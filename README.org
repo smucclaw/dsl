@@ -2,4 +2,227 @@
 
 Right now, most of the action is over in the [[https://github.com/smucclaw/complaw/][complaw]] repo.
 
+* Draft Language Specification v0.2.0
 
+** By Example
+
+*** A Simple Law
+
+*** A Simple Contract
+
+*** Libraries and Defaults
+
+**** Time
+
+**** Space: "Jurisdiction"
+
+
+** Formal Verification
+
+How to perform static analysis on the programs.
+
+** Natural Language Generation
+
+How to compile to natural languages.
+
+** 
+
+** How To Try It For Yourself
+
+A web REPL? IDE support?
+
+** How To Contribute
+
+Github issues.
+
+** Introduction
+
+** Tutorials
+
+This section will link to standalone tutorials that work through case studies for common scenarios.
+
+** Reference Manual
+
+*** Projects
+
+An L4 Project contains one or more modules.
+
+*** Modules and Structure
+
+An L4 Module is a file.
+
+The /default name/ of the module is derived from its import statement, minus any ~.l4*~ extension.
+
+The following import statements result in the following default module names:
+
+| import                                          | default name |
+|-------------------------------------------------+--------------|
+| =import "Foo/Bar/Baz.l4"=                       | Foo.Bar.Baz  |
+| =import "/usr/local/share/L4/./Foo/Bar/Baz.l4"= | Foo.Bar.Baz  |
+| =import "test/./Foo/Bar/Baz.l4"=                | Foo.Bar.Baz  |
+
+The default name is made by 
+- deleting any prefix matching the regex ~^.*/\.+/~
+- deleting any suffix matching the suffix ~\.l4\w*$~
+- converting any directory separators to dots
+
+An L4 Module contains a list of directives and statements.
+
+#+begin_src bnfc :noweb-ref l4rules
+EModule.  Rules ::= [Rule];
+terminator Rule ";";
+
+layout toplevel;
+entrypoints Rules;
+#+end_src
+
+C-style and Javascript-style comments are both supported.
+
+#+begin_src bnfc :noweb-ref l4rules
+    comment "//" ;
+    comment "/*" "*/" ;
+#+end_src
+
+*** Directives
+
+**** module
+
+A module can explicitly give itself a name by saying
+
+#+begin_src haskell
+module Foo.Bar.Baz where
+#+end_src
+
+**** numbering
+
+A numbering directive instructs the output engine to reset the autonumbering to a specific value.
+
+*** Statements
+
+An L4 statement is one of the following:
+
+**** A Rule Statement
+
+#+begin_src bnfc :noweb-ref l4rules
+ERule1.    Rule      ::= "RULE" RuleID  RuleName RuleBody;
+ERule1b.   Rule      ::= "RULE"         RuleName RuleBody;
+ERule2.    Rule      ::= "RULE" RuleNum RuleID   RuleBody;
+ERule2b.   Rule      ::= "RULE" RuleNum RuleName RuleBody;
+ERule3.    Rule      ::= "RULE" RuleNum          RuleBody;
+ERule4.    Rule      ::= "RULE" RuleID           RuleBody;
+ERule5.    Rule      ::= "RULE"                  RuleBody;
+RID.       RuleID    ::= Ident ;
+RName.     RuleName  ::= LangStrings ;
+RNum.      RuleNum   ::= Integer;
+RBNoop.    RuleBody  ::= "NOOP";
+RBDeem.    RuleBody  ::= "DEEM" [ObjAttrAnd] "WHEN" PredExpr;
+rules      PredExpr  ::= "(" PredExpr ")"
+                       | PredExpr "AND" PredExpr
+                       | PredExpr "OR"  PredExpr 
+                       | "NOOP";
+
+ObjAttrAnd. ObjAttrAnd ::= [ObjAttr] ;
+separator nonempty ObjAttrAnd "AND";
+
+rules      ObjAttr    ::= Ident ;
+
+separator nonempty ObjAttr ".";
+
+#+end_src
+
+**** Text Examples
+
+#+begin_src l4 :tangle test1.l4
+RULE 1 RuleOne NOOP
+
+RULE 2
+  DEEM Item.isPotato
+   AND Item.isEdible
+  WHEN NOOP OR NOOP
+#+end_src
+
+
+**** A Scope Statement
+
+*** Expressions
+
+#+begin_src bnfc :noweb-ref l4expressions
+EString.      NormalString ::= String ;
+ELangStrings. LangStrings  ::= [LangString] ;
+    separator nonempty LangString " ";
+ELangString.  LangString   ::= [LangID] ":" NormalString ;
+ELangID.      LangID       ::= Ident ;
+    separator nonempty LangID "," ;
+#+end_src
+
+**** String
+
+A normal string looks ="like this"= and obeys the usual conventions around escaped backslashes, quotes, and newlines.
+
+**** Language String
+
+A language string is a normal string prefixed with a language ID prefix.
+
+**** Language Identifiers
+
+A language ID prefix is one or more Langauge
+
+**** Language Stringset
+
+A Language Stringset is one or more language strings separated by whitespace.
+
+**** Lists
+
+***** Plain Lists
+
+Today's available flavours are: =[Chocolate, Vanilla, Strawberry]=
+
+***** Applicative Lists
+
+Conjunctive lists:
+- A "Neapolitan" ice cream must contain all of the following flavours: =[Chocolate, Vanilla, Strawberry]=
+- A "Neapolitan" ice cream must contain: =[Chocolate, Vanilla & Strawberry]=
+
+Disjunctive lists:
+- The allergist requires that food must not contain any of the following ingredients: =[Peanuts, Walnuts, Almonds]=
+- The allergist requires that food must not contain =[Peanuts, Walnuts | Almonds]=
+
+Conjunctive lists:
+- The restaurant cannot serve Neapolitan ice cream tonight, because the kitchen does not contain =[Chocolate, Vanilla & Strawberry]=
+
+Disjunctive lists:
+- The restaurant can serve the allergy sufferer tonight, because the kitchen does not contain =[Peanuts, Walnuts | Almonds]=
+
+The semantics of a conjunctive list:
+#+begin_src haskell :tangle Matchable.hs
+  module Matchable where
+
+  -- TODO: make this work!
+
+  class Matchable a where
+    match  :: (Eq a, Foldable t) => a -> t a -> Bool
+
+  newtype ConjList a = ConjList [a]
+  newtype DisjList a = DisjList [a]
+
+  instance Matchable (ConjList a) where
+    match x = all (== x)
+
+  instance Matchable (DisjList a) where
+    match x = any (== x)
+#+end_src
+
+*** Comments
+
+The usual:
+
+=/* text within C-style comment blocks is ignored */=
+
+=// text after Javascript-style comment slashes is ignored to end of line=
+
+* Output
+
+#+begin_src bnfc :noweb yes :tangle l4.bnfc
+<<l4rules>>
+<<l4expressions>>
+#+end_src

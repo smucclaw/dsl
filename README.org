@@ -1,5 +1,5 @@
 #+TITLE: The future home of the L4 DSL
 
-Right now, most of the action is over in the [[/smucclaw/complaw/][complaw]] repo.
+Right now, most of the action is over in the [[https://github.com/smucclaw/complaw/][complaw]] repo.
 
 

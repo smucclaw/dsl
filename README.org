@@ -104,28 +104,31 @@ An L4 statement is one of the following:
 **** A Rule Statement
 
 #+begin_src bnfc :noweb-ref l4rules
-ERule1.    Rule      ::= "RULE" RuleID  RuleName RuleBody;
-ERule1b.   Rule      ::= "RULE"         RuleName RuleBody;
-ERule2.    Rule      ::= "RULE" RuleNum RuleID   RuleBody;
-ERule2b.   Rule      ::= "RULE" RuleNum RuleName RuleBody;
-ERule3.    Rule      ::= "RULE" RuleNum          RuleBody;
-ERule4.    Rule      ::= "RULE" RuleID           RuleBody;
-ERule5.    Rule      ::= "RULE"                  RuleBody;
+rules      RuleLHS   ::= RuleNum | RuleID | RuleName
+                       | RuleNum   RuleID 
+                       | RuleNum            RuleName
+                       |           RuleID   RuleName ;
 RID.       RuleID    ::= Ident ;
 RName.     RuleName  ::= LangStrings ;
 RNum.      RuleNum   ::= Integer;
+
+RuleStanza.  Rule      ::= "RULE" RuleLHS RuleBody;
+
 RBNoop.    RuleBody  ::= "NOOP";
+
+-- DEEM Item.isPotato AND Item.isVegetable WHEN ...
 RBDeem.    RuleBody  ::= "DEEM" [ObjAttrAnd] "WHEN" PredExpr;
+separator nonempty ObjAttrAnd "AND";
+
+-- ... WHEN  
 rules      PredExpr  ::= "(" PredExpr ")"
                        | PredExpr "AND" PredExpr
                        | PredExpr "OR"  PredExpr 
                        | "NOOP";
 
-ObjAttrAnd. ObjAttrAnd ::= [ObjAttr] ;
-separator nonempty ObjAttrAnd "AND";
-
+-- Foo.Bar.Baz
+ObjAttrAnd1. ObjAttrAnd ::= [ObjAttr] ;
 rules      ObjAttr    ::= Ident ;
-
 separator nonempty ObjAttr ".";
 
 #+end_src
@@ -138,7 +141,7 @@ RULE 1 RuleOne NOOP
 RULE 2
   DEEM Item.isPotato
    AND Item.isEdible
-  WHEN NOOP OR NOOP
+  WHEN ( NOOP OR NOOP )
 #+end_src
 
 
@@ -175,23 +178,248 @@ A Language Stringset is one or more language strings separated by whitespace.
 
 ***** Plain Lists
 
-Today's available flavours are: =[Chocolate, Vanilla, Strawberry]=
+Today's available flavours are: ~[Chocolate, Vanilla, Strawberry]~
 
-***** Applicative Lists
+***** Conjunctive Lists
 
-Conjunctive lists:
-- A "Neapolitan" ice cream must contain all of the following flavours: =[Chocolate, Vanilla, Strawberry]=
-- A "Neapolitan" ice cream must contain: =[Chocolate, Vanilla & Strawberry]=
+The whole situation is a mess.
 
-Disjunctive lists:
-- The allergist requires that food must not contain any of the following ingredients: =[Peanuts, Walnuts, Almonds]=
-- The allergist requires that food must not contain =[Peanuts, Walnuts | Almonds]=
+https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
 
-Conjunctive lists:
-- The restaurant cannot serve Neapolitan ice cream tonight, because the kitchen does not contain =[Chocolate, Vanilla & Strawberry]=
+Not just in law! Let's work through an example. Over dinner. Actually, over dessert.
 
-Disjunctive lists:
-- The restaurant can serve the allergy sufferer tonight, because the kitchen does not contain =[Peanuts, Walnuts | Almonds]=
+Suppose it is well known that a [[https://en.wikipedia.org/wiki/Neapolitan_ice_cream]["Neapolitan" ice cream]] must contain all of the following flavours: ~[Chocolate, Vanilla, Strawberry]~
+
+No problem so far. Let's rephrase. Simple symbol manipulation, your basic propositional logic.
+
+#+begin_quote
+A "Neapolitan" ice cream must contain Chocolate, Vanilla, *and* Strawberry.
+#+end_quote
+
+expands, through distributivity of /must/ over /and/:
+- a "Neapolitan" ice cream *must* contain Chocolate *and*
+- a "Neapolitan" ice cream *must* contain Vanilla *and*
+- a "Neapolitan" ice cream *must* contain Strawberry.
+
+As a lawyer might put it: If any "limb" of the above argument fails, then what's in your ice cream bowl might be tasty, but it's not a valid Neapolitan.
+
+All of this flashes through your mind in a split second when the waiter says: "I'm so sorry. We cannot serve Neapolitan ice cream tonight, because the kitchen doesn't have Chocolate, Vanilla, /and/ Strawberry."
+
+By which we understand:
+1. All three flavours are needed to form a Neapolitan.
+2. The kitchen lacks at least one of them.
+3. Thus, it is false that the kitchen has all of Chocolate, Vanilla, and Strawberry.
+4. Therefore it is true that the kitchen does not have all of Chocolate, Vanilla, and Strawberry.
+
+"But," interjects the waiter, seeing the look of disappointment on your face, "we're only out of Strawberry; we do have Chocolate and Vanilla; you can still have ice cream if you want."
+
+This confirms that it is *not* true (as you might initially have feared) that the kitchen is completely out of ice cream. It is *not* true that
+- the kitchen does not have Chocolate, *and*
+- the kitchen does not have Vanilla, *and*
+- the kitchen does not have Strawberry.
+
+Wait a minute. Did we just flip the "or" for an "and"? We certainly did!
+
+What *is* true is this:
+- the kitchen does not have Chocolate, *or*
+- the kitchen does not have Vanilla, *or*
+- the kitchen does not have Strawberry.
+
+This is [[https://en.wikipedia.org/wiki/De_Morgan%27s_laws][De Morgan]] at work. "The negation of a conjunction is the disjunction of the negations".
+
+But wait, it gets worse. You say to the waiter:
+
+"Mmm. Appreciate it, but no thanks. Let's just get a round of coffee, and then the check? We'll go to the ice cream shop next door."
+
+"Fair enough, check coming right up!"
+
+Some minutes later, you stroll next door to the ice cream shop.
+
+"Welcome! You made it just before closing. So, we had a lot of customers today; we still have most of the flavours on the board, but we don't have Chocolate, Vanilla, and Strawberry."
+
+Your brush with the Neapolitan is still fresh in your mind. The restaurant used identical phrasing, but meant a different thing! Fifteen minutes ago, next door, it meant that one of the three flavours was unavailable. Now, here, it means that all three are unavailable.
+
+You can see what might drive people to invent a whole new language, [[https://en.wikipedia.org/wiki/Lojban][Lojban]].
+
+In the ice cream shop, "we don't have Chocolate, Vanilla, and Strawberry" expands to:
+- we don't have Chocolate *and*
+- we don't have Vanilla *and*
+- we don't have Strawberry.
+
+In the restaurant, "we don't have Chocolate, Vanilla, and Strawberry" expands to:
+- we don't have Chocolate *or*
+- we don't have Vanilla *or*
+- we don't have Strawberry.
+
+How crazy is English? Distribution over a list is context-dependent! I guess De Morgan's laws were made to be broken.
+
+***** Disjunctive Lists
+
+Let's up the stakes. If English is nuts, we'll go nuts too.
+
+The allergist says: your food must not contain any of the following ingredients: ~[Peanuts, Walnuts, Almonds]~.
+
+Which is to say, the food must not contain Peanuts, Walnuts, or Almonds.
+
+Or: "the food must not contain Peanuts, Walnuts, and Almonds"?
+
+"Here you go. Don't worry, our Rocky Road doesn't contain peanuts, walnuts, and almonds."
+
+Would you eat it?
+
+***** Disjunctive Or versus Exclusive Or
+
+We've talked about "and" meaning "or".
+
+Don't get me started on [[https://en.wikipedia.org/wiki/Exclusive_or#Exclusive_%22or%22_in_English]["or" meaning "xor"]].
+
+***** What is the total space?
+
+Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize all of the possible variants from that chapter.
+
+***** Is there a better way?
+
+L4 is a formal language. The meanings of expressions are explicitly defined.
+
+****** Ternary Logic In L4: "three-valued Booleans"
+
+Let ~p :: a -> Ternary~, which is to say, ~p~ is a predicate; given an input of type ~a~, it will always return Yes, No, or Neither -- "neither" meaning "unknown", "undefined", "null", or "wat". This is an example of a [[https://en.wikipedia.org/wiki/Three-valued_logic][ternary logic]].
+
+Here's a predicate: "has five toes on each fore paw". Most cats, the predicate returns ~true~. But some cats have [[https://en.wikipedia.org/wiki/Polydactyl_cat][polydactyly]]. It's an unusual condition. You can count the number of polydactyls per thousand, on the fingers of ... uh, let's just say it's a rare condition. For them, the predicate would return ~false~.
+
+But what about an amputee, who has no forelegs? They don't have six toes on each foot. They don't have five toes on each foot. They don't have feet at all.
+
+What is the hair colour of a bald man?
+
+What is the airspeed velocity of an unladen Martian swallow?
+
+On a form, you would write in "N/A" for "Not applicable".
+
+That's why we need ternary logic: sometimes yes, sometimes no, sometimes neither.
+
+Here's another predicate: "tailless". The Manx breed are considered tailless -- they are "rumpies" and "stumpies".
+
+A cat is special if it is polydactyl.
+
+A cat is special if it is tailless.
+
+A cat is valuable if it is both polydactyl and tailless.
+
+I wanted to say "a cat is special if it is polydactyl or tailless", but that brings up "exclusive or" considerations -- some might say "if it is both polydactyl and tailless than it isn't special, because it's obviously valuable instead." They're reading "xor" into the "or", in the context of the next sentence.
+
+It isn't logical, but it's English!
+
+So we spare ourselves all that grief by giving explicit definitions. Watch.
+
+****** Junction Lists
+
+In Haskell, ~Data.List.all~ tests a single predicate against a collection of ~a~ values. You can say: the members of the Polydactyly Society are ~all polydactyl~. "Polydactyl" is the predicate. "The Polydactyly Society" is the collection. ~all polydactyl society~ returns ~True~.
+
+#+begin_src haskell
+  polydactyl :: Cat -> Bool
+  polydactyl cat = length cat.frontLeft.toes  > 5 ||
+                   length cat.frontRight.toes > 5
+
+  society = filter polydactyl allcats
+#+end_src
+
+But sometimes you want to test a single value against a collection of predicates. Sometimes you want all the predicates to match.
+
+#+begin_example
+kitchen.canMakeNeapolitan = kitchen ~ [ hasChocolate
+                                      , hasVanilla
+                                      & hasStrawberry ]
+#+end_example
+
+Sometimes you want to test if any of the predicates match.
+
+#+begin_example
+dish.isDangerous = dish ~ [ hasPeanut
+                          , hasWalnut
+                          | hasAlmond ]
+#+end_example
+
+The machinery for this:
+
+#+begin_src haskell :tangle Preds.hs
+module Preds where
+
+  allPreds :: Foldable t => t (a -> Bool) -> a -> Bool
+  allPreds preds value = all (flip ($) value) preds
+
+  anyPreds :: Foldable t => t (a -> Bool) -> a -> Bool
+  anyPreds preds value = any (flip ($) value) preds
+
+  numPreds ::                [ a -> Bool ] -> a -> Int
+  numPreds preds value = length (filter (flip ($) value) preds)
+
+  xorPreds ::                [ a -> Bool ] -> a -> Bool
+  xorPreds preds value = 1 == numPreds preds value
+
+#+end_src
+
+In L4, collections of predicates are called "junction lists". The term comes from "conjunctions" and "disjunctions", hence "junctions".
+
+In L4, a *conjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~&~ character, for "and".
+
+In L4, a *disjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~|~ character, for "or".
+
+In L4, an *exclusive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~X~ character, for "exclusive or".
+
+In a junction list of three or more elements, the earlier predicates in the list can be separated by a comma "," or by the same as the final separator.
+
+This makes it easy to write:
+
+#+begin_example
+  cats = [ alice
+         , bob
+         , carol
+         , dan
+         ]
+
+  special = [ polydactyl
+            | tailless 
+            ]
+
+  valuable = [ polydactyl
+             & tailless 
+             ]
+#+end_example
+
+Conjunctive lists are syntactic sugar for ~all~.
+
+Disjunctive lists are syntactic sugar for ~any~.
+
+Exclusive lists are syntactic sugar for ~oneOf~.
+
+Lists can nest.
+
+Next we talk about matching.
+
+#+begin_example
+  specialCats  = [ polydactyl | tailless ] cats
+  valuableCats = [ polydactyl & tailless ] cats
+
+  // note that we do NOT support these alternatives in L4 syntax:
+  specialCats  = any [ polydactyl, tailless ] cats
+  valuableCats = all [ polydactyl, tailless ] cats
+
+  dish.isDangerous = dish [ hasPeanut
+                          , hasWalnut
+                          | hasAlmond ]
+#+end_example
+
+Space application is overloaded as follows:
+
+| LHS            | RHS              | meaning                                         |
+|----------------+------------------+-------------------------------------------------|
+| junction list  | single value     |                                                 |
+| single value   | junction list    | boolean                                         |
+|----------------+------------------+-------------------------------------------------|
+| junction list  | list of values   | filter for values which match the junction list |
+| list of values | junction list    | filter for values which match the junction list |
+|----------------+------------------+-------------------------------------------------|
+| list of values | single predicate |                                                 |
 
 The semantics of a conjunctive list:
 #+begin_src haskell :tangle Matchable.hs
@@ -211,6 +439,24 @@ The semantics of a conjunctive list:
   instance Matchable (DisjList a) where
     match x = any (== x)
 #+end_src
+
+****** "Any" and "all"
+
+Yay English! What's the difference between
+
+"Any zombies will be shot on sight"
+
+and
+
+"All zombies will be shot on sight"
+
+?
+
+No difference!
+
+This is why it's dangerous to reuse words with a rich existing history -- at some point, people will guess wrong.
+
+
 
 *** Comments
 

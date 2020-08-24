@@ -1,0 +1,40 @@
+EModule.  Rules ::= [Rule];
+terminator Rule ";";
+
+layout toplevel;
+entrypoints Rules;
+comment "//" ;
+comment "/*" "*/" ;
+rules      RuleLHS   ::= RuleNum | RuleID | RuleName
+                       | RuleNum   RuleID 
+                       | RuleNum            RuleName
+                       |           RuleID   RuleName ;
+RID.       RuleID    ::= Ident ;
+RName.     RuleName  ::= LangStrings ;
+RNum.      RuleNum   ::= Integer;
+
+RuleStanza.  Rule      ::= "RULE" RuleLHS RuleBody;
+
+RBNoop.    RuleBody  ::= "NOOP";
+
+-- DEEM Item.isPotato AND Item.isVegetable WHEN ...
+RBDeem.    RuleBody  ::= "DEEM" [ObjAttrAnd] "WHEN" PredExpr;
+separator nonempty ObjAttrAnd "AND";
+
+-- ... WHEN  
+rules      PredExpr  ::= "(" PredExpr ")"
+                       | PredExpr "AND" PredExpr
+                       | PredExpr "OR"  PredExpr 
+                       | "NOOP";
+
+-- Foo.Bar.Baz
+ObjAttrAnd1. ObjAttrAnd ::= [ObjAttr] ;
+rules      ObjAttr    ::= Ident ;
+separator nonempty ObjAttr ".";
+
+EString.      NormalString ::= String ;
+ELangStrings. LangStrings  ::= [LangString] ;
+    separator nonempty LangString " ";
+ELangString.  LangString   ::= [LangID] ":" NormalString ;
+ELangID.      LangID       ::= Ident ;
+    separator nonempty LangID "," ;

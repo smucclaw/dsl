@@ -1,0 +1,6 @@
+RULE 1 RuleOne NOOP
+
+RULE 2
+  DEEM Item.isPotato
+   AND Item.isEdible
+  WHEN ( NOOP OR NOOP )

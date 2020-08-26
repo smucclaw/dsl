@@ -4,3 +4,9 @@ RULE 2
   DEEM Item.isPotato
    AND Item.isEdible
   WHEN ( NOOP OR NOOP )
+
+RULE 3
+DEEM Item.isPotato
+WHEN Item.species ~ [ "Solanum tuberosum"
+                    , "Ipomoea batatas"
+                    , "Colvovulaceae" ]

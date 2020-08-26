@@ -41,6 +41,44 @@ Github issues.
 
 This section will link to standalone tutorials that work through case studies for common scenarios.
 
+** Compiler Documentation
+
+*** Stages
+
+**** Lexing
+
+handled by BNFC
+
+**** Parsing to Abstract Syntax Tree
+
+handled by BNFC
+
+**** Validation Stage 1
+
+- build a lexical symbol table of defined terms
+- Are all defined terms used?
+- Identify all undefined terms (which, presumably, would become interview questions in an abductive reasoner)
+- distinguish between declared and defined terms
+
+**** Metaprogramming
+
+Any reference to "he" in this document shall be read as "she" where appropriate.
+
+Nothing in this rule shall limit the right to xxx
+
+**** Validation Stage 2
+
+**** Numbering Resolution
+
+**** Cross-Reference Resolution
+
+**** Versioning Resolution
+
+A current rule may refer to an obsolete rule as part of a hypothetical evaluation: /the benefit defined by this rule shall be no lesser than the benefit afforded by any previous version of this rule./
+
+is a clumsy but compact way of saying, evaluate the current rule, evaluate the old rules, and take the max. This requires, in turn, that the old rules be resolvable using the same inputs available to the current rule. If that is not possible, the reasoner needs to raise an error, or ask what to do to handle that situation.
+
+
 ** Reference Manual
 
 *** Projects
@@ -93,6 +131,16 @@ A module can explicitly give itself a name by saying
 module Foo.Bar.Baz where
 #+end_src
 
+**** version
+
+**** history
+
+previous versions of this ruleset are accessible where? because this ruleset may refer to previous versions.
+
+**** import
+
+
+
 **** numbering
 
 A numbering directive instructs the output engine to reset the autonumbering to a specific value.
@@ -104,32 +152,72 @@ An L4 statement is one of the following:
 **** A Rule Statement
 
 #+begin_src bnfc :noweb-ref l4rules
-rules      RuleLHS   ::= RuleNum | RuleID | RuleName
-                       | RuleNum   RuleID 
-                       | RuleNum            RuleName
-                       |           RuleID   RuleName ;
-RID.       RuleID    ::= Ident ;
-RName.     RuleName  ::= LangStrings ;
-RNum.      RuleNum   ::= Integer;
+  rules      RuleDef   ::= RuleNum | RuleID | RuleName
+                         | RuleNum   RuleID 
+                         | RuleNum            RuleName
+                         |           RuleID   RuleName ;
+  RID.       RuleID    ::= Ident ;
+  RName.     RuleName  ::= LangStrings ;
+  RNum.      RuleNum   ::= Integer;
 
-RuleStanza.  Rule      ::= "RULE" RuleLHS RuleBody;
+  RuleStanza.  Rule      ::= "RULE" RuleDef RuleBody;
 
-RBNoop.    RuleBody  ::= "NOOP";
+  RBNoop.    RuleBody  ::= "NOOP";
 
--- DEEM Item.isPotato AND Item.isVegetable WHEN ...
-RBDeem.    RuleBody  ::= "DEEM" [ObjAttrAnd] "WHEN" PredExpr;
-separator nonempty ObjAttrAnd "AND";
+  -- DEEM Item.isPotato AND Item.isVegetable WHEN ...
+  RBDeem.    RuleBody  ::= "DEEM" [ObjAttrAnd] "WHEN" PredExpr;
+  separator nonempty ObjAttrAnd "AND";
+  ObjAttrAnd1. ObjAttrAnd ::= ObjAttr ;
 
--- ... WHEN  
-rules      PredExpr  ::= "(" PredExpr ")"
-                       | PredExpr "AND" PredExpr
-                       | PredExpr "OR"  PredExpr 
-                       | "NOOP";
+  -- ... WHEN  
+  rules      PredExpr  ::= ObjAttr
+                         | MatchExpr
+                         | PredExpr "AND" PredExpr
+                         | PredExpr "OR"  PredExpr 
+                         | "(" PredExpr ")";
 
--- Foo.Bar.Baz
-ObjAttrAnd1. ObjAttrAnd ::= [ObjAttr] ;
-rules      ObjAttr    ::= Ident ;
-separator nonempty ObjAttr ".";
+  rules      FancyBoolOp ::= PlainBoolOp Likelihood;
+
+  rules      PlainBoolOp ::= "AND" | "OR" ;
+
+  rules      Likelihood  ::= "" | "LIKELY" | "UNLIKELY";
+
+  rules     MatchExpr  ::= ObjAttr "~" JunctionList
+                         | "True"
+                         | "False" ;
+
+  rules     JunctionList ::= "[" CommaList "]"
+                           | "["   AndList "]"
+                           | "["    OrList "]"
+                           | "["   XorList "]" ;
+
+  rules     CommaList ::= [CommaElem];
+  rules     CommaElem ::= ObjAttr;
+  separator nonempty CommaElem ",";
+
+  rules     AndList ::= [AndElem];
+  rules     AndElem ::= ObjAttr;
+  separator nonempty AndElem "&";
+
+  rules     OrList ::= [OrElem];
+  rules     OrElem ::= ObjAttr;
+  separator nonempty OrElem "|";
+
+  rules     XorList ::= [XorElem];
+  rules     XorElem ::= ObjAttr;
+  separator nonempty XorElem "|";
+
+  rules      ObjAttrElem  ::= Ident ;                  -- Foo
+
+  rules      ObjAttr      ::= [ObjAttrElem]            -- Foo.Bar.Baz
+                          | ObjAttr "(" CommaList ")"  -- Foo.Bar(Baz, Quux)
+                          ;
+  separator nonempty ObjAttrElem ".";
+
+  rules      KeyVal     ::= ObjAttr ":" ObjAttr
+                          | ObjAttr "=" ObjAttr ;
+  separator nonempty KeyVal ",";
+
 
 #+end_src
 
@@ -142,8 +230,13 @@ RULE 2
   DEEM Item.isPotato
    AND Item.isEdible
   WHEN ( NOOP OR NOOP )
-#+end_src
 
+RULE 3
+DEEM Item.isPotato
+WHEN Item.species ~ [ "Solanum tuberosum"
+                    , "Ipomoea batatas"
+                    , "Colvovulaceae" ]
+#+end_src
 
 **** A Scope Statement
 
@@ -327,15 +420,15 @@ But sometimes you want to test a single value against a collection of predicates
 
 #+begin_example
 kitchen.canMakeNeapolitan = kitchen ~ [ hasChocolate
-                                      , hasVanilla
+                                      & hasVanilla
                                       & hasStrawberry ]
 #+end_example
 
 Sometimes you want to test if any of the predicates match.
 
 #+begin_example
-dish.isDangerous = dish ~ [ hasPeanut
-                          , hasWalnut
+dish.isDangerous = dish ~ [ hasPeanut     -- (hasPeanut dish) == True
+                          | hasWalnut
                           | hasAlmond ]
 #+end_example
 
@@ -456,6 +549,24 @@ No difference!
 
 This is why it's dangerous to reuse words with a rich existing history -- at some point, people will guess wrong.
 
+First-order logic knows how to deal with this situation. That's why we have \exists and \forall.
+
+*** Metaprogramming
+
+**** patterns
+
+basically, macro expansions and function definitions
+
+#+begin_src l4
+  PATTERN myfirstpattern
+  WHEREVER RuleMatchExpr // a lens-style pattern match against one or more rules
+  TRANSFORM  AliasExpr
+  TO         ReplacementExpr
+  ...
+#+end_src
+
+TODO For example we expand a rule about potatoes to also apply to cabbages, expanding ~item.isPotato~ to ~(item.isPotato OR item.isCabbage)~ in the body of any Horn clause.
+
 
 
 *** Comments
@@ -465,6 +576,12 @@ The usual:
 =/* text within C-style comment blocks is ignored */=
 
 =// text after Javascript-style comment slashes is ignored to end of line=
+
+* Developers Guide
+
+#+begin_src sh
+$ fswatch test1.l4 TestL | perl -nle 'system("clear; ./TestL test1.l4")'
+#+end_src
 
 * Output
 

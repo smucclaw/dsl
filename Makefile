@@ -6,7 +6,7 @@
 
 # Default goal.
 
-all : TestL
+all : TestL MyTestL
 
 # Rules for building the parser.
 

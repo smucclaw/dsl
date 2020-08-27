@@ -1,12 +1,42 @@
 RULE 1 RuleOne NOOP
 
-RULE 2
-  DEEM Item.isPotato
+RULE 2 
+ DEEM Item.isEdiblePotato
+  AND Item.isTastyFood
+  WHEN Item.isPotato
    AND Item.isEdible
-  WHEN ( NOOP OR NOOP )
 
-RULE 3
-DEEM Item.isPotato
-WHEN Item.species ~ [ "Solanum tuberosum"
-                    , "Ipomoea batatas"
-                    , "Colvovulaceae" ]
+// the Prolog version of the above is:
+// isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
+//
+// the Flora-2 version of this would probably rely on the Item having properties
+//
+
+// 
+// RULE 3 fertilize
+//  GIVEN Item BEING Vegetable               // fertilize ( Item : Vegetable )
+//   DEEM Item.pootato
+//     IS Item.species plus "poo"            // (++ "poo") <$> Item.species
+//                                              because every scalar is really a singleton list
+//                                              so everything is a foreach
+// 
+
+
+// Meng seems to be reinventing Haskell
+// let's call it HasSQL, haha
+
+/* like, for example ...
+
+append "poo" forEach [Foo, Bar, Baz]
+
+is equivalent to, in some other languages,
+
+    [Foo, Bar, Baz].map(x=>x+"poo")
+or
+    (++ "poo") <$> [foo, bar, baz]
+
+so we can sneak that in to our language too, just with lots of
+syntactic sugar so the "business developers" don't notice we're doing
+a list comprehension
+
+*/

@@ -1,0 +1,33 @@
+// from the JURIX paper
+
+   RULE   "Sale Restricted"
+   PARTY  P
+   SHANT  sell Item
+   WHEN   Item.isCabbage
+   UNLESS sale.onLegalDate
+       OR UNLIKELY P.hasExemption from:DirectorOfAgriculture
+          HENCE Rule "Return Policy"
+   WHERE
+      DEEM Item.isCabbage en:"is a cabbage"
+           WHEN Item.faostat ~ "FCL ITEM 0358"
+             OR (Item.category      ~ "vegetable"
+                 AND Item.species   ~ ["Brassica chinensis", "Brassica oleracea"]
+                 AND Item.cultivar !~ "botrytis")
+      DEEM sale.onLegalDate en:"on the day of a full moon"
+           WHEN sale.date ~ LegalDates
+           WHERE LegalDates = EXTERNAL url
+                              "https://www.almanac.com/astronomy/moon/full/"
+        
+    RULE "Return Policy"
+   GIVEN sale
+   PARTY Buyer
+     MAY return Item
+  BEFORE sale.date + 3W
+   HENCE Rule "Net 3"
+   
+    RULE "Net 3"
+   GIVEN return
+   PARTY Seller
+    MUST refund Amount
+  BEFORE return.date + 3D
+   WHERE Amount = return.sale.cash * 90%

@@ -718,7 +718,11 @@ The usual:
 * Developers Guide
 
 #+begin_src sh
-$ fswatch test1.l4 TestL | perl -nle 'system("clear; ./TestL test1.l4")'
+$ stack install pretty-simple
+
+$ fswatch test1.l4 TestL MyTestL.hs | perl -nle 'system("clear; make && ./MyTestL test1.l4")'
+
+$ ghcid --command "stack ghci" MyTestL.hs
 #+end_src
 
 * Output

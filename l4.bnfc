@@ -23,11 +23,13 @@ separator nonempty ObjAttrAnd "AND";
 ObjAttrAnd1. ObjAttrAnd ::= ObjAttr ;
 
 -- ... WHEN  
-rules      PredExpr  ::= ObjAttr
-                       | MatchExpr
-                       | PredExpr "AND" PredExpr
-                       | PredExpr "OR"  PredExpr 
-                       | "(" PredExpr ")";
+PEOA.      PredExpr  ::= ObjAttr;
+PEAnd.     PredExpr  ::= PredExpr "AND" PredExpr;
+PEOr.      PredExpr  ::= PredExpr "OR"  PredExpr;
+PEME.      PredExpr1 ::= MatchExpr;
+_.         PredExpr2 ::= "(" PredExpr ")";
+coercions PredExpr 2;
+-- do we really need to say coercions?
 
 rules      FancyBoolOp ::= PlainBoolOp Likelihood;
 
@@ -35,36 +37,39 @@ rules      PlainBoolOp ::= "AND" | "OR" ;
 
 rules      Likelihood  ::= "" | "LIKELY" | "UNLIKELY";
 
-rules     MatchExpr  ::= ObjAttr "~" JunctionList
-                       | "True"
-                       | "False" ;
+-- need more cases -- junctionlists
+ME_OA_JL.  MatchExpr  ::= ObjAttr "~" JunctionList ;
+ME_True.   MatchExpr  ::= "True";
+ME_False.  MatchExpr  ::= "False";
 
-rules     JunctionList ::= "[" CommaList "]"
-                         | "["   AndList "]"
-                         | "["    OrList "]"
-                         | "["   XorList "]" ;
+JL_And.    JunctionList ::= "["   AndList "]" ;
+JL_Or.     JunctionList ::= "["    OrList "]" ;
+JL_Xor.    JunctionList ::= "["   XorList "]" ;
+JL_Comma.  JunctionList ::= "[" CommaList "]" ;
 
-rules     CommaList ::= [CommaElem];
-rules     CommaElem ::= ObjAttr;
+-- some work to be done here -- the and, or, xor lists have to have at least 2 elements
+-- if there's only one element it's a plain list
+
+CommaList.  CommaList ::= [CommaElem];
+rules      CommaElem ::= ObjAttr | String;
 separator nonempty CommaElem ",";
 
-rules     AndList ::= [AndElem];
-rules     AndElem ::= ObjAttr;
+AndList.   AndList ::= [AndElem];
+rules      AndElem ::= ObjAttr | String;
 separator nonempty AndElem "&";
 
-rules     OrList ::= [OrElem];
-rules     OrElem ::= ObjAttr;
-separator nonempty OrElem "|";
-
-rules     XorList ::= [XorElem];
-rules     XorElem ::= ObjAttr;
+XorList.   XorList ::= [XorElem];
+rules      XorElem ::= ObjAttr | String;
 separator nonempty XorElem "|";
 
-rules      ObjAttrElem  ::= Ident ;                  -- Foo
+OrList.    OrList ::= [OrElem];
+rules      OrElem ::= ObjAttr | String;
+separator nonempty OrElem "|";
 
-rules      ObjAttr      ::= [ObjAttrElem]            -- Foo.Bar.Baz
-                        | ObjAttr "(" CommaList ")"  -- Foo.Bar(Baz, Quux)
-                        ;
+rules      ObjAttrElem  ::= Ident ;                     -- Foo
+
+OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+OA_method. ObjAttr      ::= ObjAttr "(" CommaList ")" ; -- Foo.Bar(Baz, Quux)
 separator nonempty ObjAttrElem ".";
 
 rules      KeyVal     ::= ObjAttr ":" ObjAttr

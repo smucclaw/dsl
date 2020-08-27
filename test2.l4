@@ -1,6 +1,6 @@
 // from the JURIX paper
 
-   RULE   "Sale Restricted"
+RULE   "Sale Restricted"
    PARTY  P
    SHANT  sell Item
    WHEN   Item.isCabbage

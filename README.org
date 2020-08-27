@@ -100,6 +100,7 @@ The transformation looks like this:
 #+begin_src haskell :tangle ToProlog.hs
   module ToProlog where
 
+  import Data.Char (isUpper, isLower, toTitle, toLower)
   import AbsL
   import Data.List (intercalate)
 
@@ -125,20 +126,113 @@ The transformation looks like this:
                                          , toProlog predexpr ++ "." ])
       <$> objattrands
 
-  instance ToProlog ObjAttr where 
-    toProlog (ObjAttr1 objAttrElems) =
-      let outside = last (toProlog <$> objAttrElems)
-          inside  = init (toProlog <$> objAttrElems)
-      in outside ++ "(" ++ intercalate "." inside ++ ")"
+  #+end_src
 
-  instance ToProlog ObjAttrElem where 
-    toProlog (ObjAttrElemIdent (Ident oaeii)) = oaeii
+Lot of heavy lifting happens in an ObjAttr "token":
 
-  instance ToProlog PredExpr where 
-    toProlog (PredExprObjAttr oa)  = toProlog oa
-    toProlog (PredExpr1 and1 and2) = toProlog and1 ++ ", " ++ toProlog and2
+| objattr       | prolog        | remark                                         |
+|---------------+---------------+------------------------------------------------|
+| One.two       | two(One)      | boolean horn                                   |
+| One.Two       | two(One,Two)  | Two contains a value for subsequent processing |
+| one.two       | one.two       | atom                                           |
+| one.Two       | one.Two       | atom                                           |
+| one.two.three | one.two.three | atom; should we consider unpacking?            |
+
+Things can get more complicated in Flora-2.
+
+See also https://www.swi-prolog.org/pldoc/man?section=bidicts for an alternative approach we might consider.
+
+  #+begin_src haskell :tangle ToProlog.hs
+    instance ToProlog ObjAttr where 
+      toProlog (OA_method oa commalist) = toProlog oa ++ "(" ++ toProlog commalist ++ ")"
+      toProlog (OA_dots objAttrElems) =
+        case asVar objAttrElems of
+          (inside, outside, Just asvar) -> outside ++ "(" ++ intercalate "," [inside, asvar] ++ ")"
+          (inside, outside, Nothing)    -> outside ++ "(" ++ inside ++ ")"
+
+    asVar :: [ObjAttrElem] -> (String, String, Maybe String)
+    asVar objAttrElems =
+       let oalist = toProlog <$> objAttrElems
+           outside = last oalist
+           inside  = head oalist
+        in
+        if and [ length oalist == 2
+               , isUpper . head $ outside
+               , isUpper . head $ inside ]
+        then (inside, lcfirst outside, Just $ titleCase outside)
+        else (inside, lcfirst outside, Nothing)
+        where titleCase "" = ""
+              titleCase (x:xs) = toTitle x : xs
+              lcfirst "" = ""
+              lcfirst (x:xs) = toLower x : xs
+       
+
+    instance ToProlog ObjAttrElem where 
+      toProlog (ObjAttrElemIdent (Ident oaeii)) = oaeii
+
+    instance ToProlog PredExpr where 
+      toProlog (PEOA oa)  = toProlog oa
+      toProlog (PEAnd exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2
+      toProlog (PEOr  exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2
+      toProlog (PEME  matchexp)  = toProlog matchexp
+
+    instance ToProlog MatchExpr where
+      toProlog (ME_OA_JL oa@(OA_dots oaes) jl) =
+        case asVar oaes of
+          (inside, outside, Just asvar) -> intercalate ", " [ toProlog oa, "match(" ++ asvar, toProlog jl ++ ")" ]
+          (inside, outside, Nothing)    -> "%% not sure what to do here"
+      toProlog (ME_OA_JL oa jl) = "%% unable to render a match against a junctionlist because the object-attribute doesn't look like Upper.lower"
+      toProlog (ME_True)        = "true"
+      toProlog (ME_False)       = "false"
+
+    instance ToProlog JunctionList where
+      toProlog (JL_Comma l) = "plain, [" ++ toProlog l ++ "]"
+      toProlog (JL_And   l) =   "and, [" ++ toProlog l ++ "]"
+      toProlog (JL_Or    l) =    "or, [" ++ toProlog l ++ "]"
+      toProlog (JL_Xor   (XorList l)) -- you can take out the plain bit when the xor match in prolog is working properly
+        | length l == 1       = "plain, [" ++ toProlog (XorList l) ++ "]"
+        | otherwise           =   "xor, [" ++ toProlog (XorList l) ++ "]"
+
+    instance ToProlog CommaList where
+      toProlog (CommaList  l) = intercalate ", " $ toProlog <$> l
+    instance ToProlog   AndList where toProlog (  AndList l) = intercalate ", " $ toProlog <$> l
+    instance ToProlog    OrList where toProlog (   OrList l) = intercalate ", " $ toProlog <$> l
+    instance ToProlog   XorList where toProlog (  XorList l) = intercalate ", " $ toProlog <$> l
+
+    instance ToProlog CommaElem where
+      toProlog (CommaElemObjAttr oa) = toProlog oa
+      toProlog (CommaElemString  oa) = show oa
+    instance ToProlog   AndElem where
+      toProlog (  AndElemObjAttr oa) = toProlog oa
+      toProlog (  AndElemString  oa) = show oa
+    instance ToProlog    OrElem where
+      toProlog (   OrElemObjAttr oa) = toProlog oa
+      toProlog (   OrElemString  oa) = show oa
+    instance ToProlog   XorElem where
+      toProlog (  XorElemObjAttr oa) = toProlog oa
+      toProlog (  XorElemString  oa) = show oa
 
 #+end_src
+
+Some helper functions
+  #+begin_src prolog :tangle prelude.pl
+    % this file is autogenerated! -*- prolog -*-
+    % 1. tangle dsl/README.org using C-c C-v C-t
+    % 2. run (cat prelude.pl; ./mkProlog test1.l4) > potato.pl
+
+    :- use_module(library(yall)).
+
+    match(Elem, or,  List)   :- member(Elem, List).
+    match(Elem, and, List)   :- maplist(  [X]>>myeq(X,Elem), List).
+    match(Elem, xor, List)   :- partition([X]>>myeq(X,Elem), List, In, _Out), length(In,L), L = 1.
+    match(Elem, plain, List) :- match(Elem, or, List).
+    myeq(A,B) :- A == B.
+    
+    % set up a couple of test potatoes
+    species(potato1, "Solanum tuberosum").
+    species(potato2, "Ipomoea batatas").
+
+  #+end_src
 
 **** Flora-2
 
@@ -239,11 +333,13 @@ An L4 statement is one of the following:
   ObjAttrAnd1. ObjAttrAnd ::= ObjAttr ;
 
   -- ... WHEN  
-  rules      PredExpr  ::= ObjAttr
-                         | MatchExpr
-                         | PredExpr "AND" PredExpr
-                         | PredExpr "OR"  PredExpr 
-                         | "(" PredExpr ")";
+  PEOA.      PredExpr  ::= ObjAttr;
+  PEAnd.     PredExpr  ::= PredExpr "AND" PredExpr;
+  PEOr.      PredExpr  ::= PredExpr "OR"  PredExpr;
+  PEME.      PredExpr1 ::= MatchExpr;
+  _.         PredExpr2 ::= "(" PredExpr ")";
+  coercions PredExpr 2;
+  -- do we really need to say coercions?
 
   rules      FancyBoolOp ::= PlainBoolOp Likelihood;
 
@@ -251,36 +347,39 @@ An L4 statement is one of the following:
 
   rules      Likelihood  ::= "" | "LIKELY" | "UNLIKELY";
 
-  rules     MatchExpr  ::= ObjAttr "~" JunctionList
-                         | "True"
-                         | "False" ;
+  -- need more cases -- junctionlists
+  ME_OA_JL.  MatchExpr  ::= ObjAttr "~" JunctionList ;
+  ME_True.   MatchExpr  ::= "True";
+  ME_False.  MatchExpr  ::= "False";
 
-  rules     JunctionList ::= "[" CommaList "]"
-                           | "["   AndList "]"
-                           | "["    OrList "]"
-                           | "["   XorList "]" ;
+  JL_And.    JunctionList ::= "["   AndList "]" ;
+  JL_Or.     JunctionList ::= "["    OrList "]" ;
+  JL_Xor.    JunctionList ::= "["   XorList "]" ;
+  JL_Comma.  JunctionList ::= "[" CommaList "]" ;
 
-  rules     CommaList ::= [CommaElem];
-  rules     CommaElem ::= ObjAttr;
+  -- some work to be done here -- the and, or, xor lists have to have at least 2 elements
+  -- if there's only one element it's a plain list
+
+  CommaList.  CommaList ::= [CommaElem];
+  rules      CommaElem ::= ObjAttr | String;
   separator nonempty CommaElem ",";
 
-  rules     AndList ::= [AndElem];
-  rules     AndElem ::= ObjAttr;
+  AndList.   AndList ::= [AndElem];
+  rules      AndElem ::= ObjAttr | String;
   separator nonempty AndElem "&";
 
-  rules     OrList ::= [OrElem];
-  rules     OrElem ::= ObjAttr;
-  separator nonempty OrElem "|";
-
-  rules     XorList ::= [XorElem];
-  rules     XorElem ::= ObjAttr;
+  XorList.   XorList ::= [XorElem];
+  rules      XorElem ::= ObjAttr | String;
   separator nonempty XorElem "|";
 
-  rules      ObjAttrElem  ::= Ident ;                  -- Foo
+  OrList.    OrList ::= [OrElem];
+  rules      OrElem ::= ObjAttr | String;
+  separator nonempty OrElem "|";
 
-  rules      ObjAttr      ::= [ObjAttrElem]            -- Foo.Bar.Baz
-                          | ObjAttr "(" CommaList ")"  -- Foo.Bar(Baz, Quux)
-                          ;
+  rules      ObjAttrElem  ::= Ident ;                     -- Foo
+
+  OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+  OA_method. ObjAttr      ::= ObjAttr "(" CommaList ")" ; -- Foo.Bar(Baz, Quux)
   separator nonempty ObjAttrElem ".";
 
   rules      KeyVal     ::= ObjAttr ":" ObjAttr
@@ -303,19 +402,15 @@ An L4 statement is one of the following:
 
   // the Prolog version of the above is:
   // isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
+  // isTastyFood(Item)    :- isPotato(Item), isEdible(Item).
   //
   // the Flora-2 version of this would probably rely on the Item having properties
   //
 
-  // 
-  // RULE 3 fertilize
-  //  GIVEN Item BEING Vegetable               // fertilize ( Item : Vegetable )
-  //   DEEM Item.pootato
-  //     IS Item.species plus "poo"            // (++ "poo") <$> Item.species
-  //                                              because every scalar is really a singleton list
-  //                                              so everything is a foreach
-  // 
-
+  
+  RULE 3 fertilize
+    DEEM Item.isPotato
+    WHEN Item.Species ~ ["Solanum tuberosum"]
 
   // Meng seems to be reinventing Haskell
   // let's call it HasSQL, haha
@@ -343,7 +438,7 @@ An L4 statement is one of the following:
 #+begin_src l4 :tangle test2.l4
 // from the JURIX paper
 
-   RULE   "Sale Restricted"
+RULE   "Sale Restricted"
    PARTY  P
    SHANT  sell Item
    WHEN   Item.isCabbage
@@ -376,6 +471,77 @@ An L4 statement is one of the following:
    WHERE Amount = return.sale.cash * 90%
 #+end_src
 
+***** Jason's Draft of the SAFE
+
+#+begin_example
+Safe_Contract IS A CATEGORY OF CONTRACT THAT:
+    HAS PARTY Investor
+    HAS PARTY Company
+    HAS JURISDICTION State_of_Incorpration
+    HAS DATE Executed_On
+    HAS CURRENCY Purchase_Amount
+    HAS CURRENCY Post-Money_Valuation_Cap
+    HAS NUMBER Discount_Rate
+    HAS FLUENT BOOLEAN Terminated
+
+Equity_Financing IS A CATEGORY OF EVENT THAT:
+    HAS A LIST OF DOCUMENTS Required_Documents
+    HAS BOOLEAN Documents_Are_Standard
+
+START SCOPE This_SAFE as Safe_Contract
+
+    RULE "Certifications"
+    Investor MUST pay Purchase_Amount to Company
+    BEFORE Executed_On + 1W
+    HENCE "Right to Shares"
+
+    START SCOPE "Right to Shares"
+
+        START SCOPE "Events"
+
+            RULE "Equity Financing"
+
+                GIVEN EVENT E
+                WHEN
+                    E.isEquityFinanceEvent AND
+                    AS OF E.date (This_SAFE.Terminated ~ False)
+                THEN
+                    Company MUST give Investor Amount of Safe_Preferred_Stock
+                    WHERE
+                        Amount = Purchase_Amount / Conversion_Price
+                HENCE "Required Documentation", "Termination By Equity Event"
+
+            RULE "Required Documentation"
+
+                GIVEN EVENT E
+                WHEN
+                    E.isEquityFinanceEvent AND
+                    AS OF E.date (This_SAFE.Terminated ~ False) AND
+                    E.documentation.isStandard
+                THEN
+                FOR EACH Document in E.Required_Documents
+                    Investor MUST
+                        execute Document
+                        AND THEN                        // sequential, not logical
+                        deliver Document to Company  
+
+            // RULE "Liquidity Event" ...
+
+            // RULE "Dissolution Event" ...
+
+            Rule "Termination By Equity Event"
+
+                GIVEN Event T
+                WHEN
+                    T ~ Company give Investor Amount of Safe_Preferred_Stock
+                THEN
+                    This_SAFE.Terminated = True
+					
+        END SCOPE "Events"
+    END SCOPE "Right to Shares"
+END SCOPE This_SAFE
+
+#+end_example
 **** A Scope Statement
 
 *** Expressions
@@ -689,6 +855,10 @@ This is why it's dangerous to reuse words with a rich existing history -- at som
 
 First-order logic knows how to deal with this situation. That's why we have \exists and \forall.
 
+*** Ontology
+
+AKA a type system
+
 *** Metaprogramming
 
 **** patterns
@@ -720,9 +890,9 @@ The usual:
 #+begin_src sh
 $ stack install pretty-simple
 
-$ fswatch test1.l4 TestL MyTestL.hs | perl -nle 'system("clear; make && ./MyTestL test1.l4")'
+$ fswatch -o Makefile l4.bnfc test1.l4 TestL.hs mkProlog.hs | perl -nle 'system("clear; make")'
 
-$ ghcid --command "stack ghci" MyTestL.hs
+$ ghcid --command "stack ghci" ./mkProlog.hs
 #+end_src
 
 * Output

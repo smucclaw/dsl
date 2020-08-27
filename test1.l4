@@ -8,19 +8,15 @@ RULE 2
 
 // the Prolog version of the above is:
 // isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
+// isTastyFood(Item)    :- isPotato(Item), isEdible(Item).
 //
 // the Flora-2 version of this would probably rely on the Item having properties
 //
 
-// 
-// RULE 3 fertilize
-//  GIVEN Item BEING Vegetable               // fertilize ( Item : Vegetable )
-//   DEEM Item.pootato
-//     IS Item.species plus "poo"            // (++ "poo") <$> Item.species
-//                                              because every scalar is really a singleton list
-//                                              so everything is a foreach
-// 
 
+RULE 3 fertilize
+  DEEM Item.isPotato
+  WHEN Item.Species ~ ["Solanum tuberosum"]
 
 // Meng seems to be reinventing Haskell
 // let's call it HasSQL, haha

@@ -20,7 +20,10 @@ ErrM.hs LexL.x PrintL.hs ParL.y TestL.hs : l4.bnfc
 	alex --ghc $<
 
 TestL : TestL.hs ErrM.hs LexL.hs ParL.hs PrintL.hs
-	ghc --make $< -o $@
+	stack ghc -- -Wall --make $< -o $@
+
+MyTestL : MyTestL.hs ErrM.hs LexL.hs ParL.hs PrintL.hs ToProlog.hs
+	stack ghc -- -Wall --make $< -o $@
 
 # Rules for cleaning generated files.
 

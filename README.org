@@ -98,18 +98,45 @@ The transformation looks like this:
 - output :: foo(X) :- bar(X), baz(X).
 
 #+begin_src haskell :tangle ToProlog.hs
-module ToProlog where
+  module ToProlog where
 
-import AbsL
+  import AbsL
+  import Data.List (intercalate)
 
-toProlog_Rules :: Rules -> String
-toProlog_Rules (EModule rules) =
-  unlines $ toProlog_Rule <$> rules
+  class ToProlog a where
+    toProlog :: a -> String
 
-toProlog_Rule :: Rule -> String
-toProlog_Rule (RuleStanza ruledef rulebody) =
-  unlines [ unwords [ "// ruleDef: ", show ruledef ]
-          , unwords [ "// ruleBody: " ++ show rulebody ] ]
+  instance ToProlog Rules where
+    toProlog (EModule rules) =
+      unlines $ toProlog <$> rules
+
+  instance ToProlog Rule where
+    toProlog (RuleStanza ruledef rulebody) =
+      unlines [ unwords [ "%% ruleDef:",   show ruledef ]
+              , unwords [ "%% ruleBody:",  show rulebody ]
+              , unwords [ toProlog rulebody ]
+              ]
+
+  instance ToProlog RuleBody where
+    toProlog RBNoop = "%% NOOP lol"
+    toProlog (RBDeem objattrands predexpr) = unlines $
+      (\(ObjAttrAnd1 objAttr) -> unwords [ toProlog objAttr
+                                         , ":-"
+                                         , toProlog predexpr ++ "." ])
+      <$> objattrands
+
+  instance ToProlog ObjAttr where 
+    toProlog (ObjAttr1 objAttrElems) =
+      let outside = last (toProlog <$> objAttrElems)
+          inside  = init (toProlog <$> objAttrElems)
+      in outside ++ "(" ++ intercalate "." inside ++ ")"
+
+  instance ToProlog ObjAttrElem where 
+    toProlog (ObjAttrElemIdent (Ident oaeii)) = oaeii
+
+  instance ToProlog PredExpr where 
+    toProlog (PredExprObjAttr oa)  = toProlog oa
+    toProlog (PredExpr1 and1 and2) = toProlog and1 ++ ", " ++ toProlog and2
 
 #+end_src
 

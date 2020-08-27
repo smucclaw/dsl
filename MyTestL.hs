@@ -26,10 +26,10 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: (Print a, Show a) => Verbosity -> ParseFun a -> FilePath -> IO ()
+runFile :: (Print a, Show a, ToProlog a) => Verbosity -> ParseFun a -> FilePath -> IO ()
 runFile v p f = putStrLn f >> readFile f >>= run v p
 
-run :: (Print a, Show a) => Verbosity -> ParseFun a -> String -> IO ()
+run :: (Print a, Show a, ToProlog a) => Verbosity -> ParseFun a -> String -> IO ()
 run v p s = case p ts of
     Left s -> do
       putStrLn "\nParse              Failed...\n"
@@ -46,12 +46,12 @@ run v p s = case p ts of
   ts = myLLexer s
 
 
-showTree :: (Show a, Print a) => Int -> a -> IO ()
+showTree :: (Show a, Print a, ToProlog a) => Int -> a -> IO ()
 showTree v tree
  = do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShow tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
-      putStrV v $ "\n[Prolog version]\n\n" ++ toProlog_Rules tree
+      putStrV v $ "\n[Prolog version]\n\n" ++ toProlog tree
 
 usage :: IO ()
 usage = do

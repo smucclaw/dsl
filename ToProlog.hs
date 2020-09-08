@@ -8,8 +8,14 @@ class ToProlog a where
   toProlog :: a -> String
 
 instance ToProlog Rules where
-  toProlog (EModule rules) =
-    unlines $ toProlog <$> rules
+  toProlog (Toplevel toplevels) =
+    unlines $ toProlog <$> toplevels
+
+instance ToProlog Toplevels where
+  toProlog (ToplevelsRule rule) = toProlog rule
+  toProlog (ToplevelsModule m)   = show m
+  toProlog (ToplevelsImport i)   = show i
+  toProlog (ToplevelsPragma p)   = show p
 
 instance ToProlog Rule where
   toProlog (RuleStanza ruledef rulebody) =

@@ -6,7 +6,7 @@
 
 # Default goal.
 
-all : TestL mkProlog
+all : TestL
 
 # Rules for building the parser.
 
@@ -20,11 +20,7 @@ ErrM.hs LexL.x PrintL.hs ParL.y TestL.hs : l4.bnfc
 	alex --ghc $<
 
 TestL : TestL.hs ErrM.hs LexL.hs ParL.hs PrintL.hs
-	stack ghc -- -Wall --make $< -o $@
-
-mkProlog : mkProlog.hs ErrM.hs LexL.hs ParL.hs PrintL.hs ToProlog.hs test1.l4 prelude.pl
-	stack ghc -- -Wall --make $< -o $@
-	(cat prelude.pl ; ./mkProlog test1.l4 ) > potato.pl
+	ghc --make $< -o $@
 
 # Rules for cleaning generated files.
 

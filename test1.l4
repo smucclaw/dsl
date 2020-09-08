@@ -1,3 +1,7 @@
+module MyPotato where
+
+import ContractLaw
+
 RULE 1 RuleOne NOOP
 
 RULE 2 

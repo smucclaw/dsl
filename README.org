@@ -25,7 +25,7 @@ How to perform static analysis on the programs.
 
 How to compile to natural languages.
 
-** 
+
 
 ** How To Try It For Yourself
 
@@ -108,8 +108,14 @@ The transformation looks like this:
     toProlog :: a -> String
 
   instance ToProlog Rules where
-    toProlog (EModule rules) =
-      unlines $ toProlog <$> rules
+    toProlog (Toplevel toplevels) =
+      unlines $ toProlog <$> toplevels
+
+  instance ToProlog Toplevels where
+    toProlog (ToplevelsRule rule) = toProlog rule
+    toProlog (ToplevelsModule m)   = show m
+    toProlog (ToplevelsImport i)   = show i
+    toProlog (ToplevelsPragma p)   = show p
 
   instance ToProlog Rule where
     toProlog (RuleStanza ruledef rulebody) =
@@ -242,7 +248,7 @@ Some helper functions
 
 
 
-** Reference Manual
+** Reference Manual and BNFC specification
 
 *** Projects
 
@@ -270,11 +276,12 @@ The default name is made by
 An L4 Module contains a list of directives and statements.
 
 #+begin_src bnfc :noweb-ref l4rules
-EModule.  Rules ::= [Rule];
-terminator Rule ";";
+  Toplevel.  Rules ::= [Toplevels];
+  rules      Toplevels ::= Rule | Module | Import | Pragma ;
+  terminator Toplevels ";";
 
-layout toplevel;
-entrypoints Rules;
+  layout toplevel;
+  entrypoints Rules;
 #+end_src
 
 C-style and Javascript-style comments are both supported.
@@ -294,7 +301,15 @@ A module can explicitly give itself a name by saying
 module Foo.Bar.Baz where
 #+end_src
 
-**** version
+#+begin_src bnfc :noweb-ref l4rules
+  ModuleDecl. Module ::= "module" ObjAttr "where";
+#+end_src
+
+**** pragma: version
+
+#+begin_src bnfc :noweb-ref l4rules
+  rules Pragma ::= "pragma" [KeyVal] ;
+#+end_src
 
 **** history
 
@@ -302,7 +317,13 @@ previous versions of this ruleset are accessible where? because this ruleset may
 
 **** import
 
+#+begin_src haskell
+import ContractLaw
+#+end_src
 
+#+begin_src bnfc :noweb-ref l4rules
+  Import. Import ::= "import" ObjAttr ;
+#+end_src
 
 **** numbering
 
@@ -392,6 +413,10 @@ An L4 statement is one of the following:
 **** Text Examples
 
 #+begin_src text :tangle test1.l4
+  module MyPotato where
+
+  import ContractLaw
+
   RULE 1 RuleOne NOOP
 
   RULE 2 

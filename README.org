@@ -156,6 +156,8 @@ In legal drafting, the order is inverted: defaults go at the top; exceptions app
 
 "Show your work: explain to me all the reasons that the outcome was calculated as it was."
 
+The Youtube link above to Coherent Knowledge's Ergo for Financial Regulation demo around Reg W is a good example of what explanation should look like, at least for a datalog-type query.
+
 See also: the New Zealand rates rebates case
 https://github.com/smucclaw/complaw/blob/master/doc/ex-nz-rates-20200909/aotearoa-haskell
 

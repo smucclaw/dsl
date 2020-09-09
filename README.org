@@ -99,13 +99,27 @@ So the quantifiers of FOL are relevant here.
 The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
 
 #+begin_example
-DEEM dish.price(weekend=true,  period=dinner) =
-     dish.price(weekend=false, period=lunch) * 1.5
+DEEM              dish.price(weekend=true,  period=dinner) =
+     hypothetical(dish.price(weekend=false, period=lunch)) * 1.5
 #+end_example
+
+This looks simple enough. Is it really necessary to wrap it in a "hypothetical"? Maybe yes, maybe no.
+
+What if the computation actually depends on a whole bunch of State? In fact, it could get worse -- it could depend on the call stack:
 
 *** Examination of Call Stack
 
-While this is not recommended, some styles of drafting say "for the purposes of P1, X is X1; for the purposes of P2, X is X2". This introduces an obvious design bug, in which P1 stacks a hypothetical P2 in its call to X. We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
+While this is not recommended, some styles of drafting say:
+
+- for the purposes of P1, X is X1;
+- for the purposes of P2, X is X2;
+- however, if the use of this variable X causes some Y to be negative, then X shall be the nearest number needed for Y to be non-negative.
+
+This "easier said than done" sentence gets us into constraint programming and linear equations.
+
+What if purpose P1 stacks a hypothetical purpose P2 in its call to X?
+
+We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
 
 *** Natural Language Support
 

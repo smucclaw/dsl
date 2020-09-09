@@ -6,16 +6,212 @@ Right now, most of the action is over in the [[https://github.com/smucclaw/compl
 
 ** By Example
 
+We want to be able to translate natural-language contracts and laws to code, without loss of meaning; so our language needs to be as expressive as natural language "pseudocode".
+
 *** A Simple Law
+
+See [[https://github.com/smucclaw/complaw/blob/master/doc/ex-20200806-hello-world-rules/][the Potato case]].
 
 *** A Simple Contract
 
-*** Libraries and Defaults
+See [[https://github.com/smucclaw/complaw/blob/master/doc/ex-jurix-20200814/][the Cabbage case]], which embeds a contract-like state graph.
 
-**** Time
+*** Underlying Logics and Concepts
+
+We build on a combination of the lamdba, mu, and pi calculi. What would we do without the Greeks?
+
+**** Temporals: Time
+
+We need to say things like: from T1 to T2, X was married to Y; from T3 to T4, X was married to Z. (OWL doesn't support this; it's timeless.)
+
+We want [[https://en.wikipedia.org/wiki/Temporal_database][multi-temporality]]: at time T1, party P believed that the legislation then in effect was L1; however, at time T3, party P realized that the legislation in effect at T1 was actually L2, having replaced L1 at time T2. However, L2 made provision that at time T1, the effective result for parties in P's situation would be as if L1 were in effect.
+
+So, we need the usual temporal notions of deadlines, durations, relative and absolute time referents, repeating periods.
+
+- Temporals :: DMN refers to a standard temporal theory of before/overlap/after. We want to reconcile that with the Event and Situation calculi.
+
+**** Deontics: Obligations, Permissions, and Prohibitions
+
+**** Party
+
+**** States, Actions, and Events: 
+
+What LegalRuleML calls "maintenance" and "achievement" obligations.
+
+This is an opportunity to use LTL/CTL.
+
+**** Definitions and truth values
+
+What LegalRuleML calls "constitutive rules", as opposed to regulative or prescriptive rules. This is one place where we might talk about FOL and a choice of well-founded semantics vs the stable model semantics.
+
+The recent discourse about binary vs nonbinary genders gives a good opportunity to talk about binary vs ternary logics.
+
+**** Default logic
+
+See section below on Rules and Metarules.
+
+**** Defeasible Logic
+
+Do we really need explicit defeasibility?
+
+**** Subjective Perspective:
+
+I want our epistemic theory to be able to express "X thinks Y thinks Z is true."
+
+Or, "Interpretation /I1/ of this text assigns one set of truth values to the following formula; Interpretation /I2/ assigns a different set, and so on."
+
+In 2020 it seems appropriate for a KRR system to admit multiple points of view, rather than to hold to set of global, universal truths. If the parties "agree to disagree", our "artificial intelligence" should not be flummoxed: “The test of a first-rate intelligence,” he said, “is the ability to hold two opposed ideas in the mind, at the same time, and still retain the ability to function.” https://quoteinvestigator.com/2020/01/05/intelligence/
+
+Within the text, a grammar of epistemic modals should handle this.
+
+In the interpreter, we might rely on answer-set-programming or SAT to construct multiple interpretive universes. Ambiguous interpretations of source text could simply show up as branching alternatives.
 
 **** Space: "Jurisdiction"
 
+Different countries have different defaults and interpretational conventions.
+
+A clause may be enforceable in one jurisdiction but not in another.
+
+**** Genres:
+
+Each of these genres requires a library -- a "sub-domain ontology".
+
+- Contract Law :: notions of what constitutes a valid contract
+- Real Estate ::
+- City Planning :: 
+
+**** Specificity: Intensionality and Extensionality
+
+- "No party who qualifies under section 12 may ..."
+
+- "Alice Apple, of 1 Address Point, specifically may ..."
+
+So the quantifiers of FOL are relevant here.
+
+**** Counterfactuals: hypothetical specification with some variable set to other than what it is
+
+The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
+
+#+begin_example
+DEEM dish.price(weekend=true, period=dinner) =
+     dish.price(weekend=true, period=lunch) * 1.5
+#+end_example
+
+**** Examination of Call Stack
+
+While this is not recommended, some styles of drafting say "for the purposes of P1, X is X1; for the purposes of P2, X is X2". This introduces an obvious design bug, in which P1 stacks a hypothetical P2 in its call to X. We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
+
+**** Natural Language Support
+
+This isn't strictly a logical matter, but if we are to extract (controlled) natural language isomorphisms we will need ways to annotate the L4 syntax with hints. In particular, idioms (in NL) and functions/macros (in L4) are a way of compacting longer expressions into shorter, reusable versions.
+
+**** Macros and Functions
+
+"Homoiconicity" refers to the idea that a program may modify itself. Contracts and laws frequently include "pragma" and "macro" statements intended to influence interpretation.
+
+**** <<<Rules and Metarules>>>
+
+If multiple rules ostensibly conflict, that just means they are really only rule fragments, and need to be resolved by composition into a larger coherent rule.
+
+Laws are sometimes written as if the drafters were drunk:
+
+1. Section 1.
+   1. The speed limit is 100.
+   2. No person may exceed the speed limit.
+   3. Any person who may exceed the speed limit shall pay a fine of $100 for every 10 kph above the speed limit.
+   4. The speed limit is 80 when it is raining.
+   5. The speed limit may be increased beyond 100 during clear weather in daytime.
+   6. Nothing in this section 1 shall allow a speed greater than 120.
+#+end_example
+
+Read literally, these rules all contradict each other. They need to be read together in context:
+
+#+begin_src haskell
+  type Raining = Bool
+  type Daytime = Bool
+  speedlimit :: Raining -> Daytime -> Int
+  speedlimit False False = 100
+  speedlimit False True  = 120
+  speedlimit True  _     = 80
+#+end_src
+
+Sometimes people talk about "default logic". In conventional programming, defaults go at the end.
+
+#+begin_src python
+  def speedlimit (raining, daytime):
+      if raining: return 80
+      if daytime: return 120
+      return             100
+#+end_src
+
+In legal drafting, the order is inverted: defaults go at the top; exceptions appear below; exceptions to exceptions appear farther below.
+
+**** Explainability
+
+"Show your work: explain to me all the reasons that the outcome was calculated as it was."
+
+See also: the New Zealand rates rebates case
+https://github.com/smucclaw/complaw/blob/master/doc/ex-nz-rates-20200909/aotearoa-haskell
+
+#+begin_example
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/aotearoa-haskell $ stack exec aotearoa-exe -- combined_income=20000 dependants=0 rates_total=2000 additional_per_dependant=500 initial_contribution=160 maximum_allowable=630 income_threshold=25180 --goal=l4/from-openfisca-rr.l4 --nlgstyle=concrete
+showing how we obtain the answer
+630.00 -- which is
+  the greater of
+  simply 0.00
+  and
+  630.00 -- which is
+    the lesser of
+    1874.67 -- which is
+      the difference between
+      1840.00 -- which is
+        the difference between
+        2000.00 -- which is
+          rates_total, the rates payable for that rating year in respect of the property
+        and
+        160.00 -- which is
+          initial_contribution, the initial contribution by ratepayer
+      and
+      -34.67 -- which is
+        the sum of
+        613.33 -- which is
+          the quotient given by
+          1840.00 -- which is
+            the difference between
+            2000.00 -- which is
+              rates_total, the rates payable for that rating year in respect of the property
+            and
+            160.00 -- which is
+              initial_contribution, the initial contribution by ratepayer
+          divided by
+          simply 3.00
+        with
+        -648.00 -- which is
+          $1 for each $8 in
+          -5180.00 -- which is
+            the difference between
+            20000.00 -- which is
+              combined_income, the ratepayer's income for the preceding tax year
+            and
+            25180.00 -- which is
+              the sum of
+              0.00 -- which is
+                the product of
+                0.00 -- which is
+                  dependants, person who was a dependant of the ratepayer
+                multiplied by
+                500.00 -- which is
+                  additional_per_dependant, the additional allowable income per dependant
+              with
+              25180.00 -- which is
+                income_threshold, the income threshold
+    and
+    630.00 -- which is
+      maximum_allowable, the maximum rebate allowed
+
+#+end_example
+
+See also: argumentation theory.
 
 ** Formal Verification
 
@@ -495,6 +691,72 @@ RULE   "Sale Restricted"
   BEFORE return.date + 3D
    WHERE Amount = return.sale.cash * 90%
 #+end_src
+
+**** TODO Syntax Sketchbook
+
+Random bits of syntax Meng has made up over the years
+
+#+begin_example
+    LEGALSOURCE  SG.Cap50.175.1
+REGULATIVE RULE  "Companies Must Hold AGM" @ cmhagm
+     SUBJECT TO  this§ & §175A
+          PARTY  EVERY Company
+          PMUST  hold (a general meeting called@ "annual general meeting") @ AGM
+          WHERE  AGM.labels == 1 [ text_en= "in addition to any other meeting" ]
+     REPEATEDLY
+          AFTER  EACH Company.financialYearEnd
+         WITHIN  Company.isListedPublicCo?
+                 THEN 4 months
+                 ELSE 6 months
+#+end_example
+
+#+begin_example
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $ stack exec hs-exe
+DEFINITION RULE "egm business"
+FORALL Company.generalMeetings.isExtraordinary?.business {
+  .level = Special
+}
+
+DEFINITION RULE "agm business"
+FORALL Company.generalMeetings.isAnnual?.business {
+  .level = Special
+           UNLESS .matter ~~ [ "the declaration of a dividend",
+                               "consideration" OF [ "the financial statements",
+                                                    "the reports of the auditors"
+                                                    &&
+                                                    "the statements of the directors" ],
+                               "the election of directors in the place of retiring directors"
+                               ||
+                               [ "the appointment"
+                                 &
+                                 "fixing of the remuneration" ] OF "the auditors" ]
+}
+
+UNSPOKEN DEFINITION RULE "metonym: the ontological essence of a meeting's business is its matter attribute"
+FORALL Company.generalMeetings.business {
+  :metonym = .matter
+}
+
+REGULATIVE RULE "must hold agm"
+PARTY Company, a corporation
+MUST hold an AGM
+     :en: hold an AGM
+REPEATEDLY every 1 year
+
+REGULATIVE RULE "Companies Must Hold AGM"
+PARTY Company, a corporation
+PMUST hold an AGM
+      :en: hold a general meeting called "annual general meeting"
+      :en: in addition to any other meeting
+      WHERE NOT (CHMAGM ~~ unique constraint excludes any other label on this meeting)
+REPEATEDLY every 1 year
+
+UNSPOKEN CONSTITUTIVE RULE "a listed public company"
+FORALL Company {
+  .isListedPublicCo? :- .isPublic?, .isListed?.
+}
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $
+#+end_example
 
 ***** Jason's Draft of the SAFE
 

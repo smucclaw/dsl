@@ -1,7 +1,6 @@
-module MyPotato where
-
+// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module Foo.Bar.Baz where
 import ContractLaw
-
 RULE 1 RuleOne NOOP
 
 RULE 2 

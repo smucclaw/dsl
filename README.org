@@ -499,11 +499,21 @@ The default name is made by
 - deleting any suffix matching the suffix ~\.l4\w*$~
 - converting any directory separators to dots
 
+A module can explicitly give itself a name by saying
+
+#+begin_src haskell :noweb-ref l4-example1
+module Foo.Bar.Baz where
+#+end_src
+
+#+begin_src bnfc :noweb-ref l4rules
+  ModuleDecl. Module ::= "module" ObjAttr "where";
+#+end_src
+
 An L4 Module contains a list of directives and statements.
 
 #+begin_src bnfc :noweb-ref l4rules
   Toplevel.  Rules ::= [Toplevels];
-  rules      Toplevels ::= Rule | Module | Import | Pragma ;
+  rules      Toplevels ::= Rule | Module | Import | Pragma | Entity | Knol ;
   terminator Toplevels ";";
 
   layout toplevel;
@@ -517,19 +527,32 @@ C-style and Javascript-style comments are both supported.
     comment "/*" "*/" ;
 #+end_src
 
+
+
 *** Directives
+**** module directive is dealt with above
 
-**** module
+Suppose we have a ContractLaw library:
 
-A module can explicitly give itself a name by saying
+#+begin_src haskell :noweb yes :tangle ContractLaw.l4
+module ContractLaw where
 
-#+begin_src haskell
-module Foo.Bar.Baz where
+RULE 1 elements
+  :en: "Elements of a Contract"
+ GIVEN scenario
+  DEEM scenario.hasContract
+  WHEN [ scenario.parties >= 2
+       , scenario.party.[Offeror].makesOffer(O) (@@ T1)
+       , scenario.party.[Acceptor @ ALL - Offeror].acceptsOffer(O) (@@ T3 > T1)
+                -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
+       , not scenario.party.[Offeror].withdrawsOffer(O) (@@ T2 > T1, T2 < T3)
+       , scenario.party.[Offeror].promises(.Consideration)
+       & scenario.party.[Acceptor].promises(.Consideration)
+       ]
+ WHERE [ Offeror.Consideration & Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]
 #+end_src
 
-#+begin_src bnfc :noweb-ref l4rules
-  ModuleDecl. Module ::= "module" ObjAttr "where";
-#+end_src
+Other modules are welcome to import this module. They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
 
 **** pragma: version
 
@@ -543,7 +566,7 @@ previous versions of this ruleset are accessible where? because this ruleset may
 
 **** import
 
-#+begin_src haskell
+#+begin_src haskell :noweb-ref l4-example1
 import ContractLaw
 #+end_src
 
@@ -559,9 +582,28 @@ A numbering directive instructs the output engine to reset the autonumbering to 
 
 An L4 statement is one of the following:
 
+**** Entities and Knols
+
+#+begin_src bnfc :noweb-ref l4rules
+  Entity.    Entity    ::= "ENTITY" Ident
+                           "ISA"   UIdent
+                           Asof
+                           "WITH"  [WithKeyVal]
+
+  layout "WITH" ;
+  separator WithKeyVal ";" ;
+
+  rules  WithKeyVal ::= ObjAttr "=" JunctionList
+                      | ObjAttr "=" BraceList
+                      | ObjAttr "=" String
+                      | ObjAttr "=" ObjAttr ;
+
+  rules BraceList ::= "{" [KeyVal] "}" ;
+
 **** A Rule Statement
 
 #+begin_src bnfc :noweb-ref l4rules
+
   rules      RuleDef   ::= RuleNum | RuleID | RuleName
                          | RuleNum   RuleID 
                          | RuleNum            RuleName
@@ -638,11 +680,9 @@ An L4 statement is one of the following:
 
 **** Text Examples
 
-#+begin_src text :tangle test1.l4
-  module MyPotato where
-
-  import ContractLaw
-
+#+begin_src text :noweb yes :tangle test1.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  <<l4-example1>>
   RULE 1 RuleOne NOOP
 
   RULE 2 
@@ -900,7 +940,11 @@ The whole situation is a mess.
 
 https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
 
-Not just in law! Let's work through an example. Over dinner. Actually, over dessert.
+http://inthelandofinventedlanguages.com/index.php?page=excerpts&id=21 "You know what I mean!"
+
+No I don't! https://edition.cnn.com/2018/02/09/us/dairy-drivers-oxford-comma-case-settlement-trnd/index.html
+
+Let's work through an example. Over dinner. Actually, over dessert.
 
 Suppose it is well known that a [[https://en.wikipedia.org/wiki/Neapolitan_ice_cream]["Neapolitan" ice cream]] must contain all of the following flavours: ~[Chocolate, Vanilla, Strawberry]~
 
@@ -1171,6 +1215,156 @@ No difference!
 This is why it's dangerous to reuse words with a rich existing history -- at some point, people will guess wrong.
 
 First-order logic knows how to deal with this situation. That's why we have \exists and \forall.
+
+**** Namespace Attributes
+
+***** Automatic singular / plural support
+
+In normal languages, ~object.party~ is a different attribute than ~object.parties~.
+
+However, our language knows English grammar, so those two attributes automatically bind to the same referent, allowing more natural expression:
+
+- ~object.party[A]~
+- ~object.party[B]~
+- ~object.parties[ALL]~
+- ~object.parties[A & B]~
+- ~object.parties[A | B]~
+
+This may turn out to be a bit of a gotcha.
+
+*** Defining Objects and Attributes
+
+As in Javascript, objects contain a dictionary of attributes.
+
+As in Haskell, we'd talk about a record type.
+
+**** Multitemporality
+
+Unlike Javascript, an attribute may be /multitemporal/:
+- valid time
+- transaction time
+- decision time
+
+An attribute is also /multivalent/: by default, every attribute of an object can have zero or more values; informally speaking, every attribute of type X is really a list of X.
+
+Let's take a simple example. As in Typescript, we define an instance type for a human:
+- human.birthdate :: Date
+- human.fullname :: String
+- human.nationality :: Country
+
+Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what Wikipedia believes, as of the 10th of September 2020.
+
+Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY blackSwan
+     ISA Human
+    WITH birthdate   = [ { xtime: 2020-09-10, value: 1981-06-09 } ]
+         nationality = [ { xtime: 2020-09-10, value: IL, vtime: 1981-06-09 -- present }
+                       , { xtime: 2020-09-10, value: US                               } ]
+#+end_src
+
+We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
+
+Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names! Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
+
+#+begin_src haskell :noweb-ref l4entity
+  -- someone can have multiple names too
+         fullname    = [ { xtime: 2020-09-10, value: ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+#+end_src
+
+As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
+- On January 1, celebrities X and Y were known to be dating.
+- By July 1, paparazzi sleuths found out that X and Y had gotten married some time in the past few months; the ceremony was said to have been held on a private island, but nobody's saying where or when it happened.
+- On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
+- On December 1, the couple announced that they had gotten divorced on November 1.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY celebXY
+     ISA Couple
+    WITH [ { xtime: 2020-01-01, maritalStatus: dating  }
+         , { xtime: 2020-07-01, maritalStatus: married }
+         , { xtime: 2020-09-01, maritalStatus: married,  vtime: 2020-06-01 -- present }
+         , { xtime: 2020-12-01, maritalStatus: married,  vtime: 2020-06-01 -- 2020-11-01 }
+         , { xtime: 2020-12-01, maritalStatus: divorced, vtime: 2020-11-01 -- present    }
+         ]
+#+end_src
+
+The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know?"
+
+**** Epistemics
+
+An attribute may also be /epistemic/:
+- on August 1, Alice learned that she was pregnant
+- on September 1, Alice wrote a letter to Bob telling him that she was pregnant, and sent it via registered post.
+- by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
+- on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
+
+#+begin_src haskell :noweb-ref l4entity
+    KNOL alicePregnancy
+    WITH [ { xtime: 2020-08-01, knownBy: Alice,                            beliefs:                 { pregnancy: true }                        }
+         , { xtime: 2020-09-01,  toldBy: Alice,                            beliefs: { knownBy: Alice, pregnancy: true }  , toldTo: Bob         }
+         , { xtime: 2020-09-01, knownBy: Alice, beliefs: { knownBy: Bob,   beliefs: { knownBy: Alice, pregnancy: true } }, vtime: 2020-09-04 } }
+         , { xtime: 2020-10-01, knownBy:   Bob, beliefs: { knownBy: Alice, beliefs: { knownBy: Alice, pregnancy: true }  , vtime: 2020-09-01 }, vtime: 2020-09-10 }
+         ]
+#+end_src
+
+*** Querying Objects and Attributes
+
+We can ask fine-grained questions like:
+- On a given date, what did entity E, or The Public, or The System generally, believe to be true about some entity E, or some unit of knowledge K?
+
+By default, L4 expressions will default to the latest known information at the time of decision.
+
+**** Using Object Attributes
+
+Okay. Deep breath. Lower case and upper case are meaningful.
+
+Specific individuals are lowercase, like blackSwan, or celebXY.
+
+Interfaces, or classes, start with an uppercase letter, like Human or Couple.
+
+Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~toldTo~, and ~beliefs~ attributes.
+
+We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+
+  ENTITY buyCabbage
+     ISA ContractOfSale
+    ASOF 2020-09-10
+    WITH date         = 2020-09-10
+         jurisdiction = SG
+         buyer        = blackSwan
+         seller       = veggieBar
+         buyer.consideration = $10
+         seller.consideration = [ item1, item2 ]
+   WHERE item1 ISA  Item
+               WITH category = "vegetable"
+                    species  = "Brassia oleracea"
+                    cultivar = "capitata"
+#+end_src
+
+**** Matching Object Attributes
+
+If this begins to feel weird, it's because under the hood, we're borrowing Prolog's unification and backtracking features.
+
+Suppose a WHEN clause says ~object.MyAttr.isTrue~.
+
+In a logic programming language that expression is synonymous with
+
+~isTrue(object.MyAttr)~
+
+~MyAttr~ takes on every attribute of ~object~ which is true
+
+Within an ~object.[ ]~ attribute dereference, the following aliases exist:
+- ALL :: unifies with every attribute
+- ALL - PreviouslyUnified :: 
 
 *** Ontology
 

@@ -1,3 +1,4 @@
+ModuleDecl. Module ::= "module" ObjAttr "where";
 Toplevel.  Rules ::= [Toplevels];
 rules      Toplevels ::= Rule | Module | Import | Pragma ;
 terminator Toplevels ";";
@@ -6,7 +7,6 @@ layout toplevel;
 entrypoints Rules;
 comment "//" ;
 comment "/*" "*/" ;
-ModuleDecl. Module ::= "module" ObjAttr "where";
 rules Pragma ::= "pragma" [KeyVal] ;
 Import. Import ::= "import" ObjAttr ;
 rules      RuleDef   ::= RuleNum | RuleID | RuleName

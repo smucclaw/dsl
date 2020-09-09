@@ -16,11 +16,11 @@ See [[https://github.com/smucclaw/complaw/blob/master/doc/ex-20200806-hello-worl
 
 See [[https://github.com/smucclaw/complaw/blob/master/doc/ex-jurix-20200814/][the Cabbage case]], which embeds a contract-like state graph.
 
-*** Underlying Logics and Concepts
+** Underlying Logics and Concepts
 
 We build on a combination of the lamdba, mu, and pi calculi. What would we do without the Greeks?
 
-**** Temporals: Time
+*** Temporals: Time
 
 We need to say things like: from T1 to T2, X was married to Y; from T3 to T4, X was married to Z. (OWL doesn't support this; it's timeless.)
 
@@ -30,31 +30,43 @@ So, we need the usual temporal notions of deadlines, durations, relative and abs
 
 - Temporals :: DMN refers to a standard temporal theory of before/overlap/after. We want to reconcile that with the Event and Situation calculi.
 
-**** Deontics: Obligations, Permissions, and Prohibitions
+*** Deontics: Obligations, Permissions, and Prohibitions
 
-**** Party
+Meng thinks the whole Chisholm paradox is only a problem in a framework that doesn't define obligations in terms of breach.
 
-**** States, Actions, and Events: 
+"You gotta do X." "Or what?" "Or nothing." "Then I don't gotta do it, do I?"
+
+So, if the penalties for each level of murder -- gentle vs bloody -- are explicitly given in a partial order, then the paradox goes away.
+
+*** Party
+
+The notion of party is complicated by the notion of "affiliates" and "subsidiaries". Also by the notion of a power of attorney, a trust, and other agent relationships.
+
+Sometimes a master agreement will establish a relationship between one group of companies and another group of companies. So we even get to employ the concept of transitive closure.
+
+See https://youtu.be/b6kkvvHfEOo?t=420 for a simple case of detecting such relations.
+
+*** States, Actions, and Events: 
 
 What LegalRuleML calls "maintenance" and "achievement" obligations.
 
 This is an opportunity to use LTL/CTL.
 
-**** Definitions and truth values
+*** Definitions and truth values
 
 What LegalRuleML calls "constitutive rules", as opposed to regulative or prescriptive rules. This is one place where we might talk about FOL and a choice of well-founded semantics vs the stable model semantics.
 
 The recent discourse about binary vs nonbinary genders gives a good opportunity to talk about binary vs ternary logics.
 
-**** Default logic
+*** Default logic
 
 See section below on Rules and Metarules.
 
-**** Defeasible Logic
+*** Defeasible Logic
 
 Do we really need explicit defeasibility?
 
-**** Subjective Perspective:
+*** Subjective Perspective:
 
 I want our epistemic theory to be able to express "X thinks Y thinks Z is true."
 
@@ -66,21 +78,15 @@ Within the text, a grammar of epistemic modals should handle this.
 
 In the interpreter, we might rely on answer-set-programming or SAT to construct multiple interpretive universes. Ambiguous interpretations of source text could simply show up as branching alternatives.
 
-**** Space: "Jurisdiction"
+*** Space: "Jurisdiction"
 
 Different countries have different defaults and interpretational conventions.
 
 A clause may be enforceable in one jurisdiction but not in another.
 
-**** Genres:
+Enforceability is a judgement to be applied late in the compilation process.
 
-Each of these genres requires a library -- a "sub-domain ontology".
-
-- Contract Law :: notions of what constitutes a valid contract
-- Real Estate ::
-- City Planning :: 
-
-**** Specificity: Intensionality and Extensionality
+*** Specificity: Intensionality and Extensionality
 
 - "No party who qualifies under section 12 may ..."
 
@@ -88,7 +94,7 @@ Each of these genres requires a library -- a "sub-domain ontology".
 
 So the quantifiers of FOL are relevant here.
 
-**** Counterfactuals: hypothetical specification with some variable set to other than what it is
+*** Counterfactuals: hypothetical specification with some variable set to other than what it is
 
 The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
 
@@ -97,19 +103,19 @@ DEEM dish.price(weekend=true, period=dinner) =
      dish.price(weekend=true, period=lunch) * 1.5
 #+end_example
 
-**** Examination of Call Stack
+*** Examination of Call Stack
 
 While this is not recommended, some styles of drafting say "for the purposes of P1, X is X1; for the purposes of P2, X is X2". This introduces an obvious design bug, in which P1 stacks a hypothetical P2 in its call to X. We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
 
-**** Natural Language Support
+*** Natural Language Support
 
 This isn't strictly a logical matter, but if we are to extract (controlled) natural language isomorphisms we will need ways to annotate the L4 syntax with hints. In particular, idioms (in NL) and functions/macros (in L4) are a way of compacting longer expressions into shorter, reusable versions.
 
-**** Macros and Functions
+*** Macros and Functions
 
 "Homoiconicity" refers to the idea that a program may modify itself. Contracts and laws frequently include "pragma" and "macro" statements intended to influence interpretation.
 
-**** <<<Rules and Metarules>>>
+*** <<<Rules and Metarules>>>
 
 If multiple rules ostensibly conflict, that just means they are really only rule fragments, and need to be resolved by composition into a larger coherent rule.
 
@@ -146,7 +152,7 @@ Sometimes people talk about "default logic". In conventional programming, defaul
 
 In legal drafting, the order is inverted: defaults go at the top; exceptions appear below; exceptions to exceptions appear farther below.
 
-**** Explainability
+*** Explainability
 
 "Show your work: explain to me all the reasons that the outcome was calculated as it was."
 
@@ -212,6 +218,14 @@ showing how we obtain the answer
 #+end_example
 
 See also: argumentation theory.
+
+** Libraries for Genres:
+
+Each of these genres requires a library -- a "sub-domain ontology".
+
+- Contract Law :: notions of what constitutes a valid contract
+- Real Estate ::
+- City Planning :: 
 
 ** Formal Verification
 

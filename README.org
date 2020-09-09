@@ -99,8 +99,8 @@ So the quantifiers of FOL are relevant here.
 The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
 
 #+begin_example
-DEEM dish.price(weekend=true, period=dinner) =
-     dish.price(weekend=true, period=lunch) * 1.5
+DEEM dish.price(weekend=true,  period=dinner) =
+     dish.price(weekend=false, period=lunch) * 1.5
 #+end_example
 
 *** Examination of Call Stack

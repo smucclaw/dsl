@@ -30,6 +30,28 @@ So, we need the usual temporal notions of deadlines, durations, relative and abs
 
 - Temporals :: DMN refers to a standard temporal theory of before/overlap/after. We want to reconcile that with the Event and Situation calculi.
 
+#+BEGIN_QUOTE
+*Comment MS:* I think there are two issues involved in the above discussion of multi-temporality:
+- the question how time evolves during the lifetime of a contract (assuming
+  that the rule set remains stable) and which actions are / have to be taken
+  at each moment by the parties involved. Formal models for this are Timed
+  Automata, Petri Nets etc. These generate / accept a set of traces, and one
+  can reason about them with temporal logics (LTL, CTL: "eventually / always",
+  "in some / all runs") or their timed variants (TCTL: "some time in the next
+  50 time units"). This technology is well understood at least in isolation,
+  but maybe not in conjunction with all the other features we need.
+- the question how the validity of a rule set changes over time. Seems closely
+  related to the question of metarules mentioned below. These seem extremely
+  difficult to deal with in full generality. A self-referential rule like
+  "This rule will not be valid in a month any more" looks like a variant of
+  the Liar's Paradox: Either the rule is still valid in a month (but
+  shouldn't be according to what it states), or it is not valid in a month
+  (but then there is no rule contradicting its validity, so as a rule
+  appearing in a contract, why shouldn't it be valid?). To avoid these
+  paradoxes, one would need a stratified set of rules, and a prover would have
+  to iterate several times over the rule set to determine the applicable rules.
+#+END_QUOTE
+
 *** Deontics: Obligations, Permissions, and Prohibitions
 
 Meng thinks the whole Chisholm paradox is only a problem in a framework that doesn't define obligations in terms of breach.
@@ -37,6 +59,21 @@ Meng thinks the whole Chisholm paradox is only a problem in a framework that doe
 "You gotta do X." "Or what?" "Or nothing." "Then I don't gotta do it, do I?"
 
 So, if the penalties for each level of murder -- gentle vs bloody -- are explicitly given in a partial order, then the paradox goes away.
+
+#+BEGIN_QUOTE
+*Comment MS:* I agree and hope we can do without explicitly using deontic
+ logic. A rule R might say: "if condition C is met, you have to do A". If one
+ reads this as an /obligation to do/ and not an /obligation to be/, one can
+ give it an operational reading: if, in the current state, condition C is
+ satisfied and I take action A, then I will get into a state of conformity
+ with rule R. If I do not take action A, I will get into a state where I
+ breach rule R. Other rules might say that there is a penalty for this breach,
+ and I can explicitly reason about the costs: If I am late arriving at the
+ airport, is it better to park the car in a non-parking zone and pay a fine or
+ to miss the plane?
+
+Question: which kind of obligations do we have: /to do/ or /to be/?
+#+END_QUOTE
 
 *** Party
 
@@ -135,6 +172,7 @@ If multiple rules ostensibly conflict, that just means they are really only rule
 
 Laws are sometimes written as if the drafters were drunk:
 
+#+begin_example
 1. Section 1.
    1. The speed limit is 100.
    2. No person may exceed the speed limit.

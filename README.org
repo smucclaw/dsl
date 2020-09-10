@@ -361,6 +361,14 @@ The transformation looks like this:
 - input :: Rule ... Given X ... DEEM X.foo WHEN X.bar AND X.baz
 - output :: foo(X) :- bar(X), baz(X).
 
+#+BEGIN_QUOTE
+*Comment MS:* Does =DEEM= always define a rule (logically speaking: an
+ implication), or is there also a mechanism for /definitions/, such as for
+ example in the Catala language (which is an equivalence, logically
+ speaking)? In the above example, when knowing =X.foo=, one cannot infer that
+ =X.bar=. 
+#+END_QUOTE
+
 #+begin_src haskell :tangle ToProlog.hs
   module ToProlog where
 
@@ -513,6 +521,44 @@ Some helper functions
 
 
 ** Reference Manual and BNFC specification
+
+#+BEGIN_QUOTE
+*Comment MS:* Having a grammar is a great step to make the language structure
+precise!
+
+/But:/ I wonder whether in addition to the /concrete syntax/ (as given by the
+grammar), one can also provide an *abstract syntax*, which is a condensed form
+of the concrete syntax and omits many of the details of the surface syntax
+(keywords, parentheses, separators, associativity etc.) and is therefore more
+readable. The abstract syntax can roughly be understood as a set of Haskell
+datatype definitions. If I understand it right, BNFC is supposed to extract
+the datatype definitions, but maybe, one can already enumerate the main
+types of the abstract syntax "manually" to get a concise picture of the
+essential constructs. To give an example, what is interesting about a rule is
+something like
+
+#+begin_src haskell
+data Rule = RuleStanza RuleDef RuleBody
+#+end_src
+whereas the different variants of a =RuleDef= are not essential for grasping the
+main aspects of the language.
+
+This would then make it easier to define a *type system* for L4, with the main
+purpose (again) of identifying the main categories of objects manipulated by
+L4. As in any programming language, there will be Booleans and numeric
+values. Some of the subtleties begin here: will there be types of
+time, money etc, and what are their typing rules? In the Cabbage Case example,
+one can write =sale.date + 3W= which seems OK, but writing =2$ + 3W= or simply
+=2 + 3W= would be considered as ill typed. 
+
+The typing question is exacerbated by the existence of object-oriented
+features (such as =Item=, =sale= in the Cabbage Case example). How does one
+declare such objects (i.e. their attributes)? Is there a notion of
+inheritance, and if so, which one: simple (as in Java), multiple (as in
+CommonLisp), or by inference from sort of ontology (which would considerably
+complicate type checking because it would have to be intertwined with proving).
+
+#+END_QUOTE
 
 *** Projects
 

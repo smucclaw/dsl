@@ -1,0 +1,162 @@
+// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module Foo.Bar.Baz where
+import ContractLaw
+
+RULE   1 SaleRestricted
+         :en:"The Sale of Cabbages is Restricted."
+         :se:"Försäljning av kål är begränsad."
+  PARTY NOBODY      AS P1
+    MAY sell Item   AS sale
+   WHEN Item IS cabbage
+ UNLESS sale IS onLegalDate
+     OR UNLIKELY P1 HAS Exemption.from ~ [DirectorOfAgriculture]
+  HENCE ReturnPolicy
+  WHERE sale IS onLegalDate
+          WHEN sale.date ~ LegalDates
+          WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
+
+RULE  2 ReturnPolicy
+  GIVEN sale
+  PARTY Buyer
+    MAY return Item
+ BEFORE sale.date + 3 weeks
+  HENCE Net3
+
+RULE  3 Net3
+  GIVEN return
+  PARTY Seller
+   MUST refund Amount
+ BEFORE return.date + 3 days
+  WHERE Amount = $return.sale.cash * 90%
+
+RULE  4 Cabbage
+   DEEM Item IS cabbage
+   WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+RULE 1 ruleOne :en:"First Rule" NOOP
+RULE 2 edible
+ DEEM Item IS EdiblePotato
+          AND TastyFood
+  WHEN Item IS Potato
+   AND Item IS Edible
+RULE 3 isPotato
+  DEEM Item IS Potato
+  WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+
+// an OR-LIST expands to
+// isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
+//                                                     ^
+// an AND-list would expand to
+// isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
+//                                                     ^
+ENTITY spud2
+   ISA Item
+  WITH species  = "Solanum tuberosum"
+       isEdible = true
+       previousOwners = [ alice, bob, charlie, daryl ]
+ENTITY alice   ISA Human WITH isNoble = true
+ENTITY bob     ISA Human WITH isNoble = false
+ENTITY charlie ISA Human WITH isNoble = true
+ENTITY daryl   ISA Human WITH isNoble = false
+
+RULE noblePotato
+  DEEM Item IS Noble
+  WHEN Item ISA Potato
+   AND Item.previousOwners.First IS Noble
+   AND Item.previousOwners.Second IS Noble
+RULE noblePotato2
+  DEEM Potato IS Noble
+  WHEN Potato.previousOwners.isNoble :: Math >= 2
+RULE noblePotato3
+  DEEM Potato IS Noble
+  WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+
+// the Prolog version of the above is:
+// isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
+// isTastyFood(Item)    :- isPotato(Item), isEdible(Item).
+//
+// the Flora-2 version of this would probably rely on the Item having properties
+//
+
+
+// Meng seems to be reinventing Haskell
+// let's call it HasSQL, haha
+
+/* like, for example ...
+
+append "poo" forEach [Foo, Bar, Baz]
+
+is equivalent to, in some other languages,
+
+    [Foo, Bar, Baz].map(x=>x+"poo")
+or
+    (++ "poo") <$> [foo, bar, baz]
+
+so we can sneak that in to our language too, just with lots of
+syntactic sugar so the "business developers" don't notice we're doing
+a list comprehension
+
+*/
+
+ENTITY blackSwan
+   ISA Human
+  WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
+//     a person can have multiple nationalities
+       nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
+                     , { xtime = 2020-09-10, value = "US"                                } ]
+//     a person can have multiple names
+       fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+ENTITY celebXY
+ GIVEN Tabloid HAVING ceaselessCoverage :: Bool
+   ISA Couple
+  WITH xtime = 2020-01-01, maritalStatus = dating
+       xtime = 2020-07-01, maritalStatus = married
+       xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
+       xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
+       xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
+SCENARIO alicePregnancy
+   TRACE 2020-08-01 Alice knew { pregnancy = true }
+         2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
+         2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
+         2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
+ENTITY veggieBar
+   ISA Business
+  WITH address = [ "1 Veggie Way" ]
+       id      = { idtype = "UEN", idval = "202000000A" }
+       name    = "The Veggie Bar Pte. Ltd."
+
+ENTITY buyCabbage
+   ISA ContractOfSale
+  WITH date         = 2020-09-10
+       jurisdiction = SG
+       buyer        = blackSwan
+       seller       = veggieBar
+       buyer.consideration  = :USD: 10
+       seller.consideration = [ item1, item2 ]
+  ASOF 2020-09-10
+ WHERE item1 ISA  Item
+             WITH category = "vegetable"
+                  species  = "Brassica oleracea"
+                  cultivar = "capitata"
+SCENARIO saleHistory
+  WITH parties = [ blackSwan, veggieBar ]
+ TRACE 2020-09-01T1210 blackSwan offers     offerDetails
+       2020-09-01T1211 veggieBar accepts    offerDetails
+       2020-09-01T1212 blackSwan pays       veggieBar $10
+       2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
+  ASOF 2020-09-10
+ WHERE offerDetails = { blackSwan.consideration = $10
+                      , veggieBar.consideration = [ item1, item2 ] }
+       item1 ISA Item
+             WITH category = "vegetable"
+                  species  = "Brassica oleracea"
+                  cultivar = "capitata"
+                  quantity = 1
+       item2 ISA Item
+             WITH category = "beverage"
+                  brand    = "Acme Water"
+                  model    = "750mL"
+                  quantity = 1
+ENTITY spud1
+   ISA Item
+  WITH species  = "Solanum tuberosum"
+       isEdible = true

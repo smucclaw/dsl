@@ -1,0 +1,55 @@
+// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+RULE showMatches
+  MATCHTYPE -- :-(
+            ObjAttr foo.bar
+            ObjAttr foo
+            UnifyElem Foo.bar
+            UnifyElem     bar
+            UnifyExpr Foo.bar
+            UnifyExpr Foo.bar.*
+            UnifyExpr Foo.bar.<Poop>
+            UnifyExpr Foo.bar.*.toots
+            UnifyExpr Foo.bar.<Poop>.toots
+            ObjMethod Foo
+            ObjMethod Foo.bar
+            ObjMethod Foo.bar(moo=poo)
+            UnifyExpr Foo.bar
+            Constraint moo=poo
+            Constraint vtime = 2010-01-02
+            VarExpr quux
+            BraceList { foo = bar }
+            BraceList { baz = quux }
+            BraceList { baz = "quux" }
+            BraceList { baz = "quux", baz = "quux" }
+            BraceList { foo=bar, baz=quux }
+            ObjMethod foo.bar(moo=poo)
+            ObjMethod foo
+            ObjMethod foo.bar
+            MathExpr 22
+            MathExpr foo.bar :: Math
+            RelBool IS
+            RelBool ISA
+            MatchExpr Foo.bar ISA Foo.bar
+            BoolExp foo.bar :: Bool
+            MatchExpr Foo ISA BAR
+            BoolExp Foo IS Bar
+            BoolExp Foo HAS Poo.Elem
+            BoolExp Foo HAS Poo.Elem ~ [Junction]
+            VarExpr $someCurrency.var * 10%
+            WhenLimb  WHEN Foo IS Bar
+            WhenLimb  WHEN Foo.bar == "baz"
+            WhereLimb WHERE Foo.bar = "baz"
+            WhereLimb WHERE Foo.bar = $10 * 2
+            WhereLimb WHERE Foo.bar = $some.currency.var * 90%
+            WhereLimb WHERE Foo = $10 * 2
+            WhereLimb WHERE Foo = $tendollars * 2
+            WhereLimb WHERE Foo.bar = objmethod(foo=bar)
+            Currency $10
+            Currency $10 * 2
+            Currency 2 * $10
+            Currency $10 + $2
+            Currency $someCurrency.var * 10%
+            VarExpr $10 + $2
+            DeonticLimb SHANT sell Item
+

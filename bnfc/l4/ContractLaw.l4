@@ -1,0 +1,16 @@
+module ContractLaw where
+
+RULE 1 elements
+  :en: "Elements of a Contract"
+ GIVEN scenario
+  DEEM scenario.hasContract
+  WHEN [ parties >= 2
+       ,   @ T1 party.Offeror  offers    O
+       ,   @ T3 party.Acceptor accepts   O, T1 <= T3
+       , ! @ T2 party.Offeror  withdraws O, T1 <= T2 <= T3
+       , ! @ T2 party.Acceptor declines  O, T1 <= T2 <= T3
+                -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
+       , O.Offeror.Consideration
+       & O.Acceptor.Consideration
+       ]
+ WHERE [ O.Offeror.Consideration & O.Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]

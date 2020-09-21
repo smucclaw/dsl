@@ -1,0 +1,19 @@
+
+
+// a simple ruleset suitable for experimenting with the Haskell PGF library integration
+
+RULE 1 ruleOne :en:"First Rule" NOOP
+
+RULE 2 edible
+ DEEM Item IS EdiblePotato
+  WHEN Item IS Potato
+   AND Item IS Edible
+
+RULE 3 isPotato
+  DEEM Item IS Potato
+  WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+
+ENTITY mySpud
+   ISA Item
+  WITH species  = "Solanum tuberosum"
+       isEdible = true

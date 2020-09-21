@@ -1,0 +1,241 @@
+Rule.      Rule      ::= "RULE" RuleDef RuleName RuleBody;
+
+RID.       RuleDef   ::=         ObjAttr ;
+RNumID.    RuleDef   ::= Integer ObjAttr ;
+RNum.      RuleDef   ::= Integer ;
+RName.     RuleName  ::= OptLangStrings ;
+
+rules      OptLangStrings ::= | LangStrings;
+
+RBNoop.    RuleBody  ::= "NOOP";
+RuleDeem.   RuleBody  ::= GivenLimb "DEEM" [Constraint] WithLimb WhenLimb WhereLimb;
+RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
+PSome.   PartyDef    ::= ObjAttr ;
+PEvery.  PartyDef    ::= PEvery ;
+rules    PEvery      ::= "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
+PNobody. PartyDef    ::= PNobody;
+rules    PNobody     ::= "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
+rules    AsAlias     ::= | "AS" ObjAttr ;
+rules    DeonticLimb ::= DeonticExpr ActionLimb;
+DEMust.  DeonticExpr ::= "MUST" ;
+DEMay.   DeonticExpr ::= "MAY"  ;
+DEShant. DeonticExpr ::= "SHANT" ;
+rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
+rules    TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
+                        | "EARLIEST" JunctionList
+                        | "LATEST"   JunctionList;
+rules    DurationExpr ::= | "+" Duration ;
+TDYM.    Duration     ::= Integer "years" ;
+TDW.     Duration     ::= Integer "weeks" ;
+TDD.     Duration     ::= Integer "days" ;
+TDDH.    Duration     ::= Integer "days" "and" Integer "hours" ;
+DNoHence. HenceLimb    ::= ;
+DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
+DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
+DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
+rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
+rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
+rules   MatchVars ::= "MathExpr"    MathExpr
+                    | "MatchExpr"   MatchExpr
+                    | "RelBool"     RelBool
+                    | "VarExpr"     VarExpr
+                    | "Constraint"  Constraint
+                    | "Currency"    Currency
+                    | "Numberlike"  Numberlike
+                    | "BoolExp"     BoolExp
+                    | "ObjMethod"   ObjMethod
+                    | "ObjAttr"     ObjAttr
+                    | "ObjAttrElem" ObjAttrElem
+                    | "UnifyExpr"   UnifyExpr
+                    | "UnifyElem"   [UnifyElem]
+                    | "WhenLimb"    WhenLimb
+                    | "WhereLimb"   WhereLimb
+                    | "DeonticLimb" DeonticLimb
+                    | "BraceList"   BraceList
+                    | "ArrayOfBraces"   ArrayOfBraces
+                    | "HenceLimb"   HenceLimb;
+separator nonempty MatchVars ";";
+ModuleDecl. Module ::= "module" ObjAttr "where";
+Toplevel.  Tops      ::= [Toplevels];
+rules      Toplevels ::= Module | Import | Pragma 
+                       | Rule | Entity | Scenario ;
+terminator Toplevels ";";
+
+layout toplevel;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+entrypoints Tops;
+comment "//" ;
+comment "--" ;
+comment "/*" "*/" ;
+rules Pragma ::= "pragma" CommaList ;
+Import. Import ::= "import" ObjAttr ;
+rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
+rules      UnlessExpr ::= | "UNLESS" BoolExp;
+TU.        TypeUnify      ::= "::" "Unify";
+TS.        TypeString     ::= "::" "String";
+TB.        TypeBool       ::= "::" "Bool";
+TM.        TypeMath       ::= "::" "Math";
+TOM.       TypeObjMethod  ::= "::" "ObjMethod";
+TT.        TypeTemporal   ::= "::" "Temporal";
+TC.        TypeCurrency   ::= "::" "Currency";
+
+rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
+rules      PlainVal  ::= String | Currency
+                       | BraceList | JunctionList | ArrayOfBraces
+                       | DateTime | DateTime "to" DateTime;
+
+rules      MathExpr   ::= MathExpr  "+" MathExpr1
+                        | MathExpr  "-" MathExpr1;
+rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
+                        | MathExpr1 "/" MathExpr2 ;
+rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
+coercions  MathExpr 2;
+rules      Numberlike ::=        Numeric
+                        |        Numeric "%" ;
+rules      Numeric    ::= Integer | Double ;
+rules      Currency   ::= Currency   "+" Currency1
+                        | Currency   "-" Currency1;
+rules      Currency1  ::= Currency1  "*" Numberlike
+                        | Numberlike "*" Currency1
+                        | Currency1  "/" Numberlike
+                        | Numberlike "/" Currency1 ;
+rules      Currency2  ::= "$"    Numeric
+                        | CurrID Numeric
+                        | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
+                        | ObjMethod TypeCurrency ;
+coercions Currency 3;
+
+BAnd1.     BoolExp    ::= BoolExp "&&"  BoolExp1;
+BAnd2.     BoolExp    ::= BoolExp "AND" BoolExp1 ;
+BOr1.      BoolExp1   ::= BoolExp1 "||"  BoolExp2;
+BOr2.      BoolExp1   ::= BoolExp1 "OR"  BoolExp2;
+BLikely.   BoolExp2   ::= Likelihood    BoolExp3;
+BNot1.     BoolExp4   ::=          "!"  BoolExp5;
+BNot2.     BoolExp4   ::=        "NOT"  BoolExp5;
+ObjEq.     BoolExp5   ::= BoolExp5 "==" BoolExp6;
+
+Likely.    Likelihood  ::= "LIKELY" ;
+Unlikely.  Likelihood  ::= "UNLIKELY";
+MathLT.    BoolExp6   ::= MathExpr "<"  MathExpr;
+MathLTE.   BoolExp6   ::= MathExpr "<=" MathExpr;
+MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
+MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
+MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
+CurrLT.    BoolExp6   ::= Currency "<"  Currency;
+CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
+CurrGT.    BoolExp6   ::= Currency ">"  Currency;
+CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
+CurrEq.    BoolExp6   ::= Currency "==" Currency;
+StrEq1.    BoolExp6   ::= String "==" ObjMethod ;
+StrEq2.    BoolExp6   ::= ObjMethod "==" String ;
+
+BMatch.    BoolExp6   ::= MatchExpr ;
+
+BTrue.     BoolExp7   ::= TrueBool; -- later, maybe | "yes" as well
+BFalse.    BoolExp7   ::= FalseBool;
+coercions  BoolExp 7;
+
+token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
+token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
+
+ME_rbjl.   MatchExpr  ::= MatchExpr RelBool MatchExpr1 ;
+rules      MatchExpr1 ::= ObjMethod -- untyped version creates 33 reduce/reduce conflicts
+                        | ObjMethod TypeBool 
+                        | JunctionList ;
+coercions  MatchExpr 2;
+rules      RelBool    ::= "IS" | "ISA" | "ARE" | "HAS" | "~";
+
+rules      ObjMethod  ::= [UnifyElem] Args ;
+rules      Args       ::= | "(" [Constraint] ")";
+
+rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
+rules      UnifyElem ::= ObjAttrElem
+                      |  UnifyBracket
+                      |  UnifyStar;
+separator nonempty UnifyElem ".";
+rules      UnifyStar ::= "*" ;
+rules      UnifyBracket ::= "<" [CommaElem] ">" ;
+-- what we realy want to be able to do is have a List a
+
+JL_And.    JunctionList ::=    AndList  ;
+JL_Or.     JunctionList ::=     OrList  ;
+JL_Xor.    JunctionList ::=    XorList  ;
+JL_Comma.  JunctionList ::=  CommaList  ;
+
+CommaList.  CommaList ::= "[" [CommaElem] "]";
+rules      CommaElem ::= ObjMethod | String;
+separator nonempty CommaElem ",";
+
+AndList.   AndList ::= AndElem "&" [AndElem];
+rules      AndElem ::= ObjMethod | String;
+_.         AndList ::= "[" AndList "]" ;
+separator nonempty AndElem "&";
+
+OrList.    OrList ::= OrElem "|" [OrElem];
+rules      OrElem ::= ObjMethod | String;
+_.         OrList ::= "[" OrList "]" ;
+separator nonempty OrElem "|";
+
+XorList.   XorList ::= XorElem "^" [XorElem];
+rules      XorElem ::= ObjMethod | String;
+_.         XorList ::= "[" XorList "]" ;
+separator nonempty XorElem "^";
+
+
+rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
+
+OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+separator nonempty ObjAttrElem ".";
+separator nonempty ObjAttr     ",";
+REntity.   Entity ::= "ENTITY" ObjAttr GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
+
+rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
+rules      GivenExpr ::=   [ObjAttr]
+                         | [ObjAttr] HavingLimb ;
+rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
+rules     HavingBoolExp ::= BoolExp;
+separator nonempty HavingBoolExp ";";
+
+rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
+rules      WithIn    ::= [Constraint] | TraceExpr;
+separator nonempty WithIn ";";
+rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
+rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+separator nonempty LogEvent ";";
+separator Blah "";
+rules      Blah     ::= VarExpr;
+rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
+rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
+
+separator nonempty WhereExp ";";
+Asof.      Asof      ::= "ASOF" DateTime ;
+AsofNull.  Asof      ::= ;
+rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
+
+token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
+token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
+token UIdent (upper (letter | digit | '_')*) ; -- doesn't seem to work for single character idents though, like P
+rules      UIdentList ::= [UIdentElem];
+rules      UIdentElem ::= UIdent;
+separator nonempty UIdentElem ".";
+
+rules BraceList     ::= "{" [Constraint] "}" ;
+rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
+rules ArrayOfBraces ::= "[" [BraceList] "]";
+separator nonempty Constraint  "," ;
+separator nonempty BraceList   "," ;
+rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
+RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+EString.      NormalString ::= String ;
+ELangStrings. LangStrings  ::= [LangString] ;
+    separator nonempty LangString " ";
+ELangString.  LangString   ::= LangID NormalString ;
+rules         LangID       ::= ":" [LangLabel] ":";
+rules         LangLabel    ::= Ident ;
+    separator nonempty LangLabel "," ;
+
+rules         CurrID       ::= ":" CurrLabel ":";
+rules         CurrLabel    ::= UIdent ;

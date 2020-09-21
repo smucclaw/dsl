@@ -1,0 +1,70 @@
+
+-- usage:
+--   cd diamond; bnfc -m test.bnfc
+--   fswatch -o test.bnfc ../l4/test4.l4 | perl -nle '$|++; system("clear; date; make && ./TestTest ../l4/test4.l4")'
+
+Toplevel.  Tops      ::= [Toplevels];
+rules      Toplevels ::= Rule ;
+terminator Toplevels ";";
+
+layout toplevel;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE" ;
+entrypoints Tops;
+comment "//" ;
+comment "--" ;
+comment "/*" "*/" ;
+
+Rule.      Rule      ::= "RULE" RuleID RuleBody;
+rules      RuleID    ::= ObjAttr ;
+RBNoop.    RuleBody  ::= "NOOP";
+
+rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
+rules   MatchVars ::= "MathExpr"    MathExpr
+                    | "VarExpr"     VarExpr
+                    | "Assignment"  Assignment
+                    | "BoolExp"     BoolExp
+                    | "ObjMethod"   ObjMethod
+                    | "ObjAttr"     ObjAttr
+                    | "ObjAttrElem" ObjAttrElem
+		    ;
+separator nonempty MatchVars ";";
+
+rules      VarExpr   ::= MathExpr | BoolExp;
+
+
+---------------------------------------------------------------------------------
+rules      MathExpr  ::= Integer | ObjMethod; TypeMath -- try changing this
+---------------------------------- ObjAttr:   parses "BoolExp foo.bar" okay
+---------------------------------- ObjMethod: syntax error on "BoolExp foo.bar"
+---------------------------------------------------------------------------------
+
+MathLT.    BoolExp   ::= MathExpr "<"  MathExpr;
+MathLTE.   BoolExp   ::= MathExpr "<=" MathExpr;
+MathGT.    BoolExp   ::= MathExpr ">"  MathExpr;
+MathGTE.   BoolExp   ::= MathExpr ">=" MathExpr;
+MathEq.    BoolExp   ::= MathExpr "==" MathExpr;
+
+Bobj.      BoolExp2  ::= ObjMethod TypeBool;
+
+TB.        TypeBool  ::= "::" "Bool";
+TM.        TypeMath  ::= "::" "Math";
+
+coercions  BoolExp 5;
+
+rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
+OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+separator nonempty ObjAttrElem ".";
+
+rules      ObjMethod  ::= ObjAttr Args ;
+rules      Args       ::= | "(" [Assignment] ")";
+
+separator nonempty ObjAttr     ",";
+
+token UIdent (upper (letter | digit | '_')*) ; -- doesn't seem to work for single character idents though, like P
+rules      UIdentList ::= [UIdentElem];
+rules      UIdentElem ::= UIdent;
+separator nonempty UIdentElem ".";
+
+rules  Assignment   ::= ObjAttr "=" ObjAttr;
+separator nonempty Assignment  "," ;
+

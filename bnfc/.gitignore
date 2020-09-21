@@ -1,0 +1,6 @@
+.stack-work/
+*~
+*.bak
+src/*.hs
+src/*.x
+src/*.y

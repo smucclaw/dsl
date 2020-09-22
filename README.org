@@ -64,7 +64,7 @@ A rule body that does nothing. This is just for dev testing. By convention this 
   RBNoop.    RuleBody  ::= "NOOP";
 #+end_src
 
-**** DEEM
+**** <<<DEEM rule>>>
 
 A constitutive rule.
 
@@ -155,9 +155,7 @@ As-aliases provide variable bindings to elements of the rule. In Haskell they ar
 
 *** ENTITY stanzas define individuals and classes.
 
-These stanzas represent what Ken Adams calls Langauge of Declaration.
-
-This is where you park details about parties and other concrete entities involved in a contract.
+These stanzas express what Ken Adams calls Language of Declaration -- about entities, at least.
 
 #+begin_src haskell :noweb-ref l4entity
   ENTITY spud1
@@ -168,9 +166,13 @@ This is where you park details about parties and other concrete entities involve
 
 ENTITY stanzas contain optional limbs: Given, With, As Of, Where.
 
+Other kinds of top-level stanzas are described below.
+
 #+begin_src bnfc :noweb-ref l4bnfc
   REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
 #+end_src
+
+This is where you park details about parties and other concrete entities involved in a contract.
 
 This converts to Prolog:
 
@@ -184,16 +186,9 @@ If we were converting to Flora-2 we would be more intelligent about classes and 
 
 Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a special case of some more generic n-place arity relational syntax for FOL" -- and you would be right. ~IS~ and ~ISA~ should be macros. This refactoring of the language will happen soon.
 
-*** Comments
-C-style and Javascript-style comments are both supported. Also Haskell-style, as a nod to our implementation language.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-    comment "//" ;
-    comment "--" ;
-    comment "/*" "*/" ;
-#+end_src
-
 ** Limbs
+
+The body of a stanzas may comprise one or more limbs. In the above examples, we have already seen a "WHEN" limb in action.
 
 *** The WHEN Limb: Constraint Expressions
 
@@ -204,17 +199,20 @@ Constraint Expressions are used both to evaluate truth values as part of a reaso
   rules      UnlessExpr ::= | "UNLESS" BoolExp;
 #+end_src
 
+More on boolean expressions below.
+
 The When Limb has an optional When part and an optional Unless part.
 
 Here's the truth table for how the parts interact
 
-| When    | Unless  | Result        |
-|---------+---------+---------------|
-| absent  | -       | true          |
-| present | absent  | evaluate when |
-| present | present | as below      |
+| When    | Unless  | Result          |
+|---------+---------+-----------------|
+| absent  | absent  | true            |
+| absent  | present | evaluate unless |
+| present | absent  | evaluate when   |
+| present | present | as below        |
 
-Here's a possible truth table for how the When/Unless limbs desugar.
+Here's a possible truth table for how the When/Unless limbs desugar. The size of this table is a sign that maybe we need to rethink this.
 
 | Party     | DeonticExpr | WHEN  | UNLESS | means           | HENCE |
 |-----------+-------------+-------+--------+-----------------+-------|
@@ -264,6 +262,9 @@ Here's a possible truth table for how the When/Unless limbs desugar.
 | Nobody    | SHANT       | false | false  | -               |       |
 
 *** Deontics and the Action Limb
+
+Some party may do some thing, to some standard. This limb talks about the thing and the standard.
+
 #+begin_src bnfc :noweb-ref l4bnfc
   rules    DeonticLimb ::= DeonticExpr ActionLimb;
   DEMust.  DeonticExpr ::= "MUST" ;
@@ -278,6 +279,9 @@ The syntax for actions is not terribly well specified at the moment.
 #+end_src
 
 *** Deadlines
+
+Every deontic modal needs a deadline -- if you don't have to do something by a certain time, do you really have to do it at all?
+
 #+begin_src bnfc :noweb-ref l4bnfc
   rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
 #+end_src
@@ -302,23 +306,23 @@ We need to beef up the temporal expressions, but for now they are:
   rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
 #+end_src
 
-*** The "ASOF" Limb and time formats
+LegalRuleML distinguishes between /maintenance/ obligations and /achievement/ obligations.
 
-We support ISO8601 dates and times.
+If we had a maintenance obligation to hold true until the contract terminated, we could say:
 
-In the future a more comprehensive time library will make it possible to say things like "the fourth Friday of every month, failing which the third Thursday."
+#+begin_example
+  RULE NonDisclosure
+  PARTY P1, P2
+  SHANT disclose confidentialInfo
+  BEFORE contract.terminationDate
+  WHERE confidentialInfo = such.and.such
+#+end_example
 
-The "ASOF" limb is syntactic shorthand for indicating a default system time for "WITH" facts declared immediately prior.
+From this we see that a maintenance obligation to not do a thing is an obligation to not achieve the thing before a certain time.
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  Asof.      Asof      ::= "ASOF" DateTime ;
-  AsofNull.  Asof      ::= ;
-  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
-  rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
+A maintenance obligation that should always hold, is an obligation to not achieve that it not hold.
 
-  token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
-  token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
-#+end_src
+This is expressible in usual temporal modal logic, LTL.
 
 *** GIVEN
 The "Given" limb is analogous to providing arguments to a function.
@@ -348,19 +352,41 @@ The "With" limb assigns attributes to an individual or a class.
   separator nonempty WithIn ";";
 #+end_src
 
+*** The "ASOF" Limb and time formats
+
+Relevant to multitemporality ---
+
+The "ASOF" limb is syntactic shorthand for indicating a default system time for "WITH" facts declared immediately prior.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Asof.      Asof      ::= "ASOF" DateTime ;
+  AsofNull.  Asof      ::= ;
+  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+  rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
+
+  token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
+  token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
+#+end_src
+
+We support ISO8601 formats for dates and times.
+
+In the future a more comprehensive time library will make it possible to say things like "the fourth Friday of every month, failing which the third Thursday."
+
 *** WHERE
 
 "Where" offers bindings similar to those found in Haskell. This is a convenient place to go into detail about concepts which are mentioned briefly in the main body.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
-  rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
+  rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
 
   separator nonempty WhereExp ";";
 #+end_src
 
+A "where" limb is very similar structurally to a DEEM rule.
+
 ** Advanced Rule Bodies
-**** Assertion
+**** TODO ASSERT
 
 A rule that describes, using LTL/CTL, certain properties of the obligation graph.
 
@@ -368,11 +394,24 @@ Violations of these properties can be found by a model checker.
 
 The syntax for assertion rules has not yet been defined.
 
-**** Meta-rule
+**** TODO PRIORITY
 
 A rule that establishes priority when other rules conflict.
 
-The syntax for meta-rules has not yet been defined. In contracts and laws we see the idea of "notwithstanding" and "subject to".
+The syntax for meta-rules has not yet been defined.
+
+***** Notwithstanding
+
+***** Subject To
+
+***** Scope
+
+We should probably handle scoping restrictions within DEEM expressions, using the GIVEN limb to inspect the call stack.
+
+**** TODO EPIRULE or META or HOrule
+
+A rule that activates or deactivates other rules.
+
 
 **** Debug: Matchtype
 
@@ -419,307 +458,257 @@ A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an 
   rules      Blah     ::= VarExpr;
 #+end_src
 
-** Important Concepts
+** Other Top-Level Keywords
 
-*** The <<<Obligation Graph>>>
+*** Module declaration
 
-*** Multitemporality
+Modules are how we do namespaces. The import and export syntax borrows from Haskell.
 
-Unlike Javascript, an attribute may be /multitemporal/:
-- valid time
-- transaction time
-- decision time
+An L4 Module is a file.
 
-An attribute is also /multivalent/: by default, every attribute of an object can have zero or more values; informally speaking, every attribute of type X is really a list of X.
+The /default name/ of the module is derived from its import statement, minus any ~.l4*~ extension.
 
-Let's take a simple example. As in Typescript, we define an instance type for a human:
-- human.birthdate :: Date
-- human.fullname :: String
-- human.nationality :: Country
+The following import statements result in the following default module names:
 
-Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what Wikipedia believes, as of the 10th of September 2020 when I wrote this.
+| import                                          | default name |
+|-------------------------------------------------+--------------|
+| ~import "Foo/Bar/Baz.l4"~                       | Foo.Bar.Baz  |
+| ~import "/usr/local/share/L4/./Foo/Bar/Baz.l4"~ | Foo.Bar.Baz  |
+| ~import "test/./Foo/Bar/Baz.l4"~                | Foo.Bar.Baz  |
 
-Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
+The default name is made by 
+- deleting any prefix matching the regex ~^.*/\.+/~
+- deleting any suffix matching the suffix ~\.l4\w*$~
+- converting any directory separators to dots
 
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY blackSwan
-     ISA Human
-    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
-  //     a person can have multiple nationalities
-         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
-                       , { xtime = 2020-09-10, value = "US"                                } ]
+A module can explicitly give itself a name by saying
+
+#+begin_src haskell :noweb-ref l4-example1
+  module Foo.Bar.Baz where
 #+end_src
-
-We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
-
-Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
-
-#+begin_src haskell :noweb-ref l4entity
-  //     a person can have multiple names
-         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
-#+end_src
-
-As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
-- On January 1, celebrities X and Y were known to be dating.
-- By July 1, paparazzi sleuths found out that X and Y had gotten married some time in the past few months; the ceremony was said to have been held on a private island, but nobody's saying where or when it happened.
-- On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
-- On December 1, the couple announced that they had gotten divorced on November 1.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY celebXY
-   GIVEN Tabloid HAVING ceaselessCoverage :: Bool
-     ISA Couple
-    WITH xtime = 2020-01-01, maritalStatus = dating
-         xtime = 2020-07-01, maritalStatus = married
-         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
-         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
-         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
-#+end_src
-
-The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"
-
-*** Epistemics
-
-An attribute may also be /epistemic/:
-- on August 1, Alice learned that she was pregnant
-- on September 1, Alice wrote a letter to Bob telling him that she was pregnant, and sent it via registered post.
-- by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
-- on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
-
-#+begin_src haskell :noweb-ref l4entity
-  SCENARIO alicePregnancy
-     TRACE 2020-08-01 Alice knew { pregnancy = true }
-           2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
-           2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
-           2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
-#+end_src
-
-There should be as many xtimes as there are knowers.
-
-*** Inference: Querying Objects and Attributes
-
-
-
-We can ask fine-grained questions like:
-- On a given date, what did entity E, or The Public, or The System generally, believe to be true about some entity E, or some unit of knowledge K?
-
-By default, L4 expressions will default to the latest known information at the time of decision.
-
-**** Using Object Attributes
-
-Okay. Deep breath. Lower case and upper case are meaningful.
-
-Specific individuals are lowercase, like blackSwan, or celebXY.
-
-Interfaces, or classes, start with an uppercase letter, like Human or Couple.
-
-Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~toldTo~, and ~beliefs~ attributes. This may go away at some point.
-
-We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY veggieBar
-     ISA Business
-    WITH address = [ "1 Veggie Way" ]
-         id      = { idtype = "UEN", idval = "202000000A" }
-         name    = "The Veggie Bar Pte. Ltd."
-
-  ENTITY buyCabbage
-     ISA ContractOfSale
-    WITH date         = 2020-09-10
-         jurisdiction = SG
-         buyer        = blackSwan
-         seller       = veggieBar
-         buyer.consideration  = :USD: 10
-         seller.consideration = [ item1, item2 ]
-    ASOF 2020-09-10
-   WHERE item1 ISA  Item
-               WITH category = "vegetable"
-                    species  = "Brassica oleracea"
-                    cultivar = "capitata"
-#+end_src
-
-ContractLaw is a library class which abstracts the essential elements of a particular contract.
-
-An alternative representation shows a trace of events:
-
-#+begin_src haskell :noweb-ref l4entity
-  SCENARIO saleHistory
-    WITH parties = [ blackSwan, veggieBar ]
-   TRACE 2020-09-01T1210 blackSwan offers     offerDetails
-         2020-09-01T1211 veggieBar accepts    offerDetails
-         2020-09-01T1212 blackSwan pays       veggieBar $10
-         2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
-    ASOF 2020-09-10
-   WHERE offerDetails = { blackSwan.consideration = $10
-                        , veggieBar.consideration = [ item1, item2 ] }
-         item1 ISA Item
-               WITH category = "vegetable"
-                    species  = "Brassica oleracea"
-                    cultivar = "capitata"
-                    quantity = 1
-         item2 ISA Item
-               WITH category = "beverage"
-                    brand    = "Acme Water"
-                    model    = "750mL"
-                    quantity = 1
-#+end_src
-
-from which a pattern-matcher could deem that a legal contract was in place. Let's see what that looks like:
-
-**** Natural Language Generation
-
-#+begin_src text :noweb-ref l4-rules
-  RULE 1 ruleOne :en:"First Rule" NOOP
-#+end_src
-
-What should this say in English?
-
-"First Rule. This rule does nothing."
-
-**** Matching Object Attributes
-
-What you're about to read is basically a Horn clause. If you know Prolog, you will recognize that this is Prolog, dressed in the guise of an object-like paradigm. You might even say, "this has the same F-Logic as Flora-2", except with the syntax of SQL.
-
-Let's start with a super simple case.
-
-Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
-
-#+begin_src haskell :noweb-ref l4-rules
-  ENTITY spud2
-     ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
-         previousOwners = [ alice, bob, charlie, daryl ]
-#+end_src
-
-What does that look like in Prolog?
-
-#+begin_src prolog
-  species(spud2, "Solanum tuberosum").
-  isEdible(spud2).
-  previousOwner(spud2, alice).
-  previousOwner(spud2, bob).
-  previousOwner(spud2, charlie).
-  previousOwner(spud2, daryl).
-#+end_src
-
-Now we have an opportunity to explore relational syntax. Think Alloy.
-
-Let's say that some of the previous owners were members of the nobility.
-
-#+begin_src haskell :noweb-ref l4-rules
-  ENTITY alice   ISA Human WITH isNoble = true
-  ENTITY bob     ISA Human WITH isNoble = false
-  ENTITY charlie ISA Human WITH isNoble = true
-  ENTITY daryl   ISA Human WITH isNoble = false
-#+end_src
-
-In Prolog, that reads:
-
-#+begin_src prolog
-  isNoble(alice).
-  isNoble(bob).
-  isNoble(charlie).
-  isNoble(daryl).
-#+end_src
-
-#+begin_src text :noweb-ref l4-rules
-  RULE 2 edible
-   DEEM Item IS EdiblePotato
-            AND TastyFood
-    WHEN Item IS Potato
-     AND Item IS Edible
-#+end_src
-
-Rule 2 relies on rule 3. This is backward chaining.
-  
-#+begin_src text :noweb-ref l4-rules
-  RULE 3 isPotato
-    DEEM Item IS Potato
-    WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
-
-  // an OR-LIST expands to
-  // isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
-  //                                                     ^
-  // an AND-list would expand to
-  // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
-  //                                                     ^
-#+end_src
-
-If this begins to feel weird, it's because under the hood, we're borrowing Prolog's unification and backtracking features.
-
-Let's say a potato is Noble if at least two of its previous owners are Noble.
-
-There are a couple ways to say that. This is one way:
-
-#+begin_src haskell :noweb-ref l4-rules
-
-  RULE noblePotato
-    DEEM Item IS Noble
-    WHEN Item ISA Potato
-     AND Item.previousOwners.First IS Noble
-     AND Item.previousOwners.Second IS Noble
-#+end_src
-
-(Maybe this also creates an automatic Item.isNoble?)
-
-That translates to:
-
-#+begin_src prolog
-  isNoble(Item) :- isPotato(Item),
-                   previousOwner(Item, First), isNoble(First),
-                   previousOwner(Item, Second), isNoble(Second),
-                   First != Second.
-#+end_src
-
-This allows us to subsequently use the term Potato instead of Item:
-
-#+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato2
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.isNoble :: Math >= 2
-#+end_src
-
-Alternative syntax:
-
-#+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato3
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
-#+end_src
-
-*** Ontology
-
-Individuals are in lower case.
-
-Variables, roles, and classes are in UpperCase.
-
-Our ontology:
-- ~x ISA Y~ :: x is an instance; Y is a class.
-- ~Y ISA Z~ :: Y is a class; Z is a superclass.
-
-** Expressions
-*** term primitives
-
-L4 uses customary ~record.attribute~ notation for most things.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-
-  rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
-
-  OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
-  separator nonempty ObjAttrElem ".";
-  separator nonempty ObjAttr     ",";
+  ModuleDecl. Module ::= "module" ObjAttr "where";
 #+end_src
 
-*** TODO Lists
+An L4 Module contains a list of directives and statements.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Toplevel.  Tops      ::= [Toplevels];
+  rules      Toplevels ::= Module | Import | Pragma 
+                         | Rule | Entity | Scenario ;
+  terminator Toplevels ";";
+
+  layout toplevel;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+  entrypoints Tops;
+#+end_src
+
+*** import statement
+
+Suppose we have a ContractLaw library:
+
+#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
+  module ContractLaw where
+#+end_src
+
+Other modules are welcome to import this module.
+
+#+begin_src haskell :noweb-ref l4-example1
+  import ContractLaw
+#+end_src
+
+Syntax for an import expression:
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Import. Import ::= "import" ObjAttr ;
+#+end_src
+
+They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
+
+*** pragma: version
+
+Pragma directives give hints to the compiler.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules Pragma ::= "pragma" CommaList ;
+#+end_src
+
+*** History
+
+A "HISTORY" stanza outlines the version history of a particular file, and indicates where previous versions of this ruleset may be found. Because this ruleset may refer to previous versions.
+
+*** Metaprogramming with pattern macros
+
+Basically, macro expansions and function definitions.
+
+#+begin_src l4
+  PATTERN myfirstpattern
+  WHEREVER RuleMatchExpr // a lens-style? regex-style? pattern match against one or more rules
+  TRANSFORM  AliasExpr
+  TO         ReplacementExpr
+  ...
+#+end_src
+
+TODO For example we expand a rule about potatoes to also apply to cabbages, expanding ~item.isPotato~ to ~(item.isPotato OR item.isCabbage)~ in the body of any Horn clause.
+
+** Syntax
+*** Comments
+
+C-style and Javascript-style comments are both supported. Also Haskell-style, as a nod to our implementation language.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+    comment "//" ;
+    comment "--" ;
+    comment "/*" "*/" ;
+#+end_src
+
+*** String Expressions
+
+A normal string looks ~"like this"~ and obeys the usual conventions around escaped backslashes, quotes, and newlines.
+
+*** Language Stringset
+
+Language strings assist with NLG. They start with a colon-bracketed language ID prefix, like ":en:". Technically, one or more comma-separated ISO639-1 language codes, where dashes and underscores are accepted. The first letter must be lowercase.
+
+Any place you can have one language string, you can have more, forming a /stringset/:
+
+#+begin_example
+:en:"potato"
+:fr:"pomme de terre"
+#+end_example
+
+BNF:
+
+#+begin_src bnfc :noweb-ref l4expressions
+ELangStrings. LangStrings  ::= [LangString] ;
+    separator nonempty LangString " ";
+ELangString.  LangString   ::= LangID String ;
+rules         LangID       ::= ":" [LangLabel] ":";
+rules         LangLabel    ::= Ident ;
+    separator nonempty LangLabel "," ;
+#+end_src
+
+Currency strings are the same but uppercase, like "USD".
+
+#+begin_src bnfc :noweb-ref l4expressions
+rules         CurrID       ::= ":" CurrLabel ":";
+rules         CurrLabel    ::= UIdent ;
+#+end_src
+
+*** Math expressions
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      MathExpr   ::= MathExpr  "+" MathExpr1
+                          | MathExpr  "-" MathExpr1;
+  rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
+                          | MathExpr1 "/" MathExpr2 ;
+  rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
+  coercions  MathExpr 2;
+  rules      Numberlike ::=        Numeric
+                          |        Numeric "%" ;
+  rules      Numeric    ::= Integer | Double ;
+#+end_src
+
+*** Currency expressions
+
+Currencies are expressed specifically as ~:SGD: 1400~ or generically as ~$~. When it's a currency variable you gotta prefix it, sorry. It'll go away when we have better type inferencing later.
+
+Many contracts deal with dollar calculations. L4 supports composable primitives and functional idioms for mathematical expressions.
+
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      Currency   ::= Currency   "+" Currency1
+                          | Currency   "-" Currency1;
+  rules      Currency1  ::= Currency1  "*" Numberlike
+                          | Numberlike "*" Currency1
+                          | Currency1  "/" Numberlike
+                          | Numberlike "/" Currency1 ;
+  rules      Currency2  ::= "$"    Numeric
+                          | CurrID Numeric
+                          | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
+                          | ObjMethod TypeCurrency ;
+  coercions Currency 3;
+
+#+end_src
+
+*** Boolean expressions
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  BAnd1.     BoolExp    ::= BoolExp "&&"  BoolExp1;
+  BAnd2.     BoolExp    ::= BoolExp "AND" BoolExp1 ;
+  BOr1.      BoolExp1   ::= BoolExp1 "||"  BoolExp2;
+  BOr2.      BoolExp1   ::= BoolExp1 "OR"  BoolExp2;
+  BLikely.   BoolExp2   ::= Likelihood    BoolExp3;
+  BNot1.     BoolExp4   ::=          "!"  BoolExp5;
+  BNot2.     BoolExp4   ::=        "NOT"  BoolExp5;
+  ObjEq.     BoolExp5   ::= BoolExp5 "==" BoolExp6;
+
+  Likely.    Likelihood  ::= "LIKELY" ;
+  Unlikely.  Likelihood  ::= "UNLIKELY";
+#+end_src
+
+A boolean expression can be labeled Likely or Unlikely to serve as a hint to a reasoner.
+
+At the moment this syntax is static. In the future it would be nice to be able to compute the likelihood of a constraint expression dynamically.
+
+*** Boolean expressions comparing math expressions
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  MathLT.    BoolExp6   ::= MathExpr "<"  MathExpr;
+  MathLTE.   BoolExp6   ::= MathExpr "<=" MathExpr;
+  MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
+  MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
+  MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
+#+end_src
+
+*** Boolean expressions comparing currency expressions
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  CurrLT.    BoolExp6   ::= Currency "<"  Currency;
+  CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
+  CurrGT.    BoolExp6   ::= Currency ">"  Currency;
+  CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
+  CurrEq.    BoolExp6   ::= Currency "==" Currency;
+#+end_src
+
+*** Boolean expressions comparing strings
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  StrEq1.    BoolExp6   ::= String "==" ObjMethod ;
+  StrEq2.    BoolExp6   ::= ObjMethod "==" String ;
+
+  BMatch.    BoolExp6   ::= MatchExpr ;
+
+  BTrue.     BoolExp7   ::= TrueBool; -- later, maybe | "yes" as well
+  BFalse.    BoolExp7   ::= FalseBool;
+  coercions  BoolExp 7;
+
+  token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
+  token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
+
+#+end_src
+
+*** Match expressions against lists
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  ME_rbjl.   MatchExpr  ::= MatchExpr RelBool MatchExpr1 ;
+  rules      MatchExpr1 ::= ObjMethod -- untyped version creates 33 reduce/reduce conflicts
+                          | ObjMethod TypeBool 
+                          | JunctionList ;
+  coercions  MatchExpr 2;
+  rules      RelBool    ::= "IS" | "ISA" | "ARE" | "HAS" | "~";
+#+end_src
+
+Okay, let's talk about lists.
+
+*** Lists
 
 Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
 
 In L4, comma lists work as usual. But we also have and-lists and or-lists, which are separated by "&" and "|" respectively.
 
-Internally we call these "junction lists" for "conjunction" and "disjunction".
+Internally we call these "junction lists" for "conjunction" and "disjunction". We are careful to define everything here, no room for ambiguity. Because https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
 
 The semantics depend on context:
 
@@ -727,6 +716,13 @@ The semantics depend on context:
 |--------+--------------+-----------------------|
 | &      | intersection | and                   |
 | \vert  | union        | or                    |
+
+Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize all of the possible variants from that chapter.
+
+| example               | ~ | list        | means                           |
+|-----------------------+---+-------------+---------------------------------|
+| some.Unification.term | ~ | [x & y]     | forall u in U, exists u in {x, y} |
+| some.Unification.term | ~ | [x \vert y] | exists u in U, exists u in {x, y} |
 
 #+begin_src bnfc :noweb-ref l4bnfc
   -- what we realy want to be able to do is have a List a
@@ -754,74 +750,11 @@ The semantics depend on context:
   rules      XorElem ::= ObjMethod | String;
   _.         XorList ::= "[" XorList "]" ;
   separator nonempty XorElem "^";
-
 #+end_src
 
-*** TODO Lists
+**** TODO Early thoughts on Lists
 
-**** Plain Lists
-
-Today's available flavours are: ~[Chocolate, Vanilla, Strawberry]~
-
-**** Conjunctive Lists
-
-The whole situation is a mess.
-
-https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
-
-**** What is the total space?
-
-Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize all of the possible variants from that chapter.
-
-**** Is there a better way?
-
-L4 is a formal language. The meanings of expressions are explicitly defined.
-
-***** Ternary Logic In L4: "three-valued Booleans"
-
-Let ~p :: a -> Ternary~, which is to say, ~p~ is a predicate; given an input of type ~a~, it will always return Yes, No, or Neither -- "neither" meaning "unknown", "undefined", "null", or "wat". This is an example of a [[https://en.wikipedia.org/wiki/Three-valued_logic][ternary logic]].
-
-Here's a predicate: "has five toes on each fore paw". Most cats, the predicate returns ~true~. But some cats have [[https://en.wikipedia.org/wiki/Polydactyl_cat][polydactyly]]. It's an unusual condition. You can count the number of polydactyls per thousand, on the fingers of ... uh, let's just say it's a rare condition. For them, the predicate would return ~false~.
-
-But what about an amputee, who has no forelegs? They don't have six toes on each foot. They don't have five toes on each foot. They don't have feet at all.
-
-What is the hair colour of a bald man?
-
-What is the airspeed velocity of an unladen Martian swallow?
-
-On a form, you would write in "N/A" for "Not applicable".
-
-That's why we need ternary logic: sometimes yes, sometimes no, sometimes neither.
-
-Here's another predicate: "tailless". The Manx breed are considered tailless -- they are "rumpies" and "stumpies".
-
-A cat is special if it is polydactyl.
-
-A cat is special if it is tailless.
-
-A cat is valuable if it is both polydactyl and tailless.
-
-I wanted to say "a cat is special if it is polydactyl or tailless", but that brings up "exclusive or" considerations -- some might say "if it is both polydactyl and tailless than it isn't special, because it's obviously valuable instead." They're reading "xor" into the "or", in the context of the next sentence.
-
-It isn't logical, but it's English!
-
-So we spare ourselves all that grief by giving explicit definitions. Watch.
-
-***** Junction Lists
-
-TO BE CONTINUED
-
-Basically we have
-
-| set theory   | propositional logic | symbol |
-|--------------+---------------------+--------|
-| union        | or                  | \vert  |
-| intersection | and                 | &      |
-
-| example               | ~ | list        | means                           |
-|-----------------------+---+-------------+---------------------------------|
-| some.Unification.term | ~ | [x & y]     | forall u in U, exists u in {x, y} |
-| some.Unification.term | ~ | [x \vert y] | exists u in U, exists u in {x, y} |
+This section is obsolete and scheduled for deletion.
 
 In Haskell, ~Data.List.all~ tests a single predicate against a collection of ~a~ values. You can say: the members of the Polydactyly Society are ~all polydactyl~. "Polydactyl" is the predicate. "The Polydactyly Society" is the collection. ~all polydactyl society~ returns ~True~.
 
@@ -950,7 +883,7 @@ The semantics of a conjunctive list:
     match x = any (== x)
 #+end_src
 
-***** "Any" and "all"
+****** "Any" and "all"
 
 Yay English! What's the difference between
 
@@ -970,7 +903,92 @@ First-order logic knows how to deal with this situation. That's why we have \exi
 
 See also https://inariksit.github.io/cclaw-zettelkasten/ambiguity_of_and.html
 
-*** Constraint Unification
+*** Defining Objects and Attributes
+
+As in Javascript, objects contain a dictionary of attributes.
+
+As in Haskell, we'd talk about a record type.
+
+**** Object Attributes
+
+L4 uses customary ~record.attribute~ notation for most things.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+
+  rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
+
+  OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+  separator nonempty ObjAttrElem ".";
+  separator nonempty ObjAttr     ",";
+#+end_src
+
+**** Automatic singular / plural support for attributes
+
+In normal languages, ~object.party~ is a different attribute than ~object.parties~.
+
+However, our language knows English grammar, so those two attributes automatically bind to the same referent, allowing more natural expression:
+
+- ~object.party[A]~
+- ~object.party[B]~
+- ~object.parties[ALL]~
+- ~object.parties[A & B]~
+- ~object.parties[A | B]~
+
+This may turn out to be a bad idea.
+
+**** Method Syntax with Args
+
+You can chuck parens on the end of an object attribute, and you end up with an object method.
+
+- ~object.party(foo=bar)~
+
+Note that the parameters are named, as Python does it.
+
+Actually, though, these parameters are constraints, so you could also say
+
+- ~object.party(age >= 21)~
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      ObjMethod  ::= [UnifyElem] Args ;
+  rules      Args       ::= | "(" [Constraint] ")";
+#+end_src
+
+**** Unification Syntax
+
+So ObjMethod turns out to have a trick up its sleeve: it can /unify/ variable elements.
+
+And that works even without the paren args.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
+  rules      UnifyElem ::= ObjAttrElem
+                        |  UnifyBracket
+                        |  UnifyStar
+                        |  "."; -- ideally we would have foo..bar and not foo...bar
+  separator nonempty UnifyElem ".";
+  rules      UnifyStar ::= "*" ;
+  rules      UnifyBracket ::= "<" [CommaElem] ">" ;
+#+end_src
+
+"*" is the simplest pattern-match: it matches any value of any attribute.
+
+More complex pattern-matches can be specified using double square brackets. In future we want this to be single square brackets, maybe when we are less scared of reduce/reduce conflicts at the moment.
+
+See Constraint Unification for details.
+
+*** <<<Constraint Unification>>>
+
+"WITH" limbs look like "foo == bar". But they're actually constraint relations, and you can do multiples of them.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules BraceList     ::= "{" [Constraint] "}" ;
+  rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
+  rules ArrayOfBraces ::= "[" [BraceList] "]";
+  separator nonempty Constraint  "," ;
+  separator nonempty BraceList   "," ;
+  rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
+#+end_src
+
 
 THIS IS STILL UNDER CONSTRUCTION
 
@@ -1063,6 +1081,8 @@ further constrains NorthAmericans to those parties whose state is WA or province
 
 *** Type Annotations
 
+To give the parser a hand the current language definition lets you annotate ~Object.attributes~ with a ~:: Type~ annotation.
+
 #+begin_src bnfc :noweb-ref l4bnfc
   TU.        TypeUnify      ::= "::" "Unify";
   TS.        TypeString     ::= "::" "String";
@@ -1073,7 +1093,7 @@ further constrains NorthAmericans to those parties whose state is WA or province
   TC.        TypeCurrency   ::= "::" "Currency";
 #+end_src
 
-A menagerie of data types
+*** A menagerie of data types
 
 #+begin_src bnfc :noweb-ref l4bnfc
 
@@ -1084,130 +1104,6 @@ A menagerie of data types
 
 #+end_src
 
-Math expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      MathExpr   ::= MathExpr  "+" MathExpr1
-                          | MathExpr  "-" MathExpr1;
-  rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
-                          | MathExpr1 "/" MathExpr2 ;
-  rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
-  coercions  MathExpr 2;
-  rules      Numberlike ::=        Numeric
-                          |        Numeric "%" ;
-  rules      Numeric    ::= Integer | Double ;
-#+end_src
-
-Currency expressions
-
-Currencies are expressed specifically as ~:SGD: 1400~ or generically as ~$~. When it's a currency variable you gotta prefix it, sorry. It'll go away when we have better type inferencing later.
-
-Many contracts deal with dollar calculations. L4 supports composable primitives and functional idioms for mathematical expressions.
-
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      Currency   ::= Currency   "+" Currency1
-                          | Currency   "-" Currency1;
-  rules      Currency1  ::= Currency1  "*" Numberlike
-                          | Numberlike "*" Currency1
-                          | Currency1  "/" Numberlike
-                          | Numberlike "/" Currency1 ;
-  rules      Currency2  ::= "$"    Numeric
-                          | CurrID Numeric
-                          | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
-                          | ObjMethod TypeCurrency ;
-  coercions Currency 3;
-
-#+end_src
-
-Boolean expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  BAnd1.     BoolExp    ::= BoolExp "&&"  BoolExp1;
-  BAnd2.     BoolExp    ::= BoolExp "AND" BoolExp1 ;
-  BOr1.      BoolExp1   ::= BoolExp1 "||"  BoolExp2;
-  BOr2.      BoolExp1   ::= BoolExp1 "OR"  BoolExp2;
-  BLikely.   BoolExp2   ::= Likelihood    BoolExp3;
-  BNot1.     BoolExp4   ::=          "!"  BoolExp5;
-  BNot2.     BoolExp4   ::=        "NOT"  BoolExp5;
-  ObjEq.     BoolExp5   ::= BoolExp5 "==" BoolExp6;
-
-  Likely.    Likelihood  ::= "LIKELY" ;
-  Unlikely.  Likelihood  ::= "UNLIKELY";
-#+end_src
-
-A boolean expression can be labeled Likely or Unlikely to serve as a hint to a reasoner.
-
-At the moment this syntax is static. In the future it would be nice to be able to compute the likelihood of a constraint expression dynamically.
-
-Boolean expressions comparing math expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  MathLT.    BoolExp6   ::= MathExpr "<"  MathExpr;
-  MathLTE.   BoolExp6   ::= MathExpr "<=" MathExpr;
-  MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
-  MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
-  MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
-#+end_src
-
-Boolean expressions comparing math expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  CurrLT.    BoolExp6   ::= Currency "<"  Currency;
-  CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
-  CurrGT.    BoolExp6   ::= Currency ">"  Currency;
-  CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
-  CurrEq.    BoolExp6   ::= Currency "==" Currency;
-#+end_src
-
-Boolean expressions comparing strings
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  StrEq1.    BoolExp6   ::= String "==" ObjMethod ;
-  StrEq2.    BoolExp6   ::= ObjMethod "==" String ;
-
-  BMatch.    BoolExp6   ::= MatchExpr ;
-
-  BTrue.     BoolExp7   ::= TrueBool; -- later, maybe | "yes" as well
-  BFalse.    BoolExp7   ::= FalseBool;
-  coercions  BoolExp 7;
-
-  token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
-  token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
-
-#+end_src
-
-Match expressions against lists
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  ME_rbjl.   MatchExpr  ::= MatchExpr RelBool MatchExpr1 ;
-  rules      MatchExpr1 ::= ObjMethod -- untyped version creates 33 reduce/reduce conflicts
-                          | ObjMethod TypeBool 
-                          | JunctionList ;
-  coercions  MatchExpr 2;
-  rules      RelBool    ::= "IS" | "ISA" | "ARE" | "HAS" | "~";
-
-  rules      ObjMethod  ::= [UnifyElem] Args ;
-  rules      Args       ::= | "(" [Constraint] ")";
-
-#+end_src
-
-Unification expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
-  rules      UnifyElem ::= ObjAttrElem
-                        |  UnifyBracket
-                        |  UnifyStar
-                        |  "."; -- ideally we would have foo..bar and not foo...bar
-  separator nonempty UnifyElem ".";
-  rules      UnifyStar ::= "*" ;
-  rules      UnifyBracket ::= "<" [CommaElem] ">" ;
-#+end_src
-
-"*" is the simplest pattern-match: it matches any value of any attribute.
-
-More complex pattern-matches can be specified using double square brackets. In future we want this to be single square brackets, maybe when we are less scared of reduce/reduce conflicts at the moment.
 
 
 *** Syntax Primitives
@@ -1222,173 +1118,126 @@ Higher-level constructs rely on syntax primitives.
 
 #+end_src
 
-"WITH" limbs look like "foo == bar". But they're actually constraint relations, and you can do multiples of them.
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules BraceList     ::= "{" [Constraint] "}" ;
-  rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
-  rules ArrayOfBraces ::= "[" [BraceList] "]";
-  separator nonempty Constraint  "," ;
-  separator nonempty BraceList   "," ;
-  rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
+*** User Guide
+
+**** How To Try It For Yourself
+
+A web REPL? IDE support?
+
+**** Tutorials
+
+This section will link to standalone tutorials that work through case studies for common scenarios.
+
+**** Libraries for Genres:
+
+Each of these genres requires a library -- a "sub-domain ontology".
+
+- Contract Law :: notions of what constitutes a valid contract
+- Real Estate ::
+- City Planning :: 
+
+**** Formal Verification
+
+How to perform static analysis on the programs.
+
+**** Natural Language Generation
+
+How to compile to natural languages.
+
+
+
+*** How To Contribute
+
+Github issues.
+
+* Important Concepts
+
+** The <<<Obligation Graph>>>
+
+** <<<Multitemporality>>>
+
+Unlike Javascript, an attribute may be /multitemporal/:
+- valid time
+- transaction time
+- decision time
+
+An attribute is also /multivalent/: by default, every attribute of an object can have zero or more values; informally speaking, every attribute of type X is really a list of X.
+
+Let's take a simple example. As in Typescript, we define an instance type for a human:
+- human.birthdate :: Date
+- human.fullname :: String
+- human.nationality :: Country
+
+Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what Wikipedia believes, as of the 10th of September 2020 when I wrote this.
+
+Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY blackSwan
+     ISA Human
+    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
+  //     a person can have multiple nationalities
+         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
+                       , { xtime = 2020-09-10, value = "US"                                } ]
 #+end_src
 
-*** String
+We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
 
-A normal string looks ~"like this"~ and obeys the usual conventions around escaped backslashes, quotes, and newlines.
+Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
 
-*** Language String
-
-A language string is a normal string prefixed with a language ID prefix. Any place you can have one language string, you can have more:
-
-#+begin_example
-:en:"potato"
-:fr:"pomme de terre"
-#+end_example
-
-*** Language Identifiers
-
-A language ID prefix is one or more comma-separated ISO639-1 language codes, where dashes and underscores are accepted.
-
-*** Language Stringset
-
-A Language Stringset is one or more language strings separated by whitespace.
-
-
-** Other Top-Level Keywords
-
-*** Module
-
-Modules offer namespaces. The import and export syntax borrows from Haskell.
-
-An L4 Module is a file.
-
-The /default name/ of the module is derived from its import statement, minus any ~.l4*~ extension.
-
-The following import statements result in the following default module names:
-
-| import                                          | default name |
-|-------------------------------------------------+--------------|
-| ~import "Foo/Bar/Baz.l4"~                       | Foo.Bar.Baz  |
-| ~import "/usr/local/share/L4/./Foo/Bar/Baz.l4"~ | Foo.Bar.Baz  |
-| ~import "test/./Foo/Bar/Baz.l4"~                | Foo.Bar.Baz  |
-
-The default name is made by 
-- deleting any prefix matching the regex ~^.*/\.+/~
-- deleting any suffix matching the suffix ~\.l4\w*$~
-- converting any directory separators to dots
-
-A module can explicitly give itself a name by saying
-
-#+begin_src haskell :noweb-ref l4-example1
-  module Foo.Bar.Baz where
+#+begin_src haskell :noweb-ref l4entity
+  //     a person can have multiple names
+         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
 #+end_src
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  ModuleDecl. Module ::= "module" ObjAttr "where";
+As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
+- On January 1, celebrities X and Y were known to be dating.
+- By July 1, paparazzi sleuths found out that X and Y had gotten married some time in the past few months; the ceremony was said to have been held on a private island, but nobody's saying where or when it happened.
+- On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
+- On December 1, the couple announced that they had gotten divorced on November 1.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY celebXY
+   GIVEN Tabloid HAVING ceaselessCoverage :: Bool
+     ISA Couple
+    WITH xtime = 2020-01-01, maritalStatus = dating
+         xtime = 2020-07-01, maritalStatus = married
+         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
+         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
+         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
 #+end_src
 
-An L4 Module contains a list of directives and statements.
+The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  Toplevel.  Tops      ::= [Toplevels];
-  rules      Toplevels ::= Module | Import | Pragma 
-                         | Rule | Entity | Scenario ;
-  terminator Toplevels ";";
+** Epistemics
 
-  layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
-  entrypoints Tops;
+An attribute may also be /epistemic/:
+- on August 1, Alice learned that she was pregnant
+- on September 1, Alice wrote a letter to Bob telling him that she was pregnant, and sent it via registered post.
+- by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
+- on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
+
+#+begin_src haskell :noweb-ref l4entity
+  SCENARIO alicePregnancy
+     TRACE 2020-08-01 Alice knew { pregnancy = true }
+           2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
+           2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
+           2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
 #+end_src
 
-*** import
+There should be as many xtimes as there are knowers.
 
-#+begin_src haskell :noweb-ref l4-example1
-import ContractLaw
-#+end_src
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  Import. Import ::= "import" ObjAttr ;
-#+end_src
-
-*** Directives
-**** module directive is dealt with above
-
-Suppose we have a ContractLaw library:
-
-#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
-  module ContractLaw where
-#+end_src
-
-Other modules are welcome to import this module. They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
-
-*** pragma: version
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules Pragma ::= "pragma" CommaList ;
-#+end_src
-
-*** history
-
-previous versions of this ruleset are accessible where? because this ruleset may refer to previous versions.
-
-*** numbering
-
-A numbering directive instructs the output engine to reset the autonumbering to a specific value.
-
-This is kind of a holdover from the C pre-processor. Do we really need it?
-
-*** Statements
-
-**** Meta-Rules: Interactions and priority
-
-***** Notwithstanding
-
-***** Subject To
-
-***** Scope
+** Inference: Querying Objects and Attributes
 
 
-**** Text Examples
 
-#+begin_src text :noweb yes :tangle bnfc/l4/test1.l4
-  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-  <<l4-example1>>
+We can ask fine-grained questions like:
+- On a given date, what did entity E, or The Public, or The System generally, believe to be true about some entity E, or some unit of knowledge K?
 
-  <<l4-rules>>
+By default, L4 expressions will default to the latest known information at the time of decision.
 
-  // the Prolog version of the above is:
-  // isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
-  // isTastyFood(Item)    :- isPotato(Item), isEdible(Item).
-  //
-  // the Flora-2 version of this would probably rely on the Item having properties
-  //
-
-
-  // Meng seems to be reinventing Haskell
-  // let's call it HasSQL, haha
-
-  /* like, for example ...
-
-  append "poo" forEach [Foo, Bar, Baz]
-
-  is equivalent to, in some other languages,
-
-      [Foo, Bar, Baz].map(x=>x+"poo")
-  or
-      (++ "poo") <$> [foo, bar, baz]
-
-  so we can sneak that in to our language too, just with lots of
-  syntactic sugar so the "business developers" don't notice we're doing
-  a list comprehension
-
-  ,*/
-
-  <<l4entity>>
-
-#+end_src
-
-***** Inference
+*** Inference
 
 The Cabbage case provides a good example of /normalization/. We present a few equivalent ways of saying the same thing, thanks to the inference rules of modal logic.
 
@@ -1465,247 +1314,526 @@ More on this later.
 
 This is a little bit analogous to the "Men Are Scum" "#NotAllMen" arguments that need to be disambiguated using Exists vs ForAll quantifiers.
 
-***** About Non-Monotonic Logics
+*** Using Object Attributes
+
+Okay. Deep breath. Lower case and upper case are meaningful.
+
+Specific individuals are lowercase, like blackSwan, or celebXY.
+
+Interfaces, or classes, start with an uppercase letter, like Human or Couple.
+
+Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~toldTo~, and ~beliefs~ attributes. This may go away at some point.
+
+We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+
+  ENTITY buyCabbage
+     ISA ContractOfSale
+    WITH date         = 2020-09-10
+         jurisdiction = SG
+         buyer        = blackSwan
+         seller       = veggieBar
+         buyer.consideration  = :USD: 10
+         seller.consideration = [ item1, item2 ]
+    ASOF 2020-09-10
+   WHERE item1 ISA  Item
+               WITH category = "vegetable"
+                    species  = "Brassica oleracea"
+                    cultivar = "capitata"
+#+end_src
+
+ContractLaw is a library class which abstracts the essential elements of a particular contract.
+
+An alternative representation shows a trace of events:
+
+#+begin_src haskell :noweb-ref l4entity
+  SCENARIO saleHistory
+    WITH parties = [ blackSwan, veggieBar ]
+   TRACE 2020-09-01T1210 blackSwan offers     offerDetails
+         2020-09-01T1211 veggieBar accepts    offerDetails
+         2020-09-01T1212 blackSwan pays       veggieBar $10
+         2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
+    ASOF 2020-09-10
+   WHERE offerDetails = { blackSwan.consideration = $10
+                        , veggieBar.consideration = [ item1, item2 ] }
+         item1 ISA Item
+               WITH category = "vegetable"
+                    species  = "Brassica oleracea"
+                    cultivar = "capitata"
+                    quantity = 1
+         item2 ISA Item
+               WITH category = "beverage"
+                    brand    = "Acme Water"
+                    model    = "750mL"
+                    quantity = 1
+#+end_src
+
+from which a pattern-matcher could deem that a legal contract was in place. Let's see what that looks like:
+
+*** Matching Object Attributes
+
+What you're about to read is basically a Horn clause. If you know Prolog, you will recognize that this is Prolog, dressed in the guise of an object-like paradigm. You might even say, "this has the same F-Logic as Flora-2", except with the syntax of SQL.
+
+Let's start with a super simple case. Remember our good old spud?
+
+Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
+
+#+begin_src haskell :noweb-ref l4-rules
+  ENTITY spud2
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+         previousOwners = [ alice, bob, charlie, daryl ]
+#+end_src
+
+What does that look like in Prolog?
+
+#+begin_src prolog
+  species(spud2, "Solanum tuberosum").
+  isEdible(spud2).
+  previousOwner(spud2, alice).
+  previousOwner(spud2, bob).
+  previousOwner(spud2, charlie).
+  previousOwner(spud2, daryl).
+#+end_src
+
+Now we have an opportunity to explore relational syntax. Think Alloy.
+
+Let's say that some of the previous owners were members of the nobility.
+
+#+begin_src haskell :noweb-ref l4-rules
+  ENTITY alice   ISA Human WITH isNoble = true
+  ENTITY bob     ISA Human WITH isNoble = false
+  ENTITY charlie ISA Human WITH isNoble = true
+  ENTITY daryl   ISA Human WITH isNoble = false
+#+end_src
+
+In Prolog, that reads:
+
+#+begin_src prolog
+  isNoble(alice).
+  isNoble(bob).
+  isNoble(charlie).
+  isNoble(daryl).
+#+end_src
+
+#+begin_src text :noweb-ref l4-rules
+  RULE 2 edible
+   DEEM Item IS EdiblePotato
+            AND TastyFood
+    WHEN Item IS Potato
+     AND Item IS Edible
+#+end_src
+
+Rule 2 relies on rule 3. This is backward chaining.
+  
+#+begin_src text :noweb-ref l4-rules
+  RULE 3 isPotato
+    DEEM Item IS Potato
+    WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+
+  // an OR-LIST expands to
+  // isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
+  //                                                     ^
+  // an AND-list would expand to
+  // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
+  //                                                     ^
+#+end_src
+
+If this begins to feel weird, it's because under the hood, we're borrowing Prolog's unification and backtracking features.
+
+Let's say a potato is Noble if at least two of its previous owners are Noble.
+
+There are a couple ways to say that. This is one way:
+
+#+begin_src haskell :noweb-ref l4-rules
+
+  RULE noblePotato
+    DEEM Item IS Noble
+    WHEN Item ISA Potato
+     AND Item.previousOwners.First IS Noble
+     AND Item.previousOwners.Second IS Noble
+#+end_src
+
+(Maybe this also creates an automatic Item.isNoble?)
+
+That translates to:
+
+#+begin_src prolog
+  isNoble(Item) :- isPotato(Item),
+                   previousOwner(Item, First), isNoble(First),
+                   previousOwner(Item, Second), isNoble(Second),
+                   First != Second.
+#+end_src
+
+This allows us to subsequently use the term Potato instead of Item:
+
+#+begin_src haskell :noweb-ref l4-rules
+  RULE noblePotato2
+    DEEM Potato IS Noble
+    WHEN Potato.previousOwners.isNoble :: Math >= 2
+#+end_src
+
+Alternative syntax:
+
+#+begin_src haskell :noweb-ref l4-rules
+  RULE noblePotato3
+    DEEM Potato IS Noble
+    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+#+end_src
+*** About Non-Monotonic Logics
 
 Meng is skeptical about non-monotonic logics. In short, if you run a function with different arguments, of course you should expect to get different results.
 
-**** TODO Syntax Sketchbook
 
-Random bits of syntax Meng has made up over the years
+** Ontology
+
+Individuals are in lower case.
+
+Variables, roles, and classes are in UpperCase.
+
+Our ontology:
+- ~x ISA Y~ :: x is an instance; Y is a class.
+- ~Y ISA Z~ :: Y is a class; Z is a superclass.
+
+** Roles and Entities
+
+There are aggregate entities, like a board of directors.
+
+There are principal/agent roles, like a trustee or someone holding power of attorney.
+
+There are other roles, like Acting Schoolmaster, which resolve to individuals.
+
+Let us reuse relevant semantics where available from other standards -- say, [[http://docs.oasis-open.org/legalruleml/legalruleml-core-spec/v1.0/cs02/legalruleml-core-spec-v1.0-cs02.html#_Toc38017888][LegalRuleML]].
+
+** Scope
+
+Should we just do scope in the Given parts of a stanza?
+** Ternary Logic: "three-valued Booleans"
+
+Let ~p :: a -> Ternary~, which is to say, ~p~ is a predicate; given an input of type ~a~, it will always return Yes, No, or Neither -- "neither" meaning "unknown", "undefined", "null", or "wat". This is an example of a [[https://en.wikipedia.org/wiki/Three-valued_logic][ternary logic]].
+
+Here's a predicate: "has five toes on each fore paw". Most cats, the predicate returns ~true~. But some cats have [[https://en.wikipedia.org/wiki/Polydactyl_cat][polydactyly]]. It's an unusual condition. You can count the number of polydactyls per thousand, on the fingers of ... uh, let's just say it's a rare condition. For them, the predicate would return ~false~.
+
+But what about an amputee, who has no forelegs? They don't have six toes on each foot. They don't have five toes on each foot. They don't have feet at all.
+
+What is the hair colour of a bald man?
+
+What is the airspeed velocity of an unladen Martian swallow?
+
+On a form, you would write in "N/A" for "Not applicable".
+
+That's why we need ternary logic: sometimes yes, sometimes no, sometimes neither.
+
+Here's another predicate: "tailless". The Manx breed are considered tailless -- they are "rumpies" and "stumpies".
+
+A cat is special if it is polydactyl.
+
+A cat is special if it is tailless.
+
+A cat is valuable if it is both polydactyl and tailless.
+
+I wanted to say "a cat is special if it is polydactyl or tailless", but that brings up "exclusive or" considerations -- some might say "if it is both polydactyl and tailless than it isn't special, because it's obviously valuable instead." They're reading "xor" into the "or", in the context of the next sentence.
+
+It isn't logical, but it's English!
+
+So we spare ourselves all that grief by giving explicit definitions. Watch.
+** Less Important Concepts -- Random Thoughts, Really
+
+We build on a combination of the lamdba, mu, and pi calculi. What would we do without the Greeks?
+
+*** Temporals: Time
+
+We need to say things like: from T1 to T2, X was married to Y; from T3 to T4, X was married to Z. (OWL doesn't support this; it's timeless.)
+
+We want [[https://en.wikipedia.org/wiki/Temporal_database][multi-temporality]]: at time T1, party P believed that the legislation then in effect was L1; however, at time T3, party P realized that the legislation in effect at T1 was actually L2, having replaced L1 at time T2. However, L2 made provision that at time T1, the effective result for parties in P's situation would be as if L1 were in effect.
+
+So, we need the usual temporal notions of deadlines, durations, relative and absolute time referents, repeating periods.
+
+- Temporals :: DMN refers to a standard temporal theory of before/overlap/after. We want to reconcile that with the Event and Situation calculi.
+
+#+BEGIN_QUOTE
+*Comment MS:* I think there are two issues involved in the above discussion of multi-temporality:
+- the question how time evolves during the lifetime of a contract (assuming
+  that the rule set remains stable) and which actions are / have to be taken
+  at each moment by the parties involved. Formal models for this are Timed
+  Automata, Petri Nets etc. These generate / accept a set of traces, and one
+  can reason about them with temporal logics (LTL, CTL: "eventually / always",
+  "in some / all runs") or their timed variants (TCTL: "some time in the next
+  50 time units"). This technology is well understood at least in isolation,
+  but maybe not in conjunction with all the other features we need.
+- the question how the validity of a rule set changes over time. Seems closely
+  related to the question of metarules mentioned below. These seem extremely
+  difficult to deal with in full generality. A self-referential rule like
+  "This rule will not be valid in a month any more" looks like a variant of
+  the Liar's Paradox: Either the rule is still valid in a month (but
+  shouldn't be according to what it states), or it is not valid in a month
+  (but then there is no rule contradicting its validity, so as a rule
+  appearing in a contract, why shouldn't it be valid?). To avoid these
+  paradoxes, one would need a stratified set of rules, and a prover would have
+  to iterate several times over the rule set to determine the applicable rules.
+#+END_QUOTE
+
+#+begin_quote
+*Meng's thoughts*: Yes, that makes sense. What software already knows how to reason in this way?
+#+end_quote
+
+*** Deontics: Obligations, Permissions, and Prohibitions
+
+Meng thinks the whole Chisholm family of paradoxes is only a problem in a framework that doesn't define obligations in terms of breach.
+
+"You gotta do X." "Or what?" "Or nothing." "Then I don't gotta do it, do I?"
+
+So, in Forrester's paradox, if the penalties for each level of murder -- gentle vs bloody -- are explicitly given in a partial order, then the paradox goes away.
+
+#+BEGIN_QUOTE
+*Comment MS:* I agree and hope we can do without explicitly using deontic
+ logic. A rule R might say: "if condition C is met, you have to do A". If one
+ reads this as an /obligation to do/ and not an /obligation to be/, one can
+ give it an operational reading: if, in the current state, condition C is
+ satisfied and I take action A, then I will get into a state of conformity
+ with rule R. If I do not take action A, I will get into a state where I
+ breach rule R. Other rules might say that there is a penalty for this breach,
+ and I can explicitly reason about the costs: If I am late arriving at the
+ airport, is it better to park the car in a non-parking zone and pay a fine or
+ to miss the plane?
+
+Question: which kind of obligations do we have: /to do/ or /to be/?
+#+END_QUOTE
+
+#+begin_quote
+*Meng's thoughts: Right. Let's agree that we aren't going to do traditional SDL.
+
+We borrow some of the useful ideas of deontic logic, e.g. may Y => not must not Y.
+
+But we don't talk about "must be", we only talk about "must do".
+
+People have choice, the way people had choice in the Israeli daycare case: [[https://rady.ucsd.edu/faculty/directory/gneezy/pub/docs/fine.pdf]["A Fine is a Price"]].
+
+The gentle murderer gets 10 years in prison.
+
+The bloody murderer gets 20 years in prison.
+
+No problem.
+
+Hvitved takes this approach; chapter 2 talks about choice.
+#+end_quote
+
+*** Party
+
+The notion of party is complicated by the notion of "affiliates" and "subsidiaries". Also by the notion of a power of attorney, a trust, and other agent relationships.
+
+Sometimes a master agreement will establish a relationship between one group of companies and another group of companies. So we even get to employ the concept of transitive closure.
+
+See https://youtu.be/b6kkvvHfEOo?t=420 for a simple case of detecting such relations.
+
+*** States, Actions, and Events: 
+
+What LegalRuleML calls "maintenance" and "achievement" obligations.
+
+This is an opportunity to use LTL/CTL.
+
+*** Definitions and truth values
+
+What LegalRuleML calls "constitutive rules", as opposed to regulative or prescriptive rules. This is one place where we might talk about FOL and a choice of well-founded semantics vs the stable model semantics.
+
+The recent discourse about binary vs nonbinary genders gives a good opportunity to talk about binary vs ternary logics.
+
+*** Default logic
+
+See section below on Rules and Metarules.
+
+*** Defeasible Logic
+
+Do we really need explicit defeasibility?
+
+*** Subjective Perspective:
+
+I want our epistemic theory to be able to express "X thinks Y thinks Z is true."
+
+Or, "Interpretation /I1/ of this text assigns one set of truth values to the following formula; Interpretation /I2/ assigns a different set, and so on."
+
+In 2020 it seems appropriate for a KRR system to admit multiple points of view, rather than to hold to set of global, universal truths. If the parties "agree to disagree", our "artificial intelligence" should not be flummoxed: “The test of a first-rate intelligence,” he said, “is the ability to hold two opposed ideas in the mind, at the same time, and still retain the ability to function.” https://quoteinvestigator.com/2020/01/05/intelligence/
+
+Within the text, a grammar of epistemic modals should handle this.
+
+In the interpreter, we might rely on answer-set-programming or SAT to construct multiple interpretive universes. Ambiguous interpretations of source text could simply show up as branching alternatives.
+
+*** Space: "Jurisdiction"
+
+Different countries have different defaults and interpretational conventions.
+
+A clause may be enforceable in one jurisdiction but not in another.
+
+Enforceability is a judgement to be applied late in the compilation process.
+
+*** Specificity: Intensionality and Extensionality
+
+- "No party who qualifies under section 12 may ..."
+
+- "Alice Apple, of 1 Address Point, specifically may ..."
+
+So the quantifiers of FOL are relevant here.
+
+*** Scope: for the purposes of this section
+*** Stack: the Call Stack as input to a function
+
+While this is not recommended, some styles of drafting say:
+
+Definition of X:
+- for the purposes of P1, X is X1;
+- for the purposes of P2, X is X2;
+- however, if the use of this variable X causes some Y to be negative, then X shall be the nearest number needed for Y to be non-negative.
+
+This "easier said than done" sentence gets us into constraint programming and linear equations.
+
+What if purpose P1 stacks a hypothetical purpose P2 in its call to X?
+
+We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
+
+*** Supposing: hypothetical, counterfactual specification with some variable set to other than what it "should be"
+
+The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
 
 #+begin_example
-    LEGALSOURCE  SG.Cap50.175.1
-REGULATIVE RULE  "Companies Must Hold AGM" @ cmhagm
-     SUBJECT TO  this§ & §175A
-          PARTY  EVERY Company
-          PMUST  hold (a general meeting called@ "annual general meeting") @ AGM
-          WHERE  AGM.labels == 1 [ text_en= "in addition to any other meeting" ]
-     REPEATEDLY
-          AFTER  EACH Company.financialYearEnd
-         WITHIN  Company.isListedPublicCo?
-                 THEN 4 months
-                 ELSE 6 months
+DEEM              dish.price(weekend=true,  period=dinner) =
+     hypothetical(dish.price(weekend=false, period=lunch)) * 1.5
 #+end_example
+
+This looks simple enough. Is it really necessary to wrap it in a "hypothetical"? Maybe yes, maybe no.
+
+What if the computation actually depends on a whole bunch of State? In fact, it could get worse -- it could depend on the call stack:
+
+*** Natural Language Support
+
+This isn't strictly a logical matter, but if we are to extract (controlled) natural language isomorphisms we will need ways to annotate the L4 syntax with hints. In particular, idioms (in NL) and functions/macros (in L4) are a way of compacting longer expressions into shorter, reusable versions.
+
+*** Macros and Functions
+
+"Homoiconicity" refers to the idea that a program may modify itself. Contracts and laws frequently include "pragma" and "macro" type statements intended to influence interpretation.
+
+*** <<<Rules and Metarules>>>
+
+If multiple rules ostensibly conflict, that just means they are really only rule fragments, and need to be resolved by composition into a larger coherent rule.
+
+Laws are sometimes written as if the drafters were drunk:
 
 #+begin_example
-mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $ stack exec hs-exe
-DEFINITION RULE "egm business"
-FORALL Company.generalMeetings.isExtraordinary?.business {
-  .level == Special
-}
-
-DEFINITION RULE "agm business"
-FORALL Company.generalMeetings.isAnnual?.business {
-  .level = Special
-           UNLESS .matter ~~ [ "the declaration of a dividend",
-                               "consideration" OF [ "the financial statements",
-                                                    "the reports of the auditors"
-                                                    &&
-                                                    "the statements of the directors" ],
-                               "the election of directors in the place of retiring directors"
-                               ||
-                               [ "the appointment"
-                                 &
-                                 "fixing of the remuneration" ] OF "the auditors" ]
-}
-
-UNSPOKEN DEFINITION RULE "metonym: the ontological essence of a meeting's business is its matter attribute"
-FORALL Company.generalMeetings.business {
-  :metonym = .matter
-}
-
-REGULATIVE RULE "must hold agm"
-PARTY Company, a corporation
-MUST hold an AGM
-     :en: hold an AGM
-REPEATEDLY every 1 year
-
-REGULATIVE RULE "Companies Must Hold AGM"
-PARTY Company, a corporation
-PMUST hold an AGM
-      :en: hold a general meeting called "annual general meeting"
-      :en: in addition to any other meeting
-      WHERE NOT (CHMAGM ~~ unique constraint excludes any other label on this meeting)
-REPEATEDLY every 1 year
-
-UNSPOKEN CONSTITUTIVE RULE "a listed public company"
-FORALL Company {
-  .isListedPublicCo? :- .isPublic?, .isListed?.
-}
-mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $
+1. Section 1.
+   1. The speed limit is 100.
+   2. No person may exceed the speed limit.
+   3. Any person who may exceed the speed limit shall pay a fine of $100 for every 10 kph above the speed limit.
+   4. The speed limit is 80 when it is raining.
+   5. The speed limit may be increased beyond 100 during clear weather in daytime.
+   6. Nothing in this section 1 shall allow a speed greater than 120.
 #+end_example
 
-***** Jason's Draft of the SAFE
+Read literally, these rules all contradict each other. They need to be read together in context:
 
-#+begin_example
-Safe_Contract IS A CATEGORY OF CONTRACT THAT:
-    HAS PARTY Investor
-    HAS PARTY Company
-    HAS JURISDICTION State_of_Incorpration
-    HAS DATE Executed_On
-    HAS CURRENCY Purchase_Amount
-    HAS CURRENCY Post-Money_Valuation_Cap
-    HAS NUMBER Discount_Rate
-    HAS FLUENT BOOLEAN Terminated
-
-Equity_Financing IS A CATEGORY OF EVENT THAT:
-    HAS A LIST OF DOCUMENTS Required_Documents
-    HAS BOOLEAN Documents_Are_Standard
-
-START SCOPE This_SAFE as Safe_Contract
-
-    RULE "Certifications"
-    Investor MUST pay Purchase_Amount to Company
-    BEFORE Executed_On + 1W
-    HENCE "Right to Shares"
-
-    START SCOPE "Right to Shares"
-
-        START SCOPE "Events"
-
-            RULE "Equity Financing"
-
-                GIVEN EVENT E
-                WHEN
-                    E.isEquityFinanceEvent AND
-                    AS OF E.date (This_SAFE.Terminated ~ False)
-                THEN
-                    Company MUST give Investor Amount of Safe_Preferred_Stock
-                    WHERE
-                        Amount = Purchase_Amount / Conversion_Price
-                HENCE "Required Documentation", "Termination By Equity Event"
-
-            RULE "Required Documentation"
-
-                GIVEN EVENT E
-                WHEN
-                    E.isEquityFinanceEvent AND
-                    AS OF E.date (This_SAFE.Terminated ~ False) AND
-                    E.documentation.isStandard
-                THEN
-                FOR EACH Document in E.Required_Documents
-                    Investor MUST
-                        execute Document
-                        AND THEN                        // sequential, not logical
-                        deliver Document to Company  
-
-            // RULE "Liquidity Event" ...
-
-            // RULE "Dissolution Event" ...
-
-            Rule "Termination By Equity Event"
-
-                GIVEN Event T
-                WHEN
-                    T ~ Company give Investor Amount of Safe_Preferred_Stock
-                THEN
-                    This_SAFE.Terminated = True
-					
-        END SCOPE "Events"
-    END SCOPE "Right to Shares"
-END SCOPE This_SAFE
-
-#+end_example
-**** A Scope Statement
-
-*** Expressions
-
-#+begin_src bnfc :noweb-ref l4expressions
-EString.      NormalString ::= String ;
-ELangStrings. LangStrings  ::= [LangString] ;
-    separator nonempty LangString " ";
-ELangString.  LangString   ::= LangID NormalString ;
-rules         LangID       ::= ":" [LangLabel] ":";
-rules         LangLabel    ::= Ident ;
-    separator nonempty LangLabel "," ;
-
-rules         CurrID       ::= ":" CurrLabel ":";
-rules         CurrLabel    ::= UIdent ;
+#+begin_src haskell
+  type Raining = Bool
+  type Daytime = Bool
+  speedlimit :: Raining -> Daytime -> Int
+  speedlimit False False = 100
+  speedlimit False True  = 120
+  speedlimit True  _     = 80
 #+end_src
 
-**** Namespace Attributes
+Sometimes people talk about "default logic". In conventional programming, defaults go at the end.
 
-***** Automatic singular / plural support
-
-In normal languages, ~object.party~ is a different attribute than ~object.parties~.
-
-However, our language knows English grammar, so those two attributes automatically bind to the same referent, allowing more natural expression:
-
-- ~object.party[A]~
-- ~object.party[B]~
-- ~object.parties[ALL]~
-- ~object.parties[A & B]~
-- ~object.parties[A | B]~
-
-This may turn out to be a bit of a gotcha.
-
-*** Defining Objects and Attributes
-
-As in Javascript, objects contain a dictionary of attributes.
-
-As in Haskell, we'd talk about a record type.
-
-*** Ontology
-
-AKA a type system
-
-*** Metaprogramming
-
-**** patterns
-
-basically, macro expansions and function definitions
-
-#+begin_src l4
-  PATTERN myfirstpattern
-  WHEREVER RuleMatchExpr // a lens-style pattern match against one or more rules
-  TRANSFORM  AliasExpr
-  TO         ReplacementExpr
-  ...
+#+begin_src python
+  def speedlimit (raining, daytime):
+      if raining: return 80
+      if daytime: return 120
+      return             100
 #+end_src
 
-TODO For example we expand a rule about potatoes to also apply to cabbages, expanding ~item.isPotato~ to ~(item.isPotato OR item.isCabbage)~ in the body of any Horn clause.
+In legal drafting, the order is inverted: defaults go at the top; exceptions appear below; exceptions to exceptions appear farther below.
 
+*** Explainability
 
+"Show your work: explain to me all the reasons that the outcome was calculated as it was."
 
-*** Comments
+The Youtube link above to Coherent Knowledge's Ergo for Financial Regulation demo around Reg W is a good example of what explanation should look like, at least for a datalog-type query.
 
-The usual:
+See also: the New Zealand rates rebates case
+https://github.com/smucclaw/complaw/blob/master/doc/ex-nz-rates-20200909/aotearoa-haskell
 
-=/* text within C-style comment blocks is ignored */=
+#+begin_example
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/aotearoa-haskell $ stack exec aotearoa-exe -- combined_income=20000 dependants=0 rates_total=2000 additional_per_dependant=500 initial_contribution=160 maximum_allowable=630 income_threshold=25180 --goal=l4/from-openfisca-rr.l4 --nlgstyle=concrete
+showing how we obtain the answer
+630.00 -- which is
+  the greater of
+  simply 0.00
+  and
+  630.00 -- which is
+    the lesser of
+    1874.67 -- which is
+      the difference between
+      1840.00 -- which is
+        the difference between
+        2000.00 -- which is
+          rates_total, the rates payable for that rating year in respect of the property
+        and
+        160.00 -- which is
+          initial_contribution, the initial contribution by ratepayer
+      and
+      -34.67 -- which is
+        the sum of
+        613.33 -- which is
+          the quotient given by
+          1840.00 -- which is
+            the difference between
+            2000.00 -- which is
+              rates_total, the rates payable for that rating year in respect of the property
+            and
+            160.00 -- which is
+              initial_contribution, the initial contribution by ratepayer
+          divided by
+          simply 3.00
+        with
+        -648.00 -- which is
+          $1 for each $8 in
+          -5180.00 -- which is
+            the difference between
+            20000.00 -- which is
+              combined_income, the ratepayer's income for the preceding tax year
+            and
+            25180.00 -- which is
+              the sum of
+              0.00 -- which is
+                the product of
+                0.00 -- which is
+                  dependants, person who was a dependant of the ratepayer
+                multiplied by
+                500.00 -- which is
+                  additional_per_dependant, the additional allowable income per dependant
+              with
+              25180.00 -- which is
+                income_threshold, the income threshold
+    and
+    630.00 -- which is
+      maximum_allowable, the maximum rebate allowed
 
-=// text after Javascript-style comment slashes is ignored to end of line=
+#+end_example
 
-** User Guide
+See also: argumentation theory.
 
-*** How To Try It For Yourself
+*** Explorability
 
-A web REPL? IDE support?
+asks "what if?"
 
-*** Tutorials
+*** Constraints and Inference
 
-This section will link to standalone tutorials that work through case studies for common scenarios.
+Our reasoner should be able to combine backward and forward chaining.
 
-*** Libraries for Genres:
-
-Each of these genres requires a library -- a "sub-domain ontology".
-
-- Contract Law :: notions of what constitutes a valid contract
-- Real Estate ::
-- City Planning :: 
-
-*** Formal Verification
-
-How to perform static analysis on the programs.
-
-*** Natural Language Generation
-
-How to compile to natural languages.
-
-
-
-** How To Contribute
-
-Github issues.
+https://cliplab.org/papers/Haemmerle14ppdp.pdf
 
 * Developers Guide
 
@@ -1959,293 +2087,6 @@ Some helper functions
 
 
 
-* Underlying Logics and Concepts
-
-We build on a combination of the lamdba, mu, and pi calculi. What would we do without the Greeks?
-
-** Temporals: Time
-
-We need to say things like: from T1 to T2, X was married to Y; from T3 to T4, X was married to Z. (OWL doesn't support this; it's timeless.)
-
-We want [[https://en.wikipedia.org/wiki/Temporal_database][multi-temporality]]: at time T1, party P believed that the legislation then in effect was L1; however, at time T3, party P realized that the legislation in effect at T1 was actually L2, having replaced L1 at time T2. However, L2 made provision that at time T1, the effective result for parties in P's situation would be as if L1 were in effect.
-
-So, we need the usual temporal notions of deadlines, durations, relative and absolute time referents, repeating periods.
-
-- Temporals :: DMN refers to a standard temporal theory of before/overlap/after. We want to reconcile that with the Event and Situation calculi.
-
-#+BEGIN_QUOTE
-*Comment MS:* I think there are two issues involved in the above discussion of multi-temporality:
-- the question how time evolves during the lifetime of a contract (assuming
-  that the rule set remains stable) and which actions are / have to be taken
-  at each moment by the parties involved. Formal models for this are Timed
-  Automata, Petri Nets etc. These generate / accept a set of traces, and one
-  can reason about them with temporal logics (LTL, CTL: "eventually / always",
-  "in some / all runs") or their timed variants (TCTL: "some time in the next
-  50 time units"). This technology is well understood at least in isolation,
-  but maybe not in conjunction with all the other features we need.
-- the question how the validity of a rule set changes over time. Seems closely
-  related to the question of metarules mentioned below. These seem extremely
-  difficult to deal with in full generality. A self-referential rule like
-  "This rule will not be valid in a month any more" looks like a variant of
-  the Liar's Paradox: Either the rule is still valid in a month (but
-  shouldn't be according to what it states), or it is not valid in a month
-  (but then there is no rule contradicting its validity, so as a rule
-  appearing in a contract, why shouldn't it be valid?). To avoid these
-  paradoxes, one would need a stratified set of rules, and a prover would have
-  to iterate several times over the rule set to determine the applicable rules.
-#+END_QUOTE
-
-#+begin_quote
-*Meng's thoughts*: Yes, that makes sense. What software already knows how to reason in this way?
-#+end_quote
-
-** Deontics: Obligations, Permissions, and Prohibitions
-
-Meng thinks the whole Chisholm family of paradoxes is only a problem in a framework that doesn't define obligations in terms of breach.
-
-"You gotta do X." "Or what?" "Or nothing." "Then I don't gotta do it, do I?"
-
-So, in Forrester's paradox, if the penalties for each level of murder -- gentle vs bloody -- are explicitly given in a partial order, then the paradox goes away.
-
-#+BEGIN_QUOTE
-*Comment MS:* I agree and hope we can do without explicitly using deontic
- logic. A rule R might say: "if condition C is met, you have to do A". If one
- reads this as an /obligation to do/ and not an /obligation to be/, one can
- give it an operational reading: if, in the current state, condition C is
- satisfied and I take action A, then I will get into a state of conformity
- with rule R. If I do not take action A, I will get into a state where I
- breach rule R. Other rules might say that there is a penalty for this breach,
- and I can explicitly reason about the costs: If I am late arriving at the
- airport, is it better to park the car in a non-parking zone and pay a fine or
- to miss the plane?
-
-Question: which kind of obligations do we have: /to do/ or /to be/?
-#+END_QUOTE
-
-#+begin_quote
-*Meng's thoughts: Right. Let's agree that we aren't going to do traditional SDL.
-
-We borrow some of the useful ideas of deontic logic, e.g. may Y => not must not Y.
-
-But we don't talk about "must be", we only talk about "must do".
-
-People have choice, the way people had choice in the Israeli daycare case: [[https://rady.ucsd.edu/faculty/directory/gneezy/pub/docs/fine.pdf]["A Fine is a Price"]].
-
-The gentle murderer gets 10 years in prison.
-
-The bloody murderer gets 20 years in prison.
-
-No problem.
-
-Hvitved takes this approach; chapter 2 talks about choice.
-#+end_quote
-
-** Party
-
-The notion of party is complicated by the notion of "affiliates" and "subsidiaries". Also by the notion of a power of attorney, a trust, and other agent relationships.
-
-Sometimes a master agreement will establish a relationship between one group of companies and another group of companies. So we even get to employ the concept of transitive closure.
-
-See https://youtu.be/b6kkvvHfEOo?t=420 for a simple case of detecting such relations.
-
-** States, Actions, and Events: 
-
-What LegalRuleML calls "maintenance" and "achievement" obligations.
-
-This is an opportunity to use LTL/CTL.
-
-** Definitions and truth values
-
-What LegalRuleML calls "constitutive rules", as opposed to regulative or prescriptive rules. This is one place where we might talk about FOL and a choice of well-founded semantics vs the stable model semantics.
-
-The recent discourse about binary vs nonbinary genders gives a good opportunity to talk about binary vs ternary logics.
-
-** Default logic
-
-See section below on Rules and Metarules.
-
-** Defeasible Logic
-
-Do we really need explicit defeasibility?
-
-** Subjective Perspective:
-
-I want our epistemic theory to be able to express "X thinks Y thinks Z is true."
-
-Or, "Interpretation /I1/ of this text assigns one set of truth values to the following formula; Interpretation /I2/ assigns a different set, and so on."
-
-In 2020 it seems appropriate for a KRR system to admit multiple points of view, rather than to hold to set of global, universal truths. If the parties "agree to disagree", our "artificial intelligence" should not be flummoxed: “The test of a first-rate intelligence,” he said, “is the ability to hold two opposed ideas in the mind, at the same time, and still retain the ability to function.” https://quoteinvestigator.com/2020/01/05/intelligence/
-
-Within the text, a grammar of epistemic modals should handle this.
-
-In the interpreter, we might rely on answer-set-programming or SAT to construct multiple interpretive universes. Ambiguous interpretations of source text could simply show up as branching alternatives.
-
-** Space: "Jurisdiction"
-
-Different countries have different defaults and interpretational conventions.
-
-A clause may be enforceable in one jurisdiction but not in another.
-
-Enforceability is a judgement to be applied late in the compilation process.
-
-** Specificity: Intensionality and Extensionality
-
-- "No party who qualifies under section 12 may ..."
-
-- "Alice Apple, of 1 Address Point, specifically may ..."
-
-So the quantifiers of FOL are relevant here.
-
-** Scope: for the purposes of this section
-** Stack: the Call Stack as input to a function
-
-While this is not recommended, some styles of drafting say:
-
-Definition of X:
-- for the purposes of P1, X is X1;
-- for the purposes of P2, X is X2;
-- however, if the use of this variable X causes some Y to be negative, then X shall be the nearest number needed for Y to be non-negative.
-
-This "easier said than done" sentence gets us into constraint programming and linear equations.
-
-What if purpose P1 stacks a hypothetical purpose P2 in its call to X?
-
-We need a meta-rule along the lines of /lex specialis/ which tells us that in such a situation P2 is located closer in the call stack to X than P1.
-
-** Supposing: hypothetical, counterfactual specification with some variable set to other than what it "should be"
-
-The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
-
-#+begin_example
-DEEM              dish.price(weekend=true,  period=dinner) =
-     hypothetical(dish.price(weekend=false, period=lunch)) * 1.5
-#+end_example
-
-This looks simple enough. Is it really necessary to wrap it in a "hypothetical"? Maybe yes, maybe no.
-
-What if the computation actually depends on a whole bunch of State? In fact, it could get worse -- it could depend on the call stack:
-
-** Natural Language Support
-
-This isn't strictly a logical matter, but if we are to extract (controlled) natural language isomorphisms we will need ways to annotate the L4 syntax with hints. In particular, idioms (in NL) and functions/macros (in L4) are a way of compacting longer expressions into shorter, reusable versions.
-
-** Macros and Functions
-
-"Homoiconicity" refers to the idea that a program may modify itself. Contracts and laws frequently include "pragma" and "macro" type statements intended to influence interpretation.
-
-** <<<Rules and Metarules>>>
-
-If multiple rules ostensibly conflict, that just means they are really only rule fragments, and need to be resolved by composition into a larger coherent rule.
-
-Laws are sometimes written as if the drafters were drunk:
-
-#+begin_example
-1. Section 1.
-   1. The speed limit is 100.
-   2. No person may exceed the speed limit.
-   3. Any person who may exceed the speed limit shall pay a fine of $100 for every 10 kph above the speed limit.
-   4. The speed limit is 80 when it is raining.
-   5. The speed limit may be increased beyond 100 during clear weather in daytime.
-   6. Nothing in this section 1 shall allow a speed greater than 120.
-#+end_example
-
-Read literally, these rules all contradict each other. They need to be read together in context:
-
-#+begin_src haskell
-  type Raining = Bool
-  type Daytime = Bool
-  speedlimit :: Raining -> Daytime -> Int
-  speedlimit False False = 100
-  speedlimit False True  = 120
-  speedlimit True  _     = 80
-#+end_src
-
-Sometimes people talk about "default logic". In conventional programming, defaults go at the end.
-
-#+begin_src python
-  def speedlimit (raining, daytime):
-      if raining: return 80
-      if daytime: return 120
-      return             100
-#+end_src
-
-In legal drafting, the order is inverted: defaults go at the top; exceptions appear below; exceptions to exceptions appear farther below.
-
-** Explainability
-
-"Show your work: explain to me all the reasons that the outcome was calculated as it was."
-
-The Youtube link above to Coherent Knowledge's Ergo for Financial Regulation demo around Reg W is a good example of what explanation should look like, at least for a datalog-type query.
-
-See also: the New Zealand rates rebates case
-https://github.com/smucclaw/complaw/blob/master/doc/ex-nz-rates-20200909/aotearoa-haskell
-
-#+begin_example
-mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/aotearoa-haskell $ stack exec aotearoa-exe -- combined_income=20000 dependants=0 rates_total=2000 additional_per_dependant=500 initial_contribution=160 maximum_allowable=630 income_threshold=25180 --goal=l4/from-openfisca-rr.l4 --nlgstyle=concrete
-showing how we obtain the answer
-630.00 -- which is
-  the greater of
-  simply 0.00
-  and
-  630.00 -- which is
-    the lesser of
-    1874.67 -- which is
-      the difference between
-      1840.00 -- which is
-        the difference between
-        2000.00 -- which is
-          rates_total, the rates payable for that rating year in respect of the property
-        and
-        160.00 -- which is
-          initial_contribution, the initial contribution by ratepayer
-      and
-      -34.67 -- which is
-        the sum of
-        613.33 -- which is
-          the quotient given by
-          1840.00 -- which is
-            the difference between
-            2000.00 -- which is
-              rates_total, the rates payable for that rating year in respect of the property
-            and
-            160.00 -- which is
-              initial_contribution, the initial contribution by ratepayer
-          divided by
-          simply 3.00
-        with
-        -648.00 -- which is
-          $1 for each $8 in
-          -5180.00 -- which is
-            the difference between
-            20000.00 -- which is
-              combined_income, the ratepayer's income for the preceding tax year
-            and
-            25180.00 -- which is
-              the sum of
-              0.00 -- which is
-                the product of
-                0.00 -- which is
-                  dependants, person who was a dependant of the ratepayer
-                multiplied by
-                500.00 -- which is
-                  additional_per_dependant, the additional allowable income per dependant
-              with
-              25180.00 -- which is
-                income_threshold, the income threshold
-    and
-    630.00 -- which is
-      maximum_allowable, the maximum rebate allowed
-
-#+end_example
-
-See also: argumentation theory.
-
-** Constraints and Inference
-
-Our reasoner should be able to combine backward and forward chaining.
-
-https://cliplab.org/papers/Haemmerle14ppdp.pdf
-
 * Standard Libraries
 
 ** ContractLaw
@@ -2280,7 +2121,158 @@ We may want to express that a counteroffer implies a decline.
 
 * Output
 
+** BNFC
 #+begin_src bnfc :noweb yes :tangle bnfc/l4.bnfc
+// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
 <<l4bnfc>>
 <<l4expressions>>
 #+end_src
+
+** Test L4 input
+#+begin_src text :noweb yes :tangle bnfc/l4/test1.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  <<l4-example1>>
+
+  <<l4-rules>>
+
+  <<l4entity>>
+
+#+end_src
+* TODO Syntax Sketchbook
+
+Random bits of syntax Meng has made up over the years
+
+#+begin_example
+    LEGALSOURCE  SG.Cap50.175.1
+REGULATIVE RULE  "Companies Must Hold AGM" @ cmhagm
+     SUBJECT TO  this§ & §175A
+          PARTY  EVERY Company
+          PMUST  hold (a general meeting called@ "annual general meeting") @ AGM
+          WHERE  AGM.labels == 1 [ text_en= "in addition to any other meeting" ]
+     REPEATEDLY
+          AFTER  EACH Company.financialYearEnd
+         WITHIN  Company.isListedPublicCo?
+                 THEN 4 months
+                 ELSE 6 months
+#+end_example
+
+#+begin_example
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $ stack exec hs-exe
+DEFINITION RULE "egm business"
+FORALL Company.generalMeetings.isExtraordinary?.business {
+  .level == Special
+}
+
+DEFINITION RULE "agm business"
+FORALL Company.generalMeetings.isAnnual?.business {
+  .level = Special
+           UNLESS .matter ~~ [ "the declaration of a dividend",
+                               "consideration" OF [ "the financial statements",
+                                                    "the reports of the auditors"
+                                                    &&
+                                                    "the statements of the directors" ],
+                               "the election of directors in the place of retiring directors"
+                               ||
+                               [ "the appointment"
+                                 &
+                                 "fixing of the remuneration" ] OF "the auditors" ]
+}
+
+UNSPOKEN DEFINITION RULE "metonym: the ontological essence of a meeting's business is its matter attribute"
+FORALL Company.generalMeetings.business {
+  :metonym = .matter
+}
+
+REGULATIVE RULE "must hold agm"
+PARTY Company, a corporation
+MUST hold an AGM
+     :en: hold an AGM
+REPEATEDLY every 1 year
+
+REGULATIVE RULE "Companies Must Hold AGM"
+PARTY Company, a corporation
+PMUST hold an AGM
+      :en: hold a general meeting called "annual general meeting"
+      :en: in addition to any other meeting
+      WHERE NOT (CHMAGM ~~ unique constraint excludes any other label on this meeting)
+REPEATEDLY every 1 year
+
+UNSPOKEN CONSTITUTIVE RULE "a listed public company"
+FORALL Company {
+  .isListedPublicCo? :- .isPublic?, .isListed?.
+}
+mengwong@solo-wmw ~/src/smucclaw/complaw/doc/ex-nz-rates-20200909/hs $
+#+end_example
+
+** Jason's Draft of the SAFE
+
+#+begin_example
+Safe_Contract IS A CATEGORY OF CONTRACT THAT:
+    HAS PARTY Investor
+    HAS PARTY Company
+    HAS JURISDICTION State_of_Incorpration
+    HAS DATE Executed_On
+    HAS CURRENCY Purchase_Amount
+    HAS CURRENCY Post-Money_Valuation_Cap
+    HAS NUMBER Discount_Rate
+    HAS FLUENT BOOLEAN Terminated
+
+Equity_Financing IS A CATEGORY OF EVENT THAT:
+    HAS A LIST OF DOCUMENTS Required_Documents
+    HAS BOOLEAN Documents_Are_Standard
+
+START SCOPE This_SAFE as Safe_Contract
+
+    RULE "Certifications"
+    Investor MUST pay Purchase_Amount to Company
+    BEFORE Executed_On + 1W
+    HENCE "Right to Shares"
+
+    START SCOPE "Right to Shares"
+
+        START SCOPE "Events"
+
+            RULE "Equity Financing"
+
+                GIVEN EVENT E
+                WHEN
+                    E.isEquityFinanceEvent AND
+                    AS OF E.date (This_SAFE.Terminated ~ False)
+                THEN
+                    Company MUST give Investor Amount of Safe_Preferred_Stock
+                    WHERE
+                        Amount = Purchase_Amount / Conversion_Price
+                HENCE "Required Documentation", "Termination By Equity Event"
+
+            RULE "Required Documentation"
+
+                GIVEN EVENT E
+                WHEN
+                    E.isEquityFinanceEvent AND
+                    AS OF E.date (This_SAFE.Terminated ~ False) AND
+                    E.documentation.isStandard
+                THEN
+                FOR EACH Document in E.Required_Documents
+                    Investor MUST
+                        execute Document
+                        AND THEN                        // sequential, not logical
+                        deliver Document to Company  
+
+            // RULE "Liquidity Event" ...
+
+            // RULE "Dissolution Event" ...
+
+            Rule "Termination By Equity Event"
+
+                GIVEN Event T
+                WHEN
+                    T ~ Company give Investor Amount of Safe_Preferred_Stock
+                THEN
+                    This_SAFE.Terminated = True
+					
+        END SCOPE "Events"
+    END SCOPE "Right to Shares"
+END SCOPE This_SAFE
+
+#+end_example
+

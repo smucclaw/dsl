@@ -13,29 +13,57 @@ RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb H
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
 PEvery.  PartyDef    ::= PEvery ;
-rules    PEvery      ::= "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
+rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
 PNobody. PartyDef    ::= PNobody;
-rules    PNobody     ::= "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
+rules    PNobody     ::=          "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
 rules    AsAlias     ::= | "AS" ObjAttr ;
+REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
+comment "//" ;
+comment "--" ;
+comment "/*" "*/" ;
+rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
+rules      UnlessExpr ::= | "UNLESS" BoolExp;
 rules    DeonticLimb ::= DeonticExpr ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
 rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
 rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
-rules    TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
+rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
                         | "EARLIEST" JunctionList
                         | "LATEST"   JunctionList;
-rules    DurationExpr ::= | "+" Duration ;
-TDYM.    Duration     ::= Integer "years" ;
-TDW.     Duration     ::= Integer "weeks" ;
-TDD.     Duration     ::= Integer "days" ;
-TDDH.    Duration     ::= Integer "days" "and" Integer "hours" ;
+rules     DurationExpr ::= | "+" Duration ;
+TDY.      Duration     ::= Integer "years" ;
+TDM.      Duration     ::= Integer "months" ;
+TDW.      Duration     ::= Integer "weeks" ;
+TDD.      Duration     ::= Integer "days" ;
+TDBD.     Duration     ::= Integer "business" "days" ;
+TDDH.     Duration     ::= Integer "days" "and" Integer "hours" ;
 DNoHence. HenceLimb    ::= ;
 DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
 DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
 DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
 rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
+Asof.      Asof      ::= "ASOF" DateTime ;
+AsofNull.  Asof      ::= ;
+rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
+
+token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
+token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
+rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
+rules      GivenExpr ::=   [ObjAttr]
+                         | [ObjAttr] HavingLimb ;
+rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
+rules     HavingBoolExp ::= BoolExp;
+separator nonempty HavingBoolExp ";";
+rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
+rules      WithIn    ::= [Constraint] | TraceExpr;
+separator nonempty WithIn ";";
+rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
+rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
+
+separator nonempty WhereExp ";";
 rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
 rules   MatchVars ::= "MathExpr"    MathExpr
                     | "MatchExpr"   MatchExpr
@@ -57,22 +85,44 @@ rules   MatchVars ::= "MathExpr"    MathExpr
                     | "ArrayOfBraces"   ArrayOfBraces
                     | "HenceLimb"   HenceLimb;
 separator nonempty MatchVars ";";
-ModuleDecl. Module ::= "module" ObjAttr "where";
-Toplevel.  Tops      ::= [Toplevels];
-rules      Toplevels ::= Module | Import | Pragma 
-                       | Rule | Entity | Scenario ;
-terminator Toplevels ";";
+RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
+rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+separator  nonempty LogEvent ";";
+separator  Blah "";
+rules      Blah     ::= VarExpr;
 
-layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
-entrypoints Tops;
-comment "//" ;
-comment "--" ;
-comment "/*" "*/" ;
-rules Pragma ::= "pragma" CommaList ;
-Import. Import ::= "import" ObjAttr ;
-rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
-rules      UnlessExpr ::= | "UNLESS" BoolExp;
+rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
+
+OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+separator nonempty ObjAttrElem ".";
+separator nonempty ObjAttr     ",";
+-- what we realy want to be able to do is have a List a
+
+JL_And.    JunctionList ::=    AndList  ;
+JL_Or.     JunctionList ::=     OrList  ;
+JL_Xor.    JunctionList ::=    XorList  ;
+JL_Comma.  JunctionList ::=  CommaList  ;
+
+CommaList.  CommaList ::= "[" [CommaElem] "]";
+rules      CommaElem ::= ObjMethod | String;
+separator nonempty CommaElem ",";
+
+AndList.   AndList ::= AndElem "&" [AndElem];
+rules      AndElem ::= ObjMethod | String;
+_.         AndList ::= "[" AndList "]" ;
+separator nonempty AndElem "&";
+
+OrList.    OrList ::= OrElem "|" [OrElem];
+rules      OrElem ::= ObjMethod | String;
+_.         OrList ::= "[" OrList "]" ;
+separator nonempty OrElem "|";
+
+XorList.   XorList ::= XorElem "^" [XorElem];
+rules      XorElem ::= ObjMethod | String;
+_.         XorList ::= "[" XorList "]" ;
+separator nonempty XorElem "^";
+
 TU.        TypeUnify      ::= "::" "Unify";
 TS.        TypeString     ::= "::" "String";
 TB.        TypeBool       ::= "::" "Bool";
@@ -153,70 +203,11 @@ rules      Args       ::= | "(" [Constraint] ")";
 rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
 rules      UnifyElem ::= ObjAttrElem
                       |  UnifyBracket
-                      |  UnifyStar;
+                      |  UnifyStar
+                      |  "."; -- ideally we would have foo..bar and not foo...bar
 separator nonempty UnifyElem ".";
 rules      UnifyStar ::= "*" ;
 rules      UnifyBracket ::= "<" [CommaElem] ">" ;
--- what we realy want to be able to do is have a List a
-
-JL_And.    JunctionList ::=    AndList  ;
-JL_Or.     JunctionList ::=     OrList  ;
-JL_Xor.    JunctionList ::=    XorList  ;
-JL_Comma.  JunctionList ::=  CommaList  ;
-
-CommaList.  CommaList ::= "[" [CommaElem] "]";
-rules      CommaElem ::= ObjMethod | String;
-separator nonempty CommaElem ",";
-
-AndList.   AndList ::= AndElem "&" [AndElem];
-rules      AndElem ::= ObjMethod | String;
-_.         AndList ::= "[" AndList "]" ;
-separator nonempty AndElem "&";
-
-OrList.    OrList ::= OrElem "|" [OrElem];
-rules      OrElem ::= ObjMethod | String;
-_.         OrList ::= "[" OrList "]" ;
-separator nonempty OrElem "|";
-
-XorList.   XorList ::= XorElem "^" [XorElem];
-rules      XorElem ::= ObjMethod | String;
-_.         XorList ::= "[" XorList "]" ;
-separator nonempty XorElem "^";
-
-
-rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
-
-OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
-separator nonempty ObjAttrElem ".";
-separator nonempty ObjAttr     ",";
-REntity.   Entity ::= "ENTITY" ObjAttr GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
-
-rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-rules      GivenExpr ::=   [ObjAttr]
-                         | [ObjAttr] HavingLimb ;
-rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-rules     HavingBoolExp ::= BoolExp;
-separator nonempty HavingBoolExp ";";
-
-rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
-rules      WithIn    ::= [Constraint] | TraceExpr;
-separator nonempty WithIn ";";
-rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
-separator nonempty LogEvent ";";
-separator Blah "";
-rules      Blah     ::= VarExpr;
-rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
-rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
-
-separator nonempty WhereExp ";";
-Asof.      Asof      ::= "ASOF" DateTime ;
-AsofNull.  Asof      ::= ;
-rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
-rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
-
-token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
-token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
 token UIdent (upper (letter | digit | '_')*) ; -- doesn't seem to work for single character idents though, like P
 rules      UIdentList ::= [UIdentElem];
 rules      UIdentElem ::= UIdent;
@@ -228,7 +219,17 @@ rules ArrayOfBraces ::= "[" [BraceList] "]";
 separator nonempty Constraint  "," ;
 separator nonempty BraceList   "," ;
 rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
-RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+ModuleDecl. Module ::= "module" ObjAttr "where";
+Toplevel.  Tops      ::= [Toplevels];
+rules      Toplevels ::= Module | Import | Pragma 
+                       | Rule | Entity | Scenario ;
+terminator Toplevels ";";
+
+layout toplevel;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+entrypoints Tops;
+Import. Import ::= "import" ObjAttr ;
+rules Pragma ::= "pragma" CommaList ;
 EString.      NormalString ::= String ;
 ELangStrings. LangStrings  ::= [LangString] ;
     separator nonempty LangString " ";

@@ -2,7 +2,7 @@
 module Foo.Bar.Baz where
 import ContractLaw
 
-RULE   1 SaleRestricted
+RULE  1 SaleRestricted
          :en:"The Sale of Cabbages is Restricted."
          :se:"Försäljning av kål är begränsad."
   PARTY NOBODY      AS P1
@@ -14,25 +14,32 @@ RULE   1 SaleRestricted
   WHERE sale IS onLegalDate
           WHEN sale.date ~ LegalDates
           WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
-
-RULE  2 ReturnPolicy
-  GIVEN sale
-  PARTY Buyer
-    MAY return Item
- BEFORE sale.date + 3 weeks
-  HENCE Net3
-
-RULE  3 Net3
-  GIVEN return
-  PARTY Seller
-   MUST refund Amount
- BEFORE return.date + 3 days
-  WHERE Amount = $return.sale.cash * 90%
-
 RULE  4 Cabbage
    DEEM Item IS cabbage
    WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
+  GIVEN sale          // defined in rule 1 above
+  PARTY Buyer
+    MAY return Item
+ BEFORE sale.date + 3 weeks
+  HENCE Net3          // targets rule 3 below
+
+RULE  3 Net3          // the "hence" target of rule 2 above
+  GIVEN return        // defined in rule 2 above
+  PARTY Seller
+   MUST refund Amount
+ BEFORE return.date + 3 days
+  WHERE Amount = $sale.cash * 90%
 RULE 1 ruleOne :en:"First Rule" NOOP
+ENTITY spud2
+   ISA Item
+  WITH species  = "Solanum tuberosum"
+       isEdible = true
+       previousOwners = [ alice, bob, charlie, daryl ]
+ENTITY alice   ISA Human WITH isNoble = true
+ENTITY bob     ISA Human WITH isNoble = false
+ENTITY charlie ISA Human WITH isNoble = true
+ENTITY daryl   ISA Human WITH isNoble = false
 RULE 2 edible
  DEEM Item IS EdiblePotato
           AND TastyFood
@@ -48,15 +55,6 @@ RULE 3 isPotato
 // an AND-list would expand to
 // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
 //                                                     ^
-ENTITY spud2
-   ISA Item
-  WITH species  = "Solanum tuberosum"
-       isEdible = true
-       previousOwners = [ alice, bob, charlie, daryl ]
-ENTITY alice   ISA Human WITH isNoble = true
-ENTITY bob     ISA Human WITH isNoble = false
-ENTITY charlie ISA Human WITH isNoble = true
-ENTITY daryl   ISA Human WITH isNoble = false
 
 RULE noblePotato
   DEEM Item IS Noble
@@ -97,6 +95,10 @@ a list comprehension
 
 */
 
+ENTITY spud1
+   ISA Item
+  WITH species  = "Solanum tuberosum"
+       isEdible = true
 ENTITY blackSwan
    ISA Human
   WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
@@ -156,7 +158,3 @@ SCENARIO saleHistory
                   brand    = "Acme Water"
                   model    = "750mL"
                   quantity = 1
-ENTITY spud1
-   ISA Item
-  WITH species  = "Solanum tuberosum"
-       isEdible = true

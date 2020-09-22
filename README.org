@@ -1,10 +1,11 @@
 #+TITLE: The future home of the L4 DSL
+#+STARTUP: content
 
-This specification is in EARLY DRAFT stage right now, and is expected to evolve throughout the remainder of 2020. The only people writing L4 according to this spec are the core development team, and even then it's not expected to work.
+This specification is in EARLY DRAFT stage right now, and is expected to evolve throughout the remainder of 2020. The only people writing L4 according to this spec are the core development team, and it doesn't even always work for them.
 
 * Draft Language Specification v0.3.0
 
-We want to be able to translate natural-language contracts and laws to code, without loss of meaning; so our language needs to be as expressive as natural language "pseudocode", while remaining formal and well-defined.
+We review a simple case. Then we detail the rest of the language.
 
 ** Quickstart: L4 By Example
 
@@ -12,10 +13,10 @@ We want to be able to translate natural-language contracts and laws to code, wit
 
 Suppose cabbages may be sold only on the day a full moon occurs -- unless an exemption was granted by the Director of Agriculture. Buyers have the right, within three weeks of purchase, to return their cabbages for a 90% refund, which the seller must issue within 3 days of the return.
 
-Let's say it in L4:
+How might we say it in L4?
 
 #+begin_src sql :noweb-ref l4-rules
-  RULE   1 SaleRestricted
+  RULE  1 SaleRestricted
            :en:"The Sale of Cabbages is Restricted."
            :se:"Försäljning av kål är begränsad."
     PARTY NOBODY      AS P1
@@ -27,33 +28,11 @@ Let's say it in L4:
     WHERE sale IS onLegalDate
             WHEN sale.date ~ LegalDates
             WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
-
-  RULE  2 ReturnPolicy
-    GIVEN sale
-    PARTY Buyer
-      MAY return Item
-   BEFORE sale.date + 3 weeks
-    HENCE Net3
-
-  RULE  3 Net3
-    GIVEN return
-    PARTY Seller
-     MUST refund Amount
-   BEFORE return.date + 3 days
-    WHERE Amount = $return.sale.cash * 90%
-
-  RULE  4 Cabbage
-     DEEM Item IS cabbage
-     WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
 #+end_src
 
 We picked this example because it embeds a simple mini-contract in the sale-and-return part.
 
 The rest of this document explains the syntax and shows the BNF language definition.
-
-Our ontology:
-- ~x ISA Y~ :: x is an instance; Y is a class.
-- ~Y ISA Z~ :: Y is a class; Z is a superclass.
 
 *** Rule Headers
 
@@ -71,9 +50,11 @@ A "RULE" stanza is labeled with a numeric identifier, a name, or both, followed 
 
 #+end_src
 
-*** Rule Bodies
+The optional langstrings provide hints for natural language generation.
 
-Every rule is one of the following types:
+*** Simple Rule Bodies: DEEM and Modals
+
+Every rule body is one of the following:
 
 **** NOOP
 
@@ -85,15 +66,28 @@ A rule body that does nothing. This is just for dev testing. By convention this 
 
 **** DEEM
 
-A constitutive rule with several limbs. Thing A can be deemed to be a Thing B under conditions C.
+A constitutive rule.
+
+#+begin_src sql :noweb-ref l4-rules
+  RULE  4 Cabbage
+     DEEM Item IS cabbage
+     WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+#+end_src
+
+The BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
   RuleDeem.   RuleBody  ::= GivenLimb "DEEM" [Constraint] WithLimb WhenLimb WhereLimb;
 #+end_src
 
-- given :: context parameters, analogous to function arguments
+Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" parts appear within the /constraint/ part:
+
 - constraint :: one or more subjects of the deem: that an A counts as B in some way, or has some value, or some inequality
-- with :: attributes of the subject(s)
+
+A DEEM rule can have several optional limbs:
+
+- given :: context parameters, analogous to function arguments
+- with :: further attributes of the subject(s)
 - when :: pre-conditions for the deem to operate
 - where :: subsidiary definitions
 
@@ -101,14 +95,30 @@ Deem rules are a good place to shoehorn your function definitions.
 
 More about these limbs below.
 
-**** Modal
+**** Modals
 
-A rule that defines a node in the obligation graph. These express what Ken Adams calls
+A modal stanza defines a node in the obligation graph. These express what Ken Adams calls
 
 - language of performance
 - language of obligation
 - language of discretion
 - language of prohibition
+
+#+begin_src sql :noweb-ref l4-rules
+  RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
+    GIVEN sale          // defined in rule 1 above
+    PARTY Buyer
+      MAY return Item
+   BEFORE sale.date + 3 weeks
+    HENCE Net3          // targets rule 3 below
+
+  RULE  3 Net3          // the "hence" target of rule 2 above
+    GIVEN return        // defined in rule 2 above
+    PARTY Seller
+     MUST refund Amount
+   BEFORE return.date + 3 days
+    WHERE Amount = $sale.cash * 90%
+#+end_src
 
 In short,
 - given some context (usually one or more references to ancestors to that node)
@@ -127,33 +137,164 @@ If they fail to perform, the state graph proceeds to the node specified in the "
   rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
-  rules    PEvery      ::= "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
+  rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
   PNobody. PartyDef    ::= PNobody;
-  rules    PNobody     ::= "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
+  rules    PNobody     ::=          "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
+#+end_src
+
+There's some syntactic sugar for "everybody" and "nobody" as special cases of parties.
+
+See [[https://drive.google.com/file/d/1sLmVMZqHhQDzj8dikKt-8CNemF-nGCn1/view?usp=sharing][page 41 of Hvitved's PhD Thesis]].
+
+#+begin_src bnfc :noweb-ref l4bnfc
   rules    AsAlias     ::= | "AS" ObjAttr ;
+#+end_src
+
+As-aliases provide variable bindings to elements of the rule. In Haskell they are like the "@" in a pattern match.
+
+
+*** ENTITY stanzas define individuals and classes.
+
+These stanzas represent what Ken Adams calls Langauge of Declaration.
+
+This is where you park details about parties and other concrete entities involved in a contract.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY spud1
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+#+end_src
+
+ENTITY stanzas contain optional limbs: Given, With, As Of, Where.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
+#+end_src
+
+This converts to Prolog:
+
+#+begin_src prolog
+  species(spud1, "Solanum tuberosum").
+  isEdible(spud1).
+  isA(spud1, Item).
+#+end_src
+
+If we were converting to Flora-2 we would be more intelligent about classes and inheritance, but we're just trying to get our feet wet with logic programming, so we'll do that another time.
+
+Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a special case of some more generic n-place arity relational syntax for FOL" -- and you would be right. ~IS~ and ~ISA~ should be macros. This refactoring of the language will happen soon.
+
+*** Comments
+C-style and Javascript-style comments are both supported. Also Haskell-style, as a nod to our implementation language.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+    comment "//" ;
+    comment "--" ;
+    comment "/*" "*/" ;
+#+end_src
+
+** Limbs
+
+*** The WHEN Limb: Constraint Expressions
+
+Constraint Expressions are used both to evaluate truth values as part of a reasoning operation, and to "assign" values immutably.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
+  rules      UnlessExpr ::= | "UNLESS" BoolExp;
+#+end_src
+
+The When Limb has an optional When part and an optional Unless part.
+
+Here's the truth table for how the parts interact
+
+| When    | Unless  | Result        |
+|---------+---------+---------------|
+| absent  | -       | true          |
+| present | absent  | evaluate when |
+| present | present | as below      |
+
+Here's a possible truth table for how the When/Unless limbs desugar.
+
+| Party     | DeonticExpr | WHEN  | UNLESS | means           | HENCE |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Some P    | MAY         | true  | true   | -               |       |
+| Some P    | MAY         | true  | false  | P MAY           |       |
+| Some P    | MAY         | false | true   | -               |       |
+| Some P    | MAY         | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Some P    | MUST        | true  | true   | -               |       |
+| Some P    | MUST        | true  | false  | P MUST          |       |
+| Some P    | MUST        | false | true   | -               |       |
+| Some P    | MUST        | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Some P    | SHANT       | true  | true   | -               |       |
+| Some P    | SHANT       | true  | false  | P SHANT         |       |
+| Some P    | SHANT       | false | true   | -               |       |
+| Some P    | SHANT       | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Everybody | MAY         | true  | true   | -               |       |
+| Everybody | MAY         | true  | false  | Everybody MAY   |       |
+| Everybody | MAY         | false | true   | -               |       |
+| Everybody | MAY         | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Everybody | MUST        | true  | true   | -               |       |
+| Everybody | MUST        | true  | false  | Everybody MUST  |       |
+| Everybody | MUST        | false | true   | -               |       |
+| Everybody | MUST        | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Everybody | SHANT       | true  | true   | P MAY           |       |
+| Everybody | SHANT       | true  | false  | Everybody Shant |       |
+| Everybody | SHANT       | false | true   | P MAY           |       |
+| Everybody | SHANT       | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Nobody    | MAY         | true  | true   | P MAY           |       |
+| Nobody    | MAY         | true  | false  | Nobody MAY      |       |
+| Nobody    | MAY         | false | true   | P MAY           |       |
+| Nobody    | MAY         | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Nobody    | MUST        | true  | true   | -               |       |
+| Nobody    | MUST        | true  | false  | Nobody must     |       |
+| Nobody    | MUST        | false | true   | -               |       |
+| Nobody    | MUST        | false | false  | -               |       |
+|-----------+-------------+-------+--------+-----------------+-------|
+| Nobody    | SHANT       | true  | true   | Everybody MAY   |       |
+| Nobody    | SHANT       | true  | false  | Nobody SHANT    |       |
+| Nobody    | SHANT       | false | true   | P MAY           |       |
+| Nobody    | SHANT       | false | false  | -               |       |
+
+*** Deontics and the Action Limb
+#+begin_src bnfc :noweb-ref l4bnfc
   rules    DeonticLimb ::= DeonticExpr ActionLimb;
   DEMust.  DeonticExpr ::= "MUST" ;
   DEMay.   DeonticExpr ::= "MAY"  ;
   DEShant. DeonticExpr ::= "SHANT" ;
-  rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
-  rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
 #+end_src
 
-See [[https://drive.google.com/file/d/1sLmVMZqHhQDzj8dikKt-8CNemF-nGCn1/view?usp=sharing][page 41 of Hvitved's PhD Thesis]].
+The syntax for actions is not terribly well specified at the moment.
 
-As-aliases provide variable bindings to elements of the rule. In Haskell they are like the "@" in a pattern match.
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+#+end_src
+
+*** Deadlines
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
+#+end_src
 
 We need to beef up the temporal expressions, but for now they are:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules    TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
+  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
                           | "EARLIEST" JunctionList
                           | "LATEST"   JunctionList;
-  rules    DurationExpr ::= | "+" Duration ;
-  TDYM.    Duration     ::= Integer "years" ;
-  TDW.     Duration     ::= Integer "weeks" ;
-  TDD.     Duration     ::= Integer "days" ;
-  TDDH.    Duration     ::= Integer "days" "and" Integer "hours" ;
+  rules     DurationExpr ::= | "+" Duration ;
+  TDY.      Duration     ::= Integer "years" ;
+  TDM.      Duration     ::= Integer "months" ;
+  TDW.      Duration     ::= Integer "weeks" ;
+  TDD.      Duration     ::= Integer "days" ;
+  TDBD.     Duration     ::= Integer "business" "days" ;
+  TDDH.     Duration     ::= Integer "days" "and" Integer "hours" ;
   DNoHence. HenceLimb    ::= ;
   DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
   DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
@@ -161,8 +302,64 @@ We need to beef up the temporal expressions, but for now they are:
   rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
 #+end_src
 
-The optional langstrings provide hints to the interpreter and to downstream components.
+*** The "ASOF" Limb and time formats
 
+We support ISO8601 dates and times.
+
+In the future a more comprehensive time library will make it possible to say things like "the fourth Friday of every month, failing which the third Thursday."
+
+The "ASOF" limb is syntactic shorthand for indicating a default system time for "WITH" facts declared immediately prior.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Asof.      Asof      ::= "ASOF" DateTime ;
+  AsofNull.  Asof      ::= ;
+  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+  rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
+
+  token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
+  token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
+#+end_src
+
+*** GIVEN
+The "Given" limb is analogous to providing arguments to a function.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
+  rules      GivenExpr ::=   [ObjAttr]
+                           | [ObjAttr] HavingLimb ;
+#+end_src
+
+The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
+  rules     HavingBoolExp ::= BoolExp;
+  separator nonempty HavingBoolExp ";";
+#+end_src
+
+The scope of a GivenExpr is the entire ancestry of that node in the obligation graph.
+
+*** WITH
+The "With" limb assigns attributes to an individual or a class.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
+  rules      WithIn    ::= [Constraint] | TraceExpr;
+  separator nonempty WithIn ";";
+#+end_src
+
+*** WHERE
+
+"Where" offers bindings similar to those found in Haskell. This is a convenient place to go into detail about concepts which are mentioned briefly in the main body.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
+  rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
+
+  separator nonempty WhereExp ";";
+#+end_src
+
+** Advanced Rule Bodies
 **** Assertion
 
 A rule that describes, using LTL/CTL, certain properties of the obligation graph.
@@ -177,7 +374,7 @@ A rule that establishes priority when other rules conflict.
 
 The syntax for meta-rules has not yet been defined. In contracts and laws we see the idea of "notwithstanding" and "subject to".
 
-**** Debug
+**** Debug: Matchtype
 
 The "MATCHTYPE" rule body is for debugging purposes only.
 
@@ -206,185 +403,574 @@ The "MATCHTYPE" rule body is for debugging purposes only.
 #+end_src
 
 
-
-*** Entities
-
-*** Pragmas
-
-*** Modules
-
-*** Imports
-
-*** Formal Verification using Temporal Logics
-
-*** Transpilation and Extraction to Operational Languages
-
-*** Natural Language Generation
-
-** Reference Manual and BNFC specification
-
-*** Projects
-
-An L4 Project contains one or more modules.
-
-*** Modules and Structure
-
-Modules offer namespaces. The import and export syntax borrows from Haskell.
-
-An L4 Module is a file.
-
-The /default name/ of the module is derived from its import statement, minus any ~.l4*~ extension.
-
-The following import statements result in the following default module names:
-
-| import                                          | default name |
-|-------------------------------------------------+--------------|
-| ~import "Foo/Bar/Baz.l4"~                       | Foo.Bar.Baz  |
-| ~import "/usr/local/share/L4/./Foo/Bar/Baz.l4"~ | Foo.Bar.Baz  |
-| ~import "test/./Foo/Bar/Baz.l4"~                | Foo.Bar.Baz  |
-
-The default name is made by 
-- deleting any prefix matching the regex ~^.*/\.+/~
-- deleting any suffix matching the suffix ~\.l4\w*$~
-- converting any directory separators to dots
-
-A module can explicitly give itself a name by saying
-
-#+begin_src haskell :noweb-ref l4-example1
-  module Foo.Bar.Baz where
-#+end_src
+** SCENARIO stanzas represent traces of events
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  ModuleDecl. Module ::= "module" ObjAttr "where";
+  RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
 #+end_src
 
-An L4 Module contains a list of directives and statements.
+A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an individual or a scenario that are bounded in time.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  Toplevel.  Tops      ::= [Toplevels];
-  rules      Toplevels ::= Module | Import | Pragma 
-                         | Rule | Entity | Scenario ;
-  terminator Toplevels ";";
-
-  layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
-  entrypoints Tops;
+  rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
+  rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+  separator  nonempty LogEvent ";";
+  separator  Blah "";
+  rules      Blah     ::= VarExpr;
 #+end_src
 
-C-style and Javascript-style comments are both supported. Also Haskell-style, as a nod to our implementation language.
+** Important Concepts
+
+*** The <<<Obligation Graph>>>
+
+*** Multitemporality
+
+Unlike Javascript, an attribute may be /multitemporal/:
+- valid time
+- transaction time
+- decision time
+
+An attribute is also /multivalent/: by default, every attribute of an object can have zero or more values; informally speaking, every attribute of type X is really a list of X.
+
+Let's take a simple example. As in Typescript, we define an instance type for a human:
+- human.birthdate :: Date
+- human.fullname :: String
+- human.nationality :: Country
+
+Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what Wikipedia believes, as of the 10th of September 2020 when I wrote this.
+
+Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY blackSwan
+     ISA Human
+    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
+  //     a person can have multiple nationalities
+         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
+                       , { xtime = 2020-09-10, value = "US"                                } ]
+#+end_src
+
+We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
+
+Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
+
+#+begin_src haskell :noweb-ref l4entity
+  //     a person can have multiple names
+         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+#+end_src
+
+As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
+- On January 1, celebrities X and Y were known to be dating.
+- By July 1, paparazzi sleuths found out that X and Y had gotten married some time in the past few months; the ceremony was said to have been held on a private island, but nobody's saying where or when it happened.
+- On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
+- On December 1, the couple announced that they had gotten divorced on November 1.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY celebXY
+   GIVEN Tabloid HAVING ceaselessCoverage :: Bool
+     ISA Couple
+    WITH xtime = 2020-01-01, maritalStatus = dating
+         xtime = 2020-07-01, maritalStatus = married
+         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
+         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
+         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
+#+end_src
+
+The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"
+
+*** Epistemics
+
+An attribute may also be /epistemic/:
+- on August 1, Alice learned that she was pregnant
+- on September 1, Alice wrote a letter to Bob telling him that she was pregnant, and sent it via registered post.
+- by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
+- on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
+
+#+begin_src haskell :noweb-ref l4entity
+  SCENARIO alicePregnancy
+     TRACE 2020-08-01 Alice knew { pregnancy = true }
+           2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
+           2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
+           2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
+#+end_src
+
+There should be as many xtimes as there are knowers.
+
+*** Inference: Querying Objects and Attributes
+
+
+
+We can ask fine-grained questions like:
+- On a given date, what did entity E, or The Public, or The System generally, believe to be true about some entity E, or some unit of knowledge K?
+
+By default, L4 expressions will default to the latest known information at the time of decision.
+
+**** Using Object Attributes
+
+Okay. Deep breath. Lower case and upper case are meaningful.
+
+Specific individuals are lowercase, like blackSwan, or celebXY.
+
+Interfaces, or classes, start with an uppercase letter, like Human or Couple.
+
+Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~toldTo~, and ~beliefs~ attributes. This may go away at some point.
+
+We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+
+  ENTITY buyCabbage
+     ISA ContractOfSale
+    WITH date         = 2020-09-10
+         jurisdiction = SG
+         buyer        = blackSwan
+         seller       = veggieBar
+         buyer.consideration  = :USD: 10
+         seller.consideration = [ item1, item2 ]
+    ASOF 2020-09-10
+   WHERE item1 ISA  Item
+               WITH category = "vegetable"
+                    species  = "Brassica oleracea"
+                    cultivar = "capitata"
+#+end_src
+
+ContractLaw is a library class which abstracts the essential elements of a particular contract.
+
+An alternative representation shows a trace of events:
+
+#+begin_src haskell :noweb-ref l4entity
+  SCENARIO saleHistory
+    WITH parties = [ blackSwan, veggieBar ]
+   TRACE 2020-09-01T1210 blackSwan offers     offerDetails
+         2020-09-01T1211 veggieBar accepts    offerDetails
+         2020-09-01T1212 blackSwan pays       veggieBar $10
+         2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
+    ASOF 2020-09-10
+   WHERE offerDetails = { blackSwan.consideration = $10
+                        , veggieBar.consideration = [ item1, item2 ] }
+         item1 ISA Item
+               WITH category = "vegetable"
+                    species  = "Brassica oleracea"
+                    cultivar = "capitata"
+                    quantity = 1
+         item2 ISA Item
+               WITH category = "beverage"
+                    brand    = "Acme Water"
+                    model    = "750mL"
+                    quantity = 1
+#+end_src
+
+from which a pattern-matcher could deem that a legal contract was in place. Let's see what that looks like:
+
+**** Natural Language Generation
+
+#+begin_src text :noweb-ref l4-rules
+  RULE 1 ruleOne :en:"First Rule" NOOP
+#+end_src
+
+What should this say in English?
+
+"First Rule. This rule does nothing."
+
+**** Matching Object Attributes
+
+What you're about to read is basically a Horn clause. If you know Prolog, you will recognize that this is Prolog, dressed in the guise of an object-like paradigm. You might even say, "this has the same F-Logic as Flora-2", except with the syntax of SQL.
+
+Let's start with a super simple case.
+
+Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
+
+#+begin_src haskell :noweb-ref l4-rules
+  ENTITY spud2
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+         previousOwners = [ alice, bob, charlie, daryl ]
+#+end_src
+
+What does that look like in Prolog?
+
+#+begin_src prolog
+  species(spud2, "Solanum tuberosum").
+  isEdible(spud2).
+  previousOwner(spud2, alice).
+  previousOwner(spud2, bob).
+  previousOwner(spud2, charlie).
+  previousOwner(spud2, daryl).
+#+end_src
+
+Now we have an opportunity to explore relational syntax. Think Alloy.
+
+Let's say that some of the previous owners were members of the nobility.
+
+#+begin_src haskell :noweb-ref l4-rules
+  ENTITY alice   ISA Human WITH isNoble = true
+  ENTITY bob     ISA Human WITH isNoble = false
+  ENTITY charlie ISA Human WITH isNoble = true
+  ENTITY daryl   ISA Human WITH isNoble = false
+#+end_src
+
+In Prolog, that reads:
+
+#+begin_src prolog
+  isNoble(alice).
+  isNoble(bob).
+  isNoble(charlie).
+  isNoble(daryl).
+#+end_src
+
+#+begin_src text :noweb-ref l4-rules
+  RULE 2 edible
+   DEEM Item IS EdiblePotato
+            AND TastyFood
+    WHEN Item IS Potato
+     AND Item IS Edible
+#+end_src
+
+Rule 2 relies on rule 3. This is backward chaining.
+  
+#+begin_src text :noweb-ref l4-rules
+  RULE 3 isPotato
+    DEEM Item IS Potato
+    WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+
+  // an OR-LIST expands to
+  // isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
+  //                                                     ^
+  // an AND-list would expand to
+  // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
+  //                                                     ^
+#+end_src
+
+If this begins to feel weird, it's because under the hood, we're borrowing Prolog's unification and backtracking features.
+
+Let's say a potato is Noble if at least two of its previous owners are Noble.
+
+There are a couple ways to say that. This is one way:
+
+#+begin_src haskell :noweb-ref l4-rules
+
+  RULE noblePotato
+    DEEM Item IS Noble
+    WHEN Item ISA Potato
+     AND Item.previousOwners.First IS Noble
+     AND Item.previousOwners.Second IS Noble
+#+end_src
+
+(Maybe this also creates an automatic Item.isNoble?)
+
+That translates to:
+
+#+begin_src prolog
+  isNoble(Item) :- isPotato(Item),
+                   previousOwner(Item, First), isNoble(First),
+                   previousOwner(Item, Second), isNoble(Second),
+                   First != Second.
+#+end_src
+
+This allows us to subsequently use the term Potato instead of Item:
+
+#+begin_src haskell :noweb-ref l4-rules
+  RULE noblePotato2
+    DEEM Potato IS Noble
+    WHEN Potato.previousOwners.isNoble :: Math >= 2
+#+end_src
+
+Alternative syntax:
+
+#+begin_src haskell :noweb-ref l4-rules
+  RULE noblePotato3
+    DEEM Potato IS Noble
+    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+#+end_src
+
+*** Ontology
+
+Individuals are in lower case.
+
+Variables, roles, and classes are in UpperCase.
+
+Our ontology:
+- ~x ISA Y~ :: x is an instance; Y is a class.
+- ~Y ISA Z~ :: Y is a class; Z is a superclass.
+
+** Expressions
+*** term primitives
+
+L4 uses customary ~record.attribute~ notation for most things.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-    comment "//" ;
-    comment "--" ;
-    comment "/*" "*/" ;
+
+  rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
+
+  OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
+  separator nonempty ObjAttrElem ".";
+  separator nonempty ObjAttr     ",";
 #+end_src
 
-*** Directives
-**** module directive is dealt with above
+*** TODO Lists
 
-Suppose we have a ContractLaw library:
+Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
 
-#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
-  module ContractLaw where
-#+end_src
+In L4, comma lists work as usual. But we also have and-lists and or-lists, which are separated by "&" and "|" respectively.
 
-Other modules are welcome to import this module. They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
+Internally we call these "junction lists" for "conjunction" and "disjunction".
 
-**** pragma: version
+The semantics depend on context:
+
+| symbol | set context  | propositional context |
+|--------+--------------+-----------------------|
+| &      | intersection | and                   |
+| \vert  | union        | or                    |
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules Pragma ::= "pragma" CommaList ;
+  -- what we realy want to be able to do is have a List a
+
+  JL_And.    JunctionList ::=    AndList  ;
+  JL_Or.     JunctionList ::=     OrList  ;
+  JL_Xor.    JunctionList ::=    XorList  ;
+  JL_Comma.  JunctionList ::=  CommaList  ;
+
+  CommaList.  CommaList ::= "[" [CommaElem] "]";
+  rules      CommaElem ::= ObjMethod | String;
+  separator nonempty CommaElem ",";
+
+  AndList.   AndList ::= AndElem "&" [AndElem];
+  rules      AndElem ::= ObjMethod | String;
+  _.         AndList ::= "[" AndList "]" ;
+  separator nonempty AndElem "&";
+
+  OrList.    OrList ::= OrElem "|" [OrElem];
+  rules      OrElem ::= ObjMethod | String;
+  _.         OrList ::= "[" OrList "]" ;
+  separator nonempty OrElem "|";
+
+  XorList.   XorList ::= XorElem "^" [XorElem];
+  rules      XorElem ::= ObjMethod | String;
+  _.         XorList ::= "[" XorList "]" ;
+  separator nonempty XorElem "^";
+
 #+end_src
 
-**** history
+*** TODO Lists
 
-previous versions of this ruleset are accessible where? because this ruleset may refer to previous versions.
+**** Plain Lists
 
-**** import
+Today's available flavours are: ~[Chocolate, Vanilla, Strawberry]~
 
-#+begin_src haskell :noweb-ref l4-example1
-import ContractLaw
+**** Conjunctive Lists
+
+The whole situation is a mess.
+
+https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
+
+**** What is the total space?
+
+Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize all of the possible variants from that chapter.
+
+**** Is there a better way?
+
+L4 is a formal language. The meanings of expressions are explicitly defined.
+
+***** Ternary Logic In L4: "three-valued Booleans"
+
+Let ~p :: a -> Ternary~, which is to say, ~p~ is a predicate; given an input of type ~a~, it will always return Yes, No, or Neither -- "neither" meaning "unknown", "undefined", "null", or "wat". This is an example of a [[https://en.wikipedia.org/wiki/Three-valued_logic][ternary logic]].
+
+Here's a predicate: "has five toes on each fore paw". Most cats, the predicate returns ~true~. But some cats have [[https://en.wikipedia.org/wiki/Polydactyl_cat][polydactyly]]. It's an unusual condition. You can count the number of polydactyls per thousand, on the fingers of ... uh, let's just say it's a rare condition. For them, the predicate would return ~false~.
+
+But what about an amputee, who has no forelegs? They don't have six toes on each foot. They don't have five toes on each foot. They don't have feet at all.
+
+What is the hair colour of a bald man?
+
+What is the airspeed velocity of an unladen Martian swallow?
+
+On a form, you would write in "N/A" for "Not applicable".
+
+That's why we need ternary logic: sometimes yes, sometimes no, sometimes neither.
+
+Here's another predicate: "tailless". The Manx breed are considered tailless -- they are "rumpies" and "stumpies".
+
+A cat is special if it is polydactyl.
+
+A cat is special if it is tailless.
+
+A cat is valuable if it is both polydactyl and tailless.
+
+I wanted to say "a cat is special if it is polydactyl or tailless", but that brings up "exclusive or" considerations -- some might say "if it is both polydactyl and tailless than it isn't special, because it's obviously valuable instead." They're reading "xor" into the "or", in the context of the next sentence.
+
+It isn't logical, but it's English!
+
+So we spare ourselves all that grief by giving explicit definitions. Watch.
+
+***** Junction Lists
+
+TO BE CONTINUED
+
+Basically we have
+
+| set theory   | propositional logic | symbol |
+|--------------+---------------------+--------|
+| union        | or                  | \vert  |
+| intersection | and                 | &      |
+
+| example               | ~ | list        | means                           |
+|-----------------------+---+-------------+---------------------------------|
+| some.Unification.term | ~ | [x & y]     | forall u in U, exists u in {x, y} |
+| some.Unification.term | ~ | [x \vert y] | exists u in U, exists u in {x, y} |
+
+In Haskell, ~Data.List.all~ tests a single predicate against a collection of ~a~ values. You can say: the members of the Polydactyly Society are ~all polydactyl~. "Polydactyl" is the predicate. "The Polydactyly Society" is the collection. ~all polydactyl society~ returns ~True~.
+
+#+begin_src haskell
+  polydactyl :: Cat -> Bool
+  polydactyl cat = length cat.frontLeft.toes  > 5 ||
+                   length cat.frontRight.toes > 5
+
+  society = filter polydactyl allcats
 #+end_src
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  Import. Import ::= "import" ObjAttr ;
+But sometimes you want to test a single value against a collection of predicates. Sometimes you want all the predicates to match.
+
+#+begin_example
+kitchen.canMakeNeapolitan = kitchen ~ [ hasChocolate
+                                      & hasVanilla
+                                      & hasStrawberry ]
+#+end_example
+
+Sometimes you want to test if any of the predicates match.
+
+#+begin_example
+dish.isDangerous = dish ~ [ hasPeanut     -- (hasPeanut dish) == True
+                          | hasWalnut
+                          | hasAlmond ]
+#+end_example
+
+The machinery for this:
+
+#+begin_src haskell :tangle bnfc/blah/Preds.hs
+module Preds where
+
+  allPreds :: Foldable t => t (a -> Bool) -> a -> Bool
+  allPreds preds value = all (flip ($) value) preds
+
+  anyPreds :: Foldable t => t (a -> Bool) -> a -> Bool
+  anyPreds preds value = any (flip ($) value) preds
+
+  numPreds ::                [ a -> Bool ] -> a -> Int
+  numPreds preds value = length (filter (flip ($) value) preds)
+
+  xorPreds ::                [ a -> Bool ] -> a -> Bool
+  xorPreds preds value = 1 == numPreds preds value
+
 #+end_src
 
-**** numbering
+In L4, collections of predicates are called "junction lists". The term comes from "conjunctions" and "disjunctions", hence "junctions".
 
-A numbering directive instructs the output engine to reset the autonumbering to a specific value.
+In L4, a *conjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~&~ character, for "and".
 
-This is kind of a holdover from the C pre-processor. Do we really need it?
+In L4, a *disjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~|~ character, for "or".
 
-*** Statements
+In L4, an *exclusive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~X~ character, for "exclusive or".
 
-An L4 statement is one of the following:
+In a junction list of three or more elements, the earlier predicates in the list can be separated by a comma "," or by the same as the final separator.
 
-**** Rule Elements
+This makes it easy to write:
 
-This section goes into detail about the elements of rule statements:
+#+begin_example
+  cats = [ alice
+         , bob
+         , carol
+         , dan
+         ]
 
-***** When: Constraint Expressions
+  special = [ polydactyl
+            | tailless 
+            ]
 
-Constraint Expressions are used both to evaluate truth values as part of a reasoning operation, and to "assign" values immutably.
+  valuable = [ polydactyl
+             & tailless 
+             ]
+#+end_example
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
-  rules      UnlessExpr ::= | "UNLESS" BoolExp;
+Conjunctive lists are syntactic sugar for ~all~.
+
+Disjunctive lists are syntactic sugar for ~any~.
+
+Exclusive lists are syntactic sugar for ~oneOf~.
+
+Lists can nest.
+
+Next we talk about matching.
+
+#+begin_example
+  specialCats  = [ polydactyl | tailless ] cats
+  valuableCats = [ polydactyl & tailless ] cats
+
+  // note that we do NOT support these alternatives in L4 syntax:
+  specialCats  = any [ polydactyl, tailless ] cats
+  valuableCats = all [ polydactyl, tailless ] cats
+
+  dish.isDangerous = dish [ hasPeanut
+                          , hasWalnut
+                          | hasAlmond ]
+#+end_example
+
+Space application is overloaded as follows:
+
+| LHS            | RHS              | meaning                                         |
+|----------------+------------------+-------------------------------------------------|
+| junction list  | single value     |                                                 |
+| single value   | junction list    | boolean                                         |
+|----------------+------------------+-------------------------------------------------|
+| junction list  | list of values   | filter for values which match the junction list |
+| list of values | junction list    | filter for values which match the junction list |
+|----------------+------------------+-------------------------------------------------|
+| list of values | single predicate |                                                 |
+
+The semantics of a conjunctive list:
+#+begin_src haskell :tangle bnfc/blah/Matchable.hs
+  module Matchable where
+
+  -- TODO: make this work!
+
+  class Matchable a where
+    match  :: (Eq a, Foldable t) => a -> t a -> Bool
+
+  newtype ConjList a = ConjList [a]
+  newtype DisjList a = DisjList [a]
+
+  instance Matchable (ConjList a) where
+    match x = all (== x)
+
+  instance Matchable (DisjList a) where
+    match x = any (== x)
 #+end_src
 
-The When Limb has an optional When part and an optional Unless part.
+***** "Any" and "all"
 
-Here's the truth table for how the parts interact
+Yay English! What's the difference between
 
-| When    | Unless  | Result        |
-|---------+---------+---------------|
-| absent  | -       | true          |
-| present | absent  | evaluate when |
-| present | present | as below      |
+"Any zombies will be shot on sight"
 
-Here's the truth table for how the When/Unless limbs desugar.
+and
 
-| Party     | DeonticExpr | WHEN  | UNLESS | means           | HENCE |
-|-----------+-------------+-------+--------+-----------------+-------|
-| Some P    | MAY         | true  | true   | -               |       |
-| Some P    | MAY         | true  | false  | P MAY           |       |
-| Some P    | MAY         | false | true   | -               |       |
-| Some P    | MAY         | false | false  | -               |       |
-| Some P    | MUST        | true  | true   | -               |       |
-| Some P    | MUST        | true  | false  | P MUST          |       |
-| Some P    | MUST        | false | true   | -               |       |
-| Some P    | MUST        | false | false  | -               |       |
-| Some P    | SHANT       | true  | true   | -               |       |
-| Some P    | SHANT       | true  | false  | P SHANT         |       |
-| Some P    | SHANT       | false | true   | -               |       |
-| Some P    | SHANT       | false | false  | -               |       |
-| Everybody | MAY         | true  | true   | -               |       |
-| Everybody | MAY         | true  | false  | Everybody MAY   |       |
-| Everybody | MAY         | false | true   | -               |       |
-| Everybody | MAY         | false | false  | -               |       |
-| Everybody | MUST        | true  | true   | -               |       |
-| Everybody | MUST        | true  | false  | Everybody MUST  |       |
-| Everybody | MUST        | false | true   | -               |       |
-| Everybody | MUST        | false | false  | -               |       |
-| Everybody | SHANT       | true  | true   | P MAY           |       |
-| Everybody | SHANT       | true  | false  | Everybody Shant |       |
-| Everybody | SHANT       | false | true   | P MAY           |       |
-| Everybody | SHANT       | false | false  | -               |       |
-| Nobody    | MAY         | true  | true   | P MAY           |       |
-| Nobody    | MAY         | true  | false  | Nobody MAY      |       |
-| Nobody    | MAY         | false | true   | P MAY           |       |
-| Nobody    | MAY         | false | false  | -               |       |
-| Nobody    | MUST        | true  | true   | -               |       |
-| Nobody    | MUST        | true  | false  | Nobody must     |       |
-| Nobody    | MUST        | false | true   | -               |       |
-| Nobody    | MUST        | false | false  | -               |       |
-| Nobody    | SHANT       | true  | true   | Everybody MAY   |       |
-| Nobody    | SHANT       | true  | false  | Nobody SHANT    |       |
-| Nobody    | SHANT       | false | true   | P MAY           |       |
-| Nobody    | SHANT       | false | false  | -               |       |
+"All zombies will be shot on sight"
 
-***** Constraint Unification
+?
+
+No difference!
+
+This is why it's dangerous to reuse words with a rich existing history -- at some point, people will guess wrong.
+
+First-order logic knows how to deal with this situation. That's why we have \exists and \forall.
+
+See also https://inariksit.github.io/cclaw-zettelkasten/ambiguity_of_and.html
+
+*** Constraint Unification
 
 THIS IS STILL UNDER CONSTRUCTION
 
@@ -475,7 +1061,7 @@ binds NorthAmericans to all those parties whose country matches US or matches CA
 
 further constrains NorthAmericans to those parties whose state is WA or province is BC.
 
-***** Type Annotations
+*** Type Annotations
 
 #+begin_src bnfc :noweb-ref l4bnfc
   TU.        TypeUnify      ::= "::" "Unify";
@@ -612,7 +1198,8 @@ Unification expressions
   rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
   rules      UnifyElem ::= ObjAttrElem
                         |  UnifyBracket
-                        |  UnifyStar;
+                        |  UnifyStar
+                        |  "."; -- ideally we would have foo..bar and not foo...bar
   separator nonempty UnifyElem ".";
   rules      UnifyStar ::= "*" ;
   rules      UnifyBracket ::= "<" [CommaElem] ">" ;
@@ -623,135 +1210,7 @@ Unification expressions
 More complex pattern-matches can be specified using double square brackets. In future we want this to be single square brackets, maybe when we are less scared of reduce/reduce conflicts at the moment.
 
 
-***** Lists
-
-Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
-
-In L4, comma lists work as usual. But we also have and-lists and or-lists, which are separated by "&" and "|" respectively.
-
-Internally we call these "junction lists" for "conjunction" and "disjunction".
-
-The semantics depend on context:
-
-| symbol | set context  | propositional context |
-|--------+--------------+-----------------------|
-| &      | intersection | and                   |
-| \vert  | union        | or                    |
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  -- what we realy want to be able to do is have a List a
-
-  JL_And.    JunctionList ::=    AndList  ;
-  JL_Or.     JunctionList ::=     OrList  ;
-  JL_Xor.    JunctionList ::=    XorList  ;
-  JL_Comma.  JunctionList ::=  CommaList  ;
-
-  CommaList.  CommaList ::= "[" [CommaElem] "]";
-  rules      CommaElem ::= ObjMethod | String;
-  separator nonempty CommaElem ",";
-
-  AndList.   AndList ::= AndElem "&" [AndElem];
-  rules      AndElem ::= ObjMethod | String;
-  _.         AndList ::= "[" AndList "]" ;
-  separator nonempty AndElem "&";
-
-  OrList.    OrList ::= OrElem "|" [OrElem];
-  rules      OrElem ::= ObjMethod | String;
-  _.         OrList ::= "[" OrList "]" ;
-  separator nonempty OrElem "|";
-
-  XorList.   XorList ::= XorElem "^" [XorElem];
-  rules      XorElem ::= ObjMethod | String;
-  _.         XorList ::= "[" XorList "]" ;
-  separator nonempty XorElem "^";
-
-#+end_src
-
-***** term primitives
-
-L4 uses customary ~record.attribute~ notation. It does not support ~object(method)~ notation at this time.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-
-  rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
-
-  OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
-  separator nonempty ObjAttrElem ".";
-  separator nonempty ObjAttr     ",";
-#+end_src
-
-***** ENTITY stanzas create individuals and classes.
-
-These stanzas represent what Ken Adams calls Langauge of Declaration.
-
-This is where you park details about parties and other concrete entities involved in a contract.
-
-ENTITY stanzas contain optional Limbs: Given, With, As Of, Where.
-
-TODO -- allow LangStrings here, so the initial ObjAttr is an EntityID
-#+begin_src bnfc :noweb-ref l4bnfc
-  REntity.   Entity ::= "ENTITY" ObjAttr GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
-#+end_src
-
-The "Given" limb is analogous to providing arguments to a function.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-
-  rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-  rules      GivenExpr ::=   [ObjAttr]
-                           | [ObjAttr] HavingLimb ;
-  rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-  rules     HavingBoolExp ::= BoolExp;
-  separator nonempty HavingBoolExp ";";
-
-#+end_src
-
-The "With" limb assigns attributes to an individual or a class.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
-  rules      WithIn    ::= [Constraint] | TraceExpr;
-  separator nonempty WithIn ";";
-#+end_src
-
-A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an individual or a scenario that are bounded in time.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-  rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
-  separator nonempty LogEvent ";";
-  separator Blah "";
-  rules      Blah     ::= VarExpr;
-#+end_src
-
-"Where" offers bindings similar to those found in Haskell. This is a convenient place to go into detail about concepts which are mentioned briefly in the main body.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
-  rules     WhereExp  ::= Constraint WithLimb WhenLimb WhereLimb ;
-
-  separator nonempty WhereExp ";";
-#+end_src
-
-***** The "ASOF" Limb and time formats
-
-We support ISO8601 dates and times.
-
-In the future a more comprehensive time library will make it possible to say things like "the fourth Friday of every month, failing which the third Thursday."
-
-The "ASOF" limb is syntactic shorthand for indicating a default system time for "WITH" facts declared immediately prior.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  Asof.      Asof      ::= "ASOF" DateTime ;
-  AsofNull.  Asof      ::= ;
-  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
-  rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
-
-  token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
-  token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
-#+end_src
-
-***** Syntax Primitives
+*** Syntax Primitives
 
 Higher-level constructs rely on syntax primitives.
 
@@ -774,12 +1233,112 @@ Higher-level constructs rely on syntax primitives.
   rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 #+end_src
 
-***** SCENARIO stanzas represent traces of events
+*** String
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+A normal string looks ~"like this"~ and obeys the usual conventions around escaped backslashes, quotes, and newlines.
+
+*** Language String
+
+A language string is a normal string prefixed with a language ID prefix. Any place you can have one language string, you can have more:
+
+#+begin_example
+:en:"potato"
+:fr:"pomme de terre"
+#+end_example
+
+*** Language Identifiers
+
+A language ID prefix is one or more comma-separated ISO639-1 language codes, where dashes and underscores are accepted.
+
+*** Language Stringset
+
+A Language Stringset is one or more language strings separated by whitespace.
+
+
+** Other Top-Level Keywords
+
+*** Module
+
+Modules offer namespaces. The import and export syntax borrows from Haskell.
+
+An L4 Module is a file.
+
+The /default name/ of the module is derived from its import statement, minus any ~.l4*~ extension.
+
+The following import statements result in the following default module names:
+
+| import                                          | default name |
+|-------------------------------------------------+--------------|
+| ~import "Foo/Bar/Baz.l4"~                       | Foo.Bar.Baz  |
+| ~import "/usr/local/share/L4/./Foo/Bar/Baz.l4"~ | Foo.Bar.Baz  |
+| ~import "test/./Foo/Bar/Baz.l4"~                | Foo.Bar.Baz  |
+
+The default name is made by 
+- deleting any prefix matching the regex ~^.*/\.+/~
+- deleting any suffix matching the suffix ~\.l4\w*$~
+- converting any directory separators to dots
+
+A module can explicitly give itself a name by saying
+
+#+begin_src haskell :noweb-ref l4-example1
+  module Foo.Bar.Baz where
 #+end_src
 
+#+begin_src bnfc :noweb-ref l4bnfc
+  ModuleDecl. Module ::= "module" ObjAttr "where";
+#+end_src
+
+An L4 Module contains a list of directives and statements.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Toplevel.  Tops      ::= [Toplevels];
+  rules      Toplevels ::= Module | Import | Pragma 
+                         | Rule | Entity | Scenario ;
+  terminator Toplevels ";";
+
+  layout toplevel;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+  entrypoints Tops;
+#+end_src
+
+*** import
+
+#+begin_src haskell :noweb-ref l4-example1
+import ContractLaw
+#+end_src
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  Import. Import ::= "import" ObjAttr ;
+#+end_src
+
+*** Directives
+**** module directive is dealt with above
+
+Suppose we have a ContractLaw library:
+
+#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
+  module ContractLaw where
+#+end_src
+
+Other modules are welcome to import this module. They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
+
+*** pragma: version
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules Pragma ::= "pragma" CommaList ;
+#+end_src
+
+*** history
+
+previous versions of this ruleset are accessible where? because this ruleset may refer to previous versions.
+
+*** numbering
+
+A numbering directive instructs the output engine to reset the autonumbering to a specific value.
+
+This is kind of a holdover from the C pre-processor. Do we really need it?
+
+*** Statements
 
 **** Meta-Rules: Interactions and priority
 
@@ -1064,240 +1623,6 @@ rules         CurrID       ::= ":" CurrLabel ":";
 rules         CurrLabel    ::= UIdent ;
 #+end_src
 
-**** String
-
-A normal string looks ~"like this"~ and obeys the usual conventions around escaped backslashes, quotes, and newlines.
-
-**** Language String
-
-A language string is a normal string prefixed with a language ID prefix. Any place you can have one language string, you can have more:
-
-#+begin_example
-:en:"potato"
-:fr:"pomme de terre"
-#+end_example
-
-**** Language Identifiers
-
-A language ID prefix is one or more comma-separated ISO639-1 language codes, where dashes and underscores are accepted.
-
-**** Language Stringset
-
-A Language Stringset is one or more language strings separated by whitespace.
-
-**** Lists
-
-***** Plain Lists
-
-Today's available flavours are: ~[Chocolate, Vanilla, Strawberry]~
-
-***** Conjunctive Lists
-
-The whole situation is a mess.
-
-https://www.lectlaw.com/def/c282.htm says: "There are many cases in law where the conjunctive 'and' is used for the disjunctive 'or' and vice versa."
-
-***** What is the total space?
-
-Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize all of the possible variants from that chapter.
-
-***** Is there a better way?
-
-L4 is a formal language. The meanings of expressions are explicitly defined.
-
-****** Ternary Logic In L4: "three-valued Booleans"
-
-Let ~p :: a -> Ternary~, which is to say, ~p~ is a predicate; given an input of type ~a~, it will always return Yes, No, or Neither -- "neither" meaning "unknown", "undefined", "null", or "wat". This is an example of a [[https://en.wikipedia.org/wiki/Three-valued_logic][ternary logic]].
-
-Here's a predicate: "has five toes on each fore paw". Most cats, the predicate returns ~true~. But some cats have [[https://en.wikipedia.org/wiki/Polydactyl_cat][polydactyly]]. It's an unusual condition. You can count the number of polydactyls per thousand, on the fingers of ... uh, let's just say it's a rare condition. For them, the predicate would return ~false~.
-
-But what about an amputee, who has no forelegs? They don't have six toes on each foot. They don't have five toes on each foot. They don't have feet at all.
-
-What is the hair colour of a bald man?
-
-What is the airspeed velocity of an unladen Martian swallow?
-
-On a form, you would write in "N/A" for "Not applicable".
-
-That's why we need ternary logic: sometimes yes, sometimes no, sometimes neither.
-
-Here's another predicate: "tailless". The Manx breed are considered tailless -- they are "rumpies" and "stumpies".
-
-A cat is special if it is polydactyl.
-
-A cat is special if it is tailless.
-
-A cat is valuable if it is both polydactyl and tailless.
-
-I wanted to say "a cat is special if it is polydactyl or tailless", but that brings up "exclusive or" considerations -- some might say "if it is both polydactyl and tailless than it isn't special, because it's obviously valuable instead." They're reading "xor" into the "or", in the context of the next sentence.
-
-It isn't logical, but it's English!
-
-So we spare ourselves all that grief by giving explicit definitions. Watch.
-
-****** Junction Lists
-
-TO BE CONTINUED
-
-Basically we have
-
-| set theory   | propositional logic | symbol |
-|--------------+---------------------+--------|
-| union        | or                  | \vert  |
-| intersection | and                 | &      |
-
-| example               | ~ | list        | means                           |
-|-----------------------+---+-------------+---------------------------------|
-| some.Unification.term | ~ | [x & y]     | forall u in U, exists u in {x, y} |
-| some.Unification.term | ~ | [x \vert y] | exists u in U, exists u in {x, y} |
-
-In Haskell, ~Data.List.all~ tests a single predicate against a collection of ~a~ values. You can say: the members of the Polydactyly Society are ~all polydactyl~. "Polydactyl" is the predicate. "The Polydactyly Society" is the collection. ~all polydactyl society~ returns ~True~.
-
-#+begin_src haskell
-  polydactyl :: Cat -> Bool
-  polydactyl cat = length cat.frontLeft.toes  > 5 ||
-                   length cat.frontRight.toes > 5
-
-  society = filter polydactyl allcats
-#+end_src
-
-But sometimes you want to test a single value against a collection of predicates. Sometimes you want all the predicates to match.
-
-#+begin_example
-kitchen.canMakeNeapolitan = kitchen ~ [ hasChocolate
-                                      & hasVanilla
-                                      & hasStrawberry ]
-#+end_example
-
-Sometimes you want to test if any of the predicates match.
-
-#+begin_example
-dish.isDangerous = dish ~ [ hasPeanut     -- (hasPeanut dish) == True
-                          | hasWalnut
-                          | hasAlmond ]
-#+end_example
-
-The machinery for this:
-
-#+begin_src haskell :tangle bnfc/blah/Preds.hs
-module Preds where
-
-  allPreds :: Foldable t => t (a -> Bool) -> a -> Bool
-  allPreds preds value = all (flip ($) value) preds
-
-  anyPreds :: Foldable t => t (a -> Bool) -> a -> Bool
-  anyPreds preds value = any (flip ($) value) preds
-
-  numPreds ::                [ a -> Bool ] -> a -> Int
-  numPreds preds value = length (filter (flip ($) value) preds)
-
-  xorPreds ::                [ a -> Bool ] -> a -> Bool
-  xorPreds preds value = 1 == numPreds preds value
-
-#+end_src
-
-In L4, collections of predicates are called "junction lists". The term comes from "conjunctions" and "disjunctions", hence "junctions".
-
-In L4, a *conjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~&~ character, for "and".
-
-In L4, a *disjunctive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~|~ character, for "or".
-
-In L4, an *exclusive list* is defined as a list of two or more predicates, in which the last two predicates are separated by a ~X~ character, for "exclusive or".
-
-In a junction list of three or more elements, the earlier predicates in the list can be separated by a comma "," or by the same as the final separator.
-
-This makes it easy to write:
-
-#+begin_example
-  cats = [ alice
-         , bob
-         , carol
-         , dan
-         ]
-
-  special = [ polydactyl
-            | tailless 
-            ]
-
-  valuable = [ polydactyl
-             & tailless 
-             ]
-#+end_example
-
-Conjunctive lists are syntactic sugar for ~all~.
-
-Disjunctive lists are syntactic sugar for ~any~.
-
-Exclusive lists are syntactic sugar for ~oneOf~.
-
-Lists can nest.
-
-Next we talk about matching.
-
-#+begin_example
-  specialCats  = [ polydactyl | tailless ] cats
-  valuableCats = [ polydactyl & tailless ] cats
-
-  // note that we do NOT support these alternatives in L4 syntax:
-  specialCats  = any [ polydactyl, tailless ] cats
-  valuableCats = all [ polydactyl, tailless ] cats
-
-  dish.isDangerous = dish [ hasPeanut
-                          , hasWalnut
-                          | hasAlmond ]
-#+end_example
-
-Space application is overloaded as follows:
-
-| LHS            | RHS              | meaning                                         |
-|----------------+------------------+-------------------------------------------------|
-| junction list  | single value     |                                                 |
-| single value   | junction list    | boolean                                         |
-|----------------+------------------+-------------------------------------------------|
-| junction list  | list of values   | filter for values which match the junction list |
-| list of values | junction list    | filter for values which match the junction list |
-|----------------+------------------+-------------------------------------------------|
-| list of values | single predicate |                                                 |
-
-The semantics of a conjunctive list:
-#+begin_src haskell :tangle bnfc/blah/Matchable.hs
-  module Matchable where
-
-  -- TODO: make this work!
-
-  class Matchable a where
-    match  :: (Eq a, Foldable t) => a -> t a -> Bool
-
-  newtype ConjList a = ConjList [a]
-  newtype DisjList a = DisjList [a]
-
-  instance Matchable (ConjList a) where
-    match x = all (== x)
-
-  instance Matchable (DisjList a) where
-    match x = any (== x)
-#+end_src
-
-****** "Any" and "all"
-
-Yay English! What's the difference between
-
-"Any zombies will be shot on sight"
-
-and
-
-"All zombies will be shot on sight"
-
-?
-
-No difference!
-
-This is why it's dangerous to reuse words with a rich existing history -- at some point, people will guess wrong.
-
-First-order logic knows how to deal with this situation. That's why we have \exists and \forall.
-
-See also https://inariksit.github.io/cclaw-zettelkasten/ambiguity_of_and.html
-
 **** Namespace Attributes
 
 ***** Automatic singular / plural support
@@ -1319,319 +1644,6 @@ This may turn out to be a bit of a gotcha.
 As in Javascript, objects contain a dictionary of attributes.
 
 As in Haskell, we'd talk about a record type.
-
-**** Multitemporality
-
-Unlike Javascript, an attribute may be /multitemporal/:
-- valid time
-- transaction time
-- decision time
-
-An attribute is also /multivalent/: by default, every attribute of an object can have zero or more values; informally speaking, every attribute of type X is really a list of X.
-
-Let's take a simple example. As in Typescript, we define an instance type for a human:
-- human.birthdate :: Date
-- human.fullname :: String
-- human.nationality :: Country
-
-Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what Wikipedia believes, as of the 10th of September 2020 when I wrote this.
-
-Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY blackSwan
-     ISA Human
-    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
-  //     a person can have multiple nationalities
-         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
-                       , { xtime = 2020-09-10, value = "US"                                } ]
-#+end_src
-
-We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
-
-Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
-
-#+begin_src haskell :noweb-ref l4entity
-  //     a person can have multiple names
-         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
-#+end_src
-
-As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
-- On January 1, celebrities X and Y were known to be dating.
-- By July 1, paparazzi sleuths found out that X and Y had gotten married some time in the past few months; the ceremony was said to have been held on a private island, but nobody's saying where or when it happened.
-- On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
-- On December 1, the couple announced that they had gotten divorced on November 1.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY celebXY
-   GIVEN Tabloid HAVING ceaselessCoverage :: Bool
-     ISA Couple
-    WITH xtime = 2020-01-01, maritalStatus = dating
-         xtime = 2020-07-01, maritalStatus = married
-         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
-         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
-         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
-#+end_src
-
-The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"
-
-**** Epistemics
-
-An attribute may also be /epistemic/:
-- on August 1, Alice learned that she was pregnant
-- on September 1, Alice wrote a letter to Bob telling him that she was pregnant, and sent it via registered post.
-- by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
-- on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
-
-#+begin_src haskell :noweb-ref l4entity
-  SCENARIO alicePregnancy
-     TRACE 2020-08-01 Alice knew { pregnancy = true }
-           2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
-           2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
-           2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
-#+end_src
-
-There should be as many xtimes as there are knowers.
-
-*** Inference: Querying Objects and Attributes
-
-
-
-We can ask fine-grained questions like:
-- On a given date, what did entity E, or The Public, or The System generally, believe to be true about some entity E, or some unit of knowledge K?
-
-By default, L4 expressions will default to the latest known information at the time of decision.
-
-**** Using Object Attributes
-
-Okay. Deep breath. Lower case and upper case are meaningful.
-
-Specific individuals are lowercase, like blackSwan, or celebXY.
-
-Interfaces, or classes, start with an uppercase letter, like Human or Couple.
-
-Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~toldTo~, and ~beliefs~ attributes. This may go away at some point.
-
-We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY veggieBar
-     ISA Business
-    WITH address = [ "1 Veggie Way" ]
-         id      = { idtype = "UEN", idval = "202000000A" }
-         name    = "The Veggie Bar Pte. Ltd."
-
-  ENTITY buyCabbage
-     ISA ContractOfSale
-    WITH date         = 2020-09-10
-         jurisdiction = SG
-         buyer        = blackSwan
-         seller       = veggieBar
-         buyer.consideration  = :USD: 10
-         seller.consideration = [ item1, item2 ]
-    ASOF 2020-09-10
-   WHERE item1 ISA  Item
-               WITH category = "vegetable"
-                    species  = "Brassica oleracea"
-                    cultivar = "capitata"
-#+end_src
-
-ContractLaw is a library class which abstracts the essential elements of a particular contract.
-
-An alternative representation shows a trace of events:
-
-#+begin_src haskell :noweb-ref l4entity
-  SCENARIO saleHistory
-    WITH parties = [ blackSwan, veggieBar ]
-   TRACE 2020-09-01T1210 blackSwan offers     offerDetails
-         2020-09-01T1211 veggieBar accepts    offerDetails
-         2020-09-01T1212 blackSwan pays       veggieBar $10
-         2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
-    ASOF 2020-09-10
-   WHERE offerDetails = { blackSwan.consideration = $10
-                        , veggieBar.consideration = [ item1, item2 ] }
-         item1 ISA Item
-               WITH category = "vegetable"
-                    species  = "Brassica oleracea"
-                    cultivar = "capitata"
-                    quantity = 1
-         item2 ISA Item
-               WITH category = "beverage"
-                    brand    = "Acme Water"
-                    model    = "750mL"
-                    quantity = 1
-#+end_src
-
-from which a pattern-matcher could deem that a legal contract was in place. Let's see what that looks like:
-
-**** Natural Language Generation
-
-#+begin_src text :noweb-ref l4-rules
-  RULE 1 ruleOne :en:"First Rule" NOOP
-#+end_src
-
-What should this say in English?
-
-"First Rule. This rule does nothing."
-
-**** Matching Object Attributes
-
-What you're about to read is basically a Horn clause. If you know Prolog, you will recognize that this is Prolog, dressed in the guise of an object-like paradigm. You might even say, "this has the same F-Logic as Flora-2", except with the syntax of SQL.
-
-Let's start with a super simple case.
-
-#+begin_src haskell :noweb-ref l4entity
-  ENTITY spud1
-     ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
-#+end_src
-
-This converts to Prolog:
-
-#+begin_src prolog
-  species(spud, "Solanum tuberosum").
-  isEdible(spud).
-#+end_src
-
-If we were converting to Flora-2 we would be more intelligent about classes and inheritance, but we're just trying to get our feet wet with logic programming, so we'll do that another time.
-
-Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a special case of some more generic n-place arity relational syntax for FOL" -- and you would be right. ~IS~ and ~ISA~ should be macros. This refactoring of the language will happen soon.
-
-Anyway, now we can run Rule2 on it.
-
-#+begin_src text :noweb-ref l4-rules
-  RULE 2 edible
-   DEEM Item IS EdiblePotato
-            AND TastyFood
-    WHEN Item IS Potato
-     AND Item IS Edible
-#+end_src
-
-Rule 2 relies on rule 3. This is backward chaining.
-  
-#+begin_src text :noweb-ref l4-rules
-  RULE 3 isPotato
-    DEEM Item IS Potato
-    WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
-
-  // an OR-LIST expands to
-  // isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
-  //                                                     ^
-  // an AND-list would expand to
-  // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
-  //                                                     ^
-#+end_src
-
-If this begins to feel weird, it's because under the hood, we're borrowing Prolog's unification and backtracking features.
-
-Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
-
-#+begin_src haskell :noweb-ref l4-rules
-  ENTITY spud2
-     ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
-         previousOwners = [ alice, bob, charlie, daryl ]
-#+end_src
-
-What does that look like in Prolog?
-
-#+begin_src prolog
-  species(spud2, "Solanum tuberosum").
-  isEdible(spud2).
-  previousOwner(spud2, alice).
-  previousOwner(spud2, bob).
-  previousOwner(spud2, charlie).
-  previousOwner(spud2, daryl).
-#+end_src
-
-Now we have an opportunity to explore relational syntax. Think Alloy.
-
-Let's say that some of the previous owners were members of the nobility.
-
-#+begin_src haskell :noweb-ref l4-rules
-  ENTITY alice   ISA Human WITH isNoble = true
-  ENTITY bob     ISA Human WITH isNoble = false
-  ENTITY charlie ISA Human WITH isNoble = true
-  ENTITY daryl   ISA Human WITH isNoble = false
-#+end_src
-
-In Prolog, that reads:
-
-#+begin_src prolog
-  isNoble(alice).
-  isNoble(bob).
-  isNoble(charlie).
-  isNoble(daryl).
-#+end_src
-
-Let's say a potato is Noble if at least two of its previous owners are Noble.
-
-There are a couple ways to say that. This is one way:
-
-#+begin_src haskell :noweb-ref l4-rules
-
-  RULE noblePotato
-    DEEM Item IS Noble
-    WHEN Item ISA Potato
-     AND Item.previousOwners.First IS Noble
-     AND Item.previousOwners.Second IS Noble
-#+end_src
-
-(Maybe this also creates an automatic Item.isNoble?)
-
-That translates to:
-
-#+begin_src prolog
-  isNoble(Item) :- isPotato(Item),
-                   previousOwner(Item, First), isNoble(First),
-                   previousOwner(Item, Second), isNoble(Second),
-                   First != Second.
-#+end_src
-
-This allows us to subsequently use the term Potato instead of Item:
-
-#+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato2
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.isNoble :: Math >= 2
-#+end_src
-
-Alternative syntax:
-
-#+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato3
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
-#+end_src
-
-*** Library: ContractLaw
-
-
-#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
-  RULE 1 elements
-    :en: "Elements of a Contract"
-   GIVEN scenario
-    DEEM scenario.hasContract
-    WHEN [ parties >= 2
-         ,   @ T1 party.Offeror  offers    O
-         ,   @ T3 party.Acceptor accepts   O, T1 <= T3
-         , ! @ T2 party.Offeror  withdraws O, T1 <= T2 <= T3
-         , ! @ T2 party.Acceptor declines  O, T1 <= T2 <= T3
-                  -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
-         , O.Offeror.Consideration
-         & O.Acceptor.Consideration
-         ]
-   WHERE [ O.Offeror.Consideration & O.Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]
-#+end_src
-
-Some unspoken rules are at play:
-- disjoint rule :: Acceptor /= Offeror because any match is automatically narrowed to be disjoint with any previous matches of the same shape, unless there is a WHERE expression that explicitly broadens the match to allow X to be Y
-- with GIVEN :: namespaces of the GIVEN parameters are available in scope for the rest of the rule
-- singular / plural unification :: .parties and .party are automatically the same object
-
-We may want to express that a counteroffer implies a decline.
 
 *** Ontology
 
@@ -2233,6 +2245,38 @@ See also: argumentation theory.
 Our reasoner should be able to combine backward and forward chaining.
 
 https://cliplab.org/papers/Haemmerle14ppdp.pdf
+
+* Standard Libraries
+
+** ContractLaw
+
+
+#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
+  RULE 1 elements
+    :en: "Elements of a Contract"
+   GIVEN scenario
+    DEEM scenario.hasContract
+    WHEN [ parties >= 2
+         ,   @ T1 party.Offeror  offers    O
+         ,   @ T3 party.Acceptor accepts   O, T1 <= T3
+         , ! @ T2 party.Offeror  withdraws O, T1 <= T2 <= T3
+         , ! @ T2 party.Acceptor declines  O, T1 <= T2 <= T3
+                  -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
+         , O.Offeror.Consideration
+         & O.Acceptor.Consideration
+         ]
+   WHERE [ O.Offeror.Consideration & O.Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]
+#+end_src
+
+Some unspoken rules are at play:
+- disjoint rule :: Acceptor /= Offeror because any match is automatically narrowed to be disjoint with any previous matches of the same shape, unless there is a WHERE expression that explicitly broadens the match to allow X to be Y
+- with GIVEN :: namespaces of the GIVEN parameters are available in scope for the rest of the rule
+- singular / plural unification :: .parties and .party are automatically the same object
+
+We may want to express that a counteroffer implies a decline.
+
+** Jurisdiction
+
 
 * Output
 

@@ -71,6 +71,20 @@ ENTITY spud1
    ISA Item
   WITH species  = "Solanum tuberosum"
        isEdible = true
+ENTITY veggieBar
+   ISA Business
+  WITH address = [ "1 Veggie Way" ]
+       id      = { idtype = "UEN", idval = "202000000A" }
+       name    = "The Veggie Bar Pte. Ltd."
+ENTITY Business
+   ISA Interface
+  WITH address = [ Str ]
+       id      = [ { idtype = String, idval = Str }
+                 , { idtype = "UEN", idval = UENString } ]
+       name    = Str
+ENTITY UENString
+   ISA Token
+  WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
 ENTITY blackSwan
    ISA Human
   WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
@@ -92,12 +106,6 @@ SCENARIO alicePregnancy
          2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
          2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
          2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
-ENTITY veggieBar
-   ISA Business
-  WITH address = [ "1 Veggie Way" ]
-       id      = { idtype = "UEN", idval = "202000000A" }
-       name    = "The Veggie Bar Pte. Ltd."
-
 ENTITY buyCabbage
    ISA ContractOfSale
   WITH date         = 2020-09-10

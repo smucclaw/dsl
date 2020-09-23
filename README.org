@@ -188,18 +188,18 @@ Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a
 
 ** Limbs
 
-The body of a stanzas may comprise one or more limbs. In the above examples, we have already seen a "WHEN" limb in action.
+The body of a stanza may comprise one or more limbs. In the above examples, we have already seen some limbs in action.
 
-*** The WHEN Limb: Constraint Expressions
+*** The WHEN Limb: Boolean Expressions
 
-Constraint Expressions are used both to evaluate truth values as part of a reasoning operation, and to "assign" values immutably.
+Boolean Expressions are used in a WHEN limb to evaluate truth values as part of a reasoning operation.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
   rules      UnlessExpr ::= | "UNLESS" BoolExp;
 #+end_src
 
-More on boolean expressions below.
+They are very similar to the constraint expressions we've already seen in DEEM rules.
 
 The When Limb has an optional When part and an optional Unless part.
 
@@ -263,7 +263,7 @@ Here's a possible truth table for how the When/Unless limbs desugar. The size of
 
 *** Deontics and the Action Limb
 
-Some party may do some thing, to some standard. This limb talks about the thing and the standard.
+In a modal stanza, some party is seen doing some thing, to some standard. This limb talks about the thing and the standard.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules    DeonticLimb ::= DeonticExpr ActionLimb;
@@ -286,7 +286,7 @@ Every deontic modal needs a deadline -- if you don't have to do something by a c
   rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
 #+end_src
 
-We need to beef up the temporal expressions, but for now they are:
+We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
@@ -333,7 +333,7 @@ The "Given" limb is analogous to providing arguments to a function.
                            | [ObjAttr] HavingLimb ;
 #+end_src
 
-The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb.
+The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb, but is scoped to the terms uttered in the GIVEN.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
@@ -341,13 +341,43 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
   separator nonempty HavingBoolExp ";";
 #+end_src
 
-The scope of a GivenExpr is the entire ancestry of that node in the obligation graph.
+The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
 
 *** WITH
-The "With" limb assigns attributes to an individual or a class.
+The "With" limb assigns attributes to an individual
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+#+end_src
+
+... or a record interface, or a class if you want to think of it that way ...
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY Business
+     ISA Record
+    WITH address = [ String ]
+         id      = [ { idtype = String, idval = String }
+                   , { idtype = "UEN" , idval = UENString } ]
+         name    = String
+#+end_src
+
+... or something halfway between a type and a token definition, basically.
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY UENString
+     ISA Token
+    WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
+#+end_src
+
+If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
+  rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
+  rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
   rules      WithIn    ::= [Constraint] | TraceExpr;
   separator nonempty WithIn ";";
 #+end_src
@@ -370,7 +400,7 @@ The "ASOF" limb is syntactic shorthand for indicating a default system time for 
 
 We support ISO8601 formats for dates and times.
 
-In the future a more comprehensive time library will make it possible to say things like "the fourth Friday of every month, failing which the third Thursday."
+In the future a more comprehensive time library will make it possible to say things like "the fifth Friday of every month, failing which the third Thursday."
 
 *** WHERE
 
@@ -422,6 +452,7 @@ The "MATCHTYPE" rule body is for debugging purposes only.
   rules   MatchVars ::= "MathExpr"    MathExpr
                       | "MatchExpr"   MatchExpr
                       | "RelBool"     RelBool
+                      | "PlainVal"    PlainVal
                       | "VarExpr"     VarExpr
                       | "Constraint"  Constraint
                       | "Numberlike"  Numberlike
@@ -1066,7 +1097,7 @@ To give the parser a hand the current language definition lets you annotate ~Obj
 
 #+begin_src bnfc :noweb-ref l4bnfc
   TU.        TypeUnify      ::= "::" "Unify";
-  TS.        TypeString     ::= "::" "String";
+  TS.        TypeString     ::= "::" "STRING";
   TB.        TypeBool       ::= "::" "Bool";
   TM.        TypeMath       ::= "::" "Math";
   TOM.       TypeObjMethod  ::= "::" "ObjMethod";
@@ -1307,12 +1338,6 @@ Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~t
 We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY veggieBar
-     ISA Business
-    WITH address = [ "1 Veggie Way" ]
-         id      = { idtype = "UEN", idval = "202000000A" }
-         name    = "The Veggie Bar Pte. Ltd."
-
   ENTITY buyCabbage
      ISA ContractOfSale
     WITH date         = 2020-09-10

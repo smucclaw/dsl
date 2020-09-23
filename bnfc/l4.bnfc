@@ -48,7 +48,8 @@ rules      GivenExpr ::=   [ObjAttr]
 rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
 rules     HavingBoolExp ::= BoolExp;
 separator nonempty HavingBoolExp ";";
-rules      WithLimb  ::= | "WITH" "{" [WithIn] "}";
+rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
+rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
 rules      WithIn    ::= [Constraint] | TraceExpr;
 separator nonempty WithIn ";";
 Asof.      Asof      ::= "ASOF" DateTime ;
@@ -66,6 +67,7 @@ rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
 rules   MatchVars ::= "MathExpr"    MathExpr
                     | "MatchExpr"   MatchExpr
                     | "RelBool"     RelBool
+                    | "PlainVal"    PlainVal
                     | "VarExpr"     VarExpr
                     | "Constraint"  Constraint
                     | "Numberlike"  Numberlike
@@ -199,7 +201,7 @@ separator nonempty Constraint  "," ;
 separator nonempty BraceList   "," ;
 rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 TU.        TypeUnify      ::= "::" "Unify";
-TS.        TypeString     ::= "::" "String";
+TS.        TypeString     ::= "::" "STRING";
 TB.        TypeBool       ::= "::" "Bool";
 TM.        TypeMath       ::= "::" "Math";
 TOM.       TypeObjMethod  ::= "::" "ObjMethod";

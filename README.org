@@ -424,7 +424,6 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "RelBool"     RelBool
                       | "VarExpr"     VarExpr
                       | "Constraint"  Constraint
-                      | "Currency"    Currency
                       | "Numberlike"  Numberlike
                       | "BoolExp"     BoolExp
                       | "ObjMethod"   ObjMethod
@@ -603,11 +602,17 @@ rules         CurrLabel    ::= UIdent ;
                           | MathExpr  "-" MathExpr1;
   rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
                           | MathExpr1 "/" MathExpr2 ;
-  rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
-  coercions  MathExpr 2;
+  rules      MathExpr2  ::= CurrencyPrefix MathExpr3 ;
+  rules      MathExpr3  ::= Numberlike
+                          | ObjMethod TypeMath
+                          | ObjMethod ;
+  coercions  MathExpr 3;
   rules      Numberlike ::=        Numeric
-                          |        Numeric "%" ;
+                          |        Numeric "%";
   rules      Numeric    ::= Integer | Double ;
+  NoCurrency.   CurrencyPrefix ::= ;
+  CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
+  CurrDollar.   CurrencyPrefix ::= "$";
 #+end_src
 
 *** Currency expressions
@@ -616,21 +621,7 @@ Currencies are expressed specifically as ~:SGD: 1400~ or generically as ~$~. Whe
 
 Many contracts deal with dollar calculations. L4 supports composable primitives and functional idioms for mathematical expressions.
 
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      Currency   ::= Currency   "+" Currency1
-                          | Currency   "-" Currency1;
-  rules      Currency1  ::= Currency1  "*" Numberlike
-                          | Numberlike "*" Currency1
-                          | Currency1  "/" Numberlike
-                          | Numberlike "/" Currency1 ;
-  rules      Currency2  ::= "$"    Numeric
-                          | CurrID Numeric
-                          | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
-                          | ObjMethod TypeCurrency ;
-  coercions Currency 3;
-
-#+end_src
+For now the parser reads currency and math expressions together.
 
 *** Boolean expressions
 
@@ -660,16 +651,6 @@ At the moment this syntax is static. In the future it would be nice to be able t
   MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
   MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
   MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
-#+end_src
-
-*** Boolean expressions comparing currency expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  CurrLT.    BoolExp6   ::= Currency "<"  Currency;
-  CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
-  CurrGT.    BoolExp6   ::= Currency ">"  Currency;
-  CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
-  CurrEq.    BoolExp6   ::= Currency "==" Currency;
 #+end_src
 
 *** Boolean expressions comparing strings
@@ -1090,7 +1071,6 @@ To give the parser a hand the current language definition lets you annotate ~Obj
   TM.        TypeMath       ::= "::" "Math";
   TOM.       TypeObjMethod  ::= "::" "ObjMethod";
   TT.        TypeTemporal   ::= "::" "Temporal";
-  TC.        TypeCurrency   ::= "::" "Currency";
 #+end_src
 
 *** A menagerie of data types
@@ -1098,8 +1078,8 @@ To give the parser a hand the current language definition lets you annotate ~Obj
 #+begin_src bnfc :noweb-ref l4bnfc
 
   rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
-  rules      PlainVal  ::= String | Currency
-                         | BraceList | JunctionList | ArrayOfBraces
+  rules      PlainVal  ::= String
+                         | BraceList | ArrayOfBraces
                          | DateTime | DateTime "to" DateTime;
 
 #+end_src
@@ -2123,7 +2103,7 @@ We may want to express that a counteroffer implies a decline.
 
 ** BNFC
 #+begin_src bnfc :noweb yes :tangle bnfc/l4.bnfc
-// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
 <<l4bnfc>>
 <<l4expressions>>
 #+end_src

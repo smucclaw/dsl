@@ -30,7 +30,6 @@ RULE  3 Net3          // the "hence" target of rule 2 above
    MUST refund Amount
  BEFORE return.date + 3 days
   WHERE Amount = $sale.cash * 90%
-RULE 1 ruleOne :en:"First Rule" NOOP
 ENTITY spud2
    ISA Item
   WITH species  = "Solanum tuberosum"
@@ -67,33 +66,6 @@ RULE noblePotato2
 RULE noblePotato3
   DEEM Potato IS Noble
   WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
-
-// the Prolog version of the above is:
-// isEdiblePotato(Item) :- isPotato(Item), isEdible(Item).
-// isTastyFood(Item)    :- isPotato(Item), isEdible(Item).
-//
-// the Flora-2 version of this would probably rely on the Item having properties
-//
-
-
-// Meng seems to be reinventing Haskell
-// let's call it HasSQL, haha
-
-/* like, for example ...
-
-append "poo" forEach [Foo, Bar, Baz]
-
-is equivalent to, in some other languages,
-
-    [Foo, Bar, Baz].map(x=>x+"poo")
-or
-    (++ "poo") <$> [foo, bar, baz]
-
-so we can sneak that in to our language too, just with lots of
-syntactic sugar so the "business developers" don't notice we're doing
-a list comprehension
-
-*/
 
 ENTITY spud1
    ISA Item

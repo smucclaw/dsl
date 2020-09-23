@@ -1526,6 +1526,8 @@ It isn't logical, but it's English!
 So we spare ourselves all that grief by giving explicit definitions. Watch.
 ** Less Important Concepts -- Random Thoughts, Really
 
+This section is due for review and possible deletion. If this is your first time through the document you can skip this section.
+
 We build on a combination of the lamdba, mu, and pi calculi. What would we do without the Greeks?
 
 *** Temporals: Time

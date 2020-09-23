@@ -41,6 +41,8 @@ RULE showMatches
             WhenLimb  WHEN Foo.bar == "baz"
             WhereLimb WHERE Foo.bar = "baz"
             WhereLimb WHERE Foo.bar = $10 * 2
+            WhereLimb WHERE Foo.bar = $some.currency.var * 2
+            WhereLimb WHERE Foo.bar = $some.currency.var * (2 + 1)
             WhereLimb WHERE Foo.bar = $some.currency.var * 90%
             WhereLimb WHERE Foo = $10 * 2
             WhereLimb WHERE Foo = $tendollars * 2

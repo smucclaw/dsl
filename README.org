@@ -522,10 +522,10 @@ Many contracts deal with dollar calculations. L4 supports composable primitives 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      Currency   ::= Currency   "+" Currency1
                           | Currency   "-" Currency1;
-  rules      Currency1  ::= Currency1  "*" Numberlike
-                          | Numberlike "*" Currency1
-                          | Currency1  "/" Numberlike
-                          | Numberlike "/" Currency1 ;
+  rules      Currency1  ::= Currency1  "*" MathExpr
+                          | MathExpr "*" Currency1
+                          | Currency1  "/" MathExpr
+                          | MathExpr "/" Currency1 ;
   rules      Currency2  ::= "$"    Numeric
                           | CurrID Numeric
                           | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay

@@ -188,7 +188,6 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "RelBool"     RelBool
                       | "VarExpr"     VarExpr
                       | "Constraint"  Constraint
-                      | "Currency"    Currency
                       | "Numberlike"  Numberlike
                       | "BoolExp"     BoolExp
                       | "ObjMethod"   ObjMethod
@@ -484,7 +483,6 @@ further constrains NorthAmericans to those parties whose state is WA or province
   TM.        TypeMath       ::= "::" "Math";
   TOM.       TypeObjMethod  ::= "::" "ObjMethod";
   TT.        TypeTemporal   ::= "::" "Temporal";
-  TC.        TypeCurrency   ::= "::" "Currency";
 #+end_src
 
 A menagerie of data types
@@ -492,8 +490,8 @@ A menagerie of data types
 #+begin_src bnfc :noweb-ref l4bnfc
 
   rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
-  rules      PlainVal  ::= String | Currency
-                         | BraceList | JunctionList | ArrayOfBraces
+  rules      PlainVal  ::= String 
+                         | BraceList | ArrayOfBraces
                          | DateTime | DateTime "to" DateTime;
 
 #+end_src
@@ -505,11 +503,17 @@ Math expressions
                           | MathExpr  "-" MathExpr1;
   rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
                           | MathExpr1 "/" MathExpr2 ;
-  rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
-  coercions  MathExpr 2;
+  rules      MathExpr2  ::= CurrencyPrefix MathExpr3 ;
+  rules      MathExpr3  ::= Numberlike
+                          | ObjMethod TypeMath
+                          | ObjMethod ;
+  coercions  MathExpr 3;
   rules      Numberlike ::=        Numeric
-                          |        Numeric "%" ;
+                          |        Numeric "%";
   rules      Numeric    ::= Integer | Double ;
+  NoCurrency.   CurrencyPrefix ::= ;
+  CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
+  CurrDollar.   CurrencyPrefix ::= "$";
 #+end_src
 
 Currency expressions
@@ -518,21 +522,7 @@ Currencies are expressed specifically as ~:SGD: 1400~ or generically as ~$~. Whe
 
 Many contracts deal with dollar calculations. L4 supports composable primitives and functional idioms for mathematical expressions.
 
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      Currency   ::= Currency   "+" Currency1
-                          | Currency   "-" Currency1;
-  rules      Currency1  ::= Currency1  "*" MathExpr
-                          | MathExpr "*" Currency1
-                          | Currency1  "/" MathExpr
-                          | MathExpr "/" Currency1 ;
-  rules      Currency2  ::= "$"    Numeric
-                          | CurrID Numeric
-                          | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
-                          | ObjMethod TypeCurrency ;
-  coercions Currency 3;
-
-#+end_src
+We pretend that currency expressions are a subset of math expressions.
 
 Boolean expressions
 
@@ -565,14 +555,6 @@ Boolean expressions comparing math expressions
 #+end_src
 
 Boolean expressions comparing math expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  CurrLT.    BoolExp6   ::= Currency "<"  Currency;
-  CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
-  CurrGT.    BoolExp6   ::= Currency ">"  Currency;
-  CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
-  CurrEq.    BoolExp6   ::= Currency "==" Currency;
-#+end_src
 
 Boolean expressions comparing strings
 

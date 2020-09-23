@@ -42,7 +42,6 @@ rules   MatchVars ::= "MathExpr"    MathExpr
                     | "RelBool"     RelBool
                     | "VarExpr"     VarExpr
                     | "Constraint"  Constraint
-                    | "Currency"    Currency
                     | "Numberlike"  Numberlike
                     | "BoolExp"     BoolExp
                     | "ObjMethod"   ObjMethod
@@ -79,34 +78,27 @@ TB.        TypeBool       ::= "::" "Bool";
 TM.        TypeMath       ::= "::" "Math";
 TOM.       TypeObjMethod  ::= "::" "ObjMethod";
 TT.        TypeTemporal   ::= "::" "Temporal";
-TC.        TypeCurrency   ::= "::" "Currency";
 
 rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
-rules      PlainVal  ::= String | Currency
-                       | BraceList | JunctionList | ArrayOfBraces
+rules      PlainVal  ::= String 
+                       | BraceList | ArrayOfBraces
                        | DateTime | DateTime "to" DateTime;
 
 rules      MathExpr   ::= MathExpr  "+" MathExpr1
                         | MathExpr  "-" MathExpr1;
 rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
                         | MathExpr1 "/" MathExpr2 ;
-rules      MathExpr2  ::= Numberlike | ObjMethod TypeMath ;
-coercions  MathExpr 2;
+rules      MathExpr2  ::= CurrencyPrefix MathExpr3 ;
+rules      MathExpr3  ::= Numberlike
+                        | ObjMethod TypeMath
+                        | ObjMethod ;
+coercions  MathExpr 3;
 rules      Numberlike ::=        Numeric
-                        |        Numeric "%" ;
+                        |        Numeric "%";
 rules      Numeric    ::= Integer | Double ;
-rules      Currency   ::= Currency   "+" Currency1
-                        | Currency   "-" Currency1;
-rules      Currency1  ::= Currency1  "*" Numberlike
-                        | Numberlike "*" Currency1
-                        | Currency1  "/" Numberlike
-                        | Numberlike "/" Currency1 ;
-rules      Currency2  ::= "$"    Numeric
-                        | CurrID Numeric
-                        | "$" ObjMethod -- let's have more reduce/reduce conflicts, yay
-                        | ObjMethod TypeCurrency ;
-coercions Currency 3;
-
+NoCurrency.   CurrencyPrefix ::= ;
+CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
+CurrDollar.   CurrencyPrefix ::= "$";
 BAnd1.     BoolExp    ::= BoolExp "&&"  BoolExp1;
 BAnd2.     BoolExp    ::= BoolExp "AND" BoolExp1 ;
 BOr1.      BoolExp1   ::= BoolExp1 "||"  BoolExp2;
@@ -123,11 +115,6 @@ MathLTE.   BoolExp6   ::= MathExpr "<=" MathExpr;
 MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
 MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
 MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
-CurrLT.    BoolExp6   ::= Currency "<"  Currency;
-CurrLTE.   BoolExp6   ::= Currency "<=" Currency;
-CurrGT.    BoolExp6   ::= Currency ">"  Currency;
-CurrGTE.   BoolExp6   ::= Currency ">=" Currency;
-CurrEq.    BoolExp6   ::= Currency "==" Currency;
 StrEq1.    BoolExp6   ::= String "==" ObjMethod ;
 StrEq2.    BoolExp6   ::= ObjMethod "==" String ;
 

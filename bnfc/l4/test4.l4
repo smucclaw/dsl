@@ -47,6 +47,12 @@ RULE showMatches
             BoolExp Foo IS Bar
             BoolExp Foo HAS Poo.Elem
             BoolExp Foo HAS Poo.Elem ~ [Junction]
+	    JunctionList [ foo, bar ]
+	    JunctionList [ foo & bar ]
+	    JunctionList [ foo | bar ]
+	    JunctionList [ foo | bar | quux ]
+	    JunctionList [ { foo=bar } | { bar=baz } | { quux=q } ]
+	    JunctionList [ { foo=bar, f=b } , { bar=baz } , { quux=q } ]
             VarExpr $someCurrency.var * 10%
             MathExpr 10
             MathExpr 10 + 20

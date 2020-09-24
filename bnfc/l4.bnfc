@@ -69,6 +69,7 @@ rules   MatchVars ::= "MathExpr"    MathExpr
                     | "RelBool"     RelBool
                     | "PlainVal"    PlainVal
                     | "VarExpr"     VarExpr
+                    | "JunctionList" JunctionList
                     | "Constraint"  Constraint
                     | "Numberlike"  Numberlike
                     | "BoolExp"     BoolExp
@@ -81,7 +82,6 @@ rules   MatchVars ::= "MathExpr"    MathExpr
                     | "WhereLimb"   WhereLimb
                     | "DeonticLimb" DeonticLimb
                     | "BraceList"   BraceList
-                    | "ArrayOfBraces"   ArrayOfBraces
                     | "HenceLimb"   HenceLimb;
 separator nonempty MatchVars ";";
 RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
@@ -161,21 +161,21 @@ JL_Xor.    JunctionList ::=    XorList  ;
 JL_Comma.  JunctionList ::=  CommaList  ;
 
 CommaList.  CommaList ::= "[" [CommaElem] "]";
-rules      CommaElem ::= ObjMethod | String;
+rules      CommaElem ::= ObjMethod | String | BraceList;
 separator nonempty CommaElem ",";
 
 AndList.   AndList ::= AndElem "&" [AndElem];
-rules      AndElem ::= ObjMethod | String;
+rules      AndElem ::= ObjMethod | String | BraceList;
 _.         AndList ::= "[" AndList "]" ;
 separator nonempty AndElem "&";
 
 OrList.    OrList ::= OrElem "|" [OrElem];
-rules      OrElem ::= ObjMethod | String;
+rules      OrElem ::= ObjMethod | String | BraceList;
 _.         OrList ::= "[" OrList "]" ;
 separator nonempty OrElem "|";
 
 XorList.   XorList ::= XorElem "^" [XorElem];
-rules      XorElem ::= ObjMethod | String;
+rules      XorElem ::= ObjMethod | String | BraceList;
 _.         XorList ::= "[" XorList "]" ;
 separator nonempty XorElem "^";
 
@@ -196,9 +196,8 @@ rules      UnifyStar ::= "*" ;
 rules      UnifyBracket ::= "<" [CommaElem] ">" ;
 rules BraceList     ::= "{" [Constraint] "}" ;
 rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
-rules ArrayOfBraces ::= "[" [BraceList] "]";
 separator nonempty Constraint  "," ;
-separator nonempty BraceList   "," ;
+
 rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 TU.        TypeUnify      ::= "::" "Unify";
 TS.        TypeString     ::= "::" "STRING";
@@ -209,7 +208,7 @@ TT.        TypeTemporal   ::= "::" "Temporal";
 
 rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
 rules      PlainVal  ::= String
-                       | BraceList | ArrayOfBraces
+                       | BraceList
                        | DateTime | DateTime "to" DateTime;
 
 token UIdent (upper (letter | digit | '_')*) ; -- doesn't seem to work for single character idents though, like P

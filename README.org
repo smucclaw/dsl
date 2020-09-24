@@ -95,7 +95,7 @@ Deem rules are a good place to shoehorn your function definitions.
 
 More about these limbs below.
 
-**** Modals
+**** Modals: welcome to the PARTY
 
 A modal stanza defines a node in the obligation graph. These express what Ken Adams calls
 
@@ -343,8 +343,17 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
 
 The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
 
-*** WITH
-The "With" limb assigns attributes to an individual
+*** WITH: attributes
+The "With" limb assigns attributes to the subject of an ENTITY, DEEM, or WHERE clause.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
+  rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
+  rules      WithIn    ::= [Constraint] | TraceExpr;
+  separator nonempty WithIn ";";
+#+end_src
+
+A lower-case entity is an individual -- a concrete "instance".
 
 #+begin_src haskell :noweb-ref l4entity
   ENTITY veggieBar
@@ -354,33 +363,32 @@ The "With" limb assigns attributes to an individual
          name    = "The Veggie Bar Pte. Ltd."
 #+end_src
 
-... or a record interface, or a class if you want to think of it that way ...
+But you can also use WITH to define the abstract form -- you might call it a record type, or an interface, or a class; it starts with an upper-case letter.
+
+If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
 #+begin_src haskell :noweb-ref l4entity
   ENTITY Business
      ISA Record
     WITH address = [ String ]
-         id      = [ { idtype = String, idval = String }
-                   , { idtype = "UEN" , idval = UENString } ]
+         id      = [ { idtype = "UEN" , idval = UENString }
+                   | { idtype = String, idval = String } ]
          name    = String
 #+end_src
 
-... or something halfway between a type and a token definition, basically.
+(Yes, the "id" attribute above has two alternative shapes -- think of it as a sum type.)
+
+You can also use ENTITY to define a type whose values must obey a certain regex:
 
 #+begin_src haskell :noweb-ref l4entity
   ENTITY UENString
-     ISA Token
+     ISA Type
     WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
 #+end_src
 
-If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
+Failure to obey that regex is a compile-time error.
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
-  rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
-  rules      WithIn    ::= [Constraint] | TraceExpr;
-  separator nonempty WithIn ";";
-#+end_src
+It is real tempting to say, "hey, if we can do regex, why not go all the way with dependent types?"
 
 *** The "ASOF" Limb and time formats
 
@@ -454,6 +462,7 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "RelBool"     RelBool
                       | "PlainVal"    PlainVal
                       | "VarExpr"     VarExpr
+                      | "JunctionList" JunctionList
                       | "Constraint"  Constraint
                       | "Numberlike"  Numberlike
                       | "BoolExp"     BoolExp
@@ -466,7 +475,6 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "WhereLimb"   WhereLimb
                       | "DeonticLimb" DeonticLimb
                       | "BraceList"   BraceList
-                      | "ArrayOfBraces"   ArrayOfBraces
                       | "HenceLimb"   HenceLimb;
   separator nonempty MatchVars ";";
 #+end_src
@@ -745,21 +753,21 @@ Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize a
   JL_Comma.  JunctionList ::=  CommaList  ;
 
   CommaList.  CommaList ::= "[" [CommaElem] "]";
-  rules      CommaElem ::= ObjMethod | String;
+  rules      CommaElem ::= ObjMethod | String | BraceList;
   separator nonempty CommaElem ",";
 
   AndList.   AndList ::= AndElem "&" [AndElem];
-  rules      AndElem ::= ObjMethod | String;
+  rules      AndElem ::= ObjMethod | String | BraceList;
   _.         AndList ::= "[" AndList "]" ;
   separator nonempty AndElem "&";
 
   OrList.    OrList ::= OrElem "|" [OrElem];
-  rules      OrElem ::= ObjMethod | String;
+  rules      OrElem ::= ObjMethod | String | BraceList;
   _.         OrList ::= "[" OrList "]" ;
   separator nonempty OrElem "|";
 
   XorList.   XorList ::= XorElem "^" [XorElem];
-  rules      XorElem ::= ObjMethod | String;
+  rules      XorElem ::= ObjMethod | String | BraceList;
   _.         XorList ::= "[" XorList "]" ;
   separator nonempty XorElem "^";
 #+end_src
@@ -995,11 +1003,12 @@ See Constraint Unification for details.
 #+begin_src bnfc :noweb-ref l4bnfc
   rules BraceList     ::= "{" [Constraint] "}" ;
   rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
-  rules ArrayOfBraces ::= "[" [BraceList] "]";
   separator nonempty Constraint  "," ;
-  separator nonempty BraceList   "," ;
+
   rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 #+end_src
+
+TODO: refactor the ArrayOfBracesOr/And syntax into the JunctionList by allowing the content of a JunctionList to be a BraceList.
 
 
 THIS IS STILL UNDER CONSTRUCTION
@@ -1110,7 +1119,7 @@ To give the parser a hand the current language definition lets you annotate ~Obj
 
   rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
   rules      PlainVal  ::= String
-                         | BraceList | ArrayOfBraces
+                         | BraceList
                          | DateTime | DateTime "to" DateTime;
 
 #+end_src

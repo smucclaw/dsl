@@ -77,13 +77,13 @@ ENTITY veggieBar
        id      = { idtype = "UEN", idval = "202000000A" }
        name    = "The Veggie Bar Pte. Ltd."
 ENTITY Business
-   ISA Interface
-  WITH address = [ Str ]
-       id      = [ { idtype = String, idval = Str }
-                 , { idtype = "UEN", idval = UENString } ]
-       name    = Str
+   ISA Record
+  WITH address = [ String ]
+       id      = [ { idtype = "UEN" , idval = UENString }
+                 | { idtype = String, idval = String } ]
+       name    = String
 ENTITY UENString
-   ISA Token
+   ISA Type
   WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
 ENTITY blackSwan
    ISA Human

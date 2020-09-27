@@ -206,8 +206,8 @@ transMathExpr x = case x of
   AbsL.MathExpr3ObjMethod objmethod -> transObjMethod objmethod
 transNumberlike :: AbsL.Numberlike -> Exp ()
 transNumberlike x = case x of
-  AbsL.NumberlikeNumeric numeric -> ConstE () (IntV (transNumeric numeric))
-  AbsL.Numberlike1 numeric -> ConstE () (IntV (transNumeric numeric))
+  AbsL.NumberlikeNumeric numeric -> ValE () (IntV (transNumeric numeric))
+  AbsL.Numberlike1 numeric -> ValE () (IntV (transNumeric numeric))
 transNumeric :: AbsL.Numeric -> Integer
 transNumeric x = case x of
   AbsL.NumericInteger integer -> integer
@@ -235,8 +235,8 @@ transBoolExp x = case x of
   -- AbsL.StrEq1 string objmethod -> failure x
   -- AbsL.StrEq2 objmethod string -> failure x
   -- AbsL.BMatch matchexpr -> failure x
-  AbsL.BTrue truebool -> ConstE () (BoolV True)
-  AbsL.BFalse falsebool -> ConstE () (BoolV False)
+  AbsL.BTrue truebool -> ValE () (BoolV True)
+  AbsL.BFalse falsebool -> ValE () (BoolV False)
 transLikelihood :: AbsL.Likelihood -> Result
 transLikelihood x = case x of
   AbsL.Likely -> failure x
@@ -311,7 +311,7 @@ transXorElem x = case x of
   AbsL.XorElemString string -> failure x
 transObjAttrElem :: AbsL.ObjAttrElem -> Exp ()
 transObjAttrElem x = case x of
-  AbsL.ObjAttrElemIdent ident -> VarE () (transIdent ident)
+  AbsL.ObjAttrElemIdent ident -> VarE () (VarNm (transIdent ident))
   -- AbsL.ObjAttrElemUIdent uident -> failure x
 transObjAttr :: AbsL.ObjAttr -> Result
 transObjAttr x = case x of

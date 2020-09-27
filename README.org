@@ -109,14 +109,14 @@ A modal stanza defines a node in the obligation graph. These express what Ken Ad
     GIVEN sale          // defined in rule 1 above
     PARTY Buyer
       MAY return Item
-   BEFORE sale.date + 3 weeks
+   BEFORE sale.date + 3 WEEKS
     HENCE Net3          // targets rule 3 below
 
   RULE  3 Net3          // the "hence" target of rule 2 above
     GIVEN return        // defined in rule 2 above
     PARTY Seller
      MUST refund Amount
-   BEFORE return.date + 3 days
+   BEFORE return.date + 3 DAYS
     WHERE Amount = $sale.cash * 90%
 #+end_src
 
@@ -195,8 +195,8 @@ The body of a stanza may comprise one or more limbs. In the above examples, we h
 Boolean Expressions are used in a WHEN limb to evaluate truth values as part of a reasoning operation.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      WhenLimb   ::= | "WHEN"   BoolExp UnlessExpr;
-  rules      UnlessExpr ::= | "UNLESS" BoolExp;
+  rules      WhenLimb   ::= | "WHEN"   Exp UnlessExpr;
+  rules      UnlessExpr ::= | "UNLESS" Exp;
 #+end_src
 
 They are very similar to the constraint expressions we've already seen in DEEM rules.
@@ -289,16 +289,16 @@ Every deontic modal needs a deadline -- if you don't have to do something by a c
 We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr 
-                          | "EARLIEST" JunctionList
-                          | "LATEST"   JunctionList;
+  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
+                          | "EARLIEST" LstExp
+                          | "LATEST"   LstExp;
   rules     DurationExpr ::= | "+" Duration ;
-  TDY.      Duration     ::= Integer "years" ;
-  TDM.      Duration     ::= Integer "months" ;
-  TDW.      Duration     ::= Integer "weeks" ;
-  TDD.      Duration     ::= Integer "days" ;
-  TDBD.     Duration     ::= Integer "business" "days" ;
-  TDDH.     Duration     ::= Integer "days" "and" Integer "hours" ;
+  TDY.      Duration     ::= Integer "YEARS" ;
+  TDM.      Duration     ::= Integer "MONTHS" ;
+  TDW.      Duration     ::= Integer "WEEKS" ;
+  TDD.      Duration     ::= Integer "DAYS" ;
+  TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
+  TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
   DNoHence. HenceLimb    ::= ;
   DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
   DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
@@ -337,7 +337,7 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-  rules     HavingBoolExp ::= BoolExp;
+  rules     HavingBoolExp ::= Exp;
   separator nonempty HavingBoolExp ";";
 #+end_src
 
@@ -368,22 +368,53 @@ But you can also use WITH to define the abstract form -- you might call it a rec
 If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY Business
+   RULE  Business
+    DEEM Business
      ISA Record
     WITH address = [ String ]
          id      = [ { idtype = "UEN" , idval = UENString }
                    | { idtype = String, idval = String } ]
          name    = String
+         owner   = Person
+#+end_src
+
+#+begin_src haskell :noweb-ref l4entity
+  RULE   Person
+    DEEM Person
+     ISA Record
+    WITH address = [ String ]
+         id      = [ { idtype = "UEN" , idval = UENString }
+                   | { idtype = String, idval = String }
+                   ]
+         name    = String
+         type    = [ "Natural" , "Corporate" | "Trust" ]
+
+  RULE Human     DEEM Human     ISA Person WITH type = "Natural"
+  RULE Company   DEEM Company   ISA Person WITH type = "Corporate"
+  RULE Signatory DEEM Signatory ISA Human  WITH principal = [ Person ]
+
+  RULE   Signatories
+       DEEM Document
+        ISA Record
+       WITH parties     = [ Person ]
+            signatories = [ Signatory ]
+            witnesses   = [ Human ]
+       WHEN [ "each signatory has a principal which is a party"
+            , "each party is a principal of a signatory"
+            , "number of witnesses >= 2"
+            & "no witness is a party" ]
 #+end_src
 
 (Yes, the "id" attribute above has two alternative shapes -- think of it as a sum type.)
 
-You can also use ENTITY to define a type whose values must obey a certain regex:
+You can also use a DEEM rule to define a type whose values must obey a certain regex:
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY UENString
-     ISA Type
-    WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
+
+  RULE  UENString
+   DEEM String
+    ISA UENString
+   WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
 #+end_src
 
 Failure to obey that regex is a compile-time error.
@@ -457,20 +488,15 @@ The "MATCHTYPE" rule body is for debugging purposes only.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-  rules   MatchVars ::= "MathExpr"    MathExpr
-                      | "MatchExpr"   MatchExpr
-                      | "RelBool"     RelBool
-                      | "PlainVal"    PlainVal
-                      | "VarExpr"     VarExpr
-                      | "JunctionList" JunctionList
-                      | "Constraint"  Constraint
-                      | "Numberlike"  Numberlike
-                      | "BoolExp"     BoolExp
+  rules   MatchVars ::= "Constraint"  Constraint
                       | "ObjMethod"   ObjMethod
                       | "ObjAttr"     ObjAttr
                       | "ObjAttrElem" ObjAttrElem
                       | "UnifyExpr"   UnifyExpr
                       | "UnifyElem"   [UnifyElem]
+                      | "Exp"         Exp
+                      | "LstExp"      LstExp
+                      | "BinExp"      BinExp
                       | "WhenLimb"    WhenLimb
                       | "WhereLimb"   WhereLimb
                       | "DeonticLimb" DeonticLimb
@@ -493,7 +519,7 @@ A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an 
   rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
   separator  nonempty LogEvent ";";
   separator  Blah "";
-  rules      Blah     ::= VarExpr;
+  rules      Blah     ::= Exp;
 #+end_src
 
 ** Other Top-Level Keywords
@@ -514,7 +540,7 @@ The following import statements result in the following default module names:
 | ~import "/usr/local/share/L4/./Foo/Bar/Baz.l4"~ | Foo.Bar.Baz  |
 | ~import "test/./Foo/Bar/Baz.l4"~                | Foo.Bar.Baz  |
 
-The default name is made by 
+The default name is made by
 - deleting any prefix matching the regex ~^.*/\.+/~
 - deleting any suffix matching the suffix ~\.l4\w*$~
 - converting any directory separators to dots
@@ -533,7 +559,7 @@ An L4 Module contains a list of directives and statements.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   Toplevel.  Tops      ::= [Toplevels];
-  rules      Toplevels ::= Module | Import | Pragma 
+  rules      Toplevels ::= Module | Import | Pragma
                          | Rule | Entity | Scenario ;
   terminator Toplevels ";";
 
@@ -569,7 +595,7 @@ They would end up with ~elements~ in the namespace, explicitly referenceable as 
 Pragma directives give hints to the compiler.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules Pragma ::= "pragma" CommaList ;
+  rules Pragma ::= "pragma" [Exp] ;
 #+end_src
 
 *** History
@@ -603,7 +629,7 @@ C-style and Javascript-style comments are both supported. Also Haskell-style, as
 
 *** String Expressions
 
-A normal string looks ~"like this"~ and obeys the usual conventions around escaped backslashes, quotes, and newlines.
+A normal string looks "like this" and obeys the usual conventions around escaped backslashes, quotes, and newlines.
 
 *** Language Stringset
 
@@ -629,31 +655,6 @@ rules         LangLabel    ::= Ident ;
 
 Currency strings are the same but uppercase, like "USD".
 
-#+begin_src bnfc :noweb-ref l4expressions
-rules         CurrID       ::= ":" CurrLabel ":";
-rules         CurrLabel    ::= UIdent ;
-#+end_src
-
-*** Math expressions
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      MathExpr   ::= MathExpr  "+" MathExpr1
-                          | MathExpr  "-" MathExpr1;
-  rules      MathExpr1  ::= MathExpr1 "*" MathExpr2
-                          | MathExpr1 "/" MathExpr2 ;
-  rules      MathExpr2  ::= CurrencyPrefix MathExpr3 ;
-  rules      MathExpr3  ::= Numberlike
-                          | ObjMethod TypeMath
-                          | ObjMethod ;
-  coercions  MathExpr 3;
-  rules      Numberlike ::=        Numeric
-                          |        Numeric "%";
-  rules      Numeric    ::= Integer | Double ;
-  NoCurrency.   CurrencyPrefix ::= ;
-  CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
-  CurrDollar.   CurrencyPrefix ::= "$";
-#+end_src
-
 *** Currency expressions
 
 Currencies are expressed specifically as ~:SGD: 1400~ or generically as ~$~. When it's a currency variable you gotta prefix it, sorry. It'll go away when we have better type inferencing later.
@@ -662,21 +663,106 @@ Many contracts deal with dollar calculations. L4 supports composable primitives 
 
 For now the parser reads currency and math expressions together.
 
-*** Boolean expressions
+*** A Simply Typed Abstract Syntax
+
+Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4, which I will represent in BNFC. Work rebalances from the parser to the type checker.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  BAnd1.     BoolExp    ::= BoolExp "&&"  BoolExp1;
-  BAnd2.     BoolExp    ::= BoolExp "AND" BoolExp1 ;
-  BOr1.      BoolExp1   ::= BoolExp1 "||"  BoolExp2;
-  BOr2.      BoolExp1   ::= BoolExp1 "OR"  BoolExp2;
-  BLikely.   BoolExp2   ::= Likelihood    BoolExp3;
-  BNot1.     BoolExp4   ::=          "!"  BoolExp5;
-  BNot2.     BoolExp4   ::=        "NOT"  BoolExp5;
-  ObjEq.     BoolExp5   ::= BoolExp5 "==" BoolExp6;
+  coercions Exp 9;
+  ConstE. Exp8 ::= ConstVal;
+  ListE.  Exp7 ::= LstExp ;
+  BracesE. Exp7 ::= BraceList ;
+  TempE.  Exp7 ::= DateTime ;
+  UnifyE. Exp6 ::= UnifyExpr;
+  ObjME.   Exp6 ::= ObjMethod ;
+  Op1E.   Exp5 ::= UnaOp   Exp ;
+  Op2E.   Exp4 ::=         BinExp ;
+  Op3E.   Exp3 ::= TriOp   Exp7 Exp7 Exp7; ;
+  Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
+  Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" Exp "ELSE" Exp;
 
-  Likely.    Likelihood  ::= "LIKELY" ;
-  Unlikely.  Likelihood  ::= "UNLIKELY";
+  ListComma.  LstExp ::=    "[" [Exp]         "]" ;
+  ListAnd.    LstExp ::=    "[" [Exp] "&" Exp "]" ;
+  ListOr.     LstExp ::=    "[" [Exp] "|" Exp "]" ;
+  separator nonempty Exp "," ;
+
+  TriOpITE. TriOp ::= "ITE" ;
+
+  BoolV_T. ConstVal ::=  TrueBool ;
+  BoolV_F. ConstVal ::= FalseBool ;
+  BoolV_N. ConstVal ::= NothingBl ;
+  IntV.    ConstVal ::= Integer ;
+  FloatV.  ConstVal ::= Double ;
+  StringV. ConstVal ::= String ;
+  FloatPercent.  ConstVal ::= Double  "%" ;
+  IntPercent.    ConstVal ::= Integer "%" ;
+
+  coercions BinExp 8;
+  BArith_Pow.  BinExp7   ::= Exp5 "**"   Exp6;
+  BArith_Mul.  BinExp4   ::= Exp4 "*"    Exp5;
+  BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
+  BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
+  BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
+  BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
+  L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
+  BCmp_LT.     BinExp2   ::= Exp4 "<"    Exp5;
+  BCmp_LTE.    BinExp2   ::= Exp4 "<="   Exp5;
+  BCmp_GT.     BinExp2   ::= Exp4 ">"    Exp5;
+  BCmp_GTE.    BinExp2   ::= Exp4 ">="   Exp5;
+  BCmp_Eq.     BinExp2   ::= Exp4 "=="   Exp5;
+  BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
+  BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
+  BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
+  BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
+  BCmp_Match.  BinExp2   ::= Exp4 "~"    Exp5;
+  BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
+  BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
+  BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
+  BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
+  BRel_Are.    BinExp1   ::= Exp4 "ARE"  Exp5;
+  BRel_To.     BinExp1   ::= Exp4 "TO"   Exp5;
+  BBool_And1.  BinExp    ::= Exp4  "∧"   Exp4;
+  BBool_And2.  BinExp    ::= Exp4  "&&"  Exp4;
+  BBool_And3.  BinExp    ::= Exp4  "AND" Exp4;
+
+  BBool_Or1.   BinExp    ::= Exp  "∨"   Exp;
+  BBool_Or2.   BinExp    ::= Exp  "||"  Exp;
+  BBool_Or3.   BinExp    ::= Exp  "OR"  Exp;
+
+  Set_Union.      BinExp ::= Exp  "∪"   Exp;
+  Set_Intersect.  BinExp ::= Exp  "∩"   Exp;
+  Set_Subset.     BinExp ::= Exp  "⊂"   Exp;
+
+  L_Union.        BinExp ::= Exp "UNION"     Exp ;
+  L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
+
+  coercions UnaOp 7;
+  UCurr.       UnaOp7 ::= CurrencyPrefix ;
+  CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
+  CurrDollar.   CurrencyPrefix ::= "$";
+
+  UBool_Not1.  UnaOp6 ::= "!"  ;
+  UBool_Not2.  UnaOp6 ::= "NOT" ;
+  UBool_Not2.  UnaOp6 ::= "¬" ;
+  UBool_Unlikely.  UnaOp5 ::= "UNLIKELY" ;
+  UBool_Likely.    UnaOp5 ::= "LIKELY" ;
+
+  L_All.       UnaOp5 ::= "ALL";
+  L_Any.       UnaOp5 ::= "ANY";
+  L_Xor.       UnaOp5 ::= "XOR";
+
 #+end_src
+
+
+*** Boolean expressions
+
+We should have a discussion at some point about how our expression model is
+- partly functional (functions evaluate to values)
+- partly logical (terms unify to values)
+
+If you have a background in logic programming this will be easier to grasp.
+
+Have a look at [[http://curry-lang.org/][Curry]] if you get the chance.
 
 A boolean expression can be labeled Likely or Unlikely to serve as a hint to a reasoner.
 
@@ -685,42 +771,10 @@ At the moment this syntax is static. In the future it would be nice to be able t
 *** Boolean expressions comparing math expressions
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  MathLT.    BoolExp6   ::= MathExpr "<"  MathExpr;
-  MathLTE.   BoolExp6   ::= MathExpr "<=" MathExpr;
-  MathGT.    BoolExp6   ::= MathExpr ">"  MathExpr;
-  MathGTE.   BoolExp6   ::= MathExpr ">=" MathExpr;
-  MathEq.    BoolExp6   ::= MathExpr "==" MathExpr;
-#+end_src
-
-*** Boolean expressions comparing strings
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  StrEq1.    BoolExp6   ::= String "==" ObjMethod ;
-  StrEq2.    BoolExp6   ::= ObjMethod "==" String ;
-
-  BMatch.    BoolExp6   ::= MatchExpr ;
-
-  BTrue.     BoolExp7   ::= TrueBool; -- later, maybe | "yes" as well
-  BFalse.    BoolExp7   ::= FalseBool;
-  coercions  BoolExp 7;
-
   token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
   token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
-
+  token NothingBl ["Nn"] ["Oo"] ["Tt"] ["Hh"] ["Ii"] ["Nn"] ["Gg"] ;
 #+end_src
-
-*** Match expressions against lists
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  ME_rbjl.   MatchExpr  ::= MatchExpr RelBool MatchExpr1 ;
-  rules      MatchExpr1 ::= ObjMethod -- untyped version creates 33 reduce/reduce conflicts
-                          | ObjMethod TypeBool 
-                          | JunctionList ;
-  coercions  MatchExpr 2;
-  rules      RelBool    ::= "IS" | "ISA" | "ARE" | "HAS" | "~";
-#+end_src
-
-Okay, let's talk about lists.
 
 *** Lists
 
@@ -743,34 +797,6 @@ Read chapter 11 of MSCDv4. The remainder of this section attempts to formalize a
 |-----------------------+---+-------------+---------------------------------|
 | some.Unification.term | ~ | [x & y]     | forall u in U, exists u in {x, y} |
 | some.Unification.term | ~ | [x \vert y] | exists u in U, exists u in {x, y} |
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  -- what we realy want to be able to do is have a List a
-
-  JL_And.    JunctionList ::=    AndList  ;
-  JL_Or.     JunctionList ::=     OrList  ;
-  JL_Xor.    JunctionList ::=    XorList  ;
-  JL_Comma.  JunctionList ::=  CommaList  ;
-
-  CommaList.  CommaList ::= "[" [CommaElem] "]";
-  rules      CommaElem ::= ObjMethod | String | BraceList;
-  separator nonempty CommaElem ",";
-
-  AndList.   AndList ::= AndElem "&" [AndElem];
-  rules      AndElem ::= ObjMethod | String | BraceList;
-  _.         AndList ::= "[" AndList "]" ;
-  separator nonempty AndElem "&";
-
-  OrList.    OrList ::= OrElem "|" [OrElem];
-  rules      OrElem ::= ObjMethod | String | BraceList;
-  _.         OrList ::= "[" OrList "]" ;
-  separator nonempty OrElem "|";
-
-  XorList.   XorList ::= XorElem "^" [XorElem];
-  rules      XorElem ::= ObjMethod | String | BraceList;
-  _.         XorList ::= "[" XorList "]" ;
-  separator nonempty XorElem "^";
-#+end_src
 
 **** TODO Early thoughts on Lists
 
@@ -841,11 +867,11 @@ This makes it easy to write:
          ]
 
   special = [ polydactyl
-            | tailless 
+            | tailless
             ]
 
   valuable = [ polydactyl
-             & tailless 
+             & tailless
              ]
 #+end_example
 
@@ -980,7 +1006,7 @@ So ObjMethod turns out to have a trick up its sleeve: it can /unify/ variable el
 And that works even without the paren args.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      UnifyExpr ::= ObjAttrElem "." [UnifyElem] ;
+  rules      UnifyExpr ::= [UnifyElem] ;
   rules      UnifyElem ::= ObjAttrElem
                         |  UnifyBracket
                         |  UnifyStar
@@ -988,6 +1014,8 @@ And that works even without the paren args.
   separator nonempty UnifyElem ".";
   rules      UnifyStar ::= "*" ;
   rules      UnifyBracket ::= "<" [CommaElem] ">" ;
+  rules      CommaElem ::= ObjAttr;
+  separator nonempty CommaElem ",";
 #+end_src
 
 "*" is the simplest pattern-match: it matches any value of any attribute.
@@ -1002,14 +1030,11 @@ See Constraint Unification for details.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules BraceList     ::= "{" [Constraint] "}" ;
-  rules  Constraint   ::= ObjAttr ConstraintBinOp VarExpr;
+  rules  Constraint   ::= Exp;
   separator nonempty Constraint  "," ;
 
-  rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
+  -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 #+end_src
-
-TODO: refactor the ArrayOfBracesOr/And syntax into the JunctionList by allowing the content of a JunctionList to be a BraceList.
-
 
 THIS IS STILL UNDER CONSTRUCTION
 
@@ -1113,18 +1138,6 @@ To give the parser a hand the current language definition lets you annotate ~Obj
   TT.        TypeTemporal   ::= "::" "Temporal";
 #+end_src
 
-*** A menagerie of data types
-
-#+begin_src bnfc :noweb-ref l4bnfc
-
-  rules      VarExpr   ::= MathExpr | BoolExp | PlainVal;
-  rules      PlainVal  ::= String
-                         | BraceList
-                         | DateTime | DateTime "to" DateTime;
-
-#+end_src
-
-
 
 *** Syntax Primitives
 
@@ -1155,7 +1168,7 @@ Each of these genres requires a library -- a "sub-domain ontology".
 
 - Contract Law :: notions of what constitutes a valid contract
 - Real Estate ::
-- City Planning :: 
+- City Planning ::
 
 **** Formal Verification
 
@@ -1198,7 +1211,7 @@ Guess what, though. She holds dual Israeli and American citizenship. Unusual, ri
      ISA Human
     WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
   //     a person can have multiple nationalities
-         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
+         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 TO PRESENT }
                        , { xtime = 2020-09-10, value = "US"                                } ]
 #+end_src
 
@@ -1219,13 +1232,13 @@ As you can see, the "multitemporal" syntax allows us to easily handle scenarios 
 
 #+begin_src haskell :noweb-ref l4entity
   ENTITY celebXY
-   GIVEN Tabloid HAVING ceaselessCoverage :: Bool
+   GIVEN Tabloid HAVING ceaselessCoverage
      ISA Couple
     WITH xtime = 2020-01-01, maritalStatus = dating
          xtime = 2020-07-01, maritalStatus = married
-         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
-         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
-         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
+         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 TO PRESENT
+         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 TO 2020-11-01
+         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 TO PRESENT
 #+end_src
 
 The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"
@@ -1301,7 +1314,7 @@ In logic, this is the difference between
 
 This also goes to a bigger point about "fail open" vs "fail closed" systems of law: https://en.wikipedia.org/wiki/No_U-turn_syndrome contrasts two defaults:
 
-- everything not explicitly permitted is prohibited 
+- everything not explicitly permitted is prohibited
 - everything not explicitly prohibited is permitted
 
 Suppose we want to live in a *permissive* world. We license inference of the form:
@@ -1446,7 +1459,7 @@ In Prolog, that reads:
 #+end_src
 
 Rule 2 relies on rule 3. This is backward chaining.
-  
+
 #+begin_src text :noweb-ref l4-rules
   RULE 3 isPotato
     DEEM Item IS Potato
@@ -1491,7 +1504,7 @@ This allows us to subsequently use the term Potato instead of Item:
 #+begin_src haskell :noweb-ref l4-rules
   RULE noblePotato2
     DEEM Potato IS Noble
-    WHEN Potato.previousOwners.isNoble :: Math >= 2
+    WHEN Potato.previousOwners.isNoble >= 2
 #+end_src
 
 Alternative syntax:
@@ -1649,7 +1662,7 @@ Sometimes a master agreement will establish a relationship between one group of 
 
 See https://youtu.be/b6kkvvHfEOo?t=420 for a simple case of detecting such relations.
 
-*** States, Actions, and Events: 
+*** States, Actions, and Events:
 
 What LegalRuleML calls "maintenance" and "achievement" obligations.
 
@@ -1949,7 +1962,7 @@ The transformation looks like this:
  implication), or is there also a mechanism for /definitions/, such as for
  example in the Catala language (which is an equivalence, logically
  speaking)? In the above example, when knowing =X.foo=, one cannot infer that
- =X.bar=. 
+ =X.bar=.
 -#+END_QUOTE
 
 #+begin_src haskell :tangle bnfc/prolog/ToProlog.hs
@@ -2004,7 +2017,7 @@ Things can get more complicated in Flora-2.
 See also https://www.swi-prolog.org/pldoc/man?section=bidicts for an alternative approach we might consider.
 
   #+begin_src haskell :tangle bnfc/prolog/ToProlog.hs
-    instance ToProlog ObjAttr where 
+    instance ToProlog ObjAttr where
       toProlog (OA_method oa commalist) = toProlog oa ++ "(" ++ toProlog commalist ++ ")"
       toProlog (OA_dots objAttrElems) =
         case asVar objAttrElems of
@@ -2026,12 +2039,12 @@ See also https://www.swi-prolog.org/pldoc/man?section=bidicts for an alternative
               titleCase (x:xs) = toTitle x : xs
               lcfirst "" = ""
               lcfirst (x:xs) = toLower x : xs
-       
 
-    instance ToProlog ObjAttrElem where 
+
+    instance ToProlog ObjAttrElem where
       toProlog (ObjAttrElemIdent (Ident oaeii)) = oaeii
 
-    instance ToProlog PredExpr where 
+    instance ToProlog PredExpr where
       toProlog (PEOA oa)  = toProlog oa
       toProlog (PEAnd exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2
       toProlog (PEOr  exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2
@@ -2088,7 +2101,7 @@ Some helper functions
     match(Elem, xor, List)   :- partition([X]>>myeq(X,Elem), List, In, _Out), length(In,L), L = 1.
     match(Elem, plain, List) :- match(Elem, or, List).
     myeq(A,B) :- A == B.
-    
+
     % set up a couple of test potatoes
     species(potato1, "Solanum tuberosum").
     species(potato2, "Ipomoea batatas").
@@ -2272,7 +2285,7 @@ START SCOPE This_SAFE as Safe_Contract
                     Investor MUST
                         execute Document
                         AND THEN                        // sequential, not logical
-                        deliver Document to Company  
+                        deliver Document to Company
 
             // RULE "Liquidity Event" ...
 
@@ -2285,10 +2298,9 @@ START SCOPE This_SAFE as Safe_Contract
                     T ~ Company give Investor Amount of Safe_Preferred_Stock
                 THEN
                     This_SAFE.Terminated = True
-					
+
         END SCOPE "Events"
     END SCOPE "Right to Shares"
 END SCOPE This_SAFE
 
 #+end_example
-

@@ -21,14 +21,14 @@ RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
   GIVEN sale          // defined in rule 1 above
   PARTY Buyer
     MAY return Item
- BEFORE sale.date + 3 weeks
+ BEFORE sale.date + 3 WEEKS
   HENCE Net3          // targets rule 3 below
 
 RULE  3 Net3          // the "hence" target of rule 2 above
   GIVEN return        // defined in rule 2 above
   PARTY Seller
    MUST refund Amount
- BEFORE return.date + 3 days
+ BEFORE return.date + 3 DAYS
   WHERE Amount = $sale.cash * 90%
 ENTITY spud2
    ISA Item
@@ -62,7 +62,7 @@ RULE noblePotato
    AND Item.previousOwners.Second IS Noble
 RULE noblePotato2
   DEEM Potato IS Noble
-  WHEN Potato.previousOwners.isNoble :: Math >= 2
+  WHEN Potato.previousOwners.isNoble >= 2
 RULE noblePotato3
   DEEM Potato IS Noble
   WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
@@ -76,31 +76,59 @@ ENTITY veggieBar
   WITH address = [ "1 Veggie Way" ]
        id      = { idtype = "UEN", idval = "202000000A" }
        name    = "The Veggie Bar Pte. Ltd."
-ENTITY Business
+RULE  Business
+ DEEM Business
+  ISA Record
+ WITH address = [ String ]
+      id      = [ { idtype = "UEN" , idval = UENString }
+                | { idtype = String, idval = String } ]
+      name    = String
+      owner   = Person
+RULE   Person
+  DEEM Person
    ISA Record
   WITH address = [ String ]
        id      = [ { idtype = "UEN" , idval = UENString }
-                 | { idtype = String, idval = String } ]
+                 | { idtype = String, idval = String }
+                 ]
        name    = String
-ENTITY UENString
-   ISA Type
-  WITH regex.pcre = "^\"\\d{9,10}[[:alpha:]]$\""
+       type    = [ "Natural" , "Corporate" | "Trust" ]
+
+RULE Human     DEEM Human     ISA Person WITH type = "Natural"
+RULE Company   DEEM Company   ISA Person WITH type = "Corporate"
+RULE Signatory DEEM Signatory ISA Human  WITH principal = [ Person ]
+
+RULE   Signatories
+     DEEM Document
+      ISA Record
+     WITH parties     = [ Person ]
+          signatories = [ Signatory ]
+          witnesses   = [ Human ]
+     WHEN [ "each signatory has a principal which is a party"
+          , "each party is a principal of a signatory"
+          , "number of witnesses >= 2"
+          & "no witness is a party" ]
+
+RULE  UENString
+ DEEM String
+  ISA UENString
+ WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
 ENTITY blackSwan
    ISA Human
   WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
 //     a person can have multiple nationalities
-       nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 to PRESENT }
+       nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 TO PRESENT }
                      , { xtime = 2020-09-10, value = "US"                                } ]
 //     a person can have multiple names
        fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
 ENTITY celebXY
- GIVEN Tabloid HAVING ceaselessCoverage :: Bool
+ GIVEN Tabloid HAVING ceaselessCoverage
    ISA Couple
   WITH xtime = 2020-01-01, maritalStatus = dating
        xtime = 2020-07-01, maritalStatus = married
-       xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 to PRESENT
-       xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 to 2020-11-01
-       xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 to PRESENT
+       xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 TO PRESENT
+       xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 TO 2020-11-01
+       xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 TO PRESENT
 SCENARIO alicePregnancy
    TRACE 2020-08-01 Alice knew { pregnancy = true }
          2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }

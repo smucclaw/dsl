@@ -2,12 +2,14 @@
 
 RULE showMatches
   MATCHTYPE -- :-(
+            UnifyExpr Foo.bar
             ObjAttr foo.bar
             ObjAttr foo
-            VarExpr "^\"\\d{9,10}[[:alpha:]]$\""
+            LstExp [ foo, bar ]
+            LstExp [ foo=bar, bar=quux ]
+            Exp "^\"\\d{9,10}[[:alpha:]]$\""
             UnifyElem Foo.bar
             UnifyElem     bar
-            UnifyExpr Foo.bar
             UnifyExpr Foo.bar.*
             UnifyExpr Foo.bar.<Poop>
             UnifyExpr Foo.bar.*.toots
@@ -16,13 +18,13 @@ RULE showMatches
             ObjMethod Foo.bar
             ObjMethod Foo.bar(moo=poo)
             UnifyExpr Foo.bar
-            VarExpr quux
-            VarExpr Quux
-            VarExpr "quux"
-            VarExpr [ "quux" ]
-            VarExpr [ quux ]
-            VarExpr [ Quux ]
-            VarExpr [ quux, pouux ]
+            Exp quux
+            Exp Quux
+            Exp "quux"
+            Exp [ "quux" ]
+            Exp [ quux ]
+            Exp [ Quux ]
+            Exp [ quux, pouux ]
             Constraint moo=poo
             Constraint vtime = 2010-01-02
             Constraint address = thing
@@ -37,33 +39,31 @@ RULE showMatches
             ObjMethod foo.bar(moo=poo)
             ObjMethod foo
             ObjMethod foo.bar
-            MathExpr 22
-            MathExpr foo.bar :: Math
-            RelBool IS
-            RelBool ISA
-            MatchExpr Foo.bar ISA Foo.bar
-            BoolExp foo.bar :: Bool
-            MatchExpr Foo ISA BAR
-            BoolExp Foo IS Bar
-            BoolExp Foo HAS Poo.Elem
-            BoolExp Foo HAS Poo.Elem ~ [Junction]
-	    JunctionList [ foo, bar ]
-	    JunctionList [ foo & bar ]
-	    JunctionList [ foo | bar ]
-	    JunctionList [ foo | bar | quux ]
-	    JunctionList [ { foo=bar } | { bar=baz } | { quux=q } ]
-	    JunctionList [ { foo=bar, f=b } , { bar=baz } , { quux=q } ]
-            VarExpr $someCurrency.var * 10%
-            MathExpr 10
-            MathExpr 10 + 20
-            MathExpr 10 + 20 * 30
-            MathExpr (10 + 20) * 30
-            MathExpr $10
-            MathExpr $10 * 2
-            MathExpr $10 + $10
-            MathExpr 2 * $10
-            MathExpr $10 + $2
-            MathExpr $someCurrency.var * 10%
+            Exp 22
+            Exp foo.bar
+            Exp Foo.bar ISA Foo.bar
+            Exp foo.bar
+            Exp Foo ISA BAR
+            Exp Foo IS Bar
+            Exp Foo HAS Poo.Elem
+            Exp Foo HAS Poo.Elem ~ [Junction]
+	    Exp [ foo, bar ]
+	    Exp [ foo & bar ]
+	    Exp [ foo | bar ]
+	    Exp [ foo , bar | quux ]
+	    Exp [ { foo=bar } , { bar=baz } | { quux=q } ]
+	    Exp [ { foo=bar, f=b } , { bar=baz } , { quux=q } ]
+            Exp $someCurrency.var * 10%
+            Exp 10
+            Exp 10 + 20
+            Exp 10 + 20 * 30
+            Exp (10 + 20) * 30
+            Exp $10
+            Exp $10 * 2
+            Exp $10 + $10
+            Exp 2 * $10
+            Exp $10 + $2
+            Exp $someCurrency.var * 10%
             WhenLimb  WHEN Foo IS Bar
             WhenLimb  WHEN Foo.bar == "baz"
             WhereLimb WHERE Foo.bar = "baz"
@@ -74,6 +74,6 @@ RULE showMatches
             WhereLimb WHERE Foo = $10 * 2
             WhereLimb WHERE Foo = $tendollars * 2
             WhereLimb WHERE Foo.bar = objmethod(foo=bar)
-            VarExpr $10 + $2
+            Exp $10 + $2
             DeonticLimb SHANT sell Item
 

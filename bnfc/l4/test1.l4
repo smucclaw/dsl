@@ -30,6 +30,10 @@ RULE  3 Net3          // the "hence" target of rule 2 above
    MUST refund Amount
  BEFORE return.date + 3 DAYS
   WHERE Amount = $sale.cash * 90%
+RULE    Quorum
+ DEFINE OrdinaryMeeting IS Quorate
+   WHEN SUM(OrdinaryMeeting.attendees.votingShares) > 50% * SUM(company.members.All.votingShares)
+  WHERE company = OrdinaryMeeting.company
 RULE    noblePotato4
  DEFINE Item IS noble
    WHEN AT LEAST 2 OF Item.previousOwners

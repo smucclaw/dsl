@@ -194,6 +194,16 @@ The body of a stanza may comprise one or more limbs. In the above examples, we h
 
 Boolean Expressions are used in a WHEN limb to evaluate truth values as part of a reasoning operation.
 
+Example:
+#+begin_src text :noweb-ref l4-rules
+  RULE    Quorum
+   DEFINE OrdinaryMeeting IS Quorate
+     WHEN SUM(OrdinaryMeeting.attendees.votingShares) > 50% * SUM(company.members.All.votingShares)
+    WHERE company = OrdinaryMeeting.company
+#+end_src
+
+BNF:
+
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      WhenLimb   ::= | "WHEN"   Exp UnlessExpr;
   rules      UnlessExpr ::= | "UNLESS" Exp;
@@ -782,7 +792,7 @@ At the moment this syntax is static. In the future it would be nice to be able t
 
 We deprecate the "~" sigil in favour of a more verbose form:
 
-Example:
+Example 1:
 
 #+begin_src text :noweb-ref l4-rules
   RULE    noblePotato4
@@ -797,9 +807,9 @@ The generic structure of a match relation is:
 
 - ObjQuantifier :: (at least N | any | all | exactly N | at most N | none) (of)?
 - ObjList :: object(s)
-- MatchQualifier :: "EACH" | "TOGETHER" | "JOINTLY-AND-SEVERALLY" ;
+- MatchQualifier :: "EACH" | "TOGETHER" ;
 - MatchRelation :: satisfies | satisfy | matches | match | is | are | isa | areA | exists | exist
-- PredQuantifier :: (at least N | any | all | exactly N | at most N | none) (of)?
+- PredQuantifier :: (at least N | any | all | exactly N | at most N | none ) (of)?
 - PredList :: predicate(s)
 
 where the predicate has type ~object -> Bool~
@@ -807,16 +817,17 @@ where the predicate has type ~object -> Bool~
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchQualifier MatchRelation
-                             MatchQuantifier Exp6 [MatchFlag];
+  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 AsAlias MatchQualifier MatchRelation
+                             MatchQuantifier Exp6 AsAlias [MatchFlag];
   -- ConstVal here will probably need to be upgraded to at least a variable
   -- so we can say, TheRelevantQuorum.Percentage
-  MQSat0.      MatchQuantifier ::= "NONE OF" ;
-  MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal OptOf ;
-  MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
-  MQSatAll.    MatchQuantifier ::= "ALL" "OF" ;
-  MQSatConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
-  MQSatMax.    MatchQuantifier ::= "AT" "MOST" ConstVal "OF" ;
+  MQuant0.      MatchQuantifier ::= "NONE OF" ;
+  MQuantMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal OptOf ;
+  MQuantAny.    MatchQuantifier ::= "ANY" "OF" ;
+  MQuantAll.    MatchQuantifier ::= "ALL" "OF" ;
+  MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
+  MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
+  MQuantNull.   MatchQuantifier ::= ;
   MRelSat1.    MatchRelation   ::= "SATISFIES" ;
   MRelSat2.    MatchRelation   ::= "SATISFY" ;
   MRelMatch1.  MatchRelation   ::= "MATCHES" ;
@@ -831,7 +842,6 @@ BNF:
 
   MQualEach.      MatchQualifier ::= "EACH";
   MQualTogether.  MatchQualifier ::= "TOGETHER";
-  MQualJS.        MatchQualifier ::= "JOINTLY-AND-SEVERALLY";
   MQualNull.      MatchQualifier ::= ;
 
   MFlagLDistinct. MatchFlag     ::= "L-DISTINCT" ;

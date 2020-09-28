@@ -717,8 +717,6 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
   BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
   BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
-  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchQualifier MatchRelation
-                             MatchQuantifier Exp6 [MatchFlag];
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
   BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
   BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
@@ -739,32 +737,6 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
 
   L_Union.        BinExp ::= Exp "UNION"     Exp ;
   L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
-
-  -- ConstVal here will probably need to be upgraded to at least a variable
-  -- so we can say, TheRelevantQuorum.Percentage
-  MQSat0.      MatchQuantifier ::= "NONE OF" ;
-  MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal "OF" ;
-  MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
-  MQSatAll.    MatchQuantifier ::= "ALL" "OF" ;
-  MQSatConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
-  MQSatMax.    MatchQuantifier ::= "AT" "MOST" ConstVal "OF" ;
-  MRelSat1.    MatchRelation   ::= "SATISFIES" ;
-  MRelSat2.    MatchRelation   ::= "SATISFY" ;
-  MRelMatch1.  MatchRelation   ::= "MATCHES" ;
-  MRelMatch2.  MatchRelation   ::= "MATCH" ;
-  MRelIs1.     MatchRelation   ::= "IS" ;
-  MRelIs2.     MatchRelation   ::= "ARE" ;
-
-  MQualEach.      MatchQualifier ::= "EACH";
-  MQualTogether.  MatchQualifier ::= "TOGETHER";
-  MQualJS.        MatchQualifier ::= "JOINTLY-AND-SEVERALLY";
-  MQualNull.      MatchQualifier ::= ;
-
-  MFlagLDistinct. MatchFlag     ::= "L-DISTINCT" ;
-  MFlagRDistinct. MatchFlag     ::= "R-DISTINCT" ;
-  MFlagBDistinct. MatchFlag     ::=   "DISTINCT" ;
-  MFlagNoRepeat.  MatchFlag     ::= "NO-REPEATS" ;
-  separator MatchFlag ",";
 
   coercions UnaOp 7;
   UCurr.       UnaOp7 ::= CurrencyPrefix ;
@@ -792,7 +764,7 @@ We should have a discussion at some point about how our expression model is
 
 If you have a background in logic programming this will be easier to grasp.
 
-Have a look at [[http://curry-lang.org/][Curry]] if you get the chance.
+Have a look at [[http://curry-lang.org/][Curry]] and [[http://www.picat-lang.org/][Picat]] if you get the chance.
 
 A boolean expression can be labeled Likely or Unlikely to serve as a hint to a reasoner.
 
@@ -806,26 +778,11 @@ At the moment this syntax is static. In the future it would be nice to be able t
   token NothingBl ["Nn"] ["Oo"] ["Tt"] ["Hh"] ["Ii"] ["Nn"] ["Gg"] ;
 #+end_src
 
-*** Lists
+*** Match Relations
 
-Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
+We deprecate the "~" sigil in favour of a more verbose form:
 
-**** Satisfaction
-
-In this current version of the language we use the "~" tilde sigil to represent satisfaction, but coming soon in the future we will replace it with an explicit SATISFIES keyword, so you can read it to yourself that way.
-
-The generic structure of a match relation is:
-
-- ObjQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
-- ObjList :: object(s)
-- MatchQualifier :: "EACH" | "TOGETHER" | "JOINTLY-AND-SEVERALLY" ;
-- MatchRelation :: satisfies | satisfy | matches | match | is | are | isa | areA
-- PredQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
-- PredList :: predicate(s)
-
-where the predicate has type ~object -> Bool~
-
-example:
+Example:
 
 #+begin_src text :noweb-ref l4-rules
   RULE    noblePotato4
@@ -836,6 +793,58 @@ example:
                         , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
 #+end_src
 
+The generic structure of a match relation is:
+
+- ObjQuantifier :: (at least N | any | all | exactly N | at most N | none) (of)?
+- ObjList :: object(s)
+- MatchQualifier :: "EACH" | "TOGETHER" | "JOINTLY-AND-SEVERALLY" ;
+- MatchRelation :: satisfies | satisfy | matches | match | is | are | isa | areA | exists | exist
+- PredQuantifier :: (at least N | any | all | exactly N | at most N | none) (of)?
+- PredList :: predicate(s)
+
+where the predicate has type ~object -> Bool~
+
+BNF:
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchQualifier MatchRelation
+                             MatchQuantifier Exp6 [MatchFlag];
+  -- ConstVal here will probably need to be upgraded to at least a variable
+  -- so we can say, TheRelevantQuorum.Percentage
+  MQSat0.      MatchQuantifier ::= "NONE OF" ;
+  MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal OptOf ;
+  MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
+  MQSatAll.    MatchQuantifier ::= "ALL" "OF" ;
+  MQSatConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
+  MQSatMax.    MatchQuantifier ::= "AT" "MOST" ConstVal "OF" ;
+  MRelSat1.    MatchRelation   ::= "SATISFIES" ;
+  MRelSat2.    MatchRelation   ::= "SATISFY" ;
+  MRelMatch1.  MatchRelation   ::= "MATCHES" ;
+  MRelMatch2.  MatchRelation   ::= "MATCH" ;
+  MRelIs1.     MatchRelation   ::= "IS" ;
+  MRelIs2.     MatchRelation   ::= "ARE" ;
+  MRelExist1.  MatchRelation   ::= "EXISTS" ;
+  MRelExist2.  MatchRelation   ::= "EXIST" ;
+
+  OptOfNull.   OptOf           ::= ;
+  OptOf.       OptOf           ::= "OF";
+
+  MQualEach.      MatchQualifier ::= "EACH";
+  MQualTogether.  MatchQualifier ::= "TOGETHER";
+  MQualJS.        MatchQualifier ::= "JOINTLY-AND-SEVERALLY";
+  MQualNull.      MatchQualifier ::= ;
+
+  MFlagLDistinct. MatchFlag     ::= "L-DISTINCT" ;
+  MFlagRDistinct. MatchFlag     ::= "R-DISTINCT" ;
+  MFlagBDistinct. MatchFlag     ::=   "DISTINCT" ;
+  MFlagNoRepeat.  MatchFlag     ::= "NO-REPEATS" ;
+  separator MatchFlag ",";
+#+end_src
+
+
+*** Lists
+
+Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
 
 **** Junction Lists
 

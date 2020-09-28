@@ -113,6 +113,11 @@ RULE     UENString
   DEFINE String
      ISA UENString
     WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
+ENTITY Minor
+   ISA Human
+  WHEN CASE self.nationality ~ ["US", "SG"]             -> self.age < 21
+            self.nationality ~ ["NZ", "TW", "TH", "JP"] -> self.age < 20
+            otherwise                                   -> self.age < 18
 ENTITY blackSwan
    ISA Human
   WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }

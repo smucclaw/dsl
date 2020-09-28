@@ -497,6 +497,7 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "Exp"         Exp
                       | "LstExp"      LstExp
                       | "BinExp"      BinExp
+                      | "CaseExpr"    CaseExpr
                       | "WhenLimb"    WhenLimb
                       | "WhereLimb"   WhereLimb
                       | "DeonticLimb" DeonticLimb
@@ -564,7 +565,7 @@ An L4 Module contains a list of directives and statements.
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE" ;
   entrypoints Tops;
 #+end_src
 
@@ -670,6 +671,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
 #+begin_src bnfc :noweb-ref l4bnfc
   coercions Exp 9;
   ConstE. Exp8 ::= ConstVal;
+  CaseE.  Exp7 ::= CaseExpr ;
   ListE.  Exp7 ::= LstExp ;
   BracesE. Exp7 ::= BraceList ;
   TempE.  Exp7 ::= DateTime ;
@@ -1036,7 +1038,50 @@ See Constraint Unification for details.
   -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 #+end_src
 
-THIS IS STILL UNDER CONSTRUCTION
+TODO: figure out "=" vs "==".
+
+#+begin_src haskell :noweb-ref l4entity
+  ENTITY Minor
+     ISA Human
+    WHEN CASE self.nationality ~ ["US", "SG"]             -> self.age < 21
+              self.nationality ~ ["NZ", "TW", "TH", "JP"] -> self.age < 20
+              otherwise                                   -> self.age < 18
+#+end_src
+
+Note that "self" and "this" are synonymous.
+
+In the future Meng would like to allow:
+- .attr :: self.attr
+- ./attr :: self.attr
+- ../attr :: parent.attr
+- ..attr :: parent.attr
+
+Oh right, we need case expressions.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules CaseExpr  ::= "CASE" "{" [CaseExp] "}" ;
+  rules CaseExp   ::= Exp "->" Exp;
+  separator nonempty CaseExp ";";
+#+end_src
+
+When there's a CASE, there's a decision table. Let's support DMNMD syntax for decision tables:
+
+#+begin_src haskell
+  ENTITY Major
+     ISA Human
+    WHEN TABLE
+         | F | nationality (in) | age (in) | return |
+         |---+------------------+----------+--------|
+         | 1 | US, SG           | >= 21    | true   |
+         | 2 | NZ, TW, TH, JP   | >= 20    | true   |
+         | 3 | -                | >= 18    | true   |
+         | 4 | -                | -        | false  |
+         ,#+TBLFM: 
+#+end_src
+
+(If you're an Emacs user, discover M-x orgtbl-mode :)
+
+*** THIS IS STILL UNDER CONSTRUCTION
 
 We define a travel budget for a given month as the number of employees living in certain states multiplied by the one-way plane fare, times 2 (rough approximation to roundtrip fare), when the month is June or September.
 

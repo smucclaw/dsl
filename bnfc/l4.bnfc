@@ -73,6 +73,7 @@ rules   MatchVars ::= "Constraint"  Constraint
                     | "Exp"         Exp
                     | "LstExp"      LstExp
                     | "BinExp"      BinExp
+                    | "CaseExpr"    CaseExpr
                     | "WhenLimb"    WhenLimb
                     | "WhereLimb"   WhereLimb
                     | "DeonticLimb" DeonticLimb
@@ -92,7 +93,7 @@ rules      Toplevels ::= Module | Import | Pragma
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING" ;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE" ;
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
 rules Pragma ::= "pragma" [Exp] ;
@@ -101,6 +102,7 @@ comment "--" ;
 comment "/*" "*/" ;
 coercions Exp 9;
 ConstE. Exp8 ::= ConstVal;
+CaseE.  Exp7 ::= CaseExpr ;
 ListE.  Exp7 ::= LstExp ;
 BracesE. Exp7 ::= BraceList ;
 TempE.  Exp7 ::= DateTime ;
@@ -208,6 +210,9 @@ rules  Constraint   ::= Exp;
 separator nonempty Constraint  "," ;
 
 -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
+rules CaseExpr  ::= "CASE" "{" [CaseExp] "}" ;
+rules CaseExp   ::= Exp "->" Exp;
+separator nonempty CaseExp ";";
 TU.        TypeUnify      ::= "::" "Unify";
 TS.        TypeString     ::= "::" "STRING";
 TB.        TypeBool       ::= "::" "Bool";

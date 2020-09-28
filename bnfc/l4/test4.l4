@@ -8,6 +8,10 @@ RULE showMatches
             LstExp [ foo, bar ]
             LstExp [ foo=bar, bar=quux ]
             Exp "^\"\\d{9,10}[[:alpha:]]$\""
+            Exp self.nationality
+            Exp ["US", "SG"]
+            Exp self.nationality ~ ["US", "SG"]
+            Exp CASE self.nationality ~ ["US", "SG"] -> "poop"
             UnifyElem Foo.bar
             UnifyElem     bar
             UnifyExpr Foo.bar.*

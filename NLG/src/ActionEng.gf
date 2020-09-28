@@ -79,9 +79,10 @@ open
 
     BaseAction a1 a2 = {
       s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- doesnt sell X and doesnt issue Y
-      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) -- not selling X and not issuing Y
+      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
+      actor = mkNP the_Det (mkN "actor") ; -- TODO
       } ;
-    ConsAction a as = {
+    ConsAction a as = as ** {
       s = \\t,p => E.ConsVPS (a.s ! t ! p) (as.s ! t ! p) ;
       gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p)
       } ;
@@ -89,7 +90,8 @@ open
       s = \\t,p =>
         E.ConjVPS co (as.s ! t ! p) ;
       gerund = \\p =>
-        SyntaxEng.mkAdv co (as.gerund ! p)
+        SyntaxEng.mkAdv co (as.gerund ! p) ;
+      actor = as.actor
       } ;
 
     BaseAction_Dir a1 a2 =
@@ -147,11 +149,13 @@ open
     LinAction : Type = {
       s : R.Tense => R.CPolarity => E.VPS ;
       gerund : R.Polarity => Adv ;
+      actor : NP ; -- sell -> seller
       } ;
 
     ListLinAction : Type = {
       s : R.Tense => R.CPolarity => E.ListVPS ;
       gerund : R.Polarity => [Adv] ;
+      actor : NP ;
       } ;
 
     linAction : LinAction -> Str = \l ->
@@ -176,7 +180,8 @@ open
             negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
         in table {
           R.Pos => posAdv ;
-          R.Neg => negAdv }
+          R.Neg => negAdv } ;
+      actor = mkNP (mkN "TODO: we should get this from wordnet") ;
       } ;
 
     -- _Dir

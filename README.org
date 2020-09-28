@@ -716,7 +716,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
   BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
   BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
-  BCmp_Match.  BinExp2   ::= Exp4 "~"    Exp5;
+  BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
+  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchRelation MatchQuantifier Exp6;
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
   BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
   BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
@@ -737,6 +738,19 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
 
   L_Union.        BinExp ::= Exp "UNION"     Exp ;
   L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
+
+  MQSat0.      MatchQuantifier ::= "NONE OF" ;
+  MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal "OF" ;
+  MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
+  MQSatAll.    MatchQuantifier ::= "ALL" "OF" ;
+  MQSatConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
+  MQSatMax.    MatchQuantifier ::= "AT" "MOST" ConstVal "OF" ;
+  MRelSat1.    MatchRelation   ::= "SATISFIES" ;
+  MRelSat2.    MatchRelation   ::= "SATISFY" ;
+  MRelMatch1.  MatchRelation   ::= "MATCHES" ;
+  MRelMatch2.  MatchRelation   ::= "MATCH" ;
+  MRelIs1.     MatchRelation   ::= "IS" ;
+  MRelIs2.     MatchRelation   ::= "ARE" ;
 
   coercions UnaOp 7;
   UCurr.       UnaOp7 ::= CurrencyPrefix ;
@@ -781,6 +795,36 @@ At the moment this syntax is static. In the future it would be nice to be able t
 *** Lists
 
 Most programming languages have the concept of lists, or arrays. Usually, elements of those lists are separated by commas.
+
+**** Satisfaction
+
+In this current version of the language we use the "~" tilde sigil to represent satisfaction, but coming soon in the future we will replace it with an explicit SATISFIES keyword, so you can read it to yourself that way.
+
+The generic structure of a match relation is:
+
+- ObjQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
+- ObjList :: object(s)
+- MatchRelation :: satisfies | satisfy | matches | match | is | are | isa | areA
+- PredQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
+- PredList :: predicate(s)
+
+where the predicate has type ~object -> Bool~
+
+example:
+
+#+begin_src text :noweb-ref l4-rules
+  RULE    noblePotato4
+   DEFINE Item IS noblePotato
+     WHEN AT LEAST 2 OF Item.previousOwners
+          SATISFY
+          AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
+                        , isDuke, isDuchess, isEarl, isCountess ]
+#+end_src
+
+
+**** Junction Lists
+
+This is experimental and may go away.
 
 In L4, comma lists work as usual. But we also have and-lists and or-lists, which are separated by "&" and "|" respectively.
 
@@ -1076,8 +1120,9 @@ When there's a CASE, there's a decision table. Let's support DMNMD syntax for de
          | 2 | NZ, TW, TH, JP   | >= 20    | true   |
          | 3 | -                | >= 18    | true   |
          | 4 | -                | -        | false  |
-         ,#+TBLFM: 
 #+end_src
+
+This has not yet been implemented.
 
 (If you're an Emacs user, discover M-x orgtbl-mode :)
 

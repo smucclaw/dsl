@@ -147,7 +147,8 @@ BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
 BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
 BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
 BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
-BCmp_Match.  BinExp2   ::= Exp4 "~"    Exp5;
+BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
+BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchRelation MatchQuantifier Exp6;
 BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
 BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
 BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
@@ -168,6 +169,19 @@ Set_Subset.     BinExp ::= Exp  "⊂"   Exp;
 
 L_Union.        BinExp ::= Exp "UNION"     Exp ;
 L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
+
+MQSat0.      MatchQuantifier ::= "NONE OF" ;
+MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal "OF" ;
+MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
+MQSatAll.    MatchQuantifier ::= "ALL" "OF" ;
+MQSatConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
+MQSatMax.    MatchQuantifier ::= "AT" "MOST" ConstVal "OF" ;
+MRelSat1.    MatchRelation   ::= "SATISFIES" ;
+MRelSat2.    MatchRelation   ::= "SATISFY" ;
+MRelMatch1.  MatchRelation   ::= "MATCHES" ;
+MRelMatch2.  MatchRelation   ::= "MATCH" ;
+MRelIs1.     MatchRelation   ::= "IS" ;
+MRelIs2.     MatchRelation   ::= "ARE" ;
 
 coercions UnaOp 7;
 UCurr.       UnaOp7 ::= CurrencyPrefix ;

@@ -30,6 +30,12 @@ RULE  3 Net3          // the "hence" target of rule 2 above
    MUST refund Amount
  BEFORE return.date + 3 DAYS
   WHERE Amount = $sale.cash * 90%
+RULE    noblePotato4
+ DEFINE Item IS noblePotato
+   WHEN AT LEAST 2 OF Item.previousOwners
+        SATISFY
+        AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
+                      , isDuke, isDuchess, isEarl, isCountess]
 ENTITY spud2
    ISA Item
   WITH species  = "Solanum tuberosum"

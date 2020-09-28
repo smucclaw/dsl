@@ -8,6 +8,7 @@ RULE showMatches
             LstExp [ foo, bar ]
             LstExp [ foo=bar, bar=quux ]
             Exp "^\"\\d{9,10}[[:alpha:]]$\""
+            Exp AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
             Exp self.nationality
             Exp ["US", "SG"]
             Exp self.nationality ~ ["US", "SG"]

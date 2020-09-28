@@ -18,7 +18,10 @@ abstract Action = Term ** {
     ASlashDir   : Action_Dir_Indir -> Term -> Action_Indir ; -- sell stock (at fixed valuation)
     ASlashIndir : Action_Dir_Indir -> Term -> Action_Dir ;   -- sell (stock) at fixed valuation
 
-    -- PursuantTo : Action -> Action_Indir ;
+    -- Valency changes
+    ANoComplDir   : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ; return _ -> "return the purchase"
+    ANoComplIndir : Action_Indir -> Action ; -- same but for indirect object
+    PursuantTo    : Action -> Action_Indir ;
 
     -- Negation of a whole Action: doesnt sell X / doesnt sell X and Y
     ANeg : Action -> Action ;

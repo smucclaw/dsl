@@ -40,14 +40,26 @@ open
     ASlashIndir = slashIndir ;
 
 
-{-    -- Opposite to complements: make the Action open for more arguments.
+    ---------------------------------
+    -- Valency changing operations --
+    ---------------------------------
+
+    -- Decrease valency: use the intransitive version of an action
+    -- : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ; return _ -> "return the purchase"
+    ANoComplDir a = a ** {s = a.intrans} ;
+
+    -- : Action_Indir -> Action ; -- same as above, but for indirect object
+    -- ANoComplIndir a = a ** {s = a.intrans} ; -- probably bad idea given the next fun
+
+    -- Increase valency: make the Action open for more arguments.
     -- : Action -> Action_Indir
     PursuantTo a = a ** {
+      intrans = a.s ; -- weird results if combined with ANoComplIndir
       indir = pursuant_to_Prep ;
       dir = \\_ => emptyAdv
       } ;
   oper
-    pursuant_to_Prep : PrepPol = prepPol "pursuant to" ; -}
+    pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
 
   lin
 
@@ -80,7 +92,7 @@ open
     BaseAction a1 a2 = {
       s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- doesnt sell X and doesnt issue Y
       gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
-      actor = mkNP the_Det (mkN "actor") ; -- TODO
+      actor = mkNP the_Det (mkN "actor") ; -- TODO -- this gets confusing with conjunctions, "the seller and the issuer"
       } ;
     ConsAction a as = as ** {
       s = \\t,p => E.ConsVPS (a.s ! t ! p) (as.s ! t ! p) ;
@@ -98,16 +110,19 @@ open
       let a1' : LinAction = complDir a1 emptyTerm ;
           a2' : LinAction = complDir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
+           intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
            dir = a1.dir ; -- : PrepPol
            indir = \\p => emptyAdv ; -- the existing indir has been incorporated in a1 and a2
          } ;
     ConsAction_Dir a as =
       let a' : LinAction = complDir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
+           intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
            dir = as.dir ; -- : PrepPol
            indir = \\p => emptyAdv
          } ;
     ConjSlashDir co as = ConjAction co as ** {
+      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -116,38 +131,47 @@ open
       let a1' : LinAction = complIndir a1 emptyTerm ;
           a2' : LinAction = complIndir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
+           intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
            indir = a1.indir ; -- : PrepPol
            dir = \\p => emptyAdv ; -- the existing dir has been incorporated in a1 and a2
          } ;
     ConsAction_Indir a as =
       let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
+           intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
            indir = as.indir ; -- : PrepPol
            dir = \\p => emptyAdv
          } ;
 
     ConjSlashIndir co as = ConjAction co as ** {
+      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
       dir = as.dir ;
       indir = as.indir
       } ;
 
     BaseAction_Dir_Indir a1 a2 = BaseAction a1 a2 ** {
+      intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
       dir = a2.dir ;
       indir = a2.indir
       } ;
     ConsAction_Dir_Indir a as = ConsAction a as ** {
+      intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
       dir = as.dir ;
       indir = as.indir
       } ;
     ConjSlashDirIndir co as = ConjAction co as ** {
+      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
       dir = as.dir ;
       indir = as.indir
       } ;
 
   oper
+    -- Special VP construction.
     -- CPolarity so that it contains "do not" and "don't", can choose later
+    TnsPolAction : Type = R.Tense => R.CPolarity => E.VPS;
+
     LinAction : Type = {
-      s : R.Tense => R.CPolarity => E.VPS ;
+      s : TnsPolAction ;
       gerund : R.Polarity => Adv ;
       actor : NP ; -- sell -> seller
       } ;
@@ -173,6 +197,10 @@ open
     -- Slash categories --
     ----------------------
 
+    mkGerSIntrans : V2 -> LinAction ** {intrans : TnsPolAction} = \v2 ->
+      let linAction : LinAction = mkGerS v2  -- default: intransitive == s
+       in linAction ** {intrans = linAction.s} ;
+
     mkGerS : V2 -> LinAction = \v2 -> {
       s = \\t,p => mkVPS t p (mkVP <v2:V2> emptyNP) ;
       gerund =
@@ -186,10 +214,11 @@ open
 
     -- _Dir
     SlashDir : Type = LinAction ** {
+      intrans : TnsPolAction ;
       indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol
       } ;
-    mkDir : V2 -> SlashDir = \v2 -> mkGerS v2 ** {
+    mkDir : V2 -> SlashDir = \v2 -> mkGerSIntrans v2 ** {
       dir = prepPol v2.c2 ;
       indir = \\_ => emptyAdv ;
       } ;
@@ -207,10 +236,11 @@ open
 
     -- _Indir
     SlashIndir : Type = LinAction ** {
+      intrans : TnsPolAction ;
       dir : R.CPolarity => Adv ; -- (Acme will/wont sell) some/any stock
-      indir : PrepPol ;
+      indir : PrepPol
       } ;
-    mkIndir : V2 -> SlashIndir = \v2 -> mkGerS v2 ** {
+    mkIndir : V2 -> SlashIndir = \v2 -> mkGerSIntrans v2 ** {
       dir = \\_ => emptyAdv ;
       indir = prepPol v2.c2 ;
       } ;
@@ -229,15 +259,16 @@ open
 
     -- _Dir_Indir
     SlashDirIndir : Type = LinAction ** {
+      intrans : TnsPolAction ;
       dir,
       indir : PrepPol ;
       } ;
     mkDirIndir = overload {
-      mkDirIndir : V3 -> SlashDirIndir = \v3 -> mkGerS v3 ** {
+      mkDirIndir : V3 -> SlashDirIndir = \v3 -> mkGerSIntrans v3 ** {
         dir = prepPol v3.c2 ;
         indir = prepPol v3.c3
         } ;
-      mkDirIndir : V3 -> PrepPol -> SlashDirIndir = \v3,indir -> mkGerS v3 ** {
+      mkDirIndir : V3 -> PrepPol -> SlashDirIndir = \v3,indir -> mkGerSIntrans v3 ** {
         indir = indir ;
         dir = prepPol v3.c2
         }
@@ -290,16 +321,19 @@ open
     -- List versions --
     -------------------
     ListSlashDir : Type = ListLinAction ** {
+      intrans : R.Tense => R.CPolarity => E.ListVPS ;
       indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol ;
       } ;
 
     ListSlashIndir : Type = ListLinAction ** {
+      intrans : R.Tense => R.CPolarity => E.ListVPS ;
       dir : R.CPolarity => Adv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol ;
       } ;
 
     ListSlashDirIndir : Type = ListLinAction ** {
+      intrans : R.Tense => R.CPolarity => E.ListVPS ;
       dir,
       indir : PrepPol ;
       } ;

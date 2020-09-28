@@ -717,7 +717,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
   BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
   BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
-  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchRelation MatchQuantifier Exp6;
+  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchQualifier MatchRelation
+                             MatchQuantifier Exp6 [MatchFlag];
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
   BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
   BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
@@ -739,6 +740,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   L_Union.        BinExp ::= Exp "UNION"     Exp ;
   L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
 
+  -- ConstVal here will probably need to be upgraded to at least a variable
+  -- so we can say, TheRelevantQuorum.Percentage
   MQSat0.      MatchQuantifier ::= "NONE OF" ;
   MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal "OF" ;
   MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
@@ -751,6 +754,17 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   MRelMatch2.  MatchRelation   ::= "MATCH" ;
   MRelIs1.     MatchRelation   ::= "IS" ;
   MRelIs2.     MatchRelation   ::= "ARE" ;
+
+  MQualEach.      MatchQualifier ::= "EACH";
+  MQualTogether.  MatchQualifier ::= "TOGETHER";
+  MQualJS.        MatchQualifier ::= "JOINTLY-AND-SEVERALLY";
+  MQualNull.      MatchQualifier ::= ;
+
+  MFlagLDistinct. MatchFlag     ::= "L-DISTINCT" ;
+  MFlagRDistinct. MatchFlag     ::= "R-DISTINCT" ;
+  MFlagBDistinct. MatchFlag     ::=   "DISTINCT" ;
+  MFlagNoRepeat.  MatchFlag     ::= "NO-REPEATS" ;
+  separator MatchFlag ",";
 
   coercions UnaOp 7;
   UCurr.       UnaOp7 ::= CurrencyPrefix ;
@@ -804,6 +818,7 @@ The generic structure of a match relation is:
 
 - ObjQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
 - ObjList :: object(s)
+- MatchQualifier :: "EACH" | "TOGETHER" | "JOINTLY-AND-SEVERALLY" ;
 - MatchRelation :: satisfies | satisfy | matches | match | is | are | isa | areA
 - PredQuantifier :: at least N of | any of | at least 1 of | all of | exactly N of | at most N of | none of
 - PredList :: predicate(s)
@@ -814,11 +829,11 @@ example:
 
 #+begin_src text :noweb-ref l4-rules
   RULE    noblePotato4
-   DEFINE Item IS noblePotato
+   DEFINE Item IS noble
      WHEN AT LEAST 2 OF Item.previousOwners
-          SATISFY
+          EACH SATISFIES
           AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
-                        , isDuke, isDuchess, isEarl, isCountess ]
+                        , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
 #+end_src
 
 

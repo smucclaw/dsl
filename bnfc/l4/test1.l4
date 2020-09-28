@@ -31,11 +31,11 @@ RULE  3 Net3          // the "hence" target of rule 2 above
  BEFORE return.date + 3 DAYS
   WHERE Amount = $sale.cash * 90%
 RULE    noblePotato4
- DEFINE Item IS noblePotato
+ DEFINE Item IS noble
    WHEN AT LEAST 2 OF Item.previousOwners
-        SATISFY
+        EACH SATISFIES
         AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
-                      , isDuke, isDuchess, isEarl, isCountess]
+                      , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
 ENTITY spud2
    ISA Item
   WITH species  = "Solanum tuberosum"

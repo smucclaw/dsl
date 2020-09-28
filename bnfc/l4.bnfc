@@ -148,7 +148,8 @@ BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
 BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
 BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
 BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
-BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchRelation MatchQuantifier Exp6;
+BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 MatchQualifier MatchRelation
+                           MatchQuantifier Exp6 [MatchFlag];
 BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
 BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
 BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
@@ -170,6 +171,8 @@ Set_Subset.     BinExp ::= Exp  "⊂"   Exp;
 L_Union.        BinExp ::= Exp "UNION"     Exp ;
 L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
 
+-- ConstVal here will probably need to be upgraded to at least a variable
+-- so we can say, TheRelevantQuorum.Percentage
 MQSat0.      MatchQuantifier ::= "NONE OF" ;
 MQSatMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal "OF" ;
 MQSatAny.    MatchQuantifier ::= "ANY" "OF" ;
@@ -182,6 +185,17 @@ MRelMatch1.  MatchRelation   ::= "MATCHES" ;
 MRelMatch2.  MatchRelation   ::= "MATCH" ;
 MRelIs1.     MatchRelation   ::= "IS" ;
 MRelIs2.     MatchRelation   ::= "ARE" ;
+
+MQualEach.      MatchQualifier ::= "EACH";
+MQualTogether.  MatchQualifier ::= "TOGETHER";
+MQualJS.        MatchQualifier ::= "JOINTLY-AND-SEVERALLY";
+MQualNull.      MatchQualifier ::= ;
+
+MFlagLDistinct. MatchFlag     ::= "L-DISTINCT" ;
+MFlagRDistinct. MatchFlag     ::= "R-DISTINCT" ;
+MFlagBDistinct. MatchFlag     ::=   "DISTINCT" ;
+MFlagNoRepeat.  MatchFlag     ::= "NO-REPEATS" ;
+separator MatchFlag ",";
 
 coercions UnaOp 7;
 UCurr.       UnaOp7 ::= CurrencyPrefix ;

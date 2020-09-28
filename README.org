@@ -52,7 +52,7 @@ A "RULE" stanza is labeled with a numeric identifier, a name, or both, followed 
 
 The optional langstrings provide hints for natural language generation.
 
-*** Simple Rule Bodies: DEEM and Modals
+*** Simple Rule Bodies: DEFINE and Modals
 
 Every rule body is one of the following:
 
@@ -64,27 +64,27 @@ A rule body that does nothing. This is just for dev testing. By convention this 
   RBNoop.    RuleBody  ::= "NOOP";
 #+end_src
 
-**** <<<DEEM rule>>>
+**** <<<DEFINE rule>>>
 
 A constitutive rule.
 
 #+begin_src sql :noweb-ref l4-rules
-  RULE  4 Cabbage
-     DEEM Item IS cabbage
-     WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+  RULE   4 Cabbage
+    DEFINE Item IS cabbage
+      WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
 #+end_src
 
 The BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RuleDeem.   RuleBody  ::= GivenLimb "DEEM" [Constraint] WithLimb WhenLimb WhereLimb;
+  RuleDeem.   RuleBody  ::= GivenLimb "DEFINE" [Constraint] WithLimb WhenLimb WhereLimb;
 #+end_src
 
 Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" parts appear within the /constraint/ part:
 
 - constraint :: one or more subjects of the deem: that an A counts as B in some way, or has some value, or some inequality
 
-A DEEM rule can have several optional limbs:
+A DEFINE rule can have several optional limbs:
 
 - given :: context parameters, analogous to function arguments
 - with :: further attributes of the subject(s)
@@ -199,7 +199,7 @@ Boolean Expressions are used in a WHEN limb to evaluate truth values as part of 
   rules      UnlessExpr ::= | "UNLESS" Exp;
 #+end_src
 
-They are very similar to the constraint expressions we've already seen in DEEM rules.
+They are very similar to the constraint expressions we've already seen in DEFINE rules.
 
 The When Limb has an optional When part and an optional Unless part.
 
@@ -344,7 +344,7 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
 The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
 
 *** WITH: attributes
-The "With" limb assigns attributes to the subject of an ENTITY, DEEM, or WHERE clause.
+The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE clause.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
@@ -368,53 +368,53 @@ But you can also use WITH to define the abstract form -- you might call it a rec
 If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
 #+begin_src haskell :noweb-ref l4entity
-   RULE  Business
-    DEEM Business
-     ISA Record
-    WITH address = [ String ]
-         id      = [ { idtype = "UEN" , idval = UENString }
-                   | { idtype = String, idval = String } ]
-         name    = String
-         owner   = Person
+   RULE    Business
+    DEFINE Business
+       ISA Record
+      WITH address = [ String ]
+           id      = [ { idtype = "UEN" , idval = UENString }
+                     | { idtype = String, idval = String } ]
+           name    = String
+           owner   = Person
 #+end_src
 
 #+begin_src haskell :noweb-ref l4entity
-  RULE   Person
-    DEEM Person
-     ISA Record
-    WITH address = [ String ]
-         id      = [ { idtype = "UEN" , idval = UENString }
-                   | { idtype = String, idval = String }
-                   ]
-         name    = String
-         type    = [ "Natural" , "Corporate" | "Trust" ]
+  RULE     Person
+    DEFINE Person
+       ISA Record
+      WITH address = [ String ]
+           id      = [ { idtype = "UEN" , idval = UENString }
+                     | { idtype = String, idval = String }
+                     ]
+           name    = String
+           type    = [ "Natural" , "Corporate" | "Trust" ]
+  
+  RULE Human     DEFINE Human     ISA Person WITH type = "Natural"
+  RULE Company   DEFINE Company   ISA Person WITH type = "Corporate"
+  RULE Signatory DEFINE Signatory ISA Human  WITH principal = [ Person ]
 
-  RULE Human     DEEM Human     ISA Person WITH type = "Natural"
-  RULE Company   DEEM Company   ISA Person WITH type = "Corporate"
-  RULE Signatory DEEM Signatory ISA Human  WITH principal = [ Person ]
-
-  RULE   Signatories
-       DEEM Document
-        ISA Record
-       WITH parties     = [ Person ]
-            signatories = [ Signatory ]
-            witnesses   = [ Human ]
-       WHEN [ "each signatory has a principal which is a party"
-            , "each party is a principal of a signatory"
-            , "number of witnesses >= 2"
-            & "no witness is a party" ]
+  RULE     Signatories
+    DEFINE Document
+       ISA Record
+      WITH parties     = [ Person ]
+           signatories = [ Signatory ]
+           witnesses   = [ Human ]
+      WHEN [ "each signatory has a principal which is a party"
+           , "each party is a principal of a signatory"
+           , "number of witnesses >= 2"
+           & "no witness is a party" ]
+ 
 #+end_src
 
 (Yes, the "id" attribute above has two alternative shapes -- think of it as a sum type.)
 
-You can also use a DEEM rule to define a type whose values must obey a certain regex:
+You can also use a DEFINE rule to define a type whose values must obey a certain regex:
 
 #+begin_src haskell :noweb-ref l4entity
-
-  RULE  UENString
-   DEEM String
-    ISA UENString
-   WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
+  RULE     UENString
+    DEFINE String
+       ISA UENString
+      WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
 #+end_src
 
 Failure to obey that regex is a compile-time error.
@@ -452,7 +452,7 @@ In the future a more comprehensive time library will make it possible to say thi
   separator nonempty WhereExp ";";
 #+end_src
 
-A "where" limb is very similar structurally to a DEEM rule.
+A "where" limb is very similar structurally to a DEFINE rule.
 
 ** Advanced Rule Bodies
 **** TODO ASSERT
@@ -475,7 +475,7 @@ The syntax for meta-rules has not yet been defined.
 
 ***** Scope
 
-We should probably handle scoping restrictions within DEEM expressions, using the GIVEN limb to inspect the call stack.
+We should probably handle scoping restrictions within DEFINE expressions, using the GIVEN limb to inspect the call stack.
 
 **** TODO EPIRULE or META or HOrule
 
@@ -665,7 +665,7 @@ For now the parser reads currency and math expressions together.
 
 *** A Simply Typed Abstract Syntax
 
-Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4, which I will represent in BNFC. Work rebalances from the parser to the type checker.
+Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. The below representation doesn't have type parameters, so work will rebalance from the parser to the type checker.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   coercions Exp 9;
@@ -1075,11 +1075,11 @@ In Haskell we would write something like:
 Let's try it in L4. We note that the record types for objects in L4 are less monomorphic than in Haskell, which is why we allow some staff to have "province" and other staff to have "state" attributes; we basically want our objects to feel loosey-goosey, the way a generation of JSON and MongoDB programmers have learned to expect.
 
 #+begin_src sql
-  GIVEN planeFare, staffDir, month
-  DEEM travelBudget = numberOf(Employees) * planeFare * 2
-  WHEN month ~ ["jun", "sep"]
-       staffDir.Employees.country ~ ["CA","US"]
-       staffDir.Employees.[province,state] ~ ["BC","CA"]
+   GIVEN planeFare, staffDir, month
+  DEFINE travelBudget = numberOf(Employees) * planeFare * 2
+    WHEN month ~ ["jun", "sep"]
+         staffDir.Employees.country ~ ["CA","US"]
+         staffDir.Employees.[province,state] ~ ["BC","CA"]
 #+end_src
 
 When there's a list on the right, I pronounce "~" "is in", like with SQL.
@@ -1099,7 +1099,7 @@ The first use unifies Employees with all the elements of the list whose ~.countr
 
 The second use further constrains Employees to those whose ~.province~ or ~.state~ attributes are ~"BC"~ or ~"CA"~.
 
-The resulting Employees is available to the main body of the DEEM, where numberOf, aka "length", turns it into an Int, and it participates in the math expressions.
+The resulting Employees is available to the main body of the DEFINE, where numberOf, aka "length", turns it into an Int, and it participates in the math expressions.
 
 Simple data types:
 - String
@@ -1451,19 +1451,19 @@ In Prolog, that reads:
 #+end_src
 
 #+begin_src text :noweb-ref l4-rules
-  RULE 2 edible
-   DEEM Item IS EdiblePotato
-            AND TastyFood
-    WHEN Item IS Potato
-     AND Item IS Edible
+  RULE  2 edible
+   DEFINE Item IS EdiblePotato
+              AND TastyFood
+     WHEN Item IS Potato
+      AND Item IS Edible
 #+end_src
 
 Rule 2 relies on rule 3. This is backward chaining.
 
 #+begin_src text :noweb-ref l4-rules
-  RULE 3 isPotato
-    DEEM Item IS Potato
-    WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+  RULE  3 isPotato
+   DEFINE Item IS Potato
+     WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
 
   // an OR-LIST expands to
   // isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
@@ -1481,11 +1481,11 @@ There are a couple ways to say that. This is one way:
 
 #+begin_src haskell :noweb-ref l4-rules
 
-  RULE noblePotato
-    DEEM Item IS Noble
-    WHEN Item ISA Potato
-     AND Item.previousOwners.First IS Noble
-     AND Item.previousOwners.Second IS Noble
+  RULE     noblePotato
+    DEFINE Item IS Noble
+      WHEN Item ISA Potato
+       AND Item.previousOwners.First  IS Noble
+       AND Item.previousOwners.Second IS Noble
 #+end_src
 
 (Maybe this also creates an automatic Item.isNoble?)
@@ -1502,17 +1502,17 @@ That translates to:
 This allows us to subsequently use the term Potato instead of Item:
 
 #+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato2
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.isNoble >= 2
+  RULE     noblePotato2
+    DEFINE Potato IS Noble
+      WHEN Potato.previousOwners.isNoble >= 2
 #+end_src
 
 Alternative syntax:
 
 #+begin_src haskell :noweb-ref l4-rules
-  RULE noblePotato3
-    DEEM Potato IS Noble
-    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+  RULE     noblePotato3
+    DEFINE Potato IS Noble
+      WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
 #+end_src
 *** About Non-Monotonic Logics
 
@@ -1731,7 +1731,7 @@ We need a meta-rule along the lines of /lex specialis/ which tells us that in su
 The Weekend Dinner price of a dish is 1.5 times what the price of the dish would have been if it were served for Weekday Lunch.
 
 #+begin_example
-DEEM              dish.price(weekend=true,  period=dinner) =
+DEFINE dish.price(weekend=true,  period=dinner) =
      hypothetical(dish.price(weekend=false, period=lunch)) * 1.5
 #+end_example
 
@@ -1954,11 +1954,11 @@ Next we turn those things into concrete outputs.
 
 The transformation looks like this:
 
-- input :: Rule ... Given X ... DEEM X.foo WHEN X.bar AND X.baz
+- input :: Rule ... Given X ... DEFINE X.foo WHEN X.bar AND X.baz
 - output :: foo(X) :- bar(X), baz(X).
 
 -#+BEGIN_QUOTE
- *Comment MS:* Does =DEEM= always define a rule (logically speaking: an
+ *Comment MS:* Does =DEFINE= always define a rule (logically speaking: an
  implication), or is there also a mechanism for /definitions/, such as for
  example in the Catala language (which is an equivalence, logically
  speaking)? In the above example, when knowing =X.foo=, one cannot infer that
@@ -2122,20 +2122,20 @@ Some helper functions
 
 
 #+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
-  RULE 1 elements
-    :en: "Elements of a Contract"
-   GIVEN scenario
-    DEEM scenario.hasContract
-    WHEN [ parties >= 2
-         ,   @ T1 party.Offeror  offers    O
-         ,   @ T3 party.Acceptor accepts   O, T1 <= T3
-         , ! @ T2 party.Offeror  withdraws O, T1 <= T2 <= T3
-         , ! @ T2 party.Acceptor declines  O, T1 <= T2 <= T3
-                  -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
-         , O.Offeror.Consideration
-         & O.Acceptor.Consideration
-         ]
-   WHERE [ O.Offeror.Consideration & O.Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]
+  RULE   1 elements
+           :en: "Elements of a Contract"
+     GIVEN scenario
+    DEFINE scenario.hasContract
+      WHEN [ parties >= 2
+           ,   @ T1 party.Offeror  offers    O
+           ,   @ T3 party.Acceptor accepts   O, T1 <= T3
+           , ! @ T2 party.Offeror  withdraws O, T1 <= T2 <= T3
+           , ! @ T2 party.Acceptor declines  O, T1 <= T2 <= T3
+                    -- Note: Acceptor may unify to multiple values, since cardinality of parties can be 3 or more
+           , O.Offeror.Consideration
+           & O.Acceptor.Consideration
+           ]
+     WHERE [ O.Offeror.Consideration & O.Acceptor.Consideration ] <&> [ [ isPromiseToRefrain | hasValue ] & not isPast ]
 #+end_src
 
 Some unspoken rules are at play:

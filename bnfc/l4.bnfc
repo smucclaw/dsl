@@ -9,7 +9,7 @@ RName.     RuleName  ::= OptLangStrings ;
 rules      OptLangStrings ::= | LangStrings;
 
 RBNoop.    RuleBody  ::= "NOOP";
-RuleDeem.   RuleBody  ::= GivenLimb "DEEM" [Constraint] WithLimb WhenLimb WhereLimb;
+RuleDeem.   RuleBody  ::= GivenLimb "DEFINE" [Constraint] WithLimb WhenLimb WhereLimb;
 RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;

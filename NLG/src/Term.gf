@@ -3,11 +3,16 @@ abstract Term = {
     Kind ; -- Not quantified yet
     Term ; -- Subjects, objects, adjuncts
     [Term]{2} ;
+    Property ;
+    [Property]{2} ;
     Conjunction ;
     Determiner ;
   fun
     And, Or : Conjunction ;
-    ConjTerm : Conjunction -> [Term] -> Term ;
+    ConjTerm
+      : Conjunction -> [Term] -> Term ;
+    ConjProperty                              -- pre-money or post-money
+      : Conjunction -> [Property] -> Property ;
 
     -- Determiners
     ASg,                                     -- a post-money valuation
@@ -18,5 +23,10 @@ abstract Term = {
     Any : Determiner ;                       -- any liquidation event
 
     TDet : Determiner -> Kind -> Term ;
+
+    -- Kinds and Properties
+    PNeg : Property -> Property ;             -- not fixed / involuntary
+    KProperty : Property -> Kind -> Kind ;    -- voluntary termination
+
 
 }

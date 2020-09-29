@@ -1,17 +1,10 @@
 abstract Rule = Action ** {
 
-  flags startcat = Rule ;
+  flags startcat = Move ;
   cat
-    Rule ;
-    Rulebody ;
+    Move ; -- Can be a rule, or a definition, any independent sentence.
 
-    GivenLimb ;
-    WithLimb ;
-    WhenLimb ;
-    WhereLimb ;
-    DeadlineLimb ;
-    HenceLimb ;
-    DeonticLimb ;
+    Deontic ;
 
     Party ;
     PartyAlias ;
@@ -19,26 +12,34 @@ abstract Rule = Action ** {
     -- Action comes from Action
     ActionAlias ; -- VP: "sell a potato" + NP: "the sale"
 
-    PredType ;
+    Temporal ;
 
   fun
+    TPresent  : Temporal ;
+    TPast     : Temporal ;
+    TFuture   : Temporal ;
 
-    -- Name and # of the rule
-    MkRule : Int -> String -> Rulebody -> Rule ;
+    MAction : Temporal ->
+      Term -> ActionAlias -> Move ; -- the seller must issue the refund within 3 days.
 
-    --
-    Modal : GivenLimb -> PartyAlias -> DeonticLimb -> WhenLimb -> DeadlineLimb -> HenceLimb -> WhereLimb -> Rulebody ;
+    MDefTerm : Kind -> Term -> Move ;
 
-    -----
-    Is, Isa, Has : PredType ;
+    May,
+      Must,
+      Shant : ActionAlias -> Deontic ;
 
 
-    -- Limbs
-    NoWith : WithLimb ;
-    NoWhen : WhenLimb ;
-    NoWhere : WhereLimb ;
-    NoHence : HenceLimb ;
-    NoGiven : GivenLimb ;
-    NoDeadline : DeadlineLimb ;
+    -- Aliases
+    AAlias : Term -> Action -> ActionAlias ;
+    PAlias : Term -> Party -> PartyAlias ;
+
+    -- Definitions
+
+  cat
+    WhereLimb ; Variable ;
+  fun
+    ParenDef, -- Cabbage (a vegetable with species Brassica oleracea)
+    DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
+      : Variable -> WhereLimb -> Term ;
 
 }

@@ -1,1 +1,3 @@
-abstract Top = Rule, Gastronomy ;
+abstract Top = Rule, Gastronomy ** {
+  flags startcat = Move ;
+}

@@ -1,9 +1,11 @@
 concrete ActionEng of Action = TermEng **
 open
   Prelude,
+  ParamX,
   (R=ResEng),
   (E=ExtendEng),
   (C=ConjunctionEng),
+  ExtraEng,
   SyntaxEng,
   ParadigmsEng,
   NounEng,
@@ -67,10 +69,11 @@ open
     -- Negations --
     ---------------
 
+    {- This doesn't work with the new design. TODO replace with something that makes sense.
     -- : Action -> Action ;        -- doesnt sell X / doesnt sell X and Y
     ANeg action = action ** {
-      s = \\t,p => case p of {
-        --R.CNeg _ => action.s ! t ! R.CPos ; -- double negation = positive
+      s = \\tmp => case p of {
+        --R.Neg  => action.s ! t ! R.CPos ; -- double negation = positive
         _ => action.s ! t ! negativePol.p
         } ;
       gerund = table {
@@ -78,6 +81,7 @@ open
         _ => action.gerund ! R.Neg
         }
       } ;
+    -}
     -- : Action_Dir -> [Term] -> Action ; -- sells neither X, Y nor Z
     AComplNoneDir v2 obj =
       let none_of : NP = mkNP neither7nor_DConj obj ;
@@ -90,17 +94,17 @@ open
     ------------------
 
     BaseAction a1 a2 = {
-      s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- doesnt sell X and doesnt issue Y
+      s = \\tmp => E.BaseVPS (a1.s ! tmp) (a2.s ! tmp) ; -- doesnt sell X and doesnt issue Y
       gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
       actor = mkNP the_Det (mkN "actor") ; -- TODO -- this gets confusing with conjunctions, "the seller and the issuer"
       } ;
     ConsAction a as = as ** {
-      s = \\t,p => E.ConsVPS (a.s ! t ! p) (as.s ! t ! p) ;
+      s = \\tmp => E.ConsVPS (a.s ! tmp) (as.s ! tmp) ;
       gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p)
       } ;
     ConjAction co as = {
-      s = \\t,p =>
-        E.ConjVPS co (as.s ! t ! p) ;
+      s = \\tmp =>
+        E.ConjVPS co (as.s ! tmp) ;
       gerund = \\p =>
         SyntaxEng.mkAdv co (as.gerund ! p) ;
       actor = as.actor
@@ -110,19 +114,19 @@ open
       let a1' : LinAction = complDir a1 emptyTerm ;
           a2' : LinAction = complDir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
-           intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
+           intrans = \\tmp => E.BaseVPS (a1.intrans ! tmp) (a2.intrans ! tmp) ;
            dir = a1.dir ; -- : PrepPol
            indir = \\p => emptyAdv ; -- the existing indir has been incorporated in a1 and a2
          } ;
     ConsAction_Dir a as =
       let a' : LinAction = complDir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
-           intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
+           intrans = \\tmp => E.ConsVPS (a.intrans ! tmp) (as.intrans ! tmp) ;
            dir = as.dir ; -- : PrepPol
            indir = \\p => emptyAdv
          } ;
     ConjSlashDir co as = ConjAction co as ** {
-      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
+      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -131,64 +135,84 @@ open
       let a1' : LinAction = complIndir a1 emptyTerm ;
           a2' : LinAction = complIndir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
-           intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
+           intrans = \\tmp => E.BaseVPS (a1.intrans ! tmp) (a2.intrans ! tmp) ;
            indir = a1.indir ; -- : PrepPol
            dir = \\p => emptyAdv ; -- the existing dir has been incorporated in a1 and a2
          } ;
     ConsAction_Indir a as =
       let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
-           intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
+           intrans = \\tmp => E.ConsVPS (a.intrans ! tmp) (as.intrans ! tmp) ;
            indir = as.indir ; -- : PrepPol
            dir = \\p => emptyAdv
          } ;
 
     ConjSlashIndir co as = ConjAction co as ** {
-      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
+      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
       dir = as.dir ;
       indir = as.indir
       } ;
 
     BaseAction_Dir_Indir a1 a2 = BaseAction a1 a2 ** {
-      intrans = \\t,p => E.BaseVPS (a1.intrans ! t ! p) (a2.intrans ! t ! p) ;
+      intrans = \\tmp => E.BaseVPS (a1.intrans ! tmp) (a2.intrans ! tmp) ;
       dir = a2.dir ;
       indir = a2.indir
       } ;
     ConsAction_Dir_Indir a as = ConsAction a as ** {
-      intrans = \\t,p => E.ConsVPS (a.intrans ! t ! p) (as.intrans ! t ! p) ;
+      intrans = \\tmp => E.ConsVPS (a.intrans ! tmp) (as.intrans ! tmp) ;
       dir = as.dir ;
       indir = as.indir
       } ;
     ConjSlashDirIndir co as = ConjAction co as ** {
-      intrans = \\t,p => E.ConjVPS co (as.intrans ! t ! p) ;
+      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
       dir = as.dir ;
       indir = as.indir
       } ;
 
+  param
+    -- Merging tense and modality
+    TenseModPol = PMay | PMust | PShant | PPres Polarity | PFut Polarity ;
+
   oper
     -- Special VP construction.
-    -- CPolarity so that it contains "do not" and "don't", can choose later
-    TnsPolAction : Type = R.Tense => R.CPolarity => E.VPS;
+    TnsPolAction : Type = TenseModPol => E.VPS;
 
     LinAction : Type = {
       s : TnsPolAction ;
-      gerund : R.Polarity => Adv ;
+      gerund : Polarity => Adv ;
       actor : NP ; -- sell -> seller
       } ;
 
     ListLinAction : Type = {
-      s : R.Tense => R.CPolarity => E.ListVPS ;
-      gerund : R.Polarity => [Adv] ;
+      s : TenseModPol => E.ListVPS ;
+      gerund : Polarity => [Adv] ;
       actor : NP ;
       } ;
 
     linAction : LinAction -> Str = \l ->
-      (mkUtt (cl presentTense positivePol emptyTerm l)).s ;
+      (mkUtt (cl (PPres R.Pos) emptyTerm l)).s ;
 
-    mkVPS : R.Tense -> R.CPolarity -> VP -> E.VPS = \t,p ->
-      let tense : Tense = lin Tense {s=[] ; t=t} ;
-          pol : Pol = lin Pol {s=[] ; p=p} ;
-       in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
+    mkVPS : TenseModPol -> VP -> E.VPS = \tm,vp ->
+      let vp_t_p : VP*Tense*Pol = case tm of {
+            PMay => <mkVP ExtraEng.may_VV vp
+                    ,presentTense
+                    ,positivePol> ;
+            PMust => <mkVP must_VV vp
+                     ,presentTense
+                     ,positivePol> ;
+            PShant => <mkVP ExtraEng.shall_VV vp
+                      ,presentTense
+                      ,negativePol> ;
+
+            PPres R.Pos => <vp, presentTense, positivePol> ;
+            PPres R.Neg => <vp, presentTense, negativePol> ;
+            PFut R.Pos => <vp, futureTense, positivePol> ;
+            PFut R.Neg => <vp, futureTense, negativePol>
+            } ;
+          vp' = vp_t_p.p1 ;
+          tense : Tense = vp_t_p.p2 ;
+          pol : Pol = vp_t_p.p3 ;
+       in E.MkVPS (mkTemp tense simultaneousAnt) pol vp' ;
 
     emptyTerm : LinTerm = emptyNP ;
 
@@ -202,7 +226,7 @@ open
        in linAction ** {intrans = linAction.s} ;
 
     mkGerS : V2 -> LinAction = \v2 -> {
-      s = \\t,p => mkVPS t p (mkVP <v2:V2> emptyNP) ;
+      s = \\tmp => mkVPS tmp (mkVP <v2:V2> emptyNP) ;
       gerund =
         let posAdv : Adv = E.GerundAdv (mkVP <v2:V2> emptyNP) ;
             negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
@@ -215,29 +239,36 @@ open
     -- _Dir
     SlashDir : Type = LinAction ** {
       intrans : TnsPolAction ;
-      indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
+      indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol
       } ;
-    mkDir : V2 -> SlashDir = \v2 -> mkGerSIntrans v2 ** {
-      dir = prepPol v2.c2 ;
-      indir = \\_ => emptyAdv ;
+    mkDir = overload {
+      mkDir : V2 -> SlashDir = \v2 -> mkGerSIntrans v2 ** {
+        dir = prepPol v2.c2 ;
+        indir = \\_ => emptyAdv ;
+        } ;
+      mkDir : V2 -> VP -> SlashDir = \v2,intransvp -> mkGerSIntrans v2 ** {
+        dir = prepPol v2.c2 ;
+        indir = \\_ => emptyAdv ;
+        intrans = \\tmp => mkVPS tmp intransvp ;
+        }
       } ;
     slashDir : SlashDirIndir -> LinTerm -> SlashIndir = \vps,do -> vps ** {
       dir = applyPrepPol vps.dir do
       } ;
     complDir : SlashDir -> LinTerm -> LinAction = \vps,do -> vps ** {
-      s = \\t,p => complS (vps.s ! t ! p)
-                          (vps.indir ! p)
-                          (applyPrepPol vps.dir do ! p) ;
+      s = \\tmp => complS (vps.s ! tmp)
+                          (vps.indir ! tmp2pol tmp)
+                          (applyPrepPol vps.dir do ! tmp2pol tmp) ;
       gerund = \\p => complGer (vps.gerund ! p)
-                            (vps.indir ! pol2cpol p)
-                            (applyPrepPol vps.dir do ! pol2cpol p)
+                            (vps.indir ! p)
+                            (applyPrepPol vps.dir do ! p)
       } ;
 
     -- _Indir
     SlashIndir : Type = LinAction ** {
       intrans : TnsPolAction ;
-      dir : R.CPolarity => Adv ; -- (Acme will/wont sell) some/any stock
+      dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol
       } ;
     mkIndir : V2 -> SlashIndir = \v2 -> mkGerSIntrans v2 ** {
@@ -248,12 +279,12 @@ open
       indir = applyPrepPol vps.indir io
       } ;
     complIndir : SlashIndir -> LinTerm -> LinAction = \vps,io -> vps ** {
-      s = \\t,p => complS (vps.s ! t ! p)
-                          (vps.dir ! p)
-                          (applyPrepPol vps.indir io ! p) ;
+      s = \\tmp => complS (vps.s ! tmp)
+                          (vps.dir ! tmp2pol tmp)
+                          (applyPrepPol vps.indir io ! tmp2pol tmp) ;
       gerund = \\p => complGer (vps.gerund ! p)
-                            (vps.dir ! pol2cpol p)
-                            (applyPrepPol vps.indir io ! pol2cpol p)
+                            (vps.dir ! p)
+                            (applyPrepPol vps.indir io ! p)
       } ;
 
 
@@ -274,7 +305,7 @@ open
         }
       } ;
     -- PrepPol is more powerful than Prep: prepared for multilayer negations
-    PrepPol : Type = R.CPolarity => PrepPlus ;
+    PrepPol : Type = Polarity => PrepPlus ;
     PrepPlus : Type = {  -- Positive version  / Negative version
       s : Str ;      -- at (fixed valuation) / whether at (fixed valuation)
       post : Str ;   -- ∅                    / or without
@@ -288,8 +319,8 @@ open
         redupl = False
         } ;
       prepPol : (p,n : PrepPlus) -> PrepPol = \pos,neg -> table {
-        R.CPos   => pos ;
-        R.CNeg _ => neg
+        R.Pos  => pos ;
+        R.Neg  => neg
         }
       } ;
 
@@ -299,7 +330,7 @@ open
       redupl = r
       } ;
 
-    applyPrepPol : PrepPol -> LinTerm -> (R.CPolarity=>Adv) = \pp,term -> \\pol =>
+    applyPrepPol : PrepPol -> LinTerm -> (Polarity=>Adv) = \pp,term -> \\pol =>
       let np : NP = term ; -- ! cpol2pol pol ;
           npacc : Str = np.s ! R.NPAcc ;
           prep : PrepPlus = pp ! pol
@@ -321,19 +352,19 @@ open
     -- List versions --
     -------------------
     ListSlashDir : Type = ListLinAction ** {
-      intrans : R.Tense => R.CPolarity => E.ListVPS ;
-      indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
+      intrans : TenseModPol => E.ListVPS ;
+      indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol ;
       } ;
 
     ListSlashIndir : Type = ListLinAction ** {
-      intrans : R.Tense => R.CPolarity => E.ListVPS ;
-      dir : R.CPolarity => Adv ; -- (Acme will/wont sell) some/any stock
+      intrans : TenseModPol => E.ListVPS ;
+      dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol ;
       } ;
 
     ListSlashDirIndir : Type = ListLinAction ** {
-      intrans : R.Tense => R.CPolarity => E.ListVPS ;
+      intrans : TenseModPol => E.ListVPS ;
       dir,
       indir : PrepPol ;
       } ;
@@ -341,26 +372,16 @@ open
     ---------------------
     -- Generic helpers --
     ---------------------
-    cl : Tense -> Pol -> LinTerm -> LinAction -> S = \t,p,subj,pred ->
-      let s : S = E.PredVPS (np subj) (pred.s ! t.t ! p.p)
-       in s ** {s = s.s ++ t.s ++ p.s} ;
-    -- This is silly, but I need to do it this way, because instead of VP, which is variable in
-    -- tense and polarity, Im storing /fully formed VPS/s in a table with R.Tense and R.CPolarity as LHS.
-    -- (Why do I store VPS instead of VP? To be able to coordinate them.)
-    -- When an abstract syntax value like TPresent or PPositive is used to choose the correct VPS,
-    -- I need to use the s fields of those values, so that every argument contributes to the linearization.
-    -- See https://inariksit.github.io/gf/2018/08/28/gf-gotchas.html#metavariables-or-those-question-marks-that-appear-when-parsing
+    cl : TenseModPol -> LinTerm -> LinAction -> S = \tmp,subj,pred ->
+      E.PredVPS (np subj) (pred.s ! tmp) ;
 
-    gerund : LinAction -> R.Polarity=>NP = \pred -> \\pol =>
+    gerund : LinAction -> Polarity=>NP = \pred -> \\pol =>
       let s : Str = (pred.gerund ! pol).s in mkNP (mkN s s s s) ;
 
-    cpol2pol : R.CPolarity -> R.Polarity = \p -> case p of {
-      R.CPos => R.Pos ;
-      R.CNeg _ => R.Neg
-      } ;
-
-    pol2cpol : R.Polarity -> R.CPolarity = \p -> case p of {
-      R.Pos => R.CPos ;
-      R.Neg => R.CNeg True
+    tmp2pol : TenseModPol -> Polarity = \p -> case p of {
+      PShant => Neg ;
+      PPres p => p ;
+      PFut p  => p ;
+      _ => Pos
       } ;
 }

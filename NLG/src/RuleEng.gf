@@ -3,22 +3,28 @@
 --   (Extend=ExtendEng) ** {} ;
 concrete RuleEng of Rule = ActionEng ** open
   Prelude,
+  ParamX,
   SyntaxEng,
-  ExtendEng in {
+  SymbolicEng,
+  ExtendEng,
+  (WN=WordNetEng) in {
   lincat
     Move = Utt ;
 
-    Deontic = actionAlias ** {modal : PModal} ;
-
-    Party = PN ;
-    PartyAlias = {party : PN ; alias : NP} ; -- Meng Wong, "the Farmer"
+    Party = NP ;
+    PartyAlias = {party, alias : NP} ; -- Meng Wong, "the Farmer"
 
     ActionAlias = LinActionAlias ;
     Deontic = LinDeontic ;
 
+    Temporal = Tense ;
+
+  param
+    TnsPol = Present Polarity | Future Polarity ;
   oper
-    LinDeontic : Type = LinActionAlias ** {
-      modal : PModal
+    LinDeontic : Type = {
+      action : VPS ; -- TODO: can we safely throw away gerund and actor?
+      alias : NP ;
       } ;
 
     LinActionAlias : Type = {
@@ -26,12 +32,62 @@ concrete RuleEng of Rule = ActionEng ** open
       alias : NP           -- NP: "the sale"
       } ;
 
-  param
-    PModal = PMay | PMust | PShant ;
-
   lin
+    -- : Temporal
+    -- TPresent = presentTense ;
+    -- TPast    = pastTense ;
+    -- TFuture  = futureTense ;
+
+    -- : PartyAlias -> Deontic -> Move ; -- the seller must issue the refund
+    MAction party deontic = mkUtt (PredVPS party.party deontic.action) ;
+
+    -- : PartyAlias -> Deontic -> Move ; -- the seller must issue the refund
+    MActionAlias party deontic = mkUtt (PredVPS party.alias deontic.action) ;
+
+    --  : Kind -> Term -> Move ;
+    MDefTerm kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
+
+    -- : ActionAlias -> Deontic ;
+    May a = a ** {
+      action = a.action.s ! PMay} ;
+    Must a = a ** {
+      action = a.action.s ! PMust} ;
+    Shant a = a ** {
+      action = a.action.s ! PShant } ;
+    -- TODO: is this a good place for these?
+    PosPres a = a ** {
+      action = a.action.s ! PPres Pos} ;
+    NegPres a = a ** {
+      action = a.action.s ! PPres Neg} ;
+    PosFut a = a ** {
+      action = a.action.s ! PFut Pos } ;
+    NegFut a = a ** {
+      action = a.action.s ! PFut Neg } ;
 
 
+    -- Aliases
+    -- : Term -> Action -> ActionAlias ;
+    AAlias alias action = {action = action ; alias = alias} ;
+    -- : Term -> Party -> PartyAlias ;
+    PAlias alias party = {party = party ; alias = alias} ;
+
+    -- Parties
+    Everybody = everybody_NP ;
+    Nobody = nobody_NP ;
+    MkParty = symb ;
+    -- Definitions
+    {-
+  lincat
+    WhereLimb ; Variable ;
+  lin
+    ParenDef, -- Cabbage (a vegetable with species Brassica oleracea)
+    DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
+      : Variable -> WhereLimb -> Term ;
+-}
+
+    -- Individual verbs
+    Refund =
+      mkDir WN.refund_V2 (mkVP WN.issue_1_V2 (mkNP aSg_Det WN.refund_1_N)) ;
 
 }
 

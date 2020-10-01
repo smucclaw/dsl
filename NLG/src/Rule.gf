@@ -19,8 +19,9 @@ abstract Rule = Action ** {
     TPast     : Temporal ;
     TFuture   : Temporal ;
 
-    MAction : Temporal ->
-      Term -> ActionAlias -> Move ; -- the seller must issue the refund within 3 days.
+    MAction,
+      MActionAlias :
+      PartyAlias -> Deontic -> Move ; -- the seller must issue the refund within 3 days.
 
     MDefTerm : Kind -> Term -> Move ;
 
@@ -28,13 +29,23 @@ abstract Rule = Action ** {
       Must,
       Shant : ActionAlias -> Deontic ;
 
+    PosPres,  -- For now these are also deontics.
+      NegPres,
+      PosFut,
+      NegFut : ActionAlias -> Deontic ;
+
 
     -- Aliases
     AAlias : Term -> Action -> ActionAlias ;
     PAlias : Term -> Party -> PartyAlias ;
 
-    -- Definitions
+    -- Parties
+    Nobody,
+      Everybody : Party ;
 
+    MkParty : String -> Party ;
+
+    -- Definitions
   cat
     WhereLimb ; Variable ;
   fun
@@ -42,4 +53,7 @@ abstract Rule = Action ** {
     DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
       : Variable -> WhereLimb -> Term ;
 
+    -- Individual verbs
+
+    Refund : Action_Dir ;
 }

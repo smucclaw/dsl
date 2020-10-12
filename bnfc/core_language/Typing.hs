@@ -32,7 +32,9 @@ locals_of_env (Env _ (LVD ls)) = ls
 class_def_assoc :: [ClassDecl] -> [(ClassName, ClassDef)]
 class_def_assoc cds = map (\(ClsDecl cn cdf) -> (cn, cdf)) cds
 
-
+-- For a class name 'cn', returns the list of the names of the superclasses of 'cn'
+-- Here, 'cdf_assoc' is an association of class names and class defs as contained in a module.
+-- 'visited' is the list of class names already visited on the way up the class hierarchy
 super_classes :: [(ClassName, ClassDef)] -> [ClassName] -> ClassName -> [ClassName]
 super_classes cdf_assoc visited cn =
   case lookup cn cdf_assoc of
@@ -43,6 +45,7 @@ super_classes cdf_assoc visited cn =
       then error ("cyclic superclass hierarchy for class " ++ (case cn of (ClsNm n) -> n))
       else super_classes cdf_assoc (cn : visited) scn 
 
+-- For each of a list of class declarations, returns its list of superclass names
 super_classes_decls :: [ClassDecl] -> [[ClassName]]
 super_classes_decls cds =
   let cdf_assoc = class_def_assoc cds
@@ -61,6 +64,25 @@ super_classes_decls cds =
 -- - no ref to undefined superclass
 -- - no cyclic graph hierarchy (implemented in super_classes above)
 -- - no duplicate field declarations (local and inherited)
+
+-- the class decl does not reference an undefined superclass
+defined_superclass :: [ClassName] -> ClassDecl -> Bool
+defined_superclass cns cdc =
+  case cdc of
+    (ClsDecl cn (ClsDef Nothing _)) -> True
+    (ClsDecl cn (ClsDef (Just scn) _)) ->
+      if elem scn cns
+      then True
+      else error ("undefined superclass for class " ++ (case cn of (ClsNm n) -> n))
+
+
+wellformed_class_decls_in_module :: Module -> Bool
+wellformed_class_decls_in_module md =
+  case md of
+    (Mdl cds rls) ->
+      let class_names = map name_of_class_decl cds
+      in all (defined_superclass class_names) cds
+  
 
 ----------------------------------------------------------------------
 -- Typing functions

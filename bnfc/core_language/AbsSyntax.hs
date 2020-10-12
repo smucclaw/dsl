@@ -37,6 +37,10 @@ data ClassDef = ClsDef (Maybe ClassName) [FieldDecl]
 data ClassDecl = ClsDecl ClassName ClassDef
   deriving (Eq, Ord, Show, Read)
 
+name_of_class_decl :: ClassDecl -> ClassName
+name_of_class_decl (ClsDecl cn _) = cn
+
+
 -- some custom classes - should eventually go into a prelude and not be hard-wired
 objectC = ClsDecl (ClsNm "Object") (ClsDef Nothing [])
 

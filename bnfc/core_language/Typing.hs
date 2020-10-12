@@ -13,15 +13,15 @@ import Data.List
 -- Typing is done in an environment, composed of
 -- the global decls of a module and
 -- local variable declarations
-data LocalVarDecls = LVD [(VarName,Tp)]
+data LocalVarDecls = LVD [(VarName, Tp)]
   deriving (Eq, Ord, Show, Read)
-data Environment = Env Module LocalVarDecls
+data Environment t = Env (Module t) LocalVarDecls
   deriving (Eq, Ord, Show, Read)
 
-module_of_env :: Environment -> Module
+module_of_env :: Environment t -> Module t
 module_of_env (Env m _) = m
 
-locals_of_env :: Environment -> [(VarName,Tp)]
+locals_of_env :: Environment t -> [(VarName,Tp)]
 locals_of_env (Env _ (LVD ls)) = ls
 
 
@@ -29,32 +29,62 @@ locals_of_env (Env _ (LVD ls)) = ls
 -- Class manipulation
 ----------------------------------------------------------------------
 
-class_def_assoc :: [ClassDecl] -> [(ClassName, ClassDef)]
-class_def_assoc cds = map (\(ClsDecl cn cdf) -> (cn, cdf)) cds
+class_def_assoc :: [ClassDecl t] -> [(ClassName, ClassDef t)]
+class_def_assoc = map (\(ClsDecl cn cdf) -> (cn, cdf))
+
+field_assoc ::  [ClassDecl t] -> [(ClassName, [FieldDecl])]
+field_assoc = map (\(ClsDecl cn cdf) -> (cn, fields_of_class_def cdf))
+
 
 -- For a class name 'cn', returns the list of the names of the superclasses of 'cn'
 -- Here, 'cdf_assoc' is an association of class names and class defs as contained in a module.
 -- 'visited' is the list of class names already visited on the way up the class hierarchy
-super_classes :: [(ClassName, ClassDef)] -> [ClassName] -> ClassName -> [ClassName]
+super_classes :: [(ClassName, ClassDef (Maybe ClassName))] -> [ClassName] -> ClassName -> [ClassName]
 super_classes cdf_assoc visited cn =
   case lookup cn cdf_assoc of
+    -- the following should not happen if defined_superclass is true in a module
     Nothing -> error "in super_classes: cn not in cdf_assoc (internal error)"
+    -- reached the top of the hierarchy
     Just (ClsDef Nothing _) -> reverse (cn : visited)
+    -- class has super-class with name scn
     Just (ClsDef (Just scn) _) -> 
       if elem scn visited
       then error ("cyclic superclass hierarchy for class " ++ (case cn of (ClsNm n) -> n))
       else super_classes cdf_assoc (cn : visited) scn 
 
 -- For each of a list of class declarations, returns its list of superclass names
-super_classes_decls :: [ClassDecl] -> [[ClassName]]
+super_classes_decls :: [ClassDecl (Maybe ClassName)] -> [[ClassName]]
 super_classes_decls cds =
   let cdf_assoc = class_def_assoc cds
   in map (super_classes cdf_assoc []) (map fst cdf_assoc)
+
+
+-- in a class declaration, replace the reference to the immediate super-class by the list of all super-classes
+elaborate_supers_in_class_decls :: [ClassDecl (Maybe ClassName)] -> [ClassDecl [ClassName]]
+elaborate_supers_in_class_decls cds =
+  let cdf_assoc = class_def_assoc cds
+  in map (\(ClsDecl cn (ClsDef mcn fds)) -> (ClsDecl cn (ClsDef (tail (super_classes cdf_assoc [] cn)) fds))) cds
+
+
+local_fields :: [(ClassName, [FieldDecl])] -> ClassName -> [FieldDecl]
+local_fields fd_assoc cn =
+  case lookup cn fd_assoc of
+    Nothing -> []
+    Just fds -> fds
+
+-- in a class declaration, replace the list of local fields of the class by the list of all fields (local and inherited)
+elaborate_fields_in_class_decls :: [ClassDecl [ClassName]] -> [ClassDecl [ClassName]]
+elaborate_fields_in_class_decls cds =
+  let fd_assoc = field_assoc cds
+  in map (\(ClsDecl cn (ClsDef scs locfds)) ->
+            (ClsDecl cn (ClsDef scs (locfds ++ (concatMap (local_fields fd_assoc) scs))))) cds
+  
 
 -- $> customCs
 
 -- $> super_classes_decls customCs
 
+-- $> elaborate_fields_in_class_decls (elaborate_supers_in_class_decls customCs)
 
 -- Cyclic superclass hierarchy:
 -- $> super_classes_decls [ClsDecl (ClsNm "Foo") (ClsDef (Just (ClsNm "Bar")) []), ClsDecl (ClsNm "Bar") (ClsDef (Just (ClsNm "Foo")) [])]
@@ -66,7 +96,7 @@ super_classes_decls cds =
 -- - no duplicate field declarations (local and inherited)
 
 -- the class decl does not reference an undefined superclass
-defined_superclass :: [ClassName] -> ClassDecl -> Bool
+defined_superclass :: [ClassName] -> ClassDecl (Maybe ClassName) -> Bool
 defined_superclass cns cdc =
   case cdc of
     (ClsDecl cn (ClsDef Nothing _)) -> True
@@ -76,13 +106,35 @@ defined_superclass cns cdc =
       else error ("undefined superclass for class " ++ (case cn of (ClsNm n) -> n))
 
 
-wellformed_class_decls_in_module :: Module -> Bool
+wellformed_class_decls_in_module :: Module (Maybe ClassName) -> Bool
 wellformed_class_decls_in_module md =
   case md of
     (Mdl cds rls) ->
       let class_names = map name_of_class_decl cds
       in all (defined_superclass class_names) cds
-  
+
+
+hasDuplicates :: (Ord a) => [a] -> Bool
+hasDuplicates xs = length (nub xs) /= length xs
+
+well_formed_field_decls :: ClassDecl t -> Bool
+well_formed_field_decls (ClsDecl cn cdf) = not (hasDuplicates (fields_of_class_def cdf))
+
+-- TODO: a bit of a hack. Error detection and treatment to be improved
+elaborate_module :: Module (Maybe ClassName) -> Module [ClassName]
+elaborate_module md =
+  if wellformed_class_decls_in_module md
+  then
+    case md of
+      Mdl cds rls ->
+        let ecdcs = (elaborate_fields_in_class_decls (elaborate_supers_in_class_decls cds))
+        in
+          if all well_formed_field_decls ecdcs
+          then Mdl ecdcs rls
+          else error "Problem in field declarations: duplicate field declarations"
+  else error "Problem in class declarations"
+
+-- $> elaborate_module (Mdl customCs [])
 
 ----------------------------------------------------------------------
 -- Typing functions
@@ -94,7 +146,7 @@ tp_constval x = case x of
   BoolV _ -> BoolT
   IntV _ -> IntT
 
-tp_var :: Environment -> VarName -> Tp
+tp_var :: Environment t -> VarName -> Tp
 tp_var env v =
   case lookup v (locals_of_env env) of
     Nothing -> ErrT
@@ -142,7 +194,7 @@ tp_binop t1 t2 bop = case bop of
 cast_compatible :: Tp -> Tp -> Bool
 cast_compatible te ctp = True
 
-tp_expr :: Environment -> Exp () -> Exp Tp
+tp_expr :: Environment t -> Exp () -> Exp Tp
 tp_expr env x = case x of
   ValE () c -> ValE (tp_constval c) c
   VarE () v -> VarE (tp_var env v) v

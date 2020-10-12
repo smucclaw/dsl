@@ -32,14 +32,17 @@ data FieldDecl = FldDecl FieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations
-data ClassDef = ClsDef (Maybe ClassName) [FieldDecl] 
-  deriving (Eq, Ord, Show, Read)
-data ClassDecl = ClsDecl ClassName ClassDef
+data ClassDef t = ClsDef t [FieldDecl] 
   deriving (Eq, Ord, Show, Read)
 
-name_of_class_decl :: ClassDecl -> ClassName
+data ClassDecl t = ClsDecl ClassName (ClassDef t)
+  deriving (Eq, Ord, Show, Read)
+
+name_of_class_decl :: ClassDecl t -> ClassName
 name_of_class_decl (ClsDecl cn _) = cn
 
+fields_of_class_def :: ClassDef t -> [FieldDecl]
+fields_of_class_def (ClsDef scn fds) = fds
 
 -- some custom classes - should eventually go into a prelude and not be hard-wired
 objectC = ClsDecl (ClsNm "Object") (ClsDef Nothing [])
@@ -67,7 +70,7 @@ timeCs = [ClsDecl (ClsNm "Year") (ClsDef (Just (ClsNm "Time")) []),
 customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs
 data Rule = TBD
   deriving (Eq, Ord, Show, Read)
-data Module = Mdl [ClassDecl] [Rule]
+data Module t = Mdl [ClassDecl t] [Rule]
   deriving (Eq, Ord, Show, Read)
 
 

@@ -1,0 +1,724 @@
+#+TITLE: bnfc parser for L4
+
+This is a bnfc-based parser for the draft L4 language.
+
+* INSTALLATION
+
+Compile and install BNFC from git source, not from package:
+
+#+begin_src shell
+git clone https://github.com/BNFC/bnfc
+#+end_src
+
+In the ~smucclaw/dsl/bnfc/~ directory, run
+
+#+begin_src shell
+stack install
+#+end_src
+
+to get the ~l4~ and ~showbug~ executables in your ~/.local/bin/ directory.
+
+Please check that ~/.local/bin is in your shell path:
+
+#+begin_example
+┌─[mengwong@venice4] - [~] - [2020-10-14 03:04:57]
+└─[0] <> echo $path
+/Users/mengwong/.cabal/bin /Users/mengwong/.ghcup/bin /Users/mengwong/.local/bin /usr/local/bin /usr/local/sbin /opt/local/bin /opt/local/sbin /Developer/usr/bin /usr/local/opt/tcl-tk/bin /usr/bin /bin /usr/sbin /sbin /Users/mengwong/bin /Users/mengwong/.cabal/bin /Library/TeX/texbin /Users/mengwong/.pyenv/bin /Users/mengwong/perl5/bin /Users/mengwong/go/bin /usr/local/opt/llvm/bin /Users/mengwong/Library/Python/3.7/bin
+#+end_example
+
+The ~showbug~ executable is used to make bnfc's error messages a little bit more readable, converting "syntax error at line M, column N" to show the actual source of the error.
+
+* Running
+
+Running ~make~ from the ~bnfc/~ directory should tangle the relevant code from the README.org source, then compile the parser, and run the parser on the sample L4 code.
+
+* Running the test4.l4
+
+Meng keeps a set of "test cases" in ~l4/test4.l4~, leading to this invocation:
+
+#+begin_example
+┌─[mengwong@venice4] - [~/src/smucclaw/dsl/bnfc] - [2020-10-14 03:12:15]
+└─[0] <git:(main e66a309✈) > make; cp l4/test4.l4 l4/test.l4; make
+#+end_example
+
+This should produce an AST:
+
+#+begin_example
+Parse Successful!
+
+[Abstract Syntax]
+#+end_example
+
+#+begin_src haskell
+Toplevel
+    [ ToplevelsRule
+        ( Rule ( RID ( OA_dots [ ObjAttrElemIdent ( Ident "showMatches" ) ] ) ) ( RName OptLangStrings1 )
+            ( RuleBody1
+                [ MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ]
+                    )
+                , MatchVars3
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "foo" )
+                        , ObjAttrElemIdent ( Ident "bar" )
+                        ]
+                    )
+                , MatchVars3 ( OA_dots [ ObjAttrElemIdent ( Ident "foo" ) ] )
+                , MatchVars8
+                    ( ListComma
+                        [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] )
+                        , UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] )
+                        ]
+                    )
+                , MatchVars8
+                    ( ListComma
+                        [ Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) )
+                        , Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ) )
+                        ]
+                    )
+                , MatchVars7 ( ConstE ( StringV "^"\d{9,10}[[:alpha:]]$"" ) )
+                , MatchVars7
+                    ( Op2E
+                        ( BCmp_Match2 ( MQuantMin ( IntV 2 ) OptOf )
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                    ]
+                                )
+                            ) AsAlias1 MQualNull MRelSat2 ( MQuantMin ( IntV 1 ) OptOf )
+                            ( ListE
+                                ( ListComma
+                                    [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "isKing" ) ) ] )
+                                    , UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "isQueen" ) ) ] )
+                                    ]
+                                )
+                            ) AsAlias1 []
+                        )
+                    )
+                , MatchVars7
+                    ( UnifyE
+                        ( UnifyExpr1
+                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "self" ) )
+                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "nationality" ) )
+                            ]
+                        )
+                    )
+                , MatchVars7
+                    ( ListE
+                        ( ListComma
+                            [ ConstE ( StringV "US" )
+                            , ConstE ( StringV "SG" )
+                            ]
+                        )
+                    )
+                , MatchVars7
+                    ( Op2E
+                        ( BCmp_Match1
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "self" ) )
+                                    , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "nationality" ) )
+                                    ]
+                                )
+                            )
+                            ( ListE
+                                ( ListComma
+                                    [ ConstE ( StringV "US" )
+                                    , ConstE ( StringV "SG" )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                , MatchVars7
+                    ( CaseE
+                        ( CaseExpr1
+                            [ CaseExp1
+                                ( Op2E
+                                    ( BCmp_Match1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "self" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "nationality" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( ListE
+                                            ( ListComma
+                                                [ ConstE ( StringV "US" )
+                                                , ConstE ( StringV "SG" )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                ) ( ConstE ( StringV "poop" ) )
+                            ]
+                        )
+                    )
+                , MatchVars6
+                    [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                    , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                    ]
+                , MatchVars6 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ]
+                , MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        , UnifyElemUnifyStar UnifyStar1
+                        ]
+                    )
+                , MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        , UnifyElemUnifyBracket ( UnifyBracket1 [ CommaElemObjAttr ( OA_dots [ ObjAttrElemUIdent ( UIdent "Poop" ) ] ) ] )
+                        ]
+                    )
+                , MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        , UnifyElemUnifyStar UnifyStar1
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "toots" ) )
+                        ]
+                    )
+                , MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        , UnifyElemUnifyBracket ( UnifyBracket1 [ CommaElemObjAttr ( OA_dots [ ObjAttrElemUIdent ( UIdent "Poop" ) ] ) ] )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "toots" ) )
+                        ]
+                    )
+                , MatchVars2 ( ObjMethod1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] Args1 )
+                , MatchVars2
+                    ( ObjMethod1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ] Args1
+                    )
+                , MatchVars2
+                    ( ObjMethod1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ] ( Args2 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "moo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "poo" ) ) ] ) ) ) ) ] )
+                    )
+                , MatchVars5
+                    ( UnifyExpr1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ]
+                    )
+                , MatchVars7 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) )
+                , MatchVars7 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Quux" ) ) ] ) )
+                , MatchVars7 ( ConstE ( StringV "quux" ) )
+                , MatchVars7 ( ListE ( ListComma [ ConstE ( StringV "quux" ) ] ) )
+                , MatchVars7 ( ListE ( ListComma [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ] ) )
+                , MatchVars7 ( ListE ( ListComma [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Quux" ) ) ] ) ] ) )
+                , MatchVars7
+                    ( ListE
+                        ( ListComma
+                            [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] )
+                            , UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "pouux" ) ) ] )
+                            ]
+                        )
+                    )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "moo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "poo" ) ) ] ) ) ) ) )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "vtime" ) ) ] ) ) ( TempE ( DateTimeIso8601 ( Iso8601YYYYMMDD ( YYYYMMDD "2010-01-02" ) ) ) ) ) ) )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "address" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "thing" ) ) ] ) ) ) ) )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "address" ) ) ] ) ) ( ListE ( ListComma [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Thing" ) ) ] ) ] ) ) ) ) )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "address" ) ) ] ) ) ( ListE ( ListComma [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Thing" ) ) ] ) ] ) ) ) ) )
+                , MatchVars1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "address" ) ) ] ) ) ( ListE ( ListOr [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Thing" ) ) ] ) ] ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "asdf" ) ) ] ) ) ) ) ) ) )
+                , MatchVars14 ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) ) ] )
+                , MatchVars14 ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ) ) ) ] )
+                , MatchVars14 ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ( ConstE ( StringV "quux" ) ) ) ) ] )
+                , MatchVars14
+                    ( BraceList1
+                        [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ( ConstE ( StringV "quux" ) ) ) )
+                        , ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ( ConstE ( StringV "quux" ) ) ) )
+                        ]
+                    )
+                , MatchVars14
+                    ( BraceList1
+                        [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) )
+                        , ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ) ) )
+                        ]
+                    )
+                , MatchVars2
+                    ( ObjMethod1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ] ( Args2 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "moo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "poo" ) ) ] ) ) ) ) ] )
+                    )
+                , MatchVars2 ( ObjMethod1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] Args1 )
+                , MatchVars2
+                    ( ObjMethod1
+                        [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) )
+                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                        ] Args1
+                    )
+                , MatchVars7 ( ConstE ( IntV 22 ) )
+                , MatchVars7
+                    ( UnifyE
+                        ( UnifyExpr1
+                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) )
+                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                            ]
+                        )
+                    )
+                , MatchVars7
+                    ( Op2E
+                        ( BRel_Isa
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                    , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                    ]
+                                )
+                            )
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                    , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                , MatchVars7
+                    ( UnifyE
+                        ( UnifyExpr1
+                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) )
+                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                            ]
+                        )
+                    )
+                , MatchVars7 ( Op2E ( BRel_Isa ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "BAR" ) ) ] ) ) ) )
+                , MatchVars7 ( Op2E ( BRel_Is ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Bar" ) ) ] ) ) ) )
+                , MatchVars7
+                    ( Op2E
+                        ( BRel_Has ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) )
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Poo" ) )
+                                    , UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Elem" ) )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                , MatchVars7
+                    ( Op2E
+                        ( BCmp_Match1
+                            ( Op2E
+                                ( BRel_Has ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Poo" ) )
+                                            , UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Elem" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            ) ( ListE ( ListComma [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Junction" ) ) ] ) ] ) )
+                        )
+                    )
+                , MatchVars7
+                    ( ListE
+                        ( ListComma
+                            [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] )
+                            , UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] )
+                            ]
+                        )
+                    )
+                , MatchVars7 ( ListE ( ListAnd [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ] ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) )
+                , MatchVars7 ( ListE ( ListOr [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ] ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) )
+                , MatchVars7
+                    ( ListE
+                        ( ListOr
+                            [ UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] )
+                            , UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] )
+                            ] ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) )
+                        )
+                    )
+                , MatchVars7
+                    ( ListE
+                        ( ListOr
+                            [ BracesE ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) ) ] )
+                            , BracesE ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ) ) ] )
+                            ] ( BracesE ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "q" ) ) ] ) ) ) ) ] ) )
+                        )
+                    )
+                , MatchVars7
+                    ( ListE
+                        ( ListComma
+                            [ BracesE
+                                ( BraceList1
+                                    [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) )
+                                    , ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "f" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "b" ) ) ] ) ) ) )
+                                    ]
+                                )
+                            , BracesE ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "baz" ) ) ] ) ) ) ) ] )
+                            , BracesE ( BraceList1 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "quux" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "q" ) ) ] ) ) ) ) ] )
+                            ]
+                        )
+                    )
+                , MatchVars7
+                    ( Op1E ( UCurr CurrDollar )
+                        ( Op2E
+                            ( BArith_Mul
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "someCurrency" ) )
+                                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "var" ) )
+                                        ]
+                                    )
+                                ) ( ConstE ( IntPercent 10 ) )
+                            )
+                        )
+                    )
+                , MatchVars7 ( ConstE ( IntV 10 ) )
+                , MatchVars7 ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 20 ) ) ) )
+                , MatchVars7 ( Op2E ( BArith_Mul ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 20 ) ) ) ) ( ConstE ( IntV 30 ) ) ) )
+                , MatchVars7 ( Op2E ( BArith_Mul ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 20 ) ) ) ) ( ConstE ( IntV 30 ) ) ) )
+                , MatchVars7 ( Op1E ( UCurr CurrDollar ) ( ConstE ( IntV 10 ) ) )
+                , MatchVars7 ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Mul ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 2 ) ) ) ) )
+                , MatchVars7 ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( Op1E ( UCurr CurrDollar ) ( ConstE ( IntV 10 ) ) ) ) ) )
+                , MatchVars7 ( Op2E ( BArith_Mul ( ConstE ( IntV 2 ) ) ( Op1E ( UCurr CurrDollar ) ( ConstE ( IntV 10 ) ) ) ) )
+                , MatchVars7 ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( Op1E ( UCurr CurrDollar ) ( ConstE ( IntV 2 ) ) ) ) ) )
+                , MatchVars7
+                    ( Op1E ( UCurr CurrDollar )
+                        ( Op2E
+                            ( BArith_Mul
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "someCurrency" ) )
+                                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "var" ) )
+                                        ]
+                                    )
+                                ) ( ConstE ( IntPercent 10 ) )
+                            )
+                        )
+                    )
+                , MatchVars11 ( WhenLimb2 ( Op2E ( BRel_Is ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Bar" ) ) ] ) ) ) ) UnlessExpr1 )
+                , MatchVars11
+                    ( WhenLimb2
+                        ( Op2E
+                            ( BCmp_Eq
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                        , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                        ]
+                                    )
+                                ) ( ConstE ( StringV "baz" ) )
+                            )
+                        ) UnlessExpr1
+                    )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        ) ( ConstE ( StringV "baz" ) )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        ) ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Mul ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 2 ) ) ) ) )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( Op1E ( UCurr CurrDollar )
+                                            ( Op2E
+                                                ( BArith_Mul
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "some" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "currency" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "var" ) )
+                                                            ]
+                                                        )
+                                                    ) ( ConstE ( IntV 2 ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( Op1E ( UCurr CurrDollar )
+                                            ( Op2E
+                                                ( BArith_Mul
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "some" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "currency" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "var" ) )
+                                                            ]
+                                                        )
+                                                    ) ( Op2E ( BArith_Plus ( ConstE ( IntV 2 ) ) ( ConstE ( IntV 1 ) ) ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( Op1E ( UCurr CurrDollar )
+                                            ( Op2E
+                                                ( BArith_Mul
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "some" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "currency" ) )
+                                                            , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "var" ) )
+                                                            ]
+                                                        )
+                                                    ) ( ConstE ( IntPercent 90 ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars12 ( WhereLimb2 [ WhereExp1 GivenLimb1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) ) ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Mul ( ConstE ( IntV 10 ) ) ( ConstE ( IntV 2 ) ) ) ) ) ) ) ) WithLimb1 WhenLimb1 WhereLimb1 ] )
+                , MatchVars12 ( WhereLimb2 [ WhereExp1 GivenLimb1 ( ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) ) ] ) ) ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Mul ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "tendollars" ) ) ] ) ) ( ConstE ( IntV 2 ) ) ) ) ) ) ) ) WithLimb1 WhenLimb1 WhereLimb1 ] )
+                , MatchVars12
+                    ( WhereLimb2
+                        [ WhereExp1 GivenLimb1
+                            ( ConstraintExp
+                                ( Op2E
+                                    ( BCmp_Ass1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Foo" ) )
+                                                , UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) )
+                                                ]
+                                            )
+                                        ) ( ObjME ( ObjMethod1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "objmethod" ) ) ] ( Args2 [ ConstraintExp ( Op2E ( BCmp_Ass1 ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "foo" ) ) ] ) ) ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "bar" ) ) ] ) ) ) ) ] ) ) )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb1 WhereLimb1
+                        ]
+                    )
+                , MatchVars7 ( Op1E ( UCurr CurrDollar ) ( Op2E ( BArith_Plus ( ConstE ( IntV 10 ) ) ( Op1E ( UCurr CurrDollar ) ( ConstE ( IntV 2 ) ) ) ) ) )
+                , MatchVars13 ( DeonticLimb1 DEShant ( ActionLimb1 ( ObjMethod1 [ UnifyElemObjAttrElem ( ObjAttrElemIdent ( Ident "sell" ) ) ] Args1 ) [ BlahExp ( UnifyE ( UnifyExpr1 [ UnifyElemObjAttrElem ( ObjAttrElemUIdent ( UIdent "Item" ) ) ] ) ) ] AsAlias1 ) )
+                ]
+            )
+        )
+    ]
+#+end_src
+and it should output BNFC's idea of the original source:
+
+#+begin_example
+RULE showMatches MATCHTYPE {
+  UnifyExpr Foo . bar;
+  ObjAttr foo . bar;
+  ObjAttr foo;
+  LstExp [foo, bar];
+  LstExp [foo = bar, bar = quux];
+  Exp "^\"\\d{9,10}[[:alpha:]]$\"";
+  Exp AT LEAST 2 OF Item . previousOwners SATISFY AT LEAST 1 OF [isKing, isQueen];
+  Exp self . nationality;
+  Exp ["US", "SG"];
+  Exp self . nationality ~ ["US", "SG"];
+  Exp CASE {
+    self . nationality ~ ["US", "SG"] -> "poop"
+  } ;
+  UnifyElem Foo . bar;
+  UnifyElem bar;
+  UnifyExpr Foo . bar . *;
+  UnifyExpr Foo . bar . < Poop >;
+  UnifyExpr Foo . bar . * . toots;
+  UnifyExpr Foo . bar . < Poop > . toots;
+  ObjMethod Foo;
+  ObjMethod Foo . bar;
+  ObjMethod Foo . bar (moo = poo);
+  UnifyExpr Foo . bar;
+  Exp quux;
+  Exp Quux;
+  Exp "quux";
+  Exp ["quux"];
+  Exp [quux];
+  Exp [Quux];
+  Exp [quux, pouux];
+  Constraint moo = poo;
+  Constraint vtime = 2010-01-02;
+  Constraint address = thing;
+  Constraint address = [Thing];
+  Constraint address = [Thing];
+  Constraint address = [Thing | asdf];
+  BraceList {
+    foo = bar
+  } ;
+  BraceList {
+    baz = quux
+  } ;
+  BraceList {
+    baz = "quux"
+  } ;
+  BraceList {
+    baz = "quux", baz = "quux"
+  } ;
+  BraceList {
+    foo = bar, baz = quux
+  } ;
+  ObjMethod foo . bar (moo = poo);
+  ObjMethod foo;
+  ObjMethod foo . bar;
+  Exp 22;
+  Exp foo . bar;
+  Exp Foo . bar ISA Foo . bar;
+  Exp foo . bar;
+  Exp Foo ISA BAR;
+  Exp Foo IS Bar;
+  Exp Foo HAS Poo . Elem;
+  Exp Foo HAS Poo . Elem ~ [Junction];
+  Exp [foo, bar];
+  Exp [foo & bar];
+  Exp [foo | bar];
+  Exp [foo, bar | quux];
+  Exp [{
+    foo = bar
+  }
+  , {
+    bar = baz
+  }
+  | {
+    quux = q
+  }
+  ];
+  Exp [{
+    foo = bar, f = b
+  }
+  , {
+    bar = baz
+  }
+  , {
+    quux = q
+  }
+  ];
+  Exp $ someCurrency . var * 10 %;
+  Exp 10;
+  Exp 10 + 20;
+  Exp 10 + 20 * 30;
+  Exp 10 + 20 * 30;
+  Exp $ 10;
+  Exp $ 10 * 2;
+  Exp $ 10 + $ 10;
+  Exp 2 * $ 10;
+  Exp $ 10 + $ 2;
+  Exp $ someCurrency . var * 10 %;
+  WhenLimb WHEN Foo IS Bar;
+  WhenLimb WHEN Foo . bar == "baz";
+  WhereLimb WHERE {
+    Foo . bar = "baz"
+  } ;
+  WhereLimb WHERE {
+    Foo . bar = $ 10 * 2
+  } ;
+  WhereLimb WHERE {
+    Foo . bar = $ some . currency . var * 2
+  } ;
+  WhereLimb WHERE {
+    Foo . bar = $ some . currency . var * (2 + 1)
+  } ;
+  WhereLimb WHERE {
+    Foo . bar = $ some . currency . var * 90 %
+  } ;
+  WhereLimb WHERE {
+    Foo = $ 10 * 2
+  } ;
+  WhereLimb WHERE {
+    Foo = $ tendollars * 2
+  } ;
+  WhereLimb WHERE {
+    Foo . bar = objmethod (foo = bar)
+  } ;
+  Exp $ 10 + $ 2;
+  DeonticLimb SHANT sell Item
+} ;
+#+end_example
+
+
+* Apology to Junior Researchers
+
+I know I wanted you to learn parser combinators before coming to this. It may therefore come as a bit of a rude surprise to learn that our approach here is BNFC-based, not Parsec- or MegaParsec-based.
+
+BNFC uses a slightly different approach vs monadic parser combinators.
+
+For this slight impedance mismatch I apologize. However, the theory you've read about how context-free grammars work (terminal vs nonterminal, etc) remains valid.
+
+We may use a combinator-based parser in a future iteration of this codebase.
+
+You may need to read [[https://www.haskell.org/happy/][Happy documentation]] to learn about BNFC's "output" format.

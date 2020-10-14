@@ -9,8 +9,23 @@ import qualified AbsL
 -- Definition of expressions
 ----------------------------------------------------------------------
 
------ Names 
+----- Parties
+data PartyAlias = Party PartyDef AsAlias
+  deriving (Eq, Ord, Show, Read)
+data PartyDef = Nobody | Everybody | MkParty VarName
+  deriving (Eq, Ord, Show, Read)
+data AsAlias = Alias VarName | NoAlias
+  deriving (Eq, Ord, Show, Read)
+
+----- Object attributes
+-- TODO: what's the relationship between Class, Var and Field
+-- how to translate expression like
+--   seller HAS Exemption.from ~ [DirectorOfAgriculture]
+
+----- Names
+newtype WNSense = WNSense Int -- WordNet sense, e.g.
 newtype VarName = VarNm String
+                | VarWN String WNSense -- "dish" :wordnet: dish_2 -> VarWN "dish" (WNSense 2)
   deriving (Eq, Ord, Show, Read)
 newtype ClassName = ClsNm String
   deriving (Eq, Ord, Show, Read)
@@ -18,7 +33,7 @@ newtype FieldName = FldNm String
   deriving (Eq, Ord, Show, Read)
 
 
------ Types 
+----- Types
 data Tp
   = BoolT
   | IntT
@@ -32,7 +47,7 @@ data FieldDecl = FldDecl FieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations
-data ClassDef = ClsDef (Maybe ClassName) [FieldDecl] 
+data ClassDef = ClsDef (Maybe ClassName) [FieldDecl]
   deriving (Eq, Ord, Show, Read)
 data ClassDecl = ClsDecl ClassName ClassDef
   deriving (Eq, Ord, Show, Read)
@@ -51,7 +66,7 @@ currencyC = ClsDecl (ClsNm "Currency")
                     (ClsDef (Just (ClsNm "QualifiedNumeric")) [])
 currencyCs = [ClsDecl (ClsNm "SGD") (ClsDef (Just (ClsNm "Currency")) []),
               ClsDecl (ClsNm "USD") (ClsDef (Just (ClsNm "Currency")) [])]
-  
+
 -- Time as QualifiedNumeric, with Year, Month, Day etc. as subclasses
 -- TODO: treatment of time needs a second thought
 --       (so far no distinction between time point and duration)
@@ -61,13 +76,21 @@ timeCs = [ClsDecl (ClsNm "Year") (ClsDef (Just (ClsNm "Time")) []),
           ClsDecl (ClsNm "Day") (ClsDef (Just (ClsNm "Time")) [])]
 
 customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs
-data Rule = TBD
+data Rule = Rule Ruledef Rulename Rulebody
   deriving (Eq, Ord, Show, Read)
+
+data Rulebody = Rulebody
+  deriving (Eq, Ord, Show, Read)
+data Ruledef = Ruledef
+  deriving (Eq, Ord, Show, Read)
+data Rulename = Rulename
+  deriving (Eq, Ord, Show, Read)
+
 data Module = Mdl [ClassDecl] [Rule]
   deriving (Eq, Ord, Show, Read)
 
 
------ Expressions 
+----- Expressions
 data Val
     = BoolV Bool
     | IntV Integer
@@ -120,5 +143,3 @@ data Exp t
     | CastE t Tp (Exp t)
     | ListE t ListOp [Exp t]
     deriving (Eq, Ord, Show, Read)
-
- 

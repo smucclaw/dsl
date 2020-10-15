@@ -22,6 +22,7 @@ newtype FieldName = FldNm String
 data Tp
   = BoolT
   | IntT
+  | FunT Tp Tp
   | ClassT ClassName
   | ErrT
   deriving (Eq, Ord, Show, Read)
@@ -41,9 +42,24 @@ data ClassDecl t = ClsDecl ClassName (ClassDef t)
 name_of_class_decl :: ClassDecl t -> ClassName
 name_of_class_decl (ClsDecl cn _) = cn
 
+def_of_class_decl :: ClassDecl t -> ClassDef t
+def_of_class_decl (ClsDecl _ cd) = cd
+
 fields_of_class_def :: ClassDef t -> [FieldDecl]
 fields_of_class_def (ClsDef scn fds) = fds
 
+data Rule = TBD
+  deriving (Eq, Ord, Show, Read)
+data Module t = Mdl [ClassDecl t] [Rule]
+  deriving (Eq, Ord, Show, Read)
+
+class_decls_of_module :: Module t -> [ClassDecl t]
+class_decls_of_module (Mdl cds _) = cds
+
+rules_of_module :: Module t -> [Rule]
+rules_of_module (Mdl _ rls) = rls
+
+-- Custom Classes and Preable Module
 -- some custom classes - should eventually go into a prelude and not be hard-wired
 objectC = ClsDecl (ClsNm "Object") (ClsDef Nothing [])
 
@@ -68,16 +84,15 @@ timeCs = [ClsDecl (ClsNm "Year") (ClsDef (Just (ClsNm "Time")) []),
           ClsDecl (ClsNm "Day") (ClsDef (Just (ClsNm "Time")) [])]
 
 customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs
-data Rule = TBD
-  deriving (Eq, Ord, Show, Read)
-data Module t = Mdl [ClassDecl t] [Rule]
-  deriving (Eq, Ord, Show, Read)
 
+preambleMdl = Mdl customCs []
 
 ----- Expressions 
 data Val
     = BoolV Bool
     | IntV Integer
+    | RecordV ClassName [(FieldName, Val)]
+    | ErrV
   deriving (Eq, Ord, Show, Read)
 
 -- unary arithmetic operators
@@ -119,13 +134,16 @@ data ListOp = AndList | OrList | XorList | CommaList
 
 -- Exp t is an expression of type t (to be determined during type checking / inference)
 data Exp t
-    = ValE t Val
-    | VarE t VarName
-    | UnaOpE t UnaOp (Exp t)
-    | BinOpE t BinOp (Exp t) (Exp t)
-    | FldAccE t (Exp t) FieldName
-    | CastE t Tp (Exp t)
-    | ListE t ListOp [Exp t]
+    = ValE t Val                                -- value
+    | VarE t VarName                            -- variable
+    | UnaOpE t UnaOp (Exp t)                    -- unary operator
+    | BinOpE t BinOp (Exp t) (Exp t)            -- binary operator
+    | AppE t (Exp t) (Exp t)                    -- function application
+    | FunE t VarName Tp (Exp t)                 -- function abstraction
+    | ClosE t [(VarName, Exp t)] (Exp t)        -- closure  (not externally visible)
+    | FldAccE t (Exp t) FieldName               -- field access
+    | CastE t Tp (Exp t)                        -- cast to type
+    | ListE t ListOp [Exp t]                    -- list expression
     deriving (Eq, Ord, Show, Read)
 
  

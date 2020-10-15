@@ -90,11 +90,6 @@ elaborate_fields_in_class_decls cds =
 -- $> super_classes_decls [ClsDecl (ClsNm "Foo") (ClsDef (Just (ClsNm "Bar")) []), ClsDecl (ClsNm "Bar") (ClsDef (Just (ClsNm "Foo")) [])]
 
 
--- TODO: several checks for well-formedness of class definitions:
--- - no ref to undefined superclass
--- - no cyclic graph hierarchy (implemented in super_classes above)
--- - no duplicate field declarations (local and inherited)
-
 -- the class decl does not reference an undefined superclass
 defined_superclass :: [ClassName] -> ClassDecl (Maybe ClassName) -> Bool
 defined_superclass cns cdc =
@@ -106,21 +101,24 @@ defined_superclass cns cdc =
       else error ("undefined superclass for class " ++ (case cn of (ClsNm n) -> n))
 
 
+hasDuplicates :: (Ord a) => [a] -> Bool
+hasDuplicates xs = length (nub xs) /= length xs
+
 wellformed_class_decls_in_module :: Module (Maybe ClassName) -> Bool
 wellformed_class_decls_in_module md =
   case md of
     (Mdl cds rls) ->
       let class_names = map name_of_class_decl cds
-      in all (defined_superclass class_names) cds
+      in all (defined_superclass class_names) cds && not (hasDuplicates (map name_of_class_decl cds))
 
-
-hasDuplicates :: (Ord a) => [a] -> Bool
-hasDuplicates xs = length (nub xs) /= length xs
 
 well_formed_field_decls :: ClassDecl t -> Bool
 well_formed_field_decls (ClsDecl cn cdf) = not (hasDuplicates (fields_of_class_def cdf))
 
 -- TODO: a bit of a hack. Error detection and treatment to be improved
+-- - no ref to undefined superclass
+-- - no cyclic graph hierarchy (implemented in super_classes above)
+-- - no duplicate field declarations (local and inherited)
 elaborate_module :: Module (Maybe ClassName) -> Module [ClassName]
 elaborate_module md =
   if wellformed_class_decls_in_module md
@@ -140,11 +138,25 @@ elaborate_module md =
 -- Typing functions
 ----------------------------------------------------------------------
 
+lookup_class_def_in_env :: Environment t -> ClassName -> [ClassDef t]
+lookup_class_def_in_env env cn =
+  map def_of_class_decl (filter (\cd -> name_of_class_decl cd == cn) (class_decls_of_module (module_of_env env)))
 
-tp_constval :: Val -> Tp
-tp_constval x = case x of
+tp_constval :: Environment t -> Val -> Tp
+tp_constval env x = case x of
   BoolV _ -> BoolT
   IntV _ -> IntT
+  -- for record values to be well-typed, the fields have to correspond exactly (incl. order of fields) to the class fields.
+  -- TODO: maybe relax some of these conditions.
+  RecordV cn fnvals -> 
+    let tfnvals = map (\(fn, v) -> FldDecl fn (tp_constval env v)) fnvals
+    in case lookup_class_def_in_env env cn of
+       [] -> error ("class name " ++ (case cn of (ClsNm n) -> n) ++ " not defined")
+       [cd] ->
+         if fields_of_class_def cd == tfnvals
+         then ClassT cn
+         else error ("record fields do not correspond to fields of class " ++ (case cn of (ClsNm n) -> n))
+       _ -> error "internal error: duplicate class definition"
 
 tp_var :: Environment t -> VarName -> Tp
 tp_var env v =
@@ -158,6 +170,8 @@ tp_of_expr x = case x of
   VarE t _        -> t
   UnaOpE t _ _    -> t
   BinOpE t _ _ _  -> t
+  AppE t _ _  -> t
+  FunE t _ _ _  -> t
   CastE t _ _     -> t
   ListE t _ _     -> t
 
@@ -194,10 +208,30 @@ tp_binop t1 t2 bop = case bop of
 cast_compatible :: Tp -> Tp -> Bool
 cast_compatible te ctp = True
 
+
+push_vardecl_env :: VarName -> Tp -> Environment t -> Environment t
+push_vardecl_env vn t (Env md (LVD vds)) = Env md (LVD ((vn, t):vds))
+
 tp_expr :: Environment t -> Exp () -> Exp Tp
 tp_expr env x = case x of
-  ValE () c -> ValE (tp_constval c) c
+  ValE () c -> ValE (tp_constval env c) c
   VarE () v -> VarE (tp_var env v) v
+  AppE () fe ae -> 
+    let tfe = (tp_expr env fe)
+        tae = (tp_expr env ae)
+        tf = (tp_of_expr tfe)
+        ta = (tp_of_expr tae)
+    in case tf of
+      FunT tpar tbody ->
+        if tpar == ta
+        then AppE tbody tfe tae
+        else AppE ErrT tfe tae
+      _ -> AppE ErrT tfe tae
+  FunE () v tparam e -> 
+    let te = (tp_expr (push_vardecl_env v tparam env) e)
+        t   = (tp_of_expr te)
+    in FunE (FunT tparam t) v tparam te
+  -- ClosE: no explicit typing because not externally visible
   UnaOpE () uop e -> 
     let te = (tp_expr env e)
         t   = tp_unaop (tp_of_expr te) uop
@@ -219,11 +253,20 @@ tp_expr env x = case x of
 -- Tests
 ----------------------------------------------------------------------
 
--- $> tp_expr (Env (Mdl [] []) (LVD [])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
 
--- $> tp_expr (Env (Mdl [] []) (LVD [(VarNm "foo", IntT)])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
+-- $> tp_expr (Env preambleMdl (LVD [])) (AppE () (FunE () (VarNm "x") IntT (VarE () (VarNm "x"))) (ValE () (IntV 3)))
 
--- $> tp_expr (Env (Mdl [] []) (LVD [])) (ValE () (IntV 5))
+-- $> tp_expr (Env (elaborate_module preambleMdl) (LVD [])) (ValE () (RecordV (ClsNm "SGD") [(FldNm "val", IntV 50)]))
 
--- $> tp_expr (Env (Mdl [] []) (LVD [])) (UnaOpE () (UBool UBneg) (BinOpE () (BCompar BClte) (ValE () (IntV 2)) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5)))))
+-- $> tp_expr (Env preambleMdl (LVD [])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
+
+-- $> tp_expr (Env preambleMdl (LVD [(VarNm "foo", IntT)])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
+
+
+
+-- $> tp_expr (Env preambleMdl (LVD [])) (UnaOpE () (UBool UBneg) (BinOpE () (BCompar BClte) (ValE () (IntV 2)) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5)))))
+
+
+-- $> tp_expr (Env preambleMdl (LVD [])) (ValE () (IntV 5))
+
 

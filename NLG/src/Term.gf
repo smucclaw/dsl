@@ -28,5 +28,7 @@ abstract Term = {
     PNeg : Property -> Property ;             -- not fixed / involuntary
     KProperty : Property -> Kind -> Kind ;    -- voluntary termination
 
+    -- Kinds with complements
+    ComplKind : Kind -> Term -> Kind ;    -- liquidation of the company
 
 }

@@ -60,10 +60,19 @@ concrete TermEng of Term = open
     -- : Determiner -> Kind -> Term
     TDet = term ; -- using our oper 'term', defined at the end of file
 
+    -- Kinds with complements
+    -- : Kind -> Term -> Kind ;    -- liquidation of the company
+    -- Complement goes to cn field, not to adv field.
+    ComplKind kind term = linkind (mkCN (merge kind) (adv part_Prep (np term))) ;
+
   param
     KType = Mass | Count | Plural ;
 
   oper
+    -- Adv
+    -- shorthand: mkAdv is imported from two modules, so it has to be qualified
+    adv : Prep -> NP -> Adv = SyntaxEng.mkAdv ;
+
     -- Kind
     LinKind : Type = {
       cn : CN ;
@@ -71,8 +80,10 @@ concrete TermEng of Term = open
       k : KType
       } ;
 
-    mkKind : N -> LinKind = \n -> {
-      cn = mkCN n ;
+    mkKind : N -> LinKind = \n -> linkind (mkCN n) ;
+
+    linkind : CN -> LinKind = \cn -> {
+      cn = cn ;
       adv = emptyAdv ;
       k = Count
       } ;
@@ -125,6 +136,7 @@ concrete TermEng of Term = open
     np : LinTerm -> NP = id NP ;
 
     -- copied from RGL to work with DetLite
+    -- This is BAD PRACTICE !!! TODO: add a strategic oper to English RG
     detCNLite : DetLite -> CN -> NP = \det,cn -> lin NP {
       s = \\c => det.s ++ cn.s ! det.n ! R.npcase2case c ;
       a = R.agrgP3 det.n cn.g

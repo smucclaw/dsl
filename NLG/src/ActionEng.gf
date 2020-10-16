@@ -1,7 +1,6 @@
 concrete ActionEng of Action = TermEng **
 open
   Prelude,
-  ParamX,
   (R=ResEng),
   (E=ExtendEng),
   (C=ConjunctionEng),
@@ -23,11 +22,17 @@ open
     [Action_Indir] = ListSlashIndir ;
     [Action_Dir_Indir] = ListSlashDirIndir ;
 
+    Temporal = Tense ;
+
   linref
     Action = linAction ;
 
-
   lin
+    -- : Temporal
+    TPresent = presentTense ;
+    TPast    = pastTense ;
+    TFuture  = futureTense ;
+
     -----------------
     -- Complements --
     -----------------
@@ -53,18 +58,6 @@ open
     -- : Action_Indir -> Action ; -- same as above, but for indirect object
     -- ANoComplIndir a = a ** {s = a.intrans} ; -- probably bad idea given the next fun
 
-    -- Increase valency: make the Action open for more arguments.
-    -- : Action -> Action_Indir
-    PursuantTo a = a ** {
-      intrans = a.s ; -- weird results if combined with ANoComplIndir
-      indir = pursuant_to_Prep ;
-      dir = \\_ => emptyAdv
-      } ;
-  oper
-    pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
-
-  lin
-
     ---------------
     -- Negations --
     ---------------
@@ -73,12 +66,12 @@ open
     -- : Action -> Action ;        -- doesnt sell X / doesnt sell X and Y
     ANeg action = action ** {
       s = \\tmp => case p of {
-        --R.Neg  => action.s ! t ! R.CPos ; -- double negation = positive
+        --Neg  => action.s ! t ! R.CPos ; -- double negation = positive
         _ => action.s ! t ! negativePol.p
         } ;
       gerund = table {
-        --R.Neg => action.gerund ! R.Pos ; -- double negation = positive
-        _ => action.gerund ! R.Neg
+        --Neg => action.gerund ! Pos ; -- double negation = positive
+        _ => action.gerund ! Neg
         }
       } ;
     -}
@@ -88,11 +81,33 @@ open
        in complDir v2 none_of ;
 
     --  AComplNoneIndir : Action_Indir -> [Term] -> Action ; -- sells (X) neither to A nor to B
+    ------------------
+    -- Relatives    --
+    ------------------
+  lin
+    -- : Term -> Term -> Temporal -> Action_Indir -> Term ;
+    RelIndir iobj subj tense vpslash =
+      let vp : LinAction = complIndir (vpslash ** {indir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.indir vp ;
+       in mkNP iobj rs ;
+
+    -- : Term -> Term -> Temporal -> Action_Dir -> Term ;
+    RelDir dobj subj tense vpslash =
+      let vp : LinAction = complDir (vpslash ** {dir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.dir vp ;
+       in mkNP dobj rs ;
+
+  oper
+    relAction : Tense -> Term -> PrepPol -> LinAction -> RS = \tns,subj,prep,action ->
+      let dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
+          pr : PrepPlus = prep ! Pos ; -- TODO check if negation works properly
+          s : S = cl (tns2tmp tns.t) subj action ;
+       in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s} ;
 
     ------------------
     -- Conjunctions --
     ------------------
-
+  lin
     BaseAction a1 a2 = {
       s = \\tmp => E.BaseVPS (a1.s ! tmp) (a2.s ! tmp) ; -- doesnt sell X and doesnt issue Y
       gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
@@ -171,6 +186,7 @@ open
 
   param
     -- Merging tense and modality
+    Polarity = Pos | Neg ;
     TenseModPol = PMay | PMust | PShant | PPres Polarity | PFut Polarity ;
 
   oper
@@ -190,7 +206,7 @@ open
       } ;
 
     linAction : LinAction -> Str = \l ->
-      (mkUtt (cl (PPres R.Pos) emptyTerm l)).s ;
+      (mkUtt (cl (PPres Pos) emptyTerm l)).s ;
 
     mkVPS : TenseModPol -> VP -> E.VPS = \tm,vp ->
       let vp_t_p : VP*Tense*Pol = case tm of {
@@ -204,10 +220,10 @@ open
                       ,presentTense
                       ,negativePol> ;
 
-            PPres R.Pos => <vp, presentTense, positivePol> ;
-            PPres R.Neg => <vp, presentTense, negativePol> ;
-            PFut R.Pos => <vp, futureTense, positivePol> ;
-            PFut R.Neg => <vp, futureTense, negativePol>
+            PPres Pos => <vp, presentTense, positivePol> ;
+            PPres Neg => <vp, presentTense, negativePol> ;
+            PFut Pos => <vp, futureTense, positivePol> ;
+            PFut Neg => <vp, futureTense, negativePol>
             } ;
           vp' = vp_t_p.p1 ;
           tense : Tense = vp_t_p.p2 ;
@@ -215,7 +231,6 @@ open
        in E.MkVPS (mkTemp tense simultaneousAnt) pol vp' ;
 
     emptyTerm : LinTerm = emptyNP ;
-
 
     ----------------------
     -- Slash categories --
@@ -231,12 +246,12 @@ open
         let posAdv : Adv = E.GerundAdv (mkVP <v2:V2> emptyNP) ;
             negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
         in table {
-          R.Pos => posAdv ;
-          R.Neg => negAdv } ;
+          Pos => posAdv ;
+          Neg => negAdv } ;
       actor = mkNP (mkN "TODO: we should get this from wordnet") ;
       } ;
 
-    -- _Dir
+    -- Action_Dir
     SlashDir : Type = LinAction ** {
       intrans : TnsPolAction ;
       indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
@@ -265,7 +280,7 @@ open
                             (applyPrepPol vps.dir do ! p)
       } ;
 
-    -- _Indir
+    -- Action_Indir
     SlashIndir : Type = LinAction ** {
       intrans : TnsPolAction ;
       dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
@@ -319,8 +334,8 @@ open
         redupl = False
         } ;
       prepPol : (p,n : PrepPlus) -> PrepPol = \pos,neg -> table {
-        R.Pos  => pos ;
-        R.Neg  => neg
+        Pos  => pos ;
+        Neg  => neg
         }
       } ;
 
@@ -329,6 +344,8 @@ open
       post = post ;
       redupl = r
       } ;
+
+    emptyPrep : PrepPol = prepPol "" ;
 
     applyPrepPol : PrepPol -> LinTerm -> (Polarity=>Adv) = \pp,term -> \\pol =>
       let np : NP = term ; -- ! cpol2pol pol ;
@@ -384,4 +401,10 @@ open
       PFut p  => p ;
       _ => Pos
       } ;
+
+    tns2tmp : R.Tense -> TenseModPol = \tns -> case tns of {
+      R.Fut => PFut Pos ;
+      _ => PPres Pos
+      } ;
+
 }

@@ -10,6 +10,8 @@ concrete TermEng of Term = open
     [Term] = ListNP ;
     Conjunction = Conj ;
     Determiner = LinDet ;
+    Property = LinProp ;
+    [Property] = ListLinProp ;
 
   linref
     -- To make discontinuous categories show properly in the shell
@@ -60,6 +62,7 @@ concrete TermEng of Term = open
     -- : Determiner -> Kind -> Term
     TDet = term ; -- using our oper 'term', defined at the end of file
 
+
     -- Kinds with complements
     -- : Kind -> Term -> Kind ;    -- liquidation of the company
     -- Complement goes to cn field, not to adv field.
@@ -96,6 +99,21 @@ concrete TermEng of Term = open
     DetLite : Type = {s : Str ;  n : ParamX.Number} ;
     LinDet : Type = KType => DetLite ;
 
+    -- Property
+    LinProp : Type = ParamX.Polarity => AP ;
+      -- TODO: see if needed {vps : VPSlash ; arg : NP ; qualif : AP ; adv : Adv ; predType : PredType} ;
+    ListLinProp : Type = ParamX.Polarity => ListAP ;
+
+    prop = overload {
+      prop : Str -> Str -> LinProp = \pos,neg -> table {
+        R.Pos => mkAP (mkA pos) ;
+        R.Neg => mkAP (mkA neg)
+        } ;
+      prop : Str -> LinProp = \pos -> table {
+        R.Pos => mkAP (mkA pos) ;
+        R.Neg => mkAP (mkA ("not" ++ pos))
+        }
+      } ;
     ----------------
     -- Empty phrases
 
@@ -151,4 +169,5 @@ concrete TermEng of Term = open
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
+    adv2ap : Adv -> AP = \adv -> mkAP <adv : AdA> emptyAP ; -- RGL has no Adv->AP fun
 }

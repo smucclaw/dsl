@@ -11,7 +11,12 @@ abstract Action = Term ** {
     [Action_Indir]{2} ;       -- sells widgets and issues stock (at fixed valuation)
     [Action_Dir_Indir]{2} ;   -- sells and issues (stock) (at fixed valuation)
 
+    Temporal ;
   fun
+    TPresent  : Temporal ;
+    TPast     : Temporal ;
+    TFuture   : Temporal ;
+
     -- Complements
     AComplDir   : Action_Dir -> Term -> Action ;
     AComplIndir : Action_Indir -> Term -> Action ;
@@ -21,7 +26,6 @@ abstract Action = Term ** {
     -- Valency changes
     ANoComplDir   : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ; return _ -> "return the purchase"
     ANoComplIndir : Action_Indir -> Action ; -- same but for indirect object
-    PursuantTo    : Action -> Action_Indir ;
 
     -- Negation of a whole Action: doesnt sell X / doesnt sell X and Y
     ANeg : Action -> Action ;
@@ -29,6 +33,21 @@ abstract Action = Term ** {
     -- Negation regarding the complements
     AComplNoneDir   : Action_Dir -> [Term] -> Action ; -- sells neither X, Y nor Z
     AComplNoneIndir : Action_Indir -> [Term] -> Action ; -- sells (X) neither to B nor to B
+
+    -- Relatives
+    RelIndir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      Temporal ->     -- (will)
+      Action_Indir -> -- sell(s) stock (under)
+      Term ; -- the contract, under which the company sells stock
+
+    RelDir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      Temporal ->     -- (will)
+      Action_Dir ->   -- sign(s)
+      Term ; -- the contract, which the company signs/will sign
 
     -- Conjunctions
     ConjAction : Conjunction -> [Action] -> Action ;

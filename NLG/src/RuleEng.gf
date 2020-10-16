@@ -3,7 +3,6 @@
 --   (Extend=ExtendEng) ** {} ;
 concrete RuleEng of Rule = ActionEng ** open
   Prelude,
-  ParamX,
   SyntaxEng,
   SymbolicEng,
   ExtendEng,
@@ -16,9 +15,6 @@ concrete RuleEng of Rule = ActionEng ** open
 
     ActionAlias = LinActionAlias ;
     Deontic = LinDeontic ;
-
-    Temporal = Tense ;
-
   param
     TnsPol = Present Polarity | Future Polarity ;
   oper
@@ -33,10 +29,6 @@ concrete RuleEng of Rule = ActionEng ** open
       } ;
 
   lin
-    -- : Temporal
-    -- TPresent = presentTense ;
-    -- TPast    = pastTense ;
-    -- TFuture  = futureTense ;
 
     -- : PartyAlias -> Deontic -> Move ; -- the seller must issue the refund
     MAction party deontic = mkUtt (PredVPS party.party deontic.action) ;

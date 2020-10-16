@@ -12,12 +12,7 @@ abstract Rule = Action ** {
     -- Action comes from Action
     ActionAlias ; -- VP: "sell a potato" + NP: "the sale"
 
-    Temporal ;
-
   fun
-    TPresent  : Temporal ;
-    TPast     : Temporal ;
-    TFuture   : Temporal ;
 
     MAction,
       MActionAlias :

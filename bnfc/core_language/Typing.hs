@@ -111,7 +111,7 @@ wellformed_class_decls_in_module md =
       let class_names = map name_of_class_decl cds
       in all (defined_superclass class_names) cds && not (hasDuplicates (map name_of_class_decl cds))
 
-
+-- TODO: still check that field decls only reference declared classes
 well_formed_field_decls :: ClassDecl t -> Bool
 well_formed_field_decls (ClsDecl cn cdf) = not (hasDuplicates (fields_of_class_def cdf))
 
@@ -133,6 +133,18 @@ elaborate_module md =
   else error "Problem in class declarations"
 
 -- $> elaborate_module (Mdl customCs [])
+
+
+strict_superclasses_of :: Module [ClassName] -> ClassName -> [ClassName]
+strict_superclasses_of md cn = case lookup cn (class_def_assoc (class_decls_of_module md)) of
+  Nothing -> error ("in strict_superclasses_of: undefined class " ++ (case cn of (ClsNm n) -> n))
+  Just (ClsDef supcls _) -> supcls
+  
+is_strict_subclass_of :: Module [ClassName] -> ClassName -> ClassName -> Bool
+is_strict_subclass_of md subcl supercl = elem subcl (strict_superclasses_of md subcl)
+
+is_subclass_of :: Module [ClassName] -> ClassName -> ClassName -> Bool
+is_subclass_of md subcl supercl = subcl == supercl || is_strict_subclass_of md subcl supercl
 
 ----------------------------------------------------------------------
 -- Typing functions
@@ -170,6 +182,7 @@ tp_of_expr x = case x of
   VarE t _        -> t
   UnaOpE t _ _    -> t
   BinOpE t _ _ _  -> t
+  IfThenElseE t _ _ _ -> t
   AppE t _ _  -> t
   FunE t _ _ _  -> t
   CastE t _ _     -> t
@@ -205,6 +218,7 @@ tp_binop t1 t2 bop = case bop of
 
 
 -- the first type can be cast to the second type
+-- TODO: still to be defined
 cast_compatible :: Tp -> Tp -> Bool
 cast_compatible te ctp = True
 
@@ -212,10 +226,29 @@ cast_compatible te ctp = True
 push_vardecl_env :: VarName -> Tp -> Environment t -> Environment t
 push_vardecl_env vn t (Env md (LVD vds)) = Env md (LVD ((vn, t):vds))
 
+
+-- TODO: FldAccE, ListE
 tp_expr :: Environment t -> Exp () -> Exp Tp
 tp_expr env x = case x of
   ValE () c -> ValE (tp_constval env c) c
   VarE () v -> VarE (tp_var env v) v
+  UnaOpE () uop e -> 
+    let te = (tp_expr env e)
+        t   = tp_unaop (tp_of_expr te) uop
+    in  UnaOpE t uop te
+  BinOpE () bop e1 e2 ->
+    let te1 = (tp_expr env e1)
+        te2 = (tp_expr env e2)
+        t   = tp_binop (tp_of_expr te1) (tp_of_expr te2) bop
+    in  BinOpE t bop te1 te2
+  IfThenElseE () c e1 e2 -> 
+    let tc = (tp_expr env c)
+        te1 = (tp_expr env e1)
+        te2 = (tp_expr env e2)
+    in
+      if tp_of_expr tc == BoolT && (tp_of_expr te1) == (tp_of_expr te2)
+      then IfThenElseE (tp_of_expr te1) tc te1 te2
+      else  IfThenElseE ErrT tc te1 te2
   AppE () fe ae -> 
     let tfe = (tp_expr env fe)
         tae = (tp_expr env ae)
@@ -232,15 +265,6 @@ tp_expr env x = case x of
         t   = (tp_of_expr te)
     in FunE (FunT tparam t) v tparam te
   -- ClosE: no explicit typing because not externally visible
-  UnaOpE () uop e -> 
-    let te = (tp_expr env e)
-        t   = tp_unaop (tp_of_expr te) uop
-    in  UnaOpE t uop te
-  BinOpE () bop e1 e2 ->
-    let te1 = (tp_expr env e1)
-        te2 = (tp_expr env e2)
-        t   = tp_binop (tp_of_expr te1) (tp_of_expr te2) bop
-    in  BinOpE t bop te1 te2
   CastE () ctp e ->        
     let te = (tp_expr env e)
     in if cast_compatible (tp_of_expr te) ctp
@@ -268,5 +292,26 @@ tp_expr env x = case x of
 
 
 -- $> tp_expr (Env preambleMdl (LVD [])) (ValE () (IntV 5))
+
+
+
+----------------------------------------------------------------------
+-- Typing Timed Automata
+----------------------------------------------------------------------
+
+clock_of_constraint :: ClConstr -> Clock
+clock_of_constraint (ClCn c _ _) = c
+
+list_subset :: Eq a => [a] -> [a] -> Bool
+list_subset xs ys = all (\x -> elem x ys) xs
+
+well_formed_transition :: Module [ClassName] -> [Loc] -> [Clock] -> Transition -> Bool
+well_formed_transition md ta_locs ta_cs (Trans l1 ccs (Act cn snc) cs l2) = 
+  elem l1 ta_locs && elem l2 ta_locs &&
+  list_subset (map clock_of_constraint ccs) ta_cs  &&
+  is_subclass_of md cn (ClsNm "Event") &&
+  list_subset cs ta_cs
+
+-- well_formed_ta :: Environment t -> TA () -> TA Tp
 
 

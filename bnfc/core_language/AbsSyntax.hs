@@ -83,7 +83,10 @@ timeC = ClsDecl (ClsNm "Time")
 timeCs = [ClsDecl (ClsNm "Year") (ClsDef (Just (ClsNm "Time")) []),
           ClsDecl (ClsNm "Day") (ClsDef (Just (ClsNm "Time")) [])]
 
-customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs
+eventC  = ClsDecl (ClsNm "Event")
+                  (ClsDef (Just (ClsNm "Object"))
+                   [FldDecl (FldNm "time") (ClassT (ClsNm "Time"))])
+customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs ++ [eventC]
 
 preambleMdl = Mdl customCs []
 
@@ -138,6 +141,7 @@ data Exp t
     | VarE t VarName                            -- variable
     | UnaOpE t UnaOp (Exp t)                    -- unary operator
     | BinOpE t BinOp (Exp t) (Exp t)            -- binary operator
+    | IfThenElseE t (Exp t) (Exp t) (Exp t)     -- conditional
     | AppE t (Exp t) (Exp t)                    -- function application
     | FunE t VarName Tp (Exp t)                 -- function abstraction
     | ClosE t [(VarName, Exp t)] (Exp t)        -- closure  (not externally visible)
@@ -147,3 +151,39 @@ data Exp t
     deriving (Eq, Ord, Show, Read)
 
  
+
+----------------------------------------------------------------------
+-- Definition of Timed Automata
+----------------------------------------------------------------------
+
+data Clock = Cl String
+  deriving (Eq, Ord, Show, Read)
+
+-- Clock constraint of the form x < c.
+-- TODO: Reconsider the Integer. Might also be a subclass of the "Time" class
+data ClConstr = ClCn Clock BComparOp Integer
+  deriving (Eq, Ord, Show, Read)
+
+data Loc = Lc String
+  deriving (Eq, Ord, Show, Read)
+
+-- Synchronization type: send or receive
+data Sync = Snd | Rec
+  deriving (Eq, Ord, Show, Read)
+
+-- Action in a transition: the string is the ClassName of a subclass of Event
+data Action = Act ClassName Sync
+  deriving (Eq, Ord, Show, Read)
+
+-- Transition relation from location to location via Action,
+-- provided [ClConstr] are satisfied; and resetting [Clock]
+data Transition = Trans Loc [ClConstr] Action [Clock] Loc
+  deriving (Eq, Ord, Show, Read)
+
+-- Timed Automation having a set of locations, a set of clocks, a transition relation,
+-- a set of initial locations, an invariant per location and an expression true in the location.
+-- The set of Actions is not explicitly represented but implicit from the set of transitions.
+-- Major extension: "Labeling function" which is typically taken to be Loc -> AP -> Bool
+-- for AP a type of atomic propositioons and which is here taken to be (Loc -> Exp)
+data TA t = TmdAut [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
+  deriving (Eq, Ord, Show, Read)

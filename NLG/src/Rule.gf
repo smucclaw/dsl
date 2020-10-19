@@ -1,8 +1,10 @@
 abstract Rule = Action ** {
 
-  flags startcat = Move ;
+  flags startcat = Sentence ; -- Phrase ;
   cat
-    Move ; -- Can be a rule, or a definition, any independent sentence.
+--    Phrase ;
+
+    Sentence; -- Can be a rule, or a definition, any independent sentence.
 
     Deontic ;
 
@@ -14,11 +16,13 @@ abstract Rule = Action ** {
 
   fun
 
+    IfThen : Sentence -> Sentence -> Sentence ;
+
     MAction,
       MActionAlias :
-      PartyAlias -> Deontic -> Move ; -- the seller must issue the refund within 3 days.
+      PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
 
-    MDefTerm : Kind -> Term -> Move ;
+    MDefTerm : Kind -> Term -> Sentence ;
 
     May,
       Must,
@@ -39,6 +43,31 @@ abstract Rule = Action ** {
       Everybody : Party ;
 
     MkParty : String -> Party ;
+
+    -- Arithmetic operations
+  cat
+    Relation ; -- TODO: check https://github.com/GrammaticalFramework/gf-contrib/tree/master/mgl/abstract for inspiration
+  fun
+    Eq,
+      Gt,
+      Lt,
+      GtEq,
+      LtEq,
+      NEq : Relation ;
+
+    NumberOf : Term -> Term ; -- the # of shares
+
+    NumberOfRel : -- the # of …
+      Term ->     -- shares
+      Relation -> -- equal to/less than
+      Term ->     -- the purchase amount
+      Term ;
+
+    Div,
+      Mul,
+      Add,
+      Sub
+      : Term -> Term -> Term ; -- the Purchase Amount divided by the Conversion Price
 
     -- Definitions
   cat

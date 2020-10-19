@@ -84,7 +84,11 @@ concrete TermEng of Term = open
       } ;
 
     mkKind : N -> LinKind = \n -> linkind (mkCN n) ;
-
+    kind : Str -> LinKind = \str -> mkKind (mkN str) ;
+    adjkind : Str -> Str -> LinKind =
+      \a,n -> linkind (mkCN (mkAP (mkA a)) (mkN n)) ;
+    ofkind : Str -> Str -> LinKind =
+      \n,p -> linkind (mkCN (mkN n) (adv part_Prep (mkNP (mkN p)))) ;
     linkind : CN -> LinKind = \cn -> {
       cn = cn ;
       adv = emptyAdv ;
@@ -169,5 +173,6 @@ concrete TermEng of Term = open
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
-    adv2ap : Adv -> AP = \adv -> mkAP <adv : AdA> emptyAP ; -- RGL has no Adv->AP fun
+    ap2adv : AP -> Adv = \ap -> lin Adv (mkUtt ap) ;  -- RGL has no AP->Adv fun
+    adv2ap : Adv -> AP = \adv -> mkAP <adv : AdA> emptyAP ; -- and no Adv->AP fun
 }

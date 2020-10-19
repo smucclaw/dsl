@@ -6,9 +6,10 @@ concrete RuleEng of Rule = ActionEng ** open
   SyntaxEng,
   SymbolicEng,
   ExtendEng,
+  (P=ParadigmsEng),
   (WN=WordNetEng) in {
   lincat
-    Move = Utt ;
+    Sentence = Utt ;
 
     Party = NP ;
     PartyAlias = {party, alias : NP} ; -- Meng Wong, "the Farmer"
@@ -30,13 +31,13 @@ concrete RuleEng of Rule = ActionEng ** open
 
   lin
 
-    -- : PartyAlias -> Deontic -> Move ; -- the seller must issue the refund
+    -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
     MAction party deontic = mkUtt (PredVPS party.party deontic.action) ;
 
-    -- : PartyAlias -> Deontic -> Move ; -- the seller must issue the refund
+    -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
     MActionAlias party deontic = mkUtt (PredVPS party.alias deontic.action) ;
 
-    --  : Kind -> Term -> Move ;
+    --  : Kind -> Term -> Sentence ;
     MDefTerm kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
 
     -- : ActionAlias -> Deontic ;
@@ -67,6 +68,39 @@ concrete RuleEng of Rule = ActionEng ** open
     Everybody = everybody_NP ;
     Nobody = nobody_NP ;
     MkParty = symb ;
+
+    -- Arithmetic operations
+  lincat
+    Relation = Prep ;
+  lin
+    -- : Relation ;
+    Eq = mkRel "equal to" ;
+    Gt = mkRel "greater than" ;
+    Lt = mkRel "less than" ;
+    GtEq = mkRel "greater than or equal to" ;
+    LtEq = mkRel "less than or equal to" ;
+    NEq = mkRel "not equal to" ;
+
+    -- : Term -> Term ; -- the # of shares
+    NumberOf term = mkNP theSg_Det (mkCN (P.mkN2 WN.number_1_N) (np term)) ;
+
+    -- : Term -> Relation -> Term -> Term -- the # of shares equal to the purchase amount
+    NumberOfRel shares equal amount =
+      let numShares : Term = NumberOf shares ;
+          equalToAmount : Adv = SyntaxEng.mkAdv equal (np amount) ;
+       in mkNP numShares equalToAmount ;
+
+    -- : Term -> Term -> Term ; -- the Purchase Amount divided by the Conversion Price
+    Div = binOp "divided by" ;
+    Mul = binOp "multiplied by" ;
+    Add = binOp "added to" ; -- ?
+    Sub = binOp "subtracted from" ;
+  oper
+    binOp : Str -> LinTerm -> LinTerm -> LinTerm = \divby,a,b ->
+      mkNP (np a) (SyntaxEng.mkAdv (P.mkPrep divby) (np b)) ;
+
+    mkRel = P.mkPrep ;
+
     -- Definitions
     {-
   lincat

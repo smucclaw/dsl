@@ -9,7 +9,10 @@ RName.     RuleName  ::= OptLangStrings ;
 rules      OptLangStrings ::= | LangStrings;
 
 RBNoop.    RuleBody  ::= "NOOP";
-RuleDeem.   RuleBody  ::= GivenLimb "DEFINE" [Constraint] WithLimb WhenLimb WhereLimb;
+RuleDeem.   RuleBody  ::= GivenLimb DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+DefDefine.  DefineWord ::= "DEFINE" ;
+DefDeem.    DefineWord ::= "DEEM" ;
+DefDeclare. DefineWord ::= "DECLARE" ;
 RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
@@ -21,11 +24,12 @@ rules    AsAlias     ::= | "AS" ObjAttr ;
 REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
 rules      WhenLimb   ::= | "WHEN"   Exp UnlessExpr;
 rules      UnlessExpr ::= | "UNLESS" Exp;
-rules    DeonticLimb ::= DeonticExpr ActionLimb;
+rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
-rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
+ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
 rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
 rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
                         | "EARLIEST" LstExp
@@ -89,13 +93,14 @@ rules      Blah     ::= Exp;
 ModuleDecl. Module ::= "module" ObjAttr "where";
 Toplevel.  Tops      ::= [Toplevels];
 rules      Toplevels ::= Module | Import | Pragma
-                       | Rule | Entity | Scenario ;
+                       | Rule | Entity | Scenario | Group ;
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE" ;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP" ;
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
+rules Group ::= "GROUP" [Toplevels] ;
 rules Pragma ::= "pragma" [Exp] ;
 comment "//" ;
 comment "--" ;
@@ -225,7 +230,7 @@ rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
 OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
 separator nonempty ObjAttrElem ".";
 separator nonempty ObjAttr     ",";
-rules      ObjMethod  ::= [UnifyElem] Args ;
+rules      ObjMethod  ::= [UnifyElem] Args OptLangStrings;
 rules      Args       ::= | "(" [Constraint] ")";
 rules      UnifyExpr ::= [UnifyElem] ;
 rules      UnifyElem ::= ObjAttrElem

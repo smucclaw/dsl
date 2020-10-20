@@ -77,7 +77,22 @@ A constitutive rule.
 The BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RuleDeem.   RuleBody  ::= GivenLimb "DEFINE" [Constraint] WithLimb WhenLimb WhereLimb;
+  -- a constitutive rule
+  RuleDeem.     RuleBody  ::= GivenLimb           DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+  
+  DefDefine.  DefineWord ::= "DEFINE" ;
+  DefDeem.    DefineWord ::= "DEEM" ;
+  DefDeclare. DefineWord ::= "DECLARE" ;
+
+  -- a performative utterance
+  RulePerform.  RuleBody  ::= GivenLimb PartyLimb DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+  
+  DefPerform. DefineWord ::= "PERFORM" ;
+  DefHereby.  DefineWord ::= "HEREBY" ;
+  DefAgree.   DefineWord ::= "AGREE" ;
+  DefRep.     DefineWord ::= "REPRESENT" ;
+  DefWar.     DefineWord ::= "WARRANT" ;
+  DefRepWar.  DefineWord ::= "REPRANT" ;
 #+end_src
 
 Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" parts appear within the /constraint/ part:
@@ -276,7 +291,7 @@ Here's a possible truth table for how the When/Unless limbs desugar. The size of
 In a modal stanza, some party is seen doing some thing, to some standard. This limb talks about the thing and the standard.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules    DeonticLimb ::= DeonticExpr ActionLimb;
+  rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
   DEMust.  DeonticExpr ::= "MUST" ;
   DEMay.   DeonticExpr ::= "MAY"  ;
   DEShant. DeonticExpr ::= "SHANT" ;
@@ -285,7 +300,8 @@ In a modal stanza, some party is seen doing some thing, to some standard. This l
 The syntax for actions is not terribly well specified at the moment.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules    ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+  ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
+  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
 #+end_src
 
 *** Deadlines
@@ -571,11 +587,12 @@ An L4 Module contains a list of directives and statements.
 #+begin_src bnfc :noweb-ref l4bnfc
   Toplevel.  Tops      ::= [Toplevels];
   rules      Toplevels ::= Module | Import | Pragma
-                         | Rule | Entity | Scenario ;
+                         | Rule | Entity | Scenario
+                         | Group | Section ;
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE" ;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION" ;
   entrypoints Tops;
 #+end_src
 
@@ -600,6 +617,16 @@ Syntax for an import expression:
 #+end_src
 
 They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
+
+*** group: 
+
+Statement Groups collect multiple other top-levels
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
+
+  rules Section ::= "SECTION" RuleDef RuleName WithLimb WhereLimb ;
+#+end_src
 
 *** pragma: version
 
@@ -1075,7 +1102,7 @@ Actually, though, these parameters are constraints, so you could also say
 - ~object.party(age >= 21)~
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      ObjMethod  ::= [UnifyElem] Args ;
+  rules      ObjMethod  ::= [UnifyElem] Args OptLangStrings;
   rules      Args       ::= | "(" [Constraint] ")";
 #+end_src
 

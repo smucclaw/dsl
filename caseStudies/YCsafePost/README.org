@@ -1,0 +1,244 @@
+#+TITLE: SAFE in L4
+
+#+begin_quote
+Once more unto the breach, dear friends, once more
+
+/Henry V, Act III, Scene I/
+#+end_quote
+
+We draft the SAFE(s) in L4, with the aim of transpiling to various targets.
+
+For context:
+- https://medium.com/@jason_90344/computational-law-diary-safe-in-drools-f665ecc605e3
+- https://github.com/smucclaw/dsl/blob/main/README.org#jasons-draft-of-the-safe
+- https://smucclaw.slack.com/archives/C0164JRERL0/p1602785652104500
+- https://github.com/smucclaw/complaw/blob/doc-faq/doc/ex-20200702-safe-post/README.org#constraints-in-z3-worked
+
+* <<<Targets>>>
+
+** Python
+
+** Z3
+
+** GF
+
+** Prolog
+
+** Alloy
+
+* L4 Source
+
+The source text for the SAFEs is in ~ycdc/~.
+
+There are four types of SAFEs:
+
+** There are four SAFEs:
+
+|             | No Cap | Cap |
+|-------------+--------+-----|
+| Discount    | [[ycdc/Postmoney-Safe---Discount-Only-v1.1-3d18bf3e3967c8e09c1b5a0318e8629d91358eae6986bee6d8a3acf2ec18c6ce.org][1]]      | [[Postmoney-Safe---Valuation-Cap-and-Discount-v1.1-76b7ee5654ac178bca20b21eab5d3eba0c1da7c467aee4835f769263f8a18749.org][2]]   |
+| No Discount | [[ycdc/Postmoney-Safe---MFN-Only-v1.1-e34548a382b732f12461b19fea3da24f06873d1903b4b55bf13aa25bb55911f3.org][MFN]]    | [[ycdc/Postmoney-Safe---Valuation-Cap-Only-v1.1-5e6f7dd124b848071137eae5e4630b2edbe2c15e5d62583646526766793585ed.org][4]]   |
+
+There are actually four SAFEs.
+
+L4 is not meant to be a complete document assembly system, but because L4 source files are plain text, "upstream" tools can be used to cut and reassemble chunks of L4 source. (Tools such as a [[https://gcc.gnu.org/onlinedocs/cpp/Ifdef.html][C pre-processor]] or [[https://www.gnu.org/software/m4/][m4]], or anything more sophisticated.)
+
+In this case study, we solve the "code duplication" problem by architecting a SAFE library, from which the four individual SAFEs can import shared code.
+
+We show the four concrete SAFEs first, followed by the common library.
+
+** 1: Discount Only
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/DiscountOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.DiscountOnly
+
+import SAFE.Common
+
+
+
+#+end_src
+
+** 2: Valuation Cap and Discount
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapAndDiscount.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.ValuationCapAndDiscount
+
+import SAFE.Common
+
+
+
+#+end_src
+
+** 3: MFN Only (No Cap, No Discount)
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/MFNOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.MFNOnly
+
+import SAFE.Common
+
+
+
+#+end_src
+
+** 4: Valuation Cap Only
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.ValuationCapOnly
+
+import SAFE.Common
+
+#+end_src
+
+** Common: Statement Groups
+
+#+begin_src haskell :noweb-ref commonGroups
+
+GROUP UnregisteredSecurity :gf:"incantation"
+  RULE 00
+    GIVEN Contract, Jurisdiction
+    DECLARE Contract IS UnregisteredSecurity
+
+  RULE 01
+    GIVEN Contract, Jurisdiction
+      PARTY NOBODY
+        MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
+            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ]
+      UNLESS [ Contract.permits
+             & under(Jurisdiction.law) 
+             & pursuantTo( [ effectiveRegistrationStatement AS x
+                           | exemption(x) ]) ]
+
+RULE 03 CertStatement
+    GIVEN Investor,
+          purchaseAmount ISA CurrencyAmount :en:"Purchase Amount",
+          effectiveDate
+    PARTY Company
+    HEREBY issues(to = Investor) right(to = Company.certainShares)
+           :gf:"incantation: subject to terms below")
+
+GROUP 04
+  RULE Provenance
+    GIVEN Contract
+    DECLARE Contract isOneOf :en:"is one of the forms available at"
+            external(url="http://ycombinator.com/documents")
+
+GROUP 05
+  RULE Unmodified
+    GIVEN Contract
+    PARTY [ Company, Investor ] AS Parties
+    AGREE nobody IN Parties
+      HAS modified Contract
+      EXCEPT fillIn([blanks U bracketedTerms])
+
+RULE 06
+  GIVEN  Discount ISA Number
+  DEFINE DiscountRate
+      IS 100 - Discount
+
+GROUP 07 :gf:"incantation"
+  PRAGMA adviceToReader
+         :en:"See {Section 2} for certain additional defined terms."
+
+SECTION 1 Events :en:"Events"
+
+RULE 11 EquityFinancing
+  UPON equityFinancing
+       :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into {numShares}"
+  WHERE numShares :en:"the number of shares of {sps}" =
+          purchaseAmount / discountPrice
+
+DEFINE sps :en:"Safe Preferred Stock" ISA Number
+
+RULE 12 EquityDocuments
+  GIVEN EquityFinancing
+  PARTY Investor
+   MUST [ execute & deliver(to=Company) ]
+        allOf txnDocuments
+   WHEN (txnDocuments = standardPSDocuments % safePS) :en:"same"
+        (txnDocuments ~ customaryExceptions) :en:"have"
+  WHERE txnDocuments
+          :en:"transaction documents related to the Equity Financing"
+        standardPSDocuments
+          :en:"the documents to be entered into with the purchasers of Standard Preferred Stock,"
+        safePS
+          :en:"appropriate variations for the Safe Preferred Stock if applicable"
+        customaryExceptions(to=dragAlong $ Investor)
+          :en:"customary exceptions to any drag-along applicable to the Investor,"
+           including(-limitation) [ limitedRep :en:"limited representations"
+                                  , warranties
+                                  , liability
+                                  & indemOb $ Investor ]
+RULE 13 LiquidityEvent
+  UPON liquidityEvent
+  DEFINE entitlement
+   WHERE entitlement = max [ cashOutAmount :en:"Cash-Out Amount"
+                           , conversionAmount :en:"Conversion Amount" ]
+         cashOutAmount = purchaseAmount
+         conversionAmount = payable(numShares = purchaseAmount / liquidityPrice)
+         choice = investorChoice
+
+RULE 14 investorChoice
+  UPON liquidityEvent
+  GIVEN other company's securityholders are given a choice
+  PARTY Investor
+    MAY choose similarly EXCEPT exclusions
+  WHERE exclusions = ...
+   
+
+
+#+end_src
+
+** Common: Entities
+
+#+begin_src haskell :noweb-ref commonEntities
+
+#+end_src
+
+** Common: Definitions
+
+#+begin_src haskell :noweb-ref commonDefinitions
+
+#+end_src
+
+** Common: Events
+
+#+begin_src haskell :noweb-ref commonEvents
+
+#+end_src
+
+** Common: Rules
+
+#+begin_src haskell :noweb-ref commonRules
+
+#+end_src
+
+* Infrastructure
+
+** The Common Library
+
+contains definitions used by individual SAFEs.
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/Common.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.Common
+
+<<commonPragmas>>
+<<commonGroups>>
+<<commonEntities>>
+<<commonDefinitions>>
+<<commonEvents>>
+<<commonRules>>
+
+#+end_src
+
+
+

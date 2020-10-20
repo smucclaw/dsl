@@ -15,12 +15,15 @@ abstract Term = {
       : Conjunction -> [Property] -> Property ;
 
     -- Determiners
-    ASg,                                     -- a post-money valuation
-    APl,                                     -- creditors
-    TheSg,                                   -- the company
-    ThePl,                                   -- the companies
-    All,                                     -- all dissolution events
-    Any : Determiner ;                       -- any liquidation event
+    ASg,            -- a post-money valuation
+    APl,            -- creditors
+    TheSg,          -- the company
+    ThePl,          -- the companies
+    All,            -- all dissolution events
+    Any,            -- any liquidation event
+    AnyOther        -- any other liquidation, dissolution or winding up
+      : Determiner ;
+
 
     TDet : Determiner -> Kind -> Term ;
 

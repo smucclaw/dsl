@@ -1,6 +1,7 @@
 concrete TermEng of Term = open
   SyntaxEng,
   ParadigmsEng,
+  AdjectiveEng,
   (R=ResEng),
   ParamX,
   Prelude in {
@@ -19,13 +20,19 @@ concrete TermEng of Term = open
     Term = \x -> (mkUtt (np x)).s ;
 
   lin
-        -- Conjunctions
+    -- Conjunctions
     And = and_Conj ;
     Or = or_Conj ;
+
     BaseTerm = mkListNP ; -- : NP -> NP -> ListNP ;
     ConsTerm = mkListNP ; -- : NP -> ListNP -> ListNP ;
     ConjTerm = mkNP ;     -- : Conj -> ListNP -> NP
 
+    BaseProperty = base AP ListAP mkListAP ; -- : AP -> AP -> ListAP
+    ConsProperty = cons AP ListAP mkListAP ; -- : AP -> ListAP -> ListAP
+    ConjProperty co ps = \\pol =>            -- : Conj -> ListAP -> AP
+      mkAP co (ps ! pol) ; -- conjunctions don't change, because negations can be lexical.
+                           -- e.g. "involuntary and unjustified"
     -- Determiners
     ASg = table {
       Mass => emptyDet ;
@@ -57,11 +64,22 @@ concrete TermEng of Term = open
       Count => all_Det ;
       Plural => all_Det
       } ;
+    AnyOther = \\_ => any_other_Det ;
 
     -- Kinds, Terms and Properties
     -- : Determiner -> Kind -> Term
     TDet = term ; -- using our oper 'term', defined at the end of file
 
+    -- : Property -> Kind -> Kind ;
+    KProperty props kind = let prop : AP = ap props in
+      case prop.isPre of {
+        True => kind ** { -- voluntary termination
+          cn = mkCN prop kind.cn
+          } ;
+        False => kind ** { -- termination for the benefit of the Company
+          adv = cc2 kind.adv (ap2adv prop)
+          }
+      } ;
 
     -- Kinds with complements
     -- : Kind -> Term -> Kind ;    -- liquidation of the company
@@ -106,8 +124,6 @@ concrete TermEng of Term = open
     -- Property
     LinProp : Type = ParamX.Polarity => AP ;
       -- TODO: see if needed {vps : VPSlash ; arg : NP ; qualif : AP ; adv : Adv ; predType : PredType} ;
-    ListLinProp : Type = ParamX.Polarity => ListAP ;
-
     prop = overload {
       prop : Str -> Str -> LinProp = \pos,neg -> table {
         R.Pos => mkAP (mkA pos) ;
@@ -118,6 +134,26 @@ concrete TermEng of Term = open
         R.Neg => mkAP (mkA ("not" ++ pos))
         }
       } ;
+
+    -- Conjunctions
+    ListLinProp : Type = ParamX.Polarity => ListAP ;
+
+    -- This is how you do polymorphism in GF.
+    -- A bit unwieldy.
+
+    base : (A : Type) -> (ListA : Type) ->
+      (A -> A -> ListA) ->
+      (a, b : ParamX.Polarity => A) ->
+      ParamX.Polarity => ListA =
+      \_,_,mkList,a,b -> \\pol => mkList (a ! pol) (b ! pol) ;
+
+    cons : (A : Type) -> (ListA : Type) ->
+      (A -> ListA -> ListA) ->
+      (a : ParamX.Polarity => A) ->
+      (as : ParamX.Polarity => ListA) ->
+      ParamX.Polarity => ListA =
+      \_,_,mkList,a,as -> \\pol => mkList (a ! pol) (as ! pol) ;
+
     ----------------
     -- Empty phrases
 
@@ -147,7 +183,9 @@ concrete TermEng of Term = open
     emptyDet : Det = a_Det ** {
       s = []
       } ;
-
+    any_other_Det : Det = a_Det ** {
+      s = "any other"
+      } ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
 
@@ -156,6 +194,9 @@ concrete TermEng of Term = open
 
     -- Default use for NPs
     np : LinTerm -> NP = id NP ;
+
+    -- Default use for most APs: pick the positive version (e.g. "voluntary", not "involuntary")
+    ap : LinProp -> AP = \lp -> lp ! Pos ;
 
     -- copied from RGL to work with DetLite
     -- This is BAD PRACTICE !!! TODO: add a strategic oper to English RG
@@ -173,6 +214,6 @@ concrete TermEng of Term = open
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
-    ap2adv : AP -> Adv = \ap -> lin Adv (mkUtt ap) ;  -- RGL has no AP->Adv fun
-    adv2ap : Adv -> AP = \adv -> mkAP <adv : AdA> emptyAP ; -- and no Adv->AP fun
+    ap2adv : AP -> Adv = \ap -> lin Adv (mkUtt ap) ; -- RGL has no AP->Adv fun
+    adv2ap : Adv -> AP = AdjectiveEng.AdvAP emptyAP ; -- RGL has no Adv->AP fun
 }

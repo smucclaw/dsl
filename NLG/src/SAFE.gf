@@ -86,8 +86,6 @@ abstract SAFE = Action ** {
       Term ;
 
     --Series,   -- a series of transactions
-    AnyOther  -- any other liquidation, dissolution or winding up
-      : Determiner ;
 
 
 

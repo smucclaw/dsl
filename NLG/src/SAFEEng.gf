@@ -4,6 +4,7 @@ concrete SAFEEng of SAFE = ActionEng ** open
   (R=ResEng),
   (N=NounEng),
   (C=ConjunctionEng),
+  (WN=WordNetEng),
   Prelude,
   ExtendEng in {
   lin
@@ -11,9 +12,9 @@ concrete SAFEEng of SAFE = ActionEng ** open
     -- Actions --
     -------------
     -- Direct object
-    Raise = mkDir raise_V2 ;
-    Issue = mkDir issue_V2 ;
-    Sell  = mkDir sell_V2 ;
+    Raise = mkDir raise_V2 raise_VP ;
+    Issue = mkDir issue_V2 issue_VP ;
+    Sell  = mkDir sell_V2 sell_VP ;
 
     -- Indirect object
     IssueAt = mkDirIndir issue_at_V3 whether_at_Prep ;
@@ -141,12 +142,19 @@ concrete SAFEEng of SAFE = ActionEng ** open
     -------------
     -- Lexicon --
     -------------
-    any_other_Det : LinDet = \\_ => a_Det ** {s = "any other"} ;
     series_Det : LinDet = \\_ => aPl_Det ** {s = "series of"} ;
 
-    raise_V2 : V2 = mkV2 (mkV "raise") ;
-    sell_V2 : V2 = mkV2 (mkV "sell") ;
-    issue_V2 : V2 = mkV2 (mkV "issue") ;
+    raise_V2 : V2 = WN.raise_4_V2 ;
+    sell_V2 : V2 = WN.sell_1_V2 ;
+    issue_V2 : V2 = WN.issue_1_V2 ;
+
+    -- intransitive versions of transitive verbs
+    -- very artificial language, rethink this design
+    sell_VP : VP = mkVP WN.perform_1_V2 (mkNP theSg_Det WN.sale_1_N) ;
+    raise_VP : VP = mkVP raise_V2  (mkNP aPl_Det WN.fund_1_N) ;
+    issue_VP : VP = mkVP WN.perform_1_V2 (mkNP theSg_Det (mkN "issuance")) ;
+
+    -- TODO: do ditransitive verbs also need intransitive version?
     sell_at_V3 : V3 = mkV3 (mkV "sell") noPrep at_Prep ;
     issue_at_V3 : V3 = mkV3 (mkV "issue") noPrep at_Prep ;
 

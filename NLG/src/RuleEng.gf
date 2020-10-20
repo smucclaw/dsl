@@ -38,7 +38,10 @@ concrete RuleEng of Rule = ActionEng ** open
     MActionAlias party deontic = mkUtt (PredVPS party.alias deontic.action) ;
 
     --  : Kind -> Term -> Sentence ;
-    MDefTerm kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
+    MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
+
+    --  : Kind -> Term -> Sentence ;
+    MDefTermMeans kind term = mkUtt (mkCl (defTerm kind) WN.mean_3_V2 (np term)) ;
 
     -- : ActionAlias -> Deontic ;
     May a = a ** {

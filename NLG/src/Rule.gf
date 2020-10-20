@@ -22,7 +22,8 @@ abstract Rule = Action ** {
       MActionAlias :
       PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
 
-    MDefTerm : Kind -> Term -> Sentence ;
+    MDefTermIs,
+      MDefTermMeans : Kind -> Term -> Sentence ;
 
     May,
       Must,

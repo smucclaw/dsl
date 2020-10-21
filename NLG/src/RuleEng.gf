@@ -43,6 +43,9 @@ concrete RuleEng of Rule = ActionEng ** open
     --  : Kind -> Term -> Sentence ;
     MDefTermMeans kind term = mkUtt (mkCl (defTerm kind) WN.mean_3_V2 (np term)) ;
 
+    -- : Kind -> Property -> Sentence ;
+    MDefProp kind prop = mkUtt (mkCl (defTerm kind) (prop ! Pos)) ;
+
     -- : ActionAlias -> Deontic ;
     May a = a ** {
       action = a.action.s ! PMay} ;

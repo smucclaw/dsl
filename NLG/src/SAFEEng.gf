@@ -46,16 +46,16 @@ concrete SAFEEng of SAFE = ActionEng ** open
       let for_b : Adv = adv for_Prep (mkNP the_Det (mkCN benefit_N2 (np t))) ;
           not_for_b : Adv = for_b ** ss2 "not" for_b.s ;
       in table {
-        R.Pos => adv2ap for_b ;
-        R.Neg => adv2ap not_for_b
+        Pos => adv2ap for_b ;
+        Neg => adv2ap not_for_b
       } ;
 
     -- : Action -> Property ; -- with the purpose of raising capital
     WithPurpose action =
       let purpose_of_NP : NP = mkNP the_Det (mkCN purpose_N2 (gerund action ! Pos)) ;
        in table {
-         R.Pos => adv2ap (adv with_Prep purpose_of_NP) ;
-         R.Neg => adv2ap (adv without_Prep purpose_of_NP)
+         Pos => adv2ap (adv with_Prep purpose_of_NP) ;
+         Neg => adv2ap (adv without_Prep purpose_of_NP)
       } ;
 
     -----------
@@ -116,7 +116,7 @@ concrete SAFEEng of SAFE = ActionEng ** open
 
     -- : [Property] -> Kind -> Kind  -- dissolution event, whether voluntary or involuntary
     KWhetherOr props kind =
-      let prop : Adv = ap2adv (mkAP whether_or_Conj (props ! R.Pos)) ;
+      let prop : Adv = ap2adv (mkAP whether_or_Conj (props ! Pos)) ;
       in kind ** {
         adv = cc2 kind.adv prop } ;
 

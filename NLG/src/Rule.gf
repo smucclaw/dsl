@@ -25,6 +25,8 @@ abstract Rule = Action ** {
     MDefTermIs,
       MDefTermMeans : Kind -> Term -> Sentence ;
 
+    MDefProp : Kind -> Property -> Sentence ;
+
     May,
       Must,
       Shant : ActionAlias -> Deontic ;

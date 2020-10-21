@@ -3,10 +3,11 @@ concrete TermEng of Term = open
   ParadigmsEng,
   AdjectiveEng,
   (R=ResEng),
-  ParamX,
+  (C=ConjunctionEng),
   Prelude in {
   lincat
     Kind = LinKind;
+    [Kind] = ListLinKind ;
     Term = NP ;
     [Term] = ListNP ;
     Conjunction = Conj ;
@@ -33,6 +34,29 @@ concrete TermEng of Term = open
     ConjProperty co ps = \\pol =>            -- : Conj -> ListAP -> AP
       mkAP co (ps ! pol) ; -- conjunctions don't change, because negations can be lexical.
                            -- e.g. "involuntary and unjustified"
+
+    BaseKind k l = {
+      cn = C.BaseCN (merge k) (merge l) ;
+      k = case <k.k, l.k> of {
+        <Plural,_>|<_,Plural> => Plural ;
+        <Mass,Mass> => Mass ;
+        _ => Count }
+      } ;
+
+    ConsKind k l = {
+      cn = C.ConsCN (merge k) l.cn ;
+      k = case <k.k, l.k> of {
+        <Plural,_>|<_,Plural> => Plural ;
+        <Mass,Mass> => Mass ;
+        _ => Count }
+      } ;
+
+    ConjKind co ks = {
+      cn = C.ConjCN co ks.cn ;
+      adv = emptyAdv ;
+      k = ks.k
+      } ;
+
     -- Determiners
     ASg = table {
       Mass => emptyDet ;
@@ -64,11 +88,19 @@ concrete TermEng of Term = open
       Count => all_Det ;
       Plural => all_Det
       } ;
-    AnyOther = \\_ => any_other_Det ;
+    AnyOther = table {
+      Plural => any_otherPl_Det ;
+      _ => any_other_Det
+      } ;
 
     -- Kinds, Terms and Properties
     -- : Determiner -> Kind -> Term
     TDet = term ; -- using our oper 'term', defined at the end of file
+
+    PNeg prop = table {
+      --Neg => prop ! Pos  -- double negation = positive
+      _ => prop ! Neg
+      } ;
 
     -- : Property -> Kind -> Kind ;
     KProperty props kind = let prop : AP = ap props in
@@ -88,7 +120,7 @@ concrete TermEng of Term = open
 
   param
     KType = Mass | Count | Plural ;
-
+    Polarity = Pos | Neg ;
   oper
     -- Adv
     -- shorthand: mkAdv is imported from two modules, so it has to be qualified
@@ -113,45 +145,51 @@ concrete TermEng of Term = open
       k = Count
       } ;
 
+    -- Conjunctions of Kinds
+    ListLinKind : Type = {
+      cn : C.ListCN ;
+      k : KType ;
+      } ;
+
     -- Term
     LinTerm : Type = NP ;
 
     -- Determiner
     -- We don't need the full category of Det from RGL
-    DetLite : Type = {s : Str ;  n : ParamX.Number} ;
+    DetLite : Type = {s : Str ; n : R.Number} ;
     LinDet : Type = KType => DetLite ;
 
     -- Property
-    LinProp : Type = ParamX.Polarity => AP ;
+    LinProp : Type = Polarity => AP ;
       -- TODO: see if needed {vps : VPSlash ; arg : NP ; qualif : AP ; adv : Adv ; predType : PredType} ;
     prop = overload {
       prop : Str -> Str -> LinProp = \pos,neg -> table {
-        R.Pos => mkAP (mkA pos) ;
-        R.Neg => mkAP (mkA neg)
+        Pos => mkAP (mkA pos) ;
+        Neg => mkAP (mkA neg)
         } ;
       prop : Str -> LinProp = \pos -> table {
-        R.Pos => mkAP (mkA pos) ;
-        R.Neg => mkAP (mkA ("not" ++ pos))
+        Pos => mkAP (mkA pos) ;
+        Neg => mkAP (mkA ("not" ++ pos))
         }
       } ;
 
     -- Conjunctions
-    ListLinProp : Type = ParamX.Polarity => ListAP ;
+    ListLinProp : Type = Polarity => ListAP ;
 
     -- This is how you do polymorphism in GF.
     -- A bit unwieldy.
 
     base : (A : Type) -> (ListA : Type) ->
       (A -> A -> ListA) ->
-      (a, b : ParamX.Polarity => A) ->
-      ParamX.Polarity => ListA =
+      (a, b : Polarity => A) ->
+      Polarity => ListA =
       \_,_,mkList,a,b -> \\pol => mkList (a ! pol) (b ! pol) ;
 
     cons : (A : Type) -> (ListA : Type) ->
       (A -> ListA -> ListA) ->
-      (a : ParamX.Polarity => A) ->
-      (as : ParamX.Polarity => ListA) ->
-      ParamX.Polarity => ListA =
+      (a : Polarity => A) ->
+      (as : Polarity => ListA) ->
+      Polarity => ListA =
       \_,_,mkList,a,as -> \\pol => mkList (a ! pol) (as ! pol) ;
 
     ----------------
@@ -171,21 +209,12 @@ concrete TermEng of Term = open
     anySg_Det : Det = a_Det ** { -- Extend a_Det: keyword ** is record extension
       s = "any"                -- Keep other fields from a_Det, but replace s with "any"
       } ;
-    anyPl_Det : Det = aPl_Det ** {
-      s = "any"
-      } ;
-    all_Det : Det = aPl_Det ** {
-      s = "all"
-      } ;
-    allSg_Det : Det = a_Det ** {
-      s = "all"
-      } ;
-    emptyDet : Det = a_Det ** {
-      s = []
-      } ;
-    any_other_Det : Det = a_Det ** {
-      s = "any other"
-      } ;
+    anyPl_Det : Det = aPl_Det ** {s = "any"} ;
+    all_Det : Det = aPl_Det ** {s = "all"} ;
+    allSg_Det : Det = a_Det ** {s = "all"} ;
+    emptyDet : Det = a_Det ** {s = []} ;
+    any_other_Det : Det = a_Det ** {s = "any other"} ;
+    any_otherPl_Det : Det = aPl_Det ** {s = "any other"} ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
 

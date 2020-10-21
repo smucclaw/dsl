@@ -1,6 +1,7 @@
 abstract Term = {
   cat
     Kind ; -- Not quantified yet
+    [Kind]{2} ;
     Term ; -- Subjects, objects, adjuncts
     [Term]{2} ;
     Property ;
@@ -9,6 +10,8 @@ abstract Term = {
     Determiner ;
   fun
     And, Or : Conjunction ;
+    ConjKind
+      : Conjunction -> [Kind] -> Kind ; -- [winding up or dissolution] of the Company
     ConjTerm
       : Conjunction -> [Term] -> Term ;
     ConjProperty                              -- pre-money or post-money

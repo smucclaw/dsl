@@ -4,12 +4,12 @@ open
   (R=ResEng),
   (E=ExtendEng),
   (C=ConjunctionEng),
-  ExtraEng,
+  (Extra=ExtraEng),
   SyntaxEng,
   ParadigmsEng,
-  NounEng,
-  VerbEng,
-  AdjectiveEng in {
+  (N=NounEng),
+  (V=VerbEng),
+  (A=AdjectiveEng) in {
 
   lincat
 
@@ -186,7 +186,7 @@ open
 
   param
     -- Merging tense and modality
-    Polarity = Pos | Neg ;
+    -- Polarity comes from Term
     TenseModPol = PMay | PMust | PShant | PPres Polarity | PFut Polarity ;
 
   oper
@@ -210,13 +210,13 @@ open
 
     mkVPS : TenseModPol -> VP -> E.VPS = \tm,vp ->
       let vp_t_p : VP*Tense*Pol = case tm of {
-            PMay => <mkVP ExtraEng.may_VV vp
+            PMay => <mkVP Extra.may_VV vp
                     ,presentTense
                     ,positivePol> ;
             PMust => <mkVP must_VV vp
                      ,presentTense
                      ,positivePol> ;
-            PShant => <mkVP ExtraEng.shall_VV vp
+            PShant => <mkVP Extra.shall_VV vp
                       ,presentTense
                       ,negativePol> ;
 

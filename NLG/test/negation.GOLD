@@ -6,12 +6,20 @@ MDefProp ChangeOfControl (PNeg Voluntary)
 
 
 ** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital .
-MDefTermMeans EquityFinancing (TDet ASg (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) (KProperty BonaFide (SingleOrSeries Transaction))))
-MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital)))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital)))) (SingleOrSeries Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital)))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital)))) (SingleOrSeries Transaction))))
 
 ** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of raising capital .
-MDefTermMeans EquityFinancing (TDet ASg (KProperty (PNeg (WithPurpose (AComplDir Raise (TDet ASg Capital)))) (KProperty BonaFide (SingleOrSeries Transaction))))
-MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (WithPurpose (AComplDir Raise (TDet ASg Capital)))) (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (PNeg (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital))))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital))))) (SingleOrSeries Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (PNeg (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital))))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital))))) (SingleOrSeries Transaction))))
 
 ** Quantifiers
 
@@ -31,6 +39,7 @@ MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir Sell (TDet All P
 ** Indirect object
 
 ** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation 
+MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))))
 MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))))
 
 

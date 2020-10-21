@@ -23,7 +23,7 @@ concrete SAFEEng of SAFE = ActionEng ** open
     -- Increase valency: make the Action open for more arguments.
     -- : Action -> Action_Indir
     PursuantTo a = a ** {
-      intrans = a.s ; -- weird results if combined with ANoComplIndir
+      intrans = \\tmp => a.s ! tmp ! Active ; -- weird results if combined with ANoComplIndir
       indir = pursuant_to_Prep ;
       dir = \\_ => emptyAdv
       } ;
@@ -50,9 +50,11 @@ concrete SAFEEng of SAFE = ActionEng ** open
         Neg => adv2ap not_for_b
       } ;
 
-    -- : Action -> Property ; -- with the purpose of raising capital
-    WithPurpose action =
-      let purpose_of_NP : NP = mkNP the_Det (mkCN purpose_N2 (gerund action ! Pos)) ;
+    -- : ActionGerund -> Property ; -- with the purpose of raising capital
+    WithPurpose gerund =
+      let s : Str = gerund.s ;
+          gerund_NP : NP = mkNP (mkN s s s s) ;
+          purpose_of_NP : NP = mkNP the_Det (mkCN purpose_N2 gerund_NP) ;
        in table {
          Pos => adv2ap (adv with_Prep purpose_of_NP) ;
          Neg => adv2ap (adv without_Prep purpose_of_NP)

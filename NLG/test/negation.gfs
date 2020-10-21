@@ -11,15 +11,14 @@ ps ""
 ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital ."
 p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital "
 
--- TODO: now to negate Actions?
--- ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital ."
--- p "equity financing means a bona fide transaction or series of transactions with the principal purpose of not raising capital "
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of not raising capital "
 
 ps "** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of raising capital ."
 p "equity financing means a bona fide transaction or series of transactions without the principal purpose of raising capital "
 
--- ps "** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital ."
--- p "equity financing means a bona fide transaction or series of transactions without the principal purpose of not raising capital "
+ps "** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital ."
+p "equity financing means a bona fide transaction or series of transactions without the principal purpose of not raising capital "
 
 
 

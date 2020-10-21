@@ -34,7 +34,7 @@ abstract SAFE = Action ** {
       : Term -> Property ;
 
     WithPurpose   -- transaction with the purpose of raising capital
-      : Action -> Property ;
+      : ActionGerund -> Property ;
 
     -----------
     -- Kinds --

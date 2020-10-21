@@ -16,26 +16,27 @@ concrete RuleEng of Rule = ActionEng ** open
 
     ActionAlias = LinActionAlias ;
     Deontic = LinDeontic ;
-  param
-    TnsPol = Present Polarity | Future Polarity ;
+
   oper
     LinDeontic : Type = {
-      action : VPS ; -- TODO: can we safely throw away gerund and actor?
+      action : Voice => VPS ; -- TODO: can we safely throw away gerund and actor?
       alias : NP ;
+      passSubject : LinTerm ;
       } ;
 
     LinActionAlias : Type = {
-      action : LinAction ; -- VP: "sell a potato"
-      alias : NP           -- NP: "the sale"
+      s : TenseModPol => Voice => VPS ; -- VP: "sell a potato"
+      passSubject : LinTerm ;
+      alias : NP                             -- NP: "the sale"
       } ;
 
   lin
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MAction party deontic = mkUtt (PredVPS party.party deontic.action) ;
+    MAction party deontic = mkUtt (PredVPS party.party (deontic.action ! Active)) ;
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MActionAlias party deontic = mkUtt (PredVPS party.alias deontic.action) ;
+    MActionAlias party deontic = mkUtt (PredVPS party.alias (deontic.action ! Active)) ;
 
     --  : Kind -> Term -> Sentence ;
     MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
@@ -48,25 +49,26 @@ concrete RuleEng of Rule = ActionEng ** open
 
     -- : ActionAlias -> Deontic ;
     May a = a ** {
-      action = a.action.s ! PMay} ;
+      action = a.s ! PMay} ;
     Must a = a ** {
-      action = a.action.s ! PMust} ;
+      action = a.s ! PMust} ;
     Shant a = a ** {
-      action = a.action.s ! PShant } ;
+      action = a.s ! PShant } ;
+
     -- TODO: is this a good place for these?
     PosPres a = a ** {
-      action = a.action.s ! PPres Pos} ;
+      action = a.s ! PPres Pos} ;
     NegPres a = a ** {
-      action = a.action.s ! PPres Neg} ;
+      action = a.s ! PPres Neg} ;
     PosFut a = a ** {
-      action = a.action.s ! PFut Pos } ;
+      action = a.s ! PFut Pos } ;
     NegFut a = a ** {
-      action = a.action.s ! PFut Neg } ;
+      action = a.s ! PFut Neg } ;
 
 
     -- Aliases
     -- : Term -> Action -> ActionAlias ;
-    AAlias alias action = {action = action ; alias = alias} ;
+    AAlias alias action = action ** {alias = alias} ;
     -- : Term -> Party -> PartyAlias ;
     PAlias alias party = {party = party ; alias = alias} ;
 

@@ -12,6 +12,8 @@ abstract Action = Term ** {
     [Action_Dir_Indir]{2} ;   -- sells and issues (stock) (at fixed valuation)
 
     Temporal ;
+    ActionGerund ; -- as an argument to Action -> Property or Action -> Term.
+                   -- has lost its finite inflection, only gerund left.
   fun
     TPresent  : Temporal ;
     TPast     : Temporal ;
@@ -48,6 +50,10 @@ abstract Action = Term ** {
       Temporal ->     -- (will)
       Action_Dir ->   -- sign(s)
       Term ; -- the contract, which the company signs/will sign
+
+    -- Gerund
+    PosGerund,
+      NegGerund : Action -> ActionGerund ;
 
     -- Conjunctions
     ConjAction : Conjunction -> [Action] -> Action ;

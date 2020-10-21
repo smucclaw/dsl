@@ -15,6 +15,10 @@ concrete SAFEEng of SAFE = ActionEng ** open
     Raise = mkDir raise_V2 raise_VP ;
     Issue = mkDir issue_V2 issue_VP ;
     Sell  = mkDir sell_V2 sell_VP ;
+    Offer = mkDir offer_V2 offer_VP ;
+    Transfer = mkDir transfer_V2 transfer_VP ;
+    Pledge = mkDir pledge_V2 pledge_VP ;
+    Hypothecate = mkDir hypothecate_V2 ;
 
     -- Indirect object
     IssueAt = mkDirIndir issue_at_V3 whether_at_Prep ;
@@ -107,6 +111,7 @@ concrete SAFEEng of SAFE = ActionEng ** open
     ConversionPrice = kind "conversion price" ;
     PurchaseAmount = kind "purchase amount" ;
     Valuation = kind "valuation" ;
+    Security = kind "security" ;
 
     -- These should be used together with ComplKind : Kind -> Term -> Kind
     -- to get "liquidation of the company" etc.
@@ -149,12 +154,19 @@ concrete SAFEEng of SAFE = ActionEng ** open
     raise_V2 : V2 = WN.raise_4_V2 ;
     sell_V2 : V2 = WN.sell_1_V2 ;
     issue_V2 : V2 = WN.issue_1_V2 ;
+    offer_V2 : V2 = WN.offer_1_V2 ;
+    transfer_V2 : V2 = mkV2 WN.transfer_2_V ;
+    pledge_V2 : V2 = WN.pledge_2_V2 ;
+    hypothecate_V2 : V2 = WN.hypothecate_1_V2 ;
 
     -- intransitive versions of transitive verbs
     -- very artificial language, rethink this design
     sell_VP : VP = mkVP WN.perform_1_V2 (mkNP theSg_Det WN.sale_1_N) ;
     raise_VP : VP = mkVP raise_V2  (mkNP aPl_Det WN.fund_1_N) ;
     issue_VP : VP = mkVP WN.perform_1_V2 (mkNP theSg_Det (mkN "issuance")) ;
+    offer_VP : VP = mkVP WN.make_3_V2 (mkNP aSg_Det WN.offer_1_N) ;
+    transfer_VP : VP = mkVP WN.make_3_V2 (mkNP aSg_Det WN.transfer_1_N) ;
+    pledge_VP : VP = mkVP WN.make_3_V2 (mkNP aSg_Det WN.pledge_1_N) ;
 
     -- TODO: do ditransitive verbs also need intransitive version?
     sell_at_V3 : V3 = mkV3 (mkV "sell") noPrep at_Prep ;

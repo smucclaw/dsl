@@ -8,7 +8,11 @@ abstract SAFE = Action ** {
     -- Direct object
     Raise,                             -- raise capital
     Issue,                             -- issue stock
-    Sell                               -- sell stock
+    Sell,                              -- sell stock
+    Offer,
+    Transfer,
+    Pledge,
+    Hypothecate
       : Action_Dir ;
 
     -- Indirect object
@@ -56,6 +60,7 @@ abstract SAFE = Action ** {
     PreferredStock,
     ConversionPrice,
     PurchaseAmount,
+    Security,
     Valuation : Kind ;
 
     -- These should be used together with ComplKind : Kind -> Term -> Kind

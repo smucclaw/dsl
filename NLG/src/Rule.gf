@@ -40,7 +40,8 @@ abstract Rule = Action ** {
 
 
     -- Aliases
-    AAlias : Term -> Action -> ActionAlias ;
+    AAlias : Action -> ActionAlias ; -- default alias is just the word "action"
+    AAliasNamed : Term -> Action -> ActionAlias ;
     PAlias : Term -> Party -> PartyAlias ;
 
     -- Parties

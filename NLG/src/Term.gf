@@ -24,7 +24,9 @@ abstract Term = {
     ThePl,          -- the companies
     All,            -- all dissolution events
     Any,            -- any liquidation event
-    AnyOther        -- any other liquidation, dissolution or winding up
+    AnyOther,       -- any other liquidation, dissolution or winding up
+    This, These,    -- These securities
+    That, Those
       : Determiner ;
 
 

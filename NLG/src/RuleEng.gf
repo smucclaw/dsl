@@ -38,7 +38,10 @@ concrete RuleEng of Rule = ActionEng ** open
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
     MActionAlias party deontic = mkUtt (PredVPS party.alias (deontic.action ! Active)) ;
 
-    --  : Kind -> Term -> Sentence ;
+    -- : Deontic -> Sentence ;
+    MPass deontic = mkUtt (PredVPS deontic.passSubject (deontic.action ! Passive)) ;
+
+    -- : Kind -> Term -> Sentence ;
     MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
 
     --  : Kind -> Term -> Sentence ;
@@ -68,7 +71,10 @@ concrete RuleEng of Rule = ActionEng ** open
 
     -- Aliases
     -- : Term -> Action -> ActionAlias ;
-    AAlias alias action = action ** {alias = alias} ;
+    AAliasNamed alias action = action ** {alias = alias} ;
+
+    AAlias action = action ** {alias = mkNP theSg_Det WN.action_1_N} ;
+
     -- : Term -> Party -> PartyAlias ;
     PAlias alias party = {party = party ; alias = alias} ;
 

@@ -92,6 +92,23 @@ concrete TermEng of Term = open
       Plural => any_otherPl_Det ;
       _ => any_other_Det
       } ;
+    This = table {
+      Plural => these_Det ;
+      _ => this_Det
+      } ;
+    These = table {
+      Mass => this_Det ;
+      _ => these_Det
+      } ;
+    That = table {
+      Plural => those_Det ;
+      _ => that_Det
+      } ;
+    Those = table {
+      Mass => that_Det ;
+      _ => those_Det
+      } ;
+
 
     -- Kinds, Terms and Properties
     -- : Determiner -> Kind -> Term

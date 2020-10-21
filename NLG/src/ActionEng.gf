@@ -307,8 +307,10 @@ open
       dir = \\_ => emptyAdv ;
       indir = prepPol v2.c2 ;
       } ;
-    slashIndir : SlashDirIndir -> LinTerm -> SlashDir = \vps,io -> vps ** {
-      indir = applyPrepPol vps.indir io
+    slashIndir : SlashDirIndir -> LinTerm -> SlashDir = \vps,io ->
+      let ioAdv : Polarity => Adv = applyPrepPol vps.indir io in vps ** {
+        indir = ioAdv ;
+        intrans = \\tmp => complS (vps.intrans ! tmp) emptyAdv (ioAdv ! tmp2pol tmp)
       } ;
     complIndir : SlashIndir -> LinTerm -> LinAction = \action,io -> action ** {
       s = \\tmp,vc =>

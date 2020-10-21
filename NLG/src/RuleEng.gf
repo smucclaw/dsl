@@ -52,9 +52,13 @@ concrete RuleEng of Rule = ActionEng ** open
 
     -- : ActionAlias -> Deontic ;
     May a = a ** {
-      action = a.s ! PMay} ;
+      action = a.s ! PMay Pos} ;
+    MayNot a = a ** {
+      action = a.s ! PMay Neg} ;
     Must a = a ** {
-      action = a.s ! PMust} ;
+      action = a.s ! PMust Pos} ;
+    MustNot a = a ** {
+      action = a.s ! PMust Neg} ;
     Shant a = a ** {
       action = a.s ! PShant } ;
 

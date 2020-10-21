@@ -190,7 +190,7 @@ open
   param
     -- Merging tense and modality
     -- Polarity comes from Term
-    TenseModPol = PMay | PMust | PShant | PPres Polarity | PFut Polarity ;
+    TenseModPol = PMay Polarity | PMust Polarity | PShant | PPres Polarity | PFut Polarity ;
     Voice = Active | Passive ;
 
   oper
@@ -220,12 +220,18 @@ open
 
     mkVPS' : TenseModPol -> VP -> E.VPS = \tm,vp ->
       let vp_t_p : VP*Tense*Pol = case tm of {
-            PMay => <mkVP Extra.may_VV vp
-                    ,presentTense
-                    ,positivePol> ;
-            PMust => <mkVP must_VV vp
-                     ,presentTense
-                     ,positivePol> ;
+            PMay Pos => <mkVP Extra.may_VV vp
+                       ,presentTense
+                       ,positivePol> ;
+            PMay Neg => <mkVP Extra.may_VV vp
+                       ,presentTense
+                       ,negativePol> ;
+            PMust Pos=> <mkVP must_VV vp
+                       ,presentTense
+                       ,positivePol> ;
+            PMust Neg=> <mkVP must_VV vp
+                       ,presentTense
+                       ,negativePol> ;
             PShant => <mkVP Extra.shall_VV vp
                       ,presentTense
                       ,negativePol> ;

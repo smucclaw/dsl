@@ -29,8 +29,8 @@ abstract Rule = Action ** {
 
     MDefProp : Kind -> Property -> Sentence ;
 
-    May,
-      Must,
+    May, MayNot,
+      Must, MustNot,
       Shant : ActionAlias -> Deontic ;
 
     PosPres,  -- For now these are also deontics.

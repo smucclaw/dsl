@@ -1,0 +1,44 @@
+i src/TopEng.gf
+
+-- Short pieces
+ps "** a change of control , a direct listing or an initial public offering "
+p -cat=Term "a change of control , a direct listing or an initial public offering "
+
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital "
+
+ps "** the Company sells preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation ."
+p "the Company sells preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation "
+
+-- variation of "including"
+ps "** a valuation , including a pre-money or post-money valuation"
+p -cat=Term "a valuation , including a pre-money or post-money valuation"
+
+-- aggregation of verb phrases
+
+ps "** the Company sells preferred stock and issues capital ."
+p "the Company sells preferred stock and issues capital "
+
+ps "** the Company sells and issues preferred stock ."
+p "the Company sells and issues preferred stock "
+
+ps "** the Company sells and issues preferred stock at a fixed valuation ."
+p "the Company sells and issues preferred stock at a fixed valuation "
+
+-- under which
+ps  "** capital , pursuant to which the Company sells preferred stock at a fixed valuation"
+p -cat=Term "capital , pursuant to which the Company  sells preferred stock at a fixed valuation ,"
+
+-- longer direct object
+ps "** the Company sells and issues preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation ."
+p "the Company sells and issues preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation "
+
+-- Actual sentences from the SAFE
+ps "** liquidity event means a change of control , a direct listing or an initial public offering ."
+p "liquidity event means a change of control , a direct listing or an initial public offering "
+
+ps "** dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary ."
+p "dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary "
+
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including a pre-money or post-money valuation ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including a pre-money or post-money valuation , "

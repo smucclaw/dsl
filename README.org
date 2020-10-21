@@ -148,7 +148,7 @@ And if they perform as specified, the state graph proceeds to the node specified
 If they fail to perform, the state graph proceeds to the node specified in the "lest" limb.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+  RModal.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
   rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
@@ -353,6 +353,8 @@ This is expressible in usual temporal modal logic, LTL.
 *** GIVEN
 The "Given" limb is analogous to providing arguments to a function.
 
+Usually the "Given" expression is the name of a previous deontic rule.
+
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
   rules      GivenExpr ::=   [ObjAttr]
@@ -368,6 +370,15 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
 #+end_src
 
 The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
+
+*** UPON
+
+"UPON" matches events.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules       UponLimb ::= | "UPON"   GivenExpr ;
+#+end_src bnfc :noweb-ref l4bnfc
+
 
 *** WITH: attributes
 The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE clause.

@@ -99,23 +99,43 @@ import SAFE.Common
 
 ** Common: Statement Groups
 
-#+begin_src haskell :noweb-ref commonGroups
+#+begin_quote
+THIS INSTRUMENT AND ANY SECURITIES ISSUABLE PURSUANT HERETO HAVE NOT
+BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED (THE
+“*SECURITIES ACT*”), OR UNDER THE SECURITIES LAWS OF CERTAIN STATES.
+THESE SECURITIES MAY NOT BE OFFERED, SOLD OR OTHERWISE TRANSFERRED,
+PLEDGED OR HYPOTHECATED EXCEPT AS PERMITTED IN THIS SAFE AND UNDER THE
+ACT AND APPLICABLE STATE SECURITIES LAWS PURSUANT TO AN EFFECTIVE
+REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
+#+end_quote
 
+#+begin_src haskell :noweb-ref commonGroups
 GROUP UnregisteredSecurity :gf:"incantation"
   RULE 00
     GIVEN Contract, Jurisdiction
-    DECLARE Contract IS UnregisteredSecurity
+    DECLARE Contract IS Jurisdiction.unregisteredSecurity
 
   RULE 01
     GIVEN Contract, Jurisdiction
       PARTY NOBODY
         MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
-            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ]
-      UNLESS [ Contract.permits
+            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ] AS action
+      UNLESS [ Contract.permits(action)
              & under(Jurisdiction.law) 
-             & pursuantTo( [ effectiveRegistrationStatement AS x
-                           | exemption(x) ]) ]
+             & pursuantTo(action, [ effectiveRegistrationStatement AS x
+                                  | exemption(x) ]) ]
 
+#+end_src
+
+#+begin_quote
+THIS CERTIFIES THAT in exchange for the payment by [Investor Name] (the
+“*Investor*”) of $[__________] (the “*Purchase Amount*”) on or about
+[Date of Safe], [Company Name], a [State of Incorporation] corporation
+(the “*Company*”), issues to the Investor the right to certain shares of
+the Company's Capital Stock, subject to the terms described below.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
 RULE 03 CertStatement
     GIVEN Investor,
           purchaseAmount ISA CurrencyAmount :en:"Purchase Amount",
@@ -124,6 +144,16 @@ RULE 03 CertStatement
     HEREBY issues(to = Investor) right(to = Company.certainShares)
            :gf:"incantation: subject to terms below")
 
+#+end_src
+
+#+begin_quote
+This Safe is one of the forms available at
+[[http://ycombinator.com/documents]] and the Company and the Investor
+agree that neither one has modified the form, except to fill in blanks
+and bracketed terms.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
 GROUP 04
   RULE Provenance
     GIVEN Contract
@@ -138,32 +168,97 @@ GROUP 05
       HAS modified Contract
       EXCEPT fillIn([blanks U bracketedTerms])
 
+#+end_src
+
+#+begin_quote
+The “*Discount Rate*” is [/100 minus the discount/]%.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
 RULE 06
   GIVEN  Discount ISA Number
   DEFINE DiscountRate
       IS 100 - Discount
+  -- we're going to need some spreadsheet-like magic around rendering percentages and auto-conversion of 100% to 1.
 
+#+end_src
+
+#+begin_quote
+See *Section 2* for certain additional defined terms.
+#+end_quote
+
+Welp, maybe we have more document assembly skillz than we expected. Here, we have string interpolation, internal cross-references and rendering format-specs within OptLangStrings.
+
+#+begin_src haskell :noweb-ref commonGroups
 GROUP 07 :gf:"incantation"
   PRAGMA adviceToReader
-         :en:"See {Section 2} for certain additional defined terms."
+         :en:"See Section {#Definitions{%n}} for certain additional defined terms."
 
-SECTION 1 Events :en:"Events"
+#+end_src
 
-RULE 11 EquityFinancing
-  UPON equityFinancing
-       :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into {numShares}"
-  WHERE numShares :en:"the number of shares of {sps}" =
-          purchaseAmount / discountPrice
+** Common: Events
 
-DEFINE sps :en:"Safe Preferred Stock" ISA Number
+*** Event: Equity Financing
 
+#+begin_quote
+*1. /Events/*
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+SECTION Events :en:"Events"
+#+end_src
+
+#+begin_quote
+(a) *_Equity Financing_*. If there is an Equity Financing before the
+termination of this Safe, on the initial closing of such Equity
+Financing, this Safe will automatically convert into the number of
+shares of Safe Preferred Stock equal to the Purchase Amount divided by
+the Discount Price.
+#+end_quote
+
+It seems unnecessary to bound the effective range to the term of the contract, because ... isn't that the default?
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 11 EquityFinancing :en:"Equity Financing"
+    UPON equityFinancing
+         :en-verbose:"If there is an Equity Financing before the termination of this Safe"
+         :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into {numSafePS}"
+  DEFINE Contract.security := safePS(num=numSafePS)
+   HENCE EquityDocuments
+   WHERE numSafePS :en:"the number of shares of {safePS}" = purchaseAmount / discountPrice
+
+DEFINE safePS :en:"Safe Preferred Stock"
+   ISA Record
+  WITH num       = Number
+       itemType  = "shares"
+       preferred = True
+
+#+end_src
+
+These two paragraphs are weird, because the causality is suspect: what happens if the Investor declines to execute and deliver the transaction documents? Does the SAFE still automatically convert? Where's the carrot? Where's the stick? I have chosen to interpret this contract into an If/Hence construct.
+
+#+begin_quote
+In connection with the automatic conversion of this Safe into shares of
+Safe Preferred Stock, the Investor will execute and deliver to the
+Company all of the transaction documents related to the Equity
+Financing; /provided,/ that such documents (i) are the same documents to
+be entered into with the purchasers of Standard Preferred Stock, with
+appropriate variations for the Safe Preferred Stock if applicable, and
+(ii) have customary exceptions to any drag-along applicable to the
+Investor, including (without limitation) limited representations,
+warranties, liability and indemnification obligations for the Investor.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
 RULE 12 EquityDocuments
   GIVEN EquityFinancing
   PARTY Investor
    MUST [ execute & deliver(to=Company) ]
         allOf txnDocuments
-   WHEN (txnDocuments = standardPSDocuments % safePS) :en:"same"
+   WHEN :en:"nl_r" -- numbered list, roman numerals
+        (txnDocuments = standardPSDocuments % safePS) :en:"same"
         (txnDocuments ~ customaryExceptions) :en:"have"
+  HENCE EquityIssue
   WHERE txnDocuments
           :en:"transaction documents related to the Equity Financing"
         standardPSDocuments
@@ -172,29 +267,140 @@ RULE 12 EquityDocuments
           :en:"appropriate variations for the Safe Preferred Stock if applicable"
         customaryExceptions(to=dragAlong $ Investor)
           :en:"customary exceptions to any drag-along applicable to the Investor,"
-           including(-limitation) [ limitedRep :en:"limited representations"
-                                  , warranties
-                                  , liability
-                                  & indemOb $ Investor ]
+           including(sans_limitation=True) [ limitedRep :en:"limited representations"
+                                           , warranties
+                                           , liability
+                                           & indemOb $ Investor ]
+
+RULE 13 EquityIssue
+  GIVEN EquityDocuments
+  PARTY Company
+   MUST issue(Contract.security, to=Investor)
+  HENCE FULFILLED
+#+end_src
+
+*** Event: Liquidity Event
+
+Can you spot the type error? How can a Safe be entitled to anything? Surely only entities can be entitled.
+
+#+begin_quote
+(b) *_Liquidity Event_*. If there is a Liquidity Event before the
+termination of this Safe, this Safe will automatically be entitled
+(subject to the liquidation priority set forth in Section 1(d) below) to
+receive a portion of Proceeds, due and payable to the Investor
+immediately prior to, or concurrent with, the consummation of such
+Liquidity Event, equal to the greater of (i) the Purchase Amount (the
+“*Cash-Out Amount*”) or (ii) the amount payable on the number of shares
+of Common Stock equal to the Purchase Amount divided by the Liquidity
+Price (the “*Conversion Amount*”).
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
 RULE 13 LiquidityEvent
   UPON liquidityEvent
-  DEFINE entitlement
-   WHERE entitlement = max [ cashOutAmount :en:"Cash-Out Amount"
+       :en-verbose:"If there is a Liquidity Event before the termination of this Safe,"
+       :en:"this Safe will automatically be entitled (subject to the liquidation priority set forth in Section {#LiquidationPriority{n}} below to receive a portion of Proceeds"
+  DEFINE entitlement = max [    cashOutAmount :en:"Cash-Out Amount"
                            , conversionAmount :en:"Conversion Amount" ]
-         cashOutAmount = purchaseAmount
+   WHERE cashOutAmount = purchaseAmount
          conversionAmount = payable(numShares = purchaseAmount / liquidityPrice)
-         choice = investorChoice
-
-RULE 14 investorChoice
-  UPON liquidityEvent
-  GIVEN other company's securityholders are given a choice
-  PARTY Investor
-    MAY choose similarly EXCEPT exclusions
-  WHERE exclusions = ...
-   
-
 
 #+end_src
+
+#+begin_quote
+If any of the Company's securityholders are given a choice as to the
+form and amount of Proceeds to be received in a Liquidity Event, the
+Investor will be given the same choice, /provided/ that the Investor
+may not choose to receive a form of consideration that the Investor
+would be ineligible to receive as a result of the Investor's failure
+to satisfy any requirement or limitation generally applicable to the
+Company's securityholders, or under any applicable laws.
+#+end_quote
+
+It's worth noting that the "Investor may not choose to receive" is an
+alethic, not a deontic, modal, in the sense that if the Investor does
+try to make that choice, the choice will silently fail, and presumably
+the Company will treat the situation as though the investor had not
+made a choice. In fact, one could consider the choice to be reduced
+accordingly, and if there are no choices left (i.e. fewer than two
+alternatives remain after exclusion) then the Company doesn't offer
+the investor a choice at all.
+
+So it's the difference between "you may not order chocolate ice cream"
+and "you may not drive your vehicle over 100". In the second case, you
+might get caught and fined. In the first case, you will just get a
+blank stare and be asked to try again.
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 14 investorChoice
+   UPON choiceOffered( to=anyOf Company.securityHolders
+                     , regarding=[form & amount] of liquidityEventProceeds) as choice
+  PARTY Company
+   MUST offerChoice( to=Investor
+                   , regarding=choice.regarding - exclusionsDueTo([
+                        failure( by=Investor
+                               , to=satisfy [requirement | limitation] )
+                      U exclusionsByLaw ])
+
+#+end_src
+
+#+begin_quote
+Notwithstanding the foregoing, in connection with a Change of Control
+intended to qualify as a tax-free reorganization, the Company may reduce
+the cash portion of Proceeds payable to the Investor by the amount
+determined by its board of directors in good faith for such Change of
+Control to qualify as a tax-free reorganization for U.S. federal income
+tax purposes, provided that such reduction (A) does not reduce the total
+Proceeds payable to such Investor and (B) is applied in the same manner
+and on a pro rata basis to all securityholders who have equal priority
+to the Investor under Section 1(d).
+#+end_quote
+
+*** Event: Dissolution Event
+
+(c) *_Dissolution Event_*. If there is a Dissolution Event before the
+termination of this Safe, the Investor will automatically be entitled
+(subject to the liquidation priority set forth in Section 1(d) below) to
+receive a portion of Proceeds equal to the Cash-Out Amount, due and
+payable to the Investor immediately prior to the consummation of the
+Dissolution Event.
+
+*** Definition: Liquidation Priority
+
+(d) *_Liquidation Priority_*. In a Liquidity Event or Dissolution Event,
+this Safe is intended to operate like standard non-participating
+Preferred Stock. The Investor's right to receive its Cash-Out Amount is:
+
+(i) Junior to payment of outstanding indebtedness and creditor claims,
+including contractual claims for payment and convertible promissory
+notes (to the extent such convertible promissory notes are not actually
+or notionally converted into Capital Stock);
+
+(ii) On par with payments for other Safes and/or Preferred Stock, and if
+the applicable Proceeds are insufficient to permit full payments to the
+Investor and such other Safes and/or Preferred Stock, the applicable
+Proceeds will be distributed pro rata to the Investor and such other
+Safes and/or Preferred Stock in proportion to the full payments that
+would otherwise be due; and
+
+(iii) Senior to payments for Common Stock.
+
+The Investor's right to receive its Conversion Amount is (A) on par with
+payments for Common Stock and other Safes and/or Preferred Stock who are
+also receiving Conversion Amounts or Proceeds on a similar as-converted
+to Common Stock basis, and (B) junior to payments described in clauses
+(i) and (ii) above (in the latter case, to the extent such payments are
+Cash-Out Amounts or similar liquidation preferences).
+
+*** Event: Termination
+
+(e) *_Termination_*. This Safe will automatically terminate (without
+relieving the Company of any obligations arising from a prior breach of
+or non-compliance with this Safe) immediately following the earliest to
+occur of: (i) the issuance of Capital Stock to the Investor pursuant to
+the automatic conversion of this Safe under Section 1(a); or (ii) the
+payment, or setting aside for payment, of amounts due the Investor
+pursuant to Section 1(b) or Section 1(c).
 
 ** Common: Entities
 
@@ -208,11 +414,93 @@ RULE 14 investorChoice
 
 #+end_src
 
-** Common: Events
+*2. /Definitions/*
 
-#+begin_src haskell :noweb-ref commonEvents
+“*Capital Stock*” means the capital stock of the Company, including,
+without limitation, the “*Common Stock*” and the “*Preferred Stock*.”
 
-#+end_src
+“*Change of Control*” means (i) a transaction or series of related
+transactions in which any “person” or “group” (within the meaning of
+Section 13(d) and 14(d) of the Securities Exchange Act of 1934, as
+amended), becomes the “beneficial owner” (as defined in Rule 13d-3 under
+the Securities Exchange Act of 1934, as amended), directly or
+indirectly, of more than 50% of the outstanding voting securities of the
+Company having the right to vote for the election of members of the
+Company's board of directors, (ii) any reorganization, merger or
+consolidation of the Company, other than a transaction or series of
+related transactions in which the holders of the voting securities of
+the Company outstanding immediately prior to such transaction or series
+of related transactions retain, immediately after such transaction or
+series of related transactions, at least a majority of the total voting
+power represented by the outstanding voting securities of the Company or
+such other surviving or resulting entity or (iii) a sale, lease or other
+disposition of all or substantially all of the assets of the Company.
+
+“*Direct Listing*” means the Company's initial listing of its Common
+Stock (other than shares of Common Stock not eligible for resale under
+Rule 144 under the Securities Act) on a national securities exchange by
+means of an effective registration statement on Form S-1 filed by the
+Company with the SEC that registers shares of existing capital stock of
+the Company for resale, as approved by the Company's board of directors.
+For the avoidance of doubt, a Direct Listing shall not be deemed to be
+an underwritten offering and shall not involve any underwriting
+services.
+
+“*Discount Price*” means the lowest price per share of the Standard
+Preferred Stock sold in the Equity Financing multiplied by the Discount
+Rate.
+
+“*Dissolution Event*” means (i) a voluntary termination of operations,
+(ii) a general assignment for the benefit of the Company's creditors or
+(iii) any other liquidation, dissolution or winding up of the Company
+(*_excluding_* a Liquidity Event), whether voluntary or involuntary.
+
+“*Dividend Amount*” means, with respect to any date on which the Company
+pays a dividend on its outstanding Common Stock, the amount of such
+dividend that is paid per share of Common Stock multiplied by (x) the
+Purchase Amount divided by (y) the Liquidity Price (treating the
+dividend date as a Liquidity Event solely for purposes of calculating
+such Liquidity Price).
+
+“*Equity Financing*” means a bona fide transaction or series of
+transactions with the principal purpose of raising capital, pursuant to
+which the Company issues and sells Preferred Stock at a fixed valuation,
+including but not limited to, a pre-money or post-money valuation.
+
+“*Initial Public Offering*” means the closing of the Company's first
+firm commitment underwritten initial public offering of Common Stock
+pursuant to a registration statement filed under the Securities Act.
+
+“*Liquidity Event*” means a Change of Control, a Direct Listing or an
+Initial Public Offering.
+
+“*Liquidity Price*” means the price per share equal to the fair market
+value of the Common Stock at the time of the Liquidity Event, as
+determined by reference to the purchase price payable in connection with
+such Liquidity Event, multiplied by the Discount Rate.
+
+“*Proceeds*” means cash and other assets (including without limitation
+stock consideration) that are proceeds from the Liquidity Event or the
+Dissolution Event, as applicable, and legally available for
+distribution.
+
+“*Safe*” means an instrument containing a future right to shares of
+Capital Stock, similar in form and content to this instrument, purchased
+by investors for the purpose of funding the Company's business
+operations. References to “this Safe” mean this specific instrument.
+
+“*Safe* *Preferred Stock*” means the shares of the series of Preferred
+Stock issued to the Investor in an Equity Financing, having the
+identical rights, privileges, preferences and restrictions as the shares
+of Standard Preferred Stock, other than with respect to: (i) the per
+share liquidation preference and the initial conversion price for
+purposes of price-based anti-dilution protection, which will equal the
+Discount Price; and (ii) the basis for any dividend rights, which will
+be based on the Discount Price.
+
+“S*tandard Preferred Stock*” means the shares of a series of Preferred
+Stock issued to the investors investing new money in the Company in
+connection with the initial closing of the Equity Financing.
 
 ** Common: Rules
 
@@ -233,9 +521,9 @@ module SAFE.Common
 
 <<commonPragmas>>
 <<commonGroups>>
-<<commonEntities>>
-<<commonDefinitions>>
 <<commonEvents>>
+<<commonDefinitions>>
+<<commonEntities>>
 <<commonRules>>
 
 #+end_src

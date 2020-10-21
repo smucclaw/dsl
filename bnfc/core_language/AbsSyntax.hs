@@ -180,10 +180,27 @@ data Action = Act ClassName Sync
 data Transition = Trans Loc [ClConstr] Action [Clock] Loc
   deriving (Eq, Ord, Show, Read)
 
--- Timed Automation having a set of locations, a set of clocks, a transition relation,
--- a set of initial locations, an invariant per location and an expression true in the location.
--- The set of Actions is not explicitly represented but implicit from the set of transitions.
+-- Timed Automaton having:
+-- a name
+-- a set of locations,
+-- a set of channel types (subclasses of Event),
+-- a set of clocks,
+-- a transition relation,
+-- a set of initial locations,
+-- an invariant per location and
+-- a labelling (an expression true in the location).
 -- Major extension: "Labeling function" which is typically taken to be Loc -> AP -> Bool
--- for AP a type of atomic propositioons and which is here taken to be (Loc -> Exp)
-data TA t = TmdAut [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
+-- for AP a type of atomic propositioons and which is here taken to be [(Loc, Exp t)].
+-- Note: the set of locations, actions, clocks could in principle be inferred from the remaining info.
+data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
   deriving (Eq, Ord, Show, Read)
+
+-- Timed Automata System: a set of TAs running in parallel
+data TASys t = TmdAutSys [TA t]
+
+name_of_ta :: TA t -> String
+name_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) = nm
+
+channels_of_ta :: TA t -> [ClassName]
+channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) = ta_act_clss
+

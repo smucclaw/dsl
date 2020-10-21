@@ -80,8 +80,6 @@ elaborate_fields_in_class_decls cds =
             (ClsDecl cn (ClsDef scs (locfds ++ (concatMap (local_fields fd_assoc) scs))))) cds
   
 
--- $> customCs
-
 -- $> super_classes_decls customCs
 
 -- $> elaborate_fields_in_class_decls (elaborate_supers_in_class_decls customCs)
@@ -302,16 +300,42 @@ tp_expr env x = case x of
 clock_of_constraint :: ClConstr -> Clock
 clock_of_constraint (ClCn c _ _) = c
 
+-- TODO: move into preamble file
 list_subset :: Eq a => [a] -> [a] -> Bool
 list_subset xs ys = all (\x -> elem x ys) xs
 
-well_formed_transition :: Module [ClassName] -> [Loc] -> [Clock] -> Transition -> Bool
-well_formed_transition md ta_locs ta_cs (Trans l1 ccs (Act cn snc) cs l2) = 
+-- TODO: move into preamble file
+distinct :: Eq a => [a] -> Bool
+distinct [] = True
+distinct (x : xs) =  if elem x xs then False else distinct xs
+
+
+well_formed_transition :: Module [ClassName] -> [Loc] -> [ClassName] -> [Clock] -> Transition -> Bool
+well_formed_transition md ta_locs ta_act_clss ta_clks (Trans l1 ccs (Act cn snc) clks l2) = 
   elem l1 ta_locs && elem l2 ta_locs &&
-  list_subset (map clock_of_constraint ccs) ta_cs  &&
-  is_subclass_of md cn (ClsNm "Event") &&
-  list_subset cs ta_cs
+  elem cn ta_act_clss &&
+  list_subset (map clock_of_constraint ccs) ta_clks  &&
+  list_subset clks ta_clks
 
--- well_formed_ta :: Environment t -> TA () -> TA Tp
-
+well_formed_ta :: Environment [ClassName] -> TA () -> TA Tp
+well_formed_ta env (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) =
+  if
+    all (well_formed_transition (module_of_env env) ta_locs ta_act_clss ta_clks) trans &&
+    all (\act_cls -> is_subclass_of (module_of_env env) act_cls (ClsNm "Event")) ta_act_clss &&
+    all (\(l, ccs) -> elem l ta_locs && list_subset (map clock_of_constraint ccs) ta_clks) invs
+  then
+    let lbls_locs = map fst lbls
+        tes = map (tp_expr env) (map snd lbls)
+    in
+      if all (\l -> elem l ta_locs) lbls_locs && all (\te -> tp_of_expr te == BoolT) tes
+      then (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs (zip lbls_locs tes))
+      else error "ill-formed timed automaton (labels)"
+  else error "ill-formed timed automaton (transitions)"
+      
+well_formed_ta_sys :: Environment [ClassName] -> TASys () -> TASys Tp
+well_formed_ta_sys env (TmdAutSys tas) =
+  if distinct (map name_of_ta tas)
+  then TmdAutSys (map (well_formed_ta env) tas)
+  else error "duplicate TA names"
+  
 

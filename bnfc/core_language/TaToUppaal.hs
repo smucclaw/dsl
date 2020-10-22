@@ -62,8 +62,9 @@ clock_resets_to_uppaal clks = " assign " ++ (intercalate "," (map clock_reset_to
 
 -- TODO: also take into consideration that actions may be anonymous (maybe just a transition "Event"?)
 action_to_uppaal :: Action -> String
-action_to_uppaal (Act (ClsNm cnm) Snd) = cnm ++ "!"
-action_to_uppaal (Act (ClsNm cnm) Rec) = cnm ++ "?"
+action_to_uppaal Internal = ""
+action_to_uppaal (Act (ClsNm cnm) Snd) = "sync " ++ cnm ++ "!;"
+action_to_uppaal (Act (ClsNm cnm) Rec) = "sync " ++ cnm ++ "?;"
 
 transition_to_uppaal :: Transition -> String
 transition_to_uppaal (Trans l1@(Lc l1n) ccs a clks l2@(Lc l2n)) =

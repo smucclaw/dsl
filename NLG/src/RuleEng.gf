@@ -12,14 +12,13 @@ concrete RuleEng of Rule = ActionEng ** open
     Sentence = Utt ;
 
     Party = NP ;
-    PartyAlias = {party, alias : NP} ; -- Meng Wong, "the Farmer"
 
     ActionAlias = LinActionAlias ;
     Deontic = LinDeontic ;
 
   oper
     LinDeontic : Type = {
-      action : Voice => VPS ; -- TODO: can we safely throw away gerund and actor?
+      action : Voice => VPS ;
       alias : NP ;
       passSubject : LinTerm ;
       } ;
@@ -27,20 +26,16 @@ concrete RuleEng of Rule = ActionEng ** open
     LinActionAlias : Type = {
       s : TenseModPol => Voice => VPS ; -- VP: "sell a potato"
       passSubject : LinTerm ;
-      alias : NP                             -- NP: "the sale"
+      alias : NP                        -- NP: "the sale"
       } ;
 
   lin
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MAction party deontic = mkUtt (PredVPS party.party (deontic.action ! Active)) ;
-
-    -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MActionAlias party deontic = mkUtt (PredVPS party.alias (deontic.action ! Active)) ;
+    MAction party deontic = mkUtt (PredVPS party (deontic.action ! Active)) ;
 
     -- : Deontic -> Sentence ;
     MPass deontic = mkUtt (PredVPS deontic.passSubject (deontic.action ! Passive)) ;
-
     -- : Kind -> Term -> Sentence ;
     MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
 
@@ -56,17 +51,19 @@ concrete RuleEng of Rule = ActionEng ** open
     MayNot a = a ** {
       action = a.s ! PMay Neg} ;
     Must a = a ** {
-      action = a.s ! PMust Pos} ;
-    MustNot a = a ** {
-      action = a.s ! PMust Neg} ;
+      action = a.s ! PMust} ;
     Shant a = a ** {
-      action = a.s ! PShant } ;
+      action = a.s ! PShant} ;
 
     -- TODO: is this a good place for these?
     PosPres a = a ** {
       action = a.s ! PPres Pos} ;
     NegPres a = a ** {
       action = a.s ! PPres Neg} ;
+    PosPast a = a ** {
+      action = a.s ! PPast Pos} ;
+    NegPast a = a ** {
+      action = a.s ! PPast Neg} ;
     PosFut a = a ** {
       action = a.s ! PFut Pos } ;
     NegFut a = a ** {
@@ -74,18 +71,17 @@ concrete RuleEng of Rule = ActionEng ** open
 
 
     -- Aliases
-    -- : Term -> Action -> ActionAlias ;
-    AAliasNamed alias action = action ** {alias = alias} ;
-
+    -- : Action -> ActionAlias ;
     AAlias action = action ** {alias = mkNP theSg_Det WN.action_1_N} ;
 
-    -- : Term -> Party -> PartyAlias ;
-    PAlias alias party = {party = party ; alias = alias} ;
+    -- : Term -> Action -> ActionAlias ;
+    -- AAliasNamed alias action = action ** {alias = alias} ;
 
     -- Parties
     Everybody = everybody_NP ;
     Nobody = nobody_NP ;
-    MkParty = symb ;
+    MkParty p = p ;
+    StrParty = symb ;
 
     -- Arithmetic operations
   lincat
@@ -134,46 +130,3 @@ concrete RuleEng of Rule = ActionEng ** open
       mkDir WN.refund_V2 (mkVP WN.issue_1_V2 (mkNP aSg_Det WN.refund_1_N)) ;
 
 }
-
-{-
-IMPORT ContractLaw
-
-
-No person shall sell a cabbage (an item with species Brassica chinensis or Brassica oleracea) except on the day of a full moon, unless the seller has an exemption granted by the Director of Agriculture.
-
-RULE 1 SaleRestricted
-PARTY NOBODY AS seller
-MAY sell Item AS sale
-WHEN Item IS cabbage
-UNLESS sale IS onLegalDate // to be defined below
-OR UNLIKELY seller HAS Exemption.from ~ [DirectorOfAgriculture]
-HENCE ReturnPolicy
-LEST VIOLATION // next-state transitions
-WHERE Item IS cabbage // "where" syntax borrowed from Haskell
-        WHEN Item.species ~ ["Brassica chinensis"|"Brassica oleracea"]
-      sale IS onLegalDate
-        WHEN sale.date ~ LegalDates
-        WHERE LegalDates = external(url="https://www.almanac.com/
-                astronomy/moon/full/")
-              :en: "on the day of the full moon"
-
-
--- purchase
-A buyer may return their purchase within three weeks for a refund.
-
-RULE 2 ReturnPolicy
-GIVEN sale
-PARTY Buyer
-MAY return Item
-BEFORE sale.date + 3 weeks
-HENCE Net3
-
-The refund amount is 90% of the sale price. The seller must issue the refund within 3 days.
-
-RULE 3 Net3
-GIVEN return
-PARTY Seller
-MUST refund Amount
-BEFORE return.date + 3 days
-WHERE Amount = $return.sale.price * 90%
--}

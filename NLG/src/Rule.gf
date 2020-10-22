@@ -9,18 +9,15 @@ abstract Rule = Action ** {
     Deontic ;
 
     Party ;
-    PartyAlias ;
 
-    -- Action comes from Action
+    -- Action comes from Action.gf
     ActionAlias ; -- VP: "sell a potato" + NP: "the sale"
 
   fun
 
     IfThen : Sentence -> Sentence -> Sentence ;
 
-    MAction,
-      MActionAlias :
-      PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
+    MAction : Party -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
 
     MPass : Deontic -> Sentence ; -- the refund must be issued within 3 days.
 
@@ -30,11 +27,13 @@ abstract Rule = Action ** {
     MDefProp : Kind -> Property -> Sentence ;
 
     May, MayNot,
-      Must, MustNot,
+      Must,
       Shant : ActionAlias -> Deontic ;
 
     PosPres,  -- For now these are also deontics.
       NegPres,
+      PosPast,
+      NegPast,
       PosFut,
       NegFut : ActionAlias -> Deontic ;
 
@@ -42,13 +41,14 @@ abstract Rule = Action ** {
     -- Aliases
     AAlias : Action -> ActionAlias ; -- default alias is just the word "action"
     AAliasNamed : Term -> Action -> ActionAlias ;
-    PAlias : Term -> Party -> PartyAlias ;
 
     -- Parties
     Nobody,
       Everybody : Party ;
 
-    MkParty : String -> Party ;
+    StrParty : String -> Party ;
+    MkParty : Term -> Party ;
+
 
     -- Arithmetic operations
   cat

@@ -111,14 +111,32 @@ open
     ------------------
   lin
     BaseAction a1 a2 = {
-      s = \\tmp,vc => E.BaseVPS (a1.s ! tmp ! vc) (a2.s ! tmp ! vc) ; -- doesnt sell X and doesnt issue Y
+      s = \\tmp,vc =>
+        let infvps : E.VPS =
+              case vc of {
+                Passive => infVPS (a2.s ! PPast Pos ! Active) ;
+                Active => case tmp of {
+                  PPast Pos|PPres Pos => a2.s ! tmp ! vc ; -- [sells X and issues Y]
+                  _ => infVPS (a2.s ! PPres Pos ! Active) -- shan't/may/must [sell X and issue Y]
+                  }
+              } ;
+         in E.BaseVPS (a1.s ! tmp ! vc) infvps ;
       gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
       passSubject = mkListNP (np a1.passSubject) (np a2.passSubject) ;
       } ;
     ConsAction a as = as ** {
-      s = \\tmp,vc => E.ConsVPS (a.s ! tmp ! vc) (as.s ! tmp ! vc) ;
+      s = \\tmp,vc =>
+        let infvps : E.ListVPS =
+              case vc of {
+                Passive => infListVPS (as.s ! PPast Pos ! Active) ;
+                Active => case tmp of {
+                  PPast Pos|PPres Pos => as.s ! tmp ! vc ; -- [sells X and issues Y]
+                  _ => infListVPS (as.s ! PPres Pos ! Active) -- shan't/may/must [sell X and issue Y]
+                  }
+              } ;
+         in E.ConsVPS (a.s ! tmp ! vc) infvps ; -- shan't/may/must [transfer Z , sell X and issue Y]
       gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p) ;
-      passSubject = mkListNP a.passSubject as.passSubject ;
+      passSubject = mkListNP (np a.passSubject) as.passSubject ;
       } ;
     ConjAction co as = {
       s = \\tmp,vc =>
@@ -190,13 +208,18 @@ open
   param
     -- Merging tense and modality
     -- Polarity comes from Term
-    TenseModPol = PMay Polarity | PMust Polarity | PShant | PPres Polarity | PFut Polarity ;
+    TenseModPol =
+        PMay Polarity
+      | PMust
+      | PShant
+      | PPres Polarity
+      | PPast Polarity
+      | PFut Polarity ;
     Voice = Active | Passive ;
 
   oper
     -- Special VP construction.
-    TnsPolAction : Type = TenseModPol => E.VPS;
-
+    -- Normal VPs don't allow lists, that's why we use Extend.VPS
     LinAction : Type = {
       s : TenseModPol => Voice => E.VPS ;
       gerund : Polarity => Adv ;
@@ -226,18 +249,17 @@ open
             PMay Neg => <mkVP Extra.may_VV vp
                        ,presentTense
                        ,negativePol> ;
-            PMust Pos=> <mkVP must_VV vp
-                       ,presentTense
-                       ,positivePol> ;
-            PMust Neg=> <mkVP must_VV vp
-                       ,presentTense
-                       ,negativePol> ;
+            PMust => <mkVP must_VV vp
+                     ,presentTense
+                     ,positivePol> ;
             PShant => <mkVP Extra.shall_VV vp
                       ,presentTense
                       ,negativePol> ;
 
             PPres Pos => <vp, presentTense, positivePol> ;
             PPres Neg => <vp, presentTense, negativePol> ;
+            PPast Pos => <vp, pastTense, positivePol> ;
+            PPast Neg => <vp, pastTense, negativePol> ;
             PFut Pos => <vp, futureTense, positivePol> ;
             PFut Neg => <vp, futureTense, negativePol>
             } ;
@@ -248,9 +270,24 @@ open
 
     emptyTerm : LinTerm = emptyNP ;
 
+    -- Force the VPS to look like infinitive.
+    -- Massive hack, only works for English. For next language, rethink the lincats.
+    infVPS : E.VPS -> E.VPS = \vps -> vps ** {
+      s = \\_ => let emptyPlNP : NP = they_NP ** {s = \\_ => []}
+                  in (E.PredVPS emptyPlNP vps).s ;
+      } ;
+    infListVPS : E.ListVPS -> E.ListVPS = \listvps -> listvps ** {
+      s1 = let vps : E.VPS = lin VPS {s = listvps.s1}
+            in (infVPS vps).s ;
+
+      s2 = let vps : E.VPS = lin VPS {s = listvps.s2}
+            in (infVPS vps).s ;
+      } ;
+
     ----------------------
     -- Slash categories --
     ----------------------
+    TnsPolAction : Type = TenseModPol => E.VPS;
 
     mkGerSIntrans : V2 -> LinAction ** {intrans : TnsPolAction} = \v2 ->
       let linAction : LinAction = mkGerS v2  -- default: intransitive == s

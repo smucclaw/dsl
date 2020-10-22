@@ -29,9 +29,6 @@ abstract Action = Term ** {
     ANoComplDir   : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ; return _ -> "return the purchase"
     ANoComplIndir : Action_Indir -> Action ; -- same but for indirect object
 
-    -- Negation of a whole Action: doesnt sell X / doesnt sell X and Y
-    ANeg : Action -> Action ;
-
     -- Negation regarding the complements
     AComplNoneDir   : Action_Dir -> [Term] -> Action ; -- sells neither X, Y nor Z
     AComplNoneIndir : Action_Indir -> [Term] -> Action ; -- sells (X) neither to B nor to B

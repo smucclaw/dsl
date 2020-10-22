@@ -39,7 +39,7 @@ The rest of this document explains the syntax and shows the BNF language definit
 A "RULE" stanza is labeled with a numeric identifier, a name, or both, followed by zero or more language strings.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  Rule.      Rule      ::= "RULE" RuleDef RuleName RuleBody;
+  Rule.      Rule      ::= "RULE" RuleDef RuleName MetaLimb RuleBody;
 
   RID.       RuleDef   ::=         ObjAttr ;
   RNumID.    RuleDef   ::= Integer ObjAttr ;
@@ -147,8 +147,11 @@ And if they perform as specified, the state graph proceeds to the node specified
 
 If they fail to perform, the state graph proceeds to the node specified in the "lest" limb.
 
+The "GIVEN" and "UPON" limbs can be swapped, synonymously.
+
 #+begin_src bnfc :noweb-ref l4bnfc
-  RModal.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+  RModal1.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+  RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
   rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
@@ -220,8 +223,7 @@ Example:
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      WhenLimb   ::= | "WHEN"   Exp UnlessExpr;
-  rules      UnlessExpr ::= | "UNLESS" Exp;
+  rules      WhenLimb   ::= | "WHEN"   Exp;
 #+end_src
 
 They are very similar to the constraint expressions we've already seen in DEFINE rules.
@@ -309,7 +311,12 @@ The syntax for actions is not terribly well specified at the moment.
 Every deontic modal needs a deadline -- if you don't have to do something by a certain time, do you really have to do it at all?
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
+  DL0.         DeadlineLimb ::= ;
+  DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
+  TRBefore.    TempRel      ::= "BEFORE";
+  TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
+  TRAfter.     TempRel      ::= "AFTER";
+  TRUntil.     TempRel      ::= "UNTIL";
 #+end_src
 
 We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
@@ -357,8 +364,8 @@ Usually the "Given" expression is the name of a previous deontic rule.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-  rules      GivenExpr ::=   [ObjAttr]
-                           | [ObjAttr] HavingLimb ;
+  rules      GivenExpr ::=   Exp
+                           | Exp HavingLimb ;
 #+end_src
 
 The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb, but is scoped to the terms uttered in the GIVEN.
@@ -373,12 +380,43 @@ The scope of a GivenExpr is the entire ancestry of that node in the obligation g
 
 *** UPON
 
-"UPON" matches events.
+"UPON" matches events. Refinements to the "UPON" can be one of the following:
+
+| Kleisli | Time    | means                                                              |
+|---------+---------+--------------------------------------------------------------------|
+| EACH    | PAST    | run once for each matching event occuring before the main GIVEN    |
+| EACH    | CURRENT | run once for each matching event contemporaneous with main GIVEN   |
+| EACH    | FUTURE  | run once for each matching event subsequent to the main GIVEN      |
+| EACH    | EVER    | run once for each matching event before, during, or after GIVEN    |
+| ANY     | PAST    | run once, if there were one or more matching events before GIVEN   |
+| ANY     | CURRENT | run once, if there are one or more matching events alongside GIVEN |
+| ANY     | FUTURE  | run once for the first future event, but not subsequently          |
+| ANY     | EVER    | combination of PAST, CURRENT, FUTURE.                              |
+
+If left unspecified, the default refinement is "ANY FUTURE".
+
+If there is no GIVEN, then the thread begins at the start of the contract.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules       UponLimb ::= | "UPON"   GivenExpr ;
+  rules       UponLimb       ::= | "UPON" UponRefinement GivenExpr ;
+  Upon0.      UponRefinement ::= ;
+  Upon2.      UponRefinement ::= UponKleisli UponTime;
+  UponEach.   UponKleisli    ::= "EACH"; -- fires once for each matching event
+  UponAny.    UponKleisli    ::= "ANY";  -- collects all matching events, fires once
+  UponPast.    UponTime      ::= "PAST"; -- match events prior to the UPON event
+  UponFuture.  UponTime      ::= "FUTURE"; -- default; match events after the UPON
+  UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with UPON
+  UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
 #+end_src bnfc :noweb-ref l4bnfc
 
+*** CLOSE
+
+A CLOSE rule terminates one or more rules that the contract may have been "listening" for.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  RClose1.     RuleBody       ::= UponLimb GivenLimb CloseLimb WhenLimb HenceLimb WhereLimb;
+  CloseLimb1.  CloseLimb      ::= "CLOSE" [Exp] ;
+#+end_src bnfc :noweb-ref l4bnfc
 
 *** WITH: attributes
 The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE clause.
@@ -500,15 +538,25 @@ Violations of these properties can be found by a model checker.
 
 The syntax for assertion rules has not yet been defined.
 
-**** TODO PRIORITY
+**** MetaLimbs: PRIORITY rules
 
-A rule that establishes priority when other rules conflict.
+An optional rule that establishes priority when other rules conflict.
 
-The syntax for meta-rules has not yet been defined.
+#+begin_src bnfc :noweb-ref l4bnfc
+Meta0.       MetaLimb ::= ;
+#+end_src
 
 ***** Notwithstanding
 
+#+begin_src bnfc :noweb-ref l4bnfc
+MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
+#+end_src
+
 ***** Subject To
+
+#+begin_src bnfc :noweb-ref l4bnfc
+MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
+#+end_src
 
 ***** Scope
 
@@ -603,7 +651,7 @@ An L4 Module contains a list of directives and statements.
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION" ;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE" ;
   entrypoints Tops;
 #+end_src
 
@@ -729,8 +777,17 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   Op2E.   Exp4 ::=         BinExp ;
   Op3E.   Exp3 ::= TriOp   Exp7 Exp7 Exp7; ;
   Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
-  Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" Exp "ELSE" Exp;
+  Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
+  Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
 
+  ExpStm1.    ExpStm ::= Exp;
+  ExpStmLet.  ExpStm ::= "LET" Exp;
+  separator nonempty ExpStm ";"; -- used inside THEN and ELSE
+
+  ListComp1.   LstExp ::=    "[" Exp "FOR" ObjAttr "IN" Exp "]" ;
+  ListComp2.   LstExp ::=    "[" Exp "FOR" ObjAttr "IN" Exp "IF" Exp "]" ;
+  ListComp3.   LstExp ::=    "["           ObjAttr "IN" Exp "IF" Exp "]" ;
+  ListComp4.   LstExp ::=    "["           ObjAttr "IN" Exp          "]" ;
   ListComma.  LstExp ::=    "[" [Exp]         "]" ;
   ListAnd.    LstExp ::=    "[" [Exp] "&" Exp "]" ;
   ListOr.     LstExp ::=    "[" [Exp] "|" Exp "]" ;
@@ -752,6 +809,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BArith_Mul.  BinExp4   ::= Exp4 "*"    Exp5;
   BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
   BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
+  BL_Modulo1.  BinExp4   ::= Exp4 "%"    Exp5;
+  BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "->" Exp5; -- rewrite
   BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
   BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
   L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
@@ -759,11 +818,12 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BCmp_LTE.    BinExp2   ::= Exp4 "<="   Exp5;
   BCmp_GT.     BinExp2   ::= Exp4 ">"    Exp5;
   BCmp_GTE.    BinExp2   ::= Exp4 ">="   Exp5;
-  BCmp_Eq.     BinExp2   ::= Exp4 "=="   Exp5;
+  BCmp_Eq1.    BinExp2   ::= Exp4 "="    Exp5; -- constraint unification
+  BCmp_Eq2.    BinExp2   ::= Exp4 "=="   Exp5; -- constraint unification
+  BCmp_Eq3.    BinExp2   ::= Exp4 "==="  Exp5; -- object reference identity
   BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
   BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
-  BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
-  BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
+  BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
   BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
   BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
@@ -779,12 +839,16 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BBool_Or2.   BinExp    ::= Exp  "||"  Exp;
   BBool_Or3.   BinExp    ::= Exp  "OR"  Exp;
 
-  Set_Union.      BinExp ::= Exp  "∪"   Exp;
-  Set_Intersect.  BinExp ::= Exp  "∩"   Exp;
-  Set_Subset.     BinExp ::= Exp  "⊂"   Exp;
+  Set_Union1.     BinExp ::= Exp  "U"   Exp;
+  Set_Union2.     BinExp ::= Exp  "∪"   Exp;
+  Set_Union3.     BinExp ::= Exp  "UNION"   Exp;
+  Set_Intersect1.  BinExp ::= Exp  "∩"   Exp;
+  Set_Intersect2.  BinExp ::= Exp "INTERSECT" Exp ;
+  Set_Subset1.     BinExp ::= Exp  "⊂"   Exp;
+  Set_Subset2.     BinExp ::= Exp  "SUBSET"   Exp;
 
-  L_Union.        BinExp ::= Exp "UNION"     Exp ;
-  L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
+  BBool_Unless.    BinExp ::= Exp  "UNLESS"   Exp;
+
 
   coercions UnaOp 7;
   UCurr.       UnaOp7 ::= CurrencyPrefix ;

@@ -35,9 +35,7 @@ For context:
 
 * L4 Source
 
-The source text for the SAFEs is in ~ycdc/~.
-
-There are four types of SAFEs:
+The source text for the SAFEs is in ~ycdc/~. Run "make" twice to get them to appear.
 
 ** There are four SAFEs:
 
@@ -45,8 +43,6 @@ There are four types of SAFEs:
 |-------------+--------+-----|
 | Discount    | [[ycdc/Postmoney-Safe---Discount-Only-v1.1-3d18bf3e3967c8e09c1b5a0318e8629d91358eae6986bee6d8a3acf2ec18c6ce.org][1]]      | [[Postmoney-Safe---Valuation-Cap-and-Discount-v1.1-76b7ee5654ac178bca20b21eab5d3eba0c1da7c467aee4835f769263f8a18749.org][2]]   |
 | No Discount | [[ycdc/Postmoney-Safe---MFN-Only-v1.1-e34548a382b732f12461b19fea3da24f06873d1903b4b55bf13aa25bb55911f3.org][MFN]]    | [[ycdc/Postmoney-Safe---Valuation-Cap-Only-v1.1-5e6f7dd124b848071137eae5e4630b2edbe2c15e5d62583646526766793585ed.org][4]]   |
-
-There are actually four SAFEs.
 
 L4 is not meant to be a complete document assembly system, but because L4 source files are plain text, "upstream" tools can be used to cut and reassemble chunks of L4 source. (Tools such as a [[https://gcc.gnu.org/onlinedocs/cpp/Ifdef.html][C pre-processor]] or [[https://www.gnu.org/software/m4/][m4]], or anything more sophisticated.)
 
@@ -58,50 +54,36 @@ We show the four concrete SAFEs first, followed by the common library.
 
 #+begin_src bnfc :noweb yes :tangle l4/SAFE/DiscountOnly.l4
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-
 module SAFE.DiscountOnly
-
 import SAFE.Common
-
-
-
+PRAGMA EXPAND SAFE.Common.* - [ MFN, ValuationCap ]
 #+end_src
 
 ** 2: Valuation Cap and Discount
 
 #+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapAndDiscount.l4
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-
 module SAFE.ValuationCapAndDiscount
-
 import SAFE.Common
-
-
-
+PRAGMA EXPAND SAFE.Common.* - [ MFN ]
 #+end_src
 
 ** 3: MFN Only (No Cap, No Discount)
 
 #+begin_src bnfc :noweb yes :tangle l4/SAFE/MFNOnly.l4
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-
 module SAFE.MFNOnly
-
 import SAFE.Common
-
-
-
+PRAGMA EXPAND SAFE.Common.* - [ ValuationCap, DiscountRate ]
 #+end_src
 
 ** 4: Valuation Cap Only
 
 #+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapOnly.l4
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-
 module SAFE.ValuationCapOnly
-
 import SAFE.Common
-
+PRAGMA EXPAND SAFE.Common.* - [ MFN, DiscountRate ]
 #+end_src
 
 ** Common: Statement Groups
@@ -120,14 +102,13 @@ REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
 GROUP UnregisteredSecurity :gf:"incantation"
   RULE 00
     GIVEN Contract, Jurisdiction
-    DECLARE [ Contract & Contract.securitiesPursuant ] ARE Jurisdiction.unregisteredSecurity
+    DECLARE [ Contract & Contract.securitiesPursuant ] AS secs ARE Jurisdiction.unregisteredSecurity
 
   RULE 01
     GIVEN Contract, Jurisdiction
       PARTY NOBODY
         MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
-            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ]
-            [ Contract U Contract.securitiesPursuant ] AS action
+            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ] secs AS action
       UNLESS [ Contract.permits(action)
              & under(Jurisdiction.law) 
              & pursuantTo(action, [ effectiveRegistrationStatement AS x
@@ -142,6 +123,19 @@ THIS CERTIFIES THAT in exchange for the payment by [Investor Name] (the
 (the “*Company*”), issues to the Investor the right to certain shares of
 the Company's Capital Stock, subject to the terms described below.
 #+end_quote
+
+#+begin_src haskell :noweb-ref commonEntities
+ENTITY Investor ISA Person
+  WITH name = String
+ENTITY Company  ISA CorporatePerson
+  WITH name = String
+       state = Jurisdiction
+
+RULE Params
+  DEFINE Contract
+    WITH PurchaseAmount = CurrencyAmount
+         EffectiveDate  = Date
+#+end_src
 
 #+begin_src haskell :noweb-ref commonGroups
 RULE 03 CertStatement
@@ -162,14 +156,12 @@ and bracketed terms.
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonGroups
-GROUP 04
-  RULE Provenance
+  RULE 04 Provenance
     GIVEN Contract
     DECLARE Contract isOneOf :en:"is one of the forms available at"
             external(url="http://ycombinator.com/documents")
 
-GROUP 05
-  RULE Unmodified
+  RULE 05 Unmodified
     GIVEN Contract
     PARTY [ Company, Investor ] AS Parties
     AGREE nobody IN Parties
@@ -179,14 +171,24 @@ GROUP 05
 #+end_src
 
 #+begin_quote
+The “*Post-Money Valuation Cap*” is $[___________].
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+RULE ValuationCap
+  GIVEN valCap ISA Number
+  DEFINE valuationCap = valCap
+#+end_src
+
+#+begin_quote
 The “*Discount Rate*” is [/100 minus the discount/]%.
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonGroups
-RULE 06
-  GIVEN  Discount ISA Number
+RULE 06 DiscountRate
+  GIVEN  discount ISA Number
   DEFINE discountRate
-      IS ( 100 - Discount ) %
+      IS ( 100 - discount ) %
   -- we're going to need some spreadsheet-like magic around rendering percentages and auto-conversion of 100% to 1.
 
 #+end_src
@@ -455,11 +457,12 @@ or notionally converted into Capital Stock);
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonEvents
-    WITH priority < min ( priority <$> [ outstandingIndebtedness, creditorClaims
-                                       , contractualClaimsForPayment
-                                       , convertiblePromissoryNotes IN company.securities
-                                           IF NOT convertiblePromissoryNotes.converted
-                                       ] ) AS debts
+  -- 
+      WITH priority < min ( priority <$> [ outstandingIndebtedness, creditorClaims
+                                         , contractualClaimsForPayment
+                                         , convertiblePromissoryNotes IN company.securities
+                                             IF NOT convertiblePromissoryNotes.converted
+                                         ] ) AS debts
 #+end_src
 
 #+begin_quote
@@ -472,12 +475,13 @@ would otherwise be due; and
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonEvents
-         priority = max [ X.priority FOR X IN company.safe U company.preferredStock - Contract ] AS onpar
-         LET allDue = sum [ I.cashOutRight FOR I IN company.{safe,preferredStock}.holders ]
-         IF   PRE.proceeds < allDue
-         THEN POST.I.cashOutRight := PRE.proceeds / allDue * PRE.I.cashOutRight
-                FOR I IN company.{safe,preferredStock}.holders
-              POST.proceeds = allDue
+  --
+           priority = max [ X.priority FOR X IN company.safe U company.preferredStock - Contract ] AS onpar
+           LET allDue = sum [ I.cashOutRight FOR I IN company.{safe,preferredStock}.holders ]
+           IF   PRE.proceeds < allDue
+           THEN POST.I.cashOutRight := PRE.proceeds / allDue * PRE.I.cashOutRight
+                  FOR I IN company.{safe,preferredStock}.holders
+                POST.proceeds = allDue
 #+end_src
 
 #+begin_quote
@@ -485,7 +489,9 @@ would otherwise be due; and
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonEvents
-         priority > max [ X.priority FOR X IN company.commonStock ]
+  --
+           priority > max [ X.priority FOR X IN company.commonStock ]
+
 #+end_src
 
 #+begin_quote
@@ -525,15 +531,6 @@ RULE 18 Termination
        , Payout
        | Dissolution ]
   CLOSE EquityFinancing, LiquidityEvent, DissolutionEvent
-#+end_src
-
-** Common: Entities
-
-#+begin_src haskell :noweb-ref commonEntities
-
-DEFINE investor ISA Person
-DEFINE company  ISA CorporatePerson
-
 #+end_src
 
 ** Common: Definitions

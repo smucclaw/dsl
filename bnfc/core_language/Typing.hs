@@ -310,10 +310,14 @@ distinct [] = True
 distinct (x : xs) =  if elem x xs then False else distinct xs
 
 
+well_formed_action :: [ClassName] -> Action -> Bool
+well_formed_action ta_act_clss Internal = True
+well_formed_action ta_act_clss (Act cn _) = elem cn ta_act_clss
+
 well_formed_transition :: Module [ClassName] -> [Loc] -> [ClassName] -> [Clock] -> Transition -> Bool
-well_formed_transition md ta_locs ta_act_clss ta_clks (Trans l1 ccs (Act cn snc) clks l2) = 
+well_formed_transition md ta_locs ta_act_clss ta_clks (Trans l1 ccs act clks l2) = 
   elem l1 ta_locs && elem l2 ta_locs &&
-  elem cn ta_act_clss &&
+  well_formed_action ta_act_clss act &&
   list_subset (map clock_of_constraint ccs) ta_clks  &&
   list_subset clks ta_clks
 

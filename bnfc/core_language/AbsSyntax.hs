@@ -172,7 +172,9 @@ data Sync = Snd | Rec
   deriving (Eq, Ord, Show, Read)
 
 -- Action in a transition: the string is the ClassName of a subclass of Event
-data Action = Act ClassName Sync
+data Action
+  = Internal
+  | Act ClassName Sync
   deriving (Eq, Ord, Show, Read)
 
 -- Transition relation from location to location via Action,
@@ -197,6 +199,7 @@ data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [C
 
 -- Timed Automata System: a set of TAs running in parallel
 data TASys t = TmdAutSys [TA t]
+  deriving (Eq, Ord, Show, Read)
 
 name_of_ta :: TA t -> String
 name_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) = nm

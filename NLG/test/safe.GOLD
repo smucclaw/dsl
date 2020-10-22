@@ -1,0 +1,31 @@
+** nobody may offer , sell , transfer , pledge or hypothecate these securities
+MAction Nobody (May (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir Sell (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))) (TDet These Security))))
+MAction (StrParty "nobody") (May (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir Sell (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))) (TDet These Security))))
+
+** these securities may not be offered , sold , transferred , pledged or hypothecated
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir Sell (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))) (TDet These Security))))
+
+** Meng must offer , pledge or hypothecate these securities
+MAction (StrParty "Meng") (Must (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng may not offer , pledge or hypothecate these securities
+MAction (StrParty "Meng") (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng shan't offer , pledge or hypothecate these securities
+MAction (StrParty "Meng") (Shant (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng offers , pledges or hypothecates these securities
+MAction (StrParty "Meng") (PosPres (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng offered , pledged or hypothecated these securities
+MAction (StrParty "Meng") (PosPast (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng didn't offer , pledge or hypothecate these securities
+MAction (StrParty "Meng") (NegPast (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng will offer , pledge or hypothecate these securities
+MAction (StrParty "Meng") (PosFut (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** these securities may not be offered , sold , transferred , pledged or hypothecated
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir Sell (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))) (TDet These Security))))
+

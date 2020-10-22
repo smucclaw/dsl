@@ -24,45 +24,43 @@ MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (Wi
 ** Quantifiers
 
 ** the Company sells any preferred stock .
-MActionAlias (PAlias Company ?2) (PosPres (AAlias ?4 (AComplDir Sell (TDet Any PreferredStock))))
+MAction (MkParty Company) (PosPres (AAlias (AComplDir Sell (TDet Any PreferredStock))))
 
 ** the Company sells all preferred stock .
-MActionAlias (PAlias Company ?2) (PosPres (AAlias ?4 (AComplDir Sell (TDet All PreferredStock))))
+MAction (MkParty Company) (PosPres (AAlias (AComplDir Sell (TDet All PreferredStock))))
 
 ** the Company doesn't sell any preferred stock .
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir Sell (TDet Any PreferredStock))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet Any PreferredStock))))
 
 ** the Company doesn't sell all preferred stock .
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir Sell (TDet All PreferredStock))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet All PreferredStock))))
 
 
 ** Indirect object
 
 ** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation 
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))))
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))))
+MAction (MkParty Company) (NegPres (AAlias (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))))
 
 
 ** Multiple objects
 
 ** the Company doesn't sell preferred stock and capital .
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir Sell (ConjTerm And (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital))))))
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (AComplDir Sell (TDet ASg (ConjKind And (BaseKind PreferredStock Capital))))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (ConjTerm And (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital))))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet ASg (ConjKind And (BaseKind PreferredStock Capital))))))
 
 ** the Company doesn't sell preferred stock and doesn't sell capital .
-MActionAlias (PAlias Company ?2) (NegPres (AAlias ?4 (ConjAction And (BaseAction (AComplDir Sell (TDet ASg PreferredStock)) (AComplDir Sell (TDet ASg Capital))))))
-
+The parser failed at token 8: "doesn't"
 ** the Company doesn't sell preferred stock and sells capital .
 The parser failed at token 8: "sells"
 ** the Company sells preferred stock and doesn't sell capital .
 The parser failed at token 7: "doesn't"
 ** the Company sells neither preferred stock nor capital .
-MActionAlias (PAlias Company ?2) (PosPres (AAlias ?4 (AComplNoneDir Sell (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital)))))
+MAction (MkParty Company) (PosPres (AAlias (AComplNoneDir Sell (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital)))))
 
 ** Multiple predicates
 
 ** the Company sells and issues preferred stock .
-MActionAlias (PAlias Company ?2) (PosPres (AAlias ?4 (AComplDir (ConjSlashDir And (BaseAction_Dir Sell Issue)) (TDet ASg PreferredStock))))
-MActionAlias (PAlias Company ?2) (PosPres (AAlias ?4 (ConjAction And (BaseAction (ANoComplDir (ASlashIndir SellAt ?7)) (AComplDir Issue (TDet ASg PreferredStock))))))
+MAction (MkParty Company) (PosPres (AAlias (AComplDir (ConjSlashDir And (BaseAction_Dir Sell Issue)) (TDet ASg PreferredStock))))
 
 

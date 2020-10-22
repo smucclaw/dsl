@@ -1,0 +1,34 @@
+import src/TopEng.gf
+
+-- Like in L4
+ps "** nobody may offer , sell , transfer , pledge or hypothecate these securities"
+p "nobody may offer , sell , transfer , pledge or hypothecate these securities"
+
+ps "** these securities may not be offered , sold , transferred , pledged or hypothecated"
+p "these securities may not be offered , sold , transferred , pledged or hypothecated"
+
+-- Variations
+
+ps "** Meng must offer , pledge or hypothecate these securities"
+p "Meng must offer , pledge or hypothecate these securities"
+
+ps "** Meng may not offer , pledge or hypothecate these securities"
+p "Meng may not offer , pledge or hypothecate these securities"
+
+ps "** Meng shan't offer , pledge or hypothecate these securities"
+p "Meng shan't offer , pledge or hypothecate these securities"
+
+ps "** Meng offers , pledges or hypothecates these securities"
+p "Meng offers , pledges or hypothecates these securities"
+
+ps "** Meng offered , pledged or hypothecated these securities"
+p "Meng offered , pledged or hypothecated these securities"
+
+ps "** Meng didn't offer , pledge or hypothecate these securities"
+p "Meng didn't offer , pledge or hypothecate these securities"
+
+ps "** Meng will offer , pledge or hypothecate these securities"
+p "Meng will offer , pledge or hypothecate these securities"
+
+ps "** these securities may not be offered , sold , transferred , pledged or hypothecated"
+p "these securities may not be offered , sold , transferred , pledged or hypothecated"

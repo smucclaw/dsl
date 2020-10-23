@@ -108,6 +108,10 @@ concrete TermEng of Term = open
       Mass => that_Det ;
       _ => those_Det
       } ;
+    Certain = table {
+      Plural => certainPl_Det ;
+      _ => certain_Det
+      } ;
 
 
     -- Kinds, Terms and Properties
@@ -226,12 +230,19 @@ concrete TermEng of Term = open
     anySg_Det : Det = a_Det ** { -- Extend a_Det: keyword ** is record extension
       s = "any"                -- Keep other fields from a_Det, but replace s with "any"
       } ;
-    anyPl_Det : Det = aPl_Det ** {s = "any"} ;
-    all_Det : Det = aPl_Det ** {s = "all"} ;
-    allSg_Det : Det = a_Det ** {s = "all"} ;
-    emptyDet : Det = a_Det ** {s = []} ;
-    any_other_Det : Det = a_Det ** {s = "any other"} ;
-    any_otherPl_Det : Det = aPl_Det ** {s = "any other"} ;
+
+    -- Generalize this into opers
+    plDet : Str -> Det = \str -> aPl_Det ** {s = str} ;
+    sgDet : Str -> Det = \str -> a_Det ** {s = str} ;
+
+    anyPl_Det : Det = plDet "any" ;
+    all_Det : Det = plDet "all" ;
+    allSg_Det : Det = sgDet "all" ;
+    emptyDet : Det = sgDet [] ;
+    any_other_Det : Det = sgDet "any other" ;
+    any_otherPl_Det : Det = plDet "any other" ;
+    certain_Det : Det = sgDet "certain" ;
+    certainPl_Det : Det = plDet "certain" ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
 

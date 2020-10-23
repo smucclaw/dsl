@@ -25,6 +25,7 @@ abstract Term = {
     All,            -- all dissolution events
     Any,            -- any liquidation event
     AnyOther,       -- any other liquidation, dissolution or winding up
+    Certain,        -- certain additional defined terms
     This, These,    -- These securities
     That, Those
       : Determiner ;

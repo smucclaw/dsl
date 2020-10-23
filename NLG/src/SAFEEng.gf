@@ -21,8 +21,8 @@ concrete SAFEEng of SAFE = ActionEng ** open
     Hypothecate = mkDir hypothecate_V2 ;
 
     -- Indirect object
-    IssueAt = mkDirIndir issue_at_V3 whether_at_Prep ;
-    SellAt = mkDirIndir sell_at_V3 whether_at_Prep ;
+    -- IssueAt = mkDirIndir issue_at_V3 whether_at_Prep ;
+    -- SellAt = mkDirIndir sell_at_V3 whether_at_Prep ;
 
     -- Increase valency: make the Action open for more arguments.
     -- : Action -> Action_Indir
@@ -31,6 +31,12 @@ concrete SAFEEng of SAFE = ActionEng ** open
       indir = pursuant_to_Prep ;
       dir = \\_ => emptyAdv
       } ;
+    At a = a ** {
+      intrans = \\tmp => a.s ! tmp ! Active ; -- weird results if combined with ANoComplIndir
+      indir = whether_at_Prep ;
+      dir = \\_ => emptyAdv
+      } ;
+
   oper
     pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
 

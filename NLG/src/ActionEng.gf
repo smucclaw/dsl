@@ -51,6 +51,18 @@ open
     -- Valency changing operations --
     ---------------------------------
 
+    -- : Action_Dir -> Action_Dir_Indir
+    Dat action = action ** {
+      indir = postCompoundPrep action.indir datPrep ;
+      } ;
+
+    -- : Action_Dir -> Action_Dir_Indir
+    -- like previous but flip dir and indir
+    -- DatDir action = action ** {
+    --   dir = postCompoundPrep action.indir datPrep ;
+    --   indir = action.dir ;
+    --   } ;
+
     -- Decrease valency: use the intransitive version of an action
     -- : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ;
     ANoComplDir a = a ** {
@@ -101,10 +113,10 @@ open
 
   oper
     relAction : Tense -> Term -> PrepPol -> LinAction -> RS = \tns,subj,prep,action ->
-      let dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
+      let dummyRS : RS = mkRS tns (mkRCl (mkCl emptyNP)) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
           pr : PrepPlus = prep ! Pos ; -- TODO check if negation works properly
           s : S = cl (tns2tmp tns.t) subj action ;
-       in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s} ;
+       in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s ++ tns.s} ;
 
     ------------------
     -- Conjunctions --
@@ -361,11 +373,11 @@ open
             dirObj : Adv = action.dir ! tmp2pol tmp ;
             indirObj : Adv = applyPrepPol action.indir io ! tmp2pol tmp ;
          in case vc of {
-              Passive => complS vps emptyAdv indirObj ;
-              Active => complS vps dirObj indirObj } ;
+              Passive => complS vps indirObj emptyAdv  ;
+              Active => complS vps indirObj dirObj } ;
       gerund = \\p => complGer (action.gerund ! p)
-                               (action.dir ! p)
                                (applyPrepPol action.indir io ! p)
+                               (action.dir ! p)
       } ;
 
 
@@ -412,6 +424,18 @@ open
       } ;
 
     emptyPrep : PrepPol = prepPol "" ;
+    datPrep : PrepPol = prepPol "to" ;
+
+    -- preCompoundPrep : Polarity=>Adv -> PrepPol -> PrepPol = \polAdv,prep -> \\pol =>
+    --   let prep : PrepPlus = prep ! pol ;
+    --       pref : Str = (polAdv ! pol).s
+    --    in prep ** {s = pref ++ prep.s} ;
+
+    postCompoundPrep : (Polarity=>Adv) -> PrepPol -> PrepPol = \polAdv,prep -> \\pol =>
+      let prep : PrepPlus = prep ! pol ;
+          postf : Str = (polAdv ! pol).s
+       in prep ** {post = prep.post ++ postf} ;
+
 
     applyPrepPol : PrepPol -> LinTerm -> (Polarity=>Adv) = \pp,term -> \\pol =>
       let np : NP = term ; -- ! cpol2pol pol ;
@@ -460,13 +484,16 @@ open
 
     tmp2pol : TenseModPol -> Polarity = \p -> case p of {
       PShant => Neg ;
+      PMay p => p ;
       PPres p => p ;
       PFut p  => p ;
-      _ => Pos
+      PPast p => p ;
+      PMust => Pos
       } ;
 
     tns2tmp : R.Tense -> TenseModPol = \tns -> case tns of {
       R.Fut => PFut Pos ;
+      R.Past => PPast Pos ;
       _ => PPres Pos
       } ;
 

@@ -26,6 +26,8 @@ abstract Action = Term ** {
     ASlashIndir : Action_Dir_Indir -> Term -> Action_Dir ;   -- sell (stock) at fixed valuation
 
     -- Valency changes
+    -- TODO: see if we can get rid of SlashDirIndir conjunction ???
+    Dat           : Action_Dir -> Action_Dir_Indir ; -- indirect object in dative: sell [stock] [to the Investor]
     ANoComplDir   : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ; return _ -> "return the purchase"
     ANoComplIndir : Action_Indir -> Action ; -- same but for indirect object
 

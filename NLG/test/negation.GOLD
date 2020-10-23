@@ -39,8 +39,7 @@ MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet All PreferredSt
 ** Indirect object
 
 ** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation 
-MAction (MkParty Company) (NegPres (AAlias (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))))
-MAction (MkParty Company) (NegPres (AAlias (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))))
+MAction (MkParty Company) (NegPres (AAlias (AComplIndir (At (AComplDir Sell (TDet ASg PreferredStock))) (TDet ASg (KProperty Fixed Valuation)))))
 
 
 ** Multiple objects

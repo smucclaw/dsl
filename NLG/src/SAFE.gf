@@ -16,10 +16,11 @@ abstract SAFE = Action ** {
       : Action_Dir ;
 
     -- Indirect object
-    IssueAt,                           -- issue stock at fixed valuation
-    SellAt
-      : Action_Dir_Indir ;
+    -- IssueAt,
+    -- SellAt
+    --   : Action_Dir_Indir ;
 
+    At,                          -- issue stock [at fixed valuation]
     PursuantTo                   -- raise capital [pursuant to _]
       : Action -> Action_Indir ;
 

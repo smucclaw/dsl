@@ -137,7 +137,10 @@ concrete TermEng of Term = open
     -- Kinds with complements
     -- : Kind -> Term -> Kind ;    -- liquidation of the company
     -- Complement goes to cn field, not to adv field.
-    ComplKind kind term = linkind (mkCN (merge kind) (adv part_Prep (np term))) ;
+    ComplKind kind term = kind ** {
+      cn = mkCN (merge kind) (adv part_Prep (np term)) ;
+      adv = emptyAdv
+      } ;
 
   param
     KType = Mass | Count | Plural ;

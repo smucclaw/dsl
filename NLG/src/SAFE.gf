@@ -20,7 +20,7 @@ abstract SAFE = Action ** {
     SellAt
       : Action_Dir_Indir ;
 
-    PursuantTo                         -- add indirect object
+    PursuantTo                   -- raise capital [pursuant to _]
       : Action -> Action_Indir ;
 
     ----------------
@@ -31,7 +31,8 @@ abstract SAFE = Action ** {
     PreMoney,
     PostMoney,
     BonaFide,
-    Voluntary : Property ;
+    Voluntary
+      : Property ;
 
 
     ForBenefit   -- general assignment for the benefit of the Company's creditors
@@ -61,11 +62,15 @@ abstract SAFE = Action ** {
     ConversionPrice,
     PurchaseAmount,
     Security,
+    DiscountRate,
     Valuation : Kind ;
+
+
 
     -- These should be used together with ComplKind : Kind -> Term -> Kind
     -- to get "liquidation of the company" etc.
     -- TODO: see if we need to split this into a new category
+    Shares,           -- shares of the Company's preferred stock
     Liquidation,
     Dissolution,
     WindingUp
@@ -80,9 +85,12 @@ abstract SAFE = Action ** {
     -- Terms --
     -----------
 
-    Company : Term ;
+    Company,
+    Investor : Term ;
 
-    Creditors : Term -> Term ; -- the Company's creditors
+    RightTo,            -- the right to the shares
+    Creditors         -- the Company's creditors
+      : Term -> Term ;
 
     TExcluding, -- liquidation of the Company, excluding a Liquidity Event
     TIncluding  -- fixed valuation, including a pre-money or post-money valuation

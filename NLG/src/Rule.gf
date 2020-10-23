@@ -14,7 +14,12 @@ abstract Rule = Action ** {
     ActionAlias ; -- VP: "sell a potato" + NP: "the sale"
 
   fun
+    -- Incantations
 
+    CrossRefDefs : Int -> Sentence ; -- "See Section {#Definitions{%n}} for certain additional defined terms."
+    SubjectToTermsBelow : Sentence -> Sentence ;
+
+    -- Sentences
     IfThen : Sentence -> Sentence -> Sentence ;
 
     MAction : Party -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
@@ -26,6 +31,7 @@ abstract Rule = Action ** {
 
     MDefProp : Kind -> Property -> Sentence ;
 
+    -- Deontics
     May, MayNot,
       Must,
       Shant : ActionAlias -> Deontic ;
@@ -48,7 +54,6 @@ abstract Rule = Action ** {
 
     StrParty : String -> Party ;
     MkParty : Term -> Party ;
-
 
     -- Arithmetic operations
   cat
@@ -83,7 +88,9 @@ abstract Rule = Action ** {
     DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
       : Variable -> WhereLimb -> Term ;
 
-    -- Individual verbs
+    -- Individual words
 
     Refund : Action_Dir ;
+    DefinedTerm : Kind ;
+    Additional : Property ;
 }

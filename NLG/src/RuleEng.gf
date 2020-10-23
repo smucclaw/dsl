@@ -30,6 +30,22 @@ concrete RuleEng of Rule = ActionEng ** open
       } ;
 
   lin
+    -- Incantations
+    -- : Int -> Sentence ; -- "See Section {#Definitions{%n}} for certain additional defined terms."
+    CrossRefDefs int =
+      let sectionN : NP = mkNP (mkCN WN.section_1_N (symb int)) ;
+          certDefTerms : NP = mkNP certainPl_Det (merge (KProperty additional_Prop DefinedTerm)) ;
+          seeTerms : VP = mkVP (mkVP WN.see_1_V2 sectionN) (adv for_Prep certDefTerms) ;
+       in mkUtt (mkImp seeTerms) ;
+
+    -- : Sentence -> Sentence ;
+    SubjectToTermsBelow sent = sent ** {s = sent.s ++ ", subject to terms below"} ;
+
+    -- Sentences
+
+    -- : Sentence -> Sentence -> Sentence ;
+    IfThen if then = mkUtt (mkAdv if_then_Conj <if : Adv> <then : Adv>) ;
+
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
     MAction party deontic = mkUtt (PredVPS party (deontic.action ! Active)) ;
@@ -116,17 +132,21 @@ concrete RuleEng of Rule = ActionEng ** open
     mkRel = P.mkPrep ;
 
     -- Definitions
-    {-
-  lincat
-    WhereLimb ; Variable ;
-  lin
-    ParenDef, -- Cabbage (a vegetable with species Brassica oleracea)
-    DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
-      : Variable -> WhereLimb -> Term ;
--}
 
-    -- Individual verbs
+  -- lincat
+  --   WhereLimb ; Variable ;
+  -- lin
+  --   ParenDef, -- Cabbage (a vegetable with species Brassica oleracea)
+  --   DefParen  -- A vegetable with species Brassica oleracea ("Cabbage")
+  --     : Variable -> WhereLimb -> Term ;
+
+  -- Individual words
+  lin
     Refund =
       mkDir WN.refund_V2 (mkVP WN.issue_1_V2 (mkNP aSg_Det WN.refund_1_N)) ;
+    DefinedTerm = kind "defined term" ;
+    Additional = additional_Prop ;
+  oper
 
+    additional_Prop : LinProp = prop "additional" ;
 }

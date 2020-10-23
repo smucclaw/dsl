@@ -69,10 +69,14 @@ concrete SAFEEng of SAFE = ActionEng ** open
     -----------
     -- : Term
     Company = mkNP theSg_Det (mkN "Company") ;
+    Investor = mkNP theSg_Det (mkN "Investor") ;
 
     -- : Term -> Term ;
     Creditors t =   -- the company's creditors
       mkNP (mkDet (ExtendEng.GenNP (np t)) pluralNum) creditor_N ;
+
+    RightTo t = -- the right to the shares
+      mkNP theSg_Det (mkCN (mkN2 WN.right_1_N to_Prep) t) ;
 
     -- : Determiner -> Kind -> Term -> Term ;
     TExcluding the valuation t =
@@ -112,10 +116,12 @@ concrete SAFEEng of SAFE = ActionEng ** open
     PurchaseAmount = kind "purchase amount" ;
     Valuation = kind "valuation" ;
     Security = kind "security" ;
+    DiscountRate = kind "discount rate" ;
 
     -- These should be used together with ComplKind : Kind -> Term -> Kind
     -- to get "liquidation of the company" etc.
     -- TODO: see if we need to split this into a new category
+    Shares = kind "share" ** {k = Plural} ;
     Liquidation = kind "liquidation" ;
     Dissolution = kind "dissolution" ;
     WindingUp = mkKind (mkN "winding up" "windings up") ;

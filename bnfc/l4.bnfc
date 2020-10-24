@@ -1,5 +1,5 @@
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-Rule.      Rule      ::= "RULE" RuleDef RuleName RuleBody;
+Rule.      Rule      ::= "RULE" RuleDef RuleName MetaLimb RuleBody;
 
 RID.       RuleDef   ::=         ObjAttr ;
 RNumID.    RuleDef   ::= Integer ObjAttr ;
@@ -9,11 +9,23 @@ RName.     RuleName  ::= OptLangStrings ;
 rules      OptLangStrings ::= | LangStrings;
 
 RBNoop.    RuleBody  ::= "NOOP";
-RuleDeem.   RuleBody  ::= GivenLimb DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+-- a constitutive rule
+RuleDeem.     RuleBody  ::= GivenLimb           DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+
 DefDefine.  DefineWord ::= "DEFINE" ;
 DefDeem.    DefineWord ::= "DEEM" ;
 DefDeclare. DefineWord ::= "DECLARE" ;
-RModal.  RuleBody    ::= GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+
+-- a performative utterance
+RulePerform.  RuleBody  ::= GivenLimb PartyLimb PerformWord [Constraint] WithLimb WhenLimb WhereLimb;
+
+PerHereby.  PerformWord ::= "HEREBY" ;
+PerAgree.   PerformWord ::= "AGREE" ;
+PerRep.     PerformWord ::= "REPRESENT" ;
+PerWar.     PerformWord ::= "WARRANT" ;
+PerRepWar.  PerformWord ::= "REPRANT" ;
+RModal1.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
 PEvery.  PartyDef    ::= PEvery ;
@@ -22,15 +34,19 @@ PNobody. PartyDef    ::= PNobody;
 rules    PNobody     ::=          "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
 rules    AsAlias     ::= | "AS" ObjAttr ;
 REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
-rules      WhenLimb   ::= | "WHEN"   Exp UnlessExpr;
-rules      UnlessExpr ::= | "UNLESS" Exp;
+rules      WhenLimb   ::= | "WHEN"   Exp;
 rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
 ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
 ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
-rules    DeadlineLimb ::= | "BEFORE" TemporalExpr AsAlias ;
+DL0.         DeadlineLimb ::= ;
+DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
+TRBefore.    TempRel      ::= "BEFORE";
+TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
+TRAfter.     TempRel      ::= "AFTER";
+TRUntil.     TempRel      ::= "UNTIL";
 rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
                         | "EARLIEST" LstExp
                         | "LATEST"   LstExp;
@@ -47,11 +63,20 @@ DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args Opt
 DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
 rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
 rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-rules      GivenExpr ::=   [ObjAttr]
-                         | [ObjAttr] HavingLimb ;
+rules      GivenExpr ::=   Exp
+                         | Exp HavingLimb ;
 rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
 rules     HavingBoolExp ::= Exp;
 separator nonempty HavingBoolExp ";";
+rules       UponLimb       ::= | "UPON" UponRefinement GivenExpr ;
+Upon0.      UponRefinement ::= ;
+Upon2.      UponRefinement ::= UponKleisli UponTime;
+UponEach.   UponKleisli    ::= "EACH"; -- fires once for each matching event
+UponAny.    UponKleisli    ::= "ANY";  -- collects all matching events, fires once
+UponPast.    UponTime      ::= "PAST"; -- match events prior to the UPON event
+UponFuture.  UponTime      ::= "FUTURE"; -- default; match events after the UPON
+UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with UPON
+UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
 rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
 rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
 rules      WithIn    ::= [Constraint] | TraceExpr;
@@ -67,6 +92,9 @@ rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
 rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
 
 separator nonempty WhereExp ";";
+Meta0.       MetaLimb ::= ;
+MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
+MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
 rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
 rules   MatchVars ::= "Constraint"  Constraint
                     | "ObjMethod"   ObjMethod
@@ -93,14 +121,17 @@ rules      Blah     ::= Exp;
 ModuleDecl. Module ::= "module" ObjAttr "where";
 Toplevel.  Tops      ::= [Toplevels];
 rules      Toplevels ::= Module | Import | Pragma
-                       | Rule | Entity | Scenario | Group ;
+                       | Rule | Entity | Scenario
+                       | Group | Section ;
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP" ;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE" ;
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
-rules Group ::= "GROUP" [Toplevels] ;
+rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
+
+rules Section ::= "SECTION" RuleDef RuleName WithLimb WhereLimb ;
 rules Pragma ::= "pragma" [Exp] ;
 comment "//" ;
 comment "--" ;
@@ -117,8 +148,17 @@ Op1E.   Exp5 ::= UnaOp   Exp ;
 Op2E.   Exp4 ::=         BinExp ;
 Op3E.   Exp3 ::= TriOp   Exp7 Exp7 Exp7; ;
 Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
-Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" Exp "ELSE" Exp;
+Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
+Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
 
+ExpStm1.    ExpStm ::= Exp;
+ExpStmLet.  ExpStm ::= "LET" Exp;
+separator nonempty ExpStm ";"; -- used inside THEN and ELSE
+
+ListComp1.   LstExp ::=    "[" Exp "FOR" ObjAttr "IN" Exp "]" ;
+ListComp2.   LstExp ::=    "[" Exp "FOR" ObjAttr "IN" Exp "IF" Exp "]" ;
+ListComp3.   LstExp ::=    "["           ObjAttr "IN" Exp "IF" Exp "]" ;
+ListComp4.   LstExp ::=    "["           ObjAttr "IN" Exp          "]" ;
 ListComma.  LstExp ::=    "[" [Exp]         "]" ;
 ListAnd.    LstExp ::=    "[" [Exp] "&" Exp "]" ;
 ListOr.     LstExp ::=    "[" [Exp] "|" Exp "]" ;
@@ -140,6 +180,8 @@ BArith_Pow.  BinExp7   ::= Exp5 "**"   Exp6;
 BArith_Mul.  BinExp4   ::= Exp4 "*"    Exp5;
 BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
 BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
+BL_Modulo1.  BinExp4   ::= Exp4 "%"    Exp5;
+BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "->" Exp5; -- rewrite
 BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
 BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
 L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
@@ -147,11 +189,12 @@ BCmp_LT.     BinExp2   ::= Exp4 "<"    Exp5;
 BCmp_LTE.    BinExp2   ::= Exp4 "<="   Exp5;
 BCmp_GT.     BinExp2   ::= Exp4 ">"    Exp5;
 BCmp_GTE.    BinExp2   ::= Exp4 ">="   Exp5;
-BCmp_Eq.     BinExp2   ::= Exp4 "=="   Exp5;
+BCmp_Eq1.    BinExp2   ::= Exp4 "="    Exp5; -- constraint unification
+BCmp_Eq2.    BinExp2   ::= Exp4 "=="   Exp5; -- constraint unification
+BCmp_Eq3.    BinExp2   ::= Exp4 "==="  Exp5; -- object reference identity
 BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
 BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
-BCmp_Ass1.   BinExp2   ::= Exp4 "="    Exp5;
-BCmp_Ass2.   BinExp2   ::= Exp4 ":="   Exp5;
+BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
 BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
 BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
 BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
@@ -167,12 +210,16 @@ BBool_Or1.   BinExp    ::= Exp  "∨"   Exp;
 BBool_Or2.   BinExp    ::= Exp  "||"  Exp;
 BBool_Or3.   BinExp    ::= Exp  "OR"  Exp;
 
-Set_Union.      BinExp ::= Exp  "∪"   Exp;
-Set_Intersect.  BinExp ::= Exp  "∩"   Exp;
-Set_Subset.     BinExp ::= Exp  "⊂"   Exp;
+Set_Union1.     BinExp ::= Exp  "U"   Exp;
+Set_Union2.     BinExp ::= Exp  "∪"   Exp;
+Set_Union3.     BinExp ::= Exp  "UNION"   Exp;
+Set_Intersect1.  BinExp ::= Exp  "∩"   Exp;
+Set_Intersect2.  BinExp ::= Exp "INTERSECT" Exp ;
+Set_Subset1.     BinExp ::= Exp  "⊂"   Exp;
+Set_Subset2.     BinExp ::= Exp  "SUBSET"   Exp;
 
-L_Union.        BinExp ::= Exp "UNION"     Exp ;
-L_Intersect.    BinExp ::= Exp "INTERSECT" Exp ;
+BBool_Unless.    BinExp ::= Exp  "UNLESS"   Exp;
+
 
 coercions UnaOp 7;
 UCurr.       UnaOp7 ::= CurrencyPrefix ;

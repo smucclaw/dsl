@@ -32,6 +32,10 @@ How might we say it in L4?
 
 We picked this example because it embeds a simple mini-contract in the sale-and-return part.
 
+The "NOBODY" syntax is a bit of a special case -- it desugars to
+1. ANY PARTY P1 MAY sell Item WHEN Item IS Cabbage AND ( sale IS onLegalDate OR P1 HAS Exemption )
+2. but, if the preceding rule doesn't match, then by default, "ANY PARTY P1 SHANT sell Item WHEN Item IS Cabbage".
+
 The rest of this document explains the syntax and shows the BNF language definition.
 
 *** Rule Headers
@@ -52,21 +56,21 @@ A "RULE" stanza is labeled with a numeric identifier, a name, or both, followed 
 
 The optional langstrings provide hints for natural language generation.
 
-*** Simple Rule Bodies: DEFINE and Modals
+The "Meta" limb facilitates rule prioritization.
+
+Subsequently, the rule body. There are several subtypes of rule bodies.
+
+*** The Core Rule Bodies: DEFINEs and Modals
 
 Every rule body is one of the following:
 
-**** NOOP
+**** <<<DEFINE rule>>> or (ENTITY rule)
 
-A rule body that does nothing. This is just for dev testing. By convention this rule is always considered satisfied when evaluated -- it is vacuously true.
+A constitutive rule, also known as a Deem rule, or a Define rule.
 
-#+begin_src bnfc :noweb-ref l4bnfc
-  RBNoop.    RuleBody  ::= "NOOP";
-#+end_src
+Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" parts appear within the /constraint/ part:
 
-**** <<<DEFINE rule>>>
-
-A constitutive rule.
+- constraint :: one or more subjects of the deem: that an A counts as B in some way, or has some value, or some inequality
 
 #+begin_src sql :noweb-ref l4-rules
   RULE   4 Cabbage
@@ -83,32 +87,15 @@ The BNF:
   DefDefine.  DefineWord ::= "DEFINE" ;
   DefDeem.    DefineWord ::= "DEEM" ;
   DefDeclare. DefineWord ::= "DECLARE" ;
-
-  -- a performative utterance
-  RulePerform.  RuleBody  ::= GivenLimb PartyLimb DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
-  
-  DefPerform. DefineWord ::= "PERFORM" ;
-  DefHereby.  DefineWord ::= "HEREBY" ;
-  DefAgree.   DefineWord ::= "AGREE" ;
-  DefRep.     DefineWord ::= "REPRESENT" ;
-  DefWar.     DefineWord ::= "WARRANT" ;
-  DefRepWar.  DefineWord ::= "REPRANT" ;
 #+end_src
 
-Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" parts appear within the /constraint/ part:
-
-- constraint :: one or more subjects of the deem: that an A counts as B in some way, or has some value, or some inequality
-
-A DEFINE rule can have several optional limbs:
-
-- given :: context parameters, analogous to function arguments
-- with :: further attributes of the subject(s)
-- when :: pre-conditions for the deem to operate
-- where :: subsidiary definitions
+A DEFINE rule can have optional limbs:
+- with limb :: further attributes of the subject(s)
+- asof limb :: when the definition came into force -- this should desugar multiple definitions of the same thing, to decorate each with a WHEN constraint to partition
 
 Deem rules are a good place to shoehorn your function definitions.
 
-More about these limbs below.
+The Entity Rule is a special case of a DEFINE.
 
 **** Modals: welcome to the PARTY
 
@@ -169,9 +156,96 @@ See [[https://drive.google.com/file/d/1sLmVMZqHhQDzj8dikKt-8CNemF-nGCn1/view?usp
 #+end_src
 
 As-aliases provide variable bindings to elements of the rule. In Haskell they are like the "@" in a pattern match.
+***** Deontics and the Action Limb
+
+In a modal stanza, some party is seen doing some thing, to some standard. This limb talks about the thing and the standard.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
+  DEMust.  DeonticExpr ::= "MUST" ;
+  DEMay.   DeonticExpr ::= "MAY"  ;
+  DEShant. DeonticExpr ::= "SHANT" ;
+#+end_src
+
+The syntax for actions is not terribly well specified at the moment. You can say pretty much whatever you want.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
+  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+#+end_src
+
+***** Deadlines
+
+Every deontic modal needs a deadline -- if you don't have to do something by a certain time, do you really have to do it at all?
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  DL0.         DeadlineLimb ::= ;
+  DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
+  TRBefore.    TempRel      ::= "BEFORE";
+  TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
+  TRAfter.     TempRel      ::= "AFTER";
+  TRUntil.     TempRel      ::= "UNTIL";
+#+end_src
+
+We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
+                          | "EARLIEST" LstExp
+                          | "LATEST"   LstExp;
+  rules     DurationExpr ::= | "+" Duration ;
+  TDY.      Duration     ::= Integer "YEARS" ;
+  TDM.      Duration     ::= Integer "MONTHS" ;
+  TDW.      Duration     ::= Integer "WEEKS" ;
+  TDD.      Duration     ::= Integer "DAYS" ;
+  TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
+  TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
+  DNoHence. HenceLimb    ::= ;
+  DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
+  DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
+  DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
+  rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
+#+end_src
+
+LegalRuleML distinguishes between /maintenance/ obligations and /achievement/ obligations.
+
+If we had a maintenance obligation to hold true until the contract terminated, we could say:
+
+#+begin_example
+  RULE NonDisclosure
+  PARTY P1, P2
+  SHANT disclose confidentialInfo
+  BEFORE contract.terminationDate
+  WHERE confidentialInfo = such.and.such
+#+end_example
+
+From this we see that a maintenance obligation to not do a thing is an obligation to not achieve the thing before a certain time.
+
+A maintenance obligation that should always hold, is an obligation to not achieve that it not hold.
+
+This is expressible in usual temporal modal logic, LTL.
 
 
-*** ENTITY stanzas define individuals and classes.
+**** Performative Utterances
+
+Similar to deontic rules, except instead of saying that a party MUST do something, the party simply HEREBY does it.
+
+Representations and warranties are given in the form of such statements.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  RulePerform.  RuleBody  ::= GivenLimb PartyLimb PerformWord [Constraint] WithLimb WhenLimb WhereLimb;
+  
+  PerHereby.    PerformWord ::= "HEREBY" ;
+  PerAgree.     PerformWord ::= "AGREE" ;
+  PerRep.       PerformWord ::= "REPRESENT" ;
+  PerWar.       PerformWord ::= "WARRANT" ;
+  PerRepWar.    PerformWord ::= "REPRANT" ;
+#+end_src
+  
+**** See Also
+- Advanced Rule Bodies.
+
+*** <<<ENTITY rule>>>: to define individuals.
 
 These stanzas express what Ken Adams calls Language of Declaration -- about entities, at least.
 
@@ -182,7 +256,7 @@ These stanzas express what Ken Adams calls Language of Declaration -- about enti
          isEdible = true
 #+end_src
 
-ENTITY stanzas contain optional limbs: Given, With, As Of, Where.
+ENTITY stanzas are a special case of a DEFINE. While DEFINE statements create classes, ENTITY stanzas create individuals, or instances, of those classes. One uses an ENTITY rule to parameterize an abstract contract to a concrete contract.
 
 Other kinds of top-level stanzas are described below.
 
@@ -206,9 +280,67 @@ Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a
 
 ** Limbs
 
-The body of a stanza may comprise one or more limbs. In the above examples, we have already seen some limbs in action.
+The body of a rule may include one or more limbs. In the above examples, we have already seen some limbs in action.
 
-*** The WHEN Limb: Boolean Expressions
+- upon :: an event or pattern that triggers the rule
+- given :: context parameters, analogous to function arguments
+- when :: pre-conditions for the rule to operate
+- where :: subsidiary definitions
+
+*** <<<UPON limb>>>: a rule is triggered by events
+
+"UPON" matches events. Refinements to the "UPON" can be one of the following:
+
+| Kleisli | Time    | means                                                              |
+|---------+---------+--------------------------------------------------------------------|
+| EACH    | PAST    | run once for each matching event occuring before the main GIVEN    |
+| EACH    | CURRENT | run once for each matching event contemporaneous with main GIVEN   |
+| EACH    | FUTURE  | run once for each matching event subsequent to the main GIVEN      |
+| EACH    | EVER    | run once for each matching event before, during, or after GIVEN    |
+| ANY     | PAST    | run once, if there were one or more matching events before GIVEN   |
+| ANY     | CURRENT | run once, if there are one or more matching events alongside GIVEN |
+| ANY     | FUTURE  | run once for the first future event, but not subsequently          |
+| ANY     | EVER    | combination of PAST, CURRENT, FUTURE.                              |
+
+If left unspecified, the default refinement is "ANY FUTURE".
+
+If there is no GIVEN, then the thread begins at the start of the contract.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules       UponLimb       ::= | "UPON" UponRefinement GivenExpr ;
+  Upon0.      UponRefinement ::= ;
+  Upon2.      UponRefinement ::= UponKleisli UponTime;
+  UponEach.   UponKleisli    ::= "EACH"; -- fires once for each matching event
+  UponAny.    UponKleisli    ::= "ANY";  -- collects all matching events, fires once
+  UponPast.    UponTime      ::= "PAST"; -- match events prior to the UPON event
+  UponFuture.  UponTime      ::= "FUTURE"; -- default; match events after the UPON
+  UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with UPON
+  UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
+#+end_src
+
+*** <<<GIVEN limb>>>: brings context into scope
+
+Usually the "Given" expression is one or more names of a previous deontic rule, in which case all the variables in scope for the previous rule are imported into the current state.
+
+The "Given" expression can also be specific variable names, in which case only those variables are brought into scope. The compiler needs to test if there are any possible execution paths which allow an undefined variable to appear in the Given.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
+  rules      GivenExpr ::=   Exp
+                           | Exp HavingLimb ;
+#+end_src
+
+The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb, but is scoped to the terms uttered in the GIVEN.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
+  rules     HavingBoolExp ::= Exp;
+  separator nonempty HavingBoolExp ";";
+#+end_src
+
+The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
+
+*** <<<WHEN limb>>>: Boolean preconditions for the rule
 
 Boolean Expressions are used in a WHEN limb to evaluate truth values as part of a reasoning operation.
 
@@ -288,137 +420,7 @@ Here's a possible truth table for how the When/Unless limbs desugar. The size of
 | Nobody    | SHANT       | false | true   | P MAY           |       |
 | Nobody    | SHANT       | false | false  | -               |       |
 
-*** Deontics and the Action Limb
-
-In a modal stanza, some party is seen doing some thing, to some standard. This limb talks about the thing and the standard.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
-  DEMust.  DeonticExpr ::= "MUST" ;
-  DEMay.   DeonticExpr ::= "MAY"  ;
-  DEShant. DeonticExpr ::= "SHANT" ;
-#+end_src
-
-The syntax for actions is not terribly well specified at the moment.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
-  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
-#+end_src
-
-*** Deadlines
-
-Every deontic modal needs a deadline -- if you don't have to do something by a certain time, do you really have to do it at all?
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  DL0.         DeadlineLimb ::= ;
-  DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
-  TRBefore.    TempRel      ::= "BEFORE";
-  TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
-  TRAfter.     TempRel      ::= "AFTER";
-  TRUntil.     TempRel      ::= "UNTIL";
-#+end_src
-
-We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
-                          | "EARLIEST" LstExp
-                          | "LATEST"   LstExp;
-  rules     DurationExpr ::= | "+" Duration ;
-  TDY.      Duration     ::= Integer "YEARS" ;
-  TDM.      Duration     ::= Integer "MONTHS" ;
-  TDW.      Duration     ::= Integer "WEEKS" ;
-  TDD.      Duration     ::= Integer "DAYS" ;
-  TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
-  TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
-  DNoHence. HenceLimb    ::= ;
-  DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
-  DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
-  DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
-  rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
-#+end_src
-
-LegalRuleML distinguishes between /maintenance/ obligations and /achievement/ obligations.
-
-If we had a maintenance obligation to hold true until the contract terminated, we could say:
-
-#+begin_example
-  RULE NonDisclosure
-  PARTY P1, P2
-  SHANT disclose confidentialInfo
-  BEFORE contract.terminationDate
-  WHERE confidentialInfo = such.and.such
-#+end_example
-
-From this we see that a maintenance obligation to not do a thing is an obligation to not achieve the thing before a certain time.
-
-A maintenance obligation that should always hold, is an obligation to not achieve that it not hold.
-
-This is expressible in usual temporal modal logic, LTL.
-
-*** GIVEN
-The "Given" limb is analogous to providing arguments to a function.
-
-Usually the "Given" expression is the name of a previous deontic rule.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-  rules      GivenExpr ::=   Exp
-                           | Exp HavingLimb ;
-#+end_src
-
-The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb, but is scoped to the terms uttered in the GIVEN.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-  rules     HavingBoolExp ::= Exp;
-  separator nonempty HavingBoolExp ";";
-#+end_src
-
-The scope of a GivenExpr is the entire ancestry of that node in the obligation graph. If some previous thing happened, the GivenExpr can bring it into scope by referring to it.
-
-*** UPON
-
-"UPON" matches events. Refinements to the "UPON" can be one of the following:
-
-| Kleisli | Time    | means                                                              |
-|---------+---------+--------------------------------------------------------------------|
-| EACH    | PAST    | run once for each matching event occuring before the main GIVEN    |
-| EACH    | CURRENT | run once for each matching event contemporaneous with main GIVEN   |
-| EACH    | FUTURE  | run once for each matching event subsequent to the main GIVEN      |
-| EACH    | EVER    | run once for each matching event before, during, or after GIVEN    |
-| ANY     | PAST    | run once, if there were one or more matching events before GIVEN   |
-| ANY     | CURRENT | run once, if there are one or more matching events alongside GIVEN |
-| ANY     | FUTURE  | run once for the first future event, but not subsequently          |
-| ANY     | EVER    | combination of PAST, CURRENT, FUTURE.                              |
-
-If left unspecified, the default refinement is "ANY FUTURE".
-
-If there is no GIVEN, then the thread begins at the start of the contract.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules       UponLimb       ::= | "UPON" UponRefinement GivenExpr ;
-  Upon0.      UponRefinement ::= ;
-  Upon2.      UponRefinement ::= UponKleisli UponTime;
-  UponEach.   UponKleisli    ::= "EACH"; -- fires once for each matching event
-  UponAny.    UponKleisli    ::= "ANY";  -- collects all matching events, fires once
-  UponPast.    UponTime      ::= "PAST"; -- match events prior to the UPON event
-  UponFuture.  UponTime      ::= "FUTURE"; -- default; match events after the UPON
-  UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with UPON
-  UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
-#+end_src bnfc :noweb-ref l4bnfc
-
-*** CLOSE
-
-A CLOSE rule terminates one or more rules that the contract may have been "listening" for.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  RClose1.     RuleBody       ::= UponLimb GivenLimb CloseLimb WhenLimb HenceLimb WhereLimb;
-  CloseLimb1.  CloseLimb      ::= "CLOSE" [Exp] ;
-#+end_src bnfc :noweb-ref l4bnfc
-
-*** WITH: attributes
+*** <<<WITH limb>>>: attributes
 The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE clause.
 
 #+begin_src bnfc :noweb-ref l4bnfc
@@ -496,11 +498,15 @@ Failure to obey that regex is a compile-time error.
 
 It is real tempting to say, "hey, if we can do regex, why not go all the way with dependent types?"
 
-*** The "ASOF" Limb and time formats
+*** <<<ASOF Limb>>>: system time
 
 Relevant to multitemporality ---
 
-The "ASOF" limb is syntactic shorthand for indicating a default system time for "WITH" facts declared immediately prior.
+The "ASOF" limb is syntactic shorthand for indicating a default system time.
+
+It can attach to "WITH" facts declared immediately prior.
+
+It can also attach to a top-level rule immediately before the "META" limb. This is intended to support legislative and contractual amendments.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   Asof.      Asof      ::= "ASOF" DateTime ;
@@ -516,6 +522,34 @@ We support ISO8601 formats for dates and times.
 
 In the future a more comprehensive time library will make it possible to say things like "the fifth Friday of every month, failing which the third Thursday."
 
+*** <<<META Limb>>>: for priority rules
+
+An optional rule that establishes priority when other rules conflict.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+Meta0.       MetaLimb ::= ;
+#+end_src
+
+**** Notwithstanding
+
+#+begin_src bnfc :noweb-ref l4bnfc
+MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
+#+end_src
+
+**** Subject To
+
+#+begin_src bnfc :noweb-ref l4bnfc
+MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
+#+end_src
+
+**** TODO Scope
+
+We should probably handle scoping restrictions within DEFINE expressions, using the GIVEN limb to inspect the call stack.
+
+**** TODO For the purposes of
+
+This can probably be done as a floating DEFINE.
+
 *** WHERE
 
 "Where" offers bindings similar to those found in Haskell. This is a convenient place to go into detail about concepts which are mentioned briefly in the main body.
@@ -529,7 +563,16 @@ In the future a more comprehensive time library will make it possible to say thi
 
 A "where" limb is very similar structurally to a DEFINE rule.
 
-** Advanced Rule Bodies
+** <<<Advanced Rule Bodies>>>
+**** CLOSE
+
+A CLOSE rule terminates one or more rules that the contract may have been "listening" for.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  RClose1.     RuleBody       ::= UponLimb GivenLimb CloseLimb WhenLimb HenceLimb WhereLimb;
+  CloseLimb1.  CloseLimb      ::= "CLOSE" [Exp] ;
+#+end_src bnfc :noweb-ref l4bnfc
+
 **** TODO ASSERT
 
 A rule that describes, using LTL/CTL, certain properties of the obligation graph.
@@ -538,34 +581,11 @@ Violations of these properties can be found by a model checker.
 
 The syntax for assertion rules has not yet been defined.
 
-**** MetaLimbs: PRIORITY rules
-
-An optional rule that establishes priority when other rules conflict.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-Meta0.       MetaLimb ::= ;
-#+end_src
-
-***** Notwithstanding
-
-#+begin_src bnfc :noweb-ref l4bnfc
-MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
-#+end_src
-
-***** Subject To
-
-#+begin_src bnfc :noweb-ref l4bnfc
-MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
-#+end_src
-
-***** Scope
-
-We should probably handle scoping restrictions within DEFINE expressions, using the GIVEN limb to inspect the call stack.
+See [[https://www.seas.upenn.edu/~lee/09cis480/lec-part-4-uppaal-input.pdf][UPPAAL's syntax]] for an inspiration.
 
 **** TODO EPIRULE or META or HOrule
 
 A rule that activates or deactivates other rules.
-
 
 **** Debug: Matchtype
 
@@ -592,21 +612,15 @@ The "MATCHTYPE" rule body is for debugging purposes only.
 #+end_src
 
 
-** SCENARIO stanzas represent traces of events
+**** NOOP
+
+A rule body that does nothing. This is just for dev testing. By convention this rule is always considered satisfied when evaluated -- it is vacuously true.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+  RBNoop.    RuleBody  ::= "NOOP";
 #+end_src
 
-A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an individual or a scenario that are bounded in time.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-  rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
-  separator  nonempty LogEvent ";";
-  separator  Blah "";
-  rules      Blah     ::= Exp;
-#+end_src
+This doesn't appear in real contracts.
 
 ** Other Top-Level Keywords
 
@@ -693,6 +707,22 @@ Pragma directives give hints to the compiler.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules Pragma ::= "pragma" [Exp] ;
+#+end_src
+
+*** Top-level SCENARIO stanzas represent traces of events
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+#+end_src
+
+A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an individual or a scenario that are bounded in time.
+
+#+begin_src bnfc :noweb-ref l4bnfc
+  rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
+  rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+  separator  nonempty LogEvent ";";
+  separator  Blah "";
+  rules      Blah     ::= Exp;
 #+end_src
 
 *** History
@@ -1413,6 +1443,36 @@ Github issues.
 * Important Concepts
 
 ** The <<<Obligation Graph>>>
+
+A contract, operationally, is expressed as a multi-DAG of states. We talk about nodes and edges.
+
+Each node represents an event, a modal rule, or a definition rule.
+
+Typically, a DAG will start with an "UPON executionDate && conditionsPrecedent" node.
+
+The children of that node will then fan out to multiple "event listeners", one for each external choice which the contract must handle.
+
+Each "thread" of execution within the contract corresponds to a separate start node.
+
+Each modal node can have multiple indegrees.
+
+The same definition rule may appear multiple times in the graph as multiple nodes.
+
+Each definition node has exactly one outdegree.
+
+Each event node has exactly one outdegree.
+
+A modal rule may be a MUST, MAY, or SHANT node. Each modal node shows the actor and the action.
+
+MUST and SHANT nodes have two outdegrees: a left exit and a right exit. In the case of a MUST node, if the actor performs the obligatory action before the given deadline, the right exit is taken. In the case of a SHANT node, if the actor successfully refrains from eating the forbidden fruit (or marshmallow) before the given deadline, the right exit is taken. Otherwise, the left exit is taken. Left is bad, right is good.
+
+A sequence of right exits constitutes a "happy path" of the contract, and terminates in a "fulfilled" node.
+
+Termination in a left exit node constitutes a "breach".
+
+MAY nodes have one outdegree: if the actor exercises their option ("internal choice"), the successor node is typically a MUST or a SHANT upon the counterparty.
+
+For convenience of representation, renderings may optimize to show multiple final nodes, or fewer. A ROBDD style representation may converge all outcomes to just two global nodes, Breach and Fulfilled. Or a rendering may display multiple Fulfilled and Breach nodes.
 
 ** <<<Multitemporality>>>
 

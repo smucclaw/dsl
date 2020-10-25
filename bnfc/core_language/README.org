@@ -1,0 +1,54 @@
+#+TITLE: Core Abstract Syntax
+
+* Overview
+
+Abstract syntax for core L4 concepts. 
+
+*Files:*
+
+- =AbsSyntax.hs= Declaration of data types (types, classes and instances,
+  modules, expressions, timed automata)
+- =Exec.hs= Execution / evaluation of expresssions
+- =TaToUppaal.hs= Conversion of Timed Automata to the Uppaal XTA format, see
+  https://www.it.uu.se/research/group/darts/uppaal/help.php?file=System_Descriptions/Introduction.shtml 
+- =TransL.hs= Translation from L4 BNFC to the core abstract syntax. Very incomplete.
+- =Typing.hs= Type checking of abstract syntax.
+
+The file =Test.hs= is for testing only and can be discarded.
+
+* Uppaal
+
+** Interactive use with the GUI
+
+Start Uppaal with =java -jar uppaal.jar &=, then =File / Open system=. Load a
+model (=*xml=) file. The view typically opens on the Editor tab (system
+definition with several automata). On the Simulator tab, one can execute the
+system by stepping through a scenario. On the Verifier tab, one finds several
+"queries" (corresponding to proof obligations). These are contained in the
+=*q= file associated with the model file. Select one of the formulas and
+verify it by clicking on the Check button. In order to obtain a
+counter-example, select "Options / Diagnostic Trace" and then one of Some /
+Shortest / Fastest. On the next Check, the counterexample will be loaded into
+the Simulator.
+
+
+** Command line interface
+
+In Haskell, running =writeFile "test_haskell_uppaal.xta" (ta_sys_to_uppaal (TmdAutSys [autA, autB]))=
+produces a textual Uppaal XTA file. The file can in principle be read in by
+the GUI. As there is no graphical layout information information associated
+with the file, the elements of the automata are first arranged in an arbitrary
+fashion. After manually rearranging and storing the model, a =.ugi= file
+stores graphic information. 
+
+The XTA file can be run (together with a query in a =.q= file) with shell
+command =verifyta= contained in the download bundle, as in =bin-Linux/verifyta -t0 
+test_haskell_uppaal.xta test_haskell_uppaal.q=, where =test_haskell_uppaal.q=
+is, for example:
+
+#+BEGIN_SRC
+E<> AutA.l3 and AutB.l2
+#+END_SRC
+
+A textual trace is then written to standard output.
+

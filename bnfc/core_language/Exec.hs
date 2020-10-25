@@ -68,9 +68,3 @@ eval_expr bd x = case x of
     ve@(ValE _ _) -> ve
     (ClosE t2 cbd2 e2) -> ClosE t (cbd2 ++ cbd) e2
 
--- $> eval_expr [] (AppE BoolT (FunE (FunT BoolT BoolT) (VarNm "x") BoolT  (UnaOpE BoolT (UBool UBneg) (VarE BoolT (VarNm "x")))) (ValE BoolT (BoolV True)))
-
-
--- $> eval_expr [] (AppE IntT (FunE (FunT IntT IntT) (VarNm "x") IntT  (BinOpE IntT (BArith BAadd) (ValE IntT (IntV 3)) (VarE IntT (VarNm "x")))) (ValE IntT (IntV 5)))
-
--- $> eval_expr [] (tp_expr (Env preambleMdl (LVD [])) (AppE () (AppE () (FunE () (VarNm "x") IntT (FunE () (VarNm "y") IntT (BinOpE () (BArith BAadd) (VarE () (VarNm "x")) (VarE () (VarNm "x"))))) (ValE () (IntV 5))) (ValE () (IntV 2))))

@@ -80,14 +80,6 @@ elaborate_fields_in_class_decls cds =
             (ClsDecl cn (ClsDef scs (locfds ++ (concatMap (local_fields fd_assoc) scs))))) cds
   
 
--- $> super_classes_decls customCs
-
--- $> elaborate_fields_in_class_decls (elaborate_supers_in_class_decls customCs)
-
--- Cyclic superclass hierarchy:
--- $> super_classes_decls [ClsDecl (ClsNm "Foo") (ClsDef (Just (ClsNm "Bar")) []), ClsDecl (ClsNm "Bar") (ClsDef (Just (ClsNm "Foo")) [])]
-
-
 -- the class decl does not reference an undefined superclass
 defined_superclass :: [ClassName] -> ClassDecl (Maybe ClassName) -> Bool
 defined_superclass cns cdc =
@@ -129,8 +121,6 @@ elaborate_module md =
           then Mdl ecdcs rls
           else error "Problem in field declarations: duplicate field declarations"
   else error "Problem in class declarations"
-
--- $> elaborate_module (Mdl customCs [])
 
 
 strict_superclasses_of :: Module [ClassName] -> ClassName -> [ClassName]
@@ -268,29 +258,6 @@ tp_expr env x = case x of
     in if cast_compatible (tp_of_expr te) ctp
        then CastE ctp ctp te
        else CastE ErrT ctp te
-
-
-
-----------------------------------------------------------------------
--- Tests
-----------------------------------------------------------------------
-
-
--- $> tp_expr (Env preambleMdl (LVD [])) (AppE () (FunE () (VarNm "x") IntT (VarE () (VarNm "x"))) (ValE () (IntV 3)))
-
--- $> tp_expr (Env (elaborate_module preambleMdl) (LVD [])) (ValE () (RecordV (ClsNm "SGD") [(FldNm "val", IntV 50)]))
-
--- $> tp_expr (Env preambleMdl (LVD [])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
-
--- $> tp_expr (Env preambleMdl (LVD [(VarNm "foo", IntT)])) (BinOpE () (BCompar BClte) (BinOpE () (BArith BAadd) (ValE () (IntV 50)) (BinOpE () (BArith BAmul) (BinOpE () (BArith BAadd) (ValE () (IntV 90)) (ValE () (IntV 4))) (VarE () (VarNm "foo")))) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5))))
-
-
-
--- $> tp_expr (Env preambleMdl (LVD [])) (UnaOpE () (UBool UBneg) (BinOpE () (BCompar BClte) (ValE () (IntV 2)) (BinOpE () (BArith BAmul) (ValE () (IntV 2)) (ValE () (IntV 5)))))
-
-
--- $> tp_expr (Env preambleMdl (LVD [])) (ValE () (IntV 5))
-
 
 
 ----------------------------------------------------------------------

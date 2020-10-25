@@ -27,7 +27,9 @@ dependencies:
 - gf
 
 library:
-  source-dirs: src
+  source-dirs:
+    - src-bnfc
+    - src-l4
 
 executables:
   l4:

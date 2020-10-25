@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 91231561ace72effbf89fbb8787a41751391a20db9d3751b192e7614fdc8c9b5
+-- hash: 998e5ecf341457ae7d072c7a544ac65e01544b69e106226893463b6cea06b225
 
 name:           bnfc
 version:        0.1.0.0
@@ -37,7 +37,8 @@ library
   other-modules:
       Paths_bnfc
   hs-source-dirs:
-      src
+      src-bnfc
+      src-l4
   build-depends:
       array
     , base >=4.7 && <5

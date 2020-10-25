@@ -1,6 +1,6 @@
 .stack-work/
 *~
 *.bak
-src/*.hs
-src/*.x
-src/*.y
+src-bnfc/*.hs
+src-bnfc/*.x
+src-bnfc/*.y

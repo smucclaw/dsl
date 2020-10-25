@@ -61,7 +61,9 @@ DNoHence. HenceLimb    ::= ;
 DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
 DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
 DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
-rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
+RGoto.          Goto   ::= RuleDef ;
+RFulfilled.     Goto   ::= "FULFILLED" ;
+RBreach.        Goto   ::= "BREACH" ;
 RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [Constraint] WithLimb WhenHenceWhere;
 
 PerHereby.    PerformWord ::= "HEREBY" ;

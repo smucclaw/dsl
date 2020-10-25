@@ -13,7 +13,9 @@ RULE 3 isPotato
   DEEM Item IS Potato
   WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
 
-ENTITY mySpud
-   ISA Item
-  WITH species  = "Solanum tuberosum"
-       isEdible = true
+RULE 4 mkSpud
+  ENTITY mySpud
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+

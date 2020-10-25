@@ -4,6 +4,7 @@ module Main where
 
 import System.Environment ( getArgs, getProgName )
 import System.Exit        ( exitFailure, exitSuccess )
+import Data.Maybe
 import Control.Monad      ( when )
 
 import Text.Pretty.Simple
@@ -51,7 +52,10 @@ showTree v tree
  = do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
-      putStrV v $ "\n[My Output]\n\n" ++ (unlines $ concatMap showRuleName $ getRules tree)
+      let ruleList = getRules tree
+      putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ catMaybes $ showRuleName <$> ruleList)
+      putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ asMap ruleList))
+      putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
 
 usage :: IO ()
 usage = do

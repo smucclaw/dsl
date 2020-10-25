@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 998e5ecf341457ae7d072c7a544ac65e01544b69e106226893463b6cea06b225
+-- hash: 694870e5051865e6dc6283626fb2253260cd0d34f4fcc877daf5f2ae2348d899
 
 name:           bnfc
 version:        0.1.0.0
@@ -42,6 +42,8 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , containers
+    , fgl
     , gf
     , pretty-simple
     , regex-with-pcre
@@ -59,6 +61,8 @@ executable l4
       array
     , base >=4.7 && <5
     , bnfc
+    , containers
+    , fgl
     , gf
     , pretty-simple
     , regex-with-pcre
@@ -76,6 +80,8 @@ executable showbug
       array
     , base >=4.7 && <5
     , bnfc
+    , containers
+    , fgl
     , gf
     , pretty-simple
     , regex-with-pcre
@@ -94,6 +100,8 @@ test-suite bnfc-test
       array
     , base >=4.7 && <5
     , bnfc
+    , containers
+    , fgl
     , gf
     , pretty-simple
     , regex-with-pcre

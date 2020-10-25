@@ -216,7 +216,9 @@ We need to beef up the temporal expressions with AFTER and UNTIL, but for now th
   DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
   DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
   DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
-  rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
+  RGoto.          Goto   ::= RuleDef ;
+  RFulfilled.     Goto   ::= "FULFILLED" ;
+  RBreach.        Goto   ::= "BREACH" ;
 #+end_src
 
 LegalRuleML distinguishes between /maintenance/ obligations and /achievement/ obligations.

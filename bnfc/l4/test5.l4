@@ -1,6 +1,0 @@
-
-
-// a simple ruleset suitable for experimenting with the Haskell PGF library integration
-
-RULE 1 ruleOne NOOP
-

@@ -25,6 +25,8 @@ dependencies:
 - text
 - regex-with-pcre
 - gf
+- containers
+- fgl
 
 library:
   source-dirs:

@@ -81,4 +81,23 @@ RULE showMatches
             WhereLimb WHERE Foo.bar = objmethod(foo=bar)
             Exp $10 + $2
             DeonticLimb SHANT sell Item
+            BinExp AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
+            DefineLimb DEFINE Foo ISA Bar WITH fooness = True
+            DefineLimb ENTITY foo ISA Bar WITH fooness = True
+                                               species  = "Solanum tuberosum"
+                                               isEdible = true
+                                               previousOwners = [ alice, bob, charlie, daryl ]
 
+	    Rule RULE mkSpud2
+                     ENTITY spud2
+                        ISA Item
+                       WITH species  = "Solanum tuberosum"
+                            isEdible = true
+                            previousOwners = [ alice, bob, charlie, daryl ]
+	    Rule RULE mkSpud2
+                     ENTITY spud1 ISA Nothing
+                     ENTITY spud2
+                        ISA Item
+                       WITH species  = "Solanum tuberosum"
+                            isEdible = true
+                            previousOwners = [ alice, bob, charlie, daryl ]

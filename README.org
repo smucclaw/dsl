@@ -43,7 +43,7 @@ The rest of this document explains the syntax and shows the BNF language definit
 A "RULE" stanza is labeled with a numeric identifier, a name, or both, followed by zero or more language strings.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  Rule.      Rule      ::= "RULE" RuleDef RuleName MetaLimb RuleBody;
+  Rule.      Rule      ::= "RULE" RuleDef RuleName Asof MetaLimb RuleBody;
 
   RID.       RuleDef   ::=         ObjAttr ;
   RNumID.    RuleDef   ::= Integer ObjAttr ;
@@ -82,11 +82,21 @@ The BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
   -- a constitutive rule
-  RuleDeem.     RuleBody  ::= GivenLimb           DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+  RuleDeem.     RuleBody  ::= GivenUpon [DefineLimb] WhenHenceWhere ;
+  separator nonempty DefineLimb "";
+
+  GU0.          GivenUpon ::= ;
+  GUGiven.      GivenUpon ::= GivenLimb UponLimb;
+  GUUpon.       GivenUpon ::= UponLimb GivenLimb;
+
+  WHW.          WhenHenceWhere ::= WhenLimb HenceLimb WhereLimb ;
+
+  DefLimb.    DefineLimb ::= DefineWord [Constraint] WithLimb Asof;
   
   DefDefine.  DefineWord ::= "DEFINE" ;
   DefDeem.    DefineWord ::= "DEEM" ;
   DefDeclare. DefineWord ::= "DECLARE" ;
+  DefEntity.  DefineWord ::= "ENTITY" ;
 #+end_src
 
 A DEFINE rule can have optional limbs:
@@ -137,7 +147,10 @@ If they fail to perform, the state graph proceeds to the node specified in the "
 The "GIVEN" and "UPON" limbs can be swapped, synonymously.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RModal1.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
+  RModal1.  RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
+
+  MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
+
   RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
   rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
@@ -233,7 +246,7 @@ Similar to deontic rules, except instead of saying that a party MUST do somethin
 Representations and warranties are given in the form of such statements.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RulePerform.  RuleBody  ::= GivenLimb PartyLimb PerformWord [Constraint] WithLimb WhenLimb WhereLimb;
+  RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [Constraint] WithLimb WhenHenceWhere;
   
   PerHereby.    PerformWord ::= "HEREBY" ;
   PerAgree.     PerformWord ::= "AGREE" ;
@@ -250,21 +263,19 @@ Representations and warranties are given in the form of such statements.
 These stanzas express what Ken Adams calls Language of Declaration -- about entities, at least.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY spud1
-     ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
+  RULE mkSpud1
+    ENTITY spud10 ISA Item
+    ENTITY spud1 ISA Item
+      WITH species  = "Solanum tuberosum"
+           isEdible = true
 #+end_src
 
 ENTITY stanzas are a special case of a DEFINE. While DEFINE statements create classes, ENTITY stanzas create individuals, or instances, of those classes. One uses an ENTITY rule to parameterize an abstract contract to a concrete contract.
 
+The syntax for an ENTITY stanza is largely the same as for a DEFINE stanza, with just the words changed. The following limbs are not expected in an ENTITY stanza:
+- Hence
+
 Other kinds of top-level stanzas are described below.
-
-#+begin_src bnfc :noweb-ref l4bnfc
-  REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
-#+end_src
-
-This is where you park details about parties and other concrete entities involved in a contract.
 
 This converts to Prolog:
 
@@ -325,7 +336,8 @@ Usually the "Given" expression is one or more names of a previous deontic rule, 
 The "Given" expression can also be specific variable names, in which case only those variables are brought into scope. The compiler needs to test if there are any possible execution paths which allow an undefined variable to appear in the Given.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
+  GivenLimb0.     GivenLimb ::= ;
+  GivenLimb1.     GivenLimb ::= "GIVEN"  GivenExpr ;
   rules      GivenExpr ::=   Exp
                            | Exp HavingLimb ;
 #+end_src
@@ -355,7 +367,8 @@ Example:
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules      WhenLimb   ::= | "WHEN"   Exp;
+  WhenLimb0.      WhenLimb   ::= ;
+  WhenLimb1.      WhenLimb   ::= "WHEN"   Exp;
 #+end_src
 
 They are very similar to the constraint expressions we've already seen in DEFINE rules.
@@ -433,11 +446,12 @@ The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE
 A lower-case entity is an individual -- a concrete "instance".
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY veggieBar
-     ISA Business
-    WITH address = [ "1 Veggie Way" ]
-         id      = { idtype = "UEN", idval = "202000000A" }
-         name    = "The Veggie Bar Pte. Ltd."
+  RULE mkVeggieBar
+    ENTITY veggieBar
+       ISA Business
+      WITH address = [ "1 Veggie Way" ]
+           id      = { idtype = "UEN", idval = "202000000A" }
+           name    = "The Veggie Bar Pte. Ltd."
 #+end_src
 
 But you can also use WITH to define the abstract form -- you might call it a record type, or an interface, or a class; it starts with an upper-case letter.
@@ -445,7 +459,7 @@ But you can also use WITH to define the abstract form -- you might call it a rec
 If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
 #+begin_src haskell :noweb-ref l4entity
-   RULE    Business
+  RULE    Business
     DEFINE Business
        ISA Record
       WITH address = [ String ]
@@ -555,7 +569,8 @@ This can probably be done as a floating DEFINE.
 "Where" offers bindings similar to those found in Haskell. This is a convenient place to go into detail about concepts which are mentioned briefly in the main body.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
+  WhereLimb0.     WhereLimb ::= ;
+  WhereLimb1.     WhereLimb ::= "WHERE" "{" [WhereExp] "}" ;
   rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
 
   separator nonempty WhereExp ";";
@@ -606,8 +621,15 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                       | "WhenLimb"    WhenLimb
                       | "WhereLimb"   WhereLimb
                       | "DeonticLimb" DeonticLimb
+                      | "DefineLimb"  DefineLimb
                       | "BraceList"   BraceList
-                      | "HenceLimb"   HenceLimb;
+                      | "HenceLimb"   HenceLimb
+                      | "MatchQualifier"  MatchQualifier
+                      | "MatchQuantifier" MatchQuantifier
+                      | "MatchRelation"   MatchRelation
+                      | "MatchFlag"       MatchFlag
+                      | "RuleBody"    RuleBody
+                      | "Rule"        Rule;
   separator nonempty MatchVars ";";
 #+end_src
 
@@ -660,12 +682,12 @@ An L4 Module contains a list of directives and statements.
 #+begin_src bnfc :noweb-ref l4bnfc
   Toplevel.  Tops      ::= [Toplevels];
   rules      Toplevels ::= Module | Import | Pragma
-                         | Rule | Entity | Scenario
+                         | Rule | Scenario
                          | Group | Section ;
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE" ;
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE";
   entrypoints Tops;
 #+end_src
 
@@ -1251,7 +1273,8 @@ See Constraint Unification for details.
 TODO: figure out "=" vs "==".
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY Minor
+ RULE mkMinor
+  DEFINE Minor
      ISA Human
     WHEN CASE self.nationality ~ ["US", "SG"]             -> self.age < 21
               self.nationality ~ ["NZ", "TW", "TH", "JP"] -> self.age < 20
@@ -1277,15 +1300,16 @@ Oh right, we need case expressions.
 When there's a CASE, there's a decision table. Let's support DMNMD syntax for decision tables:
 
 #+begin_src haskell
-  ENTITY Major
-     ISA Human
-    WHEN TABLE
-         | F | nationality (in) | age (in) | return |
-         |---+------------------+----------+--------|
-         | 1 | US, SG           | >= 21    | true   |
-         | 2 | NZ, TW, TH, JP   | >= 20    | true   |
-         | 3 | -                | >= 18    | true   |
-         | 4 | -                | -        | false  |
+  RULE mkMajor
+    ENTITY Major
+       ISA Human
+      WHEN TABLE
+           | F | nationality (in) | age (in) | return |
+           |---+------------------+----------+--------|
+           | 1 | US, SG           | >= 21    | true   |
+           | 2 | NZ, TW, TH, JP   | >= 20    | true   |
+           | 3 | -                | >= 18    | true   |
+           | 4 | -                | -        | false  |
 #+end_src
 
 This has not yet been implemented.
@@ -1493,12 +1517,13 @@ Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what W
 Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY blackSwan
-     ISA Human
-    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
-  //     a person can have multiple nationalities
-         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 TO PRESENT }
-                       , { xtime = 2020-09-10, value = "US"                                } ]
+  RULE mkBlackSwan
+    ENTITY blackSwan
+       ISA Human
+      WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
+        // a person can have multiple nationalities
+           nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 TO PRESENT }
+                         , { xtime = 2020-09-10, value = "US"                                } ]
 #+end_src
 
 We assume that her Israeli citizenship began at birth, but Wikipedia doesn't know when she became a US citizen; all we know is that as of September 10 2020, Wikipedia said she is one. So that citizenship value doesn't define a vtime.
@@ -1506,8 +1531,8 @@ We assume that her Israeli citizenship began at birth, but Wikipedia doesn't kno
 Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
 
 #+begin_src haskell :noweb-ref l4entity
-  //     a person can have multiple names
-         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+  //       a person can have multiple names
+           fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
 #+end_src
 
 As you can see, the "multitemporal" syntax allows us to easily handle scenarios like:
@@ -1517,8 +1542,9 @@ As you can see, the "multitemporal" syntax allows us to easily handle scenarios 
 - On December 1, the couple announced that they had gotten divorced on November 1.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY celebXY
+RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
+  ENTITY celebXY
      ISA Couple
     WITH xtime = 2020-01-01, maritalStatus = dating
          xtime = 2020-07-01, maritalStatus = married
@@ -1646,19 +1672,20 @@ Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~t
 We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
 
 #+begin_src haskell :noweb-ref l4entity
-  ENTITY buyCabbage
-     ISA ContractOfSale
-    WITH date         = 2020-09-10
-         jurisdiction = SG
-         buyer        = blackSwan
-         seller       = veggieBar
-         buyer.consideration  = :USD: 10
-         seller.consideration = [ item1, item2 ]
-    ASOF 2020-09-10
-   WHERE item1 ISA  Item
-               WITH category = "vegetable"
-                    species  = "Brassica oleracea"
-                    cultivar = "capitata"
+  RULE buyCabbage
+   ENTITY buyCabbage
+      ISA ContractOfSale
+     WITH date         = 2020-09-10
+          jurisdiction = SG
+          buyer        = blackSwan
+          seller       = veggieBar
+          buyer.consideration  = :USD: 10
+          seller.consideration = [ item1, item2 ]
+     ASOF 2020-09-10
+    WHERE item1 ISA  Item
+                WITH category = "vegetable"
+                     species  = "Brassica oleracea"
+                     cultivar = "capitata"
 #+end_src
 
 ContractLaw is a library class which abstracts the essential elements of a particular contract.
@@ -1698,11 +1725,12 @@ Let's start with a super simple case. Remember our good old spud?
 Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
 
 #+begin_src haskell :noweb-ref l4-rules
-  ENTITY spud2
-     ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
-         previousOwners = [ alice, bob, charlie, daryl ]
+  RULE mkSpud2
+    ENTITY spud2
+       ISA Item
+      WITH species  = "Solanum tuberosum"
+           isEdible = true
+           previousOwners = [ alice, bob, charlie, daryl ]
 #+end_src
 
 What does that look like in Prolog?
@@ -1721,10 +1749,10 @@ Now we have an opportunity to explore relational syntax. Think Alloy.
 Let's say that some of the previous owners were members of the nobility.
 
 #+begin_src haskell :noweb-ref l4-rules
-  ENTITY alice   ISA Human WITH isNoble = true
-  ENTITY bob     ISA Human WITH isNoble = false
-  ENTITY charlie ISA Human WITH isNoble = true
-  ENTITY daryl   ISA Human WITH isNoble = false
+  RULE mkAlice   ENTITY alice   ISA Human WITH isNoble = true
+  RULE mkBob     ENTITY bob     ISA Human WITH isNoble = false
+  RULE mkCharlie ENTITY charlie ISA Human WITH isNoble = true
+  RULE mkDaryl   ENTITY daryl   ISA Human WITH isNoble = false
 #+end_src
 
 In Prolog, that reads:

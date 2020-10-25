@@ -1,5 +1,5 @@
 -- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-Rule.      Rule      ::= "RULE" RuleDef RuleName MetaLimb RuleBody;
+Rule.      Rule      ::= "RULE" RuleDef RuleName Asof MetaLimb RuleBody;
 
 RID.       RuleDef   ::=         ObjAttr ;
 RNumID.    RuleDef   ::= Integer ObjAttr ;
@@ -8,23 +8,26 @@ RName.     RuleName  ::= OptLangStrings ;
 
 rules      OptLangStrings ::= | LangStrings;
 
-RBNoop.    RuleBody  ::= "NOOP";
 -- a constitutive rule
-RuleDeem.     RuleBody  ::= GivenLimb           DefineWord [Constraint] WithLimb WhenLimb WhereLimb;
+RuleDeem.     RuleBody  ::= GivenUpon [DefineLimb] WhenHenceWhere ;
+separator nonempty DefineLimb "";
+
+GU0.          GivenUpon ::= ;
+GUGiven.      GivenUpon ::= GivenLimb UponLimb;
+GUUpon.       GivenUpon ::= UponLimb GivenLimb;
+
+WHW.          WhenHenceWhere ::= WhenLimb HenceLimb WhereLimb ;
+
+DefLimb.    DefineLimb ::= DefineWord [Constraint] WithLimb Asof;
 
 DefDefine.  DefineWord ::= "DEFINE" ;
 DefDeem.    DefineWord ::= "DEEM" ;
 DefDeclare. DefineWord ::= "DECLARE" ;
+DefEntity.  DefineWord ::= "ENTITY" ;
+RModal1.  RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
 
--- a performative utterance
-RulePerform.  RuleBody  ::= GivenLimb PartyLimb PerformWord [Constraint] WithLimb WhenLimb WhereLimb;
+MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-PerHereby.  PerformWord ::= "HEREBY" ;
-PerAgree.   PerformWord ::= "AGREE" ;
-PerRep.     PerformWord ::= "REPRESENT" ;
-PerWar.     PerformWord ::= "WARRANT" ;
-PerRepWar.  PerformWord ::= "REPRANT" ;
-RModal1.  RuleBody    ::= GivenLimb UponLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
@@ -33,8 +36,6 @@ rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE
 PNobody. PartyDef    ::= PNobody;
 rules    PNobody     ::=          "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
 rules    AsAlias     ::= | "AS" ObjAttr ;
-REntity.   Entity ::= "ENTITY" ObjAttr OptLangStrings GivenLimb "ISA" ObjAttr WithLimb Asof WhenLimb WhereLimb;
-rules      WhenLimb   ::= | "WHEN"   Exp;
 rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
@@ -62,12 +63,13 @@ DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
 DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
 DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
 rules     Goto         ::= RuleDef | "FULFILLED" | "BREACH" ;
-rules      GivenLimb ::= | "GIVEN"  GivenExpr ;
-rules      GivenExpr ::=   Exp
-                         | Exp HavingLimb ;
-rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-rules     HavingBoolExp ::= Exp;
-separator nonempty HavingBoolExp ";";
+RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [Constraint] WithLimb WhenHenceWhere;
+
+PerHereby.    PerformWord ::= "HEREBY" ;
+PerAgree.     PerformWord ::= "AGREE" ;
+PerRep.       PerformWord ::= "REPRESENT" ;
+PerWar.       PerformWord ::= "WARRANT" ;
+PerRepWar.    PerformWord ::= "REPRANT" ;
 rules       UponLimb       ::= | "UPON" UponRefinement GivenExpr ;
 Upon0.      UponRefinement ::= ;
 Upon2.      UponRefinement ::= UponKleisli UponTime;
@@ -77,6 +79,15 @@ UponPast.    UponTime      ::= "PAST"; -- match events prior to the UPON event
 UponFuture.  UponTime      ::= "FUTURE"; -- default; match events after the UPON
 UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with UPON
 UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
+GivenLimb0.     GivenLimb ::= ;
+GivenLimb1.     GivenLimb ::= "GIVEN"  GivenExpr ;
+rules      GivenExpr ::=   Exp
+                         | Exp HavingLimb ;
+rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
+rules     HavingBoolExp ::= Exp;
+separator nonempty HavingBoolExp ";";
+WhenLimb0.      WhenLimb   ::= ;
+WhenLimb1.      WhenLimb   ::= "WHEN"   Exp;
 rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
 rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
 rules      WithIn    ::= [Constraint] | TraceExpr;
@@ -88,13 +99,14 @@ rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
 
 token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
 token YYYYMMDDTHHMM ( digit digit digit digit '-'? digit digit '-'? digit digit 'T' digit digit digit digit );
-rules     WhereLimb ::= | "WHERE" "{" [WhereExp] "}" ;
-rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
-
-separator nonempty WhereExp ";";
 Meta0.       MetaLimb ::= ;
 MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
 MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
+WhereLimb0.     WhereLimb ::= ;
+WhereLimb1.     WhereLimb ::= "WHERE" "{" [WhereExp] "}" ;
+rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
+
+separator nonempty WhereExp ";";
 rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
 rules   MatchVars ::= "Constraint"  Constraint
                     | "ObjMethod"   ObjMethod
@@ -109,30 +121,38 @@ rules   MatchVars ::= "Constraint"  Constraint
                     | "WhenLimb"    WhenLimb
                     | "WhereLimb"   WhereLimb
                     | "DeonticLimb" DeonticLimb
+                    | "DefineLimb"  DefineLimb
                     | "BraceList"   BraceList
-                    | "HenceLimb"   HenceLimb;
+                    | "HenceLimb"   HenceLimb
+                    | "MatchQualifier"  MatchQualifier
+                    | "MatchQuantifier" MatchQuantifier
+                    | "MatchRelation"   MatchRelation
+                    | "MatchFlag"       MatchFlag
+                    | "RuleBody"    RuleBody
+                    | "Rule"        Rule;
 separator nonempty MatchVars ";";
-RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
-rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
-separator  nonempty LogEvent ";";
-separator  Blah "";
-rules      Blah     ::= Exp;
+RBNoop.    RuleBody  ::= "NOOP";
 ModuleDecl. Module ::= "module" ObjAttr "where";
 Toplevel.  Tops      ::= [Toplevels];
 rules      Toplevels ::= Module | Import | Pragma
-                       | Rule | Entity | Scenario
+                       | Rule | Scenario
                        | Group | Section ;
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE" ;
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE";
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
 rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
 
 rules Section ::= "SECTION" RuleDef RuleName WithLimb WhereLimb ;
 rules Pragma ::= "pragma" [Exp] ;
+RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
+rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
+rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+separator  nonempty LogEvent ";";
+separator  Blah "";
+rules      Blah     ::= Exp;
 comment "//" ;
 comment "--" ;
 comment "/*" "*/" ;

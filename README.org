@@ -147,11 +147,10 @@ If they fail to perform, the state graph proceeds to the node specified in the "
 The "GIVEN" and "UPON" limbs can be swapped, synonymously.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RModal1.  RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
+  RModal.   RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
 
   MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-  RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
   rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
@@ -607,29 +606,30 @@ A rule that activates or deactivates other rules.
 The "MATCHTYPE" rule body is for debugging purposes only.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-  rules   MatchVars ::= "Constraint"  Constraint
-                      | "ObjMethod"   ObjMethod
-                      | "ObjAttr"     ObjAttr
-                      | "ObjAttrElem" ObjAttrElem
-                      | "UnifyExpr"   UnifyExpr
-                      | "UnifyElem"   [UnifyElem]
-                      | "Exp"         Exp
-                      | "LstExp"      LstExp
-                      | "BinExp"      BinExp
-                      | "CaseExpr"    CaseExpr
-                      | "WhenLimb"    WhenLimb
-                      | "WhereLimb"   WhereLimb
-                      | "DeonticLimb" DeonticLimb
-                      | "DefineLimb"  DefineLimb
-                      | "BraceList"   BraceList
-                      | "HenceLimb"   HenceLimb
-                      | "MatchQualifier"  MatchQualifier
-                      | "MatchQuantifier" MatchQuantifier
-                      | "MatchRelation"   MatchRelation
-                      | "MatchFlag"       MatchFlag
-                      | "RuleBody"    RuleBody
-                      | "Rule"        Rule;
+  RMatch.  RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
+  rules    MatchVars ::= "Constraint"  Constraint
+                       | "ObjMethod"   ObjMethod
+                       | "ObjAttr"     ObjAttr
+                       | "ObjAttrElem" ObjAttrElem
+                       | "UnifyExpr"   UnifyExpr
+                       | "UnifyElem"   [UnifyElem]
+                       | "Exp"         Exp
+                       | "LstExp"      LstExp
+                       | "BinExp"      BinExp
+                       | "CaseExpr"    CaseExpr
+                       | "WhenLimb"    WhenLimb
+                       | "WhereLimb"   WhereLimb
+                       | "DeonticLimb" DeonticLimb
+                       | "DefineLimb"  DefineLimb
+                       | "BraceList"   BraceList
+                       | "HenceLimb"   HenceLimb
+                       | "MatchQualifier"  MatchQualifier
+                       | "MatchQuantifier" MatchQuantifier
+                       | "MatchRelation"   MatchRelation
+                       | "MatchFlag"       MatchFlag
+                       | "RuleBody"    RuleBody
+                       | "Rule"        Rule;
+
   separator nonempty MatchVars ";";
 #+end_src
 

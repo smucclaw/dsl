@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 15147fd51821f006ec825bacf7c1bed26d544f41e78af50a3c11d7f96caca340
+-- hash: 91231561ace72effbf89fbb8787a41751391a20db9d3751b192e7614fdc8c9b5
 
 name:           bnfc
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       ParL
       PrintL
       SkelL
+      ToGraphViz
   other-modules:
       Paths_bnfc
   hs-source-dirs:

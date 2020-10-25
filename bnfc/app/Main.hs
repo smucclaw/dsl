@@ -12,8 +12,9 @@ import LexL    ( Token )
 import ParL    ( pTops, myLexer )
 import SkelL   ()
 import PrintL  ( Print, printTree )
-import AbsL    ()
+import AbsL    ( Tops )
 import LayoutL ( resolveLayout )
+import ToGraphViz
 
 type Err = Either String
 type ParseFun a = [Token] -> Err a
@@ -25,10 +26,10 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: (Print a, Show a) => Verbosity -> ParseFun a -> FilePath -> IO ()
+runFile :: Verbosity -> ParseFun Tops -> FilePath -> IO ()
 runFile v p f = putStrLn f >> readFile f >>= run v p
 
-run :: (Print a, Show a) => Verbosity -> ParseFun a -> String -> IO ()
+run :: Verbosity -> ParseFun Tops -> String -> IO ()
 run v p s = case p ts of
     Left s -> do
       putStrLn "\nParse              Failed...\n"
@@ -45,11 +46,12 @@ run v p s = case p ts of
   ts = myLLexer s
 
 
-showTree :: (Show a, Print a) => Int -> a -> IO ()
+showTree :: Int -> Tops -> IO ()
 showTree v tree
  = do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
+      putStrV v $ "\n[My Output]\n\n" ++ (unlines $ concatMap showRuleName $ getRules tree)
 
 usage :: IO ()
 usage = do

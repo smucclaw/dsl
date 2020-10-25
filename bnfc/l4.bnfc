@@ -24,11 +24,10 @@ DefDefine.  DefineWord ::= "DEFINE" ;
 DefDeem.    DefineWord ::= "DEEM" ;
 DefDeclare. DefineWord ::= "DECLARE" ;
 DefEntity.  DefineWord ::= "ENTITY" ;
-RModal1.  RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
+RModal.   RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
 
 MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-RModal2.  RuleBody    ::= UponLimb GivenLimb PartyLimb DeonticLimb WhenLimb DeadlineLimb HenceLimb WhereLimb ;
 rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
 PEvery.  PartyDef    ::= PEvery ;
@@ -107,29 +106,30 @@ WhereLimb1.     WhereLimb ::= "WHERE" "{" [WhereExp] "}" ;
 rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
 
 separator nonempty WhereExp ";";
-rules   RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-rules   MatchVars ::= "Constraint"  Constraint
-                    | "ObjMethod"   ObjMethod
-                    | "ObjAttr"     ObjAttr
-                    | "ObjAttrElem" ObjAttrElem
-                    | "UnifyExpr"   UnifyExpr
-                    | "UnifyElem"   [UnifyElem]
-                    | "Exp"         Exp
-                    | "LstExp"      LstExp
-                    | "BinExp"      BinExp
-                    | "CaseExpr"    CaseExpr
-                    | "WhenLimb"    WhenLimb
-                    | "WhereLimb"   WhereLimb
-                    | "DeonticLimb" DeonticLimb
-                    | "DefineLimb"  DefineLimb
-                    | "BraceList"   BraceList
-                    | "HenceLimb"   HenceLimb
-                    | "MatchQualifier"  MatchQualifier
-                    | "MatchQuantifier" MatchQuantifier
-                    | "MatchRelation"   MatchRelation
-                    | "MatchFlag"       MatchFlag
-                    | "RuleBody"    RuleBody
-                    | "Rule"        Rule;
+RMatch.  RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
+rules    MatchVars ::= "Constraint"  Constraint
+                     | "ObjMethod"   ObjMethod
+                     | "ObjAttr"     ObjAttr
+                     | "ObjAttrElem" ObjAttrElem
+                     | "UnifyExpr"   UnifyExpr
+                     | "UnifyElem"   [UnifyElem]
+                     | "Exp"         Exp
+                     | "LstExp"      LstExp
+                     | "BinExp"      BinExp
+                     | "CaseExpr"    CaseExpr
+                     | "WhenLimb"    WhenLimb
+                     | "WhereLimb"   WhereLimb
+                     | "DeonticLimb" DeonticLimb
+                     | "DefineLimb"  DefineLimb
+                     | "BraceList"   BraceList
+                     | "HenceLimb"   HenceLimb
+                     | "MatchQualifier"  MatchQualifier
+                     | "MatchQuantifier" MatchQuantifier
+                     | "MatchRelation"   MatchRelation
+                     | "MatchFlag"       MatchFlag
+                     | "RuleBody"    RuleBody
+                     | "Rule"        Rule;
+
 separator nonempty MatchVars ";";
 RBNoop.    RuleBody  ::= "NOOP";
 ModuleDecl. Module ::= "module" ObjAttr "where";

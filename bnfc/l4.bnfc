@@ -28,7 +28,8 @@ RModal.   RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
 
 MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
+Parties.   PartyLimb   ::= "PARTIES" AsAlias;
+PartyLimb. PartyLimb   ::= "PARTY" PartyDef AsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
 PEvery.  PartyDef    ::= PEvery ;
 rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 694870e5051865e6dc6283626fb2253260cd0d34f4fcc877daf5f2ae2348d899
+-- hash: be6a00b6aa9ab08be46e45555ff607984a98c371fe00273b98c4fa3b92227250
 
 name:           bnfc
 version:        0.1.0.0
@@ -45,6 +45,7 @@ library
     , containers
     , fgl
     , gf
+    , graphviz
     , pretty-simple
     , regex-with-pcre
     , text
@@ -64,6 +65,7 @@ executable l4
     , containers
     , fgl
     , gf
+    , graphviz
     , pretty-simple
     , regex-with-pcre
     , text
@@ -83,6 +85,7 @@ executable showbug
     , containers
     , fgl
     , gf
+    , graphviz
     , pretty-simple
     , regex-with-pcre
     , text
@@ -103,6 +106,7 @@ test-suite bnfc-test
     , containers
     , fgl
     , gf
+    , graphviz
     , pretty-simple
     , regex-with-pcre
     , text

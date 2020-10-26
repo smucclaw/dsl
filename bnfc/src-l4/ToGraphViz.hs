@@ -63,18 +63,26 @@ type InterpErr a = Either String (Exit a)
 data Exit a = NoExit
             | Solo   a
             | Choice a a -- left=sinister, right=rite=dexter
-            | Launch [a]
-            | Close  [a]
+            | Close  a
             deriving (Eq, Ord, Show, Read)
+            
+--------------------------------------------------------------------------------
+type RuleGraph a = Map.Map a (Exit [a])
+-- a MAY   rule has a soloExit
+-- a MUST  rule has a Choice exit
+-- a SHANT rule has a Choice exit
+-- each exit can be to multiple nodes, so we basically map from a to [a]
+--------------------------------------------------------------------------------
+
+type InterpErr a = Either String (Exit [a])
 
 ruleExits :: Rule -> InterpErr MyRuleName
 ruleExits r@(Rule rdef rname asof metalimb rulebody) =
   case rulebody of
-    RBNoop                         -> Right (Solo "FULFILLED")
     RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw
     RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
     RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
-    RMatch mvs                     -> Right $ Launch $ do
+    RMatch mvs                     -> Right $ Solo $ do
       (MatchVars22 innerRule) <- mvs
       maybeToList $ showRuleName innerRule
 
@@ -86,20 +94,20 @@ whwHenceLest dexp (WHW whenl hencel wherel) = henceHL dexp hencel
 
 -- we need some smarts here.
 -- if the modal is MUST or SHANT, then an omitted "LEST" means breach.
-henceHL :: Maybe DeonticExpr -> HenceLimb -> Either String (Exit MyRuleName)
+henceHL :: Maybe DeonticExpr -> HenceLimb -> Either String (Exit [MyRuleName])
 henceHL       Nothing  DNoHence                           = Right $ NoExit
 henceHL (Just DEMay  ) DNoHence                           = Right $ NoExit
-henceHL (Just DEMust ) DNoHence                           = Right $ Choice "FULFILLED" "BREACH"
+henceHL (Just DEMust ) DNoHence                           = Right $ Choice ["BREACH"] ["FULFILLED"]
 henceHL (Just DEShant) DNoHence                           = Left  $ "SHANT without HENCE or LEST"
 henceHL (Just DEMay  ) (DHeLe  hgoto ha hos lgoto la los) = Left  $ "MAY doesn't go with LEST"
-henceHL (Just DEMust ) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice (showPart hgoto) (showPart lgoto)
-henceHL (Just DEShant) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice (showPart hgoto) (showPart lgoto)
-henceHL (Just DEMay  ) (DHence (RGoto ruledef) _ _)       = Right $ Solo   (showRuleDef ruledef)
-henceHL (Just DEMust ) (DHence (RGoto ruledef) _ _)       = Right $ Choice (showRuleDef ruledef) "BREACH"
-henceHL (Just DEShant) (DHence (RGoto ruledef) _ _)       = Right $ Choice (showRuleDef ruledef) "BREACH"
-henceHL (Just DEMay  ) (DHence (RFulfilled)    _ _)       = Right $ Solo "FULFILLED"
-henceHL (Just DEMust ) (DHence (RFulfilled)    _ _)       = Right $ Solo "FULFILLED"
-henceHL (Just DEShant) (DHence (RFulfilled)    _ _)       = Right $ Solo "FULFILLED"
+henceHL (Just DEMust ) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice [showPart lgoto] [showPart hgoto] -- TODO: allow multiple HENCE and LEST outputs in the DSL syntax
+henceHL (Just DEShant) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice [showPart lgoto] [showPart hgoto]
+henceHL (Just DEMay  ) (DHence (RGoto ruledef) _ _)       = Right $ Solo   [showRuleDef ruledef]
+henceHL (Just DEMust ) (DHence (RGoto ruledef) _ _)       = Right $ Choice ["BREACH"] [showRuleDef ruledef]
+henceHL (Just DEShant) (DHence (RGoto ruledef) _ _)       = Right $ Choice ["BREACH"] [showRuleDef ruledef]
+henceHL (Just DEMay  ) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
+henceHL (Just DEMust ) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
+henceHL (Just DEShant) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
 henceHL (Just DEMay  ) (DHence (RBreach)       _ _)       = Left  $   "MAY shouldn't cause BREACH; L4 probably should desugar"
 henceHL (Just DEMust ) (DHence (RBreach)       _ _)       = Left  $  "MUST shouldn't cause BREACH; L4 probably should desugar"
 henceHL (Just DEShant) (DHence (RBreach)       _ _)       = Left  $ "SHANT shouldn't cause BREACH; L4 probablyh should desugar"

@@ -160,20 +160,18 @@ showPart (RBreach)        = "BREACH"
 --------------------------------------------------------------------------------
 
 rewrite :: Rule -> [Rule]
-rewrite r0
-/* >> PARTY NOBODY  MAY   act WHEN w1 UNLESS  u1 HENCE h1
-   -> PARTY ANYBODY MAY   act WHEN w1 AND     u1 HENCE h1
-   -> PARTY ANYBODY SHANT act WHEN w1 AND NOT u1 HENCE FULFILLED LEST BREACH
-  */
-  | (Rule rdef rname asof rmeta (
-  | (Rule rdef rname asof rmeta ( RBNoop                         -> Right $ NoExit
-  | (Rule rdef rname asof rmeta ( RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw
-  | (Rule rdef rname asof rmeta ( RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
-  | (Rule rdef rname asof rmeta ( RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
-  | (Rule rdef rname asof rmeta ( RMatch mvs                     -> Right $ Solo $ do
-      (MatchVars22 innerRule) <- mvs
-      maybeToList $ showRuleName innerRule
+-- >> PARTY NOBODY  MAY   act WHEN w1 UNLESS  u1 HENCE h1
+-- -> PARTY ANYBODY MAY   act WHEN w1 AND     u1 HENCE h1
+-- -> PARTY ANYBODY SHANT act WHEN w1 AND NOT u1 HENCE FULFILLED LEST BREACH
+rewrite r0@(Rule rdef rname asof rmeta ( RBNoop                         )) = pure r0
+rewrite r0@(Rule rdef rname asof rmeta ( RulePerform gu pl pw cs wl whw )) = pure r0
+rewrite r0@(Rule rdef rname asof rmeta ( RuleDeem    gu      dls    whw )) = pure r0
+rewrite r0@(Rule rdef rname asof rmeta ( RMatch mvs                     )) = pure r0
+rewrite r0@(Rule rdef rname asof rmeta ( RModal      gu ml          whw )) = Rule rdef rname asof rmeta <$> rewriteModal gu ml whw
 
+rewriteModal :: GivenUpon -> ModalLimb -> WhenHenceWhere -> [RuleBody]
+rewriteModal givenupon modallimb whenhencewhere =
+  pure $ RModal givenupon modallimb whenhencewhere
 
 --------------------------------------------------------------------------------
 -- BASICS
@@ -181,7 +179,7 @@ rewrite r0
 
 -- retrieve all rules from a parsed module
 getRules :: Tops -> [Rule]
-getRules (Toplevel tops) = fakeRules ++ do
+getRules (Toplevel tops) = concatMap rewrite $ fakeRules ++ do
   (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
   case rulebody of
     RMatch mvs              -> do

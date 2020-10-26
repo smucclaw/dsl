@@ -27,6 +27,7 @@ dependencies:
 - gf
 - containers
 - fgl
+- graphviz
 
 library:
   source-dirs:

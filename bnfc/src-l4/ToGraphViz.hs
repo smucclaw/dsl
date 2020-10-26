@@ -3,10 +3,14 @@ module ToGraphViz where
 
 import Control.Monad      ( when, guard )
 import Data.List (intercalate)
+import Data.Char (isUpper, isLower)
 import Data.Tree
 import Data.Maybe
+import Data.Either
 import Control.Applicative
 import qualified Data.Map as Map
+import           Data.Map ((!))
+import Debug.Trace
 
 import Text.Pretty.Simple
 import qualified Data.Text.Lazy as T
@@ -39,46 +43,72 @@ type RuleGraph = Gr MyRuleName EdgeLabel
 data EdgeLabel = Next  -- solo
                | Sin   -- choice left
                | Dex   -- choice right
-               | Multi -- launch
-               | Kill  -- close
+               | Hup   -- close ... "hangup"
             deriving (Eq, Ord, Show, Read)
 
-asGraph :: [Rule] -> RuleGraph
-asGraph rs =
-  let haveExits = filter (\r -> case ruleExits r of
+-- children
+children :: Rule -> [MyRuleName]
+children r = case ruleExits r of
+               Left  _      -> mempty
+               Right NoExit -> mempty
+               Right (Solo  rules)    -> rules
+               Right (Close rules)    -> rules
+               Right (Choice sin dex) -> sin ++ dex
+
+
+-- transitive closure -- note this assumes no loops in the input. if the program fails to halt we need to introduce an accumulator of seen nodes
+connectedTo :: (Map.Map MyRuleName Rule) -> [Rule] -> [Rule]
+connectedTo rnr rs = do
+  r <- rs
+  let cs = (rnr !) <$> children r
+  cs ++ connectedTo rnr cs
+
+haveExits = filter (\r -> case ruleExits r of
                              Left  _      -> False
                              Right NoExit -> False
                              otherwise    -> True
-                         ) rs
-  in
-    mkGraph (zip [1..length haveExits] (fromJust . showRuleName <$> haveExits)) []
+                         )
 
+asGraph :: [Rule] -> RuleGraph
+asGraph rs =
+  let ruleName2Rule  = Map.fromList $ (\r -> (fromJust . showRuleName $ r, r)) <$> rs
+      rulesWithExits = haveExits rs
+      ofInterest     = rulesWithExits ++ connectedTo ruleName2Rule rulesWithExits
+      ruleName2Num   = Map.fromList $ zip (fromJust . showRuleName <$> ofInterest) [1..]
+  in
+    buildGr $
+    (\(ruleName,n) ->
+        let rule     = ruleName2Rule ! ruleName
+            exitto   = fromRight NoExit $ ruleExits rule
+        in ([], n, ruleName,
+             (case exitto of
+                 Solo ens       ->   (\exitnode -> (Next, ruleName2Num ! exitnode)) <$> ens
+                 Choice sin dex ->  ((\exitnode -> (Sin,  ruleName2Num ! exitnode)) <$> sin)
+                                     <>
+                                    ((\exitnode -> (Dex,  ruleName2Num ! exitnode)) <$> dex)
+                 Close ens      ->   (\exitnode -> (Hup,  ruleName2Num ! exitnode)) <$> ens
+                 NoExit         -> []
+             ))
+    ) <$> Map.toList ruleName2Num
+
+    
 printGraph :: [Rule] -> IO ()
 printGraph = prettyPrint . asGraph
 
 --------------------------------------------------------------------------------
-type InterpErr a = Either String (Exit a)
---------------------------------------------------------------------------------
-
-data Exit a = NoExit
-            | Solo   a
-            | Choice a a -- left=sinister, right=rite=dexter
-            | Close  a
-            deriving (Eq, Ord, Show, Read)
-            
---------------------------------------------------------------------------------
-type RuleGraph a = Map.Map a (Exit [a])
--- a MAY   rule has a soloExit
--- a MUST  rule has a Choice exit
--- a SHANT rule has a Choice exit
--- each exit can be to multiple nodes, so we basically map from a to [a]
---------------------------------------------------------------------------------
-
 type InterpErr a = Either String (Exit [a])
+--------------------------------------------------------------------------------
 
+data Exit r  = NoExit
+             | Solo   r
+             | Choice r r -- left=sinister, right=rite=dexter
+             | Close  r
+             deriving (Eq, Ord, Show, Read)
+            
 ruleExits :: Rule -> InterpErr MyRuleName
 ruleExits r@(Rule rdef rname asof metalimb rulebody) =
   case rulebody of
+    RBNoop                         -> Right $ NoExit
     RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw
     RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
     RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
@@ -131,22 +161,27 @@ showPart (RBreach)        = "BREACH"
 
 -- retrieve all rules from a parsed module
 getRules :: Tops -> [Rule]
-getRules (Toplevel tops) = do
+getRules (Toplevel tops) = fakeRules ++ do
   (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
   case rulebody of
-    RBNoop                  -> mempty 
-    RulePerform _ _ _ _ _ _ -> mempty
-    RuleDeem    _ _ _       -> pure r
-    RModal      _ _ _       -> pure r
     RMatch mvs              -> do
       (MatchVars22 innerRule) <- mvs
       pure innerRule
+    otherwise               -> pure r
 
+fakeRules :: [Rule]
+fakeRules = mkRule <$> ["FULFILLED", "BREACH"]
+
+mkRule rulename = Rule (mkRID rulename) (RName OptLangStrings1) AsofNull Meta0 RBNoop
+
+mkRID [] = error "blank argument to mkRID (mkRuleID)"
+mkRID (s:tring)
+  | isUpper s = RID $ OA_dots [ ObjAttrElemUIdent $ UIdent $ s:tring ]
+  | otherwise = RID $ OA_dots [ ObjAttrElemIdent  $  Ident $ s:tring ]
 
 type MyRuleName = String
 
 showRuleName :: Rule -> Maybe MyRuleName
-showRuleName (Rule rdef rname asof metalimb RBNoop)   = mempty
 showRuleName (Rule rdef rname asof metalimb rulebody) = pure $ showRuleDef rdef
 
 showRuleDef :: RuleDef -> MyRuleName

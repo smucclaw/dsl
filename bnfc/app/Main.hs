@@ -56,6 +56,8 @@ showTree v tree
       putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ catMaybes $ showRuleName <$> ruleList)
       putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ asMap ruleList))
       putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
+      putStrV v $ "\n[As Graph]\n\n"
+      printGraph ruleList
 
 usage :: IO ()
 usage = do

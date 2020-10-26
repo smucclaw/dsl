@@ -151,7 +151,8 @@ The "GIVEN" and "UPON" limbs can be swapped, synonymously.
 
   MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-  rules    PartyLimb   ::= "PARTY" PartyDef AsAlias;
+  Parties.   PartyLimb   ::= "PARTIES" AsAlias;
+  PartyLimb. PartyLimb   ::= "PARTY" PartyDef AsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
   rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
@@ -168,6 +169,7 @@ See [[https://drive.google.com/file/d/1sLmVMZqHhQDzj8dikKt-8CNemF-nGCn1/view?usp
 #+end_src
 
 As-aliases provide variable bindings to elements of the rule. In Haskell they are like the "@" in a pattern match.
+
 ***** Deontics and the Action Limb
 
 In a modal stanza, some party is seen doing some thing, to some standard. This limb talks about the thing and the standard.
@@ -199,7 +201,7 @@ Every deontic modal needs a deadline -- if you don't have to do something by a c
   TRUntil.     TempRel      ::= "UNTIL";
 #+end_src
 
-We need to beef up the temporal expressions with AFTER and UNTIL, but for now they are:
+We need to improve the conceptual clarity of the deadline syntax.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
@@ -227,13 +229,13 @@ If we had a maintenance obligation to hold true until the contract terminated, w
 
 #+begin_example
   RULE NonDisclosure
-  PARTY P1, P2
-  SHANT disclose confidentialInfo
-  BEFORE contract.terminationDate
-  WHERE confidentialInfo = such.and.such
+    PARTY P1, P2
+    SHANT disclose confidentialInfo
+    BEFORE contract.terminationDate
+    WHERE confidentialInfo = such.and.such
 #+end_example
 
-From this we see that a maintenance obligation to not do a thing is an obligation to not achieve the thing before a certain time.
+From this we see that a maintenance obligation to not do a thing, is an obligation to not achieve the thing before a certain time.
 
 A maintenance obligation that should always hold, is an obligation to not achieve that it not hold.
 

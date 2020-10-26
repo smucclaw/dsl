@@ -15,7 +15,10 @@ import PrintL  ( Print, printTree )
 import AbsL
 
 import Data.Graph.Inductive.Graph
+import Data.Graph.Inductive.PatriciaTree
+
 import Data.Graph.Inductive.Monad
+import Data.Graph.Inductive.Monad.IOArray
 
 --------------------------------------------------------------------------------
 type RuleMap = Map.Map MyRuleName Rule
@@ -29,28 +32,47 @@ asMap rs = do
   return (fromJust rname, r)
 
 
+--------------------------------------------------------------------------------
+type RuleGraph = Gr MyRuleName EdgeLabel
+--------------------------------------------------------------------------------
+
+data EdgeLabel = Next  -- solo
+               | Sin   -- choice left
+               | Dex   -- choice right
+               | Multi -- launch
+               | Kill  -- close
+            deriving (Eq, Ord, Show, Read)
+
+asGraph :: [Rule] -> RuleGraph
+asGraph rs =
+  let haveExits = filter (\r -> case ruleExits r of
+                             Left  _      -> False
+                             Right NoExit -> False
+                             otherwise    -> True
+                         ) rs
+  in
+    mkGraph (zip [1..length haveExits] (fromJust . showRuleName <$> haveExits)) []
+
+printGraph :: [Rule] -> IO ()
+printGraph = prettyPrint . asGraph
+
+--------------------------------------------------------------------------------
+type InterpErr a = Either String (Exit a)
+--------------------------------------------------------------------------------
+
 data Exit a = NoExit
-            | Solo    a
-            | Choice  a a -- left=sinister, right=rite=dexter
+            | Solo   a
+            | Choice a a -- left=sinister, right=rite=dexter
             | Launch [a]
             | Close  [a]
             deriving (Eq, Ord, Show, Read)
-            
---------------------------------------------------------------------------------
-type RuleGraph a = Map.Map a (Exit a)
--- a MAY   rule has a soloExit
--- a MUST  rule has a Choice exit
--- a SHANT rule has a Choice exit
---------------------------------------------------------------------------------
-
-type InterpErr a = Either String (Exit a)
 
 ruleExits :: Rule -> InterpErr MyRuleName
 ruleExits r@(Rule rdef rname asof metalimb rulebody) =
   case rulebody of
     RBNoop                         -> Right (Solo "FULFILLED")
-    RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw -- we pretend it's a MAY because we want it to have a solo exit
-    RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw -- we pretend it's a MAY because we want it to have a solo exit
+    RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw
+    RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
     RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
     RMatch mvs                     -> Right $ Launch $ do
       (MatchVars22 innerRule) <- mvs

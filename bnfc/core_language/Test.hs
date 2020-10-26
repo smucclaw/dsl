@@ -1,3 +1,13 @@
+
+
+module Test where
+
+import Data.List
+import AbsSyntax
+import Typing
+import Exec
+import TaToUppaal
+
 ----------------------------------------------------------------------
 -- Exec.hs
 ----------------------------------------------------------------------

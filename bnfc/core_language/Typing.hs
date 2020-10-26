@@ -2,9 +2,8 @@
 
 module Typing where
 
--- import qualified Prelude as C (Eq, Ord, Show, Read)
-import AbsSyntax
 import Data.List
+import AbsSyntax
 
 ----------------------------------------------------------------------
 -- Environment

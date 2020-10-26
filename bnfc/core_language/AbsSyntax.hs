@@ -1,10 +1,6 @@
 
 module AbsSyntax where
 
--- import Prelude (Bool(True,False), Char, Double, Integer, String)
--- import qualified Prelude as C (Eq, Ord, Show, Read)
-import qualified AbsL
-
 ----------------------------------------------------------------------
 -- Definition of expressions
 ----------------------------------------------------------------------

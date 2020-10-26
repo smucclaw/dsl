@@ -2,10 +2,9 @@
 
 module Exec where
 
--- import qualified Prelude as C (Eq, Ord, Show, Read)
+import Data.List
 import AbsSyntax
 import Typing
-import Data.List
 
 lift_uarith_op :: UArithOp -> Val -> Val
 lift_uarith_op u c = case (u, c) of

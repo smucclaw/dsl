@@ -132,12 +132,12 @@ henceHL (Just DEShant) DNoHence                           = Left  $ "SHANT witho
 henceHL (Just DEMay  ) (DHeLe  hgoto ha hos lgoto la los) = Left  $ "MAY doesn't go with LEST"
 henceHL (Just DEMust ) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice [showPart lgoto] [showPart hgoto] -- TODO: allow multiple HENCE and LEST outputs in the DSL syntax
 henceHL (Just DEShant) (DHeLe  hgoto ha hos lgoto la los) = Right $ Choice [showPart lgoto] [showPart hgoto]
-henceHL (Just DEMay  ) (DHence (RGoto ruledef) _ _)       = Right $ Solo   [showRuleDef ruledef]
+henceHL (Just DEMay  ) (DHence (RGoto ruledef) _ _)       = Right $ Choice ["FULFILLED"] [showRuleDef ruledef] -- unusually, if a MAY is not exercised, we go to FULFILLED
 henceHL (Just DEMust ) (DHence (RGoto ruledef) _ _)       = Right $ Choice ["BREACH"] [showRuleDef ruledef]
 henceHL (Just DEShant) (DHence (RGoto ruledef) _ _)       = Right $ Choice ["BREACH"] [showRuleDef ruledef]
-henceHL (Just DEMay  ) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
-henceHL (Just DEMust ) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
-henceHL (Just DEShant) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"]
+henceHL (Just DEMay  ) (DHence (RFulfilled)    _ _)       = Right $ Solo ["FULFILLED"] -- collapsing both left and right; we may want to uncollapse in future.
+henceHL (Just DEMust ) (DHence (RFulfilled)    _ _)       = Right $ Choice ["BREACH"] ["FULFILLED"]
+henceHL (Just DEShant) (DHence (RFulfilled)    _ _)       = Right $ Choice ["BREACH"] ["FULFILLED"]
 henceHL (Just DEMay  ) (DHence (RBreach)       _ _)       = Left  $   "MAY shouldn't cause BREACH; L4 probably should desugar"
 henceHL (Just DEMust ) (DHence (RBreach)       _ _)       = Left  $  "MUST shouldn't cause BREACH; L4 probably should desugar"
 henceHL (Just DEShant) (DHence (RBreach)       _ _)       = Left  $ "SHANT shouldn't cause BREACH; L4 probablyh should desugar"
@@ -154,6 +154,26 @@ henceHL (Just DEShant) (DLest  (RGoto ruledef) _ _)       = Left  $ "LEST withou
 showPart (RGoto ruledef)  = showRuleDef ruledef
 showPart (RFulfilled)     = "FULFILLED"
 showPart (RBreach)        = "BREACH"
+
+--------------------------------------------------------------------------------
+-- LOGICAL REWRITES
+--------------------------------------------------------------------------------
+
+rewrite :: Rule -> [Rule]
+rewrite r0
+/* >> PARTY NOBODY  MAY   act WHEN w1 UNLESS  u1 HENCE h1
+   -> PARTY ANYBODY MAY   act WHEN w1 AND     u1 HENCE h1
+   -> PARTY ANYBODY SHANT act WHEN w1 AND NOT u1 HENCE FULFILLED LEST BREACH
+  */
+  | (Rule rdef rname asof rmeta (
+  | (Rule rdef rname asof rmeta ( RBNoop                         -> Right $ NoExit
+  | (Rule rdef rname asof rmeta ( RulePerform gu pl pw cs wl whw -> whwHenceLest Nothing whw
+  | (Rule rdef rname asof rmeta ( RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
+  | (Rule rdef rname asof rmeta ( RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
+  | (Rule rdef rname asof rmeta ( RMatch mvs                     -> Right $ Solo $ do
+      (MatchVars22 innerRule) <- mvs
+      maybeToList $ showRuleName innerRule
+
 
 --------------------------------------------------------------------------------
 -- BASICS

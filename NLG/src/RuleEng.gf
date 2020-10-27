@@ -18,15 +18,15 @@ concrete RuleEng of Rule = ActionEng ** open
 
   oper
     LinDeontic : Type = {
-      action : Voice => VPS ;
+      s : Voice => VPS ;
       alias : NP ;
-      passSubject : LinTerm ;
+      passive : Passive ;
       } ;
 
     LinActionAlias : Type = {
-      s : TenseModPol => Voice => VPS ; -- VP: "sell a potato"
-      passSubject : LinTerm ;
-      alias : NP                        -- NP: "the sale"
+      s : TenseModPol => VPS ; -- VP: "sell a potato"
+      passive : Passive ;
+      alias : NP               -- NP: "the sale"
       } ;
 
   lin
@@ -48,10 +48,10 @@ concrete RuleEng of Rule = ActionEng ** open
 
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MAction party deontic = mkUtt (PredVPS party (deontic.action ! Active)) ;
+    MAction party deontic = mkUtt (PredVPS party (deontic.s ! VAct)) ;
 
     -- : Deontic -> Sentence ;
-    MPass deontic = mkUtt (PredVPS deontic.passSubject (deontic.action ! Passive)) ;
+    MPass deontic = mkUtt (PredVPS deontic.passive.passSubj (deontic.s ! VPass)) ;
     -- : Kind -> Term -> Sentence ;
     MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
 
@@ -62,29 +62,27 @@ concrete RuleEng of Rule = ActionEng ** open
     MDefProp kind prop = mkUtt (mkCl (defTerm kind) (prop ! Pos)) ;
 
     -- : ActionAlias -> Deontic ;
-    May a = a ** {
-      action = a.s ! PMay Pos} ;
-    MayNot a = a ** {
-      action = a.s ! PMay Neg} ;
-    Must a = a ** {
-      action = a.s ! PMust} ;
-    Shant a = a ** {
-      action = a.s ! PShant} ;
+    May = action2deontic (PMay Pos) ;
+    MayNot = action2deontic (PMay Neg) ;
+    Must = action2deontic PMust ;
+    Shant = action2deontic PShant ;
 
     -- TODO: is this a good place for these?
-    PosPres a = a ** {
-      action = a.s ! PPres Pos} ;
-    NegPres a = a ** {
-      action = a.s ! PPres Neg} ;
-    PosPast a = a ** {
-      action = a.s ! PPast Pos} ;
-    NegPast a = a ** {
-      action = a.s ! PPast Neg} ;
-    PosFut a = a ** {
-      action = a.s ! PFut Pos } ;
-    NegFut a = a ** {
-      action = a.s ! PFut Neg } ;
+    PosPres = action2deontic (PPres Pos) ;
+    NegPres = action2deontic (PPres Neg) ;
+    PosPast = action2deontic (PPast Pos) ;
+    NegPast = action2deontic (PPast Neg) ;
+    PosFut = action2deontic (PFut Pos) ;
+    NegFut = action2deontic (PFut Neg) ;
 
+  oper
+    action2deontic : TenseModPol -> LinActionAlias -> LinDeontic = \tmp,a -> a ** {
+      s = table {
+        VAct => a.s ! tmp ;
+        VPass => passVPS tmp a.passive }
+      } ;
+
+  lin
 
     -- Aliases
     -- : Action -> ActionAlias ;

@@ -27,12 +27,12 @@ concrete SAFEEng of SAFE = ActionEng ** open
     -- Increase valency: make the Action open for more arguments.
     -- : Action -> Action_Indir
     PursuantTo a = a ** {
-      intrans = \\tmp => a.s ! tmp ! Active ; -- weird results if combined with ANoComplIndir
+      intrans = a.s ; -- weird results if combined with ANoComplIndir
       indir = pursuant_to_Prep ;
       dir = \\_ => emptyAdv
       } ;
     At a = a ** {
-      intrans = \\tmp => a.s ! tmp ! Active ; -- weird results if combined with ANoComplIndir
+      intrans = a.s ;
       indir = whether_at_Prep ;
       dir = \\_ => emptyAdv
       } ;

@@ -17,7 +17,13 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-12.26
+
+# without GF, so we can have lsp-haskell goodies:
+resolver: lts-16.20
+
+# with GF:
+# resolver: lts-12.26
+
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -45,13 +51,13 @@ packages:
 extra-deps:
 # - github: GrammaticalFramework/gf-core
 #   commit: d06539c # release 3.10
-- gf-3.10
-- cgi-3001.3.0.3 # dependency of gf
+# - gf-3.10
+# - cgi-3001.3.0.3 # dependency of gf
 
 flags:
      # this excludes PGF2 module in gf package
-  gf:
-    c-runtime: false
+#  gf:
+#    c-runtime: false
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

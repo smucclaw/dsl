@@ -24,10 +24,13 @@ dependencies:
 - array
 - text
 - regex-with-pcre
-- gf
 - containers
 - fgl
 - graphviz
+- split
+
+# - gf
+
 
 library:
   source-dirs:

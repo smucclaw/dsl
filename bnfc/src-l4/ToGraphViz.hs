@@ -1,28 +1,28 @@
 
 module ToGraphViz where
 
-import Control.Monad      ( when, guard )
-import Data.List (intercalate)
-import Data.Tree
-import Data.Maybe
-import Data.Either
-import Control.Applicative
+import Data.Text.Lazy as T (unpack)
+import Data.Either ( fromRight )
+import Control.Applicative ()
 import qualified Data.Map as Map
 import           Data.Map ((!))
-import Debug.Trace
+import Debug.Trace ()
 
-import Text.Pretty.Simple
-import qualified Data.Text.Lazy as T
-import qualified SkelL
-import PrintL  ( Print, printTree )
-import AbsL
+import Text.Pretty.Simple ()
+import AbsL ( Rule )
 import L4
+    ( Exit(NoExit, Solo, Choice, Close),
+      MyRuleName,
+      BoolGroup(..),
+      ruleExits,
+      showRuleName )
 
-import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
+import Data.Graph.Inductive.Graph (lab,  buildGr, prettyPrint )
+import Data.Graph.Inductive.PatriciaTree ( Gr )
 
-import Data.Graph.Inductive.Monad
-import Data.Graph.Inductive.Monad.IOArray
+import Data.GraphViz
+import Data.GraphViz.Printing
+import Data.Maybe (fromMaybe)
 
 --------------------------------------------------------------------------------
 type RuleMap = Map.Map MyRuleName Rule
@@ -65,7 +65,7 @@ connectedTo rnr rs = do
 haveExits = filter (\r -> case ruleExits r of
                              Left  _      -> False
                              Right NoExit -> False
-                             otherwise    -> True
+                             Right _      -> True
                          )
 
 asGraph :: [Rule] -> RuleGraph
@@ -94,3 +94,24 @@ asGraph rs =
 printGraph :: [Rule] -> IO ()
 printGraph = prettyPrint . asGraph
 
+-- https://stackoverflow.com/questions/20849893/how-to-plot-a-graph-using-haskell-graphviz
+-- http://hackage.haskell.org/package/graphviz-2999.20.1.0/docs/Data-GraphViz.html
+
+showDot :: [Rule] -> String
+showDot rs = T.unpack $ renderDot $ toDot $ graphToDot params $ myGraph
+  where
+    myGraph = asGraph rs
+    params = blankParams { globalAttributes = []
+                         , clusterBy        = clustBy
+                         , clusterID        = Num . Int
+                         , fmtCluster       = clFmt
+                         , fmtNode          = nodeFmt
+                         , fmtEdge          = const []
+                         , isDirected       = True
+                         , isDotCluster     = const True
+                         }
+    clustBy (n,l) = C (if lab myGraph n `elem` [Just "FULFILLED", Just "BREACH"]
+                       then 1
+                       else 0) $ N (n,l)
+    clFmt m = [GraphAttrs [toLabel $ ["IN","OUT"] !! m]]
+    nodeFmt (node, clusterLabel) = [toLabel (fromMaybe "(unlabeled)" $ lab myGraph node)]

@@ -2,9 +2,8 @@
 
 module Main where
 
-import System.Environment ( getArgs, getProgName )
+import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
-import Data.Maybe
 import Control.Monad      ( when )
 
 import Text.Pretty.Simple
@@ -12,7 +11,7 @@ import qualified Data.Text.Lazy as T
 import LexL    ( Token )
 import ParL    ( pTops, myLexer )
 import SkelL   ()
-import PrintL  ( Print, printTree )
+import PrintL  ( printTree )
 import AbsL    ( Tops(..), Rule(..), RuleBody(..), MatchVars(..), Toplevels(..) )
 import LayoutL ( resolveLayout )
 import ToGraphViz
@@ -59,7 +58,9 @@ showTree v tree0
       putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
       putStrV v $ "\n[As Graph]\n\n"
       printGraph ruleList
-
+      putStrV v $ "\n[As Dotfile]\n\n"
+      putStrLn $ showDot ruleList
+      writeFile "graph.dot" (showDot ruleList)
 
 
 rewriteTree :: Tops -> Tops

@@ -13,9 +13,10 @@ import LexL    ( Token )
 import ParL    ( pTops, myLexer )
 import SkelL   ()
 import PrintL  ( Print, printTree )
-import AbsL    ( Tops )
+import AbsL    ( Tops(..), Rule(..), RuleBody(..), MatchVars(..), Toplevels(..) )
 import LayoutL ( resolveLayout )
 import ToGraphViz
+import L4
 
 type Err = Either String
 type ParseFun a = [Token] -> Err a
@@ -48,16 +49,28 @@ run v p s = case p ts of
 
 
 showTree :: Int -> Tops -> IO ()
-showTree v tree
- = do
+showTree v tree0
+ = let tree = rewriteTree tree0 in do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
       let ruleList = getRules tree
-      putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ catMaybes $ showRuleName <$> ruleList)
-      putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ asMap ruleList))
+      putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ showRuleName <$> ruleList)
+      putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ nameList ruleList))
       putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
       putStrV v $ "\n[As Graph]\n\n"
       printGraph ruleList
+
+
+
+rewriteTree :: Tops -> Tops
+rewriteTree (Toplevel tops) = Toplevel $ do
+  (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
+  ToplevelsRule <$> case rulebody of
+    RMatch mvs -> do
+      (MatchVars22 innerRule) <- mvs
+      rewrite innerRule
+    otherwise -> rewrite r
+  
 
 usage :: IO ()
 usage = do

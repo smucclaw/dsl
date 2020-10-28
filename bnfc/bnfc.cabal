@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be6a00b6aa9ab08be46e45555ff607984a98c371fe00273b98c4fa3b92227250
+-- hash: 05c4719164047cf059c28961e4f8bba45a0bbf45c211d53ff024cd50046be9af
 
 name:           bnfc
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       ParL
       PrintL
       SkelL
+      L4
       ToGraphViz
   other-modules:
       Paths_bnfc
@@ -44,10 +45,10 @@ library
     , base >=4.7 && <5
     , containers
     , fgl
-    , gf
     , graphviz
     , pretty-simple
     , regex-with-pcre
+    , split
     , text
   default-language: Haskell2010
 
@@ -64,10 +65,10 @@ executable l4
     , bnfc
     , containers
     , fgl
-    , gf
     , graphviz
     , pretty-simple
     , regex-with-pcre
+    , split
     , text
   default-language: Haskell2010
 
@@ -84,10 +85,10 @@ executable showbug
     , bnfc
     , containers
     , fgl
-    , gf
     , graphviz
     , pretty-simple
     , regex-with-pcre
+    , split
     , text
   default-language: Haskell2010
 
@@ -105,9 +106,9 @@ test-suite bnfc-test
     , bnfc
     , containers
     , fgl
-    , gf
     , graphviz
     , pretty-simple
     , regex-with-pcre
+    , split
     , text
   default-language: Haskell2010

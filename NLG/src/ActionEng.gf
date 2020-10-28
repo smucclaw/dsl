@@ -65,10 +65,9 @@ open
     --   } ;
 
     -- Decrease valency: use the intransitive version of an action
+    -- TODO: rethink this, weird interference with passive
     -- : Action_Dir -> Action ;   -- refund _ -> "issue a refund" ;
-    ANoComplDir a = a ** {
-      s = a.intrans ;
-      } ;
+    ANoComplDir a = a ** {s = a.intrans} ;
 
     -- : Action_Indir -> Action ; -- same as above, but for indirect object
     -- ANoComplIndir a = a ** {s = a.intrans} ; -- is this useful?
@@ -78,10 +77,10 @@ open
     -------------
 
     -- : Action -> ActionGerund ;        -- not selling X
-    NegGerund action = action.gerund ! Neg ;
+    NegGerund action = action.inf.gerund ! Neg ;
 
     -- : Action -> ActionGerund ;        -- selling X
-    PosGerund action = action.gerund ! Pos ;
+    PosGerund action = action.inf.gerund ! Pos ;
 
     ---------------
     -- Negations --
@@ -114,7 +113,7 @@ open
     relAction : Tense -> Term -> PrepPol -> LinAction -> RS = \tns,subj,prep,action ->
       let dummyRS : RS = mkRS tns (mkRCl (mkCl emptyNP)) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
           pr : PrepPlus = prep ! Pos ; -- TODO check if negation works properly
-          s : S = cl (tns2tmp tns.t) subj action ;
+          s : S = cl (tns2vf tns.t) subj action ;
        in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s ++ tns.s} ;
 
     ------------------
@@ -122,40 +121,38 @@ open
     ------------------
   lin
     BaseAction a1 a2 = {
-      s = \\tmp,vc =>
-        let infvps : E.VPS =
-              case vc of {
-                Passive => infVPS (a2.s ! PPast Pos ! Active) ;
-                Active => case tmp of {
-                  PPast Pos|PPres Pos => a2.s ! tmp ! vc ; -- [sells X and issues Y]
-                  _ => infVPS (a2.s ! PPres Pos ! Active) -- shan't/may/must [sell X and issue Y]
-                  }
-              } ;
-         in E.BaseVPS (a1.s ! tmp ! vc) infvps ;
-      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) ; -- not selling X and not issuing Y
-      passSubject = mkListNP (np a1.passSubject) (np a2.passSubject) ;
+      s = \\vf => E.BaseVPS (a1.s ! vf) (a2.s ! vf) ; -- [sells X and issues Y]
+      inf = {  -- shan't/may/must [transfer Z , sell X and issue Y]
+        gerund = \\p => mkListAdv (a1.inf.gerund ! p) (a2.inf.gerund ! p) ; -- (not) selling X and (not) issuing Y
+        passSubj = mkListNP (np a1.inf.passSubj) (np a2.inf.passSubj) ;
+        infComp = twoTable2 Voice Polarity a1.inf.infComp a2.inf.infComp }
       } ;
+
     ConsAction a as = as ** {
-      s = \\tmp,vc =>
-        let infvps : E.ListVPS =
-              case vc of {
-                Passive => infListVPS (as.s ! PPast Pos ! Active) ;
-                Active => case tmp of {
-                  PPast Pos|PPres Pos => as.s ! tmp ! vc ; -- [sells X and issues Y]
-                  _ => infListVPS (as.s ! PPres Pos ! Active) -- shan't/may/must [sell X and issue Y]
-                  }
-              } ;
-         in E.ConsVPS (a.s ! tmp ! vc) infvps ; -- shan't/may/must [transfer Z , sell X and issue Y]
-      gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p) ;
-      passSubject = mkListNP (np a.passSubject) as.passSubject ;
+      s = \\vf => E.ConsVPS (a.s ! vf) (as.s ! vf) ;
+      inf = {
+        gerund = \\p => mkListAdv (a.inf.gerund ! p) (as.inf.gerund ! p) ;
+        passSubj = mkListNP (np a.inf.passSubj) as.inf.passSubj ;
+        infComp = consrTable2 Voice Polarity "," a.inf.infComp as.inf.infComp }
       } ;
+
     ConjAction co as = {
-      s = \\tmp,vc =>
-        E.ConjVPS co (as.s ! tmp ! vc) ;
-      gerund = \\p =>
-        SyntaxEng.mkAdv co (as.gerund ! p) ;
-      passSubject = mkNP co as.passSubject
+      s = \\vf => E.ConjVPS <co:Conj> (as.s ! vf) ;
+      inf = {
+        gerund = \\p => SyntaxEng.mkAdv co (as.inf.gerund ! p) ;
+        passSubj = mkNP co as.inf.passSubj ;
+        infComp = conjunctDistrTable2 Voice Polarity co as.inf.infComp }
       } ;
+
+    OtherwiseAction a = a ** {
+      s = \\vf => let vps : E.VPS = a.s ! vf in vps ** {s = \\agr => "otherwise" ++ vps.s ! agr} ;
+      inf = a.inf ** {
+        infComp = {s = \\vc,p => "otherwise" ++ a.inf.infComp.s ! vc ! p} ;
+        gerund = \\p => prefixSS "otherwise" (a.inf.gerund ! p) ;
+        }
+      } ;
+
+  lin
 
     BaseAction_Dir a1 a2 =
       let a1' : LinAction = complDir a1 emptyTerm ;
@@ -173,7 +170,7 @@ open
            indir = \\p => emptyAdv
          } ;
     ConjSlashDir co as = ConjAction co as ** {
-      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
+      intrans = \\vf => E.ConjVPS co (as.intrans ! vf) ;
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -189,29 +186,29 @@ open
     ConsAction_Indir a as =
       let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
-           intrans = \\tmp => E.ConsVPS (a.intrans ! tmp) (as.intrans ! tmp) ;
+           intrans = \\vf => E.ConsVPS (a.intrans ! vf) (as.intrans ! vf) ;
            indir = as.indir ; -- : PrepPol
            dir = \\p => emptyAdv
          } ;
 
     ConjSlashIndir co as = ConjAction co as ** {
-      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
+      intrans = \\vf => E.ConjVPS co (as.intrans ! vf) ;
       dir = as.dir ;
       indir = as.indir
       } ;
 
     BaseAction_Dir_Indir a1 a2 = BaseAction a1 a2 ** {
-      intrans = \\tmp => E.BaseVPS (a1.intrans ! tmp) (a2.intrans ! tmp) ;
+      intrans = \\vf => E.BaseVPS (a1.intrans ! vf) (a2.intrans ! vf) ;
       dir = a2.dir ;
       indir = a2.indir
       } ;
     ConsAction_Dir_Indir a as = ConsAction a as ** {
-      intrans = \\tmp => E.ConsVPS (a.intrans ! tmp) (as.intrans ! tmp) ;
+      intrans = \\vf => E.ConsVPS (a.intrans ! vf) (as.intrans ! vf) ;
       dir = as.dir ;
       indir = as.indir
       } ;
     ConjSlashDirIndir co as = ConjAction co as ** {
-      intrans = \\tmp => E.ConjVPS co (as.intrans ! tmp) ;
+      intrans = \\vf => E.ConjVPS co (as.intrans ! vf) ;
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -226,40 +223,69 @@ open
       | PPres Polarity
       | PPast Polarity
       | PFut Polarity ;
-    Voice = VAct | VPass ;
+
+    -- The only forms in which the actual verb inflects in our grammar:
+    -- raise, raises, raised
+    FinVF = Present | Past ;
+
+    Anteriority = Sim | Ant ;
+    Voice = VAct Anteriority | VPass ;
 
   oper
 
     -- Special VP construction.
-    -- Normal VPs don't allow lists, that's why we use Extend.VPS
+    -- Normal VPs don't allow lists, that's why we use Extend.VPS.
+    -- Seriously, if the RGL allowed VP coordination, this grammar would be much less hassle.
     LinAction : Type = {
-      s : TenseModPol => E.VPS ;
-      gerund : Polarity => Adv ;
-      passive : Passive ;
+      s : FinForms ;
+      inf : InfForms ;
       } ;
 
     ListLinAction : Type = {
-      s : TenseModPol => E.ListVPS ;
-      gerund : Polarity => [Adv] ;
-      passive : ListPassive ;
+      s : ListFinForms ;
+      inf : ListInfForms
       } ;
 
     linAction : LinAction -> Str = \l ->
-      (mkUtt (cl (PPres Pos) emptyTerm l)).s ;
+      (mkUtt (cl Present emptyTerm l)).s ;
 
-    -- Passive constructions
-    Passive : Type = {
-      passSubj : LinTerm ;          -- cabbage
-      passComp : {s : Polarity => Str} ;  -- cooked at a fixed valuation / whether at a fv or without fv
+    -- Finite verb forms
+    FinForms : Type = FinVF => E.VPS ;
+    ListFinForms : Type = FinVF => E.ListVPS ;
+
+    -- Non-finite verb forms: Passive constructions and anything with auxiliary
+    -- Active:  may (not)/must/will/won't/… [cook the potato]
+    -- Passive: may (not)/must/will/won't be [cooked]
+
+    InfComp : Type = {s : Voice => Polarity => Str} ;
+    ListInfComp : Type = ListTable2 Voice Polarity ;
+
+    InfForms : Type = {
+      passSubj : LinTerm ;     -- cabbage
+      infComp : InfComp ;      -- cooked (at a fixed valuation / whether at a fv or without fv)
+      gerund : Polarity => Adv -- cooking the cabbage
       } ;
-    ListPassive : Type = {
-      passSubj : ListNP ;           -- cabbage and refund
-      passComp : ListTable Polarity -- cooked and issued at a fixed valuation
+    ListInfForms : Type = {
+      passSubj : ListNP ;      -- cabbage and refund
+      infComp : ListInfComp ;  -- cooked and issued at a fixed valuation
+      gerund : Polarity => [Adv]
       } ;
 
-    passVPS : TenseModPol -> Passive -> E.VPS = \tmp,p ->
-      let compAdv : Adv = lin Adv {s = p.passComp.s ! tmp2pol tmp} ;
-       in mkVPS tmp (mkVP compAdv) ;
+    predVPS : Voice -> TenseModPol -> InfForms -> E.VPS = \voice,tmp,p ->
+      let s : Str = p.infComp.s ! voice ! tmp2pol tmp ;
+          compV : V = mkV s s s s s ; -- to prevent pattern matching on runtime strings
+          vp : VP = case voice of {
+                      VPass => mkVP (ParadigmsEng.mkAdv s) ;
+                      VAct _ => mkVP compV } ;
+       in mkVPS tmp vp ;
+
+
+    finVPS : FinVF -> VP -> E.VPS = \finvf,vp ->
+      let tense : Tense = case finvf of {
+            Present => presentTense ;
+            Past => pastTense }
+       in E.MkVPS (mkTemp tense simultaneousAnt) positivePol vp ;
+
 
     mkVPS : TenseModPol -> VP -> E.VPS = \tm,vp ->
       let vp_t_p : VP*Tense*Pol = case tm of {
@@ -290,7 +316,7 @@ open
 
     emptyTerm : LinTerm = emptyNP ;
 
-    -- Force the VPS to look like infinitive.
+    {-- Force the VPS to look like infinitive.
     -- Massive hack, only works for English. For next language, rethink the lincats.
     infVPS : E.VPS -> E.VPS = \vps -> vps ** {
       s = \\_ => let emptyPlNP : NP = they_NP ** {s = \\_ => []}
@@ -302,36 +328,40 @@ open
 
       s2 = let vps : E.VPS = lin VPS {s = listvps.s2}
             in (infVPS vps).s ;
-      } ;
+      } ; --}
 
     vps2str : E.VPS -> Str = \vps -> (E.PredVPS emptyNP vps).s ;
 
     ----------------------
     -- Slash categories --
     ----------------------
-    TnsPolAction : Type = TenseModPol => E.VPS;
 
-    mkGerSIntrans : V2 -> LinAction ** {intrans : TnsPolAction} = \v2 ->
+    mkGerSIntrans : V2 -> LinAction ** {intrans : FinForms} = \v2 ->
       let linAction : LinAction = mkGerS v2  -- default: intransitive == s
        in linAction ** {intrans = linAction.s} ;
 
     mkGerS : V2 -> LinAction = \v2 -> let vp : VP = mkVP v2 emptyNP in {
-      s = \\tmp => mkVPS tmp vp ;
-      passive = {
+      s = \\vf => finVPS vf vp ;
+      inf = {
         passSubj = emptyTerm ;
-        passComp = {s = \\p => vps2str (mkVPS (PPast Pos) vp)} ; -- NB. polarity only applies to the potential indirect object!
-        } ;
-      gerund =
-        let posAdv : Adv = E.GerundAdv (mkVP <v2:V2> emptyNP) ;
-            negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
-        in table {
-          Pos => posAdv ;
-          Neg => negAdv } ;
+        infComp = { -- NB. polarity only applies to the potential indirect object
+          s = \\vc,p => case vc of {
+                          VAct Sim => v2.s ! R.VInf ;
+                          VAct Ant => v2.s ! R.VPPart ; -- can't extract this form out of VP anymore
+                          VPass => v2.s ! R.VPast }
+          } ;
+        gerund =
+          let posAdv : Adv = E.GerundAdv vp ;
+              negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
+          in table {
+            Pos => posAdv ;
+            Neg => negAdv }
+        }
       } ;
 
     -- Action_Dir
     SlashDir : Type = LinAction ** {
-      intrans : TnsPolAction ;
+      intrans : FinForms ;
       indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol
       } ;
@@ -343,33 +373,33 @@ open
       mkDir : V2 -> VP -> SlashDir = \v2,intransvp -> mkGerSIntrans v2 ** {
         dir = prepPol v2.c2 ;
         indir = \\_ => emptyAdv ;
-        intrans = \\tmp => mkVPS tmp intransvp }
+        intrans = \\vf => finVPS vf intransvp }
       } ;
-    slashDir : SlashDirIndir -> LinTerm -> SlashIndir = \action,do -> action ** {
-      dir = applyPrepPol action.dir do ;
-      passive = action.passive ** {
-        passSubj = np do -- in case the Action becomes a passive sentence
-        }
-      } ;
+    slashDir : SlashDirIndir -> LinTerm -> SlashIndir = \action,do ->
+      let doAdv : Polarity => Adv = applyPrepPol action.dir do in action ** {
+      dir = doAdv ;
+      inf = action.inf ** {
+        passSubj = np do ; -- in case the Action becomes a passive sentence
+        infComp = doComp action doAdv }
+        } ;
     complDir : SlashDir -> LinTerm -> LinAction = \action,do ->
       let doAdv : Polarity=>Adv = applyPrepPol action.dir do in action ** {
-        s = \\tmp => complS (action.s ! tmp)
-                            (action.indir ! tmp2pol tmp)
-                            (doAdv ! tmp2pol tmp) ;
+        s = \\vf => complS (action.s ! vf)
+                           (action.indir ! Pos)
+                           (doAdv ! Pos) ;
 
-        passive = action.passive ** {
-          passSubj = do
-          } ;
-
-        gerund = \\p => complGer (action.gerund ! p)
-                                 (action.indir ! p)
-                                 (doAdv ! p)
+        inf = action.inf ** {
+          passSubj = np do ;
+          infComp = doComp action doAdv ;
+          gerund = \\p => complGer (action.inf.gerund ! p)
+                                   (action.indir ! p)
+                                   (doAdv ! p) }
       } ;
 
 
     -- Action_Indir
     SlashIndir : Type = LinAction ** {
-      intrans : TnsPolAction ;
+      intrans : FinForms ;
       dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol
       } ;
@@ -380,30 +410,37 @@ open
     slashIndir : SlashDirIndir -> LinTerm -> SlashDir = \action,io ->
       let ioAdv : Polarity => Adv = applyPrepPol action.indir io in action ** {
         indir = ioAdv ;
-        intrans = \\tmp => complS (action.intrans ! tmp) emptyAdv (ioAdv ! tmp2pol tmp) ;
-        passive = action.passive ** {passComp = ioComp action.passive ioAdv}
+        intrans = \\tmp => complS (action.intrans ! tmp) emptyAdv (ioAdv ! fv2pol tmp) ;
+        inf = action.inf ** {infComp = ioComp action ioAdv}
       } ;
-
     complIndir : SlashIndir -> LinTerm -> LinAction = \action,io ->
       let ioAdv : Polarity=>Adv = applyPrepPol action.indir io in action ** {
-        s = \\tmp => complS (action.s ! tmp)
-                            (action.dir ! tmp2pol tmp)
-                            (ioAdv ! tmp2pol tmp) ;
+        s = \\vf => complS (action.s ! vf)
+                           (action.dir ! Pos)
+                           (ioAdv ! Pos) ;
 
-        passive = action.passive ** {passComp = ioComp action.passive ioAdv} ;
-
-        gerund = \\p => complGer (action.gerund ! p)
-                                 (action.dir ! p)
-                                 (ioAdv ! p)
+        inf = action.inf ** {
+          infComp = ioComp action ioAdv ;
+          gerund = \\p => complGer (action.inf.gerund ! p)
+                                   (action.dir ! p)
+                                   (ioAdv ! p)
+          }
       } ;
 
-    ioComp : Passive -> (Polarity=>Adv) -> {s : Polarity => Str} = \pass,ioAdv -> {
-      s = \\p => pass.passComp.s ! p ++ (ioAdv ! p).s
+    ioComp : {inf : InfForms} -> (Polarity=>Adv) -> InfComp = \a,ioAdv -> {
+      s = \\vc,p => a.inf.infComp.s ! vc ! p ++ (ioAdv ! p).s
+      } ;
+
+    doComp : {inf : InfForms} -> (Polarity=>Adv) -> InfComp = \a,doAdv -> {
+      s = \\vc,p => case vc of {
+        VAct _ => a.inf.infComp.s ! vc ! p ++ (doAdv ! p).s ;
+        VPass  => a.inf.infComp.s ! vc ! p -- don't add direct object to passive
+        }
       } ;
 
     -- _Dir_Indir
     SlashDirIndir : Type = LinAction ** {
-      intrans : TnsPolAction ;
+      intrans : FinForms ;
       dir,
       indir : PrepPol ;
       } ;
@@ -468,6 +505,7 @@ open
       } ;
 
     -- helpers for complDir and complIndir
+    -- TODO: clean up
     complS : E.VPS -> Adv -> Adv -> E.VPS = \vps,dir,indir -> lin VPS {
       s = \\a => vps.s ! a ++ dir.s ++ indir.s
       } ;
@@ -479,19 +517,19 @@ open
     -- List versions --
     -------------------
     ListSlashDir : Type = ListLinAction ** {
-      intrans : TenseModPol => E.ListVPS ;
+      intrans : ListFinForms  ;
       indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol ;
       } ;
 
     ListSlashIndir : Type = ListLinAction ** {
-      intrans : TenseModPol => E.ListVPS ;
+      intrans : ListFinForms  ;
       dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol ;
       } ;
 
     ListSlashDirIndir : Type = ListLinAction ** {
-      intrans : TenseModPol => E.ListVPS ;
+      intrans : ListFinForms  ;
       dir,
       indir : PrepPol ;
       } ;
@@ -499,8 +537,8 @@ open
     ---------------------
     -- Generic helpers --
     ---------------------
-    cl : TenseModPol -> LinTerm -> LinAction -> S = \tmp,subj,pred ->
-      E.PredVPS (np subj) (pred.s ! tmp) ;
+    cl : FinVF -> LinTerm -> LinAction -> S = \vf,subj,pred ->
+      E.PredVPS (np subj) (pred.s ! vf) ;
 
     tmp2pol : TenseModPol -> Polarity = \p -> case p of {
       PShant => Neg ;
@@ -511,10 +549,13 @@ open
       PMust => Pos
       } ;
 
-    tns2tmp : R.Tense -> TenseModPol = \tns -> case tns of {
-      R.Fut => PFut Pos ;
-      R.Past => PPast Pos ;
-      _ => PPres Pos
+    fv2pol : FinVF -> Polarity = \_ -> Pos ;
+
+
+    tns2vf : R.Tense -> FinVF = \tns -> case tns of {
+      --R.Fut => PFut Pos ;
+      R.Past => Past ;
+      _ => Present
       } ;
 
 }

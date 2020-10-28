@@ -20,12 +20,12 @@ concrete RuleEng of Rule = ActionEng ** open
     LinDeontic : Type = {
       s : Voice => VPS ;
       alias : NP ;
-      passive : Passive ;
+      passSubj : NP ;
       } ;
 
     LinActionAlias : Type = {
-      s : TenseModPol => VPS ; -- VP: "sell a potato"
-      passive : Passive ;
+      s : FinForms ; -- VP: "sell a potato"
+      inf : InfForms ;
       alias : NP               -- NP: "the sale"
       } ;
 
@@ -48,10 +48,10 @@ concrete RuleEng of Rule = ActionEng ** open
 
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MAction party deontic = mkUtt (PredVPS party (deontic.s ! VAct)) ;
+    MAction party deontic = mkUtt (PredVPS party (deontic.s ! VAct Sim)) ;
 
     -- : Deontic -> Sentence ;
-    MPass deontic = mkUtt (PredVPS deontic.passive.passSubj (deontic.s ! VPass)) ;
+    MPass deontic = mkUtt (PredVPS deontic.passSubj (deontic.s ! VPass)) ;
     -- : Kind -> Term -> Sentence ;
     MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
 
@@ -77,9 +77,12 @@ concrete RuleEng of Rule = ActionEng ** open
 
   oper
     action2deontic : TenseModPol -> LinActionAlias -> LinDeontic = \tmp,a -> a ** {
-      s = table {
-        VAct => a.s ! tmp ;
-        VPass => passVPS tmp a.passive }
+      s = \\vc =>
+        case tmp of {
+          PPres Pos => a.s ! Present ;
+          PPast Pos => a.s ! Past ;
+          _ => predVPS vc tmp a.inf } ;
+      passSubj = a.inf.passSubj
       } ;
 
   lin

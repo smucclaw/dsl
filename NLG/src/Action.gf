@@ -60,4 +60,6 @@ abstract Action = Term ** {
     ConjSlashIndir : Conjunction -> [Action_Indir] -> Action_Indir ;
     ConjSlashDirIndir : Conjunction -> [Action_Dir_Indir] -> Action_Dir_Indir ;
 
+    -- "X may not be sold, transferred or otherwise pledged or hypothecated"
+    OtherwiseAction : Action -> Action ;
 }

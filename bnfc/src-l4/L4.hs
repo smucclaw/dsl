@@ -16,11 +16,14 @@ data BoolGroup a = AndGroup [a]
 type MyRuleName = String
 
 parseRuleGroup :: Goto -> BoolGroup MyRuleName
+parseRuleGroup (RBreach)                   = IdGroup ("BREACH")
+parseRuleGroup (RFulfilled)                = IdGroup ("FULFILLED")
+parseRuleGroup (RGotoOne ruledef)          = IdGroup (showRuleDef ruledef)
 parseRuleGroup (RGotoOne ruledef)          = IdGroup (showRuleDef ruledef)
 parseRuleGroup (RGotoLst (ListComma xs))   = AndGroup (exp2rn <$> xs)
 parseRuleGroup (RGotoLst (ListAnd   xs x)) = AndGroup (exp2rn <$> (xs <> [x]))
 parseRuleGroup (RGotoLst (ListOr    xs x)) =  OrGroup (exp2rn <$> (xs <> [x]))
-parseRuleGroup otherwise                   = error "unsupported syntax for rule group"
+parseRuleGroup wut                         = error $ "unsupported syntax for rule group " ++ show wut
 
 
 --------------------------------------------------------------------------------
@@ -53,7 +56,7 @@ whwHenceLest dexp (WHW whenl hencel wherel) = henceHL dexp hencel
 -- we need some smarts here.
 -- if the modal is MUST or SHANT, then an omitted "LEST" means breach.
 henceHL :: Maybe DeonticExpr -> HenceLimb -> InterpErr MyRuleName
-henceHL       Nothing  DNoHence                           = Right $ NoExit
+henceHL       Nothing  _                                  = Right $ NoExit
 henceHL (Just DEMay  ) DNoHence                           = Right $ NoExit
 henceHL (Just DEMust ) DNoHence                           = Right $ Choice (IdGroup "BREACH") (IdGroup "FULFILLED")
 henceHL (Just DEShant) DNoHence                           = Left  $ "SHANT without HENCE or LEST"

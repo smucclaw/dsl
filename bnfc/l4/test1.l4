@@ -89,12 +89,14 @@ RULE mkSpud1
   ENTITY spud1 ISA Item
     WITH species  = "Solanum tuberosum"
          isEdible = true
+
 RULE mkVeggieBar
   ENTITY veggieBar
      ISA Business
     WITH address = [ "1 Veggie Way" ]
          id      = { idtype = "UEN", idval = "202000000A" }
          name    = "The Veggie Bar Pte. Ltd."
+
 RULE    Business
   DEFINE Business
      ISA Record
@@ -103,6 +105,7 @@ RULE    Business
                    | { idtype = String, idval = String } ]
          name    = String
          owner   = Person
+
 RULE     Person
   DEFINE Person
      ISA Record
@@ -147,6 +150,11 @@ RULE mkBlackSwan
                        , { xtime = 2020-09-10, value = "US"                                } ]
 //       a person can have multiple names
          fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+
+
+
+
+
 RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
   ENTITY celebXY

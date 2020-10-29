@@ -30,6 +30,10 @@ dependencies:
 - split
 # - gf
 
+ghc-options:
+- -Wall
+
+
 
 library:
   source-dirs:

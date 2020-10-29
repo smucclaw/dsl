@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 05c4719164047cf059c28961e4f8bba45a0bbf45c211d53ff024cd50046be9af
+-- hash: cd295531ee52bb6ed8b142379f0d2c72fe9634df4a1546c953b4d0aab1a1024a
 
 name:           bnfc
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
   hs-source-dirs:
       src-bnfc
       src-l4
+  ghc-options: -Wall
   build-depends:
       array
     , base >=4.7 && <5
@@ -58,7 +59,7 @@ executable l4
       Paths_bnfc
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
     , base >=4.7 && <5
@@ -78,7 +79,7 @@ executable showbug
       Paths_bnfc
   hs-source-dirs:
       showbug
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
     , base >=4.7 && <5
@@ -99,7 +100,7 @@ test-suite bnfc-test
       Paths_bnfc
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
     , base >=4.7 && <5

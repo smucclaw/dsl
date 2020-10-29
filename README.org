@@ -181,6 +181,8 @@ In a modal stanza, some party is seen doing some thing, to some standard. This l
   DEShant. DeonticExpr ::= "SHANT" ;
 #+end_src
 
+Is there an argument for adding a "SHOULD" rule? RFC2119 has that notion; even though [[https://www.journals.uchicago.edu/doi/pdf/10.1086/468061][A Fine Is A Price]], and a "SHOULD" is less a "MUST" than a "MAY", we can still lodge non-pecuniary aspersions against violations.
+
 The syntax for actions is not terribly well specified at the moment. You can say pretty much whatever you want.
 
 #+begin_src bnfc :noweb-ref l4bnfc
@@ -1483,7 +1485,7 @@ The children of that node will then fan out to multiple "event listeners", one f
 
 Each "thread" of execution within the contract corresponds to a separate start node.
 
-Each modal node can have multiple indegrees.
+Each node can have multiple indegrees.
 
 The same definition rule may appear multiple times in the graph as multiple nodes.
 
@@ -1502,6 +1504,8 @@ Every Rule Group is either an And-Rule-Group or an Or-Rule-Group. Most of the ti
 MAY nodes have one outdegree: if the actor exercises their option ("internal choice"), the successor node is typically a MUST or a SHANT upon the counterparty.
 
 For convenience of representation, renderings may optimize to show multiple final nodes, or fewer. A ROBDD style representation may converge all outcomes to just two global nodes, Breach and Fulfilled. Or a rendering may display multiple Fulfilled and Breach nodes.
+
+We could use an And-Group to represent "SHOULD"s -- you're allowed to pay late and pay a fine.
 
 ** <<<Multitemporality>>>
 

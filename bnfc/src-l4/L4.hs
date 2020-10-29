@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFoldable  #-}
+
 module L4 where
 
 import AbsL
@@ -9,7 +11,7 @@ import Data.Char (isUpper, isLower)
 data BoolGroup a = AndGroup [a]
                  |  OrGroup [a]
                  |  IdGroup  a
-                 deriving (Show, Eq)
+                 deriving (Show, Eq, Foldable)
 
 type MyRuleName = String
 

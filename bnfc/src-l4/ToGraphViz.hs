@@ -5,8 +5,7 @@ import Data.Text.Lazy as T (unpack)
 import Data.Either ( fromRight )
 import Control.Applicative ()
 import qualified Data.Map as Map
-import           Data.Map ((!))
-import Data.List (find)
+import           Data.Map ((!), fromList)
 import Debug.Trace ()
 
 import Text.Pretty.Simple ()
@@ -23,7 +22,7 @@ import Data.Graph.Inductive.PatriciaTree ( Gr )
 
 import Data.GraphViz
 import Data.GraphViz.Printing
-import Data.Maybe (fromMaybe, fromJust)
+import Data.Maybe (fromMaybe)
 
 import Data.GraphViz.Attributes.Complete
 
@@ -59,10 +58,10 @@ ungroup ( OrGroup xs) = xs
 ungroup ( IdGroup x)  = pure x
 
 -- transitive closure -- note this assumes no loops in the input. if the program fails to halt we need to introduce an accumulator of seen nodes
-connectedTo :: [(MyRuleName,Rule)] -> [Rule] -> [Rule]
+connectedTo :: Map.Map MyRuleName Rule -> [Rule] -> [Rule]
 connectedTo rnr rs = do
   r <- rs
-  let cs = (lbang rnr) <$> children r
+  let cs = ((!) rnr) <$> children r
   cs ++ connectedTo rnr cs
 
 haveExits = filter (\r -> case ruleExits r of
@@ -71,35 +70,34 @@ haveExits = filter (\r -> case ruleExits r of
                              Right _      -> True
                          )
 
--- for optimization later we can switch this to Data.Map or Data.HashMap if the number of rules ever grows very large
-ruleName2Rule :: [Rule] -> [(String, Rule)]
-ruleName2Rule rs = zip (showRuleName <$> rs) rs
+ruleName2Rule :: [Rule] -> Map.Map MyRuleName Rule
+ruleName2Rule rs = fromList $ zip (showRuleName <$> rs) rs
 
-ruleName2Num :: [Rule] -> [(String, Int)] -- association list to Node number in graph
-ruleName2Num ofInterest  = zip (showRuleName <$> ofInterest) [1..]
+ruleName2Num :: [Rule] -> Map.Map MyRuleName Int
+ruleName2Num ofInterest  = fromList $ zip (showRuleName <$> ofInterest) [1..]
+
+rn2n rs = ruleName2Num (haveExits rs <> connectedTo (ruleName2Rule rs) (haveExits rs))
 
 asGraph :: [Rule] -> RuleGraph
 asGraph rs =
-  let rulesWithExits = haveExits rs
-      ofInterest     = rulesWithExits ++ connectedTo (ruleName2Rule rs) rulesWithExits
+  let rn2r  = ruleName2Rule rs
+      rn2n' = rn2n rs
   in
     buildGr $
     (\(ruleName,n) ->
-        let rule     = ruleName2Rule rs `lbang` ruleName
+        let rule     = rn2r ! ruleName
             exitto   = fromRight NoExit $ ruleExits rule
         in ([], n, ruleName,
              (case exitto of
-                 Solo ens       ->   (\exitnode -> (Next, ruleName2Num rs `lbang` exitnode)) <$> ungroup ens
-                 Choice sin dex ->  ((\exitnode -> (Sin,  ruleName2Num rs `lbang` exitnode)) <$> ungroup sin)
+                 Solo ens       ->   (\exitnode -> (Next, rn2n' ! exitnode)) <$> ungroup ens
+                 Choice sin dex ->  ((\exitnode -> (Sin,  rn2n' ! exitnode)) <$> ungroup sin)
                                      <>
-                                    ((\exitnode -> (Dex,  ruleName2Num rs `lbang` exitnode)) <$> ungroup dex)
-                 Close ens      ->   (\exitnode -> (Hup,  ruleName2Num rs `lbang` exitnode)) <$> ungroup ens
+                                    ((\exitnode -> (Dex,  rn2n' ! exitnode)) <$> ungroup dex)
+                 Close ens      ->   (\exitnode -> (Hup,  rn2n' ! exitnode)) <$> ungroup ens
                  NoExit         -> []
              ))
-    ) <$> ruleName2Num ofInterest
+    ) <$> (Map.toList $ rn2n')
 
-lbang db k = fromJust $ lookup k db
-    
 printGraph :: [Rule] -> IO ()
 printGraph = prettyPrint . asGraph
 
@@ -124,17 +122,13 @@ showDot rs = T.unpack $ renderDot $ toDot $ graphToDot params $ myGraph
                        else 0) $ N (n,l)
     clFmt m = [GraphAttrs [toLabel $ ["IN","OUT"] !! m]]
     nodeFmt (node, clusterLabel) = [toLabel (fromMaybe "(unlabeled)" $ lab myGraph node) ]
-    edgeFmt (tailN, headN, edgeLabel) = ports tailN headN edgeLabel
+    edgeFmt (headN, tailN, edgeLabel) = ports tailN headN edgeLabel
     -- to choose a tailport, we need to know:
     -- which exit of the tail rule does the edge belong ti? Solo, Choice(sin/dex), or Close?
     ports tailN headN edgeLabel =
-      let tailRule = fromJust $ find (\r -> fromJust (lab myGraph tailN) == showRuleName r) rs
-          exitto = fromRight NoExit $ ruleExits tailRule
-      in (HeadPort (CompassPoint North)) :
-         case exitto of
-           Solo _  -> [TailPort (CompassPoint SouthEast)]
-           Close _ -> [TailPort (CompassPoint SouthEast)]
-           Choice sin dex -> if (fromJust $ lab myGraph headN) `elem` sin
-             then [TailPort (CompassPoint SouthWest)]
-             else [TailPort (CompassPoint SouthEast)]
-
+      (HeadPort (CompassPoint North)) :
+         case edgeLabel of
+           Sin  -> [TailPort (CompassPoint SouthWest), Color [WC (toColor Brown) Nothing]]
+           Dex  -> [TailPort (CompassPoint SouthEast), Color [WC (toColor Blue)  Nothing]]
+           Next -> [TailPort (CompassPoint South)]
+           Hup  -> [TailPort (CompassPoint South)]

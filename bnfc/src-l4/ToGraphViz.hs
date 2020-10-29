@@ -24,6 +24,8 @@ import Data.GraphViz
 import Data.GraphViz.Printing
 import Data.Maybe (fromMaybe)
 
+import Data.GraphViz.Attributes.Complete
+
 --------------------------------------------------------------------------------
 type RuleMap = Map.Map MyRuleName Rule
 --------------------------------------------------------------------------------
@@ -68,12 +70,16 @@ haveExits = filter (\r -> case ruleExits r of
                              Right _      -> True
                          )
 
+ruleName2Rule :: [Rule] -> [(String, Rule)]
+ruleName2Rule rs = Map.fromList $ (\r -> (showRuleName r, r)) <$> rs
+
+ruleName2Num :: [Rule] -> [(String, Int)] -- association list to Node number in graph
+ruleName2Num   = Map.fromList $ zip (showRuleName <$> ofInterest) [1..]
+
 asGraph :: [Rule] -> RuleGraph
 asGraph rs =
-  let ruleName2Rule  = Map.fromList $ (\r -> (showRuleName r, r)) <$> rs
-      rulesWithExits = haveExits rs
+  let rulesWithExits = haveExits rs
       ofInterest     = rulesWithExits ++ connectedTo ruleName2Rule rulesWithExits
-      ruleName2Num   = Map.fromList $ zip (showRuleName <$> ofInterest) [1..]
   in
     buildGr $
     (\(ruleName,n) ->
@@ -89,7 +95,6 @@ asGraph rs =
                  NoExit         -> []
              ))
     ) <$> Map.toList ruleName2Num
-
     
 printGraph :: [Rule] -> IO ()
 printGraph = prettyPrint . asGraph
@@ -106,7 +111,7 @@ showDot rs = T.unpack $ renderDot $ toDot $ graphToDot params $ myGraph
                          , clusterID        = Num . Int
                          , fmtCluster       = clFmt
                          , fmtNode          = nodeFmt
-                         , fmtEdge          = const []
+                         , fmtEdge          = edgeFmt
                          , isDirected       = True
                          , isDotCluster     = const True
                          }
@@ -114,4 +119,18 @@ showDot rs = T.unpack $ renderDot $ toDot $ graphToDot params $ myGraph
                        then 1
                        else 0) $ N (n,l)
     clFmt m = [GraphAttrs [toLabel $ ["IN","OUT"] !! m]]
-    nodeFmt (node, clusterLabel) = [toLabel (fromMaybe "(unlabeled)" $ lab myGraph node)]
+    nodeFmt (node, clusterLabel) = [toLabel (fromMaybe "(unlabeled)" $ lab myGraph node) ]
+    edgeFmt (tailN, headN, edgeLabel) = ports tailN headN edgeLabel
+    -- to choose a tailport, we need to know:
+    -- which exit of the tail rule does the edge belong ti? Solo, Choice(sin/dex), or Close?
+    ports tailN headN edgeLabel =
+      let tailRule = find ((lab myGraph tailN ==) . showRuleName) rs
+          exitto = fromRight NoExit $ ruleExits tailRule
+      in (HeadPort (CompassPoint North)) :
+         case exitto of
+           Solo _  -> [TailPort (CompassPoint SouthEast)]
+           Close _ -> [TailPort (CompassPoint SouthEast)]
+           Choice sin dex -> if (lab myGraph headN) `elem` sin
+             then [TailPort (CompassPoint SouthWest)]
+             else [TailPort (CompassPoint SouthEast)]
+

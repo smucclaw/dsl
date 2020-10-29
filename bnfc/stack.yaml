@@ -48,11 +48,15 @@ packages:
 # extra-deps:
 # - 
 
-extra-deps:
+# extra-deps:
 # - github: GrammaticalFramework/gf-core
 #   commit: d06539c # release 3.10
+# - cgi-3001.5.0.0 # dependency of gf
+# - json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
+# - multipart-0.2.0@sha256:b8770e3ff6089be4dd089a8250894b31287cca671f3d258190a505f9351fa8a9,1084
+# - network-3.1.2.0@sha256:3ace4c1cab0d8f7a0029188e0887a0526f0e148dccb4473eec65806c81df3a1d,4962
+
 # - gf-3.10
-# - cgi-3001.3.0.3 # dependency of gf
 
 flags:
      # this excludes PGF2 module in gf package

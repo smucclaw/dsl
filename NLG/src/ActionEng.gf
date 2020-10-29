@@ -260,10 +260,13 @@ open
     InfComp : Type = {s : Voice => Polarity => Str} ;
     ListInfComp : Type = ListTable2 Voice Polarity ;
 
+    PolAdv : Type = Polarity => Adv ;
+    emptyPolAdv : PolAdv = \\_ => emptyAdv ;
+
     InfForms : Type = {
       passSubj : LinTerm ;     -- cabbage
       infComp : InfComp ;      -- cooked (at a fixed valuation / whether at a fv or without fv)
-      gerund : Polarity => Adv -- cooking the cabbage
+      gerund : PolAdv -- cooking the cabbage
       } ;
     ListInfForms : Type = {
       passSubj : ListNP ;      -- cabbage and refund
@@ -362,7 +365,7 @@ open
     -- Action_Dir
     SlashDir : Type = LinAction ** {
       intrans : FinForms ;
-      indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
+      indir : PolAdv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol
       } ;
     mkDir = overload {
@@ -376,7 +379,7 @@ open
         intrans = \\vf => finVPS vf intransvp }
       } ;
     slashDir : SlashDirIndir -> LinTerm -> SlashIndir = \action,do ->
-      let doAdv : Polarity => Adv = applyPrepPol action.dir do in action ** {
+      let doAdv : PolAdv = applyPrepPol action.dir do in action ** {
       dir = doAdv ;
       inf = action.inf ** {
         passSubj = np do ; -- in case the Action becomes a passive sentence
@@ -384,23 +387,19 @@ open
         } ;
     complDir : SlashDir -> LinTerm -> LinAction = \action,do ->
       let doAdv : Polarity=>Adv = applyPrepPol action.dir do in action ** {
-        s = \\vf => complS (action.s ! vf)
-                           (action.indir ! Pos)
-                           (doAdv ! Pos) ;
-
+        s = \\vf => complS (action.s ! vf) action.indir doAdv ;
         inf = action.inf ** {
           passSubj = np do ;
           infComp = doComp action doAdv ;
-          gerund = \\p => complGer (action.inf.gerund ! p)
-                                   (action.indir ! p)
-                                   (doAdv ! p) }
+          gerund = complGer action.inf.gerund action.indir doAdv
+          }
       } ;
 
 
     -- Action_Indir
     SlashIndir : Type = LinAction ** {
       intrans : FinForms ;
-      dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
+      dir : PolAdv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol
       } ;
     mkIndir : V2 -> SlashIndir = \v2 -> mkGerSIntrans v2 ** {
@@ -408,22 +407,17 @@ open
       indir = prepPol v2.c2 ;
       } ;
     slashIndir : SlashDirIndir -> LinTerm -> SlashDir = \action,io ->
-      let ioAdv : Polarity => Adv = applyPrepPol action.indir io in action ** {
+      let ioAdv : PolAdv = applyPrepPol action.indir io in action ** {
         indir = ioAdv ;
-        intrans = \\tmp => complS (action.intrans ! tmp) emptyAdv (ioAdv ! fv2pol tmp) ;
+        intrans = \\fv => complS (action.intrans ! fv) emptyPolAdv ioAdv ;
         inf = action.inf ** {infComp = ioComp action ioAdv}
       } ;
     complIndir : SlashIndir -> LinTerm -> LinAction = \action,io ->
       let ioAdv : Polarity=>Adv = applyPrepPol action.indir io in action ** {
-        s = \\vf => complS (action.s ! vf)
-                           (action.dir ! Pos)
-                           (ioAdv ! Pos) ;
-
+        s = \\vf => complS (action.s ! vf) action.dir ioAdv ;
         inf = action.inf ** {
           infComp = ioComp action ioAdv ;
-          gerund = \\p => complGer (action.inf.gerund ! p)
-                                   (action.dir ! p)
-                                   (ioAdv ! p)
+          gerund = complGer action.inf.gerund action.dir ioAdv
           }
       } ;
 
@@ -505,26 +499,29 @@ open
       } ;
 
     -- helpers for complDir and complIndir
-    -- TODO: clean up
-    complS : E.VPS -> Adv -> Adv -> E.VPS = \vps,dir,indir -> lin VPS {
-      s = \\a => vps.s ! a ++ dir.s ++ indir.s
-      } ;
-    complGer : (a,b,c : Adv) -> Adv = \ger,indir,dir -> lin Adv {
-      s = ger.s ++ dir.s ++ indir.s
-      } ;
+    complS : E.VPS -> PolAdv -> PolAdv -> E.VPS = \vps,a,b ->
+      let aAdv : Adv = a ! Pos ;
+          bAdv : Adv = b ! Pos ;
+       in vps ** {s = \\agr => vps.s ! agr ++ aAdv.s ++ bAdv.s} ;
+
+    complGer : (a,b,c : PolAdv) -> PolAdv = \g,a,b -> \\p =>
+      let ger : Adv = g ! p ;
+          aAdv : Adv = a ! p ;
+          bAdv : Adv = b ! p ;
+       in ger ** {s = ger.s ++ aAdv.s ++ bAdv.s} ;
 
     -------------------
     -- List versions --
     -------------------
     ListSlashDir : Type = ListLinAction ** {
       intrans : ListFinForms  ;
-      indir : Polarity => Adv ; -- at fixed valuation / whether at fv nor without fv
+      indir : PolAdv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol ;
       } ;
 
     ListSlashIndir : Type = ListLinAction ** {
       intrans : ListFinForms  ;
-      dir : Polarity => Adv ; -- (Acme will/wont sell) some/any stock
+      dir : PolAdv ; -- (Acme will/wont sell) some/any stock
       indir : PrepPol ;
       } ;
 

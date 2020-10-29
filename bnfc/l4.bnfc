@@ -84,8 +84,8 @@ UponCurrent. UponTime      ::= "CURRENT"; -- match events contemporaneous with U
 UponEver.    UponTime      ::= "EVER";    -- match past, current, and future
 GivenLimb0.     GivenLimb ::= ;
 GivenLimb1.     GivenLimb ::= "GIVEN"  GivenExpr ;
-rules      GivenExpr ::=   Exp
-                         | Exp HavingLimb ;
+rules      GivenExpr ::=   [Exp]
+                         | [Exp] HavingLimb ;
 rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
 rules     HavingBoolExp ::= Exp;
 separator nonempty HavingBoolExp ";";
@@ -144,7 +144,7 @@ rules      Toplevels ::= Module | Import | Pragma
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE";
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "ELSE";
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
 rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
@@ -318,7 +318,7 @@ rules  Constraint   ::= Exp;
 separator nonempty Constraint  "," ;
 
 -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
-rules CaseExpr  ::= "CASE" "{" [CaseExp] "}" ;
+rules CaseExpr  ::= "CASE" ObjAttr "BEING" "{" [CaseExp] "}" ;
 rules CaseExp   ::= Exp "->" Exp;
 separator nonempty CaseExp ";";
 TU.        TypeUnify      ::= "::" "Unify";

@@ -1,0 +1,6 @@
+digraph pawnStates {
+  rankdir=BT;
+  pawn -> pawn1;   pawn1 [label="moveForward 1"  ];
+  pawn -> pawn2;   pawn2 [label="moveForward 2" ];
+  pawn1 -> pawn2 [style=invis];
+}

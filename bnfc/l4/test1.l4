@@ -17,6 +17,12 @@ RULE  1 SaleRestricted
 RULE   4 Cabbage
   DEFINE Item IS cabbage
     WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+
+RULE   5 Price
+   GIVEN cabbage, weight, president, taxRate
+  DEFINE cabbage.price = (1+taxRate) * CASE president BEING Biden -> weight * 1.1
+                                                            Trump -> weight * 0.9
+
 RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
   GIVEN sale          // defined in rule 1 above
   PARTY Buyer
@@ -129,9 +135,9 @@ RULE     UENString
 RULE mkMinor
  DEFINE Minor
     ISA Human
-   WHEN CASE self.nationality ~ ["US", "SG"]             -> self.age < 21
-             self.nationality ~ ["NZ", "TW", "TH", "JP"] -> self.age < 20
-             otherwise                                   -> self.age < 18
+   WHEN CASE self.nationality BEING ["US", "SG"]             -> self.age < 21
+                                    ["NZ", "TW", "TH", "JP"] -> self.age < 20
+                                    otherwise                -> self.age < 18
 RULE mkBlackSwan
   ENTITY blackSwan
      ISA Human

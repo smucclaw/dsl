@@ -76,7 +76,13 @@ Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" par
   RULE   4 Cabbage
     DEFINE Item IS cabbage
       WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
-#+end_src
+
+  RULE   5 Price
+     GIVEN cabbage, weight, president, taxRate
+    DEFINE cabbage.price = (1+taxRate) * CASE president BEING Biden -> weight * 1.1
+                                                              Trump -> weight * 0.9
+
+      #+end_src
 
 The BNF:
 
@@ -344,8 +350,8 @@ The "Given" expression can also be specific variable names, in which case only t
 #+begin_src bnfc :noweb-ref l4bnfc
   GivenLimb0.     GivenLimb ::= ;
   GivenLimb1.     GivenLimb ::= "GIVEN"  GivenExpr ;
-  rules      GivenExpr ::=   Exp
-                           | Exp HavingLimb ;
+  rules      GivenExpr ::=   [Exp]
+                           | [Exp] HavingLimb ;
 #+end_src
 
 The HAVING part places a condition on the GIVEN. It desugars to an AND against the WHEN limb, but is scoped to the terms uttered in the GIVEN.
@@ -694,7 +700,7 @@ An L4 Module contains a list of directives and statements.
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "CASE", "GROUP", "SECTION", "THEN", "ELSE";
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "ELSE";
   entrypoints Tops;
 #+end_src
 
@@ -1283,9 +1289,9 @@ TODO: figure out "=" vs "==".
  RULE mkMinor
   DEFINE Minor
      ISA Human
-    WHEN CASE self.nationality ~ ["US", "SG"]             -> self.age < 21
-              self.nationality ~ ["NZ", "TW", "TH", "JP"] -> self.age < 20
-              otherwise                                   -> self.age < 18
+    WHEN CASE self.nationality BEING ["US", "SG"]             -> self.age < 21
+                                     ["NZ", "TW", "TH", "JP"] -> self.age < 20
+                                     otherwise                -> self.age < 18
 #+end_src
 
 Note that "self" and "this" are synonymous.
@@ -1299,7 +1305,7 @@ In the future Meng would like to allow:
 Oh right, we need case expressions.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules CaseExpr  ::= "CASE" "{" [CaseExp] "}" ;
+  rules CaseExpr  ::= "CASE" ObjAttr "BEING" "{" [CaseExp] "}" ;
   rules CaseExp   ::= Exp "->" Exp;
   separator nonempty CaseExp ";";
 #+end_src
@@ -1506,6 +1512,90 @@ MAY nodes have one outdegree: if the actor exercises their option ("internal cho
 For convenience of representation, renderings may optimize to show multiple final nodes, or fewer. A ROBDD style representation may converge all outcomes to just two global nodes, Breach and Fulfilled. Or a rendering may display multiple Fulfilled and Breach nodes.
 
 We could use an And-Group to represent "SHOULD"s -- you're allowed to pay late and pay a fine.
+
+*** Concurrency
+
+The graph of obligations is a finite state machine. Each node in the graph is a state. In the above cabbage example, the graph is linear: each actor 
+
+We can conceive of multiple subgraphs, each subgraph representing a "thread" of "execution". Each actor in the game may have several threads available at any given time.
+
+For example, [[https://www.youtube.com/watch?v=6W7hKe_Hxno][in a chess game]], there are twenty-two possible starting moves: each pawn can move one or two squares (16); each knight can move left or right (4); one may offer a draw (1); or one may resign (1).
+
+Suppose we exclude the two "off-the-board" cases, and partition the twenty "on-board" possibilities into ten more compact representations: eight for the pawns, two for the knights.
+
+Let's associate a "thread" to each piece: eight pawn "threads" and two knight "threads".
+
+In each pawn thread, the local state machine looks like this:
+
+#+begin_src text
+  internalChoices = [ moveForward 1, moveForward 2 ]
+#+end_src
+
+#+begin_src graphviz :tangle graphviz/pawnStates.dot
+digraph pawnStates {
+  rankdir=BT;
+  pawn -> pawn1;   pawn1 [label="moveForward 1"  ];
+  pawn -> pawn2;   pawn2 [label="moveForward 2" ];
+  pawn1 -> pawn2 [style=invis];
+}
+#+end_src
+
+[[./graphviz/pawnStates.png]]
+
+In each knight thread, the local state machine looks like this:
+
+#+begin_src text
+  internalChoices = [ forwardLeft, forwardRight ]
+#+end_src
+
+#+begin_src graphviz :tangle graphviz/knightStates.dot
+digraph knightStates {
+  rankdir=BT;
+  knight -> fl;   fl [label="forwardLeft"  ];
+  knight -> fr;   fr [label="forwardRight" ];
+}
+#+end_src
+
+[[./graphviz/knightStates.png]]
+
+At the start of the game, the per-side state machine is a composition of the ten per-piece state machines: the /accessibility relation/ from the start state ~White's Turn 1~ to the next state ~Black's Turn 1~ contains twenty-two edges to twenty-two possible worlds.
+
+Contracts are the same. A "chess contract" might set up the ten threads of execution, then force the actor to choose one, by saying:
+
+#+begin_src text
+  RULE GameStart_Pawns
+  DEFINE LegalMove :> pawn(currentSquare)
+    WHEN oneOf [ move(pawn,forward1)
+               , move(pawn,forward2) ]
+
+  RULE GameStart_Knights
+  DEFINE LegalMove :> knight(currentSquare)
+    WHEN oneOf [ move(knight,forwardLeft)
+               , move(knight,forwardRight) ]
+
+   RULE GameStart
+   UPON turn(1,color)
+  PARTY Player
+   MUST oneOf [ GameStart_Pawns(c)   | c <- [a1..h1]
+              , GameStart_Knights(c) | c <- CASE color BEING white -> [b1,g1]
+                                                             black -> [b8,g8] ]
+  BEFORE timeRemaining(Player)
+   HENCE GameStart WITH turn(1,black)
+#+end_src
+
+Learning questions:
+- how do we think about whose turn it is to move? Indeed, some games allow simultaneous movement.
+- CSP introduces the concepts of internal and external choice: http://services.informatik.hs-mannheim.de/~schramm/CSP/files/CSP_02.pdf
+- how do we think about the compositionality of state machines? Using Harel Statecharts...
+- Hierarchical State Machines: https://www.cis.upenn.edu/~lee/06cse480/lec-HSM.pdf
+- See UML; https://en.wikipedia.org/wiki/UML_state_machine
+
+See Hvitved's PhD about how internal and external choice are used in CSL.
+
+Basically, if it's White's turn, White has /internal choice/: which of the twenty moves to make? All of the sub-state-machines are available; White has to choose one.
+
+From Black's perspective, white's first move is an /external choice/. The global state graph has stepped forward, in a way that was out of its control. Now Black has to respond with an /internal choice/ of its own.
+
 
 ** <<<Multitemporality>>>
 

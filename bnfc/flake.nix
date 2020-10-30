@@ -27,9 +27,9 @@
           pkgs.graphviz
         ];
         # inputsFrom = throw nixpkgs;
-        # shellHook = ''
-        #     export NIX_PATH=nixpkgs=${nixpkgs};
-        # '';
+        shellHook = ''
+          export NIX_PATH=nixpkgs=${nixpkgs};
+        '';
         # inputsFrom = [ self.packages.${arch}.lambda-launcher-unwrapped self.packages.${arch}.lambda-launcher ];
         # inputsFrom = [ self.packages.${arch}.lambda-launcher ];
         # buildInputs = [ self.packages.${arch}.haskell-language-server ];

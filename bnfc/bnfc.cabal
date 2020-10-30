@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cdaf5d857afe9aecafa3d3d714293e8ab335ae0afc2eba46cdd6a4566e7948ac
+-- hash: 945d640e7e89748c134a5028c37b142e94717c0e166a0e0a684b9c1dee0b69c6
 
 name:           bnfc
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       L4
       ToGF
       ToGraphViz
+      ToProlog
       ToUPPAAL
   other-modules:
       Paths_bnfc
@@ -43,6 +44,9 @@ library
       src-bnfc
       src-l4
   ghc-options: -Wall
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
@@ -62,6 +66,9 @@ executable l4
   hs-source-dirs:
       app
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
@@ -82,6 +89,9 @@ executable showbug
   hs-source-dirs:
       showbug
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5
@@ -103,6 +113,9 @@ test-suite bnfc-test
   hs-source-dirs:
       test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       array
     , base >=4.7 && <5

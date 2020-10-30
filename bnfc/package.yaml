@@ -33,6 +33,9 @@ dependencies:
 ghc-options:
 - -Wall
 
+build-tools:
+- alex
+- happy
 
 
 library:

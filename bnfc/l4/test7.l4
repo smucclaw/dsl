@@ -1,9 +1,10 @@
 
 RULE mkContract
-  DEFINE blackSwan = Buyer,
-         veggieBar = Seller,
-         salePrice = 20.00,
-         goods     = Potato(quantity=1)
+  DEFINE Buyer = blackSwan
+       , veggieBar = Seller
+       , salePrice < 20.00
+       , salePrice > 10.00
+       , goods     = Potato(quantity=1)
    HENCE contractStart
 
 RULE contractStart

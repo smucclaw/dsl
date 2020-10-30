@@ -1,0 +1,44 @@
+/* Deon Bike example
+ * Example originally from https://docs.deondigital.com/latest/src/guidechapters/yourfirstcontract.html
+ * The following rules adapted from https://github.com/smucclaw/fv/blob/taboo/Experiments/Uppaal/deon_bike_select.xml
+ * (also see the comments on https://github.com/smucclaw/fv/blob/taboo/Experiments/Uppaal/README.org)
+*/
+
+
+RULE mkContract
+  DEFINE Buyer ISA Person
+       , Seller ISA Person
+       , BikeSale ISA SalesEvent
+  HENCE ContractStartBuyer
+
+
+RULE contractStartBuyer
+   PARTY Buyer
+   MAY order Seller BikeSale
+   HENCE sent_order
+
+RULE sent_order
+   UPON ANY EVER delivery
+   PARTY Buyer
+   MUST delivery
+   HENCE received_item
+
+RULE received_item
+   PARTY Buyer
+   MUST internal_trans
+   WHEN (delay <= 50) AND (order_item == delivery_item)  // impossible to write delay <= 50 DAYS
+   HENCE accepted_item
+   LEST rejected_item
+
+RULE contractStartSeller
+   UPON ANY EVER order
+   PARTY Seller
+   MUST order 
+   HENCE received_order
+
+RULE received_order
+   PARTY Seller
+   MUST delivery
+   WHEN order_amount >= 100
+   HENCE sent_item
+   LEST failed_order

@@ -30,5 +30,18 @@ p "Meng didn't offer , pledge or hypothecate these securities"
 ps "** Meng will offer , pledge or hypothecate these securities"
 p "Meng will offer , pledge or hypothecate these securities"
 
+-- Passive
+
 ps "** these securities may not be offered , sold , transferred , pledged or hypothecated"
 p "these securities may not be offered , sold , transferred , pledged or hypothecated"
+
+-- Otherwise
+
+ps "** these securities may not be offered , sold or otherwise transferred , pledged or hypothecated"
+p "these securities may not be offered , sold or otherwise transferred , pledged or hypothecated"
+
+ps "** Meng shan't offer , pledge or otherwise hypothecate these securities"
+p "Meng shan't offer , pledge or otherwise hypothecate these securities"
+
+ps "** Meng shan't otherwise cook a potato"
+p "Meng shan't otherwise cook a potato"

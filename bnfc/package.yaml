@@ -28,7 +28,7 @@ dependencies:
 - fgl
 - graphviz
 - split
-# - gf
+- gf
 
 ghc-options:
 - -Wall

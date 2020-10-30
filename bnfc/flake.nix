@@ -17,8 +17,9 @@
           pkgs.emacs
           pkgs.stack
           pkgs.nix
-          pkgs.haskellPackages.BNFC
+          pkgs.haskellPackages.BNFC # TODO: Use newer version of BNFC!
           pkgs.haskellPackages.happy
+          pkgs.haskellPackages.alex
           pkgs.graphviz
           ];
       # inputsFrom = throw nixpkgs;

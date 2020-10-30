@@ -46,11 +46,17 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 # extra-deps:
-# - 
+# -
 
 # extra-deps:
 # - github: GrammaticalFramework/gf-core
-#   commit: d06539c # release 3.10
+#   commit: 7dc6717b5e95122a810d3b580981fc4ce0c9744b
+#   # commit: d06539c # release 3.10
+# - cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+# - json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
+# # - network-2.6.3.6@sha256:1ca79d81af02d7acd6032d5e6c9bde4618a8fdcfbe19bd42b49d420183975df0,2666
+# - multipart-0.2.0@sha256:b8770e3ff6089be4dd089a8250894b31287cca671f3d258190a505f9351fa8a9,1084
+# - network-3.1.2.0@sha256:3ace4c1cab0d8f7a0029188e0887a0526f0e148dccb4473eec65806c81df3a1d,4962
 # - cgi-3001.5.0.0 # dependency of gf
 # - json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
 # - multipart-0.2.0@sha256:b8770e3ff6089be4dd089a8250894b31287cca671f3d258190a505f9351fa8a9,1084

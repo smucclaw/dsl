@@ -3,7 +3,7 @@ RULE mkContract
   DEFINE blackSwan = Buyer,
          veggieBar = Seller,
          salePrice = 20.00,
-         goods     = Potato(quantity=1)
+         goods     = Potato(quantity=2)
    HENCE contractStart
 
 RULE contractStart

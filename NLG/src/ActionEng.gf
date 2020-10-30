@@ -144,6 +144,8 @@ open
         infComp = conjunctDistrTable2 Voice Polarity co as.inf.infComp }
       } ;
 
+    OtherwiseAction_Dir a = a ** OtherwiseAction a ;
+
     OtherwiseAction a = a ** {
       s = \\vf => let vps : E.VPS = a.s ! vf in vps ** {s = \\agr => "otherwise" ++ vps.s ! agr} ;
       inf = a.inf ** {

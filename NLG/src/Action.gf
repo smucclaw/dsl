@@ -62,4 +62,5 @@ abstract Action = Term ** {
 
     -- "X may not be sold, transferred or otherwise pledged or hypothecated"
     OtherwiseAction : Action -> Action ;
+    OtherwiseAction_Dir : Action_Dir -> Action_Dir ;
 }

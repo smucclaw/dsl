@@ -50,6 +50,7 @@ library
     , base >=4.7 && <5
     , containers
     , fgl
+    , gf
     , graphviz
     , pretty-simple
     , regex-with-pcre
@@ -72,6 +73,7 @@ executable l4
     , base >=4.7 && <5
     , containers
     , fgl
+    , gf
     , graphviz
     , l4-dsl-bnfc
     , pretty-simple
@@ -95,6 +97,7 @@ executable showbug
     , base >=4.7 && <5
     , containers
     , fgl
+    , gf
     , graphviz
     , l4-dsl-bnfc
     , pretty-simple
@@ -119,6 +122,7 @@ test-suite l4-dsl-bnfc-test
     , base >=4.7 && <5
     , containers
     , fgl
+    , gf
     , graphviz
     , l4-dsl-bnfc
     , pretty-simple

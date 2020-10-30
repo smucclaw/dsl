@@ -4,4 +4,4 @@ module ToProlog where
 
 output = "happy(X) :- true."
 
-
+cabbage =200

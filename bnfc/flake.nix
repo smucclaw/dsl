@@ -3,6 +3,7 @@
 
   # inputs.nixpkgs.url = github:NixOS/nixpkgs/nixpkgs-unstable;
   inputs.nixpkgs.url = github:NixOS/nixpkgs/nixos-20.09;
+  inputs.cclaw-nix-stuff.url = github:anka-213/cclaw-nix-stuff/nix-flakes;
 
   outputs = { self, nixpkgs }: {
 

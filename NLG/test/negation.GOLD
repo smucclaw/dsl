@@ -1,0 +1,65 @@
+
+** Adjective negation
+
+** change of control is involuntary .
+MDefProp ChangeOfControl (PNeg Voluntary)
+
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital)))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital)))) (SingleOrSeries Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital)))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital)))) (SingleOrSeries Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (PNeg (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital))))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (WithPurpose (PosGerund (AComplDir Raise (TDet ASg Capital))))) (SingleOrSeries Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital .
+MDefTermMeans EquityFinancing (TDet ASg (KProperty (PNeg (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital))))) (KProperty BonaFide (SingleOrSeries Transaction))))
+MDefTermMeans EquityFinancing (TDet ASg (KProperty BonaFide (KProperty (PNeg (WithPurpose (NegGerund (AComplDir Raise (TDet ASg Capital))))) (SingleOrSeries Transaction))))
+
+** Quantifiers
+
+** the Company sells any preferred stock .
+MAction (MkParty Company) (PosPres (AAlias (AComplDir Sell (TDet Any PreferredStock))))
+
+** the Company sells all preferred stock .
+MAction (MkParty Company) (PosPres (AAlias (AComplDir Sell (TDet All PreferredStock))))
+
+** the Company doesn't sell any preferred stock .
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet Any PreferredStock))))
+
+** the Company doesn't sell all preferred stock .
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet All PreferredStock))))
+
+
+** Indirect object
+
+** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation 
+MAction (MkParty Company) (NegPres (AAlias (AComplIndir (At (AComplDir Sell (TDet ASg PreferredStock))) (TDet ASg (KProperty Fixed Valuation)))))
+
+
+** Multiple objects
+
+** the Company doesn't sell preferred stock and capital .
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (ConjTerm And (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital))))))
+MAction (MkParty Company) (NegPres (AAlias (AComplDir Sell (TDet ASg (ConjKind And (BaseKind PreferredStock Capital))))))
+
+** the Company doesn't sell preferred stock and doesn't sell capital .
+The parser failed at token 8: "doesn't"
+** the Company doesn't sell preferred stock and sells capital .
+The parser failed at token 8: "sells"
+** the Company sells preferred stock and doesn't sell capital .
+The parser failed at token 7: "doesn't"
+** the Company sells neither preferred stock nor capital .
+MAction (MkParty Company) (PosPres (AAlias (AComplNoneDir Sell (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital)))))
+
+** Multiple predicates
+
+** the Company sells and issues preferred stock .
+MAction (MkParty Company) (PosPres (AAlias (AComplDir (ConjSlashDir And (BaseAction_Dir Sell Issue)) (TDet ASg PreferredStock))))
+
+

@@ -1,6 +1,6 @@
 #+TITLE: Synchronizing L4 Contracts
 
-L4's contract semantics belong to the family of process calculi e.g. CSP.
+L4's contract semantics belong to the family of process calculi e.g. CSP and Petri Nets.
 
 How do we synchronize actions and events in L4?
 
@@ -21,13 +21,13 @@ How do we synchronize actions and events in L4?
 
 * Possible Representations
 
-First we explore standard representations of the above process.
+Let's explore a few standard representations of the above process.
 
 ** As A Petri Net, without time
 
 First we model the system as an untimed Petri Net. The diagram below shows a starting state, where Party A has prepared both the fee and the form, and is about to submit them.
 
-[[./untimed-petri.png]]
+[[./anim1.gif]]
 
 #+begin_src graphviz-dot :tangle untimed-petri.dot
   digraph G {
@@ -45,9 +45,9 @@ First we model the system as an untimed Petri Net. The diagram below shows a sta
     }
     subgraph transitions {
       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-      submission   [label="initial submission"];
-      transmission [label="internal transmission"];
-      return       [label="returned to applicant"];
+      submission   [label="submit"];
+      transmission [label="receive"];
+      return       [label="return to applicant"];
       c_review1 [label="accept"];
       c_review2 [label="reject"];
       c_review3 [label="resubmit"];
@@ -63,7 +63,7 @@ First we model the system as an untimed Petri Net. The diagram below shows a sta
     transmission -> { pa c_in };
 
     subgraph cluster_review {
-      graph [style=invis];
+      graph [label="decision", labeljust="l"];
       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
       c_review1;
       c_review2;
@@ -88,24 +88,68 @@ Timed Petri Nets augment standard Petri Nets with a time window on each transiti
 
 * Representation in L4
 
+We could represent the process in L4 as follows:
+
+#+begin_src haskell
+  RULE    SendFee
+    PARTY A
+      MAY send fee to B
+
+  RULE    SendForm
+    PARTY A
+      MAY send form to B
+
+  RULE    Receive
+     UPON [ SendFee & SendForm ]
+    PARTY B
+     MUST [ send application to C AS Transmission
+          & send application to PermanentArchive ]
+   BEFORE + 1 DAYS
+
+  RULE    Decide
+     UPON Transmission -- could also be UPON Receive
+    PARTY C
+     MUST [ accept
+          , reject(explanation=no)
+          | return(explanation=yes) to A AS Return
+          ]
+   BEFORE Receipt + 3 DAYS
+#+end_src
+
+** Alternative Representations
+
+#+begin_src haskell
+  RULE    TwoEnvelopes
+    PARTY A
+      MAY [ send fee
+          & send form ] to B AS Submission
+#+end_src
+
+#+begin_src haskell
+  RULE    OneEnvelope
+    PARTY A
+      MAY send [ fee
+               & form ] to B AS Submission
+#+end_src
+
 * Translation from L4 to Standard Representations
 
 * Infrastructure
 
 ** Prerequisites
 
-- Imagemagick
+- Imagemagick's ~convert~
 
 ** mkMultiPetri
 
-A little Haskell script to transform the primary Dot file representation into a bunch of animated PNGs.
+A little Haskell script to transform the primary Dot file representation into a bunch of animated PNGs. See also [[./Makefile]]
 
 #+begin_src haskell :tangle mkMultiPetri.hs
   #!/usr/bin/env stack
   -- stack --resolver lts-16.20 script --package split 
-  {-# LANGUAGE OverloadedStrings #-}
-  -- convert a single untimed-petri dot file to success frames of an animation
+  {-# LANGUAGE Haskell2010 #-}
   -- stack ./mkMultiPetri.hs < untimed-petri.dot
+  -- convert a single untimed-petri dot file to frames of an animation
   -- "you can write FORTRAN^H^H^H^H^H^H^HPerl in any language"
 
   import Control.Monad (forM_)
@@ -119,25 +163,23 @@ A little Haskell script to transform the primary Dot file representation into a 
           , ("anim3", "a_form a_fee > b_review > c_in pa > pa c_out3 > pa a_form") ] (
       \(outfile, tokenSpecs) -> do
         forM_ (zip [1..] (splitOn " > " tokenSpecs)) (
-          \(n,actives) ->
-            writeFile (outfile++"-"++(show n)++".dot") $ unlines $
+          \(frameN,actives) ->
+            writeFile (outfile++"-"++(show frameN)++".dot") $ unlines $
             (flip map) inlines (
             \inline -> let ws  = words  inline
                            len = length inline
-                           insert str = take (len - 3) inline ++ str ++ drop (len -3 ) inline
+                           insert str = take (len - 3) inline ++ str ++ drop (len - 3) inline
                        in if        "\\n\\n\"];" == (drop (len - 7) inline)
                           then if   length ws > 0 && head ws `elem` (words actives)
                                then insert "&bull;"
                                else insert "\\n"
-                          else inline
-                        
+                          else id inline
+
             )
           )
       )
 #+end_src
 
+** gitattributes
 
-#+begin_src shell :tangle animate.sh
-convert -delay 100 anim1-1.png anim1-2.png anim1-3.png anim1-4.png -loop 0 anim1.gif
-#+end_src
-
+https://medium.com/@clarkbw/managing-generated-files-in-github-1f1989c09dfd

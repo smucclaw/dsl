@@ -1,0 +1,121 @@
+#+TITLE: Synchronizing L4 Contracts
+
+L4's contract semantics belong to the family of process calculi e.g. CSP.
+
+How do we synchronize actions and events in L4?
+
+* Example: Paperwork.
+
+1. First Trial
+   - Party A may submit the application fee and the application form together to Party B.
+
+2. Second Trial
+   - Party B must forward Party A's submission to Party C, within 1 day.
+   - Party B must file a copy with the Permanent Archive.
+
+3. Third Trial
+   - Party C must do one of these things within 3 days:
+     1. accept the submission.
+     2. reject the submission without explanation.
+     3. return the submission with amendments to Party A.
+
+* Possible Representations
+
+First we explore standard representations of the above process.
+
+** As A Petri Net, without time
+
+First we model the system as an untimed Petri Net. The diagram below shows a starting state, where Party A has prepared both the fee and the form, and is about to submit them.
+
+[[./untimed-petri.png]]
+
+#+begin_src graphviz-dot :tangle untimed-petri.dot
+  digraph G {
+    subgraph place {
+      graph [shape=circle,color=gray];
+      node [shape=circle,fixedsize=true,width=1.5];
+      a_form   [label="A:\napplication\nform\n\n"];
+      a_fee    [label="A:\napplication\nfee\n\n"];
+      b_review [label="B:\ngatekeeper\n\n"];
+      c_in     [label="C:\napplication\nreceived\n\n"];
+      c_out1   [label="C:\naccepted\n\n\n\n"];
+      c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
+      c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
+      pa       [label="Permanent\nArchive\n\n"];
+    }
+    subgraph transitions {
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      submission   [label="initial submission"];
+      transmission [label="internal transmission"];
+      return       [label="returned to applicant"];
+      c_review1 [label="accept"];
+      c_review2 [label="reject"];
+      c_review3 [label="resubmit"];
+    }
+
+    subgraph cluster_inputs {
+      graph [style=invis];
+      a_form;
+      a_fee ;
+    }
+
+    { a_form a_fee } -> submission -> b_review -> transmission;
+    transmission -> { pa c_in };
+
+    subgraph cluster_review {
+      graph [style=invis];
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      c_review1;
+      c_review2;
+      c_review3;
+    }
+
+    c_in -> { c_review1 c_review2 c_review3 } ;
+
+    subgraph cluster_outputs {
+      graph [style=invis];
+      c_review1 -> c_out1;
+      c_review2 -> c_out2;
+      c_review3 -> c_out3 -> return -> a_form;
+    }
+  }
+
+#+end_src
+
+#+begin_src haskell :tangle mkMultiPetri.hs
+  #!/usr/bin/env stack
+  -- stack --resolver lts-12.21 script
+  {-# LANGUAGE OverloadedStrings #-}
+  -- convert a single untimed-petri dot file to success frames of an animation
+  -- mkPetriAnim < untimed-petri.dot
+  -- "you can write FORTRAN^H^H^H^H^H^H^HPerl in any language"
+
+  import Data.List.Split
+  import System.Environment
+
+  main = do
+    infile <- getContents
+    mkFrames "anim1" "a_form a_fee > b_review > c_in pa > c_out1"
+    mkFrames "anim2" "a_form a_fee > b_review > c_in pa > c_out2"
+    mkFrames "anim3" "a_form a_fee > b_review > c_in pa > c_out3 > a_form"
+
+  mkFrames :: [String] -> String -> String -> IO ()
+  mkFrames inlines outfile tokenSpecs =
+    forM_ (splitOn " > " tokenSpecs) (
+    \actives -> do
+      active <- words actives
+    )
+    writeFile outfile "boo\n";
+
+
+#+end_src
+
+** As a Petri Net, with time
+
+Timed Petri Nets augment standard Petri Nets with a time window on each transition.
+
+* Representation in L4
+
+* Translation from L4 to Standard Representations
+
+

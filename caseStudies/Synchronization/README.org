@@ -25,62 +25,9 @@ Let's explore a few standard representations of the above process.
 
 ** As A Petri Net, without time
 
-First we model the system as an untimed Petri Net. The diagram below shows a starting state, where Party A has prepared both the fee and the form, and is about to submit them.
+First we model the system as an untimed Petri Net.
 
 [[./anim1.gif]]
-
-#+begin_src graphviz-dot :tangle untimed-petri.dot
-  digraph G {
-    subgraph place {
-      graph [shape=circle,color=gray];
-      node [shape=circle,fixedsize=true,width=1.5];
-      a_form   [label="A:\napplication\nform\n\n"];
-      a_fee    [label="A:\napplication\nfee\n\n"];
-      b_review [label="B:\ngatekeeper\n\n"];
-      c_in     [label="C:\napplication\nreceived\n\n"];
-      c_out1   [label="C:\naccepted\n\n\n"];
-      c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
-      c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
-      pa       [label="\nPermanent\nArchive\n\n"];
-    }
-    subgraph transitions {
-      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-      submission   [label="submit"];
-      transmission [label="receive"];
-      return       [label="return to applicant"];
-      c_review1 [label="accept"];
-      c_review2 [label="reject"];
-      c_review3 [label="resubmit"];
-    }
-
-    subgraph cluster_inputs {
-      graph [style=invis];
-      a_form;
-      a_fee ;
-    }
-
-    { a_form a_fee } -> submission -> b_review -> transmission;
-    transmission -> { pa c_in };
-
-    subgraph cluster_review {
-      graph [label="decision", labeljust="l"];
-      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-      c_review1;
-      c_review2;
-      c_review3;
-    }
-
-    c_in -> { c_review1 c_review2 c_review3 } ;
-
-    subgraph cluster_outputs {
-      graph [style=invis];
-      c_review1 -> c_out1;
-      c_review2 -> c_out2;
-      c_review3 -> c_out3 -> return -> a_form;
-    }
-  }
-
-#+end_src
 
 ** As a Petri Net, with time
 
@@ -139,6 +86,62 @@ We could represent the process in L4 as follows:
 ** Prerequisites
 
 - Imagemagick's ~convert~
+
+** Source for the Petri Net Diagrams
+
+#+begin_src graphviz-dot :tangle untimed-petri.dot
+  digraph G {
+    subgraph place {
+      graph [shape=circle,color=gray];
+      node [shape=circle,fixedsize=true,width=1.5];
+      a_form   [label="A:\napplication\nform\n\n"];
+      a_fee    [label="A:\napplication\nfee\n\n"];
+      b_review [label="B:\ngatekeeper\n\n"];
+      c_in     [label="C:\napplication\nreceived\n\n"];
+      c_out1   [label="C:\naccepted\n\n\n\n"];
+      c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
+      c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
+      pa       [label="\nPermanent\nArchive\n\n"];
+    }
+    subgraph transitions {
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      submission   [label="submit"];
+      transmission [label="receive"];
+      return       [label="return to applicant"];
+      c_review1 [label="accept"];
+      c_review2 [label="reject"];
+      c_review3 [label="resubmit"];
+    }
+
+    subgraph cluster_inputs {
+      graph [style=invis];
+      a_form;
+      a_fee ;
+    }
+
+    { a_form a_fee } -> submission -> b_review -> transmission;
+    transmission -> { pa c_in };
+
+    subgraph cluster_review {
+      graph [label="decision", labeljust="l"];
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      c_review1;
+      c_review2;
+      c_review3;
+    }
+
+    c_in -> { c_review1 c_review2 c_review3 } ;
+
+    subgraph cluster_outputs {
+      graph [style=invis];
+      c_review1 -> c_out1;
+      c_review2 -> c_out2;
+      c_review3 -> c_out3 -> return -> a_form;
+    }
+  }
+
+#+end_src
+
 
 ** mkMultiPetri
 

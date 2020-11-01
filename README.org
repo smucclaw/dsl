@@ -2067,6 +2067,28 @@ No problem.
 Hvitved takes this approach; chapter 2 talks about choice.
 #+end_quote
 
+*** The Game Boundary Between MAY and MUST
+
+"You must run to the gate" ... "if you want to make your flight."
+
+"You must move your rook, after the king has moved two spaces" ... "if you want to complete the castle."
+
+Searle [[https://www.argumenta.org/wp-content/uploads/2018/11/4-Argumenta-41-John-R.-Searle-Constitutive-Rules.pdf][remarks]]: "if you do not follow these rules, or at least a sufficiently large subset of the rules, you are not playing chess."
+
+Sartre [[https://en.wikipedia.org/wiki/Existentialism][remarks]] that many of the "must"s in our lives are really "may"s -- we can always choose, and chose again, to walk away from the game. "Uh, I'll just take the next flight, thanks."
+
+"You must obey the law" ... "if you want to stay out of jail."
+
+"You must brush your teeth" ... "if you want to keep them."
+
+"You must submit the application form" ... "if you want to receive a permit."
+
+But if one does not care about the permit, or the teeth, or jail, one's position regarding the form changes from a "must" to a "may".
+
+It is a reflection, to some degree, of how badly one wants to play, and win, the game.
+
+So, the boundary between the game and the rest of the world is where the "may" becomes a "must". And the breach of that initiatory "must" is "you are out of the game."
+
 *** Party
 
 The notion of party is complicated by the notion of "affiliates" and "subsidiaries". Also by the notion of a power of attorney, a trust, and other agent relationships.

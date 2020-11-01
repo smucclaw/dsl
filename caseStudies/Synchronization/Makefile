@@ -18,10 +18,10 @@ Makefile multiPetri : mkMultiPetri.hs untimed-petri.dot
 animdots = $(basename $(wildcard anim*.dot))
 animpngs =            $(addsuffix .png,  $(animdots))
 
+# convert comes from ImageMagick
 animpngs : $(animpngs)
 	convert -delay 100 anim1-?.png -loop 0 anim1.gif
 	convert -delay 100 anim2-?.png -loop 0 anim2.gif
 	convert -delay 100 anim3-?.png -loop 0 anim3.gif
-
 
 

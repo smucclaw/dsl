@@ -144,8 +144,8 @@ We could represent the process in L4 as follows:
    }
 
    // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
-   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1 >             end1 pa > blank
-   // anim2 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review2 pa c_out2 >             end2 pa > blank
+   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1 >   end1 pa        > blank
+   // anim2 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review2 pa c_out2 >   end2 pa        > blank
    // anim3 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review3 pa c_out3 > return pa a_form > blank
 #+end_src
 
@@ -188,17 +188,17 @@ A little Haskell script to transform the primary Dot file representation into a 
             inlines <&> (
             \inline -> let ws  = words  inline
                            len = length inline
-                           insertl = insert 3
-                           insertr = insert 2
+                           insertl = insert 3 -- before the "];
+                           insertr = insert 2 -- before the  ];
                            insert n str = take (len - n) inline ++ str ++ drop (len - n) inline
                        in if "label=" `isInfixOf` inline
                           then if not ("\\n\\n\"];" `isSuffixOf` inline)
-                               then if head ws `elem` actives
-                                    then insertr ",fontcolor=black,fillcolor=yellow"
-                                    else id inline
-                               else if head ws `elem` actives
-                                    then insertl "&bull;"
-                                    else insertl "\\n"
+                               then if head ws `elem` actives -- transition
+                                    then insertr ",fontcolor=black,fillcolor=yellow" -- highlight
+                                    else id inline                                   -- noop
+                               else if head ws `elem` actives -- place
+                                    then insertl "&bull;"     ---- active gets a bullet to mark token
+                                    else insertl "\\n"        ---- inactive gets a newline for formatting
                           else id inline
             )
           )

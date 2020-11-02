@@ -1,0 +1,2 @@
+*.cabal    -diff -merge
+*.cabal    linguist-generated=true

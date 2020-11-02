@@ -105,9 +105,9 @@ We could represent the process in L4 as follows:
      }
      subgraph transitions {
        node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-       start        [label="START"];
-       end1         [label="END"];
-       end2         [label="END"];
+       start        [label="start"];
+       end1         [label="end"];
+       end2         [label="end"];
        submission   [label="submit"];
        transmission [label="receive"];
        return       [label="return to applicant"];

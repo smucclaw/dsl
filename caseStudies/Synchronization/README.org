@@ -144,9 +144,9 @@ We could represent the process in L4 as follows:
    }
 
    // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
-   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1             > end1 pa > blank
-   // anim2 : blank > a_form a_fee > b_review > c_in pa > pa c_out2                  > blank
-   // anim3 : blank > a_form a_fee > b_review > c_in pa > pa c_out3 > pa a_form > pa > blank
+   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1 >             end1 pa > blank
+   // anim2 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review2 pa c_out2 >             end2 pa > blank
+   // anim3 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review3 pa c_out3 > return pa a_form > blank
 #+end_src
 
 

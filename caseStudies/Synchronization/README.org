@@ -90,60 +90,63 @@ We could represent the process in L4 as follows:
 ** Source for the Petri Net Diagrams
 
 #+begin_src graphviz-dot :tangle untimed-petri.dot
-  digraph G {
-    subgraph place {
-      graph [shape=circle,color=gray];
-      node [shape=circle,fixedsize=true,width=1.5];
-      a_form   [label="A:\napplication\nform\n\n"];
-      a_fee    [label="A:\napplication\nfee\n\n"];
-      b_review [label="B:\ngatekeeper\n\n"];
-      c_in     [label="C:\napplication\nreceived\n\n"];
-      c_out1   [label="C:\naccepted\n\n\n\n"];
-      c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
-      c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
-      pa       [label="\nPermanent\nArchive\n\n"];
-    }
-    subgraph transitions {
-      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-      submission   [label="submit"];
-      transmission [label="receive"];
-      return       [label="return to applicant"];
-      c_review1 [label="accept"];
-      c_review2 [label="reject"];
-      c_review3 [label="resubmit"];
-    }
+   digraph G {
+     subgraph place {
+       graph [shape=circle,color=gray];
+       node [shape=circle,fixedsize=true,width=1.5];
+       a_form   [label="A:\napplication\nform\n\n"];
+       a_fee    [label="A:\napplication\nfee\n\n"];
+       b_review [label="B:\ngatekeeper\n\n"];
+       c_in     [label="C:\napplication\nreceived\n\n"];
+       c_out1   [label="C:\naccepted\n\n\n\n"];
+       c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
+       c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
+       pa       [label="\nPermanent\nArchive\n\n"];
+     }
+     subgraph transitions {
+       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+       start        [label="START"];
+       end1         [label="END"];
+       end2         [label="END"];
+       submission   [label="submit"];
+       transmission [label="receive"];
+       return       [label="return to applicant"];
+       c_review1 [label="accept"];
+       c_review2 [label="reject"];
+       c_review3 [label="resubmit"];
+     }
 
-    subgraph cluster_inputs {
-      graph [style=invis];
-      a_form;
-      a_fee ;
-    }
+     subgraph cluster_inputs {
+       graph [style=invis];
+       a_form;
+       a_fee ;
+     }
 
-    { a_form a_fee } -> submission -> b_review -> transmission;
-    transmission -> { pa c_in };
+     start -> { a_form a_fee } -> submission -> b_review -> transmission;
+     transmission -> { pa c_in };
 
-    subgraph cluster_review {
-      graph [label="decision", labeljust="l"];
-      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-      c_review1;
-      c_review2;
-      c_review3;
-    }
+     subgraph cluster_review {
+       graph [label="decision", labeljust="l"];
+       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+       c_review1;
+       c_review2;
+       c_review3;
+     }
 
-    c_in -> { c_review1 c_review2 c_review3 } ;
+     c_in -> { c_review1 c_review2 c_review3 } ;
 
-    subgraph cluster_outputs {
-      graph [style=invis];
-      c_review1 -> c_out1;
-      c_review2 -> c_out2;
-      c_review3 -> c_out3 -> return -> a_form;
-    }
-  }
+     subgraph cluster_outputs {
+       graph [style=invis];
+       c_review1 -> c_out1 -> end1;
+       c_review2 -> c_out2 -> end2;
+       c_review3 -> c_out3 -> return -> a_form;
+     }
+   }
 
-  // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
-  // anim1 : a_form a_fee > b_review > c_in pa > pa c_out1
-  // anim2 : a_form a_fee > b_review > c_in pa > pa c_out2
-  // anim3 : a_form a_fee > b_review > c_in pa > pa c_out3 > pa a_form
+   // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
+   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1             > end1 pa > blank
+   // anim2 : blank > a_form a_fee > b_review > c_in pa > pa c_out2                  > blank
+   // anim3 : blank > a_form a_fee > b_review > c_in pa > pa c_out3 > pa a_form > pa > blank
 #+end_src
 
 
@@ -160,6 +163,7 @@ A little Haskell script to transform the primary Dot file representation into a 
   -- "you can write FORTRAN^H^H^H^H^H^H^HPerl in any language"
   -- the control block is as seen in untimed-petri.dot, commented out at the bottom
 
+  import Text.Printf (printf)
   import Control.Monad (forM_)
   import Data.Functor ((<&>))
   import Data.List.Split
@@ -168,25 +172,33 @@ A little Haskell script to transform the primary Dot file representation into a 
 
   main = do
     inlines <- lines <$> getContents
-    let controlBlock = [ (label, specs) | eachline <- inlines
-                                        , "//" `isPrefixOf` eachline
-                                        , let commented = foldl (\str ch -> dropWhile (==ch) str) eachline " / "
-                                        , " : " `isInfixOf` commented
-                                        , let label = head $        splitOn " : " commented
-                                        , let specs = head $ tail $ splitOn " : " commented ]
+    let controlBlock = [ (label, specs)
+                       | eachline <- inlines
+                       , "//" `isPrefixOf` eachline
+                       , let commented = words $ foldl (\str ch -> dropWhile (==ch) str) eachline " / "
+                       , ":" `elem` commented
+                       , let label = head   $ commented
+                             specs = drop 2 $ commented
+                       ]
     forM_ controlBlock (
       \(outfile, tokenSpecs) -> do
-        forM_ (zip [1..] (splitOn " > " tokenSpecs)) (
+        forM_ (zip [1..] (splitOn [">"] tokenSpecs)) (
           \(frameNum,actives) ->
-            writeFile (outfile++"-"++(show frameNum)++".dot") $ unlines $
+            writeFile (printf "%s-%02d.dot" outfile (frameNum :: Int)) $ unlines $
             inlines <&> (
             \inline -> let ws  = words  inline
                            len = length inline
-                           insert str = take (len - 3) inline ++ str ++ drop (len - 3) inline
-                       in if        "\\n\\n\"];" == (drop (len - 7) inline)
-                          then if   length ws > 0 && head ws `elem` (words actives)
-                               then insert "&bull;"
-                               else insert "\\n"
+                           insertl = insert 3
+                           insertr = insert 2
+                           insert n str = take (len - n) inline ++ str ++ drop (len - n) inline
+                       in if "label=" `isInfixOf` inline
+                          then if not ("\\n\\n\"];" `isSuffixOf` inline)
+                               then if head ws `elem` actives
+                                    then insertr ",fontcolor=black,fillcolor=yellow"
+                                    else id inline
+                               else if head ws `elem` actives
+                                    then insertl "&bull;"
+                                    else insertl "\\n"
                           else id inline
             )
           )

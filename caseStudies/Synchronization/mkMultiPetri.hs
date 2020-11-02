@@ -6,6 +6,7 @@
 -- "you can write FORTRAN^H^H^H^H^H^H^HPerl in any language"
 -- the control block is as seen in untimed-petri.dot, commented out at the bottom
 
+import Text.Printf (printf)
 import Control.Monad (forM_)
 import Data.Functor ((<&>))
 import Data.List.Split
@@ -14,25 +15,33 @@ import System.Environment
 
 main = do
   inlines <- lines <$> getContents
-  let controlBlock = [ (label, specs) | eachline <- inlines
-                                      , "//" `isPrefixOf` eachline
-                                      , let commented = foldl (\str ch -> dropWhile (==ch) str) eachline " / "
-                                      , " : " `isInfixOf` commented
-                                      , let label = head $        splitOn " : " commented
-                                      , let specs = head $ tail $ splitOn " : " commented ]
+  let controlBlock = [ (label, specs)
+                     | eachline <- inlines
+                     , "//" `isPrefixOf` eachline
+                     , let commented = words $ foldl (\str ch -> dropWhile (==ch) str) eachline " / "
+                     , ":" `elem` commented
+                     , let label = head   $ commented
+                           specs = drop 2 $ commented
+                     ]
   forM_ controlBlock (
     \(outfile, tokenSpecs) -> do
-      forM_ (zip [1..] (splitOn " > " tokenSpecs)) (
+      forM_ (zip [1..] (splitOn [">"] tokenSpecs)) (
         \(frameNum,actives) ->
-          writeFile (outfile++"-"++(show frameNum)++".dot") $ unlines $
+          writeFile (printf "%s-%02d.dot" outfile (frameNum :: Int)) $ unlines $
           inlines <&> (
           \inline -> let ws  = words  inline
                          len = length inline
-                         insert str = take (len - 3) inline ++ str ++ drop (len - 3) inline
-                     in if        "\\n\\n\"];" == (drop (len - 7) inline)
-                        then if   length ws > 0 && head ws `elem` (words actives)
-                             then insert "&bull;"
-                             else insert "\\n"
+                         insertl = insert 3
+                         insertr = insert 2
+                         insert n str = take (len - n) inline ++ str ++ drop (len - n) inline
+                     in if "label=" `isInfixOf` inline
+                        then if not ("\\n\\n\"];" `isSuffixOf` inline)
+                             then if head ws `elem` actives
+                                  then insertr ",fontcolor=black,fillcolor=yellow"
+                                  else id inline
+                             else if head ws `elem` actives
+                                  then insertl "&bull;"
+                                  else insertl "\\n"
                         else id inline
           )
         )

@@ -23,10 +23,8 @@ concrete RuleEng of Rule = ActionEng ** open
       passSubj : NP ;
       } ;
 
-    LinActionAlias : Type = {
-      s : FinForms ; -- VP: "sell a potato"
-      inf : InfForms ;
-      alias : NP               -- NP: "the sale"
+    LinActionAlias : Type = LinAction ** { -- VP: "sell a potato"
+      alias : NP                           -- NP: "the sale"
       } ;
 
   lin
@@ -78,11 +76,11 @@ concrete RuleEng of Rule = ActionEng ** open
   oper
     action2deontic : TenseModPol -> LinActionAlias -> LinDeontic = \tmp,a -> a ** {
       s = \\vc =>
-        case tmp of {
-          PPres Pos => a.s ! Present ;
-          PPast Pos => a.s ! Past ;
-          _ => predVPS vc tmp a.inf } ;
-      passSubj = a.inf.passSubj
+        case <vc,tmp> of {
+          <VAct _, PPres Pos> => a.s ! Present ;
+          <VAct _, PPast Pos> => a.s ! Past ;
+          _ => predVPS vc tmp a } ;
+      passSubj = a.pass.subj
       } ;
 
   lin

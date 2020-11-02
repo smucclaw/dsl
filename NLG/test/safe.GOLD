@@ -29,3 +29,16 @@ MAction (StrParty "Meng") (PosFut (AAlias (AComplDir (ConjSlashDir Or (ConsActio
 ** these securities may not be offered , sold , transferred , pledged or hypothecated
 MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir Sell (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))) (TDet These Security))))
 
+** these securities may not be offered , sold or otherwise transferred , pledged or hypothecated
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Sell (ConjSlashDir Or (ConsAction_Dir (OtherwiseAction_Dir Transfer) (BaseAction_Dir Pledge Hypothecate)))))) (TDet These Security))))
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Sell (OtherwiseAction_Dir (ConjSlashDir Or (ConsAction_Dir Transfer (BaseAction_Dir Pledge Hypothecate))))))) (TDet These Security))))
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (ConsAction_Dir (ConjSlashDir Or (BaseAction_Dir Sell (OtherwiseAction_Dir Transfer))) (BaseAction_Dir Pledge Hypothecate)))) (TDet These Security))))
+MPass (MayNot (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Sell (OtherwiseAction_Dir Transfer)))) (BaseAction_Dir Pledge Hypothecate))) (TDet These Security))))
+
+** Meng shan't offer , pledge or otherwise hypothecate these securities
+MAction (StrParty "Meng") (Shant (AAlias (AComplDir (ConjSlashDir Or (ConsAction_Dir Offer (BaseAction_Dir Pledge (OtherwiseAction_Dir Hypothecate)))) (TDet These Security))))
+
+** Meng shan't otherwise cook a potato
+MAction (StrParty "Meng") (Shant (AAlias (AComplDir (OtherwiseAction_Dir Cook) (TDet ASg Potato))))
+MAction (StrParty "Meng") (Shant (AAlias (OtherwiseAction (AComplDir Cook (TDet ASg Potato)))))
+

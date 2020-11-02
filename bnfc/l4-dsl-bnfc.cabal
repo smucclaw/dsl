@@ -1,0 +1,128 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           l4-dsl-bnfc
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/smucclaw/dsl#readme>
+homepage:       https://github.com/smucclaw/dsl#readme
+bug-reports:    https://github.com/smucclaw/dsl/issues
+author:         Center for Computational Law, SMU
+maintainer:     example@example.com
+copyright:      2020 Center for Computational Law, SMU
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/smucclaw/dsl
+
+library
+  exposed-modules:
+      AbsL
+      ErrM
+      LayoutL
+      LexL
+      ParL
+      PrintL
+      SkelL
+      L4
+      ToGF
+      ToGraphViz
+      ToProlog
+      ToUPPAAL
+  other-modules:
+      Paths_l4_dsl_bnfc
+  hs-source-dirs:
+      src-bnfc
+      src-l4
+  ghc-options: -Wall
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers
+    , fgl
+    , graphviz
+    , pretty-simple
+    , regex-with-pcre
+    , split
+    , text
+  default-language: Haskell2010
+
+executable l4
+  main-is: Main.hs
+  other-modules:
+      Paths_l4_dsl_bnfc
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers
+    , fgl
+    , graphviz
+    , l4-dsl-bnfc
+    , pretty-simple
+    , regex-with-pcre
+    , split
+    , text
+  default-language: Haskell2010
+
+executable showbug
+  main-is: Main.hs
+  other-modules:
+      Paths_l4_dsl_bnfc
+  hs-source-dirs:
+      showbug
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers
+    , fgl
+    , graphviz
+    , l4-dsl-bnfc
+    , pretty-simple
+    , regex-with-pcre
+    , split
+    , text
+  default-language: Haskell2010
+
+test-suite l4-dsl-bnfc-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_l4_dsl_bnfc
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers
+    , fgl
+    , graphviz
+    , l4-dsl-bnfc
+    , pretty-simple
+    , regex-with-pcre
+    , split
+    , text
+  default-language: Haskell2010

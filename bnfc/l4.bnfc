@@ -28,22 +28,24 @@ RModal.   RuleBody    ::= GivenUpon ModalLimb WhenHenceWhere ;
 
 MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-Parties.   PartyLimb   ::= "PARTIES" AsAlias;
-PartyLimb. PartyLimb   ::= "PARTY" PartyDef AsAlias;
+Parties.   PartyLimb   ::= "PARTIES" OptAsAlias;
+PartyLimb. PartyLimb   ::= "PARTY" PartyDef OptAsAlias;
 PSome.   PartyDef    ::= ObjAttr ;
 PEvery.  PartyDef    ::= PEvery ;
 rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
 PNobody. PartyDef    ::= PNobody;
 rules    PNobody     ::=          "NOBODY" | "NO-ONE" | "NOONE" | "NONE" ;
-rules    AsAlias     ::= | "AS" ObjAttr ;
+OptAsAlias0.  OptAsAlias     ::= ;
+OptAsAlias1.  OptAsAlias     ::= AsAlias ;
+AsAlias. AsAlias ::= "AS" ObjAttr ;
 rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
-ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
-ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+ActionMulti.    ActionLimb  ::= LstExp    [Blah] OptAsAlias ;
+ActionSingle.   ActionLimb  ::= ObjMethod [Blah] OptAsAlias ;
 DL0.         DeadlineLimb ::= ;
-DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
+DLLimb.      DeadlineLimb ::= TempRel TemporalExpr OptAsAlias ;
 TRBefore.    TempRel      ::= "BEFORE";
 TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
 TRAfter.     TempRel      ::= "AFTER";
@@ -97,7 +99,7 @@ rules      WithIn    ::= [Constraint] | TraceExpr;
 separator nonempty WithIn ";";
 Asof.      Asof      ::= "ASOF" DateTime ;
 AsofNull.  Asof      ::= ;
-rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" | "ENTRY" ;
 rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
 
 token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
@@ -144,7 +146,7 @@ rules      Toplevels ::= Module | Import | Pragma
 terminator Toplevels ";";
 
 layout toplevel;
-layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "ELSE";
+layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "MATCHES";
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
 rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
@@ -174,6 +176,8 @@ Op3E.   Exp3 ::= TriOp   Exp7 Exp7 Exp7; ;
 Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
 Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
 Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
+
+AsAliasE.   Exp1 ::= Exp2 AsAlias;
 
 ExpStm1.    ExpStm ::= Exp;
 ExpStmLet.  ExpStm ::= "LET" Exp;
@@ -205,7 +209,7 @@ BArith_Mul.  BinExp4   ::= Exp4 "*"    Exp5;
 BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
 BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
 BL_Modulo1.  BinExp4   ::= Exp4 "%"    Exp5;
-BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "->" Exp5; -- rewrite
+BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "-->" Exp5; -- rewrite
 BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
 BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
 L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
@@ -221,6 +225,7 @@ BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
 BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
 BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
 BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
+BRel_Fat.    BinExp1   ::= Exp4 "=>"   Exp5;
 BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
 BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
 BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
@@ -263,21 +268,19 @@ L_Xor.       UnaOp5 ::= "XOR";
 token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
 token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
 token NothingBl ["Nn"] ["Oo"] ["Tt"] ["Hh"] ["Ii"] ["Nn"] ["Gg"] ;
-BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 AsAlias MatchQualifier MatchRelation
-                           MatchQuantifier Exp6 AsAlias [MatchFlag];
+BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier MatchRelation
+                           MatchQuantifier Exp6 OptAsAlias [MatchFlag];
 -- ConstVal here will probably need to be upgraded to at least a variable
 -- so we can say, TheRelevantQuorum.Percentage
 MQuant0.      MatchQuantifier ::= "NONE OF" ;
 MQuantMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal OptOf ;
-MQuantAny.    MatchQuantifier ::= "ANY" "OF" ;
-MQuantAll.    MatchQuantifier ::= "ALL" "OF" ;
+MQuantAny.    MatchQuantifier ::= "ANYOF" ;
+MQuantAll.    MatchQuantifier ::= "ALLOF" ;
 MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
 MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
 MQuantNull.   MatchQuantifier ::= ;
 MRelSat1.    MatchRelation   ::= "SATISFIES" ;
 MRelSat2.    MatchRelation   ::= "SATISFY" ;
-MRelMatch1.  MatchRelation   ::= "MATCHES" ;
-MRelMatch2.  MatchRelation   ::= "MATCH" ;
 MRelIs1.     MatchRelation   ::= "IS" ;
 MRelIs2.     MatchRelation   ::= "ARE" ;
 MRelExist1.  MatchRelation   ::= "EXISTS" ;
@@ -318,7 +321,7 @@ rules  Constraint   ::= Exp;
 separator nonempty Constraint  "," ;
 
 -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
-rules CaseExpr  ::= "CASE" ObjAttr "BEING" "{" [CaseExp] "}" ;
+rules CaseExpr  ::= "CASE" ObjAttr "MATCHES" "{" [CaseExp] "}" ;
 rules CaseExp   ::= Exp "->" Exp;
 separator nonempty CaseExp ";";
 TU.        TypeUnify      ::= "::" "Unify";

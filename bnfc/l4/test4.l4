@@ -11,8 +11,8 @@ RULE showMatches
             Exp AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
             Exp self.nationality
             Exp ["US", "SG"]
-            Exp self.nationality ~ ["US", "SG"]
-            Exp CASE self.nationality ~ ["US", "SG"] -> "poop"
+            Exp self.nationality IN ["US", "SG"]
+            Exp CASE self.nationality MATCHES ["US", "SG"] -> "poop"
             UnifyElem Foo.bar
             UnifyElem     bar
             UnifyExpr Foo.bar.*

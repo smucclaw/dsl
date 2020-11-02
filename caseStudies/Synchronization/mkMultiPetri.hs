@@ -31,17 +31,17 @@ main = do
           inlines <&> (
           \inline -> let ws  = words  inline
                          len = length inline
-                         insertl = insert 3
-                         insertr = insert 2
+                         insertl = insert 3 -- before the "];
+                         insertr = insert 2 -- before the  ];
                          insert n str = take (len - n) inline ++ str ++ drop (len - n) inline
                      in if "label=" `isInfixOf` inline
                         then if not ("\\n\\n\"];" `isSuffixOf` inline)
-                             then if head ws `elem` actives
-                                  then insertr ",fontcolor=black,fillcolor=yellow"
-                                  else id inline
-                             else if head ws `elem` actives
-                                  then insertl "&bull;"
-                                  else insertl "\\n"
+                             then if head ws `elem` actives -- transition
+                                  then insertr ",fontcolor=black,fillcolor=yellow" -- highlight
+                                  else id inline                                   -- noop
+                             else if head ws `elem` actives -- place
+                                  then insertl "&bull;"     ---- active gets a bullet to mark token
+                                  else insertl "\\n"        ---- inactive gets a newline for formatting
                         else id inline
           )
         )

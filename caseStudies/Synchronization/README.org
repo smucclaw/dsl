@@ -37,7 +37,7 @@ Timed Petri Nets augment standard Petri Nets with a time window on each transiti
 
 We could represent the process in L4 as follows:
 
-#+begin_src haskell
+#+begin_src haskell :noweb yes :tangle appform1.l4
   RULE    SendFee
     PARTY A
       MAY send fee to B
@@ -46,37 +46,45 @@ We could represent the process in L4 as follows:
     PARTY A
       MAY send form to B
 
-  RULE    Receive
-     UPON [ SendFee & SendForm ]
-    PARTY B
-     MUST [ send application to C AS Transmission
-          & send application to PermanentArchive ]
-   BEFORE + 1 DAYS
+  <<common>>
+#+end_src
 
-  RULE    Decide
-     UPON Transmission -- could also be UPON Receive
-    PARTY C
-     MUST [ accept
-          , reject(explanation=no)
-          | return(explanation=yes) to A AS Return
-          ]
-   BEFORE Receipt + 3 DAYS
+#+begin_src haskell :noweb-ref common
+    RULE    Receive
+       UPON [ SendFee & SendForm ]
+      PARTY B
+       MUST [ send => application(to=C)  AS Transmission
+            & send => application(to=PA) AS PermanentArchive ]
+     BEFORE ENTRY + 1 DAYS
+
+    RULE    Decide
+       UPON Transmission -- could also be UPON Receive
+      PARTY C
+       MUST [ accept
+            , reject(explanation=no)
+            | return(explanation=yes, to=A) AS Return
+            ]
+     BEFORE Receipt + 3 DAYS
 #+end_src
 
 ** Alternative Representations
 
-#+begin_src haskell
+#+begin_src haskell :noweb yes :tangle appform2.l4
   RULE    TwoEnvelopes
     PARTY A
       MAY [ send fee
           & send form ] to B AS Submission
+
+  <<common>>
 #+end_src
 
-#+begin_src haskell
+#+begin_src haskell :noweb yes :tangle appform3.l4
   RULE    OneEnvelope
     PARTY A
       MAY send [ fee
                & form ] to B AS Submission
+
+  <<common>>
 #+end_src
 
 * Translation from L4 to Standard Representations

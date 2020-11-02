@@ -79,8 +79,8 @@ Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" par
 
   RULE   5 Price
      GIVEN cabbage, weight, president, taxRate
-    DEFINE cabbage.price = (1+taxRate) * CASE president BEING Biden -> weight * 1.1
-                                                              Trump -> weight * 0.9
+    DEFINE cabbage.price = (1+taxRate) * CASE president MATCHES Biden -> weight * 1.1
+                                                                Trump -> weight * 0.9
 
       #+end_src
 
@@ -157,8 +157,8 @@ The "GIVEN" and "UPON" limbs can be swapped, synonymously.
 
   MD1.      ModalLimb   ::= PartyLimb DeonticLimb DeadlineLimb;
 
-  Parties.   PartyLimb   ::= "PARTIES" AsAlias;
-  PartyLimb. PartyLimb   ::= "PARTY" PartyDef AsAlias;
+  Parties.   PartyLimb   ::= "PARTIES" OptAsAlias;
+  PartyLimb. PartyLimb   ::= "PARTY" PartyDef OptAsAlias;
   PSome.   PartyDef    ::= ObjAttr ;
   PEvery.  PartyDef    ::= PEvery ;
   rules    PEvery      ::=          "EVERYBODY" | "ANYBODY" | "EVERYONE" | "ANYONE" ;
@@ -171,7 +171,9 @@ There's some syntactic sugar for "everybody" and "nobody" as special cases of pa
 See [[https://drive.google.com/file/d/1sLmVMZqHhQDzj8dikKt-8CNemF-nGCn1/view?usp=sharing][page 41 of Hvitved's PhD Thesis]].
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules    AsAlias     ::= | "AS" ObjAttr ;
+  OptAsAlias0.  OptAsAlias     ::= ;
+  OptAsAlias1.  OptAsAlias     ::= AsAlias ;
+  AsAlias. AsAlias ::= "AS" ObjAttr ;
 #+end_src
 
 As-aliases provide variable bindings to elements of the rule. In Haskell they are like the "@" in a pattern match.
@@ -192,8 +194,8 @@ Is there an argument for adding a "SHOULD" rule? RFC2119 has that notion; even t
 The syntax for actions is not terribly well specified at the moment. You can say pretty much whatever you want.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  ActionMulti.    ActionLimb  ::= LstExp    [Blah] AsAlias ;
-  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] AsAlias ;
+  ActionMulti.    ActionLimb  ::= LstExp    [Blah] OptAsAlias ;
+  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] OptAsAlias ;
 #+end_src
 
 ***** Deadlines
@@ -202,7 +204,7 @@ Every deontic modal needs a deadline -- if you don't have to do something by a c
 
 #+begin_src bnfc :noweb-ref l4bnfc
   DL0.         DeadlineLimb ::= ;
-  DLLimb.      DeadlineLimb ::= TempRel TemporalExpr AsAlias ;
+  DLLimb.      DeadlineLimb ::= TempRel TemporalExpr OptAsAlias ;
   TRBefore.    TempRel      ::= "BEFORE";
   TRPrior.     TempRel      ::= "PRIORTO"; -- immediately prior to
   TRAfter.     TempRel      ::= "AFTER";
@@ -537,7 +539,7 @@ It can also attach to a top-level rule immediately before the "META" limb. This 
 #+begin_src bnfc :noweb-ref l4bnfc
   Asof.      Asof      ::= "ASOF" DateTime ;
   AsofNull.  Asof      ::= ;
-  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" ;
+  rules      DateTime  ::= Iso8601 | "PRESENT" | "NOW" | "ENTRY" ;
   rules      Iso8601   ::= YYYYMMDD | YYYYMMDDTHHMM;
 
   token YYYYMMDD      ( digit digit digit digit '-'? digit digit '-'? digit digit );
@@ -700,7 +702,7 @@ An L4 Module contains a list of directives and statements.
   terminator Toplevels ";";
 
   layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "ELSE";
+  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "MATCHES";
   entrypoints Tops;
 #+end_src
 
@@ -845,6 +847,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
   Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
 
+  AsAliasE.   Exp1 ::= Exp2 AsAlias;
+            
   ExpStm1.    ExpStm ::= Exp;
   ExpStmLet.  ExpStm ::= "LET" Exp;
   separator nonempty ExpStm ";"; -- used inside THEN and ELSE
@@ -875,7 +879,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
   BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
   BL_Modulo1.  BinExp4   ::= Exp4 "%"    Exp5;
-  BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "->" Exp5; -- rewrite
+  BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "-->" Exp5; -- rewrite
   BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
   BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
   L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
@@ -891,6 +895,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
   BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
+  BRel_Fat.    BinExp1   ::= Exp4 "=>"   Exp5;
   BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
   BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
   BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
@@ -984,21 +989,19 @@ where the predicate has type ~object -> Bool~
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 AsAlias MatchQualifier MatchRelation
-                             MatchQuantifier Exp6 AsAlias [MatchFlag];
+  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier MatchRelation
+                             MatchQuantifier Exp6 OptAsAlias [MatchFlag];
   -- ConstVal here will probably need to be upgraded to at least a variable
   -- so we can say, TheRelevantQuorum.Percentage
   MQuant0.      MatchQuantifier ::= "NONE OF" ;
   MQuantMin.    MatchQuantifier ::= "AT" "LEAST" ConstVal OptOf ;
-  MQuantAny.    MatchQuantifier ::= "ANY" "OF" ;
-  MQuantAll.    MatchQuantifier ::= "ALL" "OF" ;
+  MQuantAny.    MatchQuantifier ::= "ANYOF" ;
+  MQuantAll.    MatchQuantifier ::= "ALLOF" ;
   MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
   MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
   MQuantNull.   MatchQuantifier ::= ;
   MRelSat1.    MatchRelation   ::= "SATISFIES" ;
   MRelSat2.    MatchRelation   ::= "SATISFY" ;
-  MRelMatch1.  MatchRelation   ::= "MATCHES" ;
-  MRelMatch2.  MatchRelation   ::= "MATCH" ;
   MRelIs1.     MatchRelation   ::= "IS" ;
   MRelIs2.     MatchRelation   ::= "ARE" ;
   MRelExist1.  MatchRelation   ::= "EXISTS" ;
@@ -1289,9 +1292,9 @@ TODO: figure out "=" vs "==".
  RULE mkMinor
   DEFINE Minor
      ISA Human
-    WHEN CASE self.nationality BEING ["US", "SG"]             -> self.age < 21
-                                     ["NZ", "TW", "TH", "JP"] -> self.age < 20
-                                     otherwise                -> self.age < 18
+    WHEN CASE self.nationality MATCHES ["US", "SG"]             -> self.age < 21
+                                       ["NZ", "TW", "TH", "JP"] -> self.age < 20
+                                       otherwise                -> self.age < 18
 #+end_src
 
 Note that "self" and "this" are synonymous.
@@ -1305,7 +1308,7 @@ In the future Meng would like to allow:
 Oh right, we need case expressions.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules CaseExpr  ::= "CASE" ObjAttr "BEING" "{" [CaseExp] "}" ;
+  rules CaseExpr  ::= "CASE" ObjAttr "MATCHES" "{" [CaseExp] "}" ;
   rules CaseExp   ::= Exp "->" Exp;
   separator nonempty CaseExp ";";
 #+end_src
@@ -1577,8 +1580,8 @@ Contracts are the same. A "chess contract" might set up the ten threads of execu
    UPON turn(1,color)
   PARTY Player
    MUST oneOf [ GameStart_Pawns(c)   | c <- [a1..h1]
-              , GameStart_Knights(c) | c <- CASE color BEING white -> [b1,g1]
-                                                             black -> [b8,g8] ]
+              , GameStart_Knights(c) | c <- CASE color MATCHES white -> [b1,g1]
+                                                               black -> [b8,g8] ]
   BEFORE timeRemaining(Player)
    HENCE GameStart WITH turn(1,black)
 #+end_src

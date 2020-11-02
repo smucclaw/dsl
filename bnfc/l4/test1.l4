@@ -20,8 +20,8 @@ RULE   4 Cabbage
 
 RULE   5 Price
    GIVEN cabbage, weight, president, taxRate
-  DEFINE cabbage.price = (1+taxRate) * CASE president BEING Biden -> weight * 1.1
-                                                            Trump -> weight * 0.9
+  DEFINE cabbage.price = (1+taxRate) * CASE president MATCHES Biden -> weight * 1.1
+                                                              Trump -> weight * 0.9
 
 RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
   GIVEN sale          // defined in rule 1 above
@@ -89,14 +89,12 @@ RULE mkSpud1
   ENTITY spud1 ISA Item
     WITH species  = "Solanum tuberosum"
          isEdible = true
-
 RULE mkVeggieBar
   ENTITY veggieBar
      ISA Business
     WITH address = [ "1 Veggie Way" ]
          id      = { idtype = "UEN", idval = "202000000A" }
          name    = "The Veggie Bar Pte. Ltd."
-
 RULE    Business
   DEFINE Business
      ISA Record
@@ -105,7 +103,6 @@ RULE    Business
                    | { idtype = String, idval = String } ]
          name    = String
          owner   = Person
-
 RULE     Person
   DEFINE Person
      ISA Record
@@ -138,9 +135,9 @@ RULE     UENString
 RULE mkMinor
  DEFINE Minor
     ISA Human
-   WHEN CASE self.nationality BEING ["US", "SG"]             -> self.age < 21
-                                    ["NZ", "TW", "TH", "JP"] -> self.age < 20
-                                    otherwise                -> self.age < 18
+   WHEN CASE self.nationality MATCHES ["US", "SG"]             -> self.age < 21
+                                      ["NZ", "TW", "TH", "JP"] -> self.age < 20
+                                      otherwise                -> self.age < 18
 RULE mkBlackSwan
   ENTITY blackSwan
      ISA Human
@@ -150,11 +147,6 @@ RULE mkBlackSwan
                        , { xtime = 2020-09-10, value = "US"                                } ]
 //       a person can have multiple names
          fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
-
-
-
-
-
 RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
   ENTITY celebXY

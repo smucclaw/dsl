@@ -79,7 +79,7 @@ concrete RuleEng of Rule = ActionEng ** open
         case <vc,tmp> of {
           <VAct _, PPres Pos> => a.s ! Present ;
           <VAct _, PPast Pos> => a.s ! Past ;
-          _ => predVPS vc tmp a } ;
+          _ => action2VPS vc tmp a } ;
       passSubj = a.pass.subj
       } ;
 

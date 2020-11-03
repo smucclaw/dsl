@@ -9,17 +9,23 @@ p "these securities may not be offered , sold , transferred , pledged or hypothe
 
 -- Variations
 
-ps "** Meng must offer , pledge or hypothecate these securities"
-p "Meng must offer , pledge or hypothecate these securities"
+ps "** Meng may offer , pledge or hypothecate these securities"
+p "Meng may offer , pledge or hypothecate these securities"
 
 ps "** Meng may not offer , pledge or hypothecate these securities"
 p "Meng may not offer , pledge or hypothecate these securities"
+
+ps "** Meng must offer , pledge or hypothecate these securities"
+p "Meng must offer , pledge or hypothecate these securities"
 
 ps "** Meng shan't offer , pledge or hypothecate these securities"
 p "Meng shan't offer , pledge or hypothecate these securities"
 
 ps "** Meng offers , pledges or hypothecates these securities"
 p "Meng offers , pledges or hypothecates these securities"
+
+ps "** Meng doesn't offer , pledge or hypothecate these securities"
+p "Meng doesn't offer , pledge or hypothecate these securities"
 
 ps "** Meng offered , pledged or hypothecated these securities"
 p "Meng offered , pledged or hypothecated these securities"
@@ -30,10 +36,41 @@ p "Meng didn't offer , pledge or hypothecate these securities"
 ps "** Meng will offer , pledge or hypothecate these securities"
 p "Meng will offer , pledge or hypothecate these securities"
 
+ps "** Meng won't offer , pledge or hypothecate these securities"
+p "Meng won't offer , pledge or hypothecate these securities"
+
 -- Passive
+
+ps "** these securities may be offered , sold , transferred , pledged or hypothecated"
+p "these securities may be offered , sold , transferred , pledged or hypothecated"
 
 ps "** these securities may not be offered , sold , transferred , pledged or hypothecated"
 p "these securities may not be offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities must be offered , sold , transferred , pledged or hypothecated"
+p "these securities must be offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities shan't be offered , sold , transferred , pledged or hypothecated"
+p "these securities shan't be offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities are offered , sold , transferred , pledged or hypothecated"
+p "these securities are offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities aren't offered , sold , transferred , pledged or hypothecated"
+p "these securities aren't offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities were offered , sold , transferred , pledged or hypothecated"
+p "these securities were offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities weren't offered , sold , transferred , pledged or hypothecated"
+p "these securities weren't offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities will be offered , sold , transferred , pledged or hypothecated"
+p "these securities will be offered , sold , transferred , pledged or hypothecated"
+
+ps "** these securities won't be offered , sold , transferred , pledged or hypothecated"
+p "these securities won't be offered , sold , transferred , pledged or hypothecated"
+
 
 -- Otherwise
 

@@ -43,13 +43,14 @@ RULE mkContract
 RULE ContractStartBuyer
    PARTY Buyer
    MAY send => order(to=seller, msg=bikeSale)
+   HENCE ContractStartSeller
 
 RULE ContractStartSeller
     UPON recv => order(from=buyer, msg=orderDetails)
    PARTY Seller
     MUST send => delivery(to=orderDetails.recipient, item=orderDetails.item)
   BEFORE maxDays
-   HENCE inventoryDeduct
+   HENCE [ inventoryDeduct & BuyerPays ]
 
 RULE inventoryDeduct
   GIVEN ContractStartSeller

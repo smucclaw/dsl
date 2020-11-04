@@ -214,24 +214,25 @@ Every deontic modal needs a deadline -- if you don't have to do something by a c
 We need to improve the conceptual clarity of the deadline syntax.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
-                          | "EARLIEST" LstExp
-                          | "LATEST"   LstExp;
-  rules     DurationExpr ::= | "+" Duration ;
-  TDY.      Duration     ::= Integer "YEARS" ;
-  TDM.      Duration     ::= Integer "MONTHS" ;
-  TDW.      Duration     ::= Integer "WEEKS" ;
-  TDD.      Duration     ::= Integer "DAYS" ;
-  TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
-  TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
-  DNoHence. HenceLimb    ::= ;
-  DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
-  DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
-  DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
-  RGotoOne.       Goto   ::= RuleDef ;
-  RGotoLst.       Goto   ::= LstExp ; -- if we could, we'd make this a LstExp RuleDef, but we can't do that in BNFC.
-  RFulfilled.     Goto   ::= "FULFILLED" ;
-  RBreach.        Goto   ::= "BREACH" ;
+    rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
+                            | "EARLIEST" LstExp
+                            | "LATEST"   LstExp
+                            | Duration;
+    rules     DurationExpr ::= | "+" Duration ;
+    TDY.      Duration     ::= Integer "YEARS" ;
+    TDM.      Duration     ::= Integer "MONTHS" ;
+    TDW.      Duration     ::= Integer "WEEKS" ;
+    TDD.      Duration     ::= Integer "DAYS" ;
+    TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
+    TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
+    DNoHence. HenceLimb    ::= ;
+    DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
+    DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
+    DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
+    RGotoOne.       Goto   ::= RuleDef ;
+    RGotoLst.       Goto   ::= LstExp ; -- if we could, we'd make this a LstExp RuleDef, but we can't do that in BNFC.
+    RFulfilled.     Goto   ::= "FULFILLED" ;
+    RBreach.        Goto   ::= "BREACH" ;
 #+end_src
 
 LegalRuleML distinguishes between /maintenance/ obligations and /achievement/ obligations.

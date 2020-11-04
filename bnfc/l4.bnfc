@@ -52,7 +52,8 @@ TRAfter.     TempRel      ::= "AFTER";
 TRUntil.     TempRel      ::= "UNTIL";
 rules     TemporalExpr ::= DateTime DurationExpr | ObjAttr DurationExpr
                         | "EARLIEST" LstExp
-                        | "LATEST"   LstExp;
+                        | "LATEST"   LstExp
+                        | Duration;
 rules     DurationExpr ::= | "+" Duration ;
 TDY.      Duration     ::= Integer "YEARS" ;
 TDM.      Duration     ::= Integer "MONTHS" ;

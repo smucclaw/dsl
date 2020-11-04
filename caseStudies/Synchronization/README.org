@@ -50,21 +50,22 @@ We could represent the process in L4 as follows:
 #+end_src
 
 #+begin_src haskell :noweb-ref common
-    RULE    Receive
-       UPON [ SendFee & SendForm ]
-      PARTY B
-       MUST [ send => application(to=C)  AS Transmission
-            & send => application(to=PA) AS PermanentArchive ]
-     BEFORE ENTRY + 1 DAYS
+  RULE    Receive
+     UPON [ SendFee & SendForm ]
+    PARTY B
+     MUST [ send => application(to=C)  AS Transmission
+          & send => application(to=PA) AS PermanentArchive ]
+   BEFORE 1 DAYS
 
-    RULE    Decide
-       UPON Transmission -- could also be UPON Receive
-      PARTY C
-       MUST [ accept
-            , reject(explanation=no)
-            | return(explanation=yes, to=A) AS Return
-            ]
-     BEFORE Receipt + 3 DAYS
+  RULE    Decide
+     UPON Transmission -- could also be UPON Receive
+    GIVEN Receive
+    PARTY C
+     MUST [ accept
+          , reject(explanation=no)
+          | return(explanation=yes, to=A) AS Return
+          ]
+   BEFORE Receive + 3 DAYS
 #+end_src
 
 ** Alternative Representations

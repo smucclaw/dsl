@@ -47,13 +47,13 @@ RULE mkContract
 
 RULE OrderBike
    PARTY Buyer
-   MAY send => Order(to=seller) -- the "from" is automatic
+     MAY send => Order(to=seller) -- the "from" is automatic
    HENCE DeliverBike
 
 RULE DeliverBike
     UPON recv => Order(from=buyer) -- the "to" is automatic
    PARTY Seller
-    MUST send => Delivery(item=Order.item)
+    MUST send => Delivery(to=buyer, item=Order.item)
   BEFORE maxDays
     WHEN Order IN Seller.inventory
    HENCE [ inventoryDeduct & BuyerPays ]

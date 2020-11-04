@@ -120,7 +120,9 @@ showDot rs = T.unpack $ renderDot $ toDot $ graphToDot params $ myGraph
     clustBy (n,l) = C (if lab myGraph n `elem` [Just "FULFILLED", Just "BREACH"]
                        then 1
                        else 0) $ N (n,l)
-    clFmt m = [GraphAttrs [toLabel $ ["IN","OUT"] !! m]]
+    clFmt m = [GraphAttrs [ toLabel   $ ["IN" ,"OUT" ] !! m
+                          , LabelJust $ [JLeft,JRight] !! m
+                          , Style [SItem Invisible []] ]]
     nodeFmt (node, clusterLabel) = [toLabel (fromMaybe "(unlabeled)" $ lab myGraph node) ]
     edgeFmt (headN, tailN, edgeLabel) = ports tailN headN edgeLabel
     -- to choose a tailport, we need to know:

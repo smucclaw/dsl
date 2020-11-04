@@ -32,8 +32,8 @@ RULE mkContract
   DEFINE Event    ISA Record   WITH time = Time
   DEFINE Message  ISA Event    WITH from = Person; to = Person
   DEFINE Delivery ISA Event    WITH from = Person; to = Person; item = Item
-  DEFINE Order    ISA Message  WITH amount    ISA CurrencyAmount
-                                    item      ISA Item
+  DEFINE Payment  ISA Event    WITH from = Person; to = Person; amount ISA CurrencyAmount
+  DEFINE Order    ISA Message  WITH amount = CurrencyAmount;    item = Item
   DEFINE wantBike ISA Order    WITH amount = :EUR:100
                                     item   = bicycle2000
   DEFINE maxDays IS 5
@@ -47,7 +47,7 @@ RULE mkContract
 
 RULE OrderBike
    PARTY Buyer
-   MAY send => wantBike(to=seller) -- the "from" is automatic
+   MAY send => Order(to=seller) -- the "from" is automatic
    HENCE DeliverBike
 
 RULE DeliverBike
@@ -63,9 +63,9 @@ RULE inventoryDeduct
   DEFINE Seller.inventory.[DeliverBike.item].count = . - 1
 
 RULE BuyerPays
-   UPON recv => delivery(from=seller, item=bikeSale.item)
+   UPON recv => Delivery(from=seller, item=bikeSale.item)
   PARTY Buyer
-   MUST send => payment(to=seller, amount=bikeSale.amount)
+   MUST send => Payment(to=seller, amount=bikeSale.amount)
  BEFORE maxDays
 
 // yes, there is a risk of damage during delivery:

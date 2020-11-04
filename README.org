@@ -1266,7 +1266,7 @@ And that works even without the paren args.
                         |  "."; -- ideally we would have foo..bar and not foo...bar
   separator nonempty UnifyElem ".";
   rules      UnifyStar ::= "*" ;
-  rules      UnifyBracket ::= "<" [CommaElem] ">" ;
+  rules      UnifyBracket ::= "[" [CommaElem] "]" ;
   rules      CommaElem ::= ObjAttr;
   separator nonempty CommaElem ",";
 #+end_src
@@ -1933,7 +1933,7 @@ Alternative syntax:
 #+begin_src haskell :noweb-ref l4-rules
   RULE     noblePotato3
     DEFINE Potato IS Noble
-      WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+      WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble
 #+end_src
 *** About Non-Monotonic Logics
 

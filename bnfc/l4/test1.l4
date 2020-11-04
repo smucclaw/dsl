@@ -82,7 +82,7 @@ RULE     noblePotato2
     WHEN Potato.previousOwners.isNoble >= 2
 RULE     noblePotato3
   DEFINE Potato IS Noble
-    WHEN Potato.previousOwners.<Owner1,Owner2> IS Noble
+    WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble
 
 RULE mkSpud1
   ENTITY spud10 ISA Item

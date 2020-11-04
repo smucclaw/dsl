@@ -316,7 +316,7 @@ rules      UnifyElem ::= ObjAttrElem
                       |  "."; -- ideally we would have foo..bar and not foo...bar
 separator nonempty UnifyElem ".";
 rules      UnifyStar ::= "*" ;
-rules      UnifyBracket ::= "<" [CommaElem] ">" ;
+rules      UnifyBracket ::= "[" [CommaElem] "]" ;
 rules      CommaElem ::= ObjAttr;
 separator nonempty CommaElem ",";
 rules BraceList     ::= "{" [ConstraintComma] "}" ;

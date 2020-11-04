@@ -27,34 +27,40 @@ template entrypoint Sale(buyer, seller, amount, item, inventory, maxDays) =
 */
 
 RULE mkContract
-  DEFINE Buyer  ISA Person
-  DEFINE Seller ISA Person WITH inventory = { item = Int }
-  DEFINE OrderDetails ISA Record   WITH amount    ISA CurrencyAmount
-                                        item      ISA Item
-  DEFINE bicycle2000 ISA item WITH name = "HotWheels 2000"
-  DEFINE bikeSale ISA OrderDetails WITH amount = :EUR:100
-                                        item   = bicycle2000
+  DEFINE Buyer    ISA Person
+  DEFINE Seller   ISA Person   WITH inventory = [ { amount = Money, item = Int } ]
+  DEFINE Event    ISA Record   WITH time = Time
+  DEFINE Message  ISA Event    WITH from = Person; to = Person
+  DEFINE Delivery ISA Event    WITH from = Person; to = Person; item = Item
+  DEFINE Order    ISA Message  WITH amount    ISA CurrencyAmount
+                                    item      ISA Item
+  DEFINE wantBike ISA Order    WITH amount = :EUR:100
+                                    item   = bicycle2000
   DEFINE maxDays IS 5
-  ENTITY alice  ISA Person WITH name = "Alice Apple"
-  ENTITY bob    ISA Person WITH name = "Bob Banana"
- DECLARE Buyer IS alice
- DECLARE Seller IS bob
+  DEFINE bicycle2000  ISA item     WITH name = "HotWheels 2000"
+  ENTITY alice        ISA Person   WITH name = "Alice Apple"
+  ENTITY bob          ISA Person   WITH name = "Bob Banana"
+ DECLARE Buyer  IS alice
+ DECLARE Seller IS bob WITH inventory = [ { amount >= :EUR:100, item = bicycle2000 }
+                                        , { amount >= :EUR:50,  item = coldWheels  }
+                                        , { amount >= :USD:200, item = popAwheelie } ]
 
-RULE ContractStartBuyer
+RULE OrderBike
    PARTY Buyer
-   MAY send => order(to=seller, msg=bikeSale)
-   HENCE ContractStartSeller
+   MAY send => wantBike(to=seller) -- the "from" is automatic
+   HENCE DeliverBike
 
-RULE ContractStartSeller
-    UPON recv => order(from=buyer, msg=orderDetails)
+RULE DeliverBike
+    UPON recv => Order(from=buyer) -- the "to" is automatic
    PARTY Seller
-    MUST send => delivery(to=orderDetails.recipient, item=orderDetails.item)
+    MUST send => Delivery(item=Order.item)
   BEFORE maxDays
+    WHEN Order IN Seller.inventory
    HENCE [ inventoryDeduct & BuyerPays ]
 
 RULE inventoryDeduct
-  GIVEN ContractStartSeller
-  DEFINE Seller.inventory.bicycle2000.count = Seller.inventory.bicycle2000.count - 1
+  GIVEN DeliverBike
+  DEFINE Seller.inventory.[DeliverBike.item].count = . - 1
 
 RULE BuyerPays
    UPON recv => delivery(from=seller, item=bikeSale.item)

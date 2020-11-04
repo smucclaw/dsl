@@ -16,9 +16,9 @@ RULE showMatches
             UnifyElem Foo.bar
             UnifyElem     bar
             UnifyExpr Foo.bar.*
-            UnifyExpr Foo.bar.<Poop>
+            UnifyExpr Foo.bar.[Poop]
             UnifyExpr Foo.bar.*.toots
-            UnifyExpr Foo.bar.<Poop>.toots
+            UnifyExpr Foo.bar.[Poop].toots
             ObjMethod Foo
             ObjMethod Foo.bar
             ObjMethod Foo.bar(moo=poo, baz=quux)

@@ -1,0 +1,59 @@
+/* meng's version of deon_bike.l4
+
+
+template entrypoint Sale(buyer, seller, amount, item, inventory, maxDays) =
+  // Some buyer orders an item for some price from a seller
+  <buyer> order: Order where
+    order.amount = amount &&
+    order.recipient = seller &&
+    order.item = item
+  then (
+    // The seller delivers that item
+    <seller> delivery: Delivery where
+      checkOffer inventory order.item order.amount &&
+      delivery.item = order.item &&
+      delivery.recipient = buyer &&
+      // 'DateTime::addDays t d' creates a new timestamp that
+      // is 'd' days after timestamp 't'.
+      delivery.timestamp <= DateTime::addDays order.timestamp maxDays
+    or
+    // The seller tries to cheat
+    <seller> delivery: Delivery where
+        checkOffer inventory order.item order.amount &&
+        (not (delivery.item = order.item) ||
+         not (delivery.recipient = buyer))
+    then failure
+  )
+*/
+
+RULE mkContract
+  DEFINE Buyer  ISA Person, alice ISA Person WITH name = "Alice Apple", Buyer IS alice
+       , Seller ISA Person, bob   ISA Person WITH name = "Bob Banana",  Buyer IS bob
+       , OrderDetails ISA Record   WITH amount    ISA CurrencyAmount
+                                        item      ISA Item
+       , bicycle2000 ISA item WITH name = "HotWheels 2000"
+       , bikeSale ISA OrderDetails WITH amount = :EUR:100
+                                        item   = bicycle2000
+       , maxDays IS 5 DAYS
+
+RULE ContractStartBuyer
+   PARTY Buyer
+   MAY send => order(to=seller, msg=bikeSale)
+
+RULE ContractStartSeller
+    UPON recv => order(from=buyer, msg=orderDetails)
+   PARTY Seller
+    MUST send => delivery(to=orderDetails.recipient, item=orderDetails.item)
+  BEFORE maxDays
+
+RULE BuyerPays
+   UPON recv => delivery(from=seller, item=bikeSale.item)
+  PARTY Buyer
+   MUST send => payment(to=seller, amount=bikeSale.amount)
+
+// yes, there is a risk of damage during delivery:
+// if the bike was shredded in transit, what happens? the buyer doesn't pay.
+// this corresponds to a UCC situation:
+// https://college.cengage.com/business/goldman/business_law/7e/chapters/chapter16.html
+// so we would need a "background theory" of contract law to fill in the blanks and cover more scenarios.
+

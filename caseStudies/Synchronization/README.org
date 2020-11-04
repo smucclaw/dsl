@@ -99,63 +99,64 @@ We could represent the process in L4 as follows:
 ** Source for the Petri Net Diagrams
 
 #+begin_src graphviz-dot :tangle untimed-petri.dot
-   digraph G {
-     subgraph place {
-       graph [shape=circle,color=gray];
-       node [shape=circle,fixedsize=true,width=1.5];
-       a_form   [label="A:\napplication\nform\n\n"];
-       a_fee    [label="A:\napplication\nfee\n\n"];
-       b_review [label="B:\ngatekeeper\n\n"];
-       c_in     [label="C:\napplication\nreceived\n\n"];
-       c_out1   [label="C:\naccepted\n\n\n\n"];
-       c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
-       c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
-       pa       [label="\nPermanent\nArchive\n\n"];
-     }
-     subgraph transitions {
-       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-       start        [label="start"];
-       end1         [label="end"];
-       end2         [label="end"];
-       submission   [label="submit"];
-       transmission [label="receive"];
-       return       [label="return to applicant"];
-       c_review1 [label="accept"];
-       c_review2 [label="reject"];
-       c_review3 [label="resubmit"];
-     }
+  digraph G {
+    subgraph place {
+      graph [shape=circle,color=gray];
+      node [shape=circle,fixedsize=true,width=1.5];
+      a_form   [label="A:\napplication\nform\n\n"];
+      a_fee    [label="A:\napplication\nfee\n\n"];
+      b_review [label="B:\ngatekeeper\n\n"];
+      c_in     [label="C:\napplication\nreceived\n\n"];
+      c_out1   [label="C:\naccepted\n\n\n\n"];
+      c_out2   [label="C:\nrejected\nwithout\nexplanation\n\n"];
+      c_out3   [label="C:\nrejected\nwith\namendments\n\n"];
+      pa       [label="\nPermanent\nArchive\n\n"];
+    }
+    subgraph transitions {
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      start        [label="start"];
+      end1         [label="end"];
+      end2         [label="end"];
+      submission   [label="submit"];
+      transmission [label="receive"];
+      return       [label="return to applicant"];
+      c_review1 [label="accept"];
+      c_review2 [label="reject"];
+      c_review3 [label="resubmit"];
+    }
 
-     subgraph cluster_inputs {
-       graph [style=invis];
-       a_form;
-       a_fee ;
-     }
+    subgraph cluster_inputs {
+      graph [style=invis];
+      a_form;
+      a_fee ;
+    }
 
-     start -> { a_form a_fee } -> submission -> b_review -> transmission;
-     transmission -> { pa c_in };
+    start -> { a_form a_fee } -> submission -> b_review -> transmission;
+    transmission -> { pa c_in };
 
-     subgraph cluster_review {
-       graph [label="decision", labeljust="l"];
-       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
-       c_review1;
-       c_review2;
-       c_review3;
-     }
+    subgraph cluster_review {
+      graph [label="decision", labeljust="l"];
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+      c_review1;
+      c_review2;
+      c_review3;
+    }
 
-     c_in -> { c_review1 c_review2 c_review3 } ;
+    c_in -> { c_review1 c_review2 c_review3 } ;
 
-     subgraph cluster_outputs {
-       graph [style=invis];
-       c_review1 -> c_out1 -> end1;
-       c_review2 -> c_out2 -> end2;
-       c_review3 -> c_out3 -> return -> a_form;
-     }
-   }
+    subgraph cluster_outputs {
+      graph [style=invis];
+      c_review1 -> c_out1 -> end1;
+      c_review2 -> c_out2 -> end2;
+      c_review3 -> c_out3 -> return;
+    }
+    return -> a_form;
+  }
 
-   // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
-   // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1 >   end1 pa        > blank
-   // anim2 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review2 pa c_out2 >   end2 pa        > blank
-   // anim3 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review3 pa c_out3 > return pa a_form > blank
+  // this controlBlock is parsed by the mkMultiPetri script to produce multiple dot files, each being one frame of the animation
+  // anim1 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review1 pa c_out1 >   end1 pa        > blank
+  // anim2 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review2 pa c_out2 >   end2 pa        > blank
+  // anim3 : blank > start a_form a_fee > submission b_review > transmission c_in pa > c_review3 pa c_out3 > return pa a_form > blank
 #+end_src
 
 

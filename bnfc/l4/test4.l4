@@ -21,7 +21,7 @@ RULE showMatches
             UnifyExpr Foo.bar.<Poop>.toots
             ObjMethod Foo
             ObjMethod Foo.bar
-            ObjMethod Foo.bar(moo=poo)
+            ObjMethod Foo.bar(moo=poo, baz=quux)
             UnifyExpr Foo.bar
             Exp quux
             Exp Quux
@@ -30,12 +30,6 @@ RULE showMatches
             Exp [ quux ]
             Exp [ Quux ]
             Exp [ quux, pouux ]
-            Constraint moo=poo
-            Constraint vtime = 2010-01-02
-            Constraint address = thing
-            Constraint address = [ Thing ]
-            Constraint address = [ Thing ]
-            Constraint address = [ Thing | asdf ]
             BraceList { foo = bar }
             BraceList { baz = quux }
             BraceList { baz = "quux" }
@@ -83,11 +77,21 @@ RULE showMatches
             DeonticLimb SHANT sell Item
             BinExp AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
             DefineLimb DEFINE Foo ISA Bar WITH fooness = True
+            DefineLimb DEFINE Foo ISA Bar WITH fooness = { honk = True }
+            Exp Foo=Bar
+            ConstraintComma { Foo=Bar }
+            ConstraintComma { Foo=Bar, Baz=Quux }
+            ConstraintSemi  { Foo=Bar; Baz=Quux }
+            ConstraintComma { moo=poo }
+            ConstraintComma { vtime = 2010-01-02 }
+            ConstraintComma { address = thing }
+            ConstraintComma { address = [ Thing ] }
+            ConstraintComma { address = [ Thing ] }
+            ConstraintComma { address = [ Thing | asdf ] }
             DefineLimb ENTITY foo ISA Bar WITH fooness = True
                                                species  = "Solanum tuberosum"
                                                isEdible = true
                                                previousOwners = [ alice, bob, charlie, daryl ]
-
 	    Rule RULE mkSpud2
                      ENTITY spud2
                         ISA Item

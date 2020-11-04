@@ -18,7 +18,7 @@ GUUpon.       GivenUpon ::= UponLimb GivenLimb;
 
 WHW.          WhenHenceWhere ::= WhenLimb HenceLimb WhereLimb ;
 
-DefLimb.    DefineLimb ::= DefineWord [Constraint] WithLimb Asof;
+DefLimb.    DefineLimb ::= DefineWord [ConstraintComma] WithLimb Asof ;
 
 DefDefine.  DefineWord ::= "DEFINE" ;
 DefDeem.    DefineWord ::= "DEEM" ;
@@ -42,8 +42,8 @@ rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
-ActionMulti.    ActionLimb  ::= LstExp    [Blah] OptAsAlias ;
-ActionSingle.   ActionLimb  ::= ObjMethod [Blah] OptAsAlias ;
+ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
+ActionSingle.   ActionLimb  ::= Exp    [Blah] OptAsAlias ;
 DL0.         DeadlineLimb ::= ;
 DLLimb.      DeadlineLimb ::= TempRel TemporalExpr OptAsAlias ;
 TRBefore.    TempRel      ::= "BEFORE";
@@ -69,7 +69,7 @@ RGotoOne.       Goto   ::= RuleDef ;
 RGotoLst.       Goto   ::= LstExp ; -- if we could, we'd make this a LstExp RuleDef, but we can't do that in BNFC.
 RFulfilled.     Goto   ::= "FULFILLED" ;
 RBreach.        Goto   ::= "BREACH" ;
-RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [Constraint] WithLimb WhenHenceWhere;
+RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [ConstraintComma] WithLimb WhenHenceWhere;
 
 PerHereby.    PerformWord ::= "HEREBY" ;
 PerAgree.     PerformWord ::= "AGREE" ;
@@ -96,7 +96,7 @@ WhenLimb0.      WhenLimb   ::= ;
 WhenLimb1.      WhenLimb   ::= "WHEN"   Exp;
 rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
 rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
-rules      WithIn    ::= [Constraint] | TraceExpr;
+rules      WithIn    ::= Exp | TraceExpr;
 separator nonempty WithIn ";";
 Asof.      Asof      ::= "ASOF" DateTime ;
 AsofNull.  Asof      ::= ;
@@ -110,11 +110,12 @@ MetaNOTW.    MetaLimb ::= "NOTW" RuleDef ;
 MetaSubj.    MetaLimb ::= "SUBJ" RuleDef ;
 WhereLimb0.     WhereLimb ::= ;
 WhereLimb1.     WhereLimb ::= "WHERE" "{" [WhereExp] "}" ;
-rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
+rules     WhereExp  ::= GivenLimb Exp WithLimb WhenLimb WhereLimb ;
 
 separator nonempty WhereExp ";";
 RMatch.  RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-rules    MatchVars ::= "Constraint"  Constraint
+rules    MatchVars ::= "ConstraintSemi"  "{" [ConstraintSemi] "}"
+                     | "ConstraintComma" "{" [ConstraintComma] "}"
                      | "ObjMethod"   ObjMethod
                      | "ObjAttr"     ObjAttr
                      | "ObjAttrElem" ObjAttrElem
@@ -148,6 +149,7 @@ terminator Toplevels ";";
 
 layout toplevel;
 layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "MATCHES";
+-- , "DEFINE", "ENTITY", "DECLARE", "DEEM";
 entrypoints Tops;
 Import. Import ::= "import" ObjAttr ;
 rules Group ::= "GROUP" RuleDef RuleName [Toplevels] ;
@@ -306,7 +308,7 @@ OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
 separator nonempty ObjAttrElem ".";
 separator nonempty ObjAttr     ",";
 rules      ObjMethod  ::= [UnifyElem] Args OptLangStrings;
-rules      Args       ::= | "(" [Constraint] ")";
+rules      Args       ::= | "(" [ConstraintComma] ")";
 rules      UnifyExpr ::= [UnifyElem] ;
 rules      UnifyElem ::= ObjAttrElem
                       |  UnifyBracket
@@ -317,9 +319,11 @@ rules      UnifyStar ::= "*" ;
 rules      UnifyBracket ::= "<" [CommaElem] ">" ;
 rules      CommaElem ::= ObjAttr;
 separator nonempty CommaElem ",";
-rules BraceList     ::= "{" [Constraint] "}" ;
-rules  Constraint   ::= Exp;
-separator nonempty Constraint  "," ;
+rules BraceList     ::= "{" [ConstraintComma] "}" ;
+CComma.  ConstraintComma   ::= Exp;
+CSemi.   ConstraintSemi    ::= Exp;
+separator nonempty ConstraintComma  "," ;
+separator nonempty ConstraintSemi   ";" ;
 
 -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 rules CaseExpr  ::= "CASE" ObjAttr "MATCHES" "{" [CaseExp] "}" ;

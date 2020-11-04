@@ -40,11 +40,11 @@ We could represent the process in L4 as follows:
 #+begin_src haskell :noweb yes :tangle appform1.l4
   RULE    SendFee
     PARTY A
-      MAY send fee to B
+      MAY pay => fee(to=B)
 
   RULE    SendForm
     PARTY A
-      MAY send form to B
+      MAY send => form(to=B)
 
   <<common>>
 #+end_src
@@ -73,8 +73,8 @@ We could represent the process in L4 as follows:
 #+begin_src haskell :noweb yes :tangle appform2.l4
   RULE    TwoEnvelopes
     PARTY A
-      MAY [ send fee
-          & send form ] to B AS Submission
+      MAY [ pay => fee
+          & send => form ].(to=B) AS Submission
 
   <<common>>
 #+end_src

@@ -151,11 +151,11 @@ RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
   ENTITY celebXY
      ISA Couple
-    WITH xtime = 2020-01-01, maritalStatus = dating
-         xtime = 2020-07-01, maritalStatus = married
-         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 TO PRESENT
-         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 TO 2020-11-01
-         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 TO PRESENT
+    WITH xtime = 2020-01-01; maritalStatus = dating
+         xtime = 2020-07-01; maritalStatus = married
+         xtime = 2020-09-01; maritalStatus = married;  vtime = 2020-06-01 TO PRESENT
+         xtime = 2020-12-01; maritalStatus = married;  vtime = 2020-06-01 TO 2020-11-01
+         xtime = 2020-12-01; maritalStatus = divorced; vtime = 2020-11-01 TO PRESENT
 SCENARIO alicePregnancy
    TRACE 2020-08-01 Alice knew { pregnancy = true }
          2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }

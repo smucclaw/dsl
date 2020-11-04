@@ -97,7 +97,7 @@ The BNF:
 
   WHW.          WhenHenceWhere ::= WhenLimb HenceLimb WhereLimb ;
 
-  DefLimb.    DefineLimb ::= DefineWord [Constraint] WithLimb Asof;
+  DefLimb.    DefineLimb ::= DefineWord [ConstraintComma] WithLimb Asof ;
   
   DefDefine.  DefineWord ::= "DEFINE" ;
   DefDeem.    DefineWord ::= "DEEM" ;
@@ -194,8 +194,8 @@ Is there an argument for adding a "SHOULD" rule? RFC2119 has that notion; even t
 The syntax for actions is not terribly well specified at the moment. You can say pretty much whatever you want.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  ActionMulti.    ActionLimb  ::= LstExp    [Blah] OptAsAlias ;
-  ActionSingle.   ActionLimb  ::= ObjMethod [Blah] OptAsAlias ;
+  ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
+  ActionSingle.   ActionLimb  ::= Exp    [Blah] OptAsAlias ;
 #+end_src
 
 ***** Deadlines
@@ -261,7 +261,7 @@ Similar to deontic rules, except instead of saying that a party MUST do somethin
 Representations and warranties are given in the form of such statements.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [Constraint] WithLimb WhenHenceWhere;
+  RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [ConstraintComma] WithLimb WhenHenceWhere;
   
   PerHereby.    PerformWord ::= "HEREBY" ;
   PerAgree.     PerformWord ::= "AGREE" ;
@@ -454,7 +454,7 @@ The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
   rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
-  rules      WithIn    ::= [Constraint] | TraceExpr;
+  rules      WithIn    ::= Exp | TraceExpr;
   separator nonempty WithIn ";";
 #+end_src
 
@@ -586,7 +586,7 @@ This can probably be done as a floating DEFINE.
 #+begin_src bnfc :noweb-ref l4bnfc
   WhereLimb0.     WhereLimb ::= ;
   WhereLimb1.     WhereLimb ::= "WHERE" "{" [WhereExp] "}" ;
-  rules     WhereExp  ::= GivenLimb Constraint WithLimb WhenLimb WhereLimb ;
+  rules     WhereExp  ::= GivenLimb Exp WithLimb WhenLimb WhereLimb ;
 
   separator nonempty WhereExp ";";
 #+end_src
@@ -623,7 +623,8 @@ The "MATCHTYPE" rule body is for debugging purposes only.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   RMatch.  RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-  rules    MatchVars ::= "Constraint"  Constraint
+  rules    MatchVars ::= "ConstraintSemi"  "{" [ConstraintSemi] "}"
+                       | "ConstraintComma" "{" [ConstraintComma] "}"
                        | "ObjMethod"   ObjMethod
                        | "ObjAttr"     ObjAttr
                        | "ObjAttrElem" ObjAttrElem
@@ -696,15 +697,16 @@ A module can explicitly give itself a name by saying
 An L4 Module contains a list of directives and statements.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  Toplevel.  Tops      ::= [Toplevels];
-  rules      Toplevels ::= Module | Import | Pragma
-                         | Rule | Scenario
-                         | Group | Section ;
-  terminator Toplevels ";";
+    Toplevel.  Tops      ::= [Toplevels];
+    rules      Toplevels ::= Module | Import | Pragma
+                           | Rule | Scenario
+                           | Group | Section ;
+    terminator Toplevels ";";
 
-  layout toplevel;
-  layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "MATCHES";
-  entrypoints Tops;
+    layout toplevel;
+    layout "WITH", "TRACE", "WHERE", "MATCHTYPE", "HAVING", "BEING", "GROUP", "SECTION", "THEN", "MATCHES";
+    -- , "DEFINE", "ENTITY", "DECLARE", "DEEM";
+    entrypoints Tops;
 #+end_src
 
 *** import statement
@@ -1247,7 +1249,7 @@ Actually, though, these parameters are constraints, so you could also say
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      ObjMethod  ::= [UnifyElem] Args OptLangStrings;
-  rules      Args       ::= | "(" [Constraint] ")";
+  rules      Args       ::= | "(" [ConstraintComma] ")";
 #+end_src
 
 **** Unification Syntax
@@ -1280,9 +1282,11 @@ See Constraint Unification for details.
 "WITH" limbs look like "foo == bar". But they're actually constraint relations, and you can do multiples of them.
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  rules BraceList     ::= "{" [Constraint] "}" ;
-  rules  Constraint   ::= Exp;
-  separator nonempty Constraint  "," ;
+  rules BraceList     ::= "{" [ConstraintComma] "}" ;
+  CComma.  ConstraintComma   ::= Exp;
+  CSemi.   ConstraintSemi    ::= Exp;
+  separator nonempty ConstraintComma  "," ;
+  separator nonempty ConstraintSemi   ";" ;
 
   -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
 #+end_src
@@ -1649,11 +1653,11 @@ RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
   ENTITY celebXY
      ISA Couple
-    WITH xtime = 2020-01-01, maritalStatus = dating
-         xtime = 2020-07-01, maritalStatus = married
-         xtime = 2020-09-01, maritalStatus = married,  vtime = 2020-06-01 TO PRESENT
-         xtime = 2020-12-01, maritalStatus = married,  vtime = 2020-06-01 TO 2020-11-01
-         xtime = 2020-12-01, maritalStatus = divorced, vtime = 2020-11-01 TO PRESENT
+    WITH xtime = 2020-01-01; maritalStatus = dating
+         xtime = 2020-07-01; maritalStatus = married
+         xtime = 2020-09-01; maritalStatus = married;  vtime = 2020-06-01 TO PRESENT
+         xtime = 2020-12-01; maritalStatus = married;  vtime = 2020-06-01 TO 2020-11-01
+         xtime = 2020-12-01; maritalStatus = divorced; vtime = 2020-11-01 TO PRESENT
 #+end_src
 
 The "transaction time" shows when the system know something; the "valid time" shows when some situation was the case. This allows one to compute "on this date, what did we know? What was actually true?"

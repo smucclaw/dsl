@@ -27,14 +27,18 @@ template entrypoint Sale(buyer, seller, amount, item, inventory, maxDays) =
 */
 
 RULE mkContract
-  DEFINE Buyer  ISA Person, alice ISA Person WITH name = "Alice Apple", Buyer IS alice
-       , Seller ISA Person, bob   ISA Person WITH name = "Bob Banana",  Buyer IS bob
-       , OrderDetails ISA Record   WITH amount    ISA CurrencyAmount
+  DEFINE Buyer  ISA Person
+  DEFINE Seller ISA Person WITH inventory = { item = Int }
+  DEFINE OrderDetails ISA Record   WITH amount    ISA CurrencyAmount
                                         item      ISA Item
-       , bicycle2000 ISA item WITH name = "HotWheels 2000"
-       , bikeSale ISA OrderDetails WITH amount = :EUR:100
+  DEFINE bicycle2000 ISA item WITH name = "HotWheels 2000"
+  DEFINE bikeSale ISA OrderDetails WITH amount = :EUR:100
                                         item   = bicycle2000
-       , maxDays IS 5 DAYS
+  DEFINE maxDays IS 5
+  ENTITY alice  ISA Person WITH name = "Alice Apple"
+  ENTITY bob    ISA Person WITH name = "Bob Banana"
+ DECLARE Buyer IS alice
+ DECLARE Seller IS bob
 
 RULE ContractStartBuyer
    PARTY Buyer
@@ -45,11 +49,17 @@ RULE ContractStartSeller
    PARTY Seller
     MUST send => delivery(to=orderDetails.recipient, item=orderDetails.item)
   BEFORE maxDays
+   HENCE inventoryDeduct
+
+RULE inventoryDeduct
+  GIVEN ContractStartSeller
+  DEFINE Seller.inventory.bicycle2000.count = Seller.inventory.bicycle2000.count - 1
 
 RULE BuyerPays
    UPON recv => delivery(from=seller, item=bikeSale.item)
   PARTY Buyer
    MUST send => payment(to=seller, amount=bikeSale.amount)
+ BEFORE maxDays
 
 // yes, there is a risk of damage during delivery:
 // if the bike was shredded in transit, what happens? the buyer doesn't pay.

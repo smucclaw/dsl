@@ -44,7 +44,7 @@ ruleExits r@(Rule rdef rname asof metalimb rulebody) =
     RuleDeem    gu      dls    whw -> whwHenceLest Nothing whw
     RModal      gu ml          whw -> whwHenceLest (Just $ modalDeontic ml) whw
     RMatch mvs                     -> Right $ Solo $ AndGroup $ do
-      (MatchVars22 innerRule) <- mvs
+      (MatchVars23 innerRule) <- mvs
       return $ showRuleName innerRule
 
 modalDeontic :: ModalLimb -> DeonticExpr
@@ -156,7 +156,7 @@ getRules (Toplevel tops) = fakeRules ++ do
   (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
   case rulebody of
     RMatch mvs              -> do
-      (MatchVars22 innerRule) <- mvs
+      (MatchVars23 innerRule) <- mvs
       pure innerRule
     otherwise               -> pure r
 

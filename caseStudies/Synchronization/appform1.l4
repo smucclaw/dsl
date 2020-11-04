@@ -1,0 +1,24 @@
+RULE    SendFee
+  PARTY A
+    MAY pay => fee(to=B)
+
+RULE    SendForm
+  PARTY A
+    MAY send => form(to=B)
+
+RULE    Receive
+   UPON [ SendFee & SendForm ]
+  PARTY B
+   MUST [ send => application(to=C)  AS Transmission
+        & send => application(to=PA) AS PermanentArchive ]
+ BEFORE 1 DAYS
+
+RULE    Decide
+   UPON Transmission -- could also be UPON Receive
+  GIVEN Receive
+  PARTY C
+   MUST [ accept
+        , reject(explanation=no)
+        | return(explanation=yes, to=A) AS Return
+        ]
+ BEFORE Receive + 3 DAYS

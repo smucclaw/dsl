@@ -1,0 +1,3 @@
+** the buyer may send the order to the seller
+MAction (MkParty (TDet TheSg Buyer)) (May (AAlias (AComplIndir (ASlashDir (Dat Send) (TDet TheSg Order)) (TDet TheSg Seller))))
+

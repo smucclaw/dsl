@@ -31,7 +31,7 @@ RULE received_item
    LEST rejected_item
 
 RULE contractStartSeller
-   UPON ANY EVER order
+   UPON order
    PARTY Seller
    MUST order 
    HENCE received_order

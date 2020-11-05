@@ -49,8 +49,10 @@ abstract Rule = Action ** {
     AAliasNamed : Term -> Action -> ActionAlias ;
 
     -- Parties
+    Buyer,
+    Seller,
     Nobody,
-      Everybody : Party ;
+    Everybody : Party ;
 
     StrParty : String -> Party ;
     MkParty : Term -> Party ;

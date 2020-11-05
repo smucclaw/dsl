@@ -44,6 +44,17 @@ concrete RuleEng of Rule = ActionEng ** open
     -- : Sentence -> Sentence -> Sentence ;
     IfThen if then = mkUtt (mkAdv if_then_Conj <if : Adv> <then : Adv>) ;
 
+    -- : ActionAlias -> Sentence -> Sentence ;
+    Upon recv sent =
+      let upon_VV : VV = P.ingVV (P.mkV "dummy") ** {s = \\_ => "upon"} ;
+          uponRecv : Utt = UttVPShort (ComplVPIVV upon_VV (recv.inf.comp ! Pos)) ;
+       in sent ** prefixSS (uponRecv.s ++ ",") sent ;
+
+    UponAlias recv sent =
+      let uponRecv : Adv = SyntaxEng.mkAdv WN.upon_Prep recv.alias ;
+       in sent ** prefixSS uponRecv.s sent ;
+
+  lin
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
     MAction party deontic = mkUtt (PredVPS party (deontic.s ! VAct Sim)) ;

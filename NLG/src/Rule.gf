@@ -55,6 +55,10 @@ abstract Rule = Action ** {
     StrParty : String -> Party ;
     MkParty : Term -> Party ;
 
+    -- Some operations are restricted to parties
+    From, To
+      : Party -> Action -> Action ;
+
     -- Arithmetic operations
   cat
     Relation ; -- TODO: check https://github.com/GrammaticalFramework/gf-contrib/tree/master/mgl/abstract for inspiration

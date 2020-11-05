@@ -85,6 +85,16 @@ open
     -- : Action_Indir -> Action ; -- same as above, but for indirect object
     ANoComplIndir a = a ** {s = a.intrans} ; -- is this useful? -}
 
+  oper
+    -- Used in other modules
+    addIndir : PrepPol -> LinAction -> SlashIndir = \prep,a -> a ** {
+      intrans = a.s ;
+      indir = prep ;
+      dir = \\_ => emptyAdv
+      } ;
+
+  lin
+
     -------------
     -- Gerunds --
     -------------

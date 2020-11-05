@@ -5,9 +5,6 @@ abstract Bike = Action ** {
       Receive
       : Action_Dir ;
 
-    From
-      : Action -> Action_Indir ;
-
     Order,
       Delivery,
       Payment,

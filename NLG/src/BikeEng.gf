@@ -2,6 +2,7 @@ concrete BikeEng of Bike = ActionEng ** open
   Prelude,
   ParadigmsEng,
   SyntaxEng,
+  SymbolicEng,
   (WN=WordNetEng) in {
   lin
     -- : Action_Dir ;
@@ -17,6 +18,10 @@ concrete BikeEng of Bike = ActionEng ** open
     Item = kind "item" ;
     Inventory = kind "inventory" ;
 
+    -- : Int -> Term ;
+    Eur int =
+      let n : Det = mkDet <symb (mkSymb int.s) : Card> ;
+       in mkNP n (mkN "EUR" "EUR") ;
 
   oper
     send_V2 : V2 = <WN.send_V3 : V2> ;

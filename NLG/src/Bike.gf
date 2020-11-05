@@ -12,4 +12,6 @@ abstract Bike = Action ** {
       Item,
       Inventory
       : Kind ;
+
+    Eur : Int -> Term ;
 }

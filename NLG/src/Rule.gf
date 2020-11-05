@@ -22,6 +22,9 @@ abstract Rule = Action ** {
     -- Sentences
     IfThen : Sentence -> Sentence -> Sentence ;
 
+    Upon, -- Upon [receiving the order/reception], …
+      UponAlias : ActionAlias -> Sentence -> Sentence ;
+
     MAction : Party -> Deontic -> Sentence ; -- the seller must issue the refund within 3 days.
 
     MPass : Deontic -> Sentence ; -- the refund must be issued within 3 days.

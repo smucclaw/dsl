@@ -93,6 +93,8 @@ concrete RuleEng of Rule = ActionEng ** open
     -- AAliasNamed alias action = action ** {alias = alias} ;
 
     -- Parties
+    Buyer = mkNP theSg_Det (WN.buyerFem_N | WN.buyerMasc_N) ;
+    Seller = mkNP theSg_Det (WN.sellerFem_N | WN.sellerMasc_N) ;
     Everybody = everybody_NP ;
     Nobody = nobody_NP ;
     MkParty p = p ;

@@ -8,8 +8,6 @@ abstract Bike = Action ** {
     Order,
       Delivery,
       Payment,
-      Buyer,
-      Seller,
       Bike,
       Item,
       Inventory

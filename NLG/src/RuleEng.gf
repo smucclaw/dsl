@@ -98,6 +98,20 @@ concrete RuleEng of Rule = ActionEng ** open
     MkParty p = p ;
     StrParty = symb ;
 
+    -- : Party -> Action -> Action ;
+    From = addParty whether_from_Prep ;
+    To = addParty datPrep ;
+
+  oper
+    addParty : PrepPol -> LinTerm -> LinAction -> LinAction = \prep,party,action ->
+      complIndir (addIndir prep action) party ;
+
+    whether_from_Prep : PrepPol =
+     prepPol
+      {s = "from" ; post = [] ; redupl = False}
+      {s = ", whether from" ; post = "or from any source" ; redupl = False} ;
+
+
     -- Arithmetic operations
   lincat
     Relation = Prep ;

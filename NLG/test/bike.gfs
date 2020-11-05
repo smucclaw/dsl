@@ -1,4 +1,51 @@
 i src/TopEng.gf
 
+ps "   RULE OrderBike"
+ps "      PARTY Buyer"
+ps "        MAY send => Order(to=seller) -- the \"from\" is automatic"
+ps "      HENCE DeliverBike"
+ps ""
+
+-- Buyer and Seller
 ps "** the buyer may send the order to the seller"
 p "the buyer may send the order to the seller"
+
+-- Replaced with names
+ps "** Alice_Apple may send the order to Bob_Banana"
+p "Alice_Apple may send the order to Bob_Banana"
+
+ps "   RULE DeliverBike"
+ps "       UPON recv => Order(from=buyer) -- the \"to\" is automatic"
+ps "      PARTY Seller"
+ps "       MUST send => Delivery(to=buyer, item=Order.item)"
+ps "     BEFORE maxDays"
+ps "       WHEN Order IN Seller.inventory"
+ps "      HENCE [ inventoryDeduct & BuyerPays ]"
+ps ""
+ps "1) Generic"
+ps "** upon receiving the order from the buyer , the seller must send the delivery to the buyer"
+p "upon receiving the order from the buyer , the seller must send the delivery to the buyer"
+
+ps "2) Seller and buyer replaced with names"
+ps "** upon receiving the order from Alice_Apple , Bob_Banana must send the delivery to Alice_Apple"
+p "upon receiving the order from Alice_Apple , Bob_Banana must send the delivery to Alice_Apple"
+
+ps "3) Delivery specified as bike"
+ps "** upon receiving the order from Alice_Apple , Bob_Banana must send the bike to Alice_Apple"
+p "upon receiving the order from Alice_Apple , Bob_Banana must send the bike to Alice_Apple"
+
+
+ps "   RULE BuyerPays"
+ps "      UPON recv => Delivery(from=seller, item=bikeSale.item)"
+ps "     PARTY Buyer"
+ps "      MUST send => Payment(to=seller, amount=bikeSale.amount)"
+ps "    BEFORE maxDays"
+ps ""
+ps "** upon receiving the delivery from the seller , the buyer must send the payment of 100 EUR to the seller"
+p "upon receiving the delivery from the seller , the buyer must send the payment of 100 EUR to the seller"
+
+ps "** upon receiving the delivery from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana"
+p "upon receiving the delivery from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana"
+
+ps "** upon receiving the bike from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana"
+p "upon receiving the bike from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana"

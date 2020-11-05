@@ -1,3 +1,46 @@
+   RULE OrderBike
+      PARTY Buyer
+        MAY send => Order(to=seller) -- the "from" is automatic
+      HENCE DeliverBike
+
 ** the buyer may send the order to the seller
-MAction (MkParty (TDet TheSg Buyer)) (May (AAlias (AComplIndir (ASlashDir (Dat Send) (TDet TheSg Order)) (TDet TheSg Seller))))
+MAction Buyer (May (AAlias (To Seller (AComplDir Send (TDet TheSg Order)))))
+
+** Alice_Apple may send the order to Bob_Banana
+MAction (StrParty "Alice_Apple") (May (AAlias (To (StrParty "Bob_Banana") (AComplDir Send (TDet TheSg Order)))))
+
+   RULE DeliverBike
+       UPON recv => Order(from=buyer) -- the "to" is automatic
+      PARTY Seller
+       MUST send => Delivery(to=buyer, item=Order.item)
+     BEFORE maxDays
+       WHEN Order IN Seller.inventory
+      HENCE [ inventoryDeduct & BuyerPays ]
+
+1) Generic
+** upon receiving the order from the buyer , the seller must send the delivery to the buyer
+Upon (AAlias (From Buyer (AComplDir Receive (TDet TheSg Order)))) (MAction Seller (Must (AAlias (To Buyer (AComplDir Send (TDet TheSg Delivery))))))
+
+2) Seller and buyer replaced with names
+** upon receiving the order from Alice_Apple , Bob_Banana must send the delivery to Alice_Apple
+Upon (AAlias (From (StrParty "Alice_Apple") (AComplDir Receive (TDet TheSg Order)))) (MAction (StrParty "Bob_Banana") (Must (AAlias (To (StrParty "Alice_Apple") (AComplDir Send (TDet TheSg Delivery))))))
+
+3) Delivery specified as bike
+** upon receiving the order from Alice_Apple , Bob_Banana must send the bike to Alice_Apple
+Upon (AAlias (From (StrParty "Alice_Apple") (AComplDir Receive (TDet TheSg Order)))) (MAction (StrParty "Bob_Banana") (Must (AAlias (To (StrParty "Alice_Apple") (AComplDir Send (TDet TheSg Bike))))))
+
+   RULE BuyerPays
+      UPON recv => Delivery(from=seller, item=bikeSale.item)
+     PARTY Buyer
+      MUST send => Payment(to=seller, amount=bikeSale.amount)
+    BEFORE maxDays
+
+** upon receiving the delivery from the seller , the buyer must send the payment of 100 EUR to the seller
+Upon (AAlias (From Seller (AComplDir Receive (TDet TheSg Delivery)))) (MAction Buyer (Must (AAlias (To Seller (AComplDir Send (TDet TheSg (ComplKind Payment (Eur 100))))))))
+
+** upon receiving the delivery from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana
+Upon (AAlias (From (StrParty "Bob_Banana") (AComplDir Receive (TDet TheSg Delivery)))) (MAction (StrParty "Alice_Apple") (Must (AAlias (To (StrParty "Bob_Banana") (AComplDir Send (TDet TheSg (ComplKind Payment (Eur 100))))))))
+
+** upon receiving the bike from Bob_Banana , Alice_Apple must send the payment of 100 EUR to Bob_Banana
+Upon (AAlias (From (StrParty "Bob_Banana") (AComplDir Receive (TDet TheSg Bike)))) (MAction (StrParty "Alice_Apple") (Must (AAlias (To (StrParty "Bob_Banana") (AComplDir Send (TDet TheSg (ComplKind Payment (Eur 100))))))))
 

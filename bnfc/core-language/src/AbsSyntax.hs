@@ -12,6 +12,10 @@ newtype ClassName = ClsNm String
   deriving (Eq, Ord, Show, Read)
 newtype FieldName = FldNm String
   deriving (Eq, Ord, Show, Read)
+newtype RuleName = RlNm String
+  deriving (Eq, Ord, Show, Read)
+newtype PartyName = PtNm String
+  deriving (Eq, Ord, Show, Read)
 
 
 ----- Types 
@@ -203,3 +207,32 @@ name_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) = n
 channels_of_ta :: TA t -> [ClassName]
 channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) = ta_act_clss
 
+
+----------------------------------------------------------------------
+-- L4 Event Rules
+----------------------------------------------------------------------
+
+-- NB: Event rules as opposed to rules defining terminology etc.
+
+
+
+
+data Event t
+  = EventClConstr ClConstr
+  | EventCond (Exp t)
+
+-- only Must and May, assuming that Shant can be compiled away during syntax analysis
+data Modality = Must | May
+
+-- EventRule with components:
+-- rule name
+-- event list (interpreted conjunctively, all events of the list have to be satisfied)
+-- modality
+-- a non-empthy list of Parties (and not a single one). The first in the list is the one initiating the action
+-- (i.e., sender), the other ones are the receivers (if any)
+-- action
+-- clock constraints valid in the state corresponding to the name of this rule
+-- rule name corresponding to HENCE clause
+-- rule name (optional) corresponding to LEST clause
+
+data EventRule t = EvRule RuleName [Event t] Modality [PartyName] Action [ClConstr] RuleName (Maybe RuleName)

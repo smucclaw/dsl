@@ -1,0 +1,5 @@
+digraph knightStates {
+  rankdir=BT;
+  knight -> fl;   fl [label="forwardLeft"  ];
+  knight -> fr;   fr [label="forwardRight" ];
+}

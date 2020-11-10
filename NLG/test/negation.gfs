@@ -1,0 +1,82 @@
+i src/TopEng.gf
+
+ps ""
+ps "** Adjective negation"
+ps ""
+ps "** change of control is involuntary ."
+p "change of control is involuntary "
+ps ""
+
+
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital "
+
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of not raising capital "
+
+ps "** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of raising capital ."
+p "equity financing means a bona fide transaction or series of transactions without the principal purpose of raising capital "
+
+ps "** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital ."
+p "equity financing means a bona fide transaction or series of transactions without the principal purpose of not raising capital "
+
+
+
+ps "** Quantifiers"
+ps ""
+ps "** the Company sells any preferred stock ."
+p "the Company sells any preferred stock "
+
+ps "** the Company sells all preferred stock ."
+p "the Company sells all preferred stock "
+
+ps "** the Company doesn't sell any preferred stock ."
+p "the Company doesn't sell any preferred stock "
+
+ps "** the Company doesn't sell all preferred stock ."
+p "the Company doesn't sell all preferred stock "
+
+ps ""
+
+ps "** Indirect object"
+ps ""
+ps "** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation "
+p "the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation "
+ps ""
+
+ps "** Multiple objects"
+ps ""
+ps "** the Company doesn't sell preferred stock and capital ."
+p "the Company doesn't sell preferred stock and capital "
+
+ps "** the Company doesn't sell preferred stock and doesn't sell capital ."
+p "the Company doesn't sell preferred stock and doesn't sell capital "
+
+ps "** the Company doesn't sell preferred stock and sells capital ."
+p "the Company doesn't sell preferred stock and sells capital "
+
+ps "** the Company sells preferred stock and doesn't sell capital ."
+p "the Company sells preferred stock and doesn't sell capital "
+
+ps "** the Company sells neither preferred stock nor capital ."
+p "the Company sells neither preferred stock nor capital "
+
+
+ps "** Multiple predicates"
+ps ""
+ps "** the Company sells and issues preferred stock ."
+p "the Company sells and issues preferred stock "
+ps ""
+
+-- TODO: doesn't work yet
+-- ps "** the Company neither sells nor issues preferred stock ."
+-- p "the Company neither sells nor issues preferred stock "
+-- ps ""
+
+-- ps "** the Company doesn't sell and issue preferred stock, whether at a fixed valuation or without a fixed valuation"
+-- p "the Company doesn't sell or issue preferred stock, whether at a fixed valuation or without a fixed valuation"
+-- ps ""
+
+-- ps "** the Company neither sells nor issues preferred stock , whether at a fixed valuation or without a fixed valuation ."
+-- p "the Company neither sells nor issues preferred stock , whether at a fixed valuation or without a fixed valuation "
+-- ps ""

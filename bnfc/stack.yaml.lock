@@ -5,22 +5,26 @@
 
 packages:
 - completed:
-    hackage: gf-3.10@sha256:6f851dfaab5e1f9d4f3796515b86f78806a2bb305136a902713dfc2b92d9cfb0,8477
+    size: 3493072
+    url: https://github.com/GrammaticalFramework/gf-core/archive/7dc6717b5e95122a810d3b580981fc4ce0c9744b.tar.gz
+    name: gf
+    version: 3.10.4
+    sha256: 5ebb43d54c819ce3ea32f6274e3d464783ad0e676193217e8718e8b70b9306c3
     pantry-tree:
-      size: 64924
-      sha256: 66332577ff42a42eed767f451f53266e1020b72749cdcdf7387933615d5de091
+      size: 65479
+      sha256: abd4187f99d31f9615cbea5ba9bea1a0bd4f8e67f4a74f1c6523949e71293f2c
   original:
-    hackage: gf-3.10
+    url: https://github.com/GrammaticalFramework/gf-core/archive/7dc6717b5e95122a810d3b580981fc4ce0c9744b.tar.gz
 - completed:
-    hackage: cgi-3001.3.0.3@sha256:4f3768d09e4a6620642588cab2e99d83c1b6b542dad6147d0af9532170036115,2076
+    hackage: json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
     pantry-tree:
-      size: 667
-      sha256: 65f6fd4574cffd1e5e2490c133b7ba58fd2fea0a65d81f1fa6fe14f08025629b
+      size: 3190
+      sha256: 5654f66b7cd8bf087ac040a9b0a83eb064219eab32230f61a3adeddfdbb4d4cd
   original:
-    hackage: cgi-3001.3.0.3
+    hackage: json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
 snapshots:
 - completed:
-    size: 509471
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/12/26.yaml
-    sha256: 95f014df58d0679b1c4a2b7bf2b652b61da8d30de5f571abb0d59015ef678646
-  original: lts-12.26
+    size: 532177
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/20.yaml
+    sha256: 0e14ba5603f01e8496e8984fd84b545a012ca723f51a098c6c9d3694e404dc6d
+  original: lts-16.20

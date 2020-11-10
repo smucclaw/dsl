@@ -1,0 +1,752 @@
+#+TITLE: SAFE in L4
+
+#+begin_quote
+Once more unto the breach, dear friends, once more
+
+/Henry V, Act III, Scene I/
+#+end_quote
+
+We draft the SAFE(s) in L4, with the aim of transpiling to various targets.
+
+We build a library of common elements, then specialize the four variants of the safe by calling library "functions".
+
+This work could be done for other investment instruments as well, e.g. Series Seed, and other contracts as well, starting with financial / tax, but expanding to other genres.
+
+For context:
+- https://medium.com/@jason_90344/computational-law-diary-safe-in-drools-f665ecc605e3
+- https://github.com/smucclaw/dsl/blob/main/README.org#jasons-draft-of-the-safe
+- https://smucclaw.slack.com/archives/C0164JRERL0/p1602785652104500
+- https://github.com/smucclaw/complaw/blob/doc-faq/doc/ex-20200702-safe-post/README.org#constraints-in-z3-worked
+- https://twitter.com/twang/status/1318947166761545735?s=20
+
+* <<<Targets>>>
+
+** Python
+
+** Z3
+
+** GF
+
+** Prolog
+
+** Alloy
+
+** UPPAAL
+
+** GraphViz
+
+** English
+
+* L4 Source
+
+The source text for the SAFEs is in ~ycdc/~. Run "make" twice to get them to appear.
+
+** There are four SAFEs:
+
+|             | No Cap | Cap |
+|-------------+--------+-----|
+| Discount    | [[ycdc/Postmoney-Safe---Discount-Only-v1.1-3d18bf3e3967c8e09c1b5a0318e8629d91358eae6986bee6d8a3acf2ec18c6ce.org][1]]      | [[Postmoney-Safe---Valuation-Cap-and-Discount-v1.1-76b7ee5654ac178bca20b21eab5d3eba0c1da7c467aee4835f769263f8a18749.org][2]]   |
+| No Discount | [[ycdc/Postmoney-Safe---MFN-Only-v1.1-e34548a382b732f12461b19fea3da24f06873d1903b4b55bf13aa25bb55911f3.org][MFN]]    | [[ycdc/Postmoney-Safe---Valuation-Cap-Only-v1.1-5e6f7dd124b848071137eae5e4630b2edbe2c15e5d62583646526766793585ed.org][4]]   |
+
+L4 is not meant to be a complete document assembly system, but because L4 source files are plain text, "upstream" tools can be used to cut and reassemble chunks of L4 source. (Tools such as a [[https://gcc.gnu.org/onlinedocs/cpp/Ifdef.html][C pre-processor]] or [[https://www.gnu.org/software/m4/][m4]], or anything more sophisticated.)
+
+In this case study, we solve the "code duplication" problem by architecting a SAFE library, from which the four individual SAFEs can import shared code.
+
+We show the four concrete SAFEs first, followed by the common library.
+
+** 1: Discount Only
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/DiscountOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module SAFE.DiscountOnly
+import SAFE.Common
+PRAGMA EXPAND SAFE.Common.* - [ MFN, ValuationCap ]
+#+end_src
+
+** 2: Valuation Cap and Discount
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapAndDiscount.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module SAFE.ValuationCapAndDiscount
+import SAFE.Common
+PRAGMA EXPAND SAFE.Common.* - [ MFN ]
+#+end_src
+
+** 3: MFN Only (No Cap, No Discount)
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/MFNOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module SAFE.MFNOnly
+import SAFE.Common
+PRAGMA EXPAND SAFE.Common.* - [ ValuationCap, DiscountRate ]
+#+end_src
+
+** 4: Valuation Cap Only
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/ValuationCapOnly.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module SAFE.ValuationCapOnly
+import SAFE.Common
+PRAGMA EXPAND SAFE.Common.* - [ MFN, DiscountRate ]
+#+end_src
+
+** Common: Statement Groups
+
+#+begin_quote
+THIS INSTRUMENT AND ANY SECURITIES ISSUABLE PURSUANT HERETO HAVE NOT
+BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED (THE
+“*SECURITIES ACT*”), OR UNDER THE SECURITIES LAWS OF CERTAIN STATES.
+THESE SECURITIES MAY NOT BE OFFERED, SOLD OR OTHERWISE TRANSFERRED,
+PLEDGED OR HYPOTHECATED EXCEPT AS PERMITTED IN THIS SAFE AND UNDER THE
+ACT AND APPLICABLE STATE SECURITIES LAWS PURSUANT TO AN EFFECTIVE
+REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+GROUP UnregisteredSecurity :gf:"incantation"
+  RULE 00
+    GIVEN Contract, Jurisdiction
+    DECLARE [ Contract & Contract.securitiesPursuant ] AS secs ARE Jurisdiction.unregisteredSecurity
+
+  RULE 01
+    GIVEN Contract, Jurisdiction
+      PARTY NOBODY
+        MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
+            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ] secs AS action
+      UNLESS [ Contract.permits(action)
+             & under(Jurisdiction.law) 
+             & pursuantTo(action, [ effectiveRegistrationStatement AS x
+                                  | exemption(x) ]) ]
+
+#+end_src
+
+#+begin_quote
+THIS CERTIFIES THAT in exchange for the payment by [Investor Name] (the
+“*Investor*”) of $[__________] (the “*Purchase Amount*”) on or about
+[Date of Safe], [Company Name], a [State of Incorporation] corporation
+(the “*Company*”), issues to the Investor the right to certain shares of
+the Company's Capital Stock, subject to the terms described below.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEntities
+ENTITY Investor ISA Person
+  WITH name = String
+ENTITY Company  ISA CorporatePerson
+  WITH name = String
+       state = Jurisdiction
+
+RULE Params
+  DEFINE Contract
+    WITH PurchaseAmount = CurrencyAmount
+         EffectiveDate  = Date
+#+end_src
+
+#+begin_src haskell :noweb-ref commonGroups
+RULE 03 CertStatement
+    GIVEN Investor,
+          purchaseAmount ISA CurrencyAmount :en:"Purchase Amount",
+          effectiveDate
+    PARTY Company
+    HEREBY issues(to = Investor) right(to = Company.certainShares)
+           :gf:"incantation: subject to terms below")
+
+#+end_src
+
+#+begin_quote
+This Safe is one of the forms available at
+[[http://ycombinator.com/documents]] and the Company and the Investor
+agree that neither one has modified the form, except to fill in blanks
+and bracketed terms.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+  RULE 04 Provenance
+    GIVEN Contract
+    DECLARE Contract isOneOf :en:"is one of the forms available at"
+            external(url="http://ycombinator.com/documents")
+
+  RULE 05 Unmodified
+    GIVEN Contract
+    PARTY [ Company, Investor ] AS Parties
+    AGREE nobody IN Parties
+      HAS modified Contract
+      EXCEPT fillIn([blanks U bracketedTerms])
+
+#+end_src
+
+#+begin_quote
+The “*Post-Money Valuation Cap*” is $[___________].
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+RULE ValuationCap
+  GIVEN valCap ISA Number
+  DEFINE valuationCap = valCap
+#+end_src
+
+#+begin_quote
+The “*Discount Rate*” is [/100 minus the discount/]%.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+RULE 06 DiscountRate
+  GIVEN  discount ISA Number
+  DEFINE discountRate
+      IS ( 100 - discount ) %
+  -- we're going to need some spreadsheet-like magic around rendering percentages and auto-conversion of 100% to 1.
+
+#+end_src
+
+#+begin_quote
+See *Section 2* for certain additional defined terms.
+#+end_quote
+
+Welp, maybe we have more document assembly skillz than we expected. Here, we have string interpolation, internal cross-references and rendering format-specs within OptLangStrings.
+
+#+begin_src haskell :noweb-ref commonGroups
+GROUP 07 :gf:"incantation"
+  PRAGMA adviceToReader
+         :en:"See Section {#Definitions{%n}} for certain additional defined terms."
+
+#+end_src
+
+** Common: Events
+
+*** Event: Equity Financing
+
+#+begin_quote
+*1. /Events/*
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+SECTION Events :en:"Events"
+#+end_src
+
+#+begin_quote
+(a) *_Equity Financing_*. If there is an Equity Financing before the
+termination of this Safe, on the initial closing of such Equity
+Financing, this Safe will automatically convert into the number of
+shares of Safe Preferred Stock equal to the Purchase Amount divided by
+the Discount Price.
+#+end_quote
+
+It seems unnecessary to bound the effective range to the term of the contract, because ... isn't that the default?
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 11 EquityFinancing :en:"Equity Financing"
+    UPON equityFinancing
+         :en-verbose:"If there is an Equity Financing before the termination of this Safe"
+         :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into {numSafePS}"
+  DEFINE Contract.security := safePS(num=numSafePS)
+   HENCE EquityDocuments
+   WHERE numSafePS :en:"the number of shares of {safePS}" = purchaseAmount / discountPrice
+
+DEFINE safePS :en:"Safe Preferred Stock"
+   ISA Record
+  WITH num       = Number
+       itemType  = "shares"
+       preferred = True
+
+#+end_src
+
+These two paragraphs are weird, because the causality is suspect: what happens if the Investor declines to execute and deliver the transaction documents? Does the SAFE still automatically convert? Where's the carrot? Where's the stick? I have chosen to interpret this contract into an If/Hence construct.
+
+#+begin_quote
+In connection with the automatic conversion of this Safe into shares of
+Safe Preferred Stock, the Investor will execute and deliver to the
+Company all of the transaction documents related to the Equity
+Financing; /provided,/ that such documents (i) are the same documents to
+be entered into with the purchasers of Standard Preferred Stock, with
+appropriate variations for the Safe Preferred Stock if applicable, and
+(ii) have customary exceptions to any drag-along applicable to the
+Investor, including (without limitation) limited representations,
+warranties, liability and indemnification obligations for the Investor.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 12 EquityDocuments
+  GIVEN EquityFinancing
+  PARTY Investor
+   MUST [ execute & deliver(to=Company) ]
+        allOf txnDocuments
+   WHEN :en:"nl_r" -- numbered list, roman numerals
+        (txnDocuments = standardPSDocuments % safePS) :en:"same"
+        (txnDocuments ~ customaryExceptions) :en:"have"
+  HENCE EquityIssue
+  WHERE txnDocuments
+          :en:"transaction documents related to the Equity Financing"
+        standardPSDocuments
+          :en:"the documents to be entered into with the purchasers of Standard Preferred Stock,"
+        safePS
+          :en:"appropriate variations for the Safe Preferred Stock if applicable"
+        customaryExceptions(to=dragAlong $ Investor)
+          :en:"customary exceptions to any drag-along applicable to the Investor,"
+           including(sans_limitation=True) [ limitedRep :en:"limited representations"
+                                           , warranties
+                                           , liability
+                                           & indemOb $ Investor ]
+
+RULE 13 EquityIssue
+  GIVEN EquityDocuments
+  PARTY Company
+   MUST issue(Contract.security, to=Investor)
+  HENCE FULFILLED
+#+end_src
+
+*** Event: Liquidity Event
+
+Can you spot the type error? How can a Safe be entitled to anything? Surely only entities can be entitled.
+
+#+begin_quote
+(b) *_Liquidity Event_*. If there is a Liquidity Event before the
+termination of this Safe, this Safe will automatically be entitled
+(subject to the liquidation priority set forth in Section 1(d) below) to
+receive a portion of Proceeds, due and payable to the Investor
+immediately prior to, or concurrent with, the consummation of such
+Liquidity Event, equal to the greater of (i) the Purchase Amount (the
+“*Cash-Out Amount*”) or (ii) the amount payable on the number of shares
+of Common Stock equal to the Purchase Amount divided by the Liquidity
+Price (the “*Conversion Amount*”).
+#+end_quote
+
+When we set ~entitlement~ to ~cashOutAmount~ or to ~conversionAmount~ we don't just copy the value but track the reference as well. Later, we'll want to test ~entitlement === conversionAmount~, to know how the ~entitlement~ was computed.
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 13 LiquidityEvent
+  UPON liquidityEvent
+       :en-verbose:"If there is a Liquidity Event before the termination of this Safe,"
+       :en:"this Safe will automatically be entitled (subject to the liquidation priority set forth in Section {#LiquidationPriority{n}} below to receive a portion of Proceeds"
+   GIVEN proceeds -- from exit, may be a combination of stock and cash; see definition below.
+  DEFINE entitlement = max [    cashOutAmount :en:"Cash-Out Amount"
+                           , conversionAmount :en:"Conversion Amount" ]
+   HENCE Payout
+   WHERE cashOutAmount = purchaseAmount
+         numShares = purchaseAmount / liquidityPrice
+         conversionAmount = proceeds * numShares / during.Company.common.total
+
+RULE 14 Payout
+   GIVEN LiquidityEvent
+   PARTY company
+    MUST pay(to=investor, item=entitlement)
+  BEFORE liquidityEvent.consummationDate
+         
+#+end_src
+
+What does "during.Company.common.total" mean? In any "UPON" stanza, the event may define multiple internal states; it is, after all, a [[https://en.wikipedia.org/wiki/UML_state_machine#Hierarchically_nested_states][Hierarchical State Machine]]. The event gets to label the internal states as it wishes; those labels are exposed to the UPON caller. State from before the event is stored in ~pre~. In this case, the ~liquidityEvent~ defines a ~during~ state, where the total amount of common stock in the company is computed on a fully-diluted, as-if-converted basis. After the event completes ("~post~"), the common stock of the company might go to zero, as it has been acquired and the company shut down.
+
+#+begin_quote
+If any of the Company's securityholders are given a choice as to the
+form and amount of Proceeds to be received in a Liquidity Event, the
+Investor will be given the same choice, /provided/ that the Investor
+may not choose to receive a form of consideration that the Investor
+would be ineligible to receive as a result of the Investor's failure
+to satisfy any requirement or limitation generally applicable to the
+Company's securityholders, or under any applicable laws.
+#+end_quote
+
+Note: the "Investor may not choose to receive" is an alethic, not a
+deontic, modal, in the sense that if the Investor does try to make
+that choice, the choice will silently fail, and presumably the Company
+will treat the situation as though the investor had not made a choice.
+In fact, one could consider the choice to be reduced accordingly, and
+if there are no choices left (i.e. fewer than two alternatives remain
+after exclusion) then the Company doesn't offer the investor a choice
+at all.
+
+So it's the difference between "you may not order chocolate ice cream"
+and "you may not drive your vehicle over 100". In the second case, you
+might get caught and fined. In the first case, you will just get a
+blank stare and be asked to try again.
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 15 investorChoice
+   UPON ANY EVER
+        choiceOffered( to=anyOf Company.securityHolders
+                     , regarding=[form & amount] of liquidityEventProceeds) AS choice
+  PARTY Company
+   MUST offerChoice( to=Investor
+                   , regarding=choice.regarding - exclusionsDueTo(
+                      [ failure( by=Investor
+                               , to=satisfy [requirement | limitation] )
+                      U exclusionsByLaw ])
+
+#+end_src
+
+#+begin_quote
+Notwithstanding the foregoing, in connection with a Change of Control
+intended to qualify as a tax-free reorganization, the Company may reduce
+the cash portion of Proceeds payable to the Investor by the amount
+determined by its board of directors in good faith for such Change of
+Control to qualify as a tax-free reorganization for U.S. federal income
+tax purposes, provided that such reduction (A) does not reduce the total
+Proceeds payable to such Investor and (B) is applied in the same manner
+and on a pro rata basis to all securityholders who have equal priority
+to the Investor under Section 1(d).
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 16 TaxFreeReorganization
+   NOTW LiquidityEvent -- higher priority than rule LiquidityEvent, brings it into scope aliased to pre and post
+   UPON changeOfControl
+        HAVING intention = taxFreeReorganization
+  GIVEN reduction ISA Percentage
+  PARTY company
+    MAY reduce proceeds.[investor].cash
+   WHEN POST.proceeds.[investor].totalValue = PRE.proceeds.[investor].totalValue
+     && reduce proceeds.[eachInvestor].cash FOR eachInvestor IN allInvestors
+  WHERE reduce proceeds.X.cash = do
+          delta = PRE.proceeds.X.cash * reduction
+          POST.proceeds.X.cash  := PRE.proceeds.X.cash  - delta
+          POST.proceeds.X.stock := PRE.proceeds.X.stock + cash2stock(delta)
+        allInvestors = I IN Company.securityHolders IF I.priority == investor.priority
+        cash2stock = / LiquidityEvent.pricePerShare
+#+end_src
+
+This example introduces [[https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions][Python-style list comprehension syntax]] (in the lines with ~allInvestors~) and [[http://wiki.haskell.org/Section_of_an_infix_operator][Haskell-style function sections]] (in the definition of "cash2stock").
+
+In the future, as our constraint engine grows stronger, we should be able to take out the WHERE line about the stock, and have it simply be propagated from the WHERE cash line as a necessary solution to the first WHEN constraint.
+
+Why is the ~.totalValue~ attribute not a ~.totalValue()~ method? Because it is defined as a constraint, and computed when it is called.
+
+*** Event: Dissolution Event
+
+#+begin_quote
+(c) *_Dissolution Event_*. If there is a Dissolution Event before the
+termination of this Safe, the Investor will automatically be entitled
+(subject to the liquidation priority set forth in Section 1(d) below) to
+receive a portion of Proceeds equal to the Cash-Out Amount, due and
+payable to the Investor immediately prior to the consummation of the
+Dissolution Event.
+#+end_quote
+
+Is this entitlement a deontic rule or a definition rule? Never mind, we know what it means.
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 16 Dissolution
+    SUBJ LiquidationPriority
+    UPON dissolutionEvent
+         :en-verbose:"If there is a Dissolution Event before the termination of this Safe"
+         :en:"the Investor will automatically be entitled"
+   GIVEN proceeds
+   PARTY company
+    MUST pay(to=investor, item=entitlement)
+   WHERE entitlement = cashOutAmount
+         cashOutAmount <= proceeds
+ PRIORTO dissolutionEvent.consummationDate
+#+end_src
+
+*** Definition: Liquidation Priority
+
+This is actually a definition, but inserted out-of-sequence in the Events section. Yay!
+
+#+begin_quote
+(d) *_Liquidation Priority_*. In a Liquidity Event or Dissolution Event,
+this Safe is intended to operate like standard non-participating
+Preferred Stock. The Investor's right to receive its Cash-Out Amount is:
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 17 LiquidationPriority
+  GIVEN [ liquidityEvent    :en:"In a Liquidity Event"
+        | dissolutionEvent  :en:"or Dissolution Event" ]
+        :en-verbose:"this Safe is intended to operate like standard non-participating Preferred Stock."
+  DEFINE investor.cashOutRight
+#+end_src
+
+#+begin_quote
+(i) Junior to payment of outstanding indebtedness and creditor claims,
+including contractual claims for payment and convertible promissory
+notes (to the extent such convertible promissory notes are not actually
+or notionally converted into Capital Stock);
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+  -- 
+      WITH priority < min ( priority <$> [ outstandingIndebtedness, creditorClaims
+                                         , contractualClaimsForPayment
+                                         , convertiblePromissoryNotes IN company.securities
+                                             IF NOT convertiblePromissoryNotes.converted
+                                         ] ) AS debts
+#+end_src
+
+#+begin_quote
+(ii) On par with payments for other Safes and/or Preferred Stock, and if
+the applicable Proceeds are insufficient to permit full payments to the
+Investor and such other Safes and/or Preferred Stock, the applicable
+Proceeds will be distributed pro rata to the Investor and such other
+Safes and/or Preferred Stock in proportion to the full payments that
+would otherwise be due; and
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+  --
+           priority = max [ X.priority FOR X IN company.safe U company.preferredStock - Contract ] AS onpar
+           LET allDue = sum [ I.cashOutRight FOR I IN company.{safe,preferredStock}.holders ]
+           IF   PRE.proceeds < allDue
+           THEN POST.I.cashOutRight := PRE.proceeds / allDue * PRE.I.cashOutRight
+                  FOR I IN company.{safe,preferredStock}.holders
+                POST.proceeds = allDue
+#+end_src
+
+#+begin_quote
+(iii) Senior to payments for Common Stock.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+  --
+           priority > max [ X.priority FOR X IN company.commonStock ]
+
+#+end_src
+
+#+begin_quote
+The Investor's right to receive its Conversion Amount is (A) on par with
+payments for Common Stock and other Safes and/or Preferred Stock who are
+also receiving Conversion Amounts or Proceeds on a similar as-converted
+to Common Stock basis, and (B) junior to payments described in clauses
+(i) and (ii) above (in the latter case, to the extent such payments are
+Cash-Out Amounts or similar liquidation preferences).
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+  DEFINE investor.conversionAmountRight
+    WITH priority = max [ X.priority FOR X IN company.safe U company.preferredStock - Contract
+                                     IF X.entitlement === X.conversionAmount ]
+         priority < debts
+         priority < onpar %% max [ listcomp ] -> max [ listcomp IF X.entitlement === X.cashOutAmount ]
+#+end_src
+
+The ~%%~ above is a rewrite rule, which modifies a previous expression (captured by "AS") using a pattern match.
+
+*** Event: Termination
+
+#+begin_quote
+(e) *_Termination_*. This Safe will automatically terminate (without
+relieving the Company of any obligations arising from a prior breach of
+or non-compliance with this Safe) immediately following the earliest to
+occur of: (i) the issuance of Capital Stock to the Investor pursuant to
+the automatic conversion of this Safe under Section 1(a); or (ii) the
+payment, or setting aside for payment, of amounts due the Investor
+pursuant to Section 1(b) or Section 1(c).
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonEvents
+RULE 18 Termination
+  UPON [ EquityIssue
+       , Payout
+       | Dissolution ]
+  CLOSE EquityFinancing, LiquidityEvent, DissolutionEvent
+#+end_src
+
+** Common: Definitions
+
+#+begin_src haskell :noweb-ref commonDefinitions
+SECTION Definitions :en:"Definitions"
+#+end_src
+
+*2. /Definitions/*
+
+#+begin_quote
+“*Capital Stock*” means the capital stock of the Company, including,
+without limitation, the “*Common Stock*” and the “*Preferred Stock*.”
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+RULE CapitalStock
+  DEFINE capitalStock = [ [ stock IN company.stock.* ]
+                        , company.stock.common
+                        U company.stock.preferred ]
+  -- when we have a formalism we don't need to be weirdly paranoid
+  -- but if we choose to be weirdly paranoid, well, the formalism lets us do it!
+#+end_src
+
+#+begin_quote
+“*Change of Control*” means (i) a transaction or series of related
+transactions in which any “person” or “group” (within the meaning of
+Section 13(d) and 14(d) of the Securities Exchange Act of 1934, as
+amended), becomes the “beneficial owner” (as defined in Rule 13d-3 under
+the Securities Exchange Act of 1934, as amended), directly or
+indirectly, of more than 50% of the outstanding voting securities of the
+Company having the right to vote for the election of members of the
+Company's board of directors, (ii) any reorganization, merger or
+consolidation of the Company, other than a transaction or series of
+related transactions in which the holders of the voting securities of
+the Company outstanding immediately prior to such transaction or series
+of related transactions retain, immediately after such transaction or
+series of related transactions, at least a majority of the total voting
+power represented by the outstanding voting securities of the Company or
+such other surviving or resulting entity or (iii) a sale, lease or other
+disposition of all or substantially all of the assets of the Company.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+RULE ChangeOfControl
+  DEFINE changeOfControl ISA Event
+    WITH totalVotes = sum Company.shareholders.votes
+         controlling = [ SH IN Company.shareholders IF SH.votes > 50% * totalVotes ]
+    WHEN [ POST.controlling > PRE.controlling
+         , EVENT ISA [ reorganization, merger | consolidation ] UNLESS POST.controlling == PRE.controlling
+         | EVENT ISA [ sale, lease | disposition(amount=[ all | substantiallyAll ], of=CompanyAssets) ]
+
+#+end_src
+
+#+begin_quote
+“*Direct Listing*” means the Company's initial listing of its Common
+Stock (other than shares of Common Stock not eligible for resale under
+Rule 144 under the Securities Act) on a national securities exchange by
+means of an effective registration statement on Form S-1 filed by the
+Company with the SEC that registers shares of existing capital stock of
+the Company for resale, as approved by the Company's board of directors.
+For the avoidance of doubt, a Direct Listing shall not be deemed to be
+an underwritten offering and shall not involve any underwriting
+services.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+RULE DirectListing
+  DEFINE directListing ISA EventSequence
+    WHEN [ company.board approves formS1
+         & company files formS1 ]
+  UNLESS EVENT ~ underwriters
+#+end_src
+
+Sometimes, multiple events appear in the log, separated in time; we use an "EventSequence" to pattern-match across multiple events.
+
+#+begin_quote
+“*Discount Price*” means the lowest price per share of the Standard
+Preferred Stock sold in the Equity Financing multiplied by the Discount
+Rate.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+RULE DiscountPrice
+   GIVEN EquityFinancing
+  DEFINE discountPrice = min [ sPS.pricePerShare FOR sPS IN EquityFinancing.standardPreferredStock ]
+                         * discountRate
+#+end_src
+
+#+begin_quote
+“*Dissolution Event*” means (i) a voluntary termination of operations,
+(ii) a general assignment for the benefit of the Company's creditors or
+(iii) any other liquidation, dissolution or winding up of the Company
+(*_excluding_* a Liquidity Event), whether voluntary or involuntary.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Dividend Amount*” means, with respect to any date on which the Company
+pays a dividend on its outstanding Common Stock, the amount of such
+dividend that is paid per share of Common Stock multiplied by (x) the
+Purchase Amount divided by (y) the Liquidity Price (treating the
+dividend date as a Liquidity Event solely for purposes of calculating
+such Liquidity Price).
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Equity Financing*” means a bona fide transaction or series of
+transactions with the principal purpose of raising capital, pursuant to
+which the Company issues and sells Preferred Stock at a fixed valuation,
+including but not limited to, a pre-money or post-money valuation.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Initial Public Offering*” means the closing of the Company's first
+firm commitment underwritten initial public offering of Common Stock
+pursuant to a registration statement filed under the Securities Act.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Liquidity Event*” means a Change of Control, a Direct Listing or an
+Initial Public Offering.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Liquidity Price*” means the price per share equal to the fair market
+value of the Common Stock at the time of the Liquidity Event, as
+determined by reference to the purchase price payable in connection with
+such Liquidity Event, multiplied by the Discount Rate.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Proceeds*” means cash and other assets (including without limitation
+stock consideration) that are proceeds from the Liquidity Event or the
+Dissolution Event, as applicable, and legally available for
+distribution.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Safe*” means an instrument containing a future right to shares of
+Capital Stock, similar in form and content to this instrument, purchased
+by investors for the purpose of funding the Company's business
+operations. References to “this Safe” mean this specific instrument.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Safe Preferred Stock*” means the shares of the series of Preferred
+Stock issued to the Investor in an Equity Financing, having the
+identical rights, privileges, preferences and restrictions as the shares
+of Standard Preferred Stock, other than with respect to: (i) the per
+share liquidation preference and the initial conversion price for
+purposes of price-based anti-dilution protection, which will equal the
+Discount Price; and (ii) the basis for any dividend rights, which will
+be based on the Discount Price.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonDefinitions
+#+end_src
+
+#+begin_quote
+“*Standard Preferred Stock*” means the shares of a series of Preferred
+Stock issued to the investors investing new money in the Company in
+connection with the initial closing of the Equity Financing.
+
+** Common: Rules
+
+#+begin_src haskell :noweb-ref commonRules
+
+#+end_src
+
+* Infrastructure
+
+** The Common Library
+
+contains definitions used by individual SAFEs.
+
+#+begin_src bnfc :noweb yes :tangle l4/SAFE/Common.l4
+-- this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+
+module SAFE.Common
+
+<<commonPragmas>>
+<<commonGroups>>
+<<commonEvents>>
+<<commonDefinitions>>
+<<commonEntities>>
+<<commonRules>>
+
+#+end_src
+
+
+

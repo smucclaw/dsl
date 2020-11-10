@@ -32,7 +32,7 @@ instance ToProlog RuleBody where
                                        , toProlog predexpr ++ "." ])
     <$> objattrands
 
-instance ToProlog ObjAttr where 
+instance ToProlog ObjAttr where
   toProlog (OA_method oa commalist) = toProlog oa ++ "(" ++ toProlog commalist ++ ")"
   toProlog (OA_dots objAttrElems) =
     case asVar objAttrElems of
@@ -56,10 +56,10 @@ asVar objAttrElems =
           lcfirst (x:xs) = toLower x : xs
 
 
-instance ToProlog ObjAttrElem where 
+instance ToProlog ObjAttrElem where
   toProlog (ObjAttrElemIdent (Ident oaeii)) = oaeii
 
-instance ToProlog PredExpr where 
+instance ToProlog PredExpr where
   toProlog (PEOA oa)  = toProlog oa
   toProlog (PEAnd exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2
   toProlog (PEOr  exp1 exp2) = toProlog exp1 ++ ", " ++ toProlog exp2

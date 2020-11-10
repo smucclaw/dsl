@@ -1,0 +1,21 @@
+
+RULE mkContract
+  DEFINE Buyer = blackSwan
+       , veggieBar = Seller
+       , salePrice < 20.00
+       , salePrice > 10.00
+       , goods     = Potato(quantity=2)
+   HENCE contractStart
+
+RULE contractStart
+   PARTY Buyer
+     MAY pay Seller salePrice
+   HENCE delivery
+
+RULE delivery
+  PARTY Seller
+   MUST deliver goods
+ BEFORE contractStart + 2 DAYS
+  HENCE FULFILLED
+   LEST BREACH
+

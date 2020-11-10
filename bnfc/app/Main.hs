@@ -2,7 +2,7 @@
 
 module Main where
 
-import System.Environment ( getArgs, getProgName )
+import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
 
@@ -11,9 +11,11 @@ import qualified Data.Text.Lazy as T
 import LexL    ( Token )
 import ParL    ( pTops, myLexer )
 import SkelL   ()
-import PrintL  ( Print, printTree )
-import AbsL    ()
+import PrintL  ( printTree )
+import AbsL    ( Tops(..), Rule(..), RuleBody(..), MatchVars(..), Toplevels(..) )
 import LayoutL ( resolveLayout )
+import ToGraphViz
+import L4
 
 type Err = Either String
 type ParseFun a = [Token] -> Err a
@@ -25,10 +27,10 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: (Print a, Show a) => Verbosity -> ParseFun a -> FilePath -> IO ()
+runFile :: Verbosity -> ParseFun Tops -> FilePath -> IO ()
 runFile v p f = putStrLn f >> readFile f >>= run v p
 
-run :: (Print a, Show a) => Verbosity -> ParseFun a -> String -> IO ()
+run :: Verbosity -> ParseFun Tops -> String -> IO ()
 run v p s = case p ts of
     Left s -> do
       putStrLn "\nParse              Failed...\n"
@@ -45,11 +47,31 @@ run v p s = case p ts of
   ts = myLLexer s
 
 
-showTree :: (Show a, Print a) => Int -> a -> IO ()
-showTree v tree
- = do
+showTree :: Int -> Tops -> IO ()
+showTree v tree0
+ = let tree = rewriteTree tree0 in do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
+      let ruleList = getRules tree
+      putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ showRuleName <$> ruleList)
+      putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ nameList ruleList))
+      putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
+      putStrV v $ "\n[As Graph]\n\n"
+      printGraph ruleList
+      putStrV v $ "\n[As Dotfile]\n\n"
+      putStrLn $ showDot ruleList
+      writeFile "graph.dot" (showDot ruleList)
+
+
+rewriteTree :: Tops -> Tops
+rewriteTree (Toplevel tops) = Toplevel $ do
+  (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
+  ToplevelsRule <$> case rulebody of
+    RMatch mvs -> do
+      (MatchVars23 innerRule) <- mvs
+      rewrite innerRule
+    otherwise -> rewrite r
+  
 
 usage :: IO ()
 usage = do

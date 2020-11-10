@@ -13,7 +13,37 @@ RULE 3 isPotato
   DEEM Item IS Potato
   WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
 
-ENTITY mySpud
-   ISA Item
-  WITH species  = "Solanum tuberosum"
-       isEdible = true
+RULE 4 mkSpud
+  ENTITY mySpud
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+
+RULE 10 SaleRestricted
+         :en:"The Sale of Cabbages is Restricted."
+         :se:"Försäljning av kål är begränsad."
+  PARTY NOBODY      AS P1
+    MAY sell Item   AS sale
+   WHEN Item IS cabbage
+ UNLESS sale IS onLegalDate
+     OR UNLIKELY P1 HAS Exemption.from ~ [DirectorOfAgriculture]
+  HENCE [AnnounceWest, AnnounceEast | ReturnPolicy]
+  WHERE sale IS onLegalDate
+          WHEN sale.date ~ LegalDates
+          WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
+
+
+RULE 11 AnnounceWest
+  GIVEN PreviousRule
+  PARTY PreviousRule.party
+   MUST announce actions to the west
+
+RULE 12 AnnounceEast
+  GIVEN PreviousRule
+  PARTY PreviousRule.party
+   MUST announce actions to the east
+
+RULE 13 ReturnPolicy
+  GIVEN PreviousRule
+  PARTY PreviousRule.party
+    MAY return PreviousRule.goods

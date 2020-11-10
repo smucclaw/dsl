@@ -1,0 +1,19 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "bnfc:lib"
+
+    - path: "./app/Main.hs"
+      component: "bnfc:exe:l4"
+
+    - path: "./app/Paths_bnfc.hs"
+      component: "bnfc:exe:l4"
+
+    - path: "./showbug/Main.hs"
+      component: "bnfc:exe:showbug"
+
+    - path: "./showbug/Paths_bnfc.hs"
+      component: "bnfc:exe:showbug"
+
+    - path: "./test"
+      component: "bnfc:test:bnfc-test"

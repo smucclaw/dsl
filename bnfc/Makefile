@@ -1,5 +1,5 @@
 
-all : subdirs out/test.out pngs
+all : subdirs out/test.out pngs src-l4/Top.pgf src-l4/Top.hs
 	stack run showbug l4/test.l4 out/test.out out/test.err
 
 subdirs :
@@ -12,6 +12,9 @@ out/test.out : l4/test.l4 src-bnfc/AbsL.hs
 src-bnfc/AbsL.hs : l4.bnfc
 	(cd src-bnfc; bnfc -m ../l4.bnfc > ../out/bnfc.out 2> ../out/bnfc.err || stack run showbug ../l4.bnfc ../out/bnfc.out ../out/bnfc.err ; rm TestL.hs; make ParL.hs; rm ParL.hs)
 	stack build
+
+src-l4/Top.pgf src-l4/Top.hs : ../grammars/TopEng.gf
+	gf -make -f haskell -D src-l4 ../grammars/TopEng.gf
 
 l4/test.l4 : l4/test1.l4
 	cp l4/test1.l4 l4/test.l4

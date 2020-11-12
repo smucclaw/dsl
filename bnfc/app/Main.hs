@@ -16,6 +16,8 @@ import AbsL    ( Tops(..), Rule(..), RuleBody(..), MatchVars(..), Toplevels(..) 
 import LayoutL ( resolveLayout )
 import ToGraphViz
 import L4
+import ToGF (bnfc2str)
+import PGF (PGF, readPGF)
 
 type Err = Either String
 type ParseFun a = [Token] -> Err a
@@ -27,11 +29,11 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: Verbosity -> ParseFun Tops -> FilePath -> IO ()
-runFile v p f = putStrLn f >> readFile f >>= run v p
+runFile :: Verbosity -> PGF -> ParseFun Tops -> FilePath -> IO ()
+runFile v gr p f = putStrLn f >> readFile f >>= run v gr p
 
-run :: Verbosity -> ParseFun Tops -> String -> IO ()
-run v p s = case p ts of
+run :: Verbosity -> PGF -> ParseFun Tops -> String -> IO ()
+run v gr p s = case p ts of
     Left s -> do
       putStrLn "\nParse              Failed...\n"
       putStrV v "Tokens:"
@@ -40,18 +42,19 @@ run v p s = case p ts of
       exitFailure
     Right tree -> do
       putStrLn "\nParse Successful!"
-      showTree v tree
+      showTree gr v tree
 
       exitSuccess
   where
   ts = myLLexer s
 
 
-showTree :: Int -> Tops -> IO ()
-showTree v tree0
+showTree :: PGF -> Int -> Tops -> IO ()
+showTree gr v tree0
  = let tree = rewriteTree tree0 in do
       putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
       putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
+      putStrV v $ "\n[In English]\n\n" ++ bnfc2str gr tree
       let ruleList = getRules tree
       putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ showRuleName <$> ruleList)
       putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ nameList ruleList))
@@ -71,7 +74,7 @@ rewriteTree (Toplevel tops) = Toplevel $ do
       (MatchVars23 innerRule) <- mvs
       rewrite innerRule
     otherwise -> rewrite r
-  
+
 
 usage :: IO ()
 usage = do
@@ -87,9 +90,9 @@ usage = do
 main :: IO ()
 main = do
   args <- getArgs
+  gr <- readPGF "src-l4/Top.pgf"
   case args of
     ["--help"] -> usage
-    [] -> getContents >>= run 2 pTops
-    "-s":fs -> mapM_ (runFile 0 pTops) fs
-    fs -> mapM_ (runFile 2 pTops) fs
-
+    [] -> getContents >>= run 2 gr pTops
+    "-s":fs -> mapM_ (runFile 0 gr pTops) fs
+    fs -> mapM_ (runFile 2 gr pTops) fs

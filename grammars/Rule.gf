@@ -102,4 +102,9 @@ abstract Rule = Action ** {
     Refund : Action_Dir ;
     DefinedTerm : Kind ;
     Additional : Property ;
+
+    -- Special term for stuff that isn't supported yet.
+  fun
+    Failure : ActionAlias ;
+
 }

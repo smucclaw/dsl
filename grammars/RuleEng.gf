@@ -21,10 +21,12 @@ concrete RuleEng of Rule = ActionEng ** open
       s : Voice => VPS ;
       alias : NP ;
       passSubj : NP ;
+      isFailure : Bool ;
       } ;
 
     LinActionAlias : Type = LinAction ** { -- VP: "sell a potato"
-      alias : NP                           -- NP: "the sale"
+      alias : NP ;                         -- NP: "the sale"
+      isFailure : Bool ;
       } ;
 
   lin
@@ -57,7 +59,9 @@ concrete RuleEng of Rule = ActionEng ** open
   lin
 
     -- : PartyAlias -> Deontic -> Sentence ; -- the seller must issue the refund
-    MAction party deontic = mkUtt (PredVPS party (deontic.s ! VAct Sim)) ;
+    MAction party deontic = case deontic.isFailure of {
+      True => mkUtt (P.mkAdv "L4 expression not yet supported by the GF grammar.") ;
+      False => mkUtt (PredVPS party (deontic.s ! VAct Sim)) } ;
 
     -- : Deontic -> Sentence ;
     MPass deontic = mkUtt (PredVPS deontic.passSubj (deontic.s ! VPass)) ;
@@ -98,10 +102,10 @@ concrete RuleEng of Rule = ActionEng ** open
 
     -- Aliases
     -- : Action -> ActionAlias ;
-    AAlias action = action ** {alias = mkNP theSg_Det WN.action_1_N} ;
+    AAlias action = action ** {alias = mkNP theSg_Det WN.action_1_N ; isFailure = False} ;
 
     -- : Term -> Action -> ActionAlias ;
-    -- AAliasNamed alias action = action ** {alias = alias} ;
+    AAliasNamed alias action = action ** {alias = alias ; isFailure = False} ;
 
     -- Parties
     Buyer = mkNP theSg_Det (WN.buyerFem_N | WN.buyerMasc_N) ;
@@ -175,4 +179,10 @@ concrete RuleEng of Rule = ActionEng ** open
   oper
 
     additional_Prop : LinProp = prop "additional" ;
+
+  lin
+    Failure =
+      let a : LinAction = complDir (mkDir (P.mkV2 "dummy")) emptyNP ;
+          aa : LinActionAlias = AAlias a
+       in aa ** {isFailure = True} ;
 }

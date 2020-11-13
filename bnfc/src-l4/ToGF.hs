@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PatternSynonyms #-}
 module ToGF (bnfc2str) where
 
 import Data.Char (toLower)
@@ -55,20 +57,27 @@ oa2str e = case e of
   ObjAttrElemIdent (Ident str) -> str
   ObjAttrElemUIdent (UIdent str) -> str
 
+pattern OaStr :: String -> ObjAttrElem
+pattern OaStr str <- (oa2str -> str)
+
 deontic2gf :: DeonticLimb -> GDeontic
-deontic2gf (DeonticLimb1 deonexpr langstrs actionl) = case deonexpr of
-  DEMust -> GMust (action2gf actionl)
-  DEMay -> GMay (action2gf actionl)
-  DEShant -> GShant (action2gf actionl)
+deontic2gf (DeonticLimb1 deonexpr langstrs actionl) = deonticFun $ action2gf actionl
+  where
+    deonticFun :: GActionAlias -> GDeontic
+    deonticFun = case deonexpr of
+      DEMust -> GMust
+      DEMay -> GMay
+      DEShant -> GShant
+
 
 action2gf :: ActionLimb -> GActionAlias
-action2gf (ActionSingle exp blahs OptAsAlias0) = case exp2action exp of
-  Just a -> GAAlias a
-  Nothing -> GFailure
-action2gf (ActionSingle exp blahs alias) = case exp2action exp of
-  Just a -> GAAliasNamed GCompany a -- TODO: use actual alias
-  Nothing -> GFailure
-action2gf (ActionMulti _ _ _) = GFailure
+action2gf (ActionSingle (ExpAction a) blahs OptAsAlias0) = GAAlias a
+action2gf (ActionSingle (ExpAction a) blahs alias) = GAAliasNamed GCompany a -- TODO: use actual alias
+action2gf ActionSingle {} = GFailure
+action2gf ActionMulti {} = GFailure
+
+pattern ExpAction :: GAction -> Exp
+pattern ExpAction act <- (exp2action -> Just act)
 
 exp2action :: Exp -> Maybe GAction
 exp2action exp = case exp of
@@ -102,6 +111,12 @@ binexp2action (BRel_Fat e1 e2) = vp
       _ -> Nothing
 binexp2action _ = Nothing
 
+pattern UnifyE1 :: [UnifyElem] -> Exp
+pattern UnifyE1 xs = UnifyE (UnifyExpr1 xs)
+
+pattern ArgEq :: [UnifyElem] -> [UnifyElem] -> ConstraintComma
+pattern ArgEq es ps = CComma (Op2E (BCmp_Eq1 (UnifyE1 es) (UnifyE1 ps)))
+
 exp2obj :: Exp -> ([GTerm], GAction -> GAction)
 exp2obj (ObjME (ObjMethod1 es args langstrs)) = (terms, f)
   where
@@ -114,16 +129,14 @@ exp2obj (ObjME (ObjMethod1 es args langstrs)) = (terms, f)
       case e of
         UnifyElemObjAttrElem oa -> oa2kind oa
         _ -> GItem -- default option, call it "the item"
-    oa2kind oa = case map toLower $ oa2str oa of
+    oa2kind (OaStr oa) = case map toLower oa of
       "order" -> GOrder
       "delivery" -> GDelivery
       "payment" -> GPayment
       "bike" -> GBike
       _ -> GItem
 
-    ccs2fun (CComma (Op2E (BCmp_Eq1
-      relExp@(UnifyE (UnifyExpr1 es))
-      partyExp@(UnifyE (UnifyExpr1 ps))))) =
+    ccs2fun (ArgEq es ps) =
         let f:_ = map unifyelem2fun es
             x:_ = map unifyelem2party ps
          in f x
@@ -131,12 +144,13 @@ exp2obj (ObjME (ObjMethod1 es args langstrs)) = (terms, f)
     unifyelem2fun e = case oa2str $ ue2oa e of
       "to" -> GTo
       "from" -> GFrom
-      _ -> \x a -> a
+      _ -> \_ a -> a
 
     unifyelem2party = str2party . oa2str . ue2oa
+exp2obj x =  error $ "exp2obj can't handle: " ++ show x
 
 exp2verb :: Exp -> [GAction_Dir]
-exp2verb (UnifyE (UnifyExpr1 es)) = verbs
+exp2verb (UnifyE1 es) = verbs
   where
     verbs = map unifyelem2verb es
     unifyelem2verb e = case e of

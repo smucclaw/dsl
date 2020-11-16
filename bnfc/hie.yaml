@@ -16,4 +16,4 @@ cradle:
       component: "l4-dsl-bnfc:exe:showbug"
 
     - path: "./test"
-      component: "l4-dsl-bnfc:test:bnfc-test"
+      component: "l4-dsl-bnfc:test:l4-dsl-bnfc-test"

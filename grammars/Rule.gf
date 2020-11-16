@@ -18,6 +18,7 @@ abstract Rule = Action ** {
 
     CrossRefDefs : Int -> Sentence ; -- "See Section {#Definitions{%n}} for certain additional defined terms."
     SubjectToTermsBelow : Sentence -> Sentence ;
+    RuleName : String -> Sentence -> Sentence ;
 
     -- Sentences
     IfThen : Sentence -> Sentence -> Sentence ;

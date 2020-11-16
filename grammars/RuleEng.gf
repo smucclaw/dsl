@@ -31,6 +31,10 @@ concrete RuleEng of Rule = ActionEng ** open
 
   lin
     -- Incantations
+
+    -- : String -> Sentence -> Sentence
+    RuleName nm sent = sent ** {s = nm.s ++ sent.s} ;
+
     -- : Int -> Sentence ; -- "See Section {#Definitions{%n}} for certain additional defined terms."
     CrossRefDefs int =
       let sectionN : NP = mkNP (mkCN WN.section_1_N (symb int)) ;

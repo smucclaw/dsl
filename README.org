@@ -15,7 +15,7 @@ Suppose cabbages may be sold only on the day a full moon occurs -- unless an exe
 
 How might we say it in L4?
 
-#+begin_src sql :noweb-ref l4-rules
+#+begin_src sql :noweb-ref l4-rules-cabbage
   RULE  1 SaleRestricted
            :en:"The Sale of Cabbages is Restricted."
            :se:"Försäljning av kål är begränsad."
@@ -72,7 +72,7 @@ Thing A is deemed to be a Thing B when conditions C are met. The "A" and "B" par
 
 - constraint :: one or more subjects of the deem: that an A counts as B in some way, or has some value, or some inequality
 
-#+begin_src sql :noweb-ref l4-rules
+#+begin_src sql :noweb-ref l4-rules-cabbage
   RULE   4 Cabbage
     DEFINE Item IS cabbage
       WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
@@ -98,7 +98,7 @@ The BNF:
   WHW.          WhenHenceWhere ::= WhenLimb HenceLimb WhereLimb ;
 
   DefLimb.    DefineLimb ::= DefineWord [ConstraintComma] WithLimb Asof ;
-  
+
   DefDefine.  DefineWord ::= "DEFINE" ;
   DefDeem.    DefineWord ::= "DEEM" ;
   DefDeclare. DefineWord ::= "DECLARE" ;
@@ -122,7 +122,7 @@ A modal stanza defines a node in the obligation graph. These express what Ken Ad
 - language of discretion
 - language of prohibition
 
-#+begin_src sql :noweb-ref l4-rules
+#+begin_src sql :noweb-ref l4-rules-cabbage
   RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
     GIVEN sale          // defined in rule 1 above
     PARTY Buyer
@@ -262,14 +262,14 @@ Representations and warranties are given in the form of such statements.
 
 #+begin_src bnfc :noweb-ref l4bnfc
   RulePerform.  RuleBody  ::= GivenUpon PartyLimb PerformWord [ConstraintComma] WithLimb WhenHenceWhere;
-  
+
   PerHereby.    PerformWord ::= "HEREBY" ;
   PerAgree.     PerformWord ::= "AGREE" ;
   PerRep.       PerformWord ::= "REPRESENT" ;
   PerWar.       PerformWord ::= "WARRANT" ;
   PerRepWar.    PerformWord ::= "REPRANT" ;
 #+end_src
-  
+
 **** See Also
 - Advanced Rule Bodies.
 
@@ -277,7 +277,7 @@ Representations and warranties are given in the form of such statements.
 
 These stanzas express what Ken Adams calls Language of Declaration -- about entities, at least.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/spud1.l4
   RULE mkSpud1
     ENTITY spud10 ISA Item
     ENTITY spud1 ISA Item
@@ -372,7 +372,7 @@ The scope of a GivenExpr is the entire ancestry of that node in the obligation g
 Boolean Expressions are used in a WHEN limb to evaluate truth values as part of a reasoning operation.
 
 Example:
-#+begin_src text :noweb-ref l4-rules
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/quorum.l4
   RULE    Quorum
    DEFINE OrdinaryMeeting IS Quorate
      WHEN SUM(OrdinaryMeeting.attendees.votingShares) > 50% * SUM(company.members.All.votingShares)
@@ -460,7 +460,7 @@ The "With" limb assigns attributes to the subject of an ENTITY, DEFINE, or WHERE
 
 A lower-case entity is an individual -- a concrete "instance".
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4veggiebar
   RULE mkVeggieBar
     ENTITY veggieBar
        ISA Business
@@ -473,7 +473,7 @@ But you can also use WITH to define the abstract form -- you might call it a rec
 
 If you have any OOP experience, e.g. TypeScript or Python, this should look familiar. Heck, this should make sense even if you're from Haskell world.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4types
   RULE    Business
     DEFINE Business
        ISA Record
@@ -484,7 +484,7 @@ If you have any OOP experience, e.g. TypeScript or Python, this should look fami
            owner   = Person
 #+end_src
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4types
   RULE     Person
     DEFINE Person
        ISA Record
@@ -494,7 +494,7 @@ If you have any OOP experience, e.g. TypeScript or Python, this should look fami
                      ]
            name    = String
            type    = [ "Natural" , "Corporate" | "Trust" ]
-  
+
   RULE Human     DEFINE Human     ISA Person WITH type = "Natural"
   RULE Company   DEFINE Company   ISA Person WITH type = "Corporate"
   RULE Signatory DEFINE Signatory ISA Human  WITH principal = [ Person ]
@@ -509,14 +509,14 @@ If you have any OOP experience, e.g. TypeScript or Python, this should look fami
            , "each party is a principal of a signatory"
            , "number of witnesses >= 2"
            & "no witness is a party" ]
- 
+
 #+end_src
 
 (Yes, the "id" attribute above has two alternative shapes -- think of it as a sum type.)
 
 You can also use a DEFINE rule to define a type whose values must obey a certain regex:
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4types
   RULE     UENString
     DEFINE String
        ISA UENString
@@ -686,7 +686,7 @@ The default name is made by
 
 A module can explicitly give itself a name by saying
 
-#+begin_src haskell :noweb-ref l4-example1
+#+begin_src haskell :noweb-ref l4-header
   module Foo.Bar.Baz where
 #+end_src
 
@@ -713,13 +713,13 @@ An L4 Module contains a list of directives and statements.
 
 Suppose we have a ContractLaw library:
 
-#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/ContractLaw.l4
   module ContractLaw where
 #+end_src
 
 Other modules are welcome to import this module.
 
-#+begin_src haskell :noweb-ref l4-example1
+#+begin_src haskell :noweb-ref l4-header
   import ContractLaw
 #+end_src
 
@@ -731,7 +731,7 @@ Syntax for an import expression:
 
 They would end up with ~elements~ in the namespace, explicitly referenceable as ContractLaw.Rule.1
 
-*** group: 
+*** group:
 
 Statement Groups collect multiple other top-levels
 
@@ -851,7 +851,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
 
   AsAliasE.   Exp1 ::= Exp2 AsAlias;
-            
+
   ExpStm1.    ExpStm ::= Exp;
   ExpStmLet.  ExpStm ::= "LET" Exp;
   separator nonempty ExpStm ";"; -- used inside THEN and ELSE
@@ -969,7 +969,7 @@ We deprecate the "~" sigil in favour of a more verbose form:
 
 Example 1:
 
-#+begin_src text :noweb-ref l4-rules
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/noblePotato4.l4
   RULE    noblePotato4
    DEFINE Item IS noble
      WHEN AT LEAST 2 OF Item.previousOwners
@@ -1293,7 +1293,7 @@ See Constraint Unification for details.
 
 TODO: figure out "=" vs "==".
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4types
  RULE mkMinor
   DEFINE Minor
      ISA Human
@@ -1523,7 +1523,7 @@ We could use an And-Group to represent "SHOULD"s -- you're allowed to pay late a
 
 *** Concurrency
 
-The graph of obligations is a finite state machine. Each node in the graph is a state. In the above cabbage example, the graph is linear: each actor 
+The graph of obligations is a finite state machine. Each node in the graph is a state. In the above cabbage example, the graph is linear: each actor
 
 We can conceive of multiple subgraphs, each subgraph representing a "thread" of "execution". Each actor in the game may have several threads available at any given time.
 
@@ -1623,7 +1623,7 @@ Take Neta-Lee Hershlag. She was born in Israel in 1981; at least, that is what W
 
 Guess what, though. She holds dual Israeli and American citizenship. Unusual, right? Most ontologies would only allow one citizenship to a person. Bit of a black swan. Let's use that as her codename.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4blackswan
   RULE mkBlackSwan
     ENTITY blackSwan
        ISA Human
@@ -1637,7 +1637,7 @@ We assume that her Israeli citizenship began at birth, but Wikipedia doesn't kno
 
 Let's not commit the usual [[https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/][falsehoods programmers believe about names]]. Can someone have multiple names? Sure, why not? Some people change their names when they get married; others when they switch genders; lots of variability. Sometimes people just have multiple names at the same time. Our Black Swan does too:
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4blackswan
   //       a person can have multiple names
            fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
 #+end_src
@@ -1648,7 +1648,7 @@ As you can see, the "multitemporal" syntax allows us to easily handle scenarios 
 - On September 1, the couple spilled the details and shared that the wedding had happened on June 1.
 - On December 1, the couple announced that they had gotten divorced on November 1.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/celeb.l4
 RULE mkCeleb
    GIVEN Tabloid HAVING ceaselessCoverage
   ENTITY celebXY
@@ -1670,7 +1670,7 @@ An attribute may also be /epistemic/:
 - by the notice terms of their pre-nup, Bob was deemed to receive notice three days after the mail was sent, on September 4.
 - on October 1, Bob claimed to have actually received the notice on September 10, due to difficulties with the postal service.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/pregnancy.l4
   SCENARIO alicePregnancy
      TRACE 2020-08-01 Alice knew { pregnancy = true }
            2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
@@ -1778,7 +1778,7 @@ Knols are belief structures, and have special attributes ~knownBy~, ~toldBy~, ~t
 
 We use the "ASOF" keyword to give all the attributes a default ~xtime~ (transaction time). If it is omitted, it defaults to the execution time.
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4buyCabbage
   RULE buyCabbage
    ENTITY buyCabbage
       ISA ContractOfSale
@@ -1799,7 +1799,7 @@ ContractLaw is a library class which abstracts the essential elements of a parti
 
 An alternative representation shows a trace of events:
 
-#+begin_src haskell :noweb-ref l4entity
+#+begin_src haskell :noweb-ref l4buyCabbage
   SCENARIO saleHistory
     WITH parties = [ blackSwan, veggieBar ]
    TRACE 2020-09-01T1210 blackSwan offers     offerDetails
@@ -1831,7 +1831,7 @@ Let's start with a super simple case. Remember our good old spud?
 
 Suppose potatoes are so rare and prized that they come with certificates of provenance tracing the history of previous owners.
 
-#+begin_src haskell :noweb-ref l4-rules
+#+begin_src haskell :noweb-ref l4-rules-spud2
   RULE mkSpud2
     ENTITY spud2
        ISA Item
@@ -1855,7 +1855,7 @@ Now we have an opportunity to explore relational syntax. Think Alloy.
 
 Let's say that some of the previous owners were members of the nobility.
 
-#+begin_src haskell :noweb-ref l4-rules
+#+begin_src haskell :noweb-ref l4-rules-spud2
   RULE mkAlice   ENTITY alice   ISA Human WITH isNoble = true
   RULE mkBob     ENTITY bob     ISA Human WITH isNoble = false
   RULE mkCharlie ENTITY charlie ISA Human WITH isNoble = true
@@ -1871,7 +1871,7 @@ In Prolog, that reads:
   isNoble(daryl).
 #+end_src
 
-#+begin_src text :noweb-ref l4-rules
+#+begin_src text :noweb-ref l4-rules-potato
   RULE  2 edible
    DEFINE Item IS EdiblePotato
               AND TastyFood
@@ -1881,7 +1881,7 @@ In Prolog, that reads:
 
 Rule 2 relies on rule 3. This is backward chaining.
 
-#+begin_src text :noweb-ref l4-rules
+#+begin_src text :noweb-ref l4-rules-potato
   RULE  3 isPotato
    DEFINE Item IS Potato
      WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
@@ -1900,7 +1900,7 @@ Let's say a potato is Noble if at least two of its previous owners are Noble.
 
 There are a couple ways to say that. This is one way:
 
-#+begin_src haskell :noweb-ref l4-rules
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/noblePotato1.l4
 
   RULE     noblePotato
     DEFINE Item IS Noble
@@ -1922,7 +1922,7 @@ That translates to:
 
 This allows us to subsequently use the term Potato instead of Item:
 
-#+begin_src haskell :noweb-ref l4-rules
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/noblePotato2.l4
   RULE     noblePotato2
     DEFINE Potato IS Noble
       WHEN Potato.previousOwners.isNoble >= 2
@@ -1930,7 +1930,7 @@ This allows us to subsequently use the term Potato instead of Item:
 
 Alternative syntax:
 
-#+begin_src haskell :noweb-ref l4-rules
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/noblePotato3.l4
   RULE     noblePotato3
     DEFINE Potato IS Noble
       WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble
@@ -2564,7 +2564,7 @@ Some helper functions
 ** ContractLaw
 
 
-#+begin_src haskell :noweb yes :tangle bnfc/l4/ContractLaw.l4
+#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/ContractLaw.l4
   RULE   1 elements
            :en: "Elements of a Contract"
      GIVEN scenario
@@ -2601,15 +2601,57 @@ We may want to express that a counteroffer implies a decline.
 #+end_src
 
 ** Test L4 input
-#+begin_src text :noweb yes :tangle bnfc/l4/test1.l4
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/cabbage.l4
   // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
-  <<l4-example1>>
+  <<l4-header>>
 
-  <<l4-rules>>
-
-  <<l4entity>>
-
+  <<l4-rules-cabbage>>
 #+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/spud2.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  <<l4-rules-spud2>>
+#+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/potato.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  <<l4-rules-potato>>
+#+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/Types.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  module Types where
+
+  <<l4types>>
+#+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/veggiebar.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  module VeggieBar where
+  import Types
+
+  <<l4veggiebar>>
+#+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/blackswan.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  module BlackSwan where
+  import Types
+
+  <<l4blackswan>>
+#+end_src
+
+
+#+begin_src text :noweb yes :tangle bnfc/l4/generated/buycabbage.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  import Types
+  import VeggieBar
+  import BlackSwan
+
+  <<l4buyCabbage>>
+#+end_src
+
+
 * TODO Syntax Sketchbook
 
 Random bits of syntax Meng has made up over the years

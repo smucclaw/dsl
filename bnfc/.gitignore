@@ -2,6 +2,7 @@
 .stack-work/
 # Cabal
 dist-newstyle/
+l4-dsl-bnfc.cabal
 # Direnv cache
 .direnv
 

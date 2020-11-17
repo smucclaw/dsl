@@ -68,9 +68,13 @@ tests:
   l4-dsl-bnfc-test:
     main:                Spec.hs
     source-dirs:         test
+    build-tools:
+    - l4-dsl-bnfc:l4
+    - l4-dsl-bnfc:showbug
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - l4-dsl-bnfc
+    - process

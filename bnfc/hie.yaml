@@ -1,18 +1,21 @@
 cradle:
   stack:
+    - path: "./src-bnfc"
+      component: "l4-dsl-bnfc:lib"
+
     - path: "./src-l4"
       component: "l4-dsl-bnfc:lib"
 
     - path: "./app/Main.hs"
       component: "l4-dsl-bnfc:exe:l4"
 
-    - path: "./app/Paths_bnfc.hs"
+    - path: "./app/Paths_l4_dsl_bnfc.hs"
       component: "l4-dsl-bnfc:exe:l4"
 
     - path: "./showbug/Main.hs"
       component: "l4-dsl-bnfc:exe:showbug"
 
-    - path: "./showbug/Paths_bnfc.hs"
+    - path: "./showbug/Paths_l4_dsl_bnfc.hs"
       component: "l4-dsl-bnfc:exe:showbug"
 
     - path: "./test"

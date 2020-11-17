@@ -17,6 +17,7 @@ system_to_uppaal :: [String] -> String
 system_to_uppaal nms = "system " ++ (intercalate ", " nms) ++ ";"
 
 clock_decls_to_uppaal :: [Clock] -> String
+clock_decls_to_uppaal [] = ""
 clock_decls_to_uppaal ta_clks = "clock " ++ (intercalate ", " (map (\(Cl cln) -> cln) ta_clks)) ++ ";\n"
 
 bcomparop_to_uppaal :: BComparOp -> String

@@ -48,15 +48,15 @@ def_of_class_decl (ClsDecl _ cd) = cd
 fields_of_class_def :: ClassDef t -> [FieldDecl]
 fields_of_class_def (ClsDef scn fds) = fds
 
-data Rule = TBD
+data GeneralRule = TBD
   deriving (Eq, Ord, Show, Read)
-data Module t = Mdl [ClassDecl t] [Rule]
+data Module t = Mdl [ClassDecl t] [GeneralRule]
   deriving (Eq, Ord, Show, Read)
 
 class_decls_of_module :: Module t -> [ClassDecl t]
 class_decls_of_module (Mdl cds _) = cds
 
-rules_of_module :: Module t -> [Rule]
+rules_of_module :: Module t -> [GeneralRule]
 rules_of_module (Mdl _ rls) = rls
 
 -- Custom Classes and Preable Module
@@ -177,6 +177,10 @@ data Action
   | Act ClassName Sync
   deriving (Eq, Ord, Show, Read)
 
+action_name :: Action -> [ClassName]
+action_name Internal = []
+action_name (Act cn s) = [cn]
+
 -- Transition relation from location to location via Action,
 -- provided [ClConstr] are satisfied; and resetting [Clock]
 data Transition = Trans Loc [ClConstr] Action [Clock] Loc
@@ -212,17 +216,19 @@ channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls)
 -- L4 Event Rules
 ----------------------------------------------------------------------
 
+-- Currently not used, rather see the translations in RuleToTa.hs
+
 -- NB: Event rules as opposed to rules defining terminology etc.
-
-
 
 
 data Event t
   = EventClConstr ClConstr
   | EventCond (Exp t)
+  deriving (Eq, Ord, Show, Read)
 
 -- only Must and May, assuming that Shant can be compiled away during syntax analysis
 data Modality = Must | May
+  deriving (Eq, Ord, Show, Read)
 
 -- EventRule with components:
 -- rule name
@@ -236,3 +242,4 @@ data Modality = Must | May
 -- rule name (optional) corresponding to LEST clause
 
 data EventRule t = EvRule RuleName [Event t] Modality [PartyName] Action [ClConstr] RuleName (Maybe RuleName)
+  deriving (Eq, Ord, Show, Read)

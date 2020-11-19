@@ -41,25 +41,29 @@ rule2gf (Rule def (RName name) asof meta rulebody) = map (gf . namefun) (body2gf
       _ -> id
 
 body2gf :: RuleBody -> [GSentence]
-body2gf (RModal given modal whw) = [modal2gf modal]
-body2gf (RuleDeem given defs whw) = map def2gf defs
+body2gf (RModal given modal whw) = [whw2gf whw (modal2gf modal)]
+body2gf (RuleDeem given [def] whw) = [whw2gf whw (def2gf def)]
+body2gf (RuleDeem given defs whw) = [whw2gf whw def | def <- map def2gf defs]
 body2gf x = error $ "body2gf doesn't handle yet " ++ show x
 --body2gf _ = GMAction GNobody (GMay GFailure)
 
-whw2gf :: WhenHenceWhere -> [GSentence]
-whw2gf (WHW WhenLimb0 henc wher) = []
-whw2gf (WHW (WhenLimb1 exp) henc wher) = []
+whw2gf :: WhenHenceWhere -> (GSentence -> GSentence)
+whw2gf (WHW WhenLimb0 henc wher) = id
+whw2gf (WHW (WhenLimb1 when) henc wher) = \sent -> GWhen sent (when2gf when)
 
+when2gf :: Exp -> GSentence
+when2gf (MatchExp e1 e2) = GMDefTermMatch (exp2term e1) (exp2term e2)
+when2gf x = error $ "when2gf doesn'y support yet " ++ show x
 
 def2gf :: DefineLimb -> GSentence
 def2gf (DefLimb _ [cc] with asof) = GMDefTermIs kind term
   where -- TODO: support many defs, return [GSentence]
     (kind,term) = case cc of
-      ArgEq e f  -> (uexp2kind e, uexp2term GASg f) 
+      ArgEq e f  -> (uexp2kind e, uexp2term GASg f)
       DefIs e f  -> (uexp2kind e, uexp2term GASg f)
       DefIsa e f -> (uexp2kind e, uexp2term GASg f)
       Mul e f -> (uexp2kind e, uexp2term GASg f)
-      _ -> error $ "def2gf doesn't support yet " ++ show cc      
+      _ -> error $ "def2gf doesn't support yet " ++ show cc
 def2gf x = error $ "def2gf doesn't support yet " ++ show x
 modal2gf :: ModalLimb -> GSentence
 modal2gf (MD1 party deonticl deadline) = GMAction (party2gf party) (deontic2gf deonticl)
@@ -90,7 +94,7 @@ action2gf (ActionSingle (ExpAction a) blahs OptAsAlias0) = GAAlias a
 action2gf (ActionSingle (ExpAction a) blahs alias) = GAAlias a -- TODO: use actual alias
 action2gf (ActionSingle e blahs alias) = -- Object is in the BlahExp, transform into => structure
   action2gf (ActionSingle (Op2E (BRel_Fat e obj)) blahs alias')
-  where 
+  where
     (obj, alias') = case blahs of
       BlahExp (AsAliasE o a):_ -> (o, OptAsAlias1 a)
       BlahExp o:_ -> (o, alias)
@@ -141,7 +145,6 @@ exp2obj (ObjME (ObjMethod1 es args langstrs)) = (uexp2term GTheSg (UnifyE1 es), 
       let f = uexp2fun e
           x = uexp2party p
        in f x
-    unifyelem2party = toParty . oa2str . ue2oa
 exp2obj e@(UnifyE1 _) = (uexp2term GTheSg e, id)
 exp2obj x = error $ "exp2obj can't handle: " ++ show x
 
@@ -151,7 +154,7 @@ exp2verb (UnifyE1 es) = verbs
     verbs = map unifyelem2verb es
     unifyelem2verb e = case e of
       UnifyElemObjAttrElem (OaStr oa) -> toV2 oa
-      _ -> GCook -- default option, silly on purpose
+      x -> error $ "exp2verb doesn't yet support " ++ show x
 exp2verb (ObjME objMethod) = []
 exp2verb _ = []
 
@@ -175,10 +178,10 @@ pattern Description str <- (describeLang "en" -> str : _) -- hardcoded for Eng
 -- Aliases
 pattern AliasStr :: Ident -> AsAlias
 --pattern AliasStr str <- (AsAlias (OA_dots [OaStr str]))
-pattern AliasStr str = AsAlias (OA_dots [ObjAttrElemIdent str]) 
+pattern AliasStr str = AsAlias (OA_dots [ObjAttrElemIdent str])
 
 pattern AliasExp :: UIdent -> Ident -> Exp
-pattern AliasExp s a = 
+pattern AliasExp s a =
   AsAliasE (UnifyE (UnifyExpr1 [UnifyElemObjAttrElem (ObjAttrElemUIdent s)])) (AliasStr a)
 
 -- ObjAttr
@@ -202,13 +205,13 @@ pattern UnifyE1 xs = UnifyE (UnifyExpr1 xs)
 pattern Single :: UnifyElem -> Exp
 pattern Single item = UnifyE1 [item]
 
--- The Item's species 
+-- The Item's species
 pattern GenitiveExp :: UnifyElem -> UnifyElem -> Exp
 pattern GenitiveExp item species = UnifyE1 [item, species]
 
 uexp2kind :: Exp -> GKind
 uexp2kind (Single item) = toKind $ oa2str $ ue2oa item
-uexp2kind (GenitiveExp item species) = GComplKind (uexp2kind $ Single item) (uexp2term GTheSg $ Single species)
+uexp2kind (GenitiveExp item species) = GComplKind (uexp2kind $ Single species) (uexp2term GTheSg $ Single item)
 uexp2kind _ = GItem
 
 uexp2term :: GDeterminer -> Exp -> GTerm
@@ -236,6 +239,27 @@ pattern DefIsa e p = CComma (Op2E (BRel_Isa e p))
 
 pattern Mul :: Exp -> Exp -> ConstraintComma
 pattern Mul e p = CComma (Op2E (BArith_Mul e p))
+
+-- Lists
+pattern OrList1 :: Exp -> Exp
+pattern OrList1 e = ListE (ListOr [] e)
+
+pattern OrList2 :: Exp -> Exp -> Exp
+pattern OrList2 e1 e2 = ListE (ListOr [e1] e2)
+
+-- Const
+pattern ConstString :: String -> Exp
+pattern ConstString s = ConstE (StringV s)
+
+exp2term :: Exp -> GTerm
+exp2term (ConstString s) = GStrTerm (GString s)
+exp2term e@(UnifyE1 _) = uexp2term GTheSg e
+exp2term (OrList2 e1 e2) = GConjTerm GOr (GListTerm [exp2term e1, exp2term e2])
+exp2term x = error $ "exp2term doesn't yet support " ++ show x
+
+-- Match
+pattern MatchExp :: Exp -> Exp -> Exp
+pattern MatchExp e1 e2 = Op2E (BCmp_Match1 e1 e2)
 
 -----------------------------------------------------------------------------
 -- Match strings to GF functions.
@@ -266,6 +290,8 @@ toKind str = case map toLower str of
   "amount" -> GAmount
   "cabbage" -> GCabbage
   "potato" -> GPotato
+  "item" -> GItem
+  "species" -> GSpecies
   _ -> GItem
 
 toParty :: String -> GParty

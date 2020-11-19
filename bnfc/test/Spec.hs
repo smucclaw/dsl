@@ -7,6 +7,10 @@ import System.Process (callProcess)
 import Test.Tasty (defaultMain, testGroup, TestTree)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 import Test.Tasty.Program (testProgram)
+import Showbug (showErrorCoordinates)
+import Control.Exception ( try, ErrorCall(..), throwIO )
+import Control.Exception.Base (evaluate)
+import qualified Data.Text.Lazy as TL
 
 -- Next goal: Use showbug
 
@@ -24,13 +28,22 @@ goldenTests = do
       [ goldenVsString
           (takeBaseName l4File) -- Test name
           l4FileGold -- golden file path
-          (parseL4File l4File)
+          (parseL4File =<< readFile l4File)
         | l4File <- l4Files
         , let l4FileGold = l4File ++ ".gold"
       ]
 
-parseL4File :: FilePath -> IO BL.ByteString
-parseL4File f = encodeUtf8 . prettyPrintParseTree <$> readFile f
+parseL4File :: String -> IO BL.ByteString
+parseL4File f = do
+  parsed <- try $ evaluate $ prettyPrintParseTree f :: (IO (Either ErrorCall (Either String TL.Text)))
+
+  case parsed of
+    Left (ErrorCallWithLocation s loc) ->
+      case showErrorCoordinates f $ ": " ++ s of
+        Just pretty -> throwIO $ ErrorCallWithLocation pretty loc
+        Nothing -> throwIO $ ErrorCallWithLocation s loc
+    Right (Left s) -> error $ "Parsing produced error: " ++ s
+    Right (Right x) -> pure $ encodeUtf8 x
 
 tests :: TestTree
 tests =

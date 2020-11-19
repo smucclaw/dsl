@@ -24,22 +24,22 @@ main = do
       orig   <- readFile origfile
       let coords = showErrorCoordinates orig $ stdout ++ stderr
       case (coords, stderr) of
-        (Nothing,[]) ->       putStr   stdout  >> exitSuccess
-        (Nothing,_)  ->       putStr   stderr  >> exitFailure
-        (Just xy,_)  -> mapM_ putStrLn xy      >> exitFailure
+        (Nothing,[]) -> putStr   stdout  >> exitSuccess
+        (Nothing,_)  -> putStr   stderr  >> exitFailure
+        (Just xy,_)  -> putStrLn xy      >> exitFailure
     [origfile] -> do
       orig  <- readFile origfile
       input <- getContents
       let coords = showErrorCoordinates orig input
       case (coords, input) of
-        (Nothing,_)  ->       putStr   input >> exitSuccess
-        (Just xy,_)  -> mapM_ putStrLn xy    >> exitFailure
+        (Nothing,_)  -> putStr   input >> exitSuccess
+        (Just xy,_)  -> putStrLn xy    >> exitFailure
     _ -> usage
 
 
 -- | showErrorCoordinates origfile input shows the code surrounding errors from input
-showErrorCoordinates :: String -> String -> Maybe [String]
-showErrorCoordinates origlines input = showAtCoords (lines origlines) <$> getErrorCoordinates input
+showErrorCoordinates :: String -> String -> Maybe String
+showErrorCoordinates origlines input = unlines . showAtCoords (lines origlines) <$> getErrorCoordinates input
 
 usage :: IO ()
 usage = do
@@ -55,8 +55,8 @@ getErrorCoordinates input =
     runTest (test, extraction, postProcess) = do
       mt <- matchedText $ input ?=~ test
       case postProcess (matches $ mt *=~ extraction) of
-        (x:y:z)   -> return (read x, read y, mt)
-        otherwise -> Nothing
+        (x:y:z) -> return (read x, read y, mt)
+        _       -> Nothing
 
 showAtCoords :: [String] -> (Int, Int, String) -> [String]
 showAtCoords origlines (line,col,errormessage) =

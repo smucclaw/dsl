@@ -52,8 +52,8 @@ run v gr p s = case p ts of
 simpleParseTree :: String  -> Err Tops
 simpleParseTree = pTops . myLLexer
 
-prettyPrintParseTree :: String -> T.Text
-prettyPrintParseTree = either error pShowNoColor . simpleParseTree
+prettyPrintParseTree :: String -> Either String T.Text
+prettyPrintParseTree = fmap pShowNoColor . simpleParseTree
 
 showTree :: PGF -> Int -> Tops -> IO ()
 showTree gr v tree0

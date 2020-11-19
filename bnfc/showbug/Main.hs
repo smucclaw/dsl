@@ -21,21 +21,24 @@ main = do
     [origfile, stdoutfile, stderrfile] -> do
       stderr <- readFile stderrfile
       stdout <- readFile stdoutfile
-      orig   <- lines <$> readFile origfile
-      let coords = getErrorCoordinates $ stdout ++ stderr
+      orig   <- readFile origfile
+      let coords = showErrorCoordinates orig $ stdout ++ stderr
       case (coords, stderr) of
-        (Nothing,[]) ->       putStr   stdout                 >> exitSuccess
-        (Nothing,_)  ->       putStr   stderr                 >> exitFailure
-        (Just xy,_)  -> mapM_ putStrLn (showAtCoords orig xy) >> exitFailure
+        (Nothing,[]) ->       putStr   stdout  >> exitSuccess
+        (Nothing,_)  ->       putStr   stderr  >> exitFailure
+        (Just xy,_)  -> mapM_ putStrLn xy      >> exitFailure
     [origfile] -> do
-      orig  <- lines <$> readFile origfile
+      orig  <- readFile origfile
       input <- getContents
-      let coords = getErrorCoordinates input
+      let coords = showErrorCoordinates orig input
       case (coords, input) of
-        (Nothing,_)  ->       putStr   input                  >> exitSuccess
-        (Just xy,_)  -> mapM_ putStrLn (showAtCoords orig xy) >> exitFailure
+        (Nothing,_)  ->       putStr   input >> exitSuccess
+        (Just xy,_)  -> mapM_ putStrLn xy    >> exitFailure
     _ -> usage
 
+
+showErrorCoordinates :: String -> String -> Maybe [String]
+showErrorCoordinates origlines input = showAtCoords (lines origlines) <$> getErrorCoordinates input
 
 usage :: IO ()
 usage = do

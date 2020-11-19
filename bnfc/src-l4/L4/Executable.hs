@@ -49,21 +49,29 @@ run v gr p s = case p ts of
   ts = myLLexer s
 
 
+simpleParseTree :: String  -> Err Tops
+simpleParseTree = pTops . myLLexer
+
+prettyPrintParseTree :: String -> T.Text
+prettyPrintParseTree = either error pShowNoColor . simpleParseTree
+
 showTree :: PGF -> Int -> Tops -> IO ()
 showTree gr v tree0
  = let tree = rewriteTree tree0 in do
-      putStrV v $ "\n[Abstract Syntax]\n\n" ++ T.unpack (pShowNoColor tree)
-      putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
-      putStrV v $ "\n[In English]\n\n" ++ bnfc2str gr tree
+      printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
+      printMsg "Linearized tree" $ printTree tree
+      printMsg "In English" $ bnfc2str gr tree
       let ruleList = getRules tree
-      putStrV v $ "\n[Just the Names]\n\n" ++ (unlines $ showRuleName <$> ruleList)
-      putStrV v $ "\n[Dictionary of Name to Rule]\n\n" ++ (T.unpack (pShow $ nameList ruleList))
-      putStrV v $ "\n[Rule to Exit]\n\n" ++ (T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList))
-      putStrV v $ "\n[As Graph]\n\n"
+      printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
+      printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
+      printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
+      printMsg "As Graph" ""
       printGraph ruleList
-      putStrV v $ "\n[As Dotfile]\n\n"
+      printMsg "As Dotfile" ""
       putStrLn $ showDot ruleList
       writeFile "graph.dot" (showDot ruleList)
+  where
+    printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
 
 
 rewriteTree :: Tops -> Tops

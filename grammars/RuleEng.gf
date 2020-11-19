@@ -9,7 +9,8 @@ concrete RuleEng of Rule = ActionEng ** open
   (P=ParadigmsEng),
   (WN=WordNetEng) in {
   lincat
-    Sentence = Utt ;
+    Sentence = S ;
+    ListSentence = ListS ;
 
     Party = NP ;
 
@@ -40,21 +41,26 @@ concrete RuleEng of Rule = ActionEng ** open
       let sectionN : NP = mkNP (mkCN WN.section_1_N (symb int)) ;
           certDefTerms : NP = mkNP certainPl_Det (merge (KProperty additional_Prop DefinedTerm)) ;
           seeTerms : VP = mkVP (mkVP WN.see_1_V2 sectionN) (adv for_Prep certDefTerms) ;
-       in mkUtt (mkImp seeTerms) ;
+       in lin S (mkUtt (mkImp seeTerms)) ;
 
     -- : Sentence -> Sentence ;
     SubjectToTermsBelow sent = sent ** {s = sent.s ++ ", subject to terms below"} ;
 
     -- Sentences
+    -- TODO: unless, deadline, hence, where
+    BaseSentence = mkListS ;
+    ConsSentence = mkListS ;
+    ConjSentence = mkS ;
 
     -- : Sentence -> Sentence -> Sentence ;
-    IfThen if then = mkUtt (mkAdv if_then_Conj <if : Adv> <then : Adv>) ;
+    When a b = lin S {s = a.s ++ ", when" ++ b.s} ;
+    IfThen if then = lin S (mkAdv if_then_Conj <if : Adv> <then : Adv>) ;
 
     -- : ActionAlias -> Sentence -> Sentence ;
     Upon recv sent =
       let upon_VV : VV = P.ingVV (P.mkV "dummy") ** {s = \\_ => "upon"} ;
           uponRecv : Utt = UttVPShort (ComplVPIVV upon_VV (recv.inf.comp ! Pos)) ;
-       in sent ** prefixSS (uponRecv.s ++ ",") sent ;
+       in sent ** prefixSS (uponRecv.s ++ ",") <sent : S> ;
 
     UponAlias recv sent =
       let uponRecv : Adv = SyntaxEng.mkAdv WN.upon_Prep recv.alias ;
@@ -68,15 +74,18 @@ concrete RuleEng of Rule = ActionEng ** open
       False => mkUtt (PredVPS party (deontic.s ! VAct Sim)) } ;
 
     -- : Deontic -> Sentence ;
-    MPass deontic = mkUtt (PredVPS deontic.passSubj (deontic.s ! VPass)) ;
+    MPass deontic = PredVPS deontic.passSubj (deontic.s ! VPass) ;
     -- : Kind -> Term -> Sentence ;
-    MDefTermIs kind term = mkUtt (mkCl (defTerm kind) (np term)) ;
+    MDefTermIs kind term = mkS (mkCl (defTerm kind) (np term)) ;
 
     --  : Kind -> Term -> Sentence ;
-    MDefTermMeans kind term = mkUtt (mkCl (defTerm kind) WN.mean_3_V2 (np term)) ;
+    MDefTermMeans kind term = mkS (mkCl (defTerm kind) WN.mean_3_V2 (np term)) ;
+
+    -- : Term -> Term -> Sentence ;
+    MDefTermMatch term1 term2 = mkS (mkCl (np term1) (np term2)) ;
 
     -- : Kind -> Property -> Sentence ;
-    MDefProp kind prop = mkUtt (mkCl (defTerm kind) (prop ! Pos)) ;
+    MDefProp kind prop = mkS (mkCl (defTerm kind) (prop ! Pos)) ;
 
     -- : ActionAlias -> Deontic ;
     May = action2deontic (PMay Pos) ;
@@ -118,6 +127,7 @@ concrete RuleEng of Rule = ActionEng ** open
     Nobody = nobody_NP ;
     MkParty p = p ;
     StrParty = symb ;
+    StrTerm = symb ;
 
     -- : Party -> Action -> Action ;
     From = addParty whether_from_Prep ;

@@ -5,6 +5,7 @@ abstract Rule = Action ** {
 --    Phrase ;
 
     Sentence; -- Can be a rule, or a definition, any independent sentence.
+    [Sentence]{2} ;
 
     Deontic ;
 
@@ -21,7 +22,10 @@ abstract Rule = Action ** {
     RuleName : String -> Sentence -> Sentence ;
 
     -- Sentences
+    When,
     IfThen : Sentence -> Sentence -> Sentence ;
+
+    ConjSentence : Conjunction -> [Sentence] -> Sentence ;
 
     Upon, -- Upon [receiving the order/reception], …
       UponAlias : ActionAlias -> Sentence -> Sentence ;
@@ -32,6 +36,8 @@ abstract Rule = Action ** {
 
     MDefTermIs,
       MDefTermMeans : Kind -> Term -> Sentence ;
+
+    MDefTermMatch : Term -> Term -> Sentence ;
 
     MDefProp : Kind -> Property -> Sentence ;
 
@@ -59,8 +65,9 @@ abstract Rule = Action ** {
     Everybody : Party ;
 
     StrParty : String -> Party ;
-    MkParty : Term -> Party ;
+    -- MkParty : Term -> Party ;
 
+    StrTerm : String -> Term ;
     -- Some operations are restricted to parties
     From, To
       : Party -> Action -> Action ;

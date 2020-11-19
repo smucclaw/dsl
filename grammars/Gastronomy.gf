@@ -4,6 +4,7 @@ abstract Gastronomy = Action ** {
     Cook : Action_Dir ;
     Potato,
       Cabbage,
+      Species,
       Almond,
       Walnut,
       Peanut : Kind ;

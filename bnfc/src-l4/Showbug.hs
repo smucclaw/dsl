@@ -37,6 +37,7 @@ main = do
     _ -> usage
 
 
+-- | showErrorCoordinates origfile input shows the code surrounding errors from input
 showErrorCoordinates :: String -> String -> Maybe [String]
 showErrorCoordinates origlines input = showAtCoords (lines origlines) <$> getErrorCoordinates input
 

@@ -926,7 +926,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
 
   UBool_Not1.  UnaOp6 ::= "!"  ;
   UBool_Not2.  UnaOp6 ::= "NOT" ;
-  UBool_Not2.  UnaOp6 ::= "¬" ;
+  UBool_Not3.  UnaOp6 ::= "¬" ;
   UBool_Unlikely.  UnaOp5 ::= "UNLIKELY" ;
   UBool_Likely.    UnaOp5 ::= "LIKELY" ;
 
@@ -1008,7 +1008,7 @@ BNF:
   MQuantAll.    MatchQuantifier ::= "ALLOF" ;
   MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
   MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
-  MQuantNull.   MatchQuantifier ::= ;
+  MQuantNull.   MatchQuantifier ::=  ; -- If this is non-empty, 95 shift/reduce conflicts disappear
   MRelSat1.    MatchRelation   ::= "SATISFIES" ;
   MRelSat2.    MatchRelation   ::= "SATISFY" ;
   MRelIs1.     MatchRelation   ::= "IS" ;

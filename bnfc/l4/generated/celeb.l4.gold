@@ -18,14 +18,8 @@ Toplevel
                                 )
                             ]
                             ( HavingLimb1
-                                [ HavingBoolExpExp
-                                    ( UnifyE
-                                        ( UnifyExpr1
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "ceaselessCoverage" ) )
-                                            ]
-                                        )
-                                    )
+                                [ HavingBoolExpMatchCondition
+                                    ( Match_BoolPredicate ( Ident "ceaselessCoverage" ) )
                                 ]
                             )
                         )

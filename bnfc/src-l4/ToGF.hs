@@ -13,6 +13,7 @@ import PGF (Expr, PGF, linearizeAll, showExpr)
 import Top
 import Data.Maybe (mapMaybe)
 
+
 -- BNFC to GF tree
 
 bnfc2str :: PGF -> Tops -> String
@@ -51,7 +52,7 @@ whw2gf :: WhenHenceWhere -> (GSentence -> GSentence)
 whw2gf (WHW WhenLimb0 henc wher) = id
 whw2gf (WHW (WhenLimb1 when) henc wher) = \sent -> GWhen sent (when2gf when)
 
-when2gf :: Exp -> GSentence
+when2gf :: MatchCondition -> GSentence
 when2gf (MatchExp e1 e2) = GMDefTermMatch (exp2term e1) (exp2term e2)
 when2gf x = error $ "when2gf doesn'y support yet " ++ show x
 
@@ -96,7 +97,6 @@ action2gf (ActionSingle e blahs alias) = -- Object is in the BlahExp, transform 
   action2gf (ActionSingle (Op2E (BRel_Fat e obj)) blahs alias')
   where
     (obj, alias') = case blahs of
-      BlahExp (AsAliasE o a):_ -> (o, OptAsAlias1 a)
       BlahExp o:_ -> (o, alias)
       x -> error $ "action2gf doesn't handle yet BlahExp" ++ show x
 action2gf x = error $ "action2gf doesn't handle yet " ++ show x
@@ -180,10 +180,6 @@ pattern AliasStr :: Ident -> AsAlias
 --pattern AliasStr str <- (AsAlias (OA_dots [OaStr str]))
 pattern AliasStr str = AsAlias (OA_dots [ObjAttrElemIdent str])
 
-pattern AliasExp :: UIdent -> Ident -> Exp
-pattern AliasExp s a =
-  AsAliasE (UnifyE (UnifyExpr1 [UnifyElemObjAttrElem (ObjAttrElemUIdent s)])) (AliasStr a)
-
 -- ObjAttr
 oa2str :: ObjAttrElem -> String
 oa2str e = case e of
@@ -258,8 +254,14 @@ exp2term (OrList2 e1 e2) = GConjTerm GOr (GListTerm [exp2term e1, exp2term e2])
 exp2term x = error $ "exp2term doesn't yet support " ++ show x
 
 -- Match
-pattern MatchExp :: Exp -> Exp -> Exp
-pattern MatchExp e1 e2 = Op2E (BCmp_Match1 e1 e2)
+pattern QualifiedExp1 :: Exp -> QualifiedExp
+pattern QualifiedExp1 e = QualExp MQuantNull e OptAsAlias0 MQualNull
+
+pattern QuantifiedExp1 :: Exp -> QuantifiedExp
+pattern QuantifiedExp1 e = QuantExp MQuantNull e OptAsAlias0
+
+pattern MatchExp :: Exp -> Exp -> MatchCondition
+pattern MatchExp e1 e2 = (Match_MatchRelation (QualifiedExp1 e1) MRelIs1 (QuantifiedExp1 e2) [])
 
 -----------------------------------------------------------------------------
 -- Match strings to GF functions.

@@ -31,7 +31,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BRel_Is
                                 ( UnifyE
                                     ( UnifyExpr1

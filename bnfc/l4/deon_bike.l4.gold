@@ -222,7 +222,7 @@ Toplevel
                 )
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BBool_And
                                 ( Op2E
                                     ( BCmp_LTE
@@ -360,7 +360,7 @@ Toplevel
                 )
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BCmp_GTE
                                 ( UnifyE
                                     ( UnifyExpr1

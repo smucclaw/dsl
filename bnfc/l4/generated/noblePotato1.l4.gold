@@ -31,7 +31,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BBool_And
                                 ( Op2E
                                     ( BRel_Isa

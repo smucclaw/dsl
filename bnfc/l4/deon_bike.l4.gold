@@ -223,7 +223,7 @@ Toplevel
                 ( WHW
                     ( WhenLimb1
                         ( Op2E
-                            ( BBool_And3
+                            ( BBool_And
                                 ( Op2E
                                     ( BCmp_LTE
                                         ( UnifyE
@@ -235,7 +235,7 @@ Toplevel
                                         )
                                         ( ConstE ( IntV 50 ) )
                                     )
-                                )
+                                ) AND_AND
                                 ( Op2E
                                     ( BCmp_Eq2
                                         ( UnifyE

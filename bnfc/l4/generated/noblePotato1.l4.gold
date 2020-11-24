@@ -32,7 +32,7 @@ Toplevel
                 ( WHW
                     ( WhenLimb1
                         ( Op2E
-                            ( BBool_And3
+                            ( BBool_And
                                 ( Op2E
                                     ( BRel_Isa
                                         ( UnifyE
@@ -50,9 +50,9 @@ Toplevel
                                             )
                                         )
                                     )
-                                )
+                                ) AND_AND
                                 ( Op2E
-                                    ( BBool_And3
+                                    ( BBool_And
                                         ( Op2E
                                             ( BRel_Is
                                                 ( UnifyE
@@ -74,7 +74,7 @@ Toplevel
                                                     )
                                                 )
                                             )
-                                        )
+                                        ) AND_AND
                                         ( Op2E
                                             ( BRel_Is
                                                 ( UnifyE

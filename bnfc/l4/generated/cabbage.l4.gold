@@ -98,7 +98,7 @@ Toplevel
                                     )
                                 )
                                 ( Op2E
-                                    ( BBool_Or3
+                                    ( BBool_Or
                                         ( Op2E
                                             ( BRel_Is
                                                 ( UnifyE
@@ -116,7 +116,7 @@ Toplevel
                                                     )
                                                 )
                                             )
-                                        )
+                                        ) OR_OR
                                         ( Op1E UBool_Unlikely
                                             ( Op2E
                                                 ( BCmp_Match1

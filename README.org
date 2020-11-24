@@ -891,8 +891,7 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BCmp_Eq1.    BinExp2   ::= Exp4 "="    Exp5; -- constraint unification
   BCmp_Eq2.    BinExp2   ::= Exp4 "=="   Exp5; -- constraint unification
   BCmp_Eq3.    BinExp2   ::= Exp4 "==="  Exp5; -- object reference identity
-  BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
-  BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
+  BCmp_Neq.    BinExp2   ::= Exp4 NEQ    Exp5;
   BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
   BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
   BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
@@ -902,23 +901,23 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
   BRel_Are.    BinExp1   ::= Exp4 "ARE"  Exp5;
   BRel_To.     BinExp1   ::= Exp4 "TO"   Exp5;
-  BBool_And1.  BinExp    ::= Exp4  "∧"   Exp4;
-  BBool_And2.  BinExp    ::= Exp4  "&&"  Exp4;
-  BBool_And3.  BinExp    ::= Exp4  "AND" Exp4;
 
-  BBool_Or1.   BinExp    ::= Exp  "∨"   Exp;
-  BBool_Or2.   BinExp    ::= Exp  "||"  Exp;
-  BBool_Or3.   BinExp    ::= Exp  "OR"  Exp;
+  rules        NEQ ::= "!=" | "/=";
+  rules        AND ::= "^" | "&&" | "AND";
+  rules        OR  ::= "∨" | "||" | "OR";
+  rules        UNION ::= "U" | "∪" | "UNION";
+  rules        SUBSET ::= "⊂" | "SUBSET";
+  rules        INTERSECT ::=  "∩" | "INTERSECT";
 
-  Set_Union1.     BinExp ::= Exp  "U"   Exp;
-  Set_Union2.     BinExp ::= Exp  "∪"   Exp;
-  Set_Union3.     BinExp ::= Exp  "UNION"   Exp;
-  Set_Intersect1.  BinExp ::= Exp  "∩"   Exp;
-  Set_Intersect2.  BinExp ::= Exp "INTERSECT" Exp ;
-  Set_Subset1.     BinExp ::= Exp  "⊂"   Exp;
-  Set_Subset2.     BinExp ::= Exp  "SUBSET"   Exp;
+  BBool_And.   BinExp    ::= Exp4 AND Exp4;
 
-  BBool_Unless.    BinExp ::= Exp  "UNLESS"   Exp;
+  BBool_Or.    BinExp    ::= Exp  OR  Exp;
+
+  Set_Union.      BinExp ::= Exp UNION     Exp;
+  Set_Subset.     BinExp ::= Exp SUBSET    Exp;
+  Set_Intersect.  BinExp ::= Exp INTERSECT Exp;
+
+  BBool_Unless.   BinExp ::= Exp "UNLESS"  Exp;
 
 
   coercions UnaOp 7;
@@ -2645,6 +2644,25 @@ We may want to express that a counteroffer implies a decline.
   import Types
   import VeggieBar
   import BlackSwan
+
+  <<l4buyCabbage>>
+#+end_src
+
+#+begin_src text :noweb yes :tangle bnfc/l4/test1.l4
+  // this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+  <<l4-header>>
+
+  <<l4-rules-cabbage>>
+
+  <<l4-rules-spud2>>
+
+  <<l4-rules-potato>>
+
+  <<l4types>>
+
+  <<l4veggiebar>>
+
+  <<l4blackswan>>
 
   <<l4buyCabbage>>
 #+end_src

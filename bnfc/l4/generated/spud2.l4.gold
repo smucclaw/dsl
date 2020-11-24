@@ -1,0 +1,306 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkSpud2" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "spud2" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "species" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "Solanum tuberosum" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isEdible" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ListE
+                                        ( ListComma
+                                            [ UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "alice" ) )
+                                                    ]
+                                                )
+                                            , UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "bob" ) )
+                                                    ]
+                                                )
+                                            , UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "charlie" ) )
+                                                    ]
+                                                )
+                                            , UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "daryl" ) )
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkAlice" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "alice" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkBob" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "bob" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_F ( FalseBool "false" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkCharlie" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "charlie" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkDaryl" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "daryl" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_F ( FalseBool "false" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    ]

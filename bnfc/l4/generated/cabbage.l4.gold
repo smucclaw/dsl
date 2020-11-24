@@ -1,0 +1,601 @@
+Toplevel
+    [ ToplevelsModule
+        ( ModuleDecl
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "Foo" )
+                , ObjAttrElemUIdent ( UIdent "Bar" )
+                , ObjAttrElemUIdent ( UIdent "Baz" )
+                ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "ContractLaw" ) ]
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 1
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "SaleRestricted" ) ]
+                )
+            )
+            ( RName
+                ( OptLangStringsLangStrings
+                    ( ELangStrings
+                        [ ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "en" ) ]
+                            ) "The Sale of Cabbages is Restricted."
+                        , ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "se" ) ]
+                            ) "Försäljning av kål är begränsad."
+                        ]
+                    )
+                )
+            ) AsofNull Meta0
+            ( RModal ( GUGiven GivenLimb0 UponLimb1 )
+                ( MD1
+                    ( PartyLimb ( PNobody PNobody_NOBODY )
+                        ( OptAsAlias1
+                            ( AsAlias
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "P1" ) ]
+                                )
+                            )
+                        )
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "sell" ) )
+                                    ]
+                                )
+                            )
+                            [ BlahExp
+                                ( AsAliasE
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( AsAlias
+                                        ( OA_dots
+                                            [ ObjAttrElemIdent ( Ident "sale" ) ]
+                                        )
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    ) DL0
+                )
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BBool_Unless
+                                ( Op2E
+                                    ( BRel_Is
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                                ( Op2E
+                                    ( BBool_Or3
+                                        ( Op2E
+                                            ( BRel_Is
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                                        ]
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        ( Op1E UBool_Unlikely
+                                            ( Op2E
+                                                ( BCmp_Match1
+                                                    ( Op2E
+                                                        ( BRel_Has
+                                                            ( UnifyE
+                                                                ( UnifyExpr1
+                                                                    [ UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemUIdent ( UIdent "P1" ) )
+                                                                    ]
+                                                                )
+                                                            )
+                                                            ( UnifyE
+                                                                ( UnifyExpr1
+                                                                    [ UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
+                                                                    , UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemIdent ( Ident "from" ) )
+                                                                    ]
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                    ( ListE
+                                                        ( ListComma
+                                                            [ UnifyE
+                                                                ( UnifyExpr1
+                                                                    [ UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
+                                                                    ]
+                                                                )
+                                                            ]
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) ]
+                                )
+                            )
+                        ) Args1 OptLangStrings1
+                    )
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( Op2E
+                                ( BRel_Is
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "sale" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            ) WithLimb1
+                            ( WhenLimb1
+                                ( Op2E
+                                    ( BCmp_Match1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "sale" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "date" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            ( WhereLimb1
+                                [ WhereExp1 GivenLimb0
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ObjME
+                                                ( ObjMethod1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "external" ) )
+                                                    ]
+                                                    ( Args2
+                                                        [ CComma
+                                                            ( Op2E
+                                                                ( BCmp_Eq1
+                                                                    ( UnifyE
+                                                                        ( UnifyExpr1
+                                                                            [ UnifyElemObjAttrElem
+                                                                                ( ObjAttrElemIdent ( Ident "url" ) )
+                                                                            ]
+                                                                        )
+                                                                    )
+                                                                    ( ConstE ( StringV "https://www.almanac.com/astronomy/moon/full/" ) )
+                                                                )
+                                                            )
+                                                        ]
+                                                    ) OptLangStrings1
+                                                )
+                                            )
+                                        )
+                                    ) WithLimb1 WhenLimb0 WhereLimb0
+                                ]
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 4
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Cabbage" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BCmp_Match1
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "species" ) )
+                                        ]
+                                    )
+                                )
+                                ( ListE
+                                    ( ListOr
+                                        [ ConstE ( StringV "Brassica chinensis" ) ]
+                                        ( ConstE ( StringV "Brassica oleracea" ) )
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 5
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Price" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    ]
+                                )
+                            , UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "weight" ) )
+                                    ]
+                                )
+                            , UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "president" ) )
+                                    ]
+                                )
+                            , UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "taxRate" ) )
+                                    ]
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BArith_Mul
+                                ( Op2E
+                                    ( BCmp_Eq1
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "price" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( Op2E
+                                            ( BArith_Plus
+                                                ( ConstE ( IntV 1 ) )
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "taxRate" ) )
+                                                        ]
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                                ( CaseE
+                                    ( CaseExpr1
+                                        ( OA_dots
+                                            [ ObjAttrElemIdent ( Ident "president" ) ]
+                                        )
+                                        [ CaseExp1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "Biden" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( Op2E
+                                                ( BArith_Mul
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "weight" ) )
+                                                            ]
+                                                        )
+                                                    )
+                                                    ( ConstE ( FloatV 1.1 ) )
+                                                )
+                                            )
+                                        , CaseExp1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "Trump" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( Op2E
+                                                ( BArith_Mul
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "weight" ) )
+                                                            ]
+                                                        )
+                                                    )
+                                                    ( ConstE ( FloatV 0.9 ) )
+                                                )
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "sale" ) )
+                                    ]
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Buyer" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "return" ) )
+                                    ]
+                                )
+                            )
+                            [ BlahExp
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    )
+                    ( DLLimb TRBefore
+                        ( TemporalExpr2
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "sale" )
+                                , ObjAttrElemIdent ( Ident "date" )
+                                ]
+                            )
+                            ( DurationExpr2 ( TDW 3 ) )
+                        ) OptAsAlias0
+                    )
+                )
+                ( WHW WhenLimb0
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "Net3" ) ]
+                                )
+                            )
+                        ) Args1 OptLangStrings1
+                    ) WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 3
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Net3" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "return" ) )
+                                    ]
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Seller" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMust OptLangStrings1
+                        ( ActionSingle
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "refund" ) )
+                                    ]
+                                )
+                            )
+                            [ BlahExp
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Amount" ) )
+                                        ]
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    )
+                    ( DLLimb TRBefore
+                        ( TemporalExpr2
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "return" )
+                                , ObjAttrElemIdent ( Ident "date" )
+                                ]
+                            )
+                            ( DurationExpr2 ( TDD 3 ) )
+                        ) OptAsAlias0
+                    )
+                )
+                ( WHW WhenLimb0 DNoHence
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Amount" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( Op1E ( UCurr CurrDollar )
+                                        ( Op2E
+                                            ( BArith_Mul
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "cash" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( ConstE ( IntPercent 90 ) )
+                                            )
+                                        )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb0 WhereLimb0
+                        ]
+                    )
+                )
+            )
+        )
+    ]

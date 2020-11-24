@@ -1,0 +1,319 @@
+Toplevel
+    [ ToplevelsScenario
+        ( RScenario
+            ( OA_dots
+                [ ObjAttrElemIdent ( Ident "alicePregnancy" ) ]
+            ) WithLimb1
+            ( TraceExpr1
+                [ LogEvent1
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-08-01" ) )
+                    ( OA_dots
+                        [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "knew" ) ]
+                    )
+                    [ BlahExp
+                        ( BracesE
+                            ( BraceList1
+                                [ CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ConstE
+                                                ( BoolV_T ( TrueBool "true" ) )
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                    ( OA_dots
+                        [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "told" ) ]
+                    )
+                    [ BlahExp
+                        ( UnifyE
+                            ( UnifyExpr1
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemUIdent ( UIdent "Bob" ) )
+                                ]
+                            )
+                        )
+                    , BlahExp
+                        ( BracesE
+                            ( BraceList1
+                                [ CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                , CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ConstE
+                                                ( BoolV_T ( TrueBool "true" ) )
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                    ( OA_dots
+                        [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "knew" ) ]
+                    )
+                    [ BlahExp
+                        ( BracesE
+                            ( BraceList1
+                                [ CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "Bob" ) )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                , CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( TempE
+                                                ( DateTimeIso8601
+                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-04" ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                , CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "beliefs" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( BracesE
+                                                ( BraceList1
+                                                    [ CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( ConstE
+                                                                    ( BoolV_T ( TrueBool "true" ) )
+                                                                )
+                                                            )
+                                                        )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-10-01" ) )
+                    ( OA_dots
+                        [ ObjAttrElemUIdent ( UIdent "Bob" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "knew" ) ]
+                    )
+                    [ BlahExp
+                        ( BracesE
+                            ( BraceList1
+                                [ CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                , CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "beliefs" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( BracesE
+                                                ( BraceList1
+                                                    [ CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( ConstE
+                                                                    ( BoolV_T ( TrueBool "true" ) )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( TempE
+                                                                    ( DateTimeIso8601
+                                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                , CComma
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( TempE
+                                                ( DateTimeIso8601
+                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                ]
+            ) AsofNull WhereLimb0
+        )
+    ]

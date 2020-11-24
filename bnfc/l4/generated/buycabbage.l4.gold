@@ -1,0 +1,603 @@
+Toplevel
+    [ ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "Types" ) ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "VeggieBar" ) ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "BlackSwan" ) ]
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "buyCabbage" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "buyCabbage" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "ContractOfSale" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "date" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "jurisdiction" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "SG" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "buyer" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "seller" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "buyer" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( Op1E
+                                        ( UCurr
+                                            ( CurrCode ( UIdent "USD" ) )
+                                        )
+                                        ( ConstE ( IntV 10 ) )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "seller" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ListE
+                                        ( ListComma
+                                            [ UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "item1" ) )
+                                                    ]
+                                                )
+                                            , UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "item2" ) )
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        ]
+                    )
+                    ( Asof
+                        ( DateTimeIso8601
+                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                        )
+                    )
+                ]
+                ( WHW WhenLimb0 DNoHence
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( Op2E
+                                ( BRel_Isa
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "item1" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                            ( WithLimb2 WithHas_WITH
+                                [ WithInExp
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "category" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ConstE ( StringV "vegetable" ) )
+                                        )
+                                    )
+                                , WithInExp
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "species" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ConstE ( StringV "Brassica oleracea" ) )
+                                        )
+                                    )
+                                , WithInExp
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "cultivar" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( ConstE ( StringV "capitata" ) )
+                                        )
+                                    )
+                                ]
+                            ) WhenLimb0 WhereLimb0
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsScenario
+        ( RScenario
+            ( OA_dots
+                [ ObjAttrElemIdent ( Ident "saleHistory" ) ]
+            )
+            ( WithLimb2 WithHas_WITH
+                [ WithInExp
+                    ( Op2E
+                        ( BCmp_Eq1
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "parties" ) )
+                                    ]
+                                )
+                            )
+                            ( ListE
+                                ( ListComma
+                                    [ UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                            ]
+                                        )
+                                    , UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                            ]
+                                        )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                ]
+            )
+            ( TraceExpr1
+                [ LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1210" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "offers" ) ]
+                    )
+                    [ BlahExp
+                        ( UnifyE
+                            ( UnifyExpr1
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                ]
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1211" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "accepts" ) ]
+                    )
+                    [ BlahExp
+                        ( UnifyE
+                            ( UnifyExpr1
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                ]
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1212" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "pays" ) ]
+                    )
+                    [ BlahExp
+                        ( UnifyE
+                            ( UnifyExpr1
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                ]
+                            )
+                        )
+                    , BlahExp
+                        ( Op1E ( UCurr CurrDollar )
+                            ( ConstE ( IntV 10 ) )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1213" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "deliversTo" ) ]
+                    )
+                    [ BlahExp
+                        ( UnifyE
+                            ( UnifyExpr1
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                ]
+                            )
+                        )
+                    , BlahExp
+                        ( ListE
+                            ( ListComma
+                                [ UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item1" ) )
+                                        ]
+                                    )
+                                , UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item2" ) )
+                                        ]
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                ]
+            )
+            ( Asof
+                ( DateTimeIso8601
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                )
+            )
+            ( WhereLimb1
+                [ WhereExp1 GivenLimb0
+                    ( Op2E
+                        ( BCmp_Eq1
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                    ]
+                                )
+                            )
+                            ( BracesE
+                                ( BraceList1
+                                    [ CComma
+                                        ( Op2E
+                                            ( BCmp_Eq1
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( Op1E ( UCurr CurrDollar )
+                                                    ( ConstE ( IntV 10 ) )
+                                                )
+                                            )
+                                        )
+                                    , CComma
+                                        ( Op2E
+                                            ( BCmp_Eq1
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( ListE
+                                                    ( ListComma
+                                                        [ UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item1" ) )
+                                                                ]
+                                                            )
+                                                        , UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item2" ) )
+                                                                ]
+                                                            )
+                                                        ]
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ]
+                                )
+                            )
+                        )
+                    ) WithLimb1 WhenLimb0 WhereLimb0
+                , WhereExp1 GivenLimb0
+                    ( Op2E
+                        ( BRel_Isa
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "item1" ) )
+                                    ]
+                                )
+                            )
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "category" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "vegetable" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "species" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "Brassica oleracea" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "cultivar" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "capitata" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "quantity" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( IntV 1 ) )
+                                )
+                            )
+                        ]
+                    ) WhenLimb0 WhereLimb0
+                , WhereExp1 GivenLimb0
+                    ( Op2E
+                        ( BRel_Isa
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "item2" ) )
+                                    ]
+                                )
+                            )
+                            ( UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ]
+                                )
+                            )
+                        )
+                    )
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "category" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "beverage" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "brand" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "Acme Water" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "model" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "750mL" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "quantity" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( IntV 1 ) )
+                                )
+                            )
+                        ]
+                    ) WhenLimb0 WhereLimb0
+                ]
+            )
+        )
+    ]

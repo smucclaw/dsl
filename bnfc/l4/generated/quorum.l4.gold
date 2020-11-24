@@ -1,0 +1,117 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Quorum" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Quorate" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BArith_Mul
+                                ( Op2E
+                                    ( BCmp_GT
+                                        ( ObjME
+                                            ( ObjMethod1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "SUM" ) )
+                                                ]
+                                                ( Args2
+                                                    [ CComma
+                                                        ( UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
+                                                                , UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "attendees" ) )
+                                                                , UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "votingShares" ) )
+                                                                ]
+                                                            )
+                                                        )
+                                                    ]
+                                                ) OptLangStrings1
+                                            )
+                                        )
+                                        ( ConstE ( IntPercent 50 ) )
+                                    )
+                                )
+                                ( ObjME
+                                    ( ObjMethod1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "SUM" ) )
+                                        ]
+                                        ( Args2
+                                            [ CComma
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "company" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "members" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "All" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "votingShares" ) )
+                                                        ]
+                                                    )
+                                                )
+                                            ]
+                                        ) OptLangStrings1
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "company" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "company" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            ) WithLimb1 WhenLimb0 WhereLimb0
+                        ]
+                    )
+                )
+            )
+        )
+    ]

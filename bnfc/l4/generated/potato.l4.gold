@@ -1,0 +1,144 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "edible" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BBool_And3
+                                ( Op2E
+                                    ( BRel_Is
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BBool_And3
+                                ( Op2E
+                                    ( BRel_Is
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                                ( Op2E
+                                    ( BRel_Is
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Edible" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 3
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "isPotato" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BCmp_Match1
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "species" ) )
+                                        ]
+                                    )
+                                )
+                                ( ListE
+                                    ( ListOr
+                                        [ ConstE ( StringV "Solanum tuberosum" ) ]
+                                        ( ConstE ( StringV "Mister Potatohead" ) )
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    ]

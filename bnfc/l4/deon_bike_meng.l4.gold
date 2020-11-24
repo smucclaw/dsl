@@ -812,7 +812,7 @@ Toplevel
                             )
                         ]
                     ) AsofNull
-                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
             )
         )
     , ToplevelsRule
@@ -876,7 +876,7 @@ Toplevel
                         )
                     ) DL0
                 )
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -1025,7 +1025,7 @@ Toplevel
                     )
                 )
                 ( WHW
-                    ( WhenLimb1
+                    ( WhenMatch
                         ( Match_BinExp
                             ( BL_In
                                 ( UnifyE
@@ -1127,7 +1127,7 @@ Toplevel
                             )
                         )
                     ] WithLimb1 AsofNull
-                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
             )
         )
     , ToplevelsRule
@@ -1285,7 +1285,7 @@ Toplevel
                             ) DurationExpr1
                         ) OptAsAlias0
                     )
-                ) ( WHW WhenLimb0 DNoHence WhereLimb0 )
+                ) ( WHW NoWhen DNoHence WhereLimb0 )
             )
         )
     ]

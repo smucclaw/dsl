@@ -180,7 +180,7 @@ Toplevel
                         )
                     )
                 ]
-                ( WHW WhenLimb0 DNoHence
+                ( WHW NoWhen DNoHence
                     ( WhereLimb1
                         [ WhereExp1 GivenLimb0
                             ( Op2E
@@ -242,7 +242,7 @@ Toplevel
                                         )
                                     )
                                 ]
-                            ) WhenLimb0 WhereLimb0
+                            ) NoWhen WhereLimb0
                         ]
                     )
                 )
@@ -448,7 +448,7 @@ Toplevel
                                 )
                             )
                         )
-                    ) WithLimb1 WhenLimb0 WhereLimb0
+                    ) WithLimb1 NoWhen WhereLimb0
                 , WhereExp1 GivenLimb0
                     ( Op2E
                         ( BRel_Isa
@@ -522,7 +522,7 @@ Toplevel
                                 )
                             )
                         ]
-                    ) WhenLimb0 WhereLimb0
+                    ) NoWhen WhereLimb0
                 , WhereExp1 GivenLimb0
                     ( Op2E
                         ( BRel_Isa
@@ -596,7 +596,7 @@ Toplevel
                                 )
                             )
                         ]
-                    ) WhenLimb0 WhereLimb0
+                    ) NoWhen WhereLimb0
                 ]
             )
         )

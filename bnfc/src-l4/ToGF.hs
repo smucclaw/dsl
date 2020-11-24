@@ -49,12 +49,13 @@ body2gf x = error $ "body2gf doesn't handle yet " ++ show x
 --body2gf _ = GMAction GNobody (GMay GFailure)
 
 whw2gf :: WhenHenceWhere -> (GSentence -> GSentence)
-whw2gf (WHW WhenLimb0 henc wher) = id
-whw2gf (WHW (WhenLimb1 when) henc wher) = \sent -> GWhen sent (when2gf when)
+whw2gf (WHW NoWhen henc wher) = id
+whw2gf (WHW (WhenMatch when) henc wher) = \sent -> GWhen sent (when2gf when)
 
 when2gf :: MatchCondition -> GSentence
 when2gf (MatchExp e1 e2) = GMDefTermMatch (exp2term e1) (exp2term e2)
-when2gf x = error $ "when2gf doesn'y support yet " ++ show x
+when2gf _ = GMAction GNobody (GMay GFailure)
+when2gf x = error $ "when2gf doesn't support yet " ++ show x
 
 def2gf :: DefineLimb -> GSentence
 def2gf (DefLimb _ [cc] with asof) = GMDefTermIs kind term

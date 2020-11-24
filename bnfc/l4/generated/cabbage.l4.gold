@@ -57,21 +57,21 @@ Toplevel
                                 )
                             )
                             [ BlahExp
-                                ( AsAliasE
-                                    ( UnifyE
-                                        ( UnifyExpr1
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                            ]
-                                        )
-                                    )
-                                    ( AsAlias
-                                        ( OA_dots
-                                            [ ObjAttrElemIdent ( Ident "sale" ) ]
-                                        )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
                                     )
                                 )
-                            ] OptAsAlias0
+                            ]
+                            ( OptAsAlias1
+                                ( AsAlias
+                                    ( OA_dots
+                                        [ ObjAttrElemIdent ( Ident "sale" ) ]
+                                    )
+                                )
+                            )
                         )
                     ) DL0
                 )

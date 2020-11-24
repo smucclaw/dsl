@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFoldable  #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module L4 where
 
@@ -118,30 +119,41 @@ mkDots s = OA_dots $ (mkoae <$> splitOn "." s)
       | isUpper s = ObjAttrElemUIdent $ UIdent $ s:tring
       | otherwise = ObjAttrElemIdent  $  Ident $ s:tring
 
+
+-- Helper patterns to make rewrite rules shorter
+pattern MayUnless :: BinExp -> BinExp -> WhenLimb
+pattern MayUnless expwhen expunless = WhenUnless (Match_BinExp expwhen) (Match_BinExp expunless)
+
+pattern MayWhenMatch :: BinExp -> BinExp -> WhenLimb
+pattern MayWhenMatch expwhen expunless = WhenMatch (Match_BinExp (BBool_And (Op2E expwhen) AND1 (Op2E expunless)))
+
+pattern ShantWhenNoMatch :: BinExp -> BinExp -> WhenLimb
+pattern ShantWhenNoMatch expwhen expunless = WhenMatch (Match_BinExp (BBool_And (Op2E expwhen) AND2 (Op1E UBool_Not1 (Op2E expunless))))
+
 -- where's DMNMD when we need it?
 rewriteModal :: GivenUpon -> ModalLimb -> WhenHenceWhere -> [(RuleBody,Maybe(String,[String]))]
-rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PSome  oa) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PEvery  _) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw = pure $ (RModal gu mL whw,Nothing)
 
-rewriteModal gu mL@(MD1 (PartyLimb (PNobody _)            pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) =
-  pure ( RModal gu (MD1 (PartyLimb (PEvery PEvery_ANYONE) pAS) (DeonticLimb1 DEMay   ols actL) dlL)     (WHW (WhenLimb1 (Match_BinExp (BBool_And expwhen AND1 expunless))) hL whL), Just ("rewrite1a",[]) )
+rewriteModal gu mL@(MD1 (PartyLimb (PNobody _)            pAS) (DeonticLimb1 DEMay ols actL) dlL) whw@(WHW (MayUnless expwhen expunless) hL whL) =
+  pure ( RModal gu (MD1 (PartyLimb (PEvery PEvery_ANYONE) pAS) (DeonticLimb1 DEMay ols actL) dlL)     (WHW (MayWhenMatch expwhen expunless) hL whL), Just ("rewrite1a",[]) )
   <>
-  pure ( RModal gu (MD1 (PartyLimb (PEvery PEvery_ANYONE) pAS) (DeonticLimb1 DEShant ols actL) dlL)     (WHW (WhenLimb1 (Match_BinExp (BBool_And expwhen AND2 (Op1E UBool_Not1 expunless)))) hL whL), Just ("rewrite1b",[]) )
+  pure ( RModal gu (MD1 (PartyLimb (PEvery PEvery_ANYONE) pAS) (DeonticLimb1 DEShant ols actL) dlL)   (WHW (ShantWhenNoMatch expwhen expunless) hL whL), Just ("rewrite1b",[]) )
 -- >> PARTY NOBODY  MAY   act WHEN w1 UNLESS  u1 HENCE h1
 -- -> PARTY ANYBODY MAY   act WHEN w1 AND     u1 HENCE h1
 -- -> PARTY ANYBODY SHANT act WHEN w1 AND NOT u1 HENCE FULFILLED LEST BREACH
 
-rewriteModal gu mL@(MD1 (PartyLimb (PNobody _)            pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw@(WHW (WhenLimb1 wL) hL whL) =
+rewriteModal gu mL@(MD1 (PartyLimb (PNobody _)            pAS) (DeonticLimb1 DEMay   ols actL) dlL) whw@(WHW (WhenMatch wL) hL whL) =
   pure ( RModal gu (MD1 (PartyLimb (PEvery PEvery_ANYONE) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw, Just ("rewrite2",[]) )
 -- >> PARTY NOBODY  MAY   act WHEN w1 (no UNLESS) ...
 -- -> PARTY ANYBODY SHANT act WHEN w1 (no UNLESS) ...
 
-rewriteModal gu mL@(MD1 (PartyLimb (PNobody _) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure (RModal gu mL whw, Nothing)
-rewriteModal gu mL@(MD1 (PartyLimb (PNobody _) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw@(WHW (WhenLimb1 (Match_BinExp (BBool_Unless expwhen expunless))) hL whL) = pure (RModal gu mL whw, Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PNobody _) pAS) (DeonticLimb1 DEMust  ols actL) dlL) whw = pure (RModal gu mL whw, Nothing)
+rewriteModal gu mL@(MD1 (PartyLimb (PNobody _) pAS) (DeonticLimb1 DEShant ols actL) dlL) whw = pure (RModal gu mL whw, Nothing)
 rewriteModal gu mL whw = pure (RModal gu mL whw, Nothing)
 
 

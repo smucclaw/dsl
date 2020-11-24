@@ -382,8 +382,9 @@ Example:
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  WhenLimb0.      WhenLimb   ::= ;
-  WhenLimb1.      WhenLimb   ::= "WHEN" MatchCondition ;
+  NoWhen.      WhenLimb   ::= ;
+  WhenMatch.   WhenLimb   ::= "WHEN" MatchCondition ;
+  WhenUnless.  WhenLimb   ::= "WHEN" MatchCondition "UNLESS" MatchCondition ;
 #+end_src
 
 They are very similar to the constraint expressions we've already seen in DEFINE rules.
@@ -918,9 +919,6 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   Set_Subset.     BinExp ::= Exp SUBSET    Exp;
   Set_Intersect.  BinExp ::= Exp INTERSECT Exp;
 
-  BBool_Unless.   BinExp ::= Exp "UNLESS"  Exp;
-
-
   coercions UnaOp 7;
   UCurr.       UnaOp7 ::= CurrencyPrefix ;
   CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
@@ -994,8 +992,6 @@ BNF:
   QuantExp.     QuantifiedExp ::= MatchQuantifier Exp6 OptAsAlias ;
   Match_MatchRelation.   MatchCondition ::= QualifiedExp MatchRelation QuantifiedExp [MatchFlag] ;
   Match_BinExp.  MatchCondition ::= BinExp ;
--- TODO: maybe restrict UNLESS only to MatchCondition?
---  BBool_Unless. MatchCondition ::= MatchCondition "UNLESS" MatchCondition ;
 
   -- Hacks, TODO find out how to make it scale better
   Match_BoolPredicate. MatchCondition ::= Ident ;

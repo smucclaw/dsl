@@ -1,1 +1,16 @@
 RULE 1 NOOP
+
+RULE 2 test
+ DEFINE [ "each signatory has a principal which is a party"
+         , "each party is a principal of a signatory"
+         , "number of witnesses >= 200"
+         & "no witness is a party" ]
+
+
+
+RULE    noblePotato4
+  DEFINE Item IS noble
+    WHEN NONE OF Item.previousOwners
+         SATISFIES
+         AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
+                       , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS

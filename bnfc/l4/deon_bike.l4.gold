@@ -67,7 +67,7 @@ Toplevel
                         )
                     ] WithLimb1 AsofNull
                 ]
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -125,7 +125,7 @@ Toplevel
                         )
                     ) DL0
                 )
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -179,7 +179,7 @@ Toplevel
                         )
                     ) DL0
                 )
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -221,7 +221,7 @@ Toplevel
                     ) DL0
                 )
                 ( WHW
-                    ( WhenLimb1
+                    ( WhenMatch
                         ( Match_BinExp
                             ( BBool_And
                                 ( Op2E
@@ -317,7 +317,7 @@ Toplevel
                         )
                     ) DL0
                 )
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -359,7 +359,7 @@ Toplevel
                     ) DL0
                 )
                 ( WHW
-                    ( WhenLimb1
+                    ( WhenMatch
                         ( Match_BinExp
                             ( BCmp_GTE
                                 ( UnifyE

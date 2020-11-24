@@ -76,81 +76,77 @@ Toplevel
                     ) DL0
                 )
                 ( WHW
-                    ( WhenLimb1
+                    ( WhenUnless
                         ( Match_BinExp
-                            ( BBool_Unless
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                        ( Match_BinExp
+                            ( BBool_Or
                                 ( Op2E
                                     ( BRel_Is
                                         ( UnifyE
                                             ( UnifyExpr1
                                                 [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                    ( ObjAttrElemIdent ( Ident "sale" ) )
                                                 ]
                                             )
                                         )
                                         ( UnifyE
                                             ( UnifyExpr1
                                                 [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                                    ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
                                                 ]
                                             )
                                         )
                                     )
-                                )
-                                ( Op2E
-                                    ( BBool_Or
-                                        ( Op2E
-                                            ( BRel_Is
-                                                ( UnifyE
-                                                    ( UnifyExpr1
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemIdent ( Ident "sale" ) )
-                                                        ]
-                                                    )
-                                                )
-                                                ( UnifyE
-                                                    ( UnifyExpr1
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
-                                                        ]
-                                                    )
-                                                )
-                                            )
-                                        ) OR_OR
-                                        ( Op1E UBool_Unlikely
+                                ) OR_OR
+                                ( Op1E UBool_Unlikely
+                                    ( Op2E
+                                        ( BCmp_Match1
                                             ( Op2E
-                                                ( BCmp_Match1
-                                                    ( Op2E
-                                                        ( BRel_Has
-                                                            ( UnifyE
-                                                                ( UnifyExpr1
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "P1" ) )
-                                                                    ]
-                                                                )
-                                                            )
-                                                            ( UnifyE
-                                                                ( UnifyExpr1
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
-                                                                    , UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "from" ) )
-                                                                    ]
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                    ( ListE
-                                                        ( ListComma
-                                                            [ UnifyE
-                                                                ( UnifyExpr1
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
-                                                                    ]
-                                                                )
+                                                ( BRel_Has
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "P1" ) )
                                                             ]
                                                         )
                                                     )
+                                                    ( UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
+                                                            , UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "from" ) )
+                                                            ]
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                            ( ListE
+                                                ( ListComma
+                                                    [ UnifyE
+                                                        ( UnifyExpr1
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
+                                                            ]
+                                                        )
+                                                    ]
                                                 )
                                             )
                                         )
@@ -188,7 +184,7 @@ Toplevel
                                     )
                                 )
                             ) WithLimb1
-                            ( WhenLimb1
+                            ( WhenMatch
                                 ( Match_BinExp
                                     ( BCmp_Match1
                                         ( UnifyE
@@ -245,7 +241,7 @@ Toplevel
                                                 )
                                             )
                                         )
-                                    ) WithLimb1 WhenLimb0 WhereLimb0
+                                    ) WithLimb1 NoWhen WhereLimb0
                                 ]
                             )
                         ]
@@ -284,7 +280,7 @@ Toplevel
                     ] WithLimb1 AsofNull
                 ]
                 ( WHW
-                    ( WhenLimb1
+                    ( WhenMatch
                         ( Match_BinExp
                             ( BCmp_Match1
                                 ( UnifyE
@@ -427,7 +423,7 @@ Toplevel
                             )
                         )
                     ] WithLimb1 AsofNull
-                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
             )
         )
     , ToplevelsRule
@@ -490,7 +486,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                 )
-                ( WHW WhenLimb0
+                ( WHW NoWhen
                     ( DHence
                         ( RGotoOne
                             ( RID
@@ -563,7 +559,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                 )
-                ( WHW WhenLimb0 DNoHence
+                ( WHW NoWhen DNoHence
                     ( WhereLimb1
                         [ WhereExp1 GivenLimb0
                             ( Op2E
@@ -592,7 +588,7 @@ Toplevel
                                         )
                                     )
                                 )
-                            ) WithLimb1 WhenLimb0 WhereLimb0
+                            ) WithLimb1 NoWhen WhereLimb0
                         ]
                     )
                 )

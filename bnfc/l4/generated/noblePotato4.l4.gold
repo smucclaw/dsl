@@ -31,8 +31,8 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
-                            ( BCmp_Match2
+                        ( Match_MatchRelation
+                            ( QualExp
                                 ( MQuantMin ( IntV 2 ) OptOf )
                                 ( UnifyE
                                     ( UnifyExpr1
@@ -42,7 +42,9 @@ Toplevel
                                             ( ObjAttrElemIdent ( Ident "previousOwners" ) )
                                         ]
                                     )
-                                ) OptAsAlias0 MQualEach MRelSat1
+                                ) OptAsAlias0 MQualEach
+                            ) MRelSat1
+                            ( QuantExp
                                 ( MQuantMin ( IntV 1 ) OptOf )
                                 ( ListE
                                     ( ListComma
@@ -97,10 +99,10 @@ Toplevel
                                         ]
                                     )
                                 ) OptAsAlias0
-                                [ MFlagBDistinct
-                                , MFlagNoRepeat
-                                ]
                             )
+                            [ MFlagBDistinct
+                            , MFlagNoRepeat
+                            ]
                         )
                     ) DNoHence WhereLimb0
                 )

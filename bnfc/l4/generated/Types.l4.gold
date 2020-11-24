@@ -648,7 +648,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( ListE
+                        ( Match_LstExp
                             ( ListAnd
                                 [ ConstE ( StringV "each signatory has a principal which is a party" )
                                 , ConstE ( StringV "each party is a principal of a signatory" )
@@ -693,7 +693,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BCmp_Match1
                                 ( UnifyE
                                     ( UnifyExpr1 [ UnifyElem1 ] )
@@ -750,7 +750,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( CaseE
+                        ( Match_CaseExpr
                             ( CaseExpr1
                                 ( OA_dots
                                     [ ObjAttrElemIdent ( Ident "self" )

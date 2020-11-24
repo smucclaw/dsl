@@ -8,11 +8,12 @@ RULE showMatches
             LstExp [ foo, bar ]
             LstExp [ foo=bar, bar=quux ]
             Exp "^\"\\d{9,10}[[:alpha:]]$\""
-            Exp AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
+            MatchCondition AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
             Exp self.nationality
             Exp ["US", "SG"]
             Exp self.nationality IN ["US", "SG"]
             Exp CASE self.nationality MATCHES ["US", "SG"] -> "poop"
+            MatchCondition CASE self.nationality MATCHES ["US", "SG"] -> "poop"
             UnifyElem Foo.bar
             UnifyElem     bar
             UnifyExpr Foo.bar.*
@@ -75,7 +76,7 @@ RULE showMatches
             WhereLimb WHERE Foo.bar = objmethod(foo=bar)
             Exp $10 + $2
             DeonticLimb SHANT sell Item
-            BinExp AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
+            MatchCondition AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
             DefineLimb DEFINE Foo ISA Bar WITH fooness = True
             DefineLimb DEFINE Foo ISA Bar WITH fooness = { honk = True }
             Exp Foo=Bar

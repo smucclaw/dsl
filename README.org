@@ -361,7 +361,7 @@ The HAVING part places a condition on the GIVEN. It desugars to an AND against t
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-  rules     HavingBoolExp ::= Exp;
+  rules     HavingBoolExp ::= MatchCondition ;
   separator nonempty HavingBoolExp ";";
 #+end_src
 
@@ -383,7 +383,7 @@ BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
   WhenLimb0.      WhenLimb   ::= ;
-  WhenLimb1.      WhenLimb   ::= "WHEN"   Exp;
+  WhenLimb1.      WhenLimb   ::= "WHEN" MatchCondition ;
 #+end_src
 
 They are very similar to the constraint expressions we've already seen in DEFINE rules.
@@ -640,6 +640,7 @@ The "MATCHTYPE" rule body is for debugging purposes only.
                        | "DefineLimb"  DefineLimb
                        | "BraceList"   BraceList
                        | "HenceLimb"   HenceLimb
+                       | "MatchCondition"  MatchCondition
                        | "MatchQualifier"  MatchQualifier
                        | "MatchQuantifier" MatchQuantifier
                        | "MatchRelation"   MatchRelation
@@ -989,8 +990,20 @@ where the predicate has type ~object -> Bool~
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier MatchRelation
-                             MatchQuantifier Exp6 OptAsAlias [MatchFlag];
+  QualExp.      QualifiedExp  ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier ;
+  QuantExp.     QuantifiedExp ::= MatchQuantifier Exp6 OptAsAlias ;
+  Match_MatchRelation.   MatchCondition ::= QualifiedExp MatchRelation QuantifiedExp [MatchFlag] ;
+  Match_BinExp.  MatchCondition ::= BinExp ;
+-- TODO: maybe restrict UNLESS only to MatchCondition?
+--  BBool_Unless. MatchCondition ::= MatchCondition "UNLESS" MatchCondition ;
+
+  -- Hacks, TODO find out how to make it scale better
+  Match_BoolPredicate. MatchCondition ::= Ident ;
+  Match_LstExp.        MatchCondition ::= LstExp ;
+  Match_CaseExpr.      MatchCondition ::= CaseExpr ;
+
+  rules NOT ::= "NOT" | "¬" | "!";
+
   -- ConstVal here will probably need to be upgraded to at least a variable
   -- so we can say, TheRelevantQuorum.Percentage
   MQuant0.      MatchQuantifier ::= "NONE OF" ;

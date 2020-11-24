@@ -42,7 +42,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BBool_And
                                 ( Op2E
                                     ( BRel_Is
@@ -118,7 +118,7 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BCmp_Match1
                                 ( UnifyE
                                     ( UnifyExpr1

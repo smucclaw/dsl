@@ -1026,7 +1026,7 @@ Toplevel
                 )
                 ( WHW
                     ( WhenLimb1
-                        ( Op2E
+                        ( Match_BinExp
                             ( BL_In
                                 ( UnifyE
                                     ( UnifyExpr1

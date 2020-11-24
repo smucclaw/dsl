@@ -10,7 +10,7 @@ Toplevel
                 [ DefLimb DefDefine
                     [ CComma
                         ( Op2E
-                            ( BBool_And3
+                            ( BBool_And
                                 ( Op2E
                                     ( BRel_Is
                                         ( UnifyE
@@ -28,7 +28,7 @@ Toplevel
                                             )
                                         )
                                     )
-                                )
+                                ) AND_AND
                                 ( UnifyE
                                     ( UnifyExpr1
                                         [ UnifyElemObjAttrElem
@@ -43,7 +43,7 @@ Toplevel
                 ( WHW
                     ( WhenLimb1
                         ( Op2E
-                            ( BBool_And3
+                            ( BBool_And
                                 ( Op2E
                                     ( BRel_Is
                                         ( UnifyE
@@ -61,7 +61,7 @@ Toplevel
                                             )
                                         )
                                     )
-                                )
+                                ) AND_AND
                                 ( Op2E
                                     ( BRel_Is
                                         ( UnifyE

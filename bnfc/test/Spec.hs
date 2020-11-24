@@ -11,6 +11,7 @@ import Showbug (showErrorCoordinates)
 import Control.Exception ( try, ErrorCall(..), throwIO )
 import Control.Exception.Base (evaluate)
 import qualified Data.Text.Lazy as TL
+import Data.Maybe (fromMaybe)
 
 -- Next goal: Use showbug
 
@@ -42,7 +43,7 @@ parseL4File f = do
       case showErrorCoordinates f $ ": " ++ s of
         Just pretty -> throwIO $ ErrorCallWithLocation pretty loc
         Nothing -> throwIO $ ErrorCallWithLocation s loc
-    Right (Left s) -> error $ "Parsing produced error: " ++ s
+    Right (Left s) -> error $ ("Parsing produced error:\n" ++) $ fromMaybe s $ showErrorCoordinates f s
     Right (Right x) -> pure $ encodeUtf8 x
 
 tests :: TestTree

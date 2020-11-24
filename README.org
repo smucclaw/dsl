@@ -850,8 +850,6 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
   Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
 
-  AsAliasE.   Exp1 ::= Exp2 AsAlias;
-
   ExpStm1.    ExpStm ::= Exp;
   ExpStmLet.  ExpStm ::= "LET" Exp;
   separator nonempty ExpStm ";"; -- used inside THEN and ELSE

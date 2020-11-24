@@ -713,7 +713,7 @@ An L4 Module contains a list of directives and statements.
 
 Suppose we have a ContractLaw library:
 
-#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/ContractLaw.l4
+#+begin_src haskell :noweb-ref ContractLaw
   module ContractLaw where
 #+end_src
 
@@ -2562,7 +2562,7 @@ Some helper functions
 ** ContractLaw
 
 
-#+begin_src haskell :noweb yes :tangle bnfc/l4/generated/ContractLaw.l4
+#+begin_src haskell :noweb-ref ContractLaw
   RULE   1 elements
            :en: "Elements of a Contract"
      GIVEN scenario

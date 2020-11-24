@@ -1,0 +1,309 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkCeleb" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr2
+                            [ UnifyE
+                                ( UnifyExpr1
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Tabloid" ) )
+                                    ]
+                                )
+                            ]
+                            ( HavingLimb1
+                                [ HavingBoolExpExp
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "ceaselessCoverage" ) )
+                                            ]
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ) UponLimb1
+                )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "celebXY" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Couple" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-01-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "dating" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-07-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "married" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "married" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BRel_To
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( TempE
+                                                ( DateTimeIso8601
+                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-06-01" ) )
+                                                )
+                                            )
+                                        )
+                                    ) ( TempE DateTime_PRESENT )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-12-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "married" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BRel_To
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( TempE
+                                                ( DateTimeIso8601
+                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-06-01" ) )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-11-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-12-01" ) )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "divorced" ) )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BRel_To
+                                    ( Op2E
+                                        ( BCmp_Eq1
+                                            ( UnifyE
+                                                ( UnifyExpr1
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                    ]
+                                                )
+                                            )
+                                            ( TempE
+                                                ( DateTimeIso8601
+                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-11-01" ) )
+                                                )
+                                            )
+                                        )
+                                    ) ( TempE DateTime_PRESENT )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    ]

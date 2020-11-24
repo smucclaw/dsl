@@ -1,0 +1,122 @@
+Toplevel
+    [ ToplevelsModule
+        ( ModuleDecl
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "VeggieBar" ) ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "Types" ) ]
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkVeggieBar" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Business" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "address" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ListE
+                                        ( ListComma
+                                            [ ConstE ( StringV "1 Veggie Way" ) ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "id" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( BracesE
+                                        ( BraceList1
+                                            [ CComma
+                                                ( Op2E
+                                                    ( BCmp_Eq1
+                                                        ( UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                                ]
+                                                            )
+                                                        )
+                                                        ( ConstE ( StringV "UEN" ) )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( Op2E
+                                                    ( BCmp_Eq1
+                                                        ( UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                                ]
+                                                            )
+                                                        )
+                                                        ( ConstE ( StringV "202000000A" ) )
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "name" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "The Veggie Bar Pte. Ltd." ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    ]

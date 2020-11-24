@@ -1,0 +1,109 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "noblePotato4" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "noble" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BCmp_Match2
+                                ( MQuantMin ( IntV 2 ) OptOf )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                        ]
+                                    )
+                                ) OptAsAlias0 MQualEach MRelSat1
+                                ( MQuantMin ( IntV 1 ) OptOf )
+                                ( ListE
+                                    ( ListComma
+                                        [ UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isKing" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isQueen" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isPrince" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isPrincess" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isDuke" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isDuchess" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isEarl" ) )
+                                                ]
+                                            )
+                                        , UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "isCountess" ) )
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                ) OptAsAlias0
+                                [ MFlagBDistinct
+                                , MFlagNoRepeat
+                                ]
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    ]

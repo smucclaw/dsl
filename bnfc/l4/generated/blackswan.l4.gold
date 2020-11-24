@@ -1,0 +1,263 @@
+Toplevel
+    [ ToplevelsModule
+        ( ModuleDecl
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "BlackSwan" ) ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "Types" ) ]
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkBlackSwan" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "birthdate" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( BracesE
+                                        ( BraceList1
+                                            [ CComma
+                                                ( Op2E
+                                                    ( BCmp_Eq1
+                                                        ( UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                ]
+                                                            )
+                                                        )
+                                                        ( TempE
+                                                            ( DateTimeIso8601
+                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( Op2E
+                                                    ( BCmp_Eq1
+                                                        ( UnifyE
+                                                            ( UnifyExpr1
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                ]
+                                                            )
+                                                        )
+                                                        ( TempE
+                                                            ( DateTimeIso8601
+                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "1981-06-09" ) )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "nationality" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ListE
+                                        ( ListComma
+                                            [ BracesE
+                                                ( BraceList1
+                                                    [ CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( TempE
+                                                                    ( DateTimeIso8601
+                                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( ConstE ( StringV "IL" ) )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BRel_To
+                                                                ( Op2E
+                                                                    ( BCmp_Eq1
+                                                                        ( UnifyE
+                                                                            ( UnifyExpr1
+                                                                                [ UnifyElemObjAttrElem
+                                                                                    ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                                                ]
+                                                                            )
+                                                                        )
+                                                                        ( TempE
+                                                                            ( DateTimeIso8601
+                                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "1981-06-09" ) )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                ) ( TempE DateTime_PRESENT )
+                                                            )
+                                                        )
+                                                    ]
+                                                )
+                                            , BracesE
+                                                ( BraceList1
+                                                    [ CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( TempE
+                                                                    ( DateTimeIso8601
+                                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( ConstE ( StringV "US" ) )
+                                                            )
+                                                        )
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "fullname" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ListE
+                                        ( ListComma
+                                            [ BracesE
+                                                ( BraceList1
+                                                    [ CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( TempE
+                                                                    ( DateTimeIso8601
+                                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    , CComma
+                                                        ( Op2E
+                                                            ( BCmp_Eq1
+                                                                ( UnifyE
+                                                                    ( UnifyExpr1
+                                                                        [ UnifyElemObjAttrElem
+                                                                            ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                                ( ListE
+                                                                    ( ListComma
+                                                                        [ ConstE ( StringV "Neta-Lee Hershlag" )
+                                                                        , ConstE ( StringV "Natalie Portman" )
+                                                                        ]
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    ]

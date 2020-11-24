@@ -1,0 +1,86 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkSpud1" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "spud10" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                , DefLimb DefEntity
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Isa
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "spud1" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "species" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE ( StringV "Solanum tuberosum" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( Op2E
+                                ( BCmp_Eq1
+                                    ( UnifyE
+                                        ( UnifyExpr1
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "isEdible" ) )
+                                            ]
+                                        )
+                                    )
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW WhenLimb0 DNoHence WhereLimb0 )
+            )
+        )
+    ]

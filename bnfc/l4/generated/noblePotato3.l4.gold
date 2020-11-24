@@ -1,0 +1,70 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "noblePotato3" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                        , UnifyElemUnifyBracket
+                                            ( UnifyBracket1
+                                                [ CommaElemObjAttr
+                                                    ( OA_dots
+                                                        [ ObjAttrElemUIdent ( UIdent "Owner1" ) ]
+                                                    )
+                                                , CommaElemObjAttr
+                                                    ( OA_dots
+                                                        [ ObjAttrElemUIdent ( UIdent "Owner2" ) ]
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    ]

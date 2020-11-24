@@ -1,0 +1,108 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "noblePotato" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( Op2E
+                            ( BRel_Is
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ]
+                                    )
+                                )
+                                ( UnifyE
+                                    ( UnifyExpr1
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenLimb1
+                        ( Op2E
+                            ( BBool_And3
+                                ( Op2E
+                                    ( BRel_Isa
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                ]
+                                            )
+                                        )
+                                        ( UnifyE
+                                            ( UnifyExpr1
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                                ( Op2E
+                                    ( BBool_And3
+                                        ( Op2E
+                                            ( BRel_Is
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "First" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                                        ]
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        ( Op2E
+                                            ( BRel_Is
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                                        , UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Second" ) )
+                                                        ]
+                                                    )
+                                                )
+                                                ( UnifyE
+                                                    ( UnifyExpr1
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                                        ]
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    ]

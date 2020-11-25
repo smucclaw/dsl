@@ -11,18 +11,18 @@ Toplevel
                     [ CComma
                         ( Op2E
                             ( BRel_Is
-                                ( UnifyE
-                                    ( UnifyExpr1
+                                ( ObjME
+                                    ( OMNoAargs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
-                                        ]
+                                        ] OptLangStrings1
                                     )
                                 )
-                                ( UnifyE
-                                    ( UnifyExpr1
+                                ( ObjME
+                                    ( OMNoAargs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Quorate" ) )
-                                        ]
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
@@ -36,21 +36,21 @@ Toplevel
                                 ( Op2E
                                     ( BCmp_GT
                                         ( ObjME
-                                            ( ObjMethod1
+                                            ( OMArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemUIdent ( UIdent "SUM" ) )
                                                 ]
-                                                ( Args2
+                                                ( Args1
                                                     [ CComma
-                                                        ( UnifyE
-                                                            ( UnifyExpr1
+                                                        ( ObjME
+                                                            ( OMNoAargs
                                                                 [ UnifyElemObjAttrElem
                                                                     ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
                                                                 , UnifyElemObjAttrElem
                                                                     ( ObjAttrElemIdent ( Ident "attendees" ) )
                                                                 , UnifyElemObjAttrElem
                                                                     ( ObjAttrElemIdent ( Ident "votingShares" ) )
-                                                                ]
+                                                                ] OptLangStrings1
                                                             )
                                                         )
                                                     ]
@@ -61,14 +61,14 @@ Toplevel
                                     )
                                 )
                                 ( ObjME
-                                    ( ObjMethod1
+                                    ( OMArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "SUM" ) )
                                         ]
-                                        ( Args2
+                                        ( Args1
                                             [ CComma
-                                                ( UnifyE
-                                                    ( UnifyExpr1
+                                                ( ObjME
+                                                    ( OMNoAargs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "company" ) )
                                                         , UnifyElemObjAttrElem
@@ -77,7 +77,7 @@ Toplevel
                                                             ( ObjAttrElemUIdent ( UIdent "All" ) )
                                                         , UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "votingShares" ) )
-                                                        ]
+                                                        ] OptLangStrings1
                                                     )
                                                 )
                                             ]
@@ -91,20 +91,20 @@ Toplevel
                         [ WhereExp1 GivenLimb0
                             ( Op2E
                                 ( BCmp_Eq1
-                                    ( UnifyE
-                                        ( UnifyExpr1
+                                    ( ObjME
+                                        ( OMNoAargs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "company" ) )
-                                            ]
+                                            ] OptLangStrings1
                                         )
                                     )
-                                    ( UnifyE
-                                        ( UnifyExpr1
+                                    ( ObjME
+                                        ( OMNoAargs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
                                             , UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "company" ) )
-                                            ]
+                                            ] OptLangStrings1
                                         )
                                     )
                                 )

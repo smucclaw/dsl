@@ -2,7 +2,7 @@
 
 RULE showMatches
   MATCHTYPE -- :-(
-            UnifyExpr Foo.bar
+            ObjMethod Foo.bar
             ObjAttr foo.bar
             ObjAttr foo
             LstExp [ foo, bar ]
@@ -16,14 +16,13 @@ RULE showMatches
             MatchCondition CASE self.nationality MATCHES ["US", "SG"] -> "poop"
             UnifyElem Foo.bar
             UnifyElem     bar
-            UnifyExpr Foo.bar.*
-            UnifyExpr Foo.bar.[Poop]
-            UnifyExpr Foo.bar.*.toots
-            UnifyExpr Foo.bar.[Poop].toots
             ObjMethod Foo
             ObjMethod Foo.bar
+            ObjMethod Foo.bar.*
+            ObjMethod Foo.bar.[Poop]
+            ObjMethod Foo.bar.*.toots
+            ObjMethod Foo.bar.[Poop].toots
             ObjMethod Foo.bar(moo=poo, baz=quux)
-            UnifyExpr Foo.bar
             Exp quux
             Exp Quux
             Exp "quux"

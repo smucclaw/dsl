@@ -79,7 +79,7 @@ rewriteTree (Toplevel tops) = Toplevel $ do
   (ToplevelsRule r@(Rule rdef rname asof metalimb rulebody)) <- tops
   ToplevelsRule <$> case rulebody of
     RMatch mvs -> do
-      (MatchVars24 innerRule) <- mvs
+      (MatchRule innerRule) <- mvs
       rewrite innerRule
     otherwise -> rewrite r
 

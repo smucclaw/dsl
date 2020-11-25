@@ -137,11 +137,11 @@ binexp2action (BRel_Fat e1 e2) = vp
 binexp2action _ = Nothing
 
 exp2obj :: Exp -> (GTerm, GAction -> GAction)
-exp2obj (ObjME (ObjMethod1 es args langstrs)) = (uexp2term GTheSg (UnifyE1 es), f)
+exp2obj (ObjME (OMArgs es args langstrs)) = (uexp2term GTheSg (UnifyE1 es), f)
   where
     f = case args of
-      Args1 -> id
-      Args2 ccs -> head $ map ccs2fun ccs
+--      Args1 -> id
+      Args1 ccs -> head $ map ccs2fun ccs
     ccs2fun (ArgEq e p) =
       let f = uexp2fun e
           x = uexp2party p
@@ -196,7 +196,7 @@ pattern ExpAction act <- (exp2action -> Just act)
 
 -- UnifyExp
 pattern UnifyE1 :: [UnifyElem] -> Exp
-pattern UnifyE1 xs = UnifyE (UnifyExpr1 xs)
+pattern UnifyE1 xs = ObjME (OMNoAargs xs OptLangStrings1)
 
 -- Single element
 pattern Single :: UnifyElem -> Exp

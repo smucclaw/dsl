@@ -36,7 +36,7 @@ data Exit r  = NoExit
              | Choice r r -- left=sinister, right=rite=dexter
              | Close  r
              deriving (Eq, Ord, Show, Read)
-            
+
 ruleExits :: Rule -> InterpErr MyRuleName
 ruleExits r@(Rule rdef rname asof metalimb rulebody) =
   case rulebody of
@@ -103,7 +103,7 @@ rewrite r0@(Rule rdef rname asof rmeta mL@( RModal      gu ml          whw )) =
     rw (RID      oa) s = RID      $ appendOA oa s
     rw (RNumID i oa) s = RNumID i $ appendOA oa s
     rw other         s = other
-  
+
 appendOA :: ObjAttr -> String -> ObjAttr
 appendOA (OA_dots oaes) str = OA_dots oaes <> str2dots str
 
@@ -112,7 +112,7 @@ instance Semigroup ObjAttr where
 
 str2dots :: String -> ObjAttr
 str2dots str = mkDots str
-                              
+
 mkDots s = OA_dots $ (mkoae <$> splitOn "." s)
   where
     mkoae (s:tring)
@@ -121,14 +121,14 @@ mkDots s = OA_dots $ (mkoae <$> splitOn "." s)
 
 
 -- Helper patterns to make rewrite rules shorter
-pattern MayUnless :: BinExp -> BinExp -> WhenLimb
-pattern MayUnless expwhen expunless = WhenUnless (Match_BinExp expwhen) (Match_BinExp expunless)
+pattern MayUnless :: Exp -> Exp -> WhenLimb
+pattern MayUnless expwhen expunless = WhenUnless expwhen  expunless
 
-pattern MayWhenMatch :: BinExp -> BinExp -> WhenLimb
-pattern MayWhenMatch expwhen expunless = WhenMatch (Match_BinExp (BBool_And (Op2E expwhen) AND1 (Op2E expunless)))
+pattern MayWhenMatch :: Exp -> Exp -> WhenLimb
+pattern MayWhenMatch expwhen expunless = WhenMatch ( (BBool_And expwhen AND1 expunless))
 
-pattern ShantWhenNoMatch :: BinExp -> BinExp -> WhenLimb
-pattern ShantWhenNoMatch expwhen expunless = WhenMatch (Match_BinExp (BBool_And (Op2E expwhen) AND2 (Op1E UBool_Not1 (Op2E expunless))))
+pattern ShantWhenNoMatch :: Exp -> Exp -> WhenLimb
+pattern ShantWhenNoMatch expwhen expunless = WhenMatch ( (BBool_And expwhen AND2 (UBool_Not NOT1 expunless)))
 
 -- where's DMNMD when we need it?
 rewriteModal :: GivenUpon -> ModalLimb -> WhenHenceWhere -> [(RuleBody,Maybe(String,[String]))]
@@ -162,7 +162,7 @@ rewriteModal gu mL whw = pure (RModal gu mL whw, Nothing)
 -- BASICS
 --------------------------------------------------------------------------------
 
-pattern MatchRule r = MatchVars23 r
+pattern MatchRule r = MatchVars1 r
 
 -- retrieve all rules from a parsed module
 getRules :: Tops -> [Rule]

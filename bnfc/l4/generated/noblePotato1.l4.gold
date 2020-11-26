@@ -9,21 +9,19 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Is
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
@@ -31,72 +29,62 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenMatch
-                        ( Match_BinExp
+                        ( BBool_And
                             ( BBool_And
-                                ( Op2E
-                                    ( BRel_Isa
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                ] OptLangStrings1
-                                            )
+                                ( RelE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                            ] OptLangStrings1
                                         )
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Potato" ) )
-                                                ] OptLangStrings1
-                                            )
+                                    ) BRel_Isa
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                            ] OptLangStrings1
                                         )
                                     )
                                 ) AND_AND
-                                ( Op2E
-                                    ( BBool_And
-                                        ( Op2E
-                                            ( BRel_Is
-                                                ( ObjME
-                                                    ( OMNoAargs
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                        , UnifyElemObjAttrElem
-                                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
-                                                        , UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "First" ) )
-                                                        ] OptLangStrings1
-                                                    )
-                                                )
-                                                ( ObjME
-                                                    ( OMNoAargs
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
-                                                        ] OptLangStrings1
-                                                    )
-                                                )
-                                            )
-                                        ) AND_AND
-                                        ( Op2E
-                                            ( BRel_Is
-                                                ( ObjME
-                                                    ( OMNoAargs
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                        , UnifyElemObjAttrElem
-                                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
-                                                        , UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "Second" ) )
-                                                        ] OptLangStrings1
-                                                    )
-                                                )
-                                                ( ObjME
-                                                    ( OMNoAargs
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
-                                                        ] OptLangStrings1
-                                                    )
-                                                )
-                                            )
+                                ( RelE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "First" ) )
+                                            ] OptLangStrings1
                                         )
+                                    ) BRel_Is
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            ) AND_AND
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Second" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Noble" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )

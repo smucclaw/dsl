@@ -9,32 +9,28 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BBool_And
-                                ( Op2E
-                                    ( BRel_Is
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                    )
-                                ) AND_AND
+                        ( BBool_And
+                            ( RelE
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         ] OptLangStrings1
                                     )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) AND_AND
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
@@ -42,42 +38,36 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenMatch
-                        ( Match_BinExp
-                            ( BBool_And
-                                ( Op2E
-                                    ( BRel_Is
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Potato" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
+                        ( BBool_And
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
                                     )
-                                ) AND_AND
-                                ( Op2E
-                                    ( BRel_Is
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Edible" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) AND_AND
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Edible" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
@@ -96,21 +86,19 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Is
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
@@ -118,22 +106,20 @@ Toplevel
                 ]
                 ( WHW
                     ( WhenMatch
-                        ( Match_BinExp
-                            ( BCmp_Match1
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        , UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "species" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "species" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ListE
-                                    ( ListOr
-                                        [ ConstE ( StringV "Solanum tuberosum" ) ]
-                                        ( ConstE ( StringV "Mister Potatohead" ) )
-                                    )
+                            ) BCmp_Match1
+                            ( ListE
+                                ( ListOr
+                                    [ ConstE ( StringV "Solanum tuberosum" ) ]
+                                    ( ConstE ( StringV "Mister Potatohead" ) )
                                 )
                             )
                         )

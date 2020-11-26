@@ -902,6 +902,8 @@ Martin suggested around 2020-09-24 a more polymorphic abstract syntax for L4. Th
   BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
   BRel_Are.    BinExp1   ::= Exp4 "ARE"  Exp5;
   BRel_To.     BinExp1   ::= Exp4 "TO"   Exp5;
+  BRel_Sat1.   BinExp1   ::= Exp5 "SATISFY"  Exp5;
+  BRel_Sat2.   BinExp1   ::= Exp5 "SATISFIES"  Exp5;
 
   rules        NEQ ::= "!=" | "/=";
   rules        AND ::= "^" | "&&" | "AND";
@@ -987,9 +989,7 @@ where the predicate has type ~object -> Bool~
 BNF:
 
 #+begin_src bnfc :noweb-ref l4bnfc
-  QualExp.      QualifiedExp  ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier ;
-  QuantExp.     QuantifiedExp ::= MatchQuantifier Exp6 OptAsAlias ;
-  Match_MatchRelation.   MatchCondition ::= QualifiedExp MatchRelation QuantifiedExp [MatchFlag] ;
+  QualExp.      Exp5  ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier [MatchFlag] ;
   Match_BinExp.  MatchCondition ::= BinExp ;
 
   -- Hacks, TODO find out how to make it scale better
@@ -1007,7 +1007,7 @@ BNF:
   MQuantAll.    MatchQuantifier ::= "ALLOF" ;
   MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
   MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
-  MQuantNull.   MatchQuantifier ::=  ; -- If this is non-empty, 95 shift/reduce conflicts disappear
+  MQuantNull.   MatchQuantifier ::= "SOME" ;
   MRelSat1.    MatchRelation   ::= "SATISFIES" ;
   MRelSat2.    MatchRelation   ::= "SATISFY" ;
   MRelIs1.     MatchRelation   ::= "IS" ;

@@ -1,5 +1,30 @@
 Toplevel
     [ ToplevelsRule
+        ( Rule ( RNum 1 ) ( RName OptLangStrings1 ) AsofNull Meta0 RBNoop )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "test" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( ListE
+                            ( ListAnd
+                                [ ConstE ( StringV "each signatory has a principal which is a party" )
+                                , ConstE ( StringV "each party is a principal of a signatory" )
+                                , ConstE ( StringV "number of witnesses >= 200" )
+                                ]
+                                ( ConstE ( StringV "no witness is a party" ) )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
         ( Rule
             ( RID
                 ( OA_dots
@@ -30,17 +55,14 @@ Toplevel
                 ( WHW
                     ( WhenMatch
                         ( RelE
-                            ( QualExp
-                                ( MQuantMin ( IntV 2 ) OptOf )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        , UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
-                                        ] OptLangStrings1
-                                    )
-                                ) OptAsAlias0 MQualEach []
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                    ] OptLangStrings1
+                                )
                             ) BRel_Sat2
                             ( QualExp
                                 ( MQuantMin ( IntV 1 ) OptOf )

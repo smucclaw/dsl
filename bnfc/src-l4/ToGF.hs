@@ -52,7 +52,7 @@ whw2gf :: WhenHenceWhere -> (GSentence -> GSentence)
 whw2gf (WHW NoWhen henc wher) = id
 whw2gf (WHW (WhenMatch when) henc wher) = \sent -> GWhen sent (when2gf when)
 
-when2gf :: MatchCondition -> GSentence
+when2gf :: Exp -> GSentence
 when2gf (MatchExp e1 e2) = GMDefTermMatch (exp2term e1) (exp2term e2)
 when2gf _ = GMAction GNobody (GMay GFailure)
 when2gf x = error $ "when2gf doesn't support yet " ++ show x
@@ -95,7 +95,7 @@ action2gf :: ActionLimb -> GActionAlias
 action2gf (ActionSingle (ExpAction a) blahs OptAsAlias0) = GAAlias a
 action2gf (ActionSingle (ExpAction a) blahs alias) = GAAlias a -- TODO: use actual alias
 action2gf (ActionSingle e blahs alias) = -- Object is in the BlahExp, transform into => structure
-  action2gf (ActionSingle (Op2E (BRel_Fat e obj)) blahs alias')
+  action2gf (ActionSingle (RelE e BRel_Fat obj) blahs alias')
   where
     (obj, alias') = case blahs of
       BlahExp o:_ -> (o, alias)
@@ -107,7 +107,7 @@ action2gf x = error $ "action2gf doesn't handle yet " ++ show x
 exp2action :: Exp -> Maybe GAction
 exp2action exp = case exp of
   -- Op1E unaOp exp ->
-  Op2E binExp -> binexp2action binExp
+  binExp -> binexp2action binExp
   -- Op3E triOp e f g ->
   -- ConstE constVal ->
   -- CaseE caseExpr ->
@@ -126,8 +126,8 @@ ue2oa :: UnifyElem -> ObjAttrElem
 ue2oa (UnifyElemObjAttrElem oa) = oa
 ue2oa _ = error "ue2oa: expected ObjAttr"
 
-binexp2action :: BinExp -> Maybe GAction
-binexp2action (BRel_Fat e1 e2) = vp
+binexp2action :: Exp -> Maybe GAction
+binexp2action (RelE e1 BRel_Fat e2) = vp
   where
     verbs = exp2verb e1
     (obj, f) = exp2obj e2
@@ -226,16 +226,16 @@ uexp2party x = error $ "uexp2party doesn't yet support " ++ show x
 
 -- Arguments
 pattern ArgEq :: Exp -> Exp -> ConstraintComma
-pattern ArgEq e p = CComma (Op2E (BCmp_Eq1 e p))
+pattern ArgEq e p = CComma (CompE e BCmp_Eq1 p)
 
 pattern DefIs :: Exp -> Exp -> ConstraintComma
-pattern DefIs e p = CComma (Op2E (BRel_Is e p))
+pattern DefIs e p = CComma (RelE e BRel_Is p)
 
 pattern DefIsa :: Exp -> Exp -> ConstraintComma
-pattern DefIsa e p = CComma (Op2E (BRel_Isa e p))
+pattern DefIsa e p = CComma (RelE e BRel_Isa p)
 
 pattern Mul :: Exp -> Exp -> ConstraintComma
-pattern Mul e p = CComma (Op2E (BArith_Mul e p))
+pattern Mul e p = CComma (MulE e BArith_Mul p)
 
 -- Lists
 pattern OrList1 :: Exp -> Exp
@@ -255,14 +255,14 @@ exp2term (OrList2 e1 e2) = GConjTerm GOr (GListTerm [exp2term e1, exp2term e2])
 exp2term x = error $ "exp2term doesn't yet support " ++ show x
 
 -- Match
-pattern QualifiedExp1 :: Exp -> QualifiedExp
-pattern QualifiedExp1 e = QualExp MQuantNull e OptAsAlias0 MQualNull
+pattern QualifiedExp1 :: Exp -> Exp
+pattern QualifiedExp1 e = QualExp MQuantNull e OptAsAlias0 MQualNull []
 
-pattern QuantifiedExp1 :: Exp -> QuantifiedExp
-pattern QuantifiedExp1 e = QuantExp MQuantNull e OptAsAlias0
+pattern QuantifiedExp1 :: Exp -> Exp
+pattern QuantifiedExp1 e = QualifiedExp1 e
 
-pattern MatchExp :: Exp -> Exp -> MatchCondition
-pattern MatchExp e1 e2 = (Match_MatchRelation (QualifiedExp1 e1) MRelIs1 (QuantifiedExp1 e2) [])
+pattern MatchExp :: Exp -> Exp -> Exp
+pattern MatchExp e1 e2 = (RelE (QualifiedExp1 e1) BRel_Is (QuantifiedExp1 e2))
 
 -----------------------------------------------------------------------------
 -- Match strings to GF functions.

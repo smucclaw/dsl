@@ -9,15 +9,166 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                            ( ObjAttrElemIdent ( Ident "inventory" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "Money" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "Int" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Event" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Record" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "time" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Time" ) )
                                         ] OptLangStrings1
                                     )
                                 )
+                            )
+                        ]
+                    ) AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Message" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Event" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "from" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
@@ -26,19 +177,15 @@ Toplevel
                                     )
                                 )
                             )
-                        )
-                    ] WithLimb1 AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Isa
+                        , WithInExp
+                            ( CompE
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                            ( ObjAttrElemIdent ( Ident "to" ) )
                                         ] OptLangStrings1
                                     )
-                                )
+                                ) BCmp_Eq1
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
@@ -47,65 +194,76 @@ Toplevel
                                     )
                                 )
                             )
+                        ]
+                    ) AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Event" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "inventory" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "from" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ListE
-                                        ( ListComma
-                                            [ BracesE
-                                                ( BraceList1
-                                                    [ CComma
-                                                        ( Op2E
-                                                            ( BCmp_Eq1
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemUIdent ( UIdent "Money" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    , CComma
-                                                        ( Op2E
-                                                            ( BCmp_Eq1
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemUIdent ( UIdent "Int" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    ]
-                                                )
-                                            ]
-                                        )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
@@ -113,42 +271,72 @@ Toplevel
                     ) AsofNull
                 , DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Event" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Payment" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Record" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Event" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "time" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "from" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Time" ) )
-                                            ] OptLangStrings1
-                                        )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "amount" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Isa
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "CurrencyAmount" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
@@ -156,61 +344,55 @@ Toplevel
                     ) AsofNull
                 , DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Message" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Event" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Message" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "from" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "amount" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "CurrencyAmount" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
                         , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "to" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
                                     )
                                 )
                             )
@@ -218,308 +400,47 @@ Toplevel
                     ) AsofNull
                 , DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "wantBike" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Event" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "from" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "amount" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
+                                ) BCmp_Eq1
+                                ( CurrE
+                                    ( CurrCode ( UIdent "EUR" ) )
+                                    ( ConstE ( IntV 100 ) )
                                 )
                             )
                         , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "to" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "item" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        ]
-                    ) AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Isa
+                            ( CompE
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Payment" ) )
+                                            ( ObjAttrElemIdent ( Ident "item" ) )
                                         ] OptLangStrings1
                                     )
-                                )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Event" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            )
-                        )
-                    ]
-                    ( WithLimb2 WithHas_WITH
-                        [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "from" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "to" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        , WithInExp
-                            ( Op2E
-                                ( BRel_Isa
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "amount" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "CurrencyAmount" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        ]
-                    ) AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Message" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            )
-                        )
-                    ]
-                    ( WithLimb2 WithHas_WITH
-                        [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "amount" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "CurrencyAmount" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "item" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        ]
-                    ) AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "wantBike" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            )
-                        )
-                    ]
-                    ( WithLimb2 WithHas_WITH
-                        [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "amount" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( Op1E
-                                        ( UCurr
-                                            ( CurrCode ( UIdent "EUR" ) )
-                                        )
-                                        ( ConstE ( IntV 100 ) )
-                                    )
-                                )
-                            )
-                        , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "item" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "bicycle2000" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    )
-                                )
-                            )
-                        ]
-                    ) AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Is
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "maxDays" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                                ( ConstE ( IntV 5 ) )
-                            )
-                        )
-                    ] WithLimb1 AsofNull
-                , DefLimb DefDefine
-                    [ CComma
-                        ( Op2E
-                            ( BRel_Isa
+                                ) BCmp_Eq1
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
@@ -527,286 +448,277 @@ Toplevel
                                         ] OptLangStrings1
                                     )
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "item" ) )
-                                        ] OptLangStrings1
-                                    )
+                            )
+                        ]
+                    ) AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "maxDays" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ConstE ( IntV 5 ) )
+                        )
+                    ] WithLimb1 AsofNull
+                , DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "bicycle2000" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "item" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "name" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ConstE ( StringV "HotWheels 2000" ) )
-                                )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "HotWheels 2000" ) )
                             )
                         ]
                     ) AsofNull
                 , DefLimb DefEntity
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "alice" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "alice" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "name" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ConstE ( StringV "Alice Apple" ) )
-                                )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Alice Apple" ) )
                             )
                         ]
                     ) AsofNull
                 , DefLimb DefEntity
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "bob" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "bob" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "name" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ConstE ( StringV "Bob Banana" ) )
-                                )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Bob Banana" ) )
                             )
                         ]
                     ) AsofNull
                 , DefLimb DefDeclare
                     [ CComma
-                        ( Op2E
-                            ( BRel_Is
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "alice" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "alice" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ] WithLimb1 AsofNull
                 , DefLimb DefDeclare
                     [ CComma
-                        ( Op2E
-                            ( BRel_Is
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "bob" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "bob" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "inventory" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "inventory" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ListE
-                                        ( ListComma
-                                            [ BracesE
-                                                ( BraceList1
-                                                    [ CComma
-                                                        ( Op2E
-                                                            ( BCmp_GTE
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( Op1E
-                                                                    ( UCurr
-                                                                        ( CurrCode ( UIdent "EUR" ) )
-                                                                    )
-                                                                    ( ConstE ( IntV 100 ) )
-                                                                )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_GTE
+                                                        ( CurrE
+                                                            ( CurrCode ( UIdent "EUR" ) )
+                                                            ( ConstE ( IntV 100 ) )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "bicycle2000" ) )
+                                                                ] OptLangStrings1
                                                             )
                                                         )
-                                                    , CComma
-                                                        ( Op2E
-                                                            ( BCmp_Eq1
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "bicycle2000" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
+                                                    )
+                                                ]
+                                            )
+                                        , BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_GTE
+                                                        ( CurrE
+                                                            ( CurrCode ( UIdent "EUR" ) )
+                                                            ( ConstE ( IntV 50 ) )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "coldWheels" ) )
+                                                                ] OptLangStrings1
                                                             )
                                                         )
-                                                    ]
-                                                )
-                                            , BracesE
-                                                ( BraceList1
-                                                    [ CComma
-                                                        ( Op2E
-                                                            ( BCmp_GTE
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( Op1E
-                                                                    ( UCurr
-                                                                        ( CurrCode ( UIdent "EUR" ) )
-                                                                    )
-                                                                    ( ConstE ( IntV 50 ) )
-                                                                )
+                                                    )
+                                                ]
+                                            )
+                                        , BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_GTE
+                                                        ( CurrE
+                                                            ( CurrCode ( UIdent "USD" ) )
+                                                            ( ConstE ( IntV 200 ) )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "item" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "popAwheelie" ) )
+                                                                ] OptLangStrings1
                                                             )
                                                         )
-                                                    , CComma
-                                                        ( Op2E
-                                                            ( BCmp_Eq1
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "coldWheels" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    ]
-                                                )
-                                            , BracesE
-                                                ( BraceList1
-                                                    [ CComma
-                                                        ( Op2E
-                                                            ( BCmp_GTE
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( Op1E
-                                                                    ( UCurr
-                                                                        ( CurrCode ( UIdent "USD" ) )
-                                                                    )
-                                                                    ( ConstE ( IntV 200 ) )
-                                                                )
-                                                            )
-                                                        )
-                                                    , CComma
-                                                        ( Op2E
-                                                            ( BCmp_Eq1
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                                ( ObjME
-                                                                    ( OMNoAargs
-                                                                        [ UnifyElemObjAttrElem
-                                                                            ( ObjAttrElemIdent ( Ident "popAwheelie" ) )
-                                                                        ] OptLangStrings1
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    ]
-                                                )
-                                            ]
-                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ]
                                     )
                                 )
                             )
@@ -833,43 +745,39 @@ Toplevel
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
                         ( ActionSingle
-                            ( Op2E
-                                ( BRel_Fat
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "send" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "send" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMArgs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                            ]
-                                            ( Args1
-                                                [ CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "to" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
+                                ) BRel_Fat
+                                ( ObjME
+                                    ( OMArgs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                        ]
+                                        ( Args1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "to" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                                            ] OptLangStrings1
                                                         )
                                                     )
-                                                ]
-                                            ) OptLangStrings1
-                                        )
+                                                )
+                                            ]
+                                        ) OptLangStrings1
                                     )
                                 )
                             ) [] OptAsAlias0
@@ -900,43 +808,39 @@ Toplevel
                 ( GUUpon
                     ( UponLimb2 Upon0
                         ( GivenExpr1
-                            [ Op2E
-                                ( BRel_Fat
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "recv" ) )
-                                            ] OptLangStrings1
-                                        )
+                            [ RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "recv" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMArgs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                            ]
-                                            ( Args1
-                                                [ CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "from" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
+                                ) BRel_Fat
+                                ( ObjME
+                                    ( OMArgs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                        ]
+                                        ( Args1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "from" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                                            ] OptLangStrings1
                                                         )
                                                     )
-                                                ]
-                                            ) OptLangStrings1
-                                        )
+                                                )
+                                            ]
+                                        ) OptLangStrings1
                                     )
                                 )
                             ]
@@ -953,64 +857,58 @@ Toplevel
                     )
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
-                            ( Op2E
-                                ( BRel_Fat
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "send" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "send" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMArgs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
+                                ) BRel_Fat
+                                ( ObjME
+                                    ( OMArgs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
+                                        ]
+                                        ( Args1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "to" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "item" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                                            , UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "item" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
                                             ]
-                                            ( Args1
-                                                [ CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "to" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                                                    , UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                ]
-                                            ) OptLangStrings1
-                                        )
+                                        ) OptLangStrings1
                                     )
                                 )
                             ) [] OptAsAlias0
@@ -1026,23 +924,21 @@ Toplevel
                 )
                 ( WHW
                     ( WhenMatch
-                        ( Match_BinExp
-                            ( BL_In
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Order" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Order" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                        , UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "inventory" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BL_In
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "inventory" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
@@ -1093,36 +989,32 @@ Toplevel
                 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( Op2E
-                            ( BArith_Sub
-                                ( Op2E
-                                    ( BCmp_Eq1
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                                , UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "inventory" ) )
-                                                , UnifyElemUnifyBracket
-                                                    ( UnifyBracket1
-                                                        [ CommaElemObjAttr
-                                                            ( OA_dots
-                                                                [ ObjAttrElemUIdent ( UIdent "DeliverBike" )
-                                                                , ObjAttrElemIdent ( Ident "item" )
-                                                                ]
-                                                            )
-                                                        ]
-                                                    )
-                                                , UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "count" ) )
-                                                ] OptLangStrings1
-                                            )
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "inventory" ) )
+                                    , UnifyElemUnifyBracket
+                                        ( UnifyBracket1
+                                            [ CommaElemObjAttr
+                                                ( OA_dots
+                                                    [ ObjAttrElemUIdent ( UIdent "DeliverBike" )
+                                                    , ObjAttrElemIdent ( Ident "item" )
+                                                    ]
+                                                )
+                                            ]
                                         )
-                                        ( ObjME
-                                            ( OMNoAargs [ UnifyElem1 ] OptLangStrings1 )
-                                        )
-                                    )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "count" ) )
+                                    ] OptLangStrings1
                                 )
+                            ) BCmp_Eq1
+                            ( AddE
+                                ( ObjME
+                                    ( OMNoAargs [ UnifyElem1 ] OptLangStrings1 )
+                                ) BArith_Sub
                                 ( ConstE ( IntV 1 ) )
                             )
                         )
@@ -1141,64 +1033,58 @@ Toplevel
                 ( GUUpon
                     ( UponLimb2 Upon0
                         ( GivenExpr1
-                            [ Op2E
-                                ( BRel_Fat
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "recv" ) )
-                                            ] OptLangStrings1
-                                        )
+                            [ RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "recv" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMArgs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
+                                ) BRel_Fat
+                                ( ObjME
+                                    ( OMArgs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Delivery" ) )
+                                        ]
+                                        ( Args1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "from" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "seller" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "item" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "bikeSale" ) )
+                                                            , UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "item" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
                                             ]
-                                            ( Args1
-                                                [ CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "from" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "seller" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "bikeSale" ) )
-                                                                    , UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "item" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                ]
-                                            ) OptLangStrings1
-                                        )
+                                        ) OptLangStrings1
                                     )
                                 )
                             ]
@@ -1215,64 +1101,58 @@ Toplevel
                     )
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
-                            ( Op2E
-                                ( BRel_Fat
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "send" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "send" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ObjME
-                                        ( OMArgs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "Payment" ) )
+                                ) BRel_Fat
+                                ( ObjME
+                                    ( OMArgs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Payment" ) )
+                                        ]
+                                        ( Args1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "to" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "seller" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "bikeSale" ) )
+                                                            , UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "amount" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
                                             ]
-                                            ( Args1
-                                                [ CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "to" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "seller" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( Op2E
-                                                        ( BCmp_Eq1
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                            ( ObjME
-                                                                ( OMNoAargs
-                                                                    [ UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "bikeSale" ) )
-                                                                    , UnifyElemObjAttrElem
-                                                                        ( ObjAttrElemIdent ( Ident "amount" ) )
-                                                                    ] OptLangStrings1
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                ]
-                                            ) OptLangStrings1
-                                        )
+                                        ) OptLangStrings1
                                     )
                                 )
                             ) [] OptAsAlias0

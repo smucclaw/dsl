@@ -8,12 +8,12 @@ RULE showMatches
             LstExp [ foo, bar ]
             LstExp [ foo=bar, bar=quux ]
             Exp "^\"\\d{9,10}[[:alpha:]]$\""
-            MatchCondition AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
+            Exp AT LEAST 2 OF Item.previousOwners SATISFY AT LEAST 1 OF [ isKing, isQueen ]
             Exp self.nationality
             Exp ["US", "SG"]
             Exp self.nationality IN ["US", "SG"]
             Exp CASE self.nationality MATCHES ["US", "SG"] -> "poop"
-            MatchCondition CASE self.nationality MATCHES ["US", "SG"] -> "poop"
+            Exp CASE self.nationality MATCHES ["US", "SG"] -> "poop"
             UnifyElem Foo.bar
             UnifyElem     bar
             ObjMethod Foo

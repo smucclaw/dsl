@@ -42,7 +42,8 @@ rules    DeonticLimb ::= DeonticExpr OptLangStrings ActionLimb;
 DEMust.  DeonticExpr ::= "MUST" ;
 DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
-ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
+-- Exp already contains LstExp
+-- ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
 ActionSingle.   ActionLimb  ::= Exp    [Blah] OptAsAlias ;
 DL0.         DeadlineLimb ::= ;
 DLLimb.      DeadlineLimb ::= TempRel TemporalExpr OptAsAlias ;
@@ -62,10 +63,11 @@ TDD.      Duration     ::= Integer "DAYS" ;
 TDBD.     Duration     ::= Integer "BUSINESS" "DAYS" ;
 TDDH.     Duration     ::= Integer "DAYS" "AND" Integer "HOURS" ;
 DNoHence. HenceLimb    ::= ;
-DHence.   HenceLimb    ::= "HENCE" Goto Args OptLangStrings;
-DHeLe.    HenceLimb    ::= "HENCE" Goto Args OptLangStrings "LEST" Goto Args OptLangStrings ;
-DLest.    HenceLimb    ::=                                  "LEST" Goto Args OptLangStrings ;
+DHence.   HenceLimb    ::= "HENCE" Goto OptLangStrings;
+DHeLe.    HenceLimb    ::= "HENCE" Goto OptLangStrings "LEST" Goto OptLangStrings ;
+DLest.    HenceLimb    ::=                             "LEST" Goto OptLangStrings ;
 RGotoOne.       Goto   ::= RuleDef ;
+RGotoOneArgs.   Goto   ::= RuleDef Args ;
 RGotoLst.       Goto   ::= LstExp ; -- if we could, we'd make this a LstExp RuleDef, but we can't do that in BNFC.
 RFulfilled.     Goto   ::= "FULFILLED" ;
 RBreach.        Goto   ::= "BREACH" ;
@@ -90,10 +92,11 @@ GivenLimb1.     GivenLimb ::= "GIVEN"  GivenExpr ;
 rules      GivenExpr ::=   [Exp]
                          | [Exp] HavingLimb ;
 rules     HavingLimb ::= "HAVING" "{" [HavingBoolExp] "}";
-rules     HavingBoolExp ::= Exp;
+rules     HavingBoolExp ::= Exp ;
 separator nonempty HavingBoolExp ";";
-WhenLimb0.      WhenLimb   ::= ;
-WhenLimb1.      WhenLimb   ::= "WHEN"   Exp;
+NoWhen.      WhenLimb   ::= ;
+WhenMatch.   WhenLimb   ::= "WHEN" Exp ;
+WhenUnless.  WhenLimb   ::= "WHEN" Exp "UNLESS" Exp ;
 rules      WithLimb  ::= | WithHas "{" [WithIn] "}";
 rules      WithHas   ::= "WITH" | "HAS" | "TYPE" ;
 rules      WithIn    ::= Exp | TraceExpr;
@@ -114,17 +117,16 @@ rules     WhereExp  ::= GivenLimb Exp WithLimb WhenLimb WhereLimb ;
 
 separator nonempty WhereExp ";";
 RMatch.  RuleBody  ::= "MATCHTYPE" "{" [MatchVars] "}";
-rules    MatchVars ::= "ConstraintSemi"  "{" [ConstraintSemi] "}"
+rules    MatchVars ::= "Rule"        Rule
+                     | "ConstraintSemi"  "{" [ConstraintSemi] "}"
                      | "ConstraintComma" "{" [ConstraintComma] "}"
                      | "ObjMethod"   ObjMethod
                      | "ObjAttr"     ObjAttr
                      | "ObjAttrElem" ObjAttrElem
-                     | "UnifyExpr"   UnifyExpr
                      | "UnifyElem"   [UnifyElem]
                      | "Exp"         Exp
                      | "LstExp"      LstExp
-                     | "BinExp"      BinExp
-                     | "CaseExpr"    CaseExpr
+                     | "CaseExpr"    Exp14
                      | "WhenLimb"    WhenLimb
                      | "WhereLimb"   WhereLimb
                      | "DeonticLimb" DeonticLimb
@@ -133,10 +135,8 @@ rules    MatchVars ::= "ConstraintSemi"  "{" [ConstraintSemi] "}"
                      | "HenceLimb"   HenceLimb
                      | "MatchQualifier"  MatchQualifier
                      | "MatchQuantifier" MatchQuantifier
-                     | "MatchRelation"   MatchRelation
                      | "MatchFlag"       MatchFlag
-                     | "RuleBody"    RuleBody
-                     | "Rule"        Rule;
+                     | "RuleBody"    RuleBody;
 
 separator nonempty MatchVars ";";
 RBNoop.    RuleBody  ::= "NOOP";
@@ -165,22 +165,48 @@ rules      Blah     ::= Exp;
 comment "//" ;
 comment "--" ;
 comment "/*" "*/" ;
-coercions Exp 9;
-ConstE. Exp8 ::= ConstVal;
-CaseE.  Exp7 ::= CaseExpr ;
-ListE.  Exp7 ::= LstExp ;
-BracesE. Exp7 ::= BraceList ;
-TempE.  Exp7 ::= DateTime ;
-UnifyE. Exp6 ::= UnifyExpr;
-ObjME.   Exp6 ::= ObjMethod ;
-Op1E.   Exp5 ::= UnaOp   Exp ;
-Op2E.   Exp4 ::=         BinExp ;
-Op3E.   Exp3 ::= TriOp   Exp7 Exp7 Exp7; ;
-Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
-Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" reduce conflict here
-Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
+coercions Exp 40;
+ConstE. Exp40 ::= ConstVal ;
+-- CaseE.  Exp38 ::= CaseExpr ;
+ListE.  Exp38 ::= LstExp ;
+BracesE. Exp38 ::= BraceList ; -- This might cause indentation confusion
+TempE.  Exp38 ::= DateTime ;
+ObjME.  Exp35 ::= ObjMethod ;
+CurrE.  Exp34 ::= CurrencyPrefix Exp35 ;
 
-AsAliasE.   Exp1 ::= Exp2 AsAlias;
+-- QualExp.      Exp25  ::= MatchQuantifier Exp30 OptAsAlias MatchQualifier [MatchFlag] ;
+
+-- Num -> Num -> Num
+PowE.   Exp22 ::= Exp23 PowOp Exp24 ;
+MulE.   Exp21 ::= Exp21 MulOp Exp22 ;
+AddE.   Exp20  ::= Exp20 AddOp Exp21 ;
+
+-- Set -> Set -> Set
+Set_Union.      Exp15 ::= Exp23 UNION     Exp23;
+Set_Subset.     Exp15 ::= Exp23 SUBSET    Exp23;
+Set_Intersect.  Exp15 ::= Exp23 INTERSECT Exp23;
+
+-- a -> a -> Bool
+CompE.  Exp9  ::= Exp10 CompOp Exp10 ;
+RelE.   Exp8  ::= Exp10 RelOp Exp9 ; -- TODO: Extract "HAS"
+
+-- Bool -> Bool
+UBool_Not. Exp7 ::= NOT Exp8 ;
+LikelyE. Exp6 ::= Likelihood Exp7 ;
+
+-- Bool -> Bool -> Bool
+BBool_And.   Exp5    ::= Exp5 AND Exp6;
+BBool_Or.    Exp4    ::= Exp4 OR  Exp5;
+-- BBool_Xor.   Exp4    ::= Exp6 "XOR" Exp6;
+
+-- Op1E.   Exp5 ::= UnaOp   Exp ;
+-- Op3E.   Exp3 ::= TriOp   Exp14 Exp14 Exp14; ;
+
+-- Op3ETern1.  Exp2 ::=         Exp "?"    Exp ":"    Exp;
+-- Op3ETern2.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] ; -- classic "dangling else" shift/reduce conflict here
+-- Op3ETern3.  Exp2 ::=    "IF" Exp "THEN" [ExpStm] "ELSE" [ExpStm];
+
+-- BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
 
 ExpStm1.    ExpStm ::= Exp;
 ExpStmLet.  ExpStm ::= "LET" Exp;
@@ -195,7 +221,7 @@ ListAnd.    LstExp ::=    "[" [Exp] "&" Exp "]" ;
 ListOr.     LstExp ::=    "[" [Exp] "|" Exp "]" ;
 separator nonempty Exp "," ;
 
-TriOpITE. TriOp ::= "ITE" ;
+-- TriOpITE. TriOp ::= "ITE" ;
 
 BoolV_T. ConstVal ::=  TrueBool ;
 BoolV_F. ConstVal ::= FalseBool ;
@@ -206,73 +232,74 @@ StringV. ConstVal ::= String ;
 FloatPercent.  ConstVal ::= Double  "%" ;
 IntPercent.    ConstVal ::= Integer "%" ;
 
-coercions BinExp 8;
-BArith_Pow.  BinExp7   ::= Exp5 "**"   Exp6;
-BArith_Mul.  BinExp4   ::= Exp4 "*"    Exp5;
-BArith_Div.  BinExp4   ::= Exp4 "/"    Exp5;
-BL_In.       BinExp4   ::= Exp4 "IN"   Exp5;
-BL_Modulo1.  BinExp4   ::= Exp4 "%"    Exp5;
-BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "-->" Exp5; -- rewrite
-BArith_Plus. BinExp3   ::= Exp4 "+"    Exp5;
-BArith_Sub.  BinExp3   ::= Exp4 "-"    Exp5;
-L_Join.      BinExp3   ::= Exp4 "++"   Exp5;
-BCmp_LT.     BinExp2   ::= Exp4 "<"    Exp5;
-BCmp_LTE.    BinExp2   ::= Exp4 "<="   Exp5;
-BCmp_GT.     BinExp2   ::= Exp4 ">"    Exp5;
-BCmp_GTE.    BinExp2   ::= Exp4 ">="   Exp5;
-BCmp_Eq1.    BinExp2   ::= Exp4 "="    Exp5; -- constraint unification
-BCmp_Eq2.    BinExp2   ::= Exp4 "=="   Exp5; -- constraint unification
-BCmp_Eq3.    BinExp2   ::= Exp4 "==="  Exp5; -- object reference identity
-BCmp_Neq1.   BinExp2   ::= Exp4 "/="   Exp5;
-BCmp_Neq2.   BinExp2   ::= Exp4 "!="   Exp5;
-BAssign2.    BinExp2   ::= Exp4 ":="   Exp5;
-BCmp_Match1. BinExp2   ::= Exp4 "~"    Exp5;
-BCmp_NMatch. BinExp2   ::= Exp4 "!~"   Exp5;
-BRel_Fat.    BinExp1   ::= Exp4 "=>"   Exp5;
-BRel_Is.     BinExp1   ::= Exp4 "IS"   Exp5;
-BRel_Isa.    BinExp1   ::= Exp4 "ISA"  Exp5;
-BRel_Has.    BinExp1   ::= Exp4 "HAS"  Exp5;
-BRel_Are.    BinExp1   ::= Exp4 "ARE"  Exp5;
-BRel_To.     BinExp1   ::= Exp4 "TO"   Exp5;
-BBool_And1.  BinExp    ::= Exp4  "∧"   Exp4;
-BBool_And2.  BinExp    ::= Exp4  "&&"  Exp4;
-BBool_And3.  BinExp    ::= Exp4  "AND" Exp4;
+-- Numeric operations
+BArith_Pow.  PowOp   ::= "**" ;
 
-BBool_Or1.   BinExp    ::= Exp  "∨"   Exp;
-BBool_Or2.   BinExp    ::= Exp  "||"  Exp;
-BBool_Or3.   BinExp    ::= Exp  "OR"  Exp;
+BArith_Mul.  MulOp   ::= "*" ;
+BArith_Div.  MulOp   ::= "/" ;
+BL_Modulo1.  MulOp   ::= "%" ;
 
-Set_Union1.     BinExp ::= Exp  "U"   Exp;
-Set_Union2.     BinExp ::= Exp  "∪"   Exp;
-Set_Union3.     BinExp ::= Exp  "UNION"   Exp;
-Set_Intersect1.  BinExp ::= Exp  "∩"   Exp;
-Set_Intersect2.  BinExp ::= Exp "INTERSECT" Exp ;
-Set_Subset1.     BinExp ::= Exp  "⊂"   Exp;
-Set_Subset2.     BinExp ::= Exp  "SUBSET"   Exp;
+BArith_Plus. AddOp   ::= "+" ;
+BArith_Sub.  AddOp   ::= "-" ;
+-- List concatenation
+L_Join.      AddOp   ::= "++";
 
-BBool_Unless.    BinExp ::= Exp  "UNLESS"   Exp;
+-- BL_Modulo2.  BinExp4   ::= Exp4 "%%"   Exp5 "-->" Exp5; -- rewrite
+
+-- Convert into bool
+BCmp_LT.     CompOp   ::= "<"   ;
+BCmp_LTE.    CompOp   ::= "<="  ;
+BCmp_GT.     CompOp   ::= ">"   ;
+BCmp_GTE.    CompOp   ::= ">="  ;
+BCmp_Eq1.    CompOp   ::= "="   ; -- constraint unification
+BCmp_Eq2.    CompOp   ::= "=="  ; -- constraint unification
+BCmp_Eq3.    CompOp   ::= "===" ; -- object reference identity
+BCmp_Neq.    CompOp   ::= NEQ   ;
+BCmp_Match1. CompOp   ::= "~"   ;
+BCmp_NMatch. CompOp   ::= "!~"  ;
+
+BL_In.       RelOp   ::= "IN"        ;
+BRel_Fat.    RelOp   ::= "=>"        ;
+BRel_Is.     RelOp   ::= "IS"        ;
+BRel_Isa.    RelOp   ::= "ISA"       ;
+BRel_Has.    RelOp   ::= "HAS"       ;
+BRel_Are.    RelOp   ::= "ARE"       ;
+BRel_To.     RelOp   ::= "TO"        ;
+BRel_Sat1.   RelOp   ::= "SATISFY"   ;
+BRel_Sat2.   RelOp   ::= "SATISFIES" ;
+BRel_Exist1. RelOp   ::= "EXIST"     ;
+BRel_Exist2. RelOp   ::= "EXISTS"    ;
 
 
-coercions UnaOp 7;
-UCurr.       UnaOp7 ::= CurrencyPrefix ;
+rules        NEQ ::= "!=" | "/=";
+rules        AND ::= "^" | "&&" | "AND";
+rules        OR  ::= "∨" | "||" | "OR";
+rules        UNION ::= "U" | "∪" | "UNION";
+rules        SUBSET ::= "⊂" | "SUBSET";
+rules        INTERSECT ::=  "∩" | "INTERSECT";
+
 CurrCode.     CurrencyPrefix ::= ":" UIdent ":" ;
 CurrDollar.   CurrencyPrefix ::= "$";
 
-UBool_Not1.  UnaOp6 ::= "!"  ;
-UBool_Not2.  UnaOp6 ::= "NOT" ;
-UBool_Not2.  UnaOp6 ::= "¬" ;
-UBool_Unlikely.  UnaOp5 ::= "UNLIKELY" ;
-UBool_Likely.    UnaOp5 ::= "LIKELY" ;
+UBool_Unlikely.  Likelihood ::= "UNLIKELY" ;
+UBool_Likely.    Likelihood ::= "LIKELY" ;
 
-L_All.       UnaOp5 ::= "ALL";
-L_Any.       UnaOp5 ::= "ANY";
-L_Xor.       UnaOp5 ::= "XOR";
+-- These are already in MatchQuantifier
+-- L_All.       UnaOp ::= "ALL";
+-- L_Any.       UnaOp ::= "ANY";
+
+-- What is this?
+-- L_Xor.       UnaOp ::= "XOR";
+
 
 token TrueBool  ["Tt"] ["Rr"] ["Uu"] ["Ee"] ;
 token FalseBool ["Ff"] ["Aa"] ["Ll"] ["Ss"] ["Ee"];
 token NothingBl ["Nn"] ["Oo"] ["Tt"] ["Hh"] ["Ii"] ["Nn"] ["Gg"] ;
-BCmp_Match2. BinExp2   ::= MatchQuantifier Exp6 OptAsAlias MatchQualifier MatchRelation
-                           MatchQuantifier Exp6 OptAsAlias [MatchFlag];
+-- [a] -> a
+QualExp.      Exp25  ::= MatchQuantifier Exp30 OptAsAlias MatchQualifier [MatchFlag] ;
+
+rules NOT ::= "NOT" | "¬" | "!";
+
 -- ConstVal here will probably need to be upgraded to at least a variable
 -- so we can say, TheRelevantQuorum.Percentage
 MQuant0.      MatchQuantifier ::= "NONE OF" ;
@@ -281,13 +308,7 @@ MQuantAny.    MatchQuantifier ::= "ANYOF" ;
 MQuantAll.    MatchQuantifier ::= "ALLOF" ;
 MQuantConst.  MatchQuantifier ::= "EXACTLY" ConstVal "OF" ;
 MQuantMax.    MatchQuantifier ::= "AT" "MOST" ConstVal OptOf ;
-MQuantNull.   MatchQuantifier ::= ;
-MRelSat1.    MatchRelation   ::= "SATISFIES" ;
-MRelSat2.    MatchRelation   ::= "SATISFY" ;
-MRelIs1.     MatchRelation   ::= "IS" ;
-MRelIs2.     MatchRelation   ::= "ARE" ;
-MRelExist1.  MatchRelation   ::= "EXISTS" ;
-MRelExist2.  MatchRelation   ::= "EXIST" ;
+MQuantNull.   MatchQuantifier ::= "SOME" ;
 
 OptOfNull.   OptOf           ::= ;
 OptOf.       OptOf           ::= "OF";
@@ -307,9 +328,10 @@ rules      ObjAttrElem  ::= Ident | UIdent ;            -- Foo
 OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
 separator nonempty ObjAttrElem ".";
 separator nonempty ObjAttr     ",";
-rules      ObjMethod  ::= [UnifyElem] Args OptLangStrings;
-rules      Args       ::= | "(" [ConstraintComma] ")";
-rules      UnifyExpr ::= [UnifyElem] ;
+OMArgs.    ObjMethod ::= [UnifyElem] Args OptLangStrings;
+OMNoAargs. ObjMethod ::= [UnifyElem] OptLangStrings;
+
+rules      Args       ::= "(" [ConstraintComma] ")";
 rules      UnifyElem ::= ObjAttrElem
                       |  UnifyBracket
                       |  UnifyStar
@@ -326,8 +348,9 @@ separator nonempty ConstraintComma  "," ;
 separator nonempty ConstraintSemi   ";" ;
 
 -- rules ConstraintBinOp ::= "=" | "<" | ">" | "<=" | ">=" | "==" | "IS" | "ISA" | "ARE" | "HAS";
-rules CaseExpr  ::= "CASE" ObjAttr "MATCHES" "{" [CaseExp] "}" ;
+CaseE. Exp38  ::= "CASE" ObjAttr "MATCHES" "{" [CaseExp] "}" ;
 rules CaseExp   ::= Exp "->" Exp;
+-- TODO: CaseExp should take a pattern, not an arbitrary Exp
 separator nonempty CaseExp ";";
 TU.        TypeUnify      ::= "::" "Unify";
 TS.        TypeString     ::= "::" "STRING";

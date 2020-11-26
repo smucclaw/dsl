@@ -21,98 +21,86 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefEntity
                     [ CComma
-                        ( Op2E
-                            ( BRel_Isa
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "veggieBar" ) )
-                                        ] OptLangStrings1
-                                    )
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                    ] OptLangStrings1
                                 )
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Business" ) )
-                                        ] OptLangStrings1
-                                    )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Business" ) )
+                                    ] OptLangStrings1
                                 )
                             )
                         )
                     ]
                     ( WithLimb2 WithHas_WITH
                         [ WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "address" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "address" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ListE
-                                        ( ListComma
-                                            [ ConstE ( StringV "1 Veggie Way" ) ]
-                                        )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ConstE ( StringV "1 Veggie Way" ) ]
                                     )
                                 )
                             )
                         , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "id" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "id" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( BracesE
-                                        ( BraceList1
-                                            [ CComma
-                                                ( Op2E
-                                                    ( BCmp_Eq1
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        )
-                                                        ( ConstE ( StringV "UEN" ) )
+                                ) BCmp_Eq1
+                                ( BracesE
+                                    ( BraceList1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                        ] OptLangStrings1
                                                     )
-                                                )
-                                            , CComma
-                                                ( Op2E
-                                                    ( BCmp_Eq1
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        )
-                                                        ( ConstE ( StringV "202000000A" ) )
+                                                ) BCmp_Eq1
+                                                ( ConstE ( StringV "UEN" ) )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                        ] OptLangStrings1
                                                     )
-                                                )
-                                            ]
-                                        )
+                                                ) BCmp_Eq1
+                                                ( ConstE ( StringV "202000000A" ) )
+                                            )
+                                        ]
                                     )
                                 )
                             )
                         , WithInExp
-                            ( Op2E
-                                ( BCmp_Eq1
-                                    ( ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "name" ) )
-                                            ] OptLangStrings1
-                                        )
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
                                     )
-                                    ( ConstE ( StringV "The Veggie Bar Pte. Ltd." ) )
-                                )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "The Veggie Bar Pte. Ltd." ) )
                             )
                         ]
                     ) AsofNull

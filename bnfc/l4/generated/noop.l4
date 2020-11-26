@@ -6,11 +6,9 @@ RULE 2 test
          , "number of witnesses >= 200"
          & "no witness is a party" ]
 
-
-
 RULE    noblePotato4
   DEFINE Item IS noble
-    WHEN NONE OF Item.previousOwners
+    WHEN Item.previousOwners
          SATISFIES
          AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
                        , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS

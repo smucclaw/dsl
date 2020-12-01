@@ -75,7 +75,7 @@ RULE showMatches
             WhereLimb WHERE Foo.bar = objmethod(foo=bar)
             Exp $10 + $2
             DeonticLimb SHANT sell Item
-            MatchCondition AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
+            Exp AT LEAST 2 OF Item.previousOwners EACH SATISFIES AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
             DefineLimb DEFINE Foo ISA Bar WITH fooness = True
             DefineLimb DEFINE Foo ISA Bar WITH fooness = { honk = True }
             Exp Foo=Bar

@@ -1,0 +1,2572 @@
+Toplevel
+    [ ToplevelsModule
+        ( ModuleDecl
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "Foo" )
+                , ObjAttrElemUIdent ( UIdent "Bar" )
+                , ObjAttrElemUIdent ( UIdent "Baz" )
+                ]
+            )
+        )
+    , ToplevelsImport
+        ( Import
+            ( OA_dots
+                [ ObjAttrElemUIdent ( UIdent "ContractLaw" ) ]
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 1
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "SaleRestricted" ) ]
+                )
+            )
+            ( RName
+                ( OptLangStringsLangStrings
+                    ( ELangStrings
+                        [ ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "en" ) ]
+                            ) "The Sale of Cabbages is Restricted."
+                        , ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "se" ) ]
+                            ) "Försäljning av kål är begränsad."
+                        ]
+                    )
+                )
+            ) AsofNull Meta0
+            ( RModal ( GUGiven GivenLimb0 UponLimb1 )
+                ( MD1
+                    ( PartyLimb ( PNobody PNobody_NOBODY )
+                        ( OptAsAlias1
+                            ( AsAlias
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "P1" ) ]
+                                )
+                            )
+                        )
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "sell" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ]
+                            ( OptAsAlias1
+                                ( AsAlias
+                                    ( OA_dots
+                                        [ ObjAttrElemIdent ( Ident "sale" ) ]
+                                    )
+                                )
+                            )
+                        )
+                    ) DL0
+                )
+                ( WHW
+                    ( WhenUnless
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                        ( BBool_Or
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) OR_OR
+                            ( LikelyE UBool_Unlikely
+                                ( RelE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "P1" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BRel_Has
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "from" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Match1
+                                        ( ListE
+                                            ( ListComma
+                                                [ ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) ]
+                                )
+                            )
+                        ) OptLangStrings1
+                    )
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) WithLimb1
+                            ( WhenMatch
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "sale" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "date" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Match1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            )
+                            ( WhereLimb1
+                                [ WhereExp1 GivenLimb0
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ObjME
+                                            ( OMArgs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "external" ) )
+                                                ]
+                                                ( Args1
+                                                    [ CComma
+                                                        ( CompE
+                                                            ( ObjME
+                                                                ( OMNoAargs
+                                                                    [ UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemIdent ( Ident "url" ) )
+                                                                    ] OptLangStrings1
+                                                                )
+                                                            ) BCmp_Eq1
+                                                            ( ConstE ( StringV "https://www.almanac.com/astronomy/moon/full/" ) )
+                                                        )
+                                                    ]
+                                                ) OptLangStrings1
+                                            )
+                                        )
+                                    ) WithLimb1 NoWhen WhereLimb0
+                                ]
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 4
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Cabbage" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "species" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Match1
+                            ( ListE
+                                ( ListOr
+                                    [ ConstE ( StringV "Brassica chinensis" ) ]
+                                    ( ConstE ( StringV "Brassica oleracea" ) )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 5
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Price" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    ] OptLangStrings1
+                                )
+                            , ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "weight" ) )
+                                    ] OptLangStrings1
+                                )
+                            , ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "president" ) )
+                                    ] OptLangStrings1
+                                )
+                            , ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "taxRate" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "price" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Eq1
+                            ( MulE
+                                ( AddE
+                                    ( ConstE ( IntV 1 ) ) BArith_Plus
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "taxRate" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                ) BArith_Mul
+                                ( CaseE
+                                    ( OA_dots
+                                        [ ObjAttrElemIdent ( Ident "president" ) ]
+                                    )
+                                    [ CaseExp1
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Biden" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        )
+                                        ( MulE
+                                            ( ObjME
+                                                ( OMNoAargs
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "weight" ) )
+                                                    ] OptLangStrings1
+                                                )
+                                            ) BArith_Mul
+                                            ( ConstE ( FloatV 1.1 ) )
+                                        )
+                                    , CaseExp1
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Trump" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        )
+                                        ( MulE
+                                            ( ObjME
+                                                ( OMNoAargs
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "weight" ) )
+                                                    ] OptLangStrings1
+                                                )
+                                            ) BArith_Mul
+                                            ( ConstE ( FloatV 0.9 ) )
+                                        )
+                                    ]
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "sale" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Buyer" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "return" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    )
+                    ( DLLimb TRBefore
+                        ( TemporalExpr2
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "sale" )
+                                , ObjAttrElemIdent ( Ident "date" )
+                                ]
+                            )
+                            ( DurationExpr2 ( TDW 3 ) )
+                        ) OptAsAlias0
+                    )
+                )
+                ( WHW NoWhen
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "Net3" ) ]
+                                )
+                            )
+                        ) OptLangStrings1
+                    ) WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 3
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Net3" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "return" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Seller" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMust OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "refund" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Amount" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    )
+                    ( DLLimb TRBefore
+                        ( TemporalExpr2
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "return" )
+                                , ObjAttrElemIdent ( Ident "date" )
+                                ]
+                            )
+                            ( DurationExpr2 ( TDD 3 ) )
+                        ) OptAsAlias0
+                    )
+                )
+                ( WHW NoWhen DNoHence
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Amount" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( MulE
+                                    ( CurrE CurrDollar
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "sale" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "cash" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        )
+                                    ) BArith_Mul
+                                    ( ConstE ( IntPercent 90 ) )
+                                )
+                            ) WithLimb1 NoWhen WhereLimb0
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkSpud2" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "spud2" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "species" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Solanum tuberosum" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isEdible" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_T ( TrueBool "true" ) )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "previousOwners" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "alice" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        , ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "bob" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        , ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "charlie" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        , ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "daryl" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkAlice" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "alice" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_T ( TrueBool "true" ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkBob" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "bob" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_F ( FalseBool "false" ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkCharlie" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "charlie" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_T ( TrueBool "true" ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkDaryl" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "daryl" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isNoble" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_F ( FalseBool "false" ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "edible" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( BBool_And
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) AND_AND
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( BBool_And
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) AND_AND
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Edible" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 3
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "isPotato" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "species" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Match1
+                            ( ListE
+                                ( ListOr
+                                    [ ConstE ( StringV "Solanum tuberosum" ) ]
+                                    ( ConstE ( StringV "Mister Potatohead" ) )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Business" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Business" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Record" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "address" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "id" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListOr
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ConstE ( StringV "UEN" ) )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "UENString" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                        ( BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "owner" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Person" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Record" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "address" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "id" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListOr
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ConstE ( StringV "UEN" ) )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "UENString" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                        ( BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "type" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListOr
+                                        [ ConstE ( StringV "Natural" )
+                                        , ConstE ( StringV "Corporate" )
+                                        ]
+                                        ( ConstE ( StringV "Trust" ) )
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Human" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "type" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Natural" ) )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Company" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Company" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "type" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Corporate" ) )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Signatory" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Signatory" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "principal" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "Signatories" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Document" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Record" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "parties" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Person" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "signatories" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Signatory" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "witnesses" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( ListE
+                            ( ListAnd
+                                [ ConstE ( StringV "each signatory has a principal which is a party" )
+                                , ConstE ( StringV "each party is a principal of a signatory" )
+                                , ConstE ( StringV "number of witnesses >= 2" )
+                                ]
+                                ( ConstE ( StringV "no witness is a party" ) )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "UENString" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "String" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "UENString" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs [ UnifyElem1 ] OptLangStrings1 )
+                            ) BCmp_Match1
+                            ( ObjME
+                                ( OMArgs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "regex" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "pcre" ) )
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( ConstE ( StringV "^"\d{9,10}[[:alpha:]]$"" ) )
+                                        ]
+                                    ) OptLangStrings1
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkMinor" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Minor" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( CaseE
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "self" )
+                                , ObjAttrElemIdent ( Ident "nationality" )
+                                ]
+                            )
+                            [ CaseExp1
+                                ( ListE
+                                    ( ListComma
+                                        [ ConstE ( StringV "US" )
+                                        , ConstE ( StringV "SG" )
+                                        ]
+                                    )
+                                )
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "self" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "age" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_LT
+                                    ( ConstE ( IntV 21 ) )
+                                )
+                            , CaseExp1
+                                ( ListE
+                                    ( ListComma
+                                        [ ConstE ( StringV "NZ" )
+                                        , ConstE ( StringV "TW" )
+                                        , ConstE ( StringV "TH" )
+                                        , ConstE ( StringV "JP" )
+                                        ]
+                                    )
+                                )
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "self" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "age" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_LT
+                                    ( ConstE ( IntV 20 ) )
+                                )
+                            , CaseExp1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "otherwise" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "self" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "age" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_LT
+                                    ( ConstE ( IntV 18 ) )
+                                )
+                            ]
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkVeggieBar" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Business" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "address" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ConstE ( StringV "1 Veggie Way" ) ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "id" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( BracesE
+                                    ( BraceList1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "idtype" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ConstE ( StringV "UEN" ) )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "idval" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ConstE ( StringV "202000000A" ) )
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "name" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "The Veggie Bar Pte. Ltd." ) )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkBlackSwan" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Human" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "birthdate" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( BracesE
+                                    ( BraceList1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( TempE
+                                                    ( DateTimeIso8601
+                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                    )
+                                                )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "value" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( TempE
+                                                    ( DateTimeIso8601
+                                                        ( Iso8601YYYYMMDD ( YYYYMMDD "1981-06-09" ) )
+                                                    )
+                                                )
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "nationality" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( TempE
+                                                            ( DateTimeIso8601
+                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ConstE ( StringV "IL" ) )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( RangeE
+                                                            ( TempE
+                                                                ( DateTimeIso8601
+                                                                    ( Iso8601YYYYMMDD ( YYYYMMDD "1981-06-09" ) )
+                                                                )
+                                                            ) ( TempE DateTime_PRESENT )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        , BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( TempE
+                                                            ( DateTimeIso8601
+                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ConstE ( StringV "US" ) )
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "fullname" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ BracesE
+                                            ( BraceList1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "xtime" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( TempE
+                                                            ( DateTimeIso8601
+                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                                            )
+                                                        )
+                                                    )
+                                                , CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "value" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ListE
+                                                            ( ListComma
+                                                                [ ConstE ( StringV "Neta-Lee Hershlag" )
+                                                                , ConstE ( StringV "Natalie Portman" )
+                                                                ]
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "buyCabbage" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "buyCabbage" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "ContractOfSale" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "date" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( TempE
+                                    ( DateTimeIso8601
+                                        ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "jurisdiction" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "SG" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "buyer" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "seller" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "buyer" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( CurrE
+                                    ( CurrCode ( UIdent "USD" ) )
+                                    ( ConstE ( IntV 10 ) )
+                                )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "seller" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ListE
+                                    ( ListComma
+                                        [ ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "item1" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        , ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "item2" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ]
+                    )
+                    ( Asof
+                        ( DateTimeIso8601
+                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                        )
+                    )
+                ]
+                ( WHW NoWhen DNoHence
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item1" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Isa
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                            ( WithLimb2 WithHas_WITH
+                                [ WithInExp
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "category" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ConstE ( StringV "vegetable" ) )
+                                    )
+                                , WithInExp
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "species" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ConstE ( StringV "Brassica oleracea" ) )
+                                    )
+                                , WithInExp
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "cultivar" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ConstE ( StringV "capitata" ) )
+                                    )
+                                ]
+                            ) NoWhen WhereLimb0
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsScenario
+        ( RScenario
+            ( OA_dots
+                [ ObjAttrElemIdent ( Ident "saleHistory" ) ]
+            )
+            ( WithLimb2 WithHas_WITH
+                [ WithInExp
+                    ( CompE
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "parties" ) )
+                                ] OptLangStrings1
+                            )
+                        ) BCmp_Eq1
+                        ( ListE
+                            ( ListComma
+                                [ ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                        ] OptLangStrings1
+                                    )
+                                , ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ]
+                            )
+                        )
+                    )
+                ]
+            )
+            ( TraceExpr1
+                [ LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1210" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "offers" ) ]
+                    )
+                    [ BlahExp
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1211" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "accepts" ) ]
+                    )
+                    [ BlahExp
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1212" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "pays" ) ]
+                    )
+                    [ BlahExp
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    , BlahExp
+                        ( CurrE CurrDollar
+                            ( ConstE ( IntV 10 ) )
+                        )
+                    ]
+                , LogEvent1
+                    ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1213" ) )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
+                    )
+                    ( OA_dots
+                        [ ObjAttrElemIdent ( Ident "deliversTo" ) ]
+                    )
+                    [ BlahExp
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    , BlahExp
+                        ( ListE
+                            ( ListComma
+                                [ ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item1" ) )
+                                        ] OptLangStrings1
+                                    )
+                                , ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "item2" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                ]
+            )
+            ( Asof
+                ( DateTimeIso8601
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                )
+            )
+            ( WhereLimb1
+                [ WhereExp1 GivenLimb0
+                    ( CompE
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                                ] OptLangStrings1
+                            )
+                        ) BCmp_Eq1
+                        ( BracesE
+                            ( BraceList1
+                                [ CComma
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( CurrE CurrDollar
+                                            ( ConstE ( IntV 10 ) )
+                                        )
+                                    )
+                                , CComma
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "consideration" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ListE
+                                            ( ListComma
+                                                [ ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "item1" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                , ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "item2" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ) WithLimb1 NoWhen WhereLimb0
+                , WhereExp1 GivenLimb0
+                    ( RelE
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "item1" ) )
+                                ] OptLangStrings1
+                            )
+                        ) BRel_Isa
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    )
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "category" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "vegetable" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "species" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Brassica oleracea" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "cultivar" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "capitata" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "quantity" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( IntV 1 ) )
+                            )
+                        ]
+                    ) NoWhen WhereLimb0
+                , WhereExp1 GivenLimb0
+                    ( RelE
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemIdent ( Ident "item2" ) )
+                                ] OptLangStrings1
+                            )
+                        ) BRel_Isa
+                        ( ObjME
+                            ( OMNoAargs
+                                [ UnifyElemObjAttrElem
+                                    ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                ] OptLangStrings1
+                            )
+                        )
+                    )
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "category" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "beverage" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "brand" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Acme Water" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "model" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "750mL" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "quantity" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( IntV 1 ) )
+                            )
+                        ]
+                    ) NoWhen WhereLimb0
+                ]
+            )
+        )
+    ]

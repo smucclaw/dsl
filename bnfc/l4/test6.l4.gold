@@ -1,0 +1,643 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RNumID 1
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "ruleOne" ) ]
+                )
+            )
+            ( RName
+                ( OptLangStringsLangStrings
+                    ( ELangStrings
+                        [ ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "en" ) ]
+                            ) "First Rule"
+                        ]
+                    )
+                )
+            ) AsofNull Meta0 RBNoop
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 2
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "edible" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDeem
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( BBool_And
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) AND_AND
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Edible" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 3
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "isPotato" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDeem
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW
+                    ( WhenMatch
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    , UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "species" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Match1
+                            ( ListE
+                                ( ListOr
+                                    [ ConstE ( StringV "Solanum tuberosum" ) ]
+                                    ( ConstE ( StringV "Mister Potatohead" ) )
+                                )
+                            )
+                        )
+                    ) DNoHence WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 4
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkSpud" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefEntity
+                    [ CComma
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "mySpud" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Isa
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    ]
+                    ( WithLimb2 WithHas_WITH
+                        [ WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "species" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE ( StringV "Solanum tuberosum" ) )
+                            )
+                        , WithInExp
+                            ( CompE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "isEdible" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BCmp_Eq1
+                                ( ConstE
+                                    ( BoolV_T ( TrueBool "true" ) )
+                                )
+                            )
+                        ]
+                    ) AsofNull
+                ] ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 10
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "SaleRestricted" ) ]
+                )
+            )
+            ( RName
+                ( OptLangStringsLangStrings
+                    ( ELangStrings
+                        [ ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "en" ) ]
+                            ) "The Sale of Cabbages is Restricted."
+                        , ELangString
+                            ( LangID1
+                                [ LangLabelIdent ( Ident "se" ) ]
+                            ) "Försäljning av kål är begränsad."
+                        ]
+                    )
+                )
+            ) AsofNull Meta0
+            ( RModal ( GUGiven GivenLimb0 UponLimb1 )
+                ( MD1
+                    ( PartyLimb ( PNobody PNobody_NOBODY )
+                        ( OptAsAlias1
+                            ( AsAlias
+                                ( OA_dots
+                                    [ ObjAttrElemUIdent ( UIdent "P1" ) ]
+                                )
+                            )
+                        )
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "sell" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ]
+                            ( OptAsAlias1
+                                ( AsAlias
+                                    ( OA_dots
+                                        [ ObjAttrElemIdent ( Ident "sale" ) ]
+                                    )
+                                )
+                            )
+                        )
+                    ) DL0
+                )
+                ( WHW
+                    ( WhenUnless
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "cabbage" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                        ( BBool_Or
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) OR_OR
+                            ( LikelyE UBool_Unlikely
+                                ( RelE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "P1" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BRel_Has
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
+                                                , UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "from" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Match1
+                                        ( ListE
+                                            ( ListComma
+                                                [ ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    ( DHence
+                        ( RGotoLst
+                            ( ListOr
+                                [ ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "AnnounceWest" ) )
+                                        ] OptLangStrings1
+                                    )
+                                , ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "AnnounceEast" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ]
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            )
+                        ) OptLangStrings1
+                    )
+                    ( WhereLimb1
+                        [ WhereExp1 GivenLimb0
+                            ( RelE
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "sale" ) )
+                                        ] OptLangStrings1
+                                    )
+                                ) BRel_Is
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "onLegalDate" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ) WithLimb1
+                            ( WhenMatch
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "sale" ) )
+                                            , UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "date" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Match1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            )
+                            ( WhereLimb1
+                                [ WhereExp1 GivenLimb0
+                                    ( CompE
+                                        ( ObjME
+                                            ( OMNoAargs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemUIdent ( UIdent "LegalDates" ) )
+                                                ] OptLangStrings1
+                                            )
+                                        ) BCmp_Eq1
+                                        ( ObjME
+                                            ( OMArgs
+                                                [ UnifyElemObjAttrElem
+                                                    ( ObjAttrElemIdent ( Ident "external" ) )
+                                                ]
+                                                ( Args1
+                                                    [ CComma
+                                                        ( CompE
+                                                            ( ObjME
+                                                                ( OMNoAargs
+                                                                    [ UnifyElemObjAttrElem
+                                                                        ( ObjAttrElemIdent ( Ident "url" ) )
+                                                                    ] OptLangStrings1
+                                                                )
+                                                            ) BCmp_Eq1
+                                                            ( ConstE ( StringV "https://www.almanac.com/astronomy/moon/full/" ) )
+                                                        )
+                                                    ]
+                                                ) OptLangStrings1
+                                            )
+                                        )
+                                    ) WithLimb1 NoWhen WhereLimb0
+                                ]
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 11
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "AnnounceWest" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "PreviousRule" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "PreviousRule" )
+                                , ObjAttrElemIdent ( Ident "party" )
+                                ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMust OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "announce" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "actions" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "the" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "west" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    ) DL0
+                ) ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 12
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "AnnounceEast" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "PreviousRule" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "PreviousRule" )
+                                , ObjAttrElemIdent ( Ident "party" )
+                                ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMust OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "announce" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "actions" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "the" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "east" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    ) DL0
+                ) ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RNumID 13
+                ( OA_dots
+                    [ ObjAttrElemUIdent ( UIdent "ReturnPolicy" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal
+                ( GUGiven
+                    ( GivenLimb1
+                        ( GivenExpr1
+                            [ ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "PreviousRule" ) )
+                                    ] OptLangStrings1
+                                )
+                            ]
+                        )
+                    ) UponLimb1
+                )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "PreviousRule" )
+                                , ObjAttrElemIdent ( Ident "party" )
+                                ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "return" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "PreviousRule" ) )
+                                        , UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "goods" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    ) DL0
+                ) ( WHW NoWhen DNoHence WhereLimb0 )
+            )
+        )
+    ]

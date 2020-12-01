@@ -21,6 +21,9 @@
 # without GF, so we can have lsp-haskell goodies:
 resolver: lts-16.20
 
+nix:
+  enable: true
+
 # with GF, we have a version of GHC that is so old the haskell language server thingy doesn't support it.
 # resolver: lts-12.26
 

@@ -11,8 +11,38 @@ copyright:           2020 Author name here
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:  README.md
+extra-source-files:  README.org
 
+library
+  exposed-modules:
+                  -- from src
+                  AbsSyntax
+                  ExampleInput
+                  Exec
+                  RuleToTa
+                  TaToUppaal
+                  Typing
+                  -- from src-bnfc
+                  AbsL
+                  ErrM
+                  LayoutL
+                  LexL
+                  ParL
+                  PrintL
+                  SkelL
+                  -- from src-l4
+                  L4
+  hs-source-dirs:
+     src
+     src-bnfc
+     src-l4
+  build-depends:       base >= 4.7 && < 5
+                     , array
+                     , pretty-simple
+                     , split
+                     , text
+  default-language: Haskell2010
+                       
 executable core-language
   hs-source-dirs:      src
   main-is:             Main.hs

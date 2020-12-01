@@ -36,6 +36,7 @@ data FieldDecl = FldDecl FieldName Tp -- FieldAttribs
 data ClassDef t = ClsDef t [FieldDecl] 
   deriving (Eq, Ord, Show, Read)
 
+-- declares class with ClassName and definition as of ClassDef
 data ClassDecl t = ClsDecl ClassName (ClassDef t)
   deriving (Eq, Ord, Show, Read)
 
@@ -198,6 +199,8 @@ data Transition = Trans Loc [ClConstr] Action [Clock] Loc
 -- Major extension: "Labeling function" which is typically taken to be Loc -> AP -> Bool
 -- for AP a type of atomic propositioons and which is here taken to be [(Loc, Exp t)].
 -- Note: the set of locations, actions, clocks could in principle be inferred from the remaining info.
+-- Type parameter t: type of expressions: () or Tp, see function Typing/tp_expr
+-- Type parameter e: 
 data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
   deriving (Eq, Ord, Show, Read)
 
@@ -216,7 +219,7 @@ channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls)
 -- L4 Event Rules
 ----------------------------------------------------------------------
 
--- Currently not used, rather see the translations in RuleToTa.hs
+-- CURRENTLY NOT USED, rather see the translations in RuleToTa.hs
 
 -- NB: Event rules as opposed to rules defining terminology etc.
 

@@ -79,7 +79,6 @@ tests:
     - l4-dsl-bnfc
     - process
     - tasty
-    - tasty-hspec
     - tasty-program
     - tasty-golden
     - filepath

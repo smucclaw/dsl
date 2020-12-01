@@ -1,0 +1,219 @@
+Toplevel
+    [ ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "mkContract" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
+                [ DefLimb DefDefine
+                    [ CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Eq1
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    , CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Eq1
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                        )
+                    , CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "salePrice" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_LT
+                            ( ConstE ( FloatV 20.0 ) )
+                        )
+                    , CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "salePrice" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_GT
+                            ( ConstE ( FloatV 10.0 ) )
+                        )
+                    , CComma
+                        ( CompE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "goods" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BCmp_Eq1
+                            ( ObjME
+                                ( OMArgs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Potato" ) )
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "quantity" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ConstE ( IntV 2 ) )
+                                            )
+                                        ]
+                                    ) OptLangStrings1
+                                )
+                            )
+                        )
+                    ] WithLimb1 AsofNull
+                ]
+                ( WHW NoWhen
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemIdent ( Ident "contractStart" ) ]
+                                )
+                            )
+                        ) OptLangStrings1
+                    ) WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "contractStart" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal ( GUGiven GivenLimb0 UponLimb1 )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Buyer" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMay OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "pay" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            , BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "salePrice" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    ) DL0
+                )
+                ( WHW NoWhen
+                    ( DHence
+                        ( RGotoOne
+                            ( RID
+                                ( OA_dots
+                                    [ ObjAttrElemIdent ( Ident "delivery" ) ]
+                                )
+                            )
+                        ) OptLangStrings1
+                    ) WhereLimb0
+                )
+            )
+        )
+    , ToplevelsRule
+        ( Rule
+            ( RID
+                ( OA_dots
+                    [ ObjAttrElemIdent ( Ident "delivery" ) ]
+                )
+            ) ( RName OptLangStrings1 ) AsofNull Meta0
+            ( RModal ( GUGiven GivenLimb0 UponLimb1 )
+                ( MD1
+                    ( PartyLimb
+                        ( PSome
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Seller" ) ]
+                            )
+                        ) OptAsAlias0
+                    )
+                    ( DeonticLimb1 DEMust OptLangStrings1
+                        ( ActionSingle
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemIdent ( Ident "deliver" ) )
+                                    ] OptLangStrings1
+                                )
+                            )
+                            [ BlahExp
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemIdent ( Ident "goods" ) )
+                                        ] OptLangStrings1
+                                    )
+                                )
+                            ] OptAsAlias0
+                        )
+                    )
+                    ( DLLimb TRBefore
+                        ( TemporalExpr2
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "contractStart" ) ]
+                            )
+                            ( DurationExpr2 ( TDD 2 ) )
+                        ) OptAsAlias0
+                    )
+                )
+                ( WHW NoWhen ( DHeLe RFulfilled OptLangStrings1 RBreach OptLangStrings1 ) WhereLimb0 )
+            )
+        )
+    ]

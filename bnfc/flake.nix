@@ -15,28 +15,34 @@
     # packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
     # defaultPackage.x86_64-linux = self.packages.x86_64-linux.hello;
     devShell = builtins.mapAttrs
-      (arch: pkgs: pkgs.mkShell {
-        buildInputs = [
-          pkgs.emacs
-          pkgs.stack
-          pkgs.nix
-          # pkgs.haskellPackages.BNFC # TODO: Use newer version of BNFC!
-          gf-nix.packages.${arch}.bnfc
-          pkgs.haskellPackages.happy
-          pkgs.haskellPackages.alex
-          pkgs.graphviz
-        ];
-        # inputsFrom = throw nixpkgs;
-        shellHook = ''
-          export NIX_PATH=nixpkgs=${nixpkgs};
-        '';
-        # inputsFrom = [ self.packages.${arch}.lambda-launcher-unwrapped self.packages.${arch}.lambda-launcher ];
-        # inputsFrom = [ self.packages.${arch}.lambda-launcher ];
-        # buildInputs = [ self.packages.${arch}.haskell-language-server ];
-        # buildInputs = [ self.packages.${arch}.ghc-wrapper ];
-        # shellHook = "eval $(egrep ^export ${self.packages.${arch}.ghc-wrapper}/bin/ghc)";
-        # shellHook = "eval $(egrep ^export ${pkgs.ghc-wrapper}/bin/ghc)";
-      })
+      (arch: pkgs:
+        let
+          gf-pkgs = gf-nix.packages.${arch};
+          # inherit (gf-pkgs) gf-wordnet;
+        in
+        pkgs.mkShell {
+          buildInputs = [
+            pkgs.emacs
+            pkgs.stack
+            pkgs.nix
+            gf-pkgs.bnfc
+            gf-pkgs.gf-with-rgl
+            pkgs.haskellPackages.happy
+            pkgs.haskellPackages.alex
+            pkgs.graphviz
+          ];
+          # inputsFrom = throw nixpkgs;
+          shellHook = ''
+            export NIX_PATH=nixpkgs=${nixpkgs};
+            export GF_LIB_PATH=$GF_LIB_PATH''${GF_LIB_PATH:+':'}${gf-pkgs.gf-wordnet}
+          '';
+          # inputsFrom = [ self.packages.${arch}.lambda-launcher-unwrapped self.packages.${arch}.lambda-launcher ];
+          # inputsFrom = [ self.packages.${arch}.lambda-launcher ];
+          # buildInputs = [ self.packages.${arch}.haskell-language-server ];
+          # buildInputs = [ self.packages.${arch}.ghc-wrapper ];
+          # shellHook = "eval $(egrep ^export ${self.packages.${arch}.ghc-wrapper}/bin/ghc)";
+          # shellHook = "eval $(egrep ^export ${pkgs.ghc-wrapper}/bin/ghc)";
+        })
       nixpkgs.legacyPackages;
   };
 }

@@ -41,6 +41,14 @@ jobs:
     - run: nix-shell --dry-run
       working-directory: bnfc
 
+    - name: Install nix dependencies
+      run: nix-shell --run "echo Dependencies downloaded"
+      working-directory: bnfc
+
+    - name: Stack install dependencies
+      run: nix-shell --run "stack build --system-ghc --only-dependencies"
+      working-directory: bnfc
+
     # Verify that the main program builds
     - run: nix-shell --run "make test"
       working-directory: bnfc

@@ -23,6 +23,12 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
         # If you chose API tokens for write access OR if you have a private cache
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - uses: actions/cache@v1
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('bnfc/stack.yaml') }}
     # Run the general flake checks
     # Don't do this, since IFD makes the situation sad
     # - run: nix flake check

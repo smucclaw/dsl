@@ -56,6 +56,7 @@ RULE mkAlice   ENTITY alice   ISA Human WITH isNoble = true
 RULE mkBob     ENTITY bob     ISA Human WITH isNoble = false
 RULE mkCharlie ENTITY charlie ISA Human WITH isNoble = true
 RULE mkDaryl   ENTITY daryl   ISA Human WITH isNoble = false
+
 RULE  2 edible
  DEFINE Item IS EdiblePotato
             AND TastyFood
@@ -75,14 +76,17 @@ RULE  3 isPotato
 RULE     noblePotato
   DEFINE Item IS Noble
     WHEN Item ISA Potato
-     AND Item.previousOwners.First  IS Noble
-     AND Item.previousOwners.Second IS Noble
+     AND Item.previousOwners.First  IS Noble -- binds alice to First
+     AND Item.previousOwners.Second IS Noble -- binds charlie to Second
+
+
 RULE     noblePotato2
   DEFINE Potato IS Noble
     WHEN Potato.previousOwners.isNoble >= 2
+
 RULE     noblePotato3
   DEFINE Potato IS Noble
-    WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble
+    WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble -- binds alice to Owner1 and charlie to Owner2
 
 RULE mkSpud1
   ENTITY spud10 ISA Item

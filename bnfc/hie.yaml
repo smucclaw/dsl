@@ -1,22 +1,32 @@
 cradle:
-  stack:
-    - path: "./src-bnfc"
-      component: "l4-dsl-bnfc:lib"
+  multi: # TODO: Do this in the directory above as well
+  - path: "./"
+    config:
+      cradle:
+        stack:
+          - path: "./.stack-work"
+            component: "l4-dsl-bnfc:lib"
 
-    - path: "./src-l4"
-      component: "l4-dsl-bnfc:lib"
+          - path: "./src-bnfc"
+            component: "l4-dsl-bnfc:lib"
 
-    - path: "./app/Main.hs"
-      component: "l4-dsl-bnfc:exe:l4"
+          - path: "./src-l4"
+            component: "l4-dsl-bnfc:lib"
 
-    - path: "./app/Paths_l4_dsl_bnfc.hs"
-      component: "l4-dsl-bnfc:exe:l4"
+          - path: "./app/Main.hs"
+            component: "l4-dsl-bnfc:exe:l4"
 
-    - path: "./showbug/Main.hs"
-      component: "l4-dsl-bnfc:exe:showbug"
+          - path: "./app/Paths_l4_dsl_bnfc.hs"
+            component: "l4-dsl-bnfc:exe:l4"
 
-    - path: "./showbug/Paths_l4_dsl_bnfc.hs"
-      component: "l4-dsl-bnfc:exe:showbug"
+          - path: "./showbug/Main.hs"
+            component: "l4-dsl-bnfc:exe:showbug"
 
-    - path: "./test"
-      component: "l4-dsl-bnfc:test:l4-dsl-bnfc-test"
+          - path: "./showbug/Paths_l4_dsl_bnfc.hs"
+            component: "l4-dsl-bnfc:exe:showbug"
+
+          - path: "./test"
+            component: "l4-dsl-bnfc:test:l4-dsl-bnfc-test"
+
+  - path: "./l4"
+    config: { cradle: { none:  } }

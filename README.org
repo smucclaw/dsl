@@ -19,11 +19,11 @@ How might we say it in L4?
   RULE  1 SaleRestricted
            :en:"The Sale of Cabbages is Restricted."
            :se:"Försäljning av kål är begränsad."
-    PARTY NOBODY      AS P1
+    PARTY NOBODY      AS seller
       MAY sell Item   AS sale
      WHEN Item IS cabbage
    UNLESS sale IS onLegalDate
-       OR UNLIKELY P1 HAS Exemption.from ~ [DirectorOfAgriculture]
+       OR UNLIKELY seller HAS Exemption(from=DirectorOfAgriculture)
     HENCE ReturnPolicy
     WHERE sale IS onLegalDate
             WHEN sale.date ~ LegalDates

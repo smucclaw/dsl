@@ -42,7 +42,7 @@ Toplevel
                         ( OptAsAlias1
                             ( AsAlias
                                 ( OA_dots
-                                    [ ObjAttrElemUIdent ( UIdent "P1" ) ]
+                                    [ ObjAttrElemIdent ( Ident "seller" ) ]
                                 )
                             )
                         )
@@ -115,30 +115,35 @@ Toplevel
                                     ( ObjME
                                         ( OMNoAargs
                                             [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemUIdent ( UIdent "P1" ) )
+                                                ( ObjAttrElemIdent ( Ident "seller" ) )
                                             ] OptLangStrings1
                                         )
                                     ) BRel_Has
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
-                                                , UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "from" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Match1
-                                        ( ListE
-                                            ( ListComma
-                                                [ ObjME
-                                                    ( OMNoAargs
-                                                        [ UnifyElemObjAttrElem
-                                                            ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
-                                                        ] OptLangStrings1
+                                    ( ObjME
+                                        ( OMArgs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Exemption" ) )
+                                            ]
+                                            ( Args1
+                                                [ CComma
+                                                    ( CompE
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemIdent ( Ident "from" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        ) BCmp_Eq1
+                                                        ( ObjME
+                                                            ( OMNoAargs
+                                                                [ UnifyElemObjAttrElem
+                                                                    ( ObjAttrElemUIdent ( UIdent "DirectorOfAgriculture" ) )
+                                                                ] OptLangStrings1
+                                                            )
+                                                        )
                                                     )
                                                 ]
-                                            )
+                                            ) OptLangStrings1
                                         )
                                     )
                                 )

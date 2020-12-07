@@ -9,28 +9,28 @@ Toplevel
             ( RuleDeem ( GUGiven GivenLimb0 UponLimb1 )
                 [ DefLimb DefDefine
                     [ CComma
-                        ( BBool_And
-                            ( RelE
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                ) BRel_Is
+                        ( RelE
+                            ( ObjME
+                                ( OMNoAargs
+                                    [ UnifyElemObjAttrElem
+                                        ( ObjAttrElemUIdent ( UIdent "Item" ) )
+                                    ] OptLangStrings1
+                                )
+                            ) BRel_Is
+                            ( BBool_And
                                 ( ObjME
                                     ( OMNoAargs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
                                         ] OptLangStrings1
                                     )
-                                )
-                            ) AND_AND
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
-                                    ] OptLangStrings1
+                                ) AND_AND
+                                ( ObjME
+                                    ( OMNoAargs
+                                        [ UnifyElemObjAttrElem
+                                            ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
+                                        ] OptLangStrings1
+                                    )
                                 )
                             )
                         )

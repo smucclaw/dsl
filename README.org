@@ -1898,8 +1898,8 @@ In Prolog, that reads:
 
 #+begin_src text :noweb-ref l4-rules-potato
   RULE  2 edible
-   DEFINE Item IS EdiblePotato
-              AND TastyFood
+   DEFINE Item IS (EdiblePotato
+              AND TastyFood)
      WHEN Item IS Potato
       AND Item IS Edible
 #+end_src

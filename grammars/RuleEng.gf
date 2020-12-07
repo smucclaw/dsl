@@ -84,6 +84,9 @@ concrete RuleEng of Rule = ActionEng ** open
     -- : Term -> Term -> Sentence ;
     MDefTermMatch term1 term2 = mkS (mkCl (np term1) (np term2)) ;
 
+    -- : Party -> Term -> Sentence ;
+    MTermHas party term = mkS (mkCl party (mkVP have_V2 (np term))) ;
+
     -- : Kind -> Property -> Sentence ;
     MDefProp kind prop = mkS (mkCl (defTerm kind) (prop ! Pos)) ;
 

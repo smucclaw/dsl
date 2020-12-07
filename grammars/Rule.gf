@@ -39,6 +39,8 @@ abstract Rule = Action ** {
 
     MDefTermMatch : Term -> Term -> Sentence ;
 
+    MTermHas : Party -> Term -> Sentence ; -- seller has an exemption
+
     MDefProp : Kind -> Property -> Sentence ;
 
     -- Deontics

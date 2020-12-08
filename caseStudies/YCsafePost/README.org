@@ -19,23 +19,73 @@ For context:
 - https://github.com/smucclaw/complaw/blob/doc-faq/doc/ex-20200702-safe-post/README.org#constraints-in-z3-worked
 - https://twitter.com/twang/status/1318947166761545735?s=20
 
-* <<<Targets>>>
+* <<<Targets>>> and Demonstrations
 
-** Python
+** GF
+
+We run the l4 interpreter and ask it to produce English, styled as Markdown.
+
+#+begin_example
+$ l4 nlg --lang=en_US --format=md params.json l4/SAFE/lib/US.l4 l4/SAFE/MFNOnly.l4
+<!-- l4/SAFE/MFNOnly.l4
+     run at Tue Dec  8 19:58:59 +08 2020
+     generating en_US output
+     imported libraries: l4/SAFE/lib/US.l4
+     parameters: params.json
+     -->
+
+<!-- GROUP UnregisteredSecurity :gf:"incantation" -->
+<!-- RULE 00 -->
+THIS INSTRUMENT AND ANY SECURITIES ISSUABLE PURSUANT HERETO HAVE NOT
+BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED (THE
+“*SECURITIES ACT*”), OR UNDER THE SECURITIES LAWS OF CERTAIN STATES.
+
+<!-- RULE 01 -->
+THESE SECURITIES MAY NOT BE OFFERED, SOLD OR OTHERWISE TRANSFERRED,
+PLEDGED OR HYPOTHECATED EXCEPT AS PERMITTED IN THIS SAFE AND UNDER THE
+ACT AND APPLICABLE STATE SECURITIES LAWS PURSUANT TO AN EFFECTIVE
+REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
+
+# Get Rick Quick Inc.
+# SAFE
+# Simple Agreement for Future Equity
+
+<!-- RULE 03 CertStatement -->
+THIS CERTIFIES THAT in exchange for the payment by Alice Apple (the
+“*Investor*”) of US$100,000 (the “*Purchase Amount*”) on or about
+the 1st of January 2020, Get Rich Quick Inc., a Delaware, US corporation
+(the “*Company*”), issues to the Investor the right to certain shares of
+the Company's Capital Stock, subject to the terms described below.
+#+end_example
 
 ** Z3
 
-** GF
+We ask the L4 intepreter to produce a representation of the arithmetic content of the SAFE in the form of constraints suitable for Z3.
+
+#+begin_example
+$ l4 z3 l4/SAFE/MFNOnly.l4 > MFNOnly.z3
+# 
+
+#+end_example
+
+
+** UPPAAL
+
+
 
 ** Prolog
 
 ** Alloy
 
-** UPPAAL
+** Python
 
 ** GraphViz
 
 ** English
+
+* Original English Source
+
+See ~ycdc/*.txt~ for the original source.
 
 * L4 Source
 
@@ -90,43 +140,7 @@ import SAFE.Common
 PRAGMA EXPAND SAFE.Common.* - [ MFN, DiscountRate ]
 #+end_src
 
-** Common: Statement Groups
-
-#+begin_quote
-THIS INSTRUMENT AND ANY SECURITIES ISSUABLE PURSUANT HERETO HAVE NOT
-BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED (THE
-“*SECURITIES ACT*”), OR UNDER THE SECURITIES LAWS OF CERTAIN STATES.
-THESE SECURITIES MAY NOT BE OFFERED, SOLD OR OTHERWISE TRANSFERRED,
-PLEDGED OR HYPOTHECATED EXCEPT AS PERMITTED IN THIS SAFE AND UNDER THE
-ACT AND APPLICABLE STATE SECURITIES LAWS PURSUANT TO AN EFFECTIVE
-REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
-#+end_quote
-
-#+begin_src haskell :noweb-ref commonGroups
-GROUP UnregisteredSecurity :gf:"incantation"
-  RULE 00
-    GIVEN Contract, Jurisdiction
-    DECLARE [ Contract & Contract.securitiesPursuant ] AS secs ARE Jurisdiction.unregisteredSecurity
-
-  RULE 01
-    GIVEN Contract, Jurisdiction
-      PARTY NOBODY
-        MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
-            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ] secs AS action
-      UNLESS [ Contract.permits(action)
-             & under(Jurisdiction.law) 
-             & pursuantTo(action, [ effectiveRegistrationStatement AS x
-                                  | exemption(x) ]) ]
-
-#+end_src
-
-#+begin_quote
-THIS CERTIFIES THAT in exchange for the payment by [Investor Name] (the
-“*Investor*”) of $[__________] (the “*Purchase Amount*”) on or about
-[Date of Safe], [Company Name], a [State of Incorporation] corporation
-(the “*Company*”), issues to the Investor the right to certain shares of
-the Company's Capital Stock, subject to the terms described below.
-#+end_quote
+** Parameterization
 
 #+begin_src haskell :noweb-ref commonEntities
 ENTITY Investor ISA Person
@@ -141,15 +155,80 @@ RULE Params
          EffectiveDate  = Date
 #+end_src
 
+We expect an accompanying ~params.json~ file:
+
+#+begin_src typescript :tangle params.json
+  { "Investor": { "name": "Alice Apple" },
+    "Company":  { "name": "Get Rich Quick Inc.",
+                  "state": "Delaware, US" },
+    "Contract": { "PurchaseAmount": { "currency": "USD", "amount": 100000 },
+                  "EffectiveDate": { "2020-01-01" },
+                  "valCap": { 2000000 },
+                  "discount": 20
+                }
+  }
+#+end_src
+
+** Common: Statement Groups
+
+#+begin_quote
+THIS INSTRUMENT AND ANY SECURITIES ISSUABLE PURSUANT HERETO HAVE NOT
+BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED (THE
+“*SECURITIES ACT*”), OR UNDER THE SECURITIES LAWS OF CERTAIN STATES.
+THESE SECURITIES MAY NOT BE OFFERED, SOLD OR OTHERWISE TRANSFERRED,
+PLEDGED OR HYPOTHECATED EXCEPT AS PERMITTED IN THIS SAFE AND UNDER THE
+ACT AND APPLICABLE STATE SECURITIES LAWS PURSUANT TO AN EFFECTIVE
+REGISTRATION STATEMENT OR AN EXEMPTION THEREFROM.
+#+end_quote
+
+#+begin_src haskell :noweb-ref commonGroups
+  RULE 00
+    GIVEN Contract, Jurisdiction
+    DECLARE [ Contract & Contract.securitiesPursuant ] AS secs ARE Jurisdiction.unregisteredSecurity
+
+  RULE 01
+    GIVEN Contract, Jurisdiction
+      PARTY NOBODY
+        MAY :gf:"passiveVoice" -- converts to "these securities may not be..."
+            [ offer, sell | otherwise([ transfer, pledge | hypothecate ]) ] secs AS action
+      UNLESS [ Contract.permits(action)
+             & under(Jurisdiction.law) 
+             & pursuantTo(action, [ registrationStatement(effective=True) AS x
+                                  | exemption(x) ]) ]
+
+  PRAGMA md :en_US:
+            # ${Company.name}
+            # SAFE
+            # Simple Agreement for Future Equity
+#+end_src
+
+#+begin_quote
+THIS CERTIFIES THAT in exchange for the payment by [Investor Name] (the
+“*Investor*”) of $[__________] (the “*Purchase Amount*”) on or about
+[Date of Safe], [Company Name], a [State of Incorporation] corporation
+(the “*Company*”), issues to the Investor the right to certain shares of
+the Company's Capital Stock, subject to the terms described below.
+#+end_quote
+
 #+begin_src haskell :noweb-ref commonGroups
 RULE 03 CertStatement
-    GIVEN Investor,
-          purchaseAmount ISA CurrencyAmount :en:"Purchase Amount",
-          effectiveDate
-    PARTY Company
-    HEREBY issues(to = Investor) right(to = Company.certainShares)
-           :gf:"incantation: subject to terms below")
-
+          :en:"This certifies that in exchange for the payment by"
+    GIVEN Investor :en:"${Investor.name}"
+                   :label_en:"the Investor"
+          Contract.PurchaseAmount :en:"of ${Contract.PurchaseAmount}"
+                                  :label_en:"the Purchase Amount"
+          Contract.EffectiveDate  :en:"on or about ${Contract.EffectiveDate}"
+                                  :label_en:"the Effective Date"
+    PARTY Company :en:"${Company.name}, a ${Company.state} corporation"
+                  :label_en:"the Company"
+    HEREBY issues( to = Investor
+                   :en:"issues to the Investor"
+                 , right( to = Company.certainShares)
+                   :en:"the right to certain shares of the Company's Capital Stock,"
+                 , subject_to(termsBelow)
+                   :en:"subject to the terms described below."
+                   :gf:"incantation: subject to terms below"
+                 )
 #+end_src
 
 #+begin_quote
@@ -160,18 +239,23 @@ and bracketed terms.
 #+end_quote
 
 #+begin_src haskell :noweb-ref commonGroups
-  RULE 04 Provenance
-    GIVEN Contract
-    DECLARE Contract isOneOf :en:"is one of the forms available at"
-            external(url="http://ycombinator.com/documents")
+  GROUP ProvenanceDeclaration
 
-  RULE 05 Unmodified
-    GIVEN Contract
-    PARTY [ Company, Investor ] AS Parties
-    AGREE nobody IN Parties
-      HAS modified Contract
-      EXCEPT fillIn([blanks U bracketedTerms])
+    RULE 04 Provenance
+      GIVEN Contract :en:"This Safe"
+      DECLARE Contract isOneOf :en:"is one of the forms available at"
+              external(url="http://ycombinator.com/documents")
 
+    -- GROUPing two rules means their NLG resjults are conjoined into a comma-and conjunction list
+
+    RULE 05 Unmodified
+      GIVEN Contract
+      PARTY [ Company, Investor ] AS Parties
+      AGREE nobody IN Parties  :en:"neither"
+        HAS modified Contract  :en:"has modified the form,"
+        EXCEPT fillIn([ blanks :en:"blanks"
+                      & bracketedTerms :en:"bracketed terms"])
+                              :en:"except to fill in"
 #+end_src
 
 #+begin_quote
@@ -180,8 +264,9 @@ The “*Post-Money Valuation Cap*” is $[___________].
 
 #+begin_src haskell :noweb-ref commonGroups
 RULE ValuationCap
-  GIVEN valCap ISA Number
-  DEFINE valuationCap = valCap
+  GIVEN Contract
+  DEFINE valuationCap :label_en:"The Post-Money Valuation Cap"
+         = Contract.valCap
 #+end_src
 
 #+begin_quote
@@ -190,9 +275,9 @@ The “*Discount Rate*” is [/100 minus the discount/]%.
 
 #+begin_src haskell :noweb-ref commonGroups
 RULE 06 DiscountRate
-  GIVEN  discount ISA Number
-  DEFINE discountRate
-      IS ( 100 - discount ) %
+  GIVEN  Contract.discount
+  DEFINE discountRate :label_en:"The Discount Rate"
+      IS ( 100 - Contract.discount ) %
   -- we're going to need some spreadsheet-like magic around rendering percentages and auto-conversion of 100% to 1.
 
 #+end_src
@@ -205,7 +290,7 @@ Welp, maybe we have more document assembly skillz than we expected. Here, we hav
 
 #+begin_src haskell :noweb-ref commonGroups
 GROUP 07 :gf:"incantation"
-  PRAGMA adviceToReader
+  PRAGMA md :en_US: seeAlso([Definitions])
          :en:"See Section {#Definitions{%n}} for certain additional defined terms."
 
 #+end_src
@@ -236,17 +321,17 @@ It seems unnecessary to bound the effective range to the term of the contract, b
 RULE 11 EquityFinancing :en:"Equity Financing"
     UPON equityFinancing
          :en-verbose:"If there is an Equity Financing before the termination of this Safe"
-         :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into {numSafePS}"
+         :en:"on the initial closing of an Equity Financing, this Safe will automatically convert into ${numSafePS}"
   DEFINE Contract.security := safePS(num=numSafePS)
    HENCE EquityDocuments
-   WHERE numSafePS :en:"the number of shares of {safePS}" = purchaseAmount / discountPrice
+   WHERE numSafePS :en:"the number of shares of ${safePS}"
+         = purchaseAmount / discountPrice
 
 DEFINE safePS :en:"Safe Preferred Stock"
    ISA Record
   WITH num       = Number
        itemType  = "shares"
        preferred = True
-
 #+end_src
 
 These two paragraphs are weird, because the causality is suspect: what happens if the Investor declines to execute and deliver the transaction documents? Does the SAFE still automatically convert? Where's the carrot? Where's the stick? I have chosen to interpret this contract into an If/Hence construct.
@@ -292,6 +377,8 @@ RULE 13 EquityIssue
    MUST issue(Contract.security, to=Investor)
   HENCE FULFILLED
 #+end_src
+
+However, if we were to express it literally as written, our formal verification engine should throw a warning or an error that asks: what happens if the Investor fails to execut and deliver the transaction documents? How are these actions synchronized? An FV engine like Uppaal or Alloy or TLA+ or NuSMV should pick this up.
 
 *** Event: Liquidity Event
 

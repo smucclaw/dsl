@@ -6,7 +6,7 @@ Once more unto the breach, dear friends, once more
 /Henry V, Act III, Scene I/
 #+end_quote
 
-We draft the SAFE(s) in L4, with the aim of transpiling to various targets.
+We draft the SAFE(s) in L4, with the aim of transpiling to various targets to demonstrate a range of functionality.
 
 We build a library of common elements, then specialize the four variants of the safe by calling library "functions".
 
@@ -19,9 +19,59 @@ For context:
 - https://github.com/smucclaw/complaw/blob/doc-faq/doc/ex-20200702-safe-post/README.org#constraints-in-z3-worked
 - https://twitter.com/twang/status/1318947166761545735?s=20
 
-* <<<Targets>>> and Demonstrations
+* Demonstrations
 
-** GF
+In this use case, we demonstrate a range of scenarios, all involving a founder at a tech startup dealing with a SAFE investment instrument, in different ways.
+
+Scenario 1A: Prior to investment: the founder has two dozen investors and is producing SAFE paperwork for each investor to sign. Each instance differs by investment amount and investor details. The challenge: generate 24 PDFs suitable for signature.
+
+Scenario 1B: Prior to investment: one or two of the investors have requested that their SAFEs be varied in certain ways. The founder wants to make these changes within the L4 environment and regenerate fresh paperwork for signature. The changes in question: some investors want cap-only, no-discount; others want discount-only, no-cap. The challenge: make these changes and re-generate the PDFs.
+
+Scenario 1C: (in future) the changes include a call-out to an arbitrary oracle; the response is used as an input to the contract in some way. The call is made through the sending of a notice and the receiving of a response; if a response is not received, a default is assumed.
+
+Scenario 2: After investment has occurred, the startup now has 24 PDFs sitting in a folder, one for each SAFE. Two years later, a certain event occurs. The original founder was hit by a bus and is no longer with the startup. Their replacement, acting in the role of in-house counsel, wants to know, without manually reading each of the PDFs, what is now supposed to happen in each case, based on the event that is occurring. The challenge: produce a report in English containing the residual sub-contract that is now active, in terms of the immediate obligations upon the company and upon each investor. Also produce performative documents suitable for signature, such as "party P1 hereby issues N shares to party P2".
+
+Scenario 2A: The event is an equity financing.
+
+Scenario 2B: The event is a liquidity event.
+
+Scenario 2C: The event is a dissolution event.
+
+Our demonstration of L4's usefulness is divided across the following six areas:
+
+- NLG :: useful because a user can tweak an L4 contract and produce a revised version suitable for signature.
+- IDE support :: useful because a user (aka L4 developer) can do the tweaking with decent tooling support.
+- syntactic and semantic error messages :: good error messages are a big part of developer support; our FV engine helps give intelligent error messages.
+- visualization :: projection of an L4 script to graphical forms helps with understanding. This is useful at compile time and at run time.
+- runtimes :: testing, scenario analysis, and runtime evaluation help people who are in the thick of a legal situation understand what is going on, what they have to do next, and how various things got to be the way they are. People who are merely contemplating a legal situation will find the same tools useful.
+- embedding :: the L4 content of a contract is embedded within a PDF, using XMP, and can be read back out using our tools.
+
+Where the SAFE is concerned, the "runtime" component means we say, "The date is D. A certain event E has happened, with certain details E_d. What does the contract say will happen next?"
+
+We propose the following assignments of task to team:
+
+| Work Area     | Team Leads      | On the team            | Deliverable                                                                                                |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| NLG           | Inari           | Regina, Maryam, Liyana | Haskell, PGF, and GF code to output fragments of SAFE L4 contracts to English. Jason advising.             |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| Errors        | Martin, Andreas | Jacob                  | Upon each save, run interpreter. Produce warnings & errors, to be reported by IDE.                         |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| Visualization | Meng            | Jo Hsi                 | Rendering of a contract graph as a Dot->PNG, or equivalent but better-looking SVG->PNG.                    |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| IDE           | Ruslan          | Asey, Joey             | Realtime rendering of generated output. NLG visible in a Results window, as PNG or PDF. Errors as usual.   |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| Runtimes      | Andreas         | Alfred, Max            | Given one or more L4 contracts, and a JSON containing an event trace, output residual contracts and docs.  |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| Embedding     | Meng            | Wei Shen               | Learn about XMP and exiftool. Shoehorn an L4 contract into a PDF as a CDATA blob of text. Get it back out. |
+
+All team leads will be involved in evolving the DSL and the SAFE L4 representations in response to the needs of the work.
+
+
+* <<<Targets>>>
+
+The above demonstrations build on the following components:
+
+** GF to English
 
 We run the l4 interpreter and ask it to produce English, styled as Markdown.
 

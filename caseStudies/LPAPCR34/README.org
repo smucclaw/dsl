@@ -1,0 +1,10 @@
+#+TITLE: LPAPCR34
+
+In this case study, we formalize [[https://sso.agc.gov.sg/SL/LPA1966-S706-2015#pr34-][Section 34 of the Legal Profession (Professional Conduct) Rules 2015]].
+
+* Targets and Demonstrations
+
+We automate the creation of a DocAssemble expert system.
+
+We auto-generate Python to go into the DocAssemble YAML interview file.
+

@@ -1,0 +1,20 @@
+#+TITLE: NLBPW
+
+In this case study, we formalize the regulations concerning the construction of a non-load-bearing partition wall.
+
+There are quite a few. The ones of greatest interest are listed in rows 1--8 of [[https://drive.google.com/file/d/1aiisMJJw5h1c8s-jf3M3gmX8zPCNBTn1/view][the Work Method Statement spreadsheet]].
+
+Some (all?) of the the source regulations are available [[https://drive.google.com/drive/folders/1IL43o9QZnLfkDxocCFV5SbtynWtmiZy4?usp=sharing][here]].
+
+* Targets and Demonstrations
+
+We build an SDK API including a TypeScript schema for our "ontology".
+
+We build a rule engine which is queried along this pattern:
+- input JSON :: this is the overall goal; these are the facts available
+- output JSON :: to achieve the goal, given the facts available, either this is The Answer; or you need to ask the user these further questions, and the questions are structured in a certain way; or some other error.
+
+We encode the rules into a form suitable for manipulation by the rule engine.
+
+We build a reference command-line implementation that crudely acts out an interview interaction.
+

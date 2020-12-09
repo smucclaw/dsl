@@ -44,9 +44,9 @@ Our demonstration of L4's usefulness is divided across the following six areas:
 - syntactic and semantic error messages :: good error messages are a big part of developer support; our FV engine helps give intelligent error messages.
 - visualization :: projection of an L4 script to graphical forms helps with understanding. This is useful at compile time and at run time.
 - runtimes :: testing, scenario analysis, and runtime evaluation help people who are in the thick of a legal situation understand what is going on, what they have to do next, and how various things got to be the way they are. People who are merely contemplating a legal situation will find the same tools useful.
-- embedding :: the L4 content of a contract is embedded within a PDF, using XMP, and can be read back out using our tools.
+- embedding :: the L4 content of a contract is embedded within a PDF, using XMP, and can be read back out using our tools. The two dozen PDFs produced in Scenario 1A contain L4! Which makes life easier in Scenario 2.
 
-Where the SAFE is concerned, the "runtime" component means we say, "The date is D. A certain event E has happened, with certain details E_d. What does the contract say will happen next?"
+Where the SAFE is concerned, the "runtime" component means we say, "The date is D. A certain event E has happened, with certain details E_d. What does the contract say will happen next?" This is where we evaluate the math problems that deal with how much somebody gets -- see [[https://github.com/smucclaw/complaw/tree/primary/doc/ex-20200702-safe-post][the 20200702 safe-post exercise]].
 
 We propose the following assignments of task to team:
 

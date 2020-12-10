@@ -63,9 +63,14 @@ We propose the following assignments of task to team:
 | Runtimes      | Andreas         | Alfred, Max            | Given one or more L4 contracts, and a JSON containing an event trace, output residual contracts and docs.  |
 |---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
 | Embedding     | Meng            | Wei Shen               | Learn about XMP and exiftool. Shoehorn an L4 contract into a PDF as a CDATA blob of text. Get it back out. |
+|---------------+-----------------+------------------------+------------------------------------------------------------------------------------------------------------|
+| L4 drafting   | Meng & Jason    | whoever volunteers     | Interpret and convert the legislation and contract inputs into L4 code.                                    |
+
+In practice, there will be overlap, more than is shown in the table above.
 
 All team leads will be involved in evolving the DSL and the SAFE L4 representations in response to the needs of the work.
 
+Jason will be acting as customer advocate and user representative, giving feedback from the user point of view about how the various components are usable -- or not.
 
 * <<<Targets>>>
 

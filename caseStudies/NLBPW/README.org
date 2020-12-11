@@ -4,7 +4,7 @@ In this case study, we formalize the regulations concerning the construction of 
 
 There are quite a few. The ones of greatest interest are listed in rows 1--8 of [[https://drive.google.com/file/d/1aiisMJJw5h1c8s-jf3M3gmX8zPCNBTn1/view][the Work Method Statement spreadsheet]].
 
-Some (all?) of the the source regulations are available [[https://drive.google.com/drive/folders/1IL43o9QZnLfkDxocCFV5SbtynWtmiZy4?usp=sharing][here]].
+Some (all?) of the the source regulations are available [[https://drive.google.com/drive/folders/1IL43o9QZnLfkDxocCFV5SbtynWtmiZy4?usp=sharing][here]]. See also [[https://sso.agc.gov.sg/Act/WSHA2006?ViewType=Sl][SSO]].
 
 * Targets and Demonstrations
 

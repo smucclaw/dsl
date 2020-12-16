@@ -1,0 +1,113 @@
+
+
+RULE 14 :en:"Electrical Installation and Equipment"
+  GIVEN workplace
+        occupier
+        eee
+ HAVING isOccuperOfWorkplace(occupier, workplace)
+        geoloc(eee, workplace)
+ PARTY occupier
+   MUST ensure
+   THAT EVERY eee IN [ electricalInstallation, electricalEquipment ]
+        IS [ ofGoodConstruction
+           , ofSoundMaterial
+           , freeFromDefects
+           , usedIn(manner=safeToUse)
+           & maintained(manner=safeToUse)
+           ]
+        
+
+
+and [ a, b, c, or [ 1, 2, 3] ]
+
+
+&
+- isOfGoodConstruction
+- isSoundMaterial
+- isFreeFromDefects
+  |
+  - isUsed(manner=safeToUse)
+  - isMaintained(manner=safeToUse)
+
+
+
+
+
+... if (Where any tank, structure, sump or pit in a workplace contains any scalding, burning, corrosive or toxic liquid and the edge of the tank, structure, sump or pit is less than one metre above the highest ground or platform from which a person might fall into it) :
+          duty of the occupier ...
+
+
+# pseudocode for Electrical Installation and Equipment
+
+def isDutiful( person, # the occupier of a workplace
+               thing,
+               workplace) :
+
+    if not isOccupier(person, workplace): return None
+    if not isElectricalInstallationIn(thing, workplace): return None
+    if not isElectricalEquipmentIn(   thing, workplace): return None
+    
+    if (thing.isOfGoodConstruction()
+        and thing.isOfSoundMaterial()
+        and thing.isFreeFromDefects()
+        and thing.isUsedInAMannerSafeToUse()
+        and thing.isMaintainedInAMannerSafeToUse()):
+        return True
+    else:
+        return False
+
+def isElectricalEquipment(thing, workplace):
+    if (thing.isMachineWhichConsumesorUtilisesElectricity()
+        or thing.isApplianceWhichConsumesorUtilisesElectricity()
+        or thing.isApparatusWhichConsumesorUtilisesElectricity()
+        or thing.isLightingFittingWhichConsumesorUtilisesElectricity()):
+
+    [ isMachine or isAppliance or isApparatus or isLightingFitting
+      and
+      consumesElectricity or utilisesElectricity ]
+    
+    return True
+    
+    
+# - is of good construction
+# - is of sound material
+# - is free from defects
+# - is used in such manner so that it is safe to use.
+# - is maintained in such manner so that it is safe to use.
+
+
+# 14.—(1)  It shall be
+
+# we have a notion of "Duty" -- which suggests we need to support "modal deontic logic"
+
+the duty of
+
+# here we have a sort of intensional role: is Alice an occupier of a workplace? I don't know, is Alice ... x y or z?
+the occupier of a workplace to
+
+# "ensure" looks like an action -- in fact it is an action about an action
+ensure that
+
+# every! which looks like forall! the upside down A.
+#    forall EI : electrical installation
+#    forall EE : electrical equipment
+#  (EX in EI, EE)
+#
+every electrical installation and electrical equipment in the workplace —
+
+# EX(inTheWorkplace) ->
+# 
+
+- is of good construction
+- is of sound material
+- is free from defects
+- is used in such manner so that it is safe to use.
+- is maintained in such manner so that it is safe to use.
+
+(a1 && a2 && a3) && (b1 && b2)
+
+# (a)	is of good construction, sound material and free from defects; and
+# (b)	is used and maintained in such manner so that it is safe to use.
+# 
+
+

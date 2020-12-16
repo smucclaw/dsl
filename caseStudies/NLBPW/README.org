@@ -18,3 +18,7 @@ We encode the rules into a form suitable for manipulation by the rule engine.
 
 We build a reference command-line implementation that crudely acts out an interview interaction.
 
+
+* Test
+
+We drafted freehand some conceptual work, under test/

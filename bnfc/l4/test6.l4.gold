@@ -228,7 +228,7 @@ Toplevel
                         )
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -236,15 +236,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ]
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            )
                             ( OptAsAlias1
                                 ( AsAlias
                                     ( OA_dots
@@ -462,45 +456,49 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "announce" ) )
-                                    ] OptLangStrings1
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "obj" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "actions" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "theWest" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        ]
+                                    ) OptLangStrings1
                                 )
-                            )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "actions" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "to" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "the" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "west" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 ) ( WHW NoWhen DNoHence WhereLimb0 )
@@ -540,45 +538,49 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "announce" ) )
-                                    ] OptLangStrings1
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "obj" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "actions" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "theEast" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        ]
+                                    ) OptLangStrings1
                                 )
-                            )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "actions" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "to" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "the" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "east" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 ) ( WHW NoWhen DNoHence WhereLimb0 )
@@ -616,7 +618,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -624,17 +626,11 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "PreviousRule" ) )
-                                        , UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "goods" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "PreviousRule" )
+                                , ObjAttrElemIdent ( Ident "goods" )
+                                ]
+                            ) OptAsAlias0
                         )
                     ) DL0
                 ) ( WHW NoWhen DNoHence WhereLimb0 )

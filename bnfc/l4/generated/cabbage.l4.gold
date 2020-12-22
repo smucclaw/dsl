@@ -48,7 +48,7 @@ Toplevel
                         )
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -56,15 +56,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ]
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            )
                             ( OptAsAlias1
                                 ( AsAlias
                                     ( OA_dots
@@ -427,7 +421,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -435,15 +429,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            ) OptAsAlias0
                         )
                     )
                     ( DLLimb TRBefore
@@ -500,7 +488,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMust OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -508,15 +496,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Amount" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Amount" ) ]
+                            ) OptAsAlias0
                         )
                     )
                     ( DLLimb TRBefore

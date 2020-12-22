@@ -44,7 +44,9 @@ DEMay.   DeonticExpr ::= "MAY"  ;
 DEShant. DeonticExpr ::= "SHANT" ;
 -- Exp already contains LstExp
 -- ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
-ActionSingle.   ActionLimb  ::= Exp    [Blah] OptAsAlias ;
+ActionDirObj.   ActionLimb  ::= Exp ObjAttr OptAsAlias ; -- shortcut for "sell Item"
+ActionSingle.   ActionLimb  ::= Exp         OptAsAlias ; -- general structure: pay(to=veggieBar, price=$10)
+
 DL0.         DeadlineLimb ::= ;
 DLLimb.      DeadlineLimb ::= TempRel TemporalExpr OptAsAlias ;
 TRBefore.    TempRel      ::= "BEFORE";
@@ -159,7 +161,8 @@ rules Section ::= "SECTION" RuleDef RuleName WithLimb WhereLimb ;
 rules Pragma ::= "pragma" [Exp] ;
 RScenario. Scenario ::= "SCENARIO" ObjAttr WithLimb TraceExpr Asof WhereLimb ;
 rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+LogEventDirObj. LogEvent ::= Iso8601 ObjAttr Exp Exp ;
+LogEventAny.    LogEvent ::= Iso8601 ObjAttr ObjMethod ;
 separator  nonempty LogEvent ";";
 separator  Blah "";
 rules      Blah     ::= Exp;

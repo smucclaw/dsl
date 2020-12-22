@@ -111,16 +111,15 @@ deontic2gf (DeonticLimb1 deonexpr langstrs actionl) = deonticFun $ action2gf act
       DEShant -> GShant
 
 action2gf :: ActionLimb -> GActionAlias
-action2gf (ActionSingle (ExpAction a) blahs OptAsAlias0) = GAAlias a
-action2gf (ActionSingle (ExpAction a) blahs alias) = GAAlias a -- TODO: use actual alias
-action2gf (ActionSingle e blahs alias) =
-  -- Object is in the BlahExp, transform into => structure
-  action2gf (ActionSingle (RelE e BRel_Fat obj) blahs alias')
-  where
-    (obj, alias') = case blahs of
-      BlahExp o : _ -> (o, alias)
-      x -> error $ "action2gf doesn't handle yet BlahExp" ++ show x
-action2gf _ = GFailure
+action2gf (ActionSingle (ExpAction a) OptAsAlias0) = GAAlias a
+action2gf (ActionSingle (ExpAction a) alias) = GAAlias a -- TODO: use actual alias
+-- action2gf (ActionSingle e alias) =
+--   -- Object is in the BlahExp, transform into => structure
+--   action2gf (ActionSingle (RelE e BRel_Fat obj) blahs alias')
+--   where
+--     (obj, alias') = case blahs of
+--       BlahExp o : _ -> (o, alias)
+--       x -> error $ "action2gf doesn't handle yet BlahExp" ++ show x
 action2gf x = error $ "action2gf doesn't handle yet " ++ show x
 
 -- action2gf ActionSingle {} = GFailure

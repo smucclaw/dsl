@@ -93,29 +93,49 @@ Toplevel
                     ( DeonticLimb1 DEMay OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "order" ) )
-                                    ] OptLangStrings1
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "from" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "item" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "BikeSale" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        ]
+                                    ) OptLangStrings1
                                 )
-                            )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "BikeSale" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )
@@ -169,7 +189,7 @@ Toplevel
                                         ( ObjAttrElemIdent ( Ident "delivery" ) )
                                     ] OptLangStrings1
                                 )
-                            ) [] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )
@@ -210,7 +230,7 @@ Toplevel
                                         ( ObjAttrElemIdent ( Ident "internal_trans" ) )
                                     ] OptLangStrings1
                                 )
-                            ) [] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )
@@ -301,7 +321,7 @@ Toplevel
                                         ( ObjAttrElemIdent ( Ident "order" ) )
                                     ] OptLangStrings1
                                 )
-                            ) [] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )
@@ -342,7 +362,7 @@ Toplevel
                                         ( ObjAttrElemIdent ( Ident "delivery" ) )
                                     ] OptLangStrings1
                                 )
-                            ) [] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )

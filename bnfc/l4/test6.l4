@@ -36,12 +36,12 @@ RULE 10 SaleRestricted
 RULE 11 AnnounceWest
   GIVEN PreviousRule
   PARTY PreviousRule.party
-   MUST announce actions to the west
+   MUST announce (obj=actions, to=theWest)
 
 RULE 12 AnnounceEast
   GIVEN PreviousRule
   PARTY PreviousRule.party
-   MUST announce actions to the east
+   MUST announce (obj=actions, to=theEast)
 
 RULE 13 ReturnPolicy
   GIVEN PreviousRule

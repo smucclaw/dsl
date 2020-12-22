@@ -198,7 +198,9 @@ The syntax for actions is not terribly well specified at the moment. You can say
 #+begin_src bnfc :noweb-ref l4bnfc
   -- Exp already contains LstExp
   -- ActionMulti.    ActionLimb  ::= LstExp [Blah] OptAsAlias ;
-  ActionSingle.   ActionLimb  ::= Exp    [Blah] OptAsAlias ;
+  ActionDirObj.   ActionLimb  ::= Exp ObjAttr OptAsAlias ; -- shortcut for "sell Item"
+  ActionSingle.   ActionLimb  ::= Exp         OptAsAlias ; -- general structure: pay(to=veggieBar, price=$10)
+
 #+end_src
 
 ***** Deadlines
@@ -762,7 +764,8 @@ A "Trace" is syntactic sugar for a "With" limb for perdurants -- facts about an 
 
 #+begin_src bnfc :noweb-ref l4bnfc
   rules      TraceExpr ::= "TRACE" "{" [LogEvent] "}";
-  rules      LogEvent ::= Iso8601 ObjAttr ObjAttr [Blah] ;
+  LogEventDirObj. LogEvent ::= Iso8601 ObjAttr Exp Exp ;
+  LogEventAny.    LogEvent ::= Iso8601 ObjAttr ObjMethod ;
   separator  nonempty LogEvent ";";
   separator  Blah "";
   rules      Blah     ::= Exp;
@@ -1815,7 +1818,7 @@ An attribute may also be /epistemic/:
 #+begin_src haskell :noweb yes :tangle bnfc/l4/generated/pregnancy.l4
   SCENARIO alicePregnancy
      TRACE 2020-08-01 Alice knew { pregnancy = true }
-           2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
+           2020-09-01 Alice told(to=Bob) { knownBy = Alice, pregnancy = true }
            2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
            2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
 #+end_src

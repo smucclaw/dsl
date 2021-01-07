@@ -30,7 +30,7 @@ The ~showbug~ executable is used to make bnfc's error messages a little bit more
 
 * Running
 
-Running ~make~ from the ~bnfc/~ directory should tangle the relevant code from the README.org source, then compile the parser, and run the parser on the sample L4 code.
+Running ~nix-shell --run make~ from the ~bnfc/~ directory should tangle the relevant code from the README.org source, then compile the parser, and run the parser on the sample L4 code.
 
 * Running the test4.l4
 
@@ -38,7 +38,7 @@ Meng keeps a set of "test cases" in ~l4/test4.l4~, leading to this invocation:
 
 #+begin_example
 ┌─[mengwong@venice4] - [~/src/smucclaw/dsl/bnfc] - [2020-10-14 03:12:15]
-└─[0] <git:(main e66a309✈) > make; cp l4/test4.l4 l4/test.l4; make
+└─[0] <git:(main e66a309✈) > nix-shell --run make; cp l4/test4.l4 l4/test.l4; nix-shell --run make
 #+end_example
 
 This should produce an AST:

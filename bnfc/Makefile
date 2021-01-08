@@ -13,7 +13,7 @@ out/test.out : l4/test.l4 src-bnfc/AbsL.hs
 	dot -Tpng graph.dot > graph.png
 
 src-bnfc/AbsL.hs : l4.bnfc src-l4/Top.hs
-	(mkdir -p src-bnfc out; cd src-bnfc; bnfc -m ../l4.bnfc ; rm TestL.hs; make ParL.hs; rm ParL.hs)
+	(mkdir -p src-bnfc out; cd src-bnfc; export LC_ALL=C.UTF-8; bnfc -m ../l4.bnfc ; rm TestL.hs; make ParL.hs; rm ParL.hs)
 	# (cd src-bnfc; bnfc --haskell ../l4.bnfc; rm TestL.hs)
 	stack build
 

@@ -793,6 +793,14 @@ TODO: how would we define the "SubjectTo" and "Notwithstanding" idioms in L4? Su
   RETURN default
 #+end_src
 
+Can we rewrite "notwithstanding" and "despite" to "subjectTo"?
+
+#+begin_src l4
+  PATTERN despite :: Rules -> Rules -> Rules
+  GIVEN default, exception
+  RETURN subjectTo exception default
+#+end_src
+
 ** Syntax
 *** Comments
 

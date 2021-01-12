@@ -786,21 +786,119 @@ TODO For example we expand a rule about potatoes to also apply to cabbages, expa
 
 TODO: how would we define the "SubjectTo" and "Notwithstanding" idioms in L4? Suppose we want to say
 
-#+begin_src l4
-  PATTERN subjectTo :: Rules -> Rules -> Rules
-  GIVEN exception, default
-  IF exception.applies() THEN RETURN exception ELSE
-  RETURN default
+What are our truth values? Are we dealing with Booleans? Or Maybe Booleans?
+
+"Bool"s have cardinality 2: everything that is not false can be assumed to be true.
+
+"Maybe Bool"s have cardinality 3: things are true, false, or unknown.
+
+data WithDefault = MkWD { given   :: Maybe Bool
+                        , default ::       Bool }
+
+| F | Regal Whim | Parking |
+|---+------------+---------|
+| 1 | Generous   | Yes     |
+| 2 | Vicious    | No      |
+| 3 | Unknown    |         |
+
+
+**** Explicit Ordering
+
+1. Parking is allowed.
+
+2. Despite Rule 1, parking is not allowed on Fridays.
+
+**** Conventions for Resolving Conflict -- Lex Specialis
+
+1. Parking is not allowed on Fridays.
+
+2. Parking is allowed.
+
+1 wins because it is more specific.
+
+**** Conventions for Resolving Conflict -- Lex Posterior Derogat Legi Prior
+
+1. Parking is allowed. [2000]
+
+2. Parking is not allowed on Fridays. [2020]
+
+2 wins because it is more specific but also because it came later.
+
+
+I drive to the parking spot but I don't know what day of the week it is.
+
+Am I allowed to park there?
+
+"Not enough information."
+
+Answer: Nothing :: Maybe Bool
+
+#+begin_src l4 :noweb-ref prelude
+  FUNCTION subjectTo ISA Rule
+     GIVEN exception ISA Rule
+           default   ISA Rule
+        IF exception.applies()
+           THEN RETURN exception
+           ELSE RETURN default
+
+  FUNCTION Rule
+     GIVEN SOME World
+    RETURN SOME Maybe Bool
 #+end_src
 
 Can we rewrite "notwithstanding" and "despite" to "subjectTo"?
 
 #+begin_src l4
-  PATTERN despite :: Rules -> Rules -> Rules
+  DEF despite :: Rules -> Rules -> Rules
   GIVEN default, exception
   RETURN subjectTo exception default
 #+end_src
 
+rule_1.a. | undignified   -> prohibited.
+rule_1.b. | distracting   -> prohibited.
+rule_1.c. | spoilMarket   -> prohibited.
+rule_1.d. | feeSharing    -> prohibited.
+rule_1.e. | firstSchedule -> prohibited.
+rule_1.f. | explicitly    -> prohibited.
+
+rule_5.  notwithstanding 1.b
+         rule_5'
+
+rule_5'. subjectTo [1.a, 1.c..f]
+         rule_5base.
+           
+rule_5base. (all [ nonLegalEntity
+                 , SecondSchedule ] )
+             -> allowed  
+            
+-------> REWRITE! ------>
+
+rule_1.b. subjectTo 5'
+          (distracting -> prohibited)
+
+**** Can we do Section 34 in DMN?
+
+| practitioner | business        | allowed? |
+|--------------+-----------------+----------|
+| locum        | law-related     |          |
+| locum        | not law-related |          |
+| not a locum  | law-related     |          |
+| not a locum  | not law-related |          |
+
+**** Philosophical Question
+
+are these effectively the same?
+
+***** ignore
+
+"notwithstanding" means: “although the subject matter of section 3.2 overlaps with that of the quoted sentence, the quoted sentence should be read and interpreted as if section 3.2 did not exist.”
+
+Excerpt From: Kenneth A. Adams. “A Manual of Style for Contract Drafting”. Apple Books. 
+
+***** ignore where disagreement
+
+"notwithstanding" means: "to the extent that the subject matter of section 3.2 disagrees with that of the quoted sentence, the quoted sentence should be read and interpreted as if section 3.2 did not disagree."
+          
 ** Syntax
 *** Comments
 

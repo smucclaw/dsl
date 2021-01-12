@@ -784,6 +784,15 @@ Basically, macro expansions and function definitions.
 
 TODO For example we expand a rule about potatoes to also apply to cabbages, expanding ~item.isPotato~ to ~(item.isPotato OR item.isCabbage)~ in the body of any Horn clause.
 
+TODO: how would we define the "SubjectTo" and "Notwithstanding" idioms in L4? Suppose we want to say
+
+#+begin_src l4
+  PATTERN subjectTo :: Rules -> Rules -> Rules
+  GIVEN exception, default
+  IF exception.applies() THEN RETURN exception ELSE
+  RETURN default
+#+end_src
+
 ** Syntax
 *** Comments
 

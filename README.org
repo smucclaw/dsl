@@ -1,6 +1,8 @@
 #+TITLE: The future home of the L4 DSL
 #+STARTUP: content
 
+[[https://github.com/smucclaw/dsl/workflows/Test/badge.svg]]
+
 This specification is in EARLY DRAFT stage right now, and is expected to evolve throughout the remainder of 2020. The only people writing L4 according to this spec are the core development team, and it doesn't even always work for them.
 
 * Draft Language Specification v0.3.0

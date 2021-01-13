@@ -30,7 +30,7 @@ toGF :: Tops -> [Expr]
 toGF (Toplevel tops) = concat $ mapMaybe toTree tops
   where
     toTree (ToplevelsRule rule) = Just $ rule2gf rule
-    toTree (ToplevelsScenario _) = error "Scenarios not yet translated to GF"
+    --toTree (ToplevelsScenario _) = error "Scenarios not yet translated to GF"
     toTree _ = Nothing
 
 rule2gf :: AbsL.Rule -> [Expr]
@@ -76,7 +76,8 @@ def2gf (DefLimb _ [cc] with asof) = GMDefTermMatch kind term
       DefIs e f -> (exp2term GASg e, exp2term GASg f)
       DefIsa e f -> (exp2term GASg e, exp2term GASg f)
       _ -> error $ "def2gf doesn't support yet " ++ show cc
-def2gf x = error $ "def2gf doesn't support yet " ++ show x
+def2gf x = GMAction GNobody (GMay GFailure)
+-- error $ "def2gf doesn't support yet " ++ show x
 
 modal2gf :: ModalLimb -> GSentence
 modal2gf (MD1 party deonticl deadline) = GMAction (party2gf party) (deontic2gf deonticl)
@@ -112,6 +113,7 @@ action2gf (ActionSingle e blahs alias) =
     (obj, alias') = case blahs of
       BlahExp o : _ -> (o, alias)
       x -> error $ "action2gf doesn't handle yet BlahExp" ++ show x
+action2gf _ = GFailure
 action2gf x = error $ "action2gf doesn't handle yet " ++ show x
 
 -- action2gf ActionSingle {} = GFailure
@@ -255,9 +257,8 @@ uexp2kind (Single (UE item)) = toKind item
 uexp2kind (GenitiveExp item species) = do
   spec <- uexp2kind $ Single species -- TODO: make string literals available at any stage?
   return $ GComplKind spec (exp2term GTheSg $ Single item)
+uexp2kind _ = Nothing
 uexp2kind x = error $ "uexp2kind: Not yet supported: " ++ show x
-
---uexp2kind _ = GItem
 
 uexp2term :: GDeterminer -> Exp -> GTerm
 uexp2term det exp@(UnifyNoArgs xs) =
@@ -277,7 +278,8 @@ uexp2fun _ = \_ a -> a
 uexp2party :: Exp -> GParty
 uexp2party (Single (UE item)) = toParty item
 uexp2party (UnifyNoArgs (UEs xs)) = toParty xs
-uexp2party x = error $ "uexp2party doesn't yet support " ++ show x
+uexp2party x = GStrParty (GString $ "uexp2party doesn't support " ++ show x)
+--uexp2party x = error $ "uexp2party doesn't yet support " ++ show x
 
 -- Arguments
 pattern ArgEq :: Exp -> Exp -> ConstraintComma

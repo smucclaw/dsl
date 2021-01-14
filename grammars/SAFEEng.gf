@@ -167,7 +167,7 @@ concrete SAFEEng of SAFE = ActionEng ** open
     sell_V2 : V2 = WN.sell_1_V2 ;
     issue_V2 : V2 = WN.issue_1_V2 ;
     offer_V2 : V2 = WN.offer_1_V2 ;
-    transfer_V2 : V2 = mkV2 WN.transfer_2_V ;
+    transfer_V2 : V2 = WN.transfer_2_V2 ;
     pledge_V2 : V2 = WN.pledge_2_V2 ;
     hypothecate_V2 : V2 = WN.hypothecate_1_V2 ;
 

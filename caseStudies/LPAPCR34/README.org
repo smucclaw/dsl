@@ -182,31 +182,33 @@ LAW-RELATED SERVICES
       AND Predicate (Business, LegalPractitioner)
 
      RULE 34.1.a
-   RETURN 1base(Business [ detractsFrom
-                         , isIncompatibleWith
-                         | derogatesFrom ]
-                         dignity (of = LegalProfession) )
+   RETURN 1base(Business [ detracts(from)
+                         , isIncompatible(with)
+                         | derogates(from) ]
+                         dignity (of LegalProfession) )
 
      RULE 34.1.b
-   RETURN 1base(Business materiallyInterferes ( with = [ primaryOccupation
-                                                       , serviceAvailability
-                                                       | clientRepresentation ]
-                                              , of = LegalPractitioner )
+   RETURN 1base(Business materiallyInterferes ( with [ primaryOccupation
+                                                     , serviceAvailability
+                                                     | clientRepresentation ]
+                                                     of LegalPractitioner ) )
+                                               -- note: right associativity
 
      RULE 34.1.c
-   RETURN 1base(Business likely ( to = UnfairlyAttractBusiness
-                                , in = practiceOfLaw )
+   RETURN 1base(Business likely ( to UnfairlyAttractBusiness in practiceOfLaw ) )
 
      RULE 34.1.d
-   RETURN 1base(Business involves ( [ sharingFees(with=)
-                                    | paymentOfCommission(to=)
+   RETURN 1base(Business involves ( [ sharingFees with
+                                    | paymentOfCommission to
                                     ] unauthorizedPerson
-                                  , for (legalWork performed (by = LegalPractitioner) ) )
-
-     RULE 1e
+                                    for (legalWork performed by LegalPractitioner ) ) )
+                                  
+     RULE 34.1.e
    RETURN 1base(FirstSchedule(Business))
 
-     RULE 1f
+
+   -- with more explicit equals signs; can we get rid of them?
+     RULE 34.1.f
    RETURN 1base(Business prohibited (by = [ theAct
                                           , [ theseRules | subsidiaryLegislation ]
                                           , any [ practiceDirections , guidanceNotes U rulings ]

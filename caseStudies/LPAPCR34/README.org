@@ -127,7 +127,7 @@ We use a different syntactic style here, where the entire paragraph is made a si
                 -- arguably they forgot to break this out as a 34.2.c
                 AND NOT (Involvement (of MainP, in RelatedP)
                          prohibitedByUsualSuspects)
-
+              ]
 #+end_src         
 
 * Notes: Simplification

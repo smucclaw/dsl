@@ -181,33 +181,34 @@ LAW-RELATED SERVICES
     WHERE ExecutiveAppointment associatedWith Business
       AND Predicate (Business, LegalPractitioner)
 
-     RULE 34.1.a
+  -- note the preposition combinators are right associative
+    
+     RULE 34.1.a         -- syntax alternative 1: "or-list" with commas
    RETURN 1base(Business [ detracts(from)
                          , isIncompatible(with)
                          | derogates(from) ]
-                         dignity (of LegalProfession) )
+                         dignity of LegalProfession )
 
-     RULE 34.1.b
-   RETURN 1base(Business materiallyInterferes ( with [ primaryOccupation
-                                                     , serviceAvailability
-                                                     | clientRepresentation ]
+     RULE 34.1.b                                -- syntax 2: experimental
+   RETURN 1base(Business materiallyInterferes ( with | primaryOccupation
+                                                     | serviceAvailability
+                                                     | clientRepresentation
                                                      of LegalPractitioner ) )
-                                               -- note: right associativity
 
-     RULE 34.1.c
+     RULE 34.1.c                 -- consider right associativity
    RETURN 1base(Business likely ( to UnfairlyAttractBusiness in practiceOfLaw ) )
 
-     RULE 34.1.d
-   RETURN 1base(Business involves ( [ sharingFees with
-                                    | paymentOfCommission to
-                                    ] unauthorizedPerson
+     RULE 34.1.d                    -- syntax 3: "any" of a normal [,,,] list
+   RETURN 1base(Business involves ( any [ sharingFees with
+                                        , paymentOfCommission to
+                                        ] unauthorizedPerson
                                     for (legalWork performed by LegalPractitioner ) ) )
-                                  
+
      RULE 34.1.e
    RETURN 1base(FirstSchedule(Business))
 
 
-   -- with more explicit equals signs; can we get rid of them?
+   -- syntax 4: with more explicit equals signs, resembling function params; can we get rid of them?
      RULE 34.1.f
    RETURN 1base(Business prohibited (by = [ theAct
                                           , [ theseRules | subsidiaryLegislation ]

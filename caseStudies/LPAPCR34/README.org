@@ -18,6 +18,137 @@ We automate the creation of a DocAssemble expert system.
 
 We auto-generate Python to go into the DocAssemble YAML interview file.
 
+** Formal Verification
+
+We output to the model checking syntaxes shown in the [[https://github.com/smucclaw/fv/blob/taboo/Experiments/ProfessionalConductRule34/][FV repo]]. At some point these will be merged.
+
+* L4 representation
+
+** Section 1
+
+1) A legal practitioner must not accept any executive appointment associated with any of the following businesses:
+   a) any business which detracts from, is incompatible with, or derogates from the dignity of, the legal profession;
+   b) any business which materially interferes with —
+      1) the legal practitioner’s primary occupation of practising as a lawyer;
+      2) the legal practitioner’s availability to those who may seek the legal practitioner’s services as a lawyer; or
+      3) the representation of the legal practitioner’s clients;
+   c) any business which is likely to unfairly attract business in the practice of law;
+   d) any business which involves the sharing of the legal practitioner’s fees with, or the payment of a commission to, any unauthorised person for legal work performed by the legal practitioner;
+   e) any business set out in the First Schedule;
+   f) any business which is prohibited by —
+      1) the Act;
+      2) these Rules or any other subsidiary legislation made under the Act;
+      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act; or
+      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
+
+#+begin_src sql :noweb-ref section34
+  SECTION 34.1
+
+   DEFINE 1base ISA DeonticRule
+    GIVEN Predicate
+    PARTY LegalPractitioner
+    SHANT accept(role = ExecutiveAppointment)
+    WHERE ExecutiveAppointment associatedWith Business
+      AND Predicate (Business, LegalPractitioner)
+
+  -- note the preposition combinators are right associative
+
+  RULE    34.1.a         -- syntax alternative 1: "or-list" with commas
+   RETURN 1base(Business [ detracts(from)
+                         , isIncompatible(with)
+                         | derogates(from) ]
+                         dignity of LegalProfession )
+
+  RULE    34.1.b                                -- syntax 2: experimental
+   RETURN 1base(Business materiallyInterferes ( with | primaryOccupation
+                                                     | serviceAvailability
+                                                     | clientRepresentation
+                                                     of LegalPractitioner ) )
+
+  RULE    34.1.c                 -- consider right associativity
+   RETURN 1base(Business likely ( to UnfairlyAttractBusiness in practiceOfLaw ) )
+
+  RULE    34.1.d                    -- syntax 3: "any" of a normal [,,,] list
+   RETURN 1base(Business involves ( any [ sharingFees with
+                                        , paymentOfCommission to
+                                        ] unauthorizedPerson
+                                    for (legalWork performed by LegalPractitioner ) ) )
+
+  RULE    34.1.e
+   RETURN 1base(FirstSchedule(Business))
+
+
+   -- syntax 4: with more explicit equals signs, resembling function params; can we get rid of them?
+  RULE    34.1.f
+   RETURN 1base(Business prohibitedByUsualSuspects)
+
+  DEFINE  prohibitedByUsualSuspects
+   SCOPE  SECTION 34
+   HIDDEN true
+   RETURN prohibited (by = [ theAct
+                           , [ theseRules | subsidiaryLegislation ]
+                           , any [ practiceDirections , guidanceNotes U rulings ]
+                             issued (under = section 71.6 of Act)
+                           | any [ practiceDirections , guidanceNotes U rulings ]
+                             relating (to = [ professionalPractice, etiquette, conduct U discipline ])
+                             issued   (by = [ theCouncil | theSociety ] )
+                           ] )
+
+#+end_src
+
+** Section 2
+
+2) Subject to paragraph (1), a legal practitioner in a Singapore law practice (called in this paragraph the main practice) may accept an executive appointment in another Singapore law practice (called in this paragraph the related practice), if the related practice is connected to the main practice in either of the following ways:
+   a) every legal or beneficial owner of the related practice is the sole proprietor, or a partner or director, of the main practice;
+   b) the legal practitioner accepts the executive appointment as a representative of the main practice in the related practice, and the involvement of the main practice in the related practice is not prohibited by any of the following:
+      1) the Act;
+      2) these Rules or any other subsidiary legislation made under the Act;
+      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act;
+      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
+
+We use a different syntactic style here, where the entire paragraph is made a single RULE; the parts are labeled.
+
+#+begin_src sql :noweb-ref section34
+  SECTION 34.2
+   RULE       34.2
+    SUBJECTTO 34.1
+        GIVEN SingaporeLawPractice1 :en:"the main practice"    AS MainP
+              SingaporeLawPractice2 :en:"the related practice" AS RelatedP
+        PARTY LegalPractitioner
+          MAY accept (role = ExecutiveAppointment) in SingaporeLawPractice2 AS Acceptance
+        WHERE [ :label:34.2.a
+                forall Owner2 in [ legal | beneficial ] Owner of SingaporeLawPractice2 {
+                  Owner2 is [ soleProprietor | [partner | director] ] of SingaporeLawPractice1
+                }
+                :label:34.2.b
+                Acceptance as representative
+                              (of SingaporeLawPractice1
+                              ,in SingaporeLawPractice2)
+                -- arguably they forgot to break this out as a 34.2.c
+                AND NOT (Involvement (of MainP, in RelatedP)
+                         prohibitedByUsualSuspects)
+
+#+end_src         
+
+* Notes: Simplification
+
+The compiler automatically expands, then refactors, 34.1 to simplify the expression to be readable, from
+
+#+begin_example
+any:
+  - a b c 1 2
+  - a b c 3 4
+  - a b c 5 6
+  - a b c 7 8
+#+end_example
+
+to
+#+begin_example
+- a b c (any [1 2, 3 4, 5 6, 7 8])
+#+end_example
+
+  
+  
 * Source Text
 
 ** Section 34
@@ -154,92 +285,3 @@ LAW-RELATED SERVICES
 8. Any voluntary liquidation service
 
 
-* L4 representation
-
-** 1
-
-1) A legal practitioner must not accept any executive appointment associated with any of the following businesses:
-   a) any business which detracts from, is incompatible with, or derogates from the dignity of, the legal profession;
-   b) any business which materially interferes with —
-      1) the legal practitioner’s primary occupation of practising as a lawyer;
-      2) the legal practitioner’s availability to those who may seek the legal practitioner’s services as a lawyer; or
-      3) the representation of the legal practitioner’s clients;
-   c) any business which is likely to unfairly attract business in the practice of law;
-   d) any business which involves the sharing of the legal practitioner’s fees with, or the payment of a commission to, any unauthorised person for legal work performed by the legal practitioner;
-   e) any business set out in the First Schedule;
-   f) any business which is prohibited by —
-      1) the Act;
-      2) these Rules or any other subsidiary legislation made under the Act;
-      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act; or
-      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
-
-#+begin_src sql :noweb-ref section34
-  SECTION 34.1
-
-   DEFINE 1base ISA DeonticRule
-    GIVEN Predicate
-    PARTY LegalPractitioner
-    SHANT accept(role = ExecutiveAppointment)
-    WHERE ExecutiveAppointment associatedWith Business
-      AND Predicate (Business, LegalPractitioner)
-
-  -- note the preposition combinators are right associative
-    
-     RULE 34.1.a         -- syntax alternative 1: "or-list" with commas
-   RETURN 1base(Business [ detracts(from)
-                         , isIncompatible(with)
-                         | derogates(from) ]
-                         dignity of LegalProfession )
-
-     RULE 34.1.b                                -- syntax 2: experimental
-   RETURN 1base(Business materiallyInterferes ( with | primaryOccupation
-                                                     | serviceAvailability
-                                                     | clientRepresentation
-                                                     of LegalPractitioner ) )
-
-     RULE 34.1.c                 -- consider right associativity
-   RETURN 1base(Business likely ( to UnfairlyAttractBusiness in practiceOfLaw ) )
-
-     RULE 34.1.d                    -- syntax 3: "any" of a normal [,,,] list
-   RETURN 1base(Business involves ( any [ sharingFees with
-                                        , paymentOfCommission to
-                                        ] unauthorizedPerson
-                                    for (legalWork performed by LegalPractitioner ) ) )
-
-     RULE 34.1.e
-   RETURN 1base(FirstSchedule(Business))
-
-
-   -- syntax 4: with more explicit equals signs, resembling function params; can we get rid of them?
-     RULE 34.1.f
-   RETURN 1base(Business prohibited (by = [ theAct
-                                          , [ theseRules | subsidiaryLegislation ]
-                                          , any [ practiceDirections , guidanceNotes U rulings ]
-                                            issued (under = section 71.6 of Act)
-                                          | any [ practiceDirections , guidanceNotes U rulings ]
-                                            relating (to = [ professionalPractice, etiquette, conduct U discipline ])
-                                            issued   (by = [ theCouncil | theSociety ] )
-                                          ] )
-
-
-#+end_src
-
-** Simplification
-
-The compiler automatically expands, then refactors, 34.1 to simplify the expression to be readable, from
-
-#+begin_example
-any:
-  - a b c 1 2
-  - a b c 3 4
-  - a b c 5 6
-  - a b c 7 8
-#+end_example
-
-to
-#+begin_example
-- a b c (any [1 2, 3 4, 5 6, 7 8])
-#+end_example
-
-  
-  

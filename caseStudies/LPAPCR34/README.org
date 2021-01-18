@@ -2,9 +2,239 @@
 
 In this case study, we formalize [[https://sso.agc.gov.sg/SL/LPA1966-S706-2015#pr34-][Section 34 of the Legal Profession (Professional Conduct) Rules 2015]].
 
+* Content
+
+We represent all of Section 34 in L4. L4 (as currently defined) may not suffice to accurately and idiomatically represent Section 34. This use case therefore motivates improvement of the L4 language.
+
 * Targets and Demonstrations
 
+** Prolog
+We create Prolog, in the spirit of "British Nationality Act as a Logic Program".
+
+** Python
 We automate the creation of a DocAssemble expert system.
 
 We auto-generate Python to go into the DocAssemble YAML interview file.
 
+* Source Text
+
+** Section 34
+
+https://sso.agc.gov.sg/SL/LPA1966-S706-2015#pr34-
+
+Paragraph numbering scheme is 1.a.i. Roman numerals were converted to arabic to be kinder to org-mode.
+
+1) A legal practitioner must not accept any executive appointment associated with any of the following businesses:
+   a) any business which detracts from, is incompatible with, or derogates from the dignity of, the legal profession;
+   b) any business which materially interferes with —
+      1) the legal practitioner’s primary occupation of practising as a lawyer;
+      2) the legal practitioner’s availability to those who may seek the legal practitioner’s services as a lawyer; or
+      3) the representation of the legal practitioner’s clients;
+   c) any business which is likely to unfairly attract business in the practice of law;
+   d) any business which involves the sharing of the legal practitioner’s fees with, or the payment of a commission to, any unauthorised person for legal work performed by the legal practitioner;
+   e) any business set out in the First Schedule;
+   f) any business which is prohibited by —
+      1) the Act;
+      2) these Rules or any other subsidiary legislation made under the Act;
+      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act; or
+      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
+
+2) Subject to paragraph (1), a legal practitioner in a Singapore law practice (called in this paragraph the main practice) may accept an executive appointment in another Singapore law practice (called in this paragraph the related practice), if the related practice is connected to the main practice in either of the following ways:
+   a) every legal or beneficial owner of the related practice is the sole proprietor, or a partner or director, of the main practice;
+   b) the legal practitioner accepts the executive appointment as a representative of the main practice in the related practice, and the involvement of the main practice in the related practice is not prohibited by any of the following:
+      1) the Act;
+      2) these Rules or any other subsidiary legislation made under the Act;
+      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act;
+      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
+
+3) Subject to paragraph (1), a legal practitioner may accept an executive appointment in a business entity which provides law-related services.
+
+4) Subject to paragraph (1), a legal practitioner (not being a locum solicitor) may accept an executive appointment in a business entity which does not provide any legal services or law-related services, if all of the conditions set out in the Second Schedule are satisfied.
+
+5) Despite paragraph (1)(b), but subject to paragraph (1)(a) and (c) to (f), a locum solicitor may accept an executive appointment in a business entity which does not provide any legal services or law-related services, if all of the conditions set out in the Second Schedule are satisfied.
+
+6) Except as provided in paragraphs (2) to (5) —
+   a) a legal practitioner in a Singapore law practice must not accept any executive appointment in another Singapore law practice; and
+   b) a legal practitioner must not accept any executive appointment in a business entity.
+
+7) To avoid doubt, nothing in this rule prohibits a legal practitioner from accepting any appointment in any institution set out in the Third Schedule.
+
+8) To avoid doubt, this rule does not authorise the formation of, or regulate —
+   a) any related practice referred to in paragraph (2); or
+   b) any business entity referred to in paragraph (3), (4) or (5).
+
+9) In this rule and the First to Fourth Schedules —
+   - "business" :: includes any business, trade or calling in Singapore or elsewhere, whether or not for the purpose of profit, but excludes the practice of law;
+   - "business entity" ::
+     a) includes any company, corporation, partnership, limited liability partnership, sole proprietorship, business trust or other entity that carries on any business; but
+     b) excludes any Singapore law practice, any Joint Law Venture, any Formal Law Alliance, any foreign law practice and any institution set out in the Third Schedule;
+   - "executive appointment" :: means a position associated with a business, or in a business entity or Singapore law practice, which entitles the holder of the position to perform executive functions in relation to the business, business entity or Singapore law practice (as the case may be), but excludes any non‑executive director or independent director associated with the business or in the business entity;
+   - "law-related service" :: means any service set out in the Fourth Schedule, being a service that may reasonably be performed in conjunction with, and that is in substance related to, the provision of any legal service.
+
+
+** First Schedule
+
+Rule 34(1)(e) and (9)
+
+PROHIBITED BUSINESSES
+
+1.	Housing or estate agency business
+
+2.	Debt collection business
+
+** Second Schedule
+
+Rule 34(4), (5) and (9)
+
+CONDITIONS FOR ACCEPTING EXECUTIVE APPOINTMENT IN BUSINESS ENTITY
+
+1. The business of the business entity —
+   a) must not jeopardise the professional integrity, independence or competence of the legal practitioner; and
+   b) must not detract from the standing and dignity of the legal profession.
+
+2. The business entity must not be held out or described in such a way as to suggest —
+   a) that the business entity is a law practice; or
+   b) that any legal practitioner in the business entity provides services, carries on business, or is employed, as a regulated legal practitioner.
+
+3. The involvement of the legal practitioner in the business entity must not impair, and must not be in conflict with, the legal practitioner’s duties —
+   a) in the law practice in which the legal practitioner practises; or
+   b) to any client of that law practice.
+
+4. The files, records and accounts of the business entity must be kept separate from and independent of the files, records and accounts of the law practice in which the legal practitioner practises.
+
+5. Where, in the course of dealing with the law practice in which the legal practitioner practises, a client of that law practice deals with, or is referred by that law practice to, the business entity, the legal practitioner must make full and frank disclosure of all of the following matters to the client:
+   a) the relationship (if any) between the business entity and each of the following:
+      1) that law practice;
+      2) every legal practitioner in that law practice who has any interest in the business entity;
+   b) the financial or other interests of each of the following in the business entity:
+      i) that law practice;
+      ii) every legal practitioner in that law practice who has any interest in the business entity;
+   c) that the statutory protection conferred on a client of a law practice under the Act (including but not limited to compulsory professional indemnity insurance coverage and the Compensation Fund maintained under section 75 of the Act), or under any subsidiary legislation made under the Act, may not be available to a customer of the business entity.
+
+6. The client account of the law practice in which the legal practitioner practises, and any other account of that law practice used to hold money for a client of that law practice, must not be used to hold money for the business entity in its capacity as such, or for any customer of the business entity in the customer’s capacity as such.
+
+7. Each account of the business entity must not be used to hold money for the law practice in which the legal practitioner practises in that law practice’s capacity as such, or for any client of that law practice in the client’s capacity as such.
+
+8.
+   1. The business entity must conduct its business at an address that is separate and distinct from the address of the law practice in which the legal practitioner practises.
+   2. However —
+      a) both addresses may be in the same building; and
+      b) the business entity is not to be treated as conducting its business at an address by reason only that the address is the address of the registered office of the business entity.
+
+
+** Third Schedule
+
+Rule 34(7) and (9)
+
+INSTITUTIONS IN WHICH LEGAL PRACTITIONER MAY ACCEPT ANY APPOINTMENT
+
+1. The Society
+2. The Academy
+3. The Institute
+4. The National University of Singapore
+5. The Singapore Management University
+5A. The Singapore University of Social Sciences [S 82/2018 wef 12/02/2018]
+6. Any charity registered under section 5 of the Charities Act (Cap. 37)
+
+** Fourth Schedule
+
+Rule 34(9)
+
+LAW-RELATED SERVICES
+
+1. Any intellectual property service, including the registration (where applicable), and the provision of consultancy and advice on the management and enforcement, of copyright, trade marks, patents, designs, plant varieties and any other category of intellectual property referred to in the Agreement on Trade-Related Aspects of Intellectual Property Rights
+2. Any tax service, including tax consultancy and advice
+3. Any trust business or trust business service as defined in section 2 of the Trust Companies Act (Cap. 336)
+4. Any company secretarial service, including the establishment and incorporation of a company
+5. Any service as a continuing sponsor company for an entity any shares of which are listed for quotation on the Singapore Exchange Catalist
+6. Any administrative, management, property or other service provided exclusively to a law practice or to a business entity referred to in rule 34(3), (4) or (5)
+7. Any forensic investigation, document management or discovery service, or any other service relating to litigation support
+8. Any voluntary liquidation service
+
+
+* L4 representation
+
+** 1
+
+1) A legal practitioner must not accept any executive appointment associated with any of the following businesses:
+   a) any business which detracts from, is incompatible with, or derogates from the dignity of, the legal profession;
+   b) any business which materially interferes with —
+      1) the legal practitioner’s primary occupation of practising as a lawyer;
+      2) the legal practitioner’s availability to those who may seek the legal practitioner’s services as a lawyer; or
+      3) the representation of the legal practitioner’s clients;
+   c) any business which is likely to unfairly attract business in the practice of law;
+   d) any business which involves the sharing of the legal practitioner’s fees with, or the payment of a commission to, any unauthorised person for legal work performed by the legal practitioner;
+   e) any business set out in the First Schedule;
+   f) any business which is prohibited by —
+      1) the Act;
+      2) these Rules or any other subsidiary legislation made under the Act;
+      3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act; or
+      4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
+
+#+begin_src sql :noweb-ref section34
+  SECTION 34.1
+
+   DEFINE 1base ISA DeonticRule
+    GIVEN Predicate
+    PARTY LegalPractitioner
+    SHANT accept(role = ExecutiveAppointment)
+    WHERE ExecutiveAppointment associatedWith Business
+      AND Predicate (Business, LegalPractitioner)
+
+     RULE 34.1.a
+   RETURN 1base(Business [ detractsFrom
+                         , isIncompatibleWith
+                         | derogatesFrom ]
+                         dignity (of = LegalProfession) )
+
+     RULE 34.1.b
+   RETURN 1base(Business materiallyInterferes ( with = [ primaryOccupation
+                                                       , serviceAvailability
+                                                       | clientRepresentation ]
+                                              , of = LegalPractitioner )
+
+     RULE 34.1.c
+   RETURN 1base(Business likely ( to = UnfairlyAttractBusiness
+                                , in = practiceOfLaw )
+
+     RULE 34.1.d
+   RETURN 1base(Business involves ( [ sharingFees(with=)
+                                    | paymentOfCommission(to=)
+                                    ] unauthorizedPerson
+                                  , for (legalWork performed (by = LegalPractitioner) ) )
+
+     RULE 1e
+   RETURN 1base(FirstSchedule(Business))
+
+     RULE 1f
+   RETURN 1base(Business prohibited (by = [ theAct
+                                          , [ theseRules | subsidiaryLegislation ]
+                                          , any [ practiceDirections , guidanceNotes U rulings ]
+                                            issued (under = section 71.6 of Act)
+                                          | any [ practiceDirections , guidanceNotes U rulings ]
+                                            relating (to = [ professionalPractice, etiquette, conduct U discipline ])
+                                            issued   (by = [ theCouncil | theSociety ] )
+                                          ] )
+
+
+#+end_src
+
+** Simplification
+
+The compiler automatically expands, then refactors, 34.1 to simplify the expression to be readable, from
+
+#+begin_example
+any:
+  - a b c 1 2
+  - a b c 3 4
+  - a b c 5 6
+  - a b c 7 8
+#+end_example
+
+to
+#+begin_example
+- a b c (any [1 2, 3 4, 5 6, 7 8])
+#+end_example
+
+  
+  

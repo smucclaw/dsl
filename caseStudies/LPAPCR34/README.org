@@ -48,31 +48,31 @@ We output to the model checking syntaxes shown in the [[https://github.com/smucc
     GIVEN Predicate
     PARTY LegalPractitioner
     SHANT accept(role = ExecutiveAppointment)
-    WHERE ExecutiveAppointment associatedWith Business
+    WHERE ExecutiveAppointment associated with Business
       AND Predicate (Business, LegalPractitioner)
 
   -- note the preposition combinators are right associative
 
-  RULE    34.1.a         -- syntax alternative 1: "or-list" with commas
-   RETURN 1base(Business [ detracts(from)
-                         , isIncompatible(with)
-                         | derogates(from) ]
-                         dignity of LegalProfession )
+  RULE    34.1.a         -- syntax alternative 1: "or-list" with commas; the preps are partially applied
+   RETURN 1base(Business [ detracts from
+                         , is_incompatible with
+                         | derogates from ]
+                         dignity of legal_profession )
 
   RULE    34.1.b                                -- syntax 2: experimental
-   RETURN 1base(Business materiallyInterferes ( with | primaryOccupation
-                                                     | serviceAvailability
-                                                     | clientRepresentation
-                                                     of LegalPractitioner ) )
+   RETURN 1base(Business materially_interferes ( with | primary_occupation
+                                                      | service_availability
+                                                      | client_representation
+                                                      of LegalPractitioner ) )
 
   RULE    34.1.c                 -- consider right associativity
-   RETURN 1base(Business likely ( to UnfairlyAttractBusiness in practiceOfLaw ) )
+   RETURN 1base(Business likely ( to unfairly_attract_business in practice of law ) )
 
   RULE    34.1.d                    -- syntax 3: "any" of a normal [,,,] list
-   RETURN 1base(Business involves ( any [ sharingFees with
-                                        , paymentOfCommission to
-                                        ] unauthorizedPerson
-                                    for (legalWork performed by LegalPractitioner ) ) )
+   RETURN 1base(Business involves ( any [ sharing_fees with
+                                        , (payment of commission to)
+                                        ] unauthorized_person
+                                    for (legal_work performed by LegalPractitioner ) ) )
 
   RULE    34.1.e
    RETURN 1base(FirstSchedule(Business))
@@ -85,13 +85,13 @@ We output to the model checking syntaxes shown in the [[https://github.com/smucc
   DEFINE  prohibitedByUsualSuspects
    SCOPE  SECTION 34
    HIDDEN true
-   RETURN prohibited (by = [ theAct
-                           , [ theseRules | subsidiaryLegislation ]
-                           , any [ practiceDirections , guidanceNotes U rulings ]
+   RETURN prohibited (by = [ the_Act
+                           , [ these_rules | subsidiary_legislation ]
+                           , any [ practice_directions , guidance_notes U rulings ]
                              issued (under = section 71.6 of Act)
-                           | any [ practiceDirections , guidanceNotes U rulings ]
-                             relating (to = [ professionalPractice, etiquette, conduct U discipline ])
-                             issued   (by = [ theCouncil | theSociety ] )
+                           | any [ practice_directions , guidance_notes U rulings ]
+                             relating (to = [ professional_practice, etiquette, conduct U discipline ])
+                             issued   (by = [ the_Council | the_Society ] )
                            ] )
 
 #+end_src
@@ -124,13 +124,92 @@ We use a different syntactic style here, where the entire paragraph is made a si
                 Acceptance as representative
                               (of SingaporeLawPractice1
                               ,in SingaporeLawPractice2)
-                -- arguably they forgot to break this out as a 34.2.c
-                AND NOT (Involvement (of MainP, in RelatedP)
-                         prohibitedByUsualSuspects)
+                  -- arguably they forgot to break this out as a 34.2.c
+                  AND NOT (Involvement (of MainP, in RelatedP)
+                           prohibitedByUsualSuspects)
               ]
 #+end_src         
 
-* Notes: Simplification
+* Language Notes
+
+** Prepositional Style and Infix Operators
+
+Gosh, prepositions are complicated. Here we'll try to do a sort of Rosetta Stone between representations of the same ideas in multiple languages.
+
+https://en.wikipedia.org/wiki/List_of_English_prepositions
+
+Let's say we follow Prolog tradition for a moment: variables are =Upper= and functions are =lower=.
+
+Suppose we have a simple clause that says, *if color is red, blue, or green*. Semantically, the clause is a Boolean predicate.
+- Python     :: color in     [ red, blue, green ]
+- Javascript :: [ red, blue, green ].indexOf(color) >= 0
+- Haskell    :: color `elem` [ red, blue, green ]
+- L4         :: color is     [ red, blue | green ] -- NLG produces "color is red, blue, or green"
+- L4         :: color is any [ red, blue U green ] -- NLG produces "color is any of red, blue, and green"
+- Prolog     :: member(   Color, [ red, blue, green ]).
+- Prolog     :: memberchk(Color, [ red, blue, green ]). (semidet)
+
+What do we do about more complex phrases? Let's consider a sentence which expresses a list -- a list of things, filtered through a couple of predicates:
+- English :: *any guidance notes relating to conduct issued by the Council*
+- GF      ::
+#+begin_src gf
+(AnyDet (NounVP (mkNoun "guidance note" Pl)
+                             (mkAdvP "relating" "to" (mkN "conduct"))
+                             (mkAdvP "issued"   "by" (theDet (mkN "Council")))))
+#+end_src
+- Python  :: [ x in guidanceNotes
+               if  "conduct" in x.relatingTo
+               and "Council" in x.issuedBy ]
+- Javascript :: guidanceNotes.filter(lambda x => 
+- Prolog :: gnRule(GN) :- relatesTo(GN, conduct), issuedBy(GN, theCouncil).
+- L4 :: any guidanceNotes relating to conduct issued by theCouncil
+
+Let's throw a couple more bits into the mix:
+
+- English :: *any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.*
+
+Here we have ambiguity -- does the "relating to" constraint attach to "rulings" only, or to all of "practice directions, guidance notes and rulings"? The nice thing about a formal syntax is that it saves us from even having to ask that question.
+
+- L4 ::
+#+begin_src sql
+      any [ practice_directions, guidance_notes U rulings ]
+          relating to [ professional_practice, etiquette, conduct U discipline ]
+          issued   by [ the_Council | the_Society ]
+#+end_src
+
+** Right Associativity and Transitive Prepositions
+
+Let's take an entity defined by its constraint:
+
+- English :: Business likely to unfairly attract business in practice of law
+- L4 :: business likely to unfairly_attract_business in practice of law
+
+Here's how the right-associativity binds:
+
+business (likely to (unfairly_attract_business in (practice of law)))
+
+Gosh, it looks like the prepositions here are binary infix operators:
+
+| left                      | binary preposition | right  | bound to term |
+|---------------------------+--------------------+--------+---------------|
+| practice                  | of                 | law    | pol           |
+| unfairly_attract_business | in                 | pol    | uabpol        |
+| likely                    | to                 | uabpol | l2uabpol      |
+
+So our algorithm looks for keyword prepositions; the stuff to the right is the complement; the word, clause, or array to the left of the preposition is the LHS.
+
+** Prepositional Groups: when do we use commas and parentheses?
+
+#+begin_quote
+Finally, a preposition that consists of two or more words is called a complex preposition.[10] It is a matter of debate as to whether these groups of words each function as a single preposition (the complex preposition analysis) or the initial preposition simply takes a complement that contains another preposition. Traditional grammars and some dictionaries take this complex preposition approach, but grammars informed by work in linguistics vary in how they address these groups of words.
+#+end_quote
+
+Suppose we have: =Business [ detracts from , is_incompatible with | derogates from ] dignity of legal_profession=
+
+
+
+                         
+** Notes: Simplification
 
 The compiler automatically expands, then refactors, 34.1 to simplify the expression to be readable, from
 

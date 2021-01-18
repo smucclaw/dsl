@@ -2,6 +2,8 @@
 
 In this case study, we formalize [[https://sso.agc.gov.sg/SL/LPA1966-S706-2015#pr34-][Section 34 of the Legal Profession (Professional Conduct) Rules 2015]].
 
+See also [[https://github.com/smucclaw/fv/blob/taboo/Experiments/ProfessionalConductRule34/][the FV repo experiment]]. At some point these will be merged.
+
 * Content
 
 We represent all of Section 34 in L4. L4 (as currently defined) may not suffice to accurately and idiomatically represent Section 34. This use case therefore motivates improvement of the L4 language.

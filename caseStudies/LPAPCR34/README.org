@@ -41,6 +41,69 @@ We output to the model checking syntaxes shown in the [[https://github.com/smucc
       3) any practice directions, guidance notes and rulings issued under section 71(6) of the Act; or
       4) any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct and discipline) issued by the Council or the Society.
 
+
+*** Let's talk commas!
+
+=any business which detracts from, is incompatible with, or derogates from the dignity of, the legal profession=
+
+Some style guides would argue that this comma is not strictly grammatical. Others would rebut that the last comma is necessary to disambiguate from
+
+=any business which detracts from, is incompatible with, or derogates from, the dignity of the legal profession=
+
+Before you read on: which makes more sense:
+A. "detract from the legal profession"
+B. "detract from the dignity of the legal profession"
+
+If you answered B, you agree with the wording of the Second Schedule:
+
+#+begin_quote
+1. The business of the business entity —
+(a) must not jeopardise the professional integrity, independence or competence of the legal practitioner; and
+(b) must not detract from the standing and dignity of the legal profession.
+#+end_quote
+
+Analysis follows.
+
+#+begin_example
+// 1. the original phrasing invites this interpretation:
+any business which - detracts from,
+                   - is incompatible with,
+                   or
+                   - derogates from the dignity of,
+                   the legal profession
+
+// 2. Without a comma, it could mean the same as above...
+any business which - detracts from,
+                   - is incompatible with,
+                     or
+                   - derogates from the dignity of
+                   the legal profession
+
+// 3. ... or it could bind "the dignity of" differently, as in:
+any business which - detracts from,
+                   - is incompatible with,
+                   or
+                   - derogates from
+                   the dignity of the legal profession
+
+// 4. though if this were the intended interpretation we might place the comma differently:
+any business which - detracts from,
+                   - is incompatible with,
+                   or
+                   - derogates from,
+                   the dignity of the legal profession
+
+// can we think of a situation where
+a business is compatible with the legal profession
+but is incompatible with the dignity of the legal profession
+?
+
+scenario: a lawyer wants to make an indie movie on the side because of his lifelong interest in film. In the film, lawyers are portrayed negatively, as undignified. The movie is inspired in part by "Better Call Saul"
+#+end_example
+
+
+*** In L4
+
 #+begin_src sql :noweb-ref section34
   SECTION 34.1
 
@@ -51,13 +114,37 @@ We output to the model checking syntaxes shown in the [[https://github.com/smucc
     WHERE ExecutiveAppointment associated with Business
       AND Predicate (Business, LegalPractitioner)
 
+   -- (expands to...)
+ 
+   DEFINE 34.1.a ISA DeonticRule
+    PARTY LegalPractitioner
+    SHANT accept(role = ExecutiveAppointment)
+    WHERE ExecutiveAppointment associated with Business
+      AND Business detracts from legal_profession
+
+   DEFINE 34.1.b ISA DeonticRule
+    PARTY LegalPractitioner
+    SHANT accept(role = ExecutiveAppointment)
+    WHERE ExecutiveAppointment associated with Business
+      AND Business materially_interferes ( with | primary_occupation
+                                                | service_availability
+                                                | client_representation
+                                                of LegalPractitioner ) )
+
   -- note the preposition combinators are right associative
 
   RULE    34.1.a         -- syntax alternative 1: "or-list" with commas; the preps are partially applied
    RETURN 1base(Business [ detracts from
-                         , is_incompatible with
-                         | derogates from ]
-                         dignity of legal_profession )
+                         | is_incompatible with         -- LHS to a preposition
+                         | derogates from dignity of ]  -- is a VPSlash
+                         legal_profession )             -- "complement" to a preposition
+
+   RETURN 1base(Business detracts from legal_profession )
+   RETURN 1base(Business [ detracts from , is_incompatible with ]
+                         [ legal_profession, financial_profession ] )
+
+
+                       -- Applicatives: [ a, b, c ] <*> pure legal_profession
 
   RULE    34.1.b                                -- syntax 2: experimental
    RETURN 1base(Business materially_interferes ( with | primary_occupation
@@ -73,6 +160,7 @@ We output to the model checking syntaxes shown in the [[https://github.com/smucc
                                         , (payment of commission to)
                                         ] unauthorized_person
                                     for (legal_work performed by LegalPractitioner ) ) )
+
 
   RULE    34.1.e
    RETURN 1base(FirstSchedule(Business))
@@ -117,18 +205,45 @@ We use a different syntactic style here, where the entire paragraph is made a si
         PARTY LegalPractitioner
           MAY accept (role = ExecutiveAppointment) in SingaporeLawPractice2 AS Acceptance
         WHERE [ :label:34.2.a
-                forall Owner2 in [ legal | beneficial ] Owner of SingaporeLawPractice2 {
-                  Owner2 is [ soleProprietor | [partner | director] ] of SingaporeLawPractice1
+                FORALL Owner2 in [ legal | beneficial ] Owner of SingaporeLawPractice2 {
+                  Owner2 is [ soleProprietor | partner | director ] of SingaporeLawPractice1
                 }
                 :label:34.2.b
                 Acceptance as representative
                               (of SingaporeLawPractice1
                               ,in SingaporeLawPractice2)
-                  -- arguably they forgot to break this out as a 34.2.c
+                  -- this is not a 34.2.c because it's a OR (b1 AND b2)
                   AND NOT (Involvement (of MainP, in RelatedP)
                            prohibitedByUsualSuspects)
               ]
 #+end_src         
+
+every legal or beneficial owner of the related practice is
+
+- the sole proprietor, or a partner or director, of the main practice;
+- the sole proprietor, a partner, or a director of the main practice;
+
+BUT NOT
+
+- the sole proprietor, partner, or director of the main practice;
+  (implies there is only one partner / director)
+
+- the sole proprietor, a partner, or director of the main practice;
+  (ungrammatical, "director" violates parallel structure)
+
+- "is a sole proprietor, partner, or director of the main practice"
+
+** Section 3
+
+** Section 4
+
+** Section 5
+
+*** Let's talk types!
+
+There is synecdoche going on here -- 34.1.b is a predicate constraining businesses, but 34.5 casts it to a deontic deny, implicitly including the context of the introductory text of 34.1 above in the "parent".
+
+** Section 6
 
 * Language Notes
 
@@ -140,14 +255,25 @@ https://en.wikipedia.org/wiki/List_of_English_prepositions
 
 Let's say we follow Prolog tradition for a moment: variables are =Upper= and functions are =lower=.
 
-Suppose we have a simple clause that says, *if color is red, blue, or green*. Semantically, the clause is a Boolean predicate.
-- Python     :: color in     [ red, blue, green ]
-- Javascript :: [ red, blue, green ].indexOf(color) >= 0
-- Haskell    :: color `elem` [ red, blue, green ]
-- L4         :: color is     [ red, blue | green ] -- NLG produces "color is red, blue, or green"
-- L4         :: color is any [ red, blue U green ] -- NLG produces "color is any of red, blue, and green"
-- Prolog     :: member(   Color, [ red, blue, green ]).
-- Prolog     :: memberchk(Color, [ red, blue, green ]). (semidet)
+Color = { red, green, blue }
+val red   = "red"
+val green = "green"
+val blue  = "blue"
+
+val potatoColor : Color = green
+
+Suppose we have a simple clause that says, *if potatoColor is red, blue, or green*. Semantically, the clause is a Boolean predicate.
+- Python     :: potatoColor in     [ red, blue, green ]
+- Javascript :: [ red, blue, green ].indexOf(potatoColor) >= 0
+- Haskell    :: potatoColor `elem` [ red, blue, green ]
+- Prolog     :: member(   PotatoColor, [ red, blue, green ]).
+- Prolog     :: memberchk(PotatoColor, [ red, blue, green ]).      (semidet)
+- L4         :: potatoColor is     [ red, blue | green ] -- NLG produces "potatoColor is red, blue, or green"
+- L4         :: potatoColor is any [ red, blue U green ] -- NLG produces "potatoColor is any of red, blue, and green"
+
+potato.color is [red, blue | green]
+
+potato is [yellow, cooked & salted]
 
 What do we do about more complex phrases? Let's consider a sentence which expresses a list -- a list of things, filtered through a couple of predicates:
 - English :: *any guidance notes relating to conduct issued by the Council*
@@ -160,9 +286,9 @@ What do we do about more complex phrases? Let's consider a sentence which expres
 - Python  :: [ x in guidanceNotes
                if  "conduct" in x.relatingTo
                and "Council" in x.issuedBy ]
-- Javascript :: guidanceNotes.filter(lambda x => 
+- Javascript :: guidanceNotes.filter(lambda x => ...)
 - Prolog :: gnRule(GN) :- relatesTo(GN, conduct), issuedBy(GN, theCouncil).
-- L4 :: any guidanceNotes relating to conduct issued by theCouncil
+- L4 :: (any guidanceNotes (relating TO conduct (issued BY theCouncil)))
 
 Let's throw a couple more bits into the mix:
 
@@ -170,11 +296,25 @@ Let's throw a couple more bits into the mix:
 
 Here we have ambiguity -- does the "relating to" constraint attach to "rulings" only, or to all of "practice directions, guidance notes and rulings"? The nice thing about a formal syntax is that it saves us from even having to ask that question.
 
-- L4 ::
+- L4 :: wrong:
+#+begin_src sql
+      any [ practice_directions, guidance_notes U rulings ]
+          relating to ( [ professional_practice, etiquette, conduct U discipline ]
+                        issued   by [ the_Council | the_Society ] )
+#+end_src
+
+- L4 :: right:
 #+begin_src sql
       any [ practice_directions, guidance_notes U rulings ]
           relating to [ professional_practice, etiquette, conduct U discipline ]
           issued   by [ the_Council | the_Society ]
+#+end_src
+
+#+begin_src haskell
+  [ thing <- [ x, y, z ]
+  | thing `relatingTo` [...]
+  , thing `issuedBy`   [...]
+  ]
 #+end_src
 
 ** Right Associativity and Transitive Prepositions
@@ -186,7 +326,11 @@ Let's take an entity defined by its constraint:
 
 Here's how the right-associativity binds:
 
-business (likely to (unfairly_attract_business in (practice of law)))
+                                                   N2?
+                                                   VPSlash  PrepOf Comp
+                     VPSlash               PrepIn (Comp               )
+          VPSlash PrepTo  (Comp                                        )
+business (likely to (unfairly_attract_business in (practice of     law)))
 
 Gosh, it looks like the prepositions here are binary infix operators:
 
@@ -214,15 +358,20 @@ Suppose we have: =Business [ detracts from , is_incompatible with | derogates fr
 The compiler automatically expands, then refactors, 34.1 to simplify the expression to be readable, from
 
 #+begin_example
-any:
+step 1:
+  - base = a b c(...)
+  - base(1 2)
+  - base(3 4)
+  - base(5 6)
+  - base(7 8)
+
+step 2:
   - a b c 1 2
   - a b c 3 4
   - a b c 5 6
   - a b c 7 8
-#+end_example
 
-to
-#+begin_example
+step 3:
 - a b c (any [1 2, 3 4, 5 6, 7 8])
 #+end_example
 

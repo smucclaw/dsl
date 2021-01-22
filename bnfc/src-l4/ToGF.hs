@@ -219,7 +219,8 @@ pattern OaStrs str <- (unwords . map oa2str -> str)
 ue2oa :: UnifyElem -> ObjAttrElem
 ue2oa (UnifyElemObjAttrElem oa) = oa
 ue2oa UnifyElem1 = ObjAttrElemIdent (Ident "it") -- TODO: anaphora in the grammar?
-ue2oa x = error $ "ue2oa: expected ObjAttr, got " ++ show x
+ue2oa _ = ObjAttrElemIdent (Ident "<not supported yet>")
+-- ue2oa x = error $ "ue2oa: expected ObjAttr, got " ++ show x
 
 pattern UE :: String -> UnifyElem
 pattern UE str <- (oa2str . ue2oa -> str)
@@ -268,7 +269,7 @@ uexp2kind (GenitiveExp item species) = do
   spec <- uexp2kind $ Single species -- TODO: make string literals available at any stage?
   return $ GComplKind spec (exp2term GTheSg $ Single item)
 uexp2kind _ = Nothing
-uexp2kind x = error $ "uexp2kind: Not yet supported: " ++ show x
+-- uexp2kind x = error $ "uexp2kind: Not yet supported: " ++ show x
 
 uexp2term :: GDeterminer -> Exp -> GTerm
 uexp2term det exp@(UnifyNoArgs xs) =

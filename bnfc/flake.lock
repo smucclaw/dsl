@@ -45,11 +45,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1611211961,
-        "narHash": "sha256-nSuHw5tRAp26wqfdPfW2T2P6DEArnC1olRHp1/UMDGI=",
+        "lastModified": 1611295601,
+        "narHash": "sha256-ipTl9FaRRjQqFGMgRqPAUzT/TOZx7CFg5pmH1r/JCcs=",
         "owner": "anka-213",
         "repo": "cclaw-nix-stuff",
-        "rev": "03b4423b3e498bcba2f79969fd0ef9b215424465",
+        "rev": "826d3ef3682a8cd6366b90d0603596e9b8df4dfe",
         "type": "github"
       },
       "original": {
@@ -79,11 +79,11 @@
     "gf-wordnet": {
       "flake": false,
       "locked": {
-        "lastModified": 1603879166,
-        "narHash": "sha256-iNP3TUWWVPBzAlZEBgKHlLC/pvl456l2GqZ4nyn4zOw=",
+        "lastModified": 1611164100,
+        "narHash": "sha256-8mrbWXuirmtIIuGPiVBAxbEe+y3Mhbt3HQP22KJw1Vc=",
         "owner": "GrammaticalFramework",
         "repo": "gf-wordnet",
-        "rev": "fa50c397877b273edd31d4e7af7bf8cfa41bf759",
+        "rev": "51a04ad2e8b27ea07772314243624b523bb9c8f1",
         "type": "github"
       },
       "original": {

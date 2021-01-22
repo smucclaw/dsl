@@ -204,11 +204,11 @@ We use a different syntactic style here, where the entire paragraph is made a si
               SingaporeLawPractice2 :en:"the related practice" AS RelatedP
         PARTY LegalPractitioner
           MAY accept (role = ExecutiveAppointment) in SingaporeLawPractice2 AS Acceptance
-        WHERE [ :label:34.2.a
+         WHEN [ :label:34.2.a
                 FORALL Owner2 in [ legal | beneficial ] Owner of SingaporeLawPractice2 {
                   Owner2 is [ soleProprietor | partner | director ] of SingaporeLawPractice1
                 }
-                :label:34.2.b
+              | :label:34.2.b
                 Acceptance as representative
                               (of SingaporeLawPractice1
                               ,in SingaporeLawPractice2)

@@ -4,29 +4,36 @@ This is a bnfc-based parser for the draft L4 language.
 
 * INSTALLATION
 
-Compile and install BNFC from git source, not from package:
+The primary method of getting the l4 compiler on your system right now, requires having the ~nix~ package manager installed on your system. We utilize ~direnv~ to handle the pre-requisite BNFC installation automatically so that there is no need to compile from source.
+
+
+Install direnv using nix-env:
 
 #+begin_src shell
-git clone https://github.com/BNFC/bnfc
+nix-env -i direnv
 #+end_src
 
-In the ~smucclaw/dsl/bnfc/~ directory, run
+Once installation is complete, you will need to hook direnv into your shell of choice (bash/zsh/fish/etc). Follow the instructions here: https://direnv.net/docs/hook.html
 
-#+begin_src shell
-stack install
-#+end_src
+Once the installation is complete, cd into the ~smucclaw/dsl/bnfc directory. There will be a message popup that warns you about the blocking of a .envrc file. Follow the instructions given within the message to unblock it.
 
-to get the ~l4~ and ~showbug~ executables in your ~/.local/bin/ directory.
+Once unblocked, direnv will construct a local environment based upon the contents of the .envrc file. There will be some time needed for it to set up, so brew yourself your beverage of choice and come back in a bit. 
 
-Please check that ~/.local/bin is in your shell path:
+Once complete, run the following to get the ~l4~ and ~showbug~ executables.
 
 #+begin_example
-┌─[mengwong@venice4] - [~] - [2020-10-14 03:04:57]
-└─[0] <> echo $path
-/Users/mengwong/.cabal/bin /Users/mengwong/.ghcup/bin /Users/mengwong/.local/bin /usr/local/bin /usr/local/sbin /opt/local/bin /opt/local/sbin /Developer/usr/bin /usr/local/opt/tcl-tk/bin /usr/bin /bin /usr/sbin /sbin /Users/mengwong/bin /Users/mengwong/.cabal/bin /Library/TeX/texbin /Users/mengwong/.pyenv/bin /Users/mengwong/perl5/bin /Users/mengwong/go/bin /usr/local/opt/llvm/bin /Users/mengwong/Library/Python/3.7/bin
+nix-shell --run make
 #+end_example
 
+After which, you should see an output that is the same as listed below in "Running the test4.14".
+
+
+The ~l4~ and ~showbug~ executables will only be available through the nix-shell. See the Makefile for more details.
+
+* Why is there a showbug executable?
+
 The ~showbug~ executable is used to make bnfc's error messages a little bit more readable, converting "syntax error at line M, column N" to show the actual source of the error.
+
 
 * Running
 

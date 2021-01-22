@@ -15,9 +15,7 @@ nix-env -i direnv
 
 Once installation is complete, you will need to hook direnv into your shell of choice (bash/zsh/fish/etc). Follow the instructions here: https://direnv.net/docs/hook.html
 
-Once the installation is complete, cd into the ~smucclaw/dsl/bnfc directory. There will be a message popup that warns you about the blocking of a .envrc file. Follow the instructions given within the message to unblock it.
-
-Once unblocked, direnv will construct a local environment based upon the contents of the .envrc file. There will be some time needed for it to set up, so brew yourself your beverage of choice and come back in a bit. 
+After you've done that, cd into the ~smucclaw/dsl/bnfc directory. There will be a message popup that warns you about the blocking of a .envrc file. Follow the instructions given within the message to unblock it. direnv will then construct a local environment based upon the contents of the .envrc file. There will be some time needed for it to set up, so brew yourself your beverage of choice and come back in a bit. 
 
 Once complete, run the following to get the ~l4~ and ~showbug~ executables.
 

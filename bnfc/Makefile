@@ -31,6 +31,6 @@ l4/test1.l4 l4.bnfc : ../README.org
 
 pngs: ../graphviz/cabbage.png ../graphviz/pawnStates.png ../graphviz/knightStates.png
 
-.PHONY: clean all subdirs
+.PHONY: clean all test subdirs
 clean :
 	rm out/* src-bnfc/* l4/* prolog/*

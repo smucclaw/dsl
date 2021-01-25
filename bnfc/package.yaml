@@ -29,6 +29,7 @@ dependencies:
 - graphviz
 - split
 - gf
+- optparse-simple
 
 ghc-options:
 - -Wall

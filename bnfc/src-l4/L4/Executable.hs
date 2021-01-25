@@ -5,6 +5,7 @@ module L4.Executable where
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
+import Options.Applicative.Simple
 
 import Text.Pretty.Simple
 import qualified Data.Text.Lazy as T
@@ -95,12 +96,55 @@ usage = do
     ]
   exitFailure
 
+
+data InputOpts = InputOpts 
+  { all       :: Bool
+  , dot       :: Bool
+  , ast       :: Bool
+  , gfOut     :: String
+  , silent    :: Bool
+  , stdin     :: String
+  } deriving Show
+
 main :: IO ()
-main = do
-  args <- getArgs
-  gr <- readPGF "src-l4/Top.pgf"
-  case args of
-    ["--help"] -> usage
-    [] -> getContents >>= run 2 gr pTops
-    "-s":fs -> mapM_ (runFile 0 gr pTops) fs
-    fs -> mapM_ (runFile 2 gr pTops) fs
+main = do 
+  (opts, ()) <- simpleOptions "VERSION x.xx.x"
+                              "l4 - a parser for the l4 language"
+                              "\n\nThis is a sample description"
+                              optsParse
+                              empty
+                              
+  doThings opts
+
+optsParse :: Parser InputOpts
+optsParse = InputOpts <$>
+      switch 
+        ( long "all"
+       <> short 'a'
+       <> help "Generates all possible output formats (except natLang)" )
+  <*> switch 
+        ( long "dot"
+       <> help "Enables graphviz DOT language output" )
+  <*> switch
+        ( long "ast"
+       <> help "Enables AST output" )
+  <*> strOption 
+        ( long "gf" 
+       <> help "Generates NLG output in chosen lanugage" 
+       <> metavar "<language>" )
+  <*> switch
+        ( long "silent"
+       <> short 's'
+       <> help "Enables silent output" )
+  <*> argument str (metavar "<stdin>")
+
+doThings = print
+--main :: IO ()
+--main = do
+  --args <- getArgs
+  --gr <- readPGF "src-l4/Top.pgf"
+  --case args of
+    --["--help"] -> usage
+    --[] -> getContents >>= run 2 gr pTops
+    --"-s":fs -> mapM_ (runFile 0 gr pTops) fs
+    --fs -> mapM_ (runFile 2 gr pTops) fs

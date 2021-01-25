@@ -10,7 +10,7 @@ The primary method of getting the l4 compiler on your system right now, requires
 Install direnv using nix-env:
 
 #+begin_src shell
-nix-env -i direnv
+nix-env -iA direnv
 #+end_src
 
 Once installation is complete, you will need to hook direnv into your shell of choice (bash/zsh/fish/etc). Follow the instructions here: https://direnv.net/docs/hook.html

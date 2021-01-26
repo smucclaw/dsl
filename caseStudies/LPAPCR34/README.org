@@ -102,9 +102,9 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 #+end_example
 
 
-*** In L4
+*** In L4, First Try
 
-#+begin_src sql :noweb-ref section34
+#+begin_src sql :noweb-ref section34-try1
   SECTION 34.1
 
    DEFINE 1base ISA DeonticRule
@@ -184,6 +184,146 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
 #+end_src
 
+*** Second Try, all in one giant block
+
+**** As L4
+#+begin_src text :tangle test/section34-1.l4
+  SECTION 34.1 :en:"Thirty Four, Part One"
+
+     RULE 34.1.a ISA DeonticRule
+    PARTY LegalPractitioner
+    SHANT accept(Executive_appointment)
+     WHEN associatedWith(Executive_appointment, Business)
+      AND any [ Business [ detracts_from
+                         , is_incompatible_with
+                         | derogates_from ] the_dignity_of the_legal_profession
+              , Business materially_interferes_with [ LegalPractitioner's primary_occupation_of_practising_as_a_lawyer
+                                                    , availability_to those_who may_seek LegalPractitioner's services_as_a_lawyer
+                                                    | the_representation_of LegalPractitioner's clients ]
+              , Business is_likely_to unfairly attract_business_in the_practice_of_law
+              , Business involves [ the_sharing_of LegalPractitioner's fees with
+                                  | the_payment_of a_commission to ]
+                                  (any unauthorised_person)
+                                  for (legal_work performed_by LegalPractitioner)
+              , Business is in FirstSchedule
+              , Business is prohibited_by [ the_Act
+                                          , [ these_Rules
+                                            | any_other_subsidiary_legislation
+                                              made_under the_Act ]
+                                          , any [ practice_directions
+                                                , guidance_notes
+                                                U rulings ]
+                                            issued_under section_71(6)_of the_Act
+                                          | any [ practice_directions
+                                                , guidance_notes
+                                                U rulings ]
+                                            relating_to [ professional_practice
+                                                        , etiquette
+                                                        , conduct
+                                                        & discipline ]
+                                            issued_by [ the_Council | the_Society ]
+                                          ]
+              ]
+#+end_src
+
+**** Our front-end uses a few simple types
+
+#+begin_src haskell :noweb-ref 34-types
+  data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
+    deriving (Show, Eq)
+
+  data TermExpr = TEString NLStr               -- ideally spaceless but can contain spaces
+                | TEList Conj [TermExpr]       -- any [foo,bar]   [foo, bar | baz]   [foo & bar]
+                | TECompound TermExpr TermExpr -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
+                | TEPrep NLStr                 -- "to" "for" "with" "of" "from" "by"
+                | TE2 TermExpr BinOp TermExpr  -- foo + bar, foo = bar
+    deriving (Show, Eq)
+
+  type NLTag = (String,String)
+  data NLStr = NL { ex :: String, tags :: [NLTag] } deriving (Show, Eq)
+  data BinOp = Plus | Minus | Times | Divide | Pow | Tilde deriving (Show, Eq)
+
+  data Stm = Section          NLStr
+           | DeonticRule      NLStr
+           | ConstitutiveRule NLStr deriving (Show, Eq)
+
+#+end_src
+
+**** The Parser
+#+begin_src haskell :noweb-ref 34-parser
+  parseL4 :: Parser [Stm]
+  parseL4 = do
+    stm <- parseStm
+    rhs <- parseL4
+    eof
+    return (stm : rhs)
+
+  parseStm :: Parser Stm
+  parseStm = do
+    many newline
+    stm <- choice [ try (Section <$> (lexeme "SECTION" *> parseNLStr)) ]
+    return stm
+
+  parseNLStr :: Parser NLStr
+  parseNLStr = do
+    exPart    <- lexeme $ some alphaNumChar
+    tagsPart  <- many parseTag
+    return $ NL exPart tagsPart
+
+  parseTag :: Parser NLTag
+  parseTag = do
+    lhs <- between (char ':') (char ':') (some alphaNumChar)
+    rhs <- stringLiteral
+    return (lhs, rhs)
+#+end_src
+
+**** A simple app calls the parser and prints the AST
+
+#+begin_src haskell :noweb-ref 34-app
+  someFunc :: IO ()
+  someFunc = do
+    myinput <- getContents
+    let ast = case parse parseL4 "parsing L4 toplevel" (pack myinput) of
+                Left  someError  -> error $ errorBundlePretty someError
+                Right rhs -> rhs
+    -- print ast
+    print ast
+#+end_src
+
+**** Haskell Infrastructure
+
+#+begin_src haskell parse-341 :noweb yes :tangle src/Lib.hs
+
+  {-# LANGUAGE OverloadedStrings #-}
+  {-# LANGUAGE ScopedTypeVariables #-}
+
+  module Lib where
+
+  import Text.Megaparsec
+  import Text.Megaparsec.Char
+  import qualified Text.Megaparsec.Char.Lexer as L
+  import Data.Text (Text, pack, unpack)
+  import Data.Void
+  import Data.List (nub, permutations, sort, sortOn, intercalate)
+  import Data.Char (toLower)
+  import Control.Monad (forM_)
+  import qualified Text.PrettyPrint.Boxes as Bx
+  type Parser = Parsec Void Text
+
+  sc :: Parser ()
+  sc = L.space space1 (L.skipLineComment "//") (L.skipBlockComment "/*" "*/")
+
+  lexeme :: Parser a -> Parser a
+  lexeme = L.lexeme sc
+
+  stringLiteral = char '"' >> manyTill L.charLiteral (char '"')
+  
+  <<34-types>>
+  <<34-parser>>
+  <<34-app>>
+
+#+end_src
+
 ** Section 2
 
 2) Subject to paragraph (1), a legal practitioner in a Singapore law practice (called in this paragraph the main practice) may accept an executive appointment in another Singapore law practice (called in this paragraph the related practice), if the related practice is connected to the main practice in either of the following ways:
@@ -234,6 +374,8 @@ BUT NOT
 - "is a sole proprietor, partner, or director of the main practice"
 
 ** Section 3
+
+3) Subject to paragraph (1), a legal practitioner may accept an executive appointment in a business entity which provides law-related services.
 
 ** Section 4
 
@@ -511,5 +653,6 @@ LAW-RELATED SERVICES
 6. Any administrative, management, property or other service provided exclusively to a law practice or to a business entity referred to in rule 34(3), (4) or (5)
 7. Any forensic investigation, document management or discovery service, or any other service relating to litigation support
 8. Any voluntary liquidation service
+
 
 

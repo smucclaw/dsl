@@ -21,6 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/meng
 
 dependencies:
 - base >= 4.7 && < 5
+- megaparsec
+- containers
+- text
+- boxes
 
 library:
   source-dirs: src

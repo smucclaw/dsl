@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c2bc6551797bf6a86a908c15b4acb28c0786d23d295362072d31650795809ee9
+-- hash: 086433a10eb18779cf9020c8cfa1252f249ed6030b01bd423b2c60caca4a254e
 
 name:           LPAPCR34
 version:        0.1.0.0
@@ -18,7 +18,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
+    README.org
     ChangeLog.md
 
 source-repository head
@@ -34,6 +34,10 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , boxes
+    , containers
+    , megaparsec
+    , text
   default-language: Haskell2010
 
 executable LPAPCR34-exe
@@ -46,6 +50,10 @@ executable LPAPCR34-exe
   build-depends:
       LPAPCR34
     , base >=4.7 && <5
+    , boxes
+    , containers
+    , megaparsec
+    , text
   default-language: Haskell2010
 
 test-suite LPAPCR34-test
@@ -59,4 +67,8 @@ test-suite LPAPCR34-test
   build-depends:
       LPAPCR34
     , base >=4.7 && <5
+    , boxes
+    , containers
+    , megaparsec
+    , text
   default-language: Haskell2010

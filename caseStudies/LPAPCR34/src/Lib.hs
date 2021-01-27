@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Lib where
 
@@ -27,9 +28,9 @@ data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
 
 data TermExpr = TEString NLStr               -- ideally spaceless but can contain spaces
               | TEList Conj [TermExpr]       -- any [foo,bar]   [foo, bar | baz]   [foo & bar]
-              | TECompound TermExpr TermExpr -- foo(bar, baz)
+              | TECompound TermExpr TermExpr -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
               | TEPrep NLStr                 -- "to" "for" "with" "of" "from" "by"
-              | TE2 TermExpr BinOp TermExpr  -- foo + bar
+              | TE2 TermExpr BinOp TermExpr  -- foo + bar, foo = bar
   deriving (Show, Eq)
 
 type NLTag = (String,String)
@@ -37,9 +38,24 @@ data NLStr = NL { ex :: String, tags :: [NLTag] } deriving (Show, Eq)
 data BinOp = Plus | Minus | Times | Divide | Pow | Tilde deriving (Show, Eq)
 
 data Stm = Section          NLStr
-         | DeonticRule      NLStr
-         | ConstitutiveRule NLStr deriving (Show, Eq)
+         | DeonticRule      NLStr DRuleBody
+         | ConstitutiveRule NLStr CRuleBody deriving (Show, Eq)
 
+data Deontic = DMust | DMay | DShant deriving (Show, Eq)
+
+data DRuleBody = DRule { party  :: NLStr
+                       , dmodal :: Deontic
+                       , action :: TermExpr
+                       , when   :: Maybe TermExpr
+                       } deriving (Show, Eq)
+  -- no hence, no lest
+
+data CRuleBody = CRule { item :: NLStr
+                       , body :: TermExpr
+                       , when :: Maybe TermExpr
+                       } deriving (Show, Eq)
+
+-- an L4 document is a list of stanzas
 parseL4 :: Parser [Stm]
 parseL4 = do
   stm <- parseStm
@@ -47,23 +63,55 @@ parseL4 = do
   eof
   return (stm : rhs)
 
+-- a stanza
 parseStm :: Parser Stm
 parseStm = do
   many newline
-  stm <- choice [ try (Section <$> (lexeme "SECTION" *> parseNLStr)) ]
+  stm <- choice [ try (Section          <$> (lexeme "SECTION" *> parseNLStr))
+                , try parseDeonticRule
+                , try parseConstitutiveRule
+                ]
   return stm
 
+-- RULE PARTY X MUST Y
+parseDeonticRule :: Parser Stm
+parseDeonticRule = do
+  ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "DeonticRule" <* some newline
+  party    <- space *> lexeme "PARTY"   *> parseNLStr <*                                         some newline
+  dmodal   <- space *> lexeme (DMust  <$ "MUST" <|>
+                               DMay   <$ "MAY"  <|>
+                               DShant <$ "SHANT")
+  action   <-          lexeme parseTermExpr <* some newline
+  when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr) <|> (Nothing <$ empty)
+  return (DeonticRule ruleName (DRule party dmodal action when))
+
+-- DEFINE X IS BLAH
+parseConstitutiveRule :: Parser Stm
+parseConstitutiveRule = do
+  ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "ConstitutiveRule" <* some newline
+  item     <- space *> lexeme "DEFINE"  *> parseNLStr <*                                         some newline
+  body     <-          lexeme parseTermExpr <* some newline
+  when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr ) <|> (Nothing <$ empty)
+  return (DeonticRule ruleName (DRule party dmodal action when))
+
+-- SomeString :en:"Some String"
 parseNLStr :: Parser NLStr
 parseNLStr = do
-  exPart    <- lexeme $ some alphaNumChar
-  tagsPart  <- many parseTag
+  exPart    <- lexeme $ some (alphaNumChar <|> char '.')
+  tagsPart  <- many (lexeme parseTag)
   return $ NL exPart tagsPart
 
+-- :en:"Some String"
 parseTag :: Parser NLTag
 parseTag = do
   lhs <- between (char ':') (char ':') (some alphaNumChar)
   rhs <- stringLiteral
   return (lhs, rhs)
+
+-- sooner or later we will need to think about https://github.com/glebec/left-recursion
+parseTermExpr :: Parser TermExpr
+parseTermExpr = return $ TEString (NL "burf" [])
+
 someFunc :: IO ()
 someFunc = do
   myinput <- getContents

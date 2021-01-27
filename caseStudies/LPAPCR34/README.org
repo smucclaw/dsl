@@ -244,13 +244,28 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
   data BinOp = Plus | Minus | Times | Divide | Pow | Tilde deriving (Show, Eq)
 
   data Stm = Section          NLStr
-           | DeonticRule      NLStr
-           | ConstitutiveRule NLStr deriving (Show, Eq)
+           | DeonticRule      NLStr DRuleBody
+           | ConstitutiveRule NLStr CRuleBody deriving (Show, Eq)
+
+  data Deontic = DMust | DMay | DShant deriving (Show, Eq)
+
+  data DRuleBody = DRule { party  :: NLStr
+                         , dmodal :: Deontic
+                         , action :: TermExpr
+                         , when   :: Maybe TermExpr
+                         } deriving (Show, Eq)
+    -- no hence, no lest
+
+  data CRuleBody = CRule { item :: NLStr
+                         , body :: TermExpr
+                         , when :: Maybe TermExpr
+                         } deriving (Show, Eq)
 
 #+end_src
 
 **** The Parser
 #+begin_src haskell :noweb-ref 34-parser
+  -- an L4 document is a list of stanzas
   parseL4 :: Parser [Stm]
   parseL4 = do
     stm <- parseStm
@@ -258,23 +273,55 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
     eof
     return (stm : rhs)
 
+  -- a stanza
   parseStm :: Parser Stm
   parseStm = do
     many newline
-    stm <- choice [ try (Section <$> (lexeme "SECTION" *> parseNLStr)) ]
+    stm <- choice [ try (Section          <$> (lexeme "SECTION" *> parseNLStr))
+                  , try parseDeonticRule
+                  , try parseConstitutiveRule
+                  ]
     return stm
 
+  -- RULE PARTY X MUST Y
+  parseDeonticRule :: Parser Stm
+  parseDeonticRule = do
+    ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "DeonticRule" <* some newline
+    party    <- space *> lexeme "PARTY"   *> parseNLStr <*                                         some newline
+    dmodal   <- space *> lexeme (DMust  <$ "MUST" <|>
+                                 DMay   <$ "MAY"  <|>
+                                 DShant <$ "SHANT")
+    action   <-          lexeme parseTermExpr <* some newline
+    when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr) <|> (Nothing <$ empty)
+    return (DeonticRule ruleName (DRule party dmodal action when))
+
+  -- DEFINE X IS BLAH
+  parseConstitutiveRule :: Parser Stm
+  parseConstitutiveRule = do
+    ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "ConstitutiveRule" <* some newline
+    item     <- space *> lexeme "DEFINE"  *> parseNLStr <*                                         some newline
+    body     <-          lexeme parseTermExpr <* some newline
+    when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr ) <|> (Nothing <$ empty)
+    return (DeonticRule ruleName (DRule party dmodal action when))
+
+  -- SomeString :en:"Some String"
   parseNLStr :: Parser NLStr
   parseNLStr = do
-    exPart    <- lexeme $ some alphaNumChar
-    tagsPart  <- many parseTag
+    exPart    <- lexeme $ some (alphaNumChar <|> char '.')
+    tagsPart  <- many (lexeme parseTag)
     return $ NL exPart tagsPart
 
+  -- :en:"Some String"
   parseTag :: Parser NLTag
   parseTag = do
     lhs <- between (char ':') (char ':') (some alphaNumChar)
     rhs <- stringLiteral
     return (lhs, rhs)
+
+  -- sooner or later we will need to think about https://github.com/glebec/left-recursion
+  parseTermExpr :: Parser TermExpr
+  parseTermExpr = return $ TEString (NL "burf" [])
+    
 #+end_src
 
 **** A simple app calls the parser and prints the AST
@@ -296,6 +343,7 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
   {-# LANGUAGE OverloadedStrings #-}
   {-# LANGUAGE ScopedTypeVariables #-}
+  {-# LANGUAGE DuplicateRecordFields #-}
 
   module Lib where
 
@@ -317,7 +365,7 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
   lexeme = L.lexeme sc
 
   stringLiteral = char '"' >> manyTill L.charLiteral (char '"')
-  
+
   <<34-types>>
   <<34-parser>>
   <<34-app>>

@@ -25,6 +25,7 @@ dependencies:
 - containers
 - text
 - boxes
+- pretty-simple
 
 library:
   source-dirs: src

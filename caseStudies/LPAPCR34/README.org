@@ -232,38 +232,156 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
   data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
     deriving (Show, Eq)
 
-  data TermExpr = TEString NLStr               -- ideally spaceless but can contain spaces
-                | TEList Conj [TermExpr]       -- any [foo,bar]   [foo, bar | baz]   [foo & bar]
-                | TECompound TermExpr TermExpr -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
-                | TEPrep NLStr                 -- "to" "for" "with" "of" "from" "by"
-                | TE2 TermExpr BinOp TermExpr  -- foo + bar, foo = bar
+  data TermExpr = NL String [NLTag]            -- "potato" `TENL` "Solanum tuberosum"
+                | TKey Key                     -- "potato"
+                | All [TermExpr]               -- and
+                | Any [TermExpr]               -- or
+                | And [TermExpr]               -- set union
+                | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
+                | Cons TermExpr TermExpr
+                | BinOp TermExpr TermExpr TermExpr -- ace "of" bass
     deriving (Show, Eq)
 
-  type NLTag = (String,String)
-  data NLStr = NL { ex :: String, tags :: [NLTag] } deriving (Show, Eq)
-  data BinOp = Plus | Minus | Times | Divide | Pow | Tilde deriving (Show, Eq)
+  type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
+  type NLTag = (Key,String)
 
-  data Stm = Section          NLStr
-           | DeonticRule      NLStr DRuleBody
-           | ConstitutiveRule NLStr CRuleBody deriving (Show, Eq)
+  data Stm = Section TermExpr -- first TermExpr should always be an NL
+           | DRule { rulename :: TermExpr
+                   , party  :: TermExpr
+                   , dmodal :: Deontic
+                   , action :: TermExpr
+                   , when   :: Maybe TermExpr
+                   }
+           | CRule { rulename :: TermExpr
+                   , item :: TermExpr
+                   , body :: TermExpr
+                   , when :: Maybe TermExpr
+                   }
+    deriving (Show, Eq)
 
   data Deontic = DMust | DMay | DShant deriving (Show, Eq)
 
-  data DRuleBody = DRule { party  :: NLStr
-                         , dmodal :: Deontic
-                         , action :: TermExpr
-                         , when   :: Maybe TermExpr
-                         } deriving (Show, Eq)
-    -- no hence, no lest
+#+end_src
 
-  data CRuleBody = CRule { item :: NLStr
-                         , body :: TermExpr
-                         , when :: Maybe TermExpr
-                         } deriving (Show, Eq)
+**** As Raw Haskell
+
+Given only those types, and the structure above, we construct an AST. Subsequently we will write a parser that turns the L4 syntax into this AST. For now we take the eDSL approach with a bit of syntactic sugar, and write the AST from scratch.
+
+#+begin_src haskell :noweb-ref 34-haskell
+
+    section34 :: [Stm]
+    section34 = [ (§) ("34" 💬 "Thirty Four, part One")
+                , section34_1 ]
+
+    section34_1 :: Stm
+    section34_1 = (§§) ("34.1" 💬 "Prohibitions")
+                       ("LP" 💬 "Legal Practitioner")
+                       mustNot
+                       (en_ "accept" ⏩ ["ExecA" 💬 "Executive Appointment"])
+                       (Just (All [ "ExecA" 👉 ("assocWith" 💬 "associated with") $ (en_ "Business")
+                                  , Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)
+                                                             , ("incompat" 💬 "is incompatible" `_with`)
+                                                             , (en_ "derogates" `_from`)
+                                                             ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")
+                                        , "Business" 👉 (en_ "materially interferes with") $
+                                          Any [ "LP" `_'s` ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
+                                              , "LP" `_'s` en_ "availability to those who may seek" `cons` "LP" `_'s` en_ "services as a lawyer"
+                                              , en_ "representation" `of_` "LP" `_'s` en_ "clients" ]
+                                        , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business in the practice of law")
+                                        , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "the practice of law")
+                                        , "Business" 👉 (en_ "involves")     $ (en_ "sharing") `of_` "LP" `_'s` en_ "fees" `with_` (Any [ (en_ "payment" `of_` en_ "commission" `_to`)
+                                                                                                                                        , Any [ en_ "unauthorised person" `for_` en_ "legal work performed" `by_` (TKey "LP") ]
+                                                                                                                                        ])
+                                        , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
+                                        , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
+                                          Any [ en_ "Act"
+                                              , Any [ en_ "these Rules"
+                                                    , en_ "any other subsidiary legislation made under the Act" ]
+                                              , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                                                `cons` en_ "issued under section 71(6) of the Act"
+                                              , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                                                `cons` en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
+                                                `cons` en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
+                                            ]
+                                        ]
+                                  ]
+                             )
+                       )
+
+
+#+end_src
+
+Emacs users may need to put this in their =.emacs=:
+#+begin_src elisp
+(set-fontset-font t 'symbol "Apple Color Emoji")
+#+end_src
+
+
+#+begin_src haskell :noweb-ref 34-haskell
+
+  -- syntactic sugar for constructing common types
+  (💬) :: String -> String -> TermExpr
+  infixr 7 💬
+  ex 💬 tag = NL ex [("en",tag)]
+
+  -- syntactic sugar for constructing common types
+  en_ :: String -> TermExpr
+  en_ ex = NL ex [("en",ex)]
+
+  nl_ :: String -> TermExpr
+  nl_ ex = NL ex []
+
+  -- syntactic sugar for Compound
+  (⏩) :: TermExpr -> [TermExpr] -> TermExpr
+  infixr 5 ⏩
+  lhs ⏩ rhs = Compound lhs rhs
+
+  -- executive appointment IS associatedWith Something
+  (👉) :: Key -> TermExpr -> TermExpr -> TermExpr
+  infixr 5 👉
+  lhs 👉 compound = \rhs -> Compound compound [TKey lhs, rhs]
+
+  (§) :: TermExpr -> Stm
+  (§) = Section -- this always has to be wrapped in () because it's a section
+
+  type MkDRule = TermExpr -> TermExpr -> Deontic -> TermExpr -> Maybe TermExpr -> Stm
+  (§§) :: MkDRule
+  (§§) = DRule
+
+  cons :: TermExpr -> TermExpr -> TermExpr
+  cons = Cons
+  infixr 6 `cons`
+
+  _'s :: Key -> TermExpr -> TermExpr
+  infixr 6 `_'s`
+  x `_'s` y = TKey x `possessive` y
+
+  mustNot = DShant
+  mayNot = DShant
+  must = DMust
+  may = DMay
+
+  binop op x y = BinOp x (nl_ op) y
+
+  -- this is a sign we need to learn Template Haskell
+  infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x `cons` (nl_ "of")
+  infixr 6 `to_`;     to_ = binop "to";      infixr 5 `_to`;    _to  x = x `cons` (nl_ "to")
+  infixr 6 `as_`;     as_ = binop "as";      infixr 5 `_as`;    _as  x = x `cons` (nl_ "as")
+  infixr 6 `in_`;     in_ = binop "in";      infixr 5 `_in`;    _in  x = x `cons` (nl_ "in")
+  infixr 6 `is_`;     is_ = binop "is";      infixr 5 `_is`;    _is  x = x `cons` (nl_ "is")
+  infixr 6 `by_`;     by_ = binop "by";      infixr 5 `_by`;    _by  x = x `cons` (nl_ "by")
+  infixr 6 `for_`;   for_ = binop "for";     infixr 5 `_for`;   _for x = x `cons` (nl_ "for")
+  infixr 6 `with_`; with_ = binop "with";    infixr 5 `_with`; _with x = x `cons` (nl_ "with")
+  infixr 6 `from_`; from_ = binop "from";    infixr 5 `_from`; _from x = x `cons` (nl_ "from")
+
+  infixr 6 `possessive`
+  possessive = binop "'s"
 
 #+end_src
 
 **** The Parser
+
+This is a work in progress.
 #+begin_src haskell :noweb-ref 34-parser
   -- an L4 document is a list of stanzas
   parseL4 :: Parser [Stm]
@@ -277,7 +395,7 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
   parseStm :: Parser Stm
   parseStm = do
     many newline
-    stm <- choice [ try (Section          <$> (lexeme "SECTION" *> parseNLStr))
+    stm <- choice [ try (Section           <$> (lexeme "SECTION" *> parseNLStr))
                   , try parseDeonticRule
                   , try parseConstitutiveRule
                   ]
@@ -292,8 +410,8 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
                                  DMay   <$ "MAY"  <|>
                                  DShant <$ "SHANT")
     action   <-          lexeme parseTermExpr <* some newline
-    when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr) <|> (Nothing <$ empty)
-    return (DeonticRule ruleName (DRule party dmodal action when))
+    when     <- optional (space *> lexeme "WHEN" *> parseTermExpr)
+    return (DRule ruleName party dmodal action when)
 
   -- DEFINE X IS BLAH
   parseConstitutiveRule :: Parser Stm
@@ -301,11 +419,11 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
     ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "ConstitutiveRule" <* some newline
     item     <- space *> lexeme "DEFINE"  *> parseNLStr <*                                         some newline
     body     <-          lexeme parseTermExpr <* some newline
-    when     <- (Just <$> space *> lexeme "WHEN" *> parseTermExpr ) <|> (Nothing <$ empty)
-    return (DeonticRule ruleName (DRule party dmodal action when))
+    when     <- optional (space *> lexeme "WHEN" *> parseTermExpr)
+    return (CRule ruleName item body when)
 
   -- SomeString :en:"Some String"
-  parseNLStr :: Parser NLStr
+  parseNLStr :: Parser TermExpr
   parseNLStr = do
     exPart    <- lexeme $ some (alphaNumChar <|> char '.')
     tagsPart  <- many (lexeme parseTag)
@@ -320,11 +438,11 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
   -- sooner or later we will need to think about https://github.com/glebec/left-recursion
   parseTermExpr :: Parser TermExpr
-  parseTermExpr = return $ TEString (NL "burf" [])
+  parseTermExpr = return $ NL "burf" []
     
 #+end_src
 
-**** A simple app calls the parser and prints the AST
+**** A simple app prints the manually defined
 
 #+begin_src haskell :noweb-ref 34-app
   someFunc :: IO ()
@@ -337,10 +455,26 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
     print ast
 #+end_src
 
+**** Let's try outputting to Prolog
+
+#+begin_src haskell :noweb-ref 34-prolog
+  stmToProlog :: Stm -> String
+  stmTorolog (Section te)       = unlines [ unwords [ "% SECTION", teToProlog te ] ]
+  stmTorolog (DRule rn p d a w) = unlines [ unwords [ "%    RULE", teToProlog rn ],
+                                            unwords [ "%   PARTY", teToProlog p ]
+                                          ]
+  -- rule_34_1(party(LegalPractitioner), shant, accept(ExecA)) :- assocWith(ExecA, Business),
+  --    detracts_from
+
+
+  -- teToProlog :: TermExpr -> String
+  -- teToProlog 
+
+#+end_src
 **** Haskell Infrastructure
 
 #+begin_src haskell parse-341 :noweb yes :tangle src/Lib.hs
-
+  {-# LANGUAGE PostfixOperators #-} -- https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#postfix-operators
   {-# LANGUAGE OverloadedStrings #-}
   {-# LANGUAGE ScopedTypeVariables #-}
   {-# LANGUAGE DuplicateRecordFields #-}
@@ -368,6 +502,8 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
   <<34-types>>
   <<34-parser>>
+
+  <<34-haskell>>
   <<34-app>>
 
 #+end_src

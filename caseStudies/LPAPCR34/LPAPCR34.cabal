@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 086433a10eb18779cf9020c8cfa1252f249ed6030b01bd423b2c60caca4a254e
+-- hash: 15b2dc415976773c1d5d035e1a6be96380f5213c2efdf3f6c4f82937217886e8
 
 name:           LPAPCR34
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
     , boxes
     , containers
     , megaparsec
+    , pretty-simple
     , text
   default-language: Haskell2010
 
@@ -53,6 +54,7 @@ executable LPAPCR34-exe
     , boxes
     , containers
     , megaparsec
+    , pretty-simple
     , text
   default-language: Haskell2010
 
@@ -70,5 +72,6 @@ test-suite LPAPCR34-test
     , boxes
     , containers
     , megaparsec
+    , pretty-simple
     , text
   default-language: Haskell2010

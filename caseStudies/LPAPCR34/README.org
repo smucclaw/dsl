@@ -365,6 +365,9 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   mayNot  = DShant
   must    = DMust
   may     = DMay
+  dshow DShant = "SHANT"
+  dshow DMust  = "MUST"
+  dshow DMay   = "MAY"
 
   binop op x y = BinOp x (nl_ op) y
 
@@ -609,40 +612,102 @@ This is a work in progress.
     
 #+end_src
 
-**** The STDIN parser is on hold at the moment
-
-#+begin_src haskell :noweb-ref 34-app-parse
-  someFunc :: IO ()
-  someFunc = do
-    myinput <- getContents
-    let ast = case parse parseL4 "parsing L4 toplevel" (pack myinput) of
-                Left  someError  -> error $ errorBundlePretty someError
-                Right rhs -> rhs
-    -- print ast
-    print ast
-#+end_src
-
-**** Instead we will just print the manually generated AST
+**** We can print the manually generated AST or the parsed STDIN
 #+begin_src haskell :noweb-ref 34-app
-  someFunc :: IO ()
-  someFunc = do
-    pPrint section34
+  someFunc :: String -> IO ()
+  someFunc myinput = do
+    let stdinAST = case parse parseL4 "parsing L4 toplevel" (pack myinput) of
+                     Left  someError  -> error $ errorBundlePretty someError
+                     Right rhs -> rhs
+    (opts,runCmd) <-
+      simpleOptions "v0.01" "lpapcr34" "an early L4 prototype for section 34" (pure ()) $
+      do addSubCommands "pretty" "pretty-print" (
+           do addCommand "ast"   "the manual AST" (const (pPrint section34)) (pure ())
+              addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
+           )
+         addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . PP.render . stmToProlog) section34)) (pure ())
+    runCmd
 #+end_src
 
 **** Let's try outputting to Prolog
 
 #+begin_src haskell :noweb-ref 34-prolog
-  stmToProlog :: Stm -> String
-  stmTorolog (Section te)       = unlines [ unwords [ "%% SECTION", teToProlog te ] ]
-  stmTorolog (DRule rn p d a w) = unlines [ unwords [ "%%  D RULE", teToProlog rn ],
-                                            unwords [ "%%   PARTY", teToProlog p ]
-                                          ]
+  stmToProlog :: Stm -> PP.Doc
+  stmToProlog (Section te) = PP.text "%% " <> PP.text (stmToL4 (Section te))
+  stmToProlog (DRule rn p d a w) =
+    let headP = PP.text "drule" PP.<> parencomma [ teToProlog p
+                                                 , PP.text (toLower <$> dshow d)
+                                                 , teToProlog a ]
+        varargs = teToProlog p : unwrapP a
+    in PP.vcat ( [ if null w
+                   then headP PP.<> PP.char '.'
+                   else headP PP.<+> PP.text ":-" PP.$$ (PP.nest 4 $ PP.text "subRule" PP.<> parencomma (PP.text "SubRuleName" : varargs) PP.<> PP.char '.')
+                 ] ++ asPrologSubrules w varargs )
+
+  asPrologSubrules :: Maybe TermExpr -> [PP.Doc] -> [PP.Doc]
+  asPrologSubrules Nothing _ = [PP.empty]
+  asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (zip ['A'..] termexprs)
+
+  asPrologSubrule :: [PP.Doc] -> (Char, TermExpr) -> PP.Doc
+  asPrologSubrule varargs (ruleNum, te) =
+    PP.hang
+    (PP.text "subRule" PP.<> parencomma ([ PP.text ("subRule_"++[ruleNum]) ] ++ varargs) PP.<+> (PP.text ":-"))
+    5
+    ((teToProlog te) PP.<> PP.char '.')
+  
+
+  unwrapP :: TermExpr -> [PP.Doc]
+  unwrapP (Compound te termexprs) = teToProlog <$> termexprs
+  unwrapP (mainex :@ nltags) = [PP.text mainex]
+  unwrapP (TKey tkey)        = [PP.text tkey]
+  unwrapP (All termexprs)    = teToProlog <$> termexprs
+  unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
+  unwrapP (And termexprs)          = teToProlog <$> termexprs
+  unwrapP (Cons te1 te2)           = [teToProlog te1, teToProlog te2]
+  unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
+
+  parencomma docs = PP.parens (PP.hsep $ PP.punctuate (PP.char ',') docs)
+
+  teToProlog :: TermExpr -> PP.Doc
+  teToProlog (mainex :@ nltags) = PP.text mainex
+  teToProlog (TKey tkey)        = PP.text tkey
+  teToProlog (All termexprs)    = PP.text "TODO All"
+  teToProlog orig@(Any termexprs)     = PP.text "TODO Any"
+  teToProlog (And termexprs)          = PP.text "TODO And"
+  teToProlog (Cons te1 te2)           = PP.text "TODO Cons"
+  teToProlog orig@(Compound te1 termexprs) = teToProlog te1 <> parencomma (teToProlog <$> termexprs)
+  teToProlog orig@(BinOp te1 bo2 te3)      = teToProlog bo2 <> parencomma [teToProlog te1, teToProlog te3]
+
+
+  stmToL4 :: Stm -> String
+  stmToL4 (Section te)       = unlines [ unwords [ "SECTION",             teToL4 toplevel te ] ]
+  stmToL4 (DRule rn p d a w) = unlines [ unwords [ "   RULE",             teToL4 toplevel rn ]
+                                       , unwords [ "  PARTY",             teToL4 toplevel p ]
+                                       , unwords [ "  "  ++ dshow d,      teToL4 toplevel a ]
+                                       , unwords [ "   " ++ maybe "-- EVER"
+                                                                (("WHEN " ++) . teToL4 toplevel) w ]
+
+                                       ]
   -- rule_34_1(party(LegalPractitioner), shant, accept(ExecA)) :- assocWith(ExecA, Business),
   --    detracts_from
+  toplevel = Ctx []
 
+  data Context = Ctx { stack    :: [TermExpr] } deriving (Show, Eq)
 
-  -- teToProlog :: TermExpr -> String
-  -- teToProlog 
+  ppTE ctx orig@(Any termexprs)     = "Any " ++ (PP.render $ PP.brackets (PP.hcat $ PP.punctuate (PP.char ',') (PP.text . (teToL4' ctx orig) <$> termexprs )))
+
+  -- this Context thing really should be a State monad
+  teToL4 :: Context -> TermExpr -> String
+  teToL4 ctx (mainex :@ nltags) = mainex
+  teToL4 ctx (TKey tkey)        = tkey
+  teToL4 ctx (All termexprs)    = "TODO All"
+  teToL4 ctx orig@(Any termexprs)     = "TODO Any"
+  teToL4 ctx (And termexprs)          = "TODO And"
+  teToL4 ctx (Cons te1 te2)           = "TODO Cons"
+  teToL4 ctx orig@(Compound te1 termexprs) = teToL4' ctx orig te1 ++ "(" ++ intercalate "," ((teToL4' ctx orig) <$> termexprs) ++ ")"
+  teToL4 ctx orig@(BinOp te1 bo2 te3)      = teToL4' ctx orig bo2 ++ "(" ++ teToL4' ctx orig te1 ++ " , " ++ teToL4' ctx orig te3 ++ ")"
+
+  teToL4' ctx orig = teToL4 (ctx { stack = orig : stack ctx })
 
 #+end_src
 **** Haskell Infrastructure
@@ -662,9 +727,13 @@ This is a work in progress.
   import Data.Void
   import Data.List (nub, permutations, sort, sortOn, intercalate)
   import Data.Char (toLower)
+  import qualified Text.PrettyPrint as PP
   import Control.Monad (forM_)
+  import qualified Data.Map.Lazy as Map
   import qualified Text.PrettyPrint.Boxes as Bx
   import Text.Pretty.Simple (pPrint, pShow)
+  import Options.Applicative.Simple (simpleOptions, addCommand, addSubCommands)
+  import Language.Prolog
   type Parser = Parsec Void Text
 
   sc :: Parser ()
@@ -677,7 +746,7 @@ This is a work in progress.
 
   <<34-types>>
   <<34-parser>>
-
+  <<34-prolog>>
   <<34-haskell>>
   <<34-app>>
 

@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
+    pantry-tree:
+      size: 741
+      sha256: f23b5ae4da14ec67060a97d7360ead327c0e0f59e962a5b000e24c4624bd35d9
+  original:
+    hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 snapshots:
 - completed:
     size: 532177

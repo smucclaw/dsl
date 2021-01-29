@@ -26,6 +26,9 @@ dependencies:
 - text
 - boxes
 - pretty-simple
+- pretty
+- optparse-simple
+- prolog
 
 library:
   source-dirs: src

@@ -32,9 +32,6 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: Verbosity -> PGF -> ParseFun Tops -> InputOpts -> FilePath -> IO ()
-runFile v gr p inOpt f = putStrLn f >> readFile f >>= run v gr p inOpt
-
 run :: Verbosity -> PGF -> ParseFun Tops -> InputOpts -> String -> IO ()
 run v gr p inOpt s = case p ts of
     Left notTree -> do
@@ -86,13 +83,13 @@ showTree inOpts gr v tree0
             printGraph ruleList
                                     ) >>
             when (wantAll (isJust . gfOut)) (do
-              -- gf output currently only in ENG
+              -- not quite sure what this is for, but leaving it within the gf section...
+              printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
+              printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
+              printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
+              -- gf output currently only in ENG (as stated in a previous commit)
               printMsg "In English" $ bnfc2str gr tree
-                                        )
-      ---- not quite sure what this is for, gotta ask andreas
-        --printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
-        --printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
-        --printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
+                                            )
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
 
@@ -115,7 +112,6 @@ data InputOpts = InputOpts
   , png         :: Bool
   , gfOut       :: Maybe String
   , silent      :: Bool
-  , files       :: Maybe String
   } deriving Show
 
 
@@ -145,11 +141,6 @@ optsParse = InputOpts <$>
         ( long "silent"
        <> short 's'
        <> help "Enables silent output" )
-  <*> optional (strOption 
-        ( long "files"
-       <> metavar "<filenames>"
-       <> help "Files to be processed" ))
-
 
 main :: IO ()
 main = do 
@@ -158,21 +149,9 @@ main = do
                               "\n\nThis is a sample description"
                               optsParse
                               empty
+  stdin <- getContents
                               
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  case files opts of 
-    Just fs -> print fs
-      -- mapM_ (runFile 2 gr pTops) fs
-    Nothing -> getContents >>= run vb gr pTops opts  
+  run vb gr pTops opts stdin 
 
-
-
---main :: IO ()
---main = do
-  --args <- getArgs
-  --gr <- readPGF "src-l4/Top.pgf"
-  --case args of
-    --["--help"] -> usage
-    --[]     --"-s":fs -> mapM_ (runFile 0 gr pTops) fs
-    --fs -> mapM_ (runFile 2 gr pTops) fs

@@ -1,5 +1,28 @@
 #+TITLE: bnfc parser for L4
 
+* ATTN: IDE team
+
+Hello hello, this is currently a work-in-progress branch of the main build. It contains the features that you need, i.e. enabling single-format output of dot and gf, but some of its quirks have not yet been ironed out.
+
+**Installation (Specific only to this branch):
+
+Running ~stack run -- l4~ once after switching to this branch should compile the executables for you. 
+Afterwhich, 
+
+to enable dot-only output, run 'stack exec -- l4 --dot < l4/test.l4 > out/test.out'
+to enable gf-only ouput, run 'stack exec -- l4 --gf EN < l4/test.l4 > out/test.out'
+
+
+** Miscellanous
+For now, the quirks of this build are as follows:
+1) This version of the l4 executable only supports IO with STDIN and STDOUT, so you will have to use '<' and '>' to denote any file IO.
+2) If you follow the build-process listed below in ~INSTALLATION~, it will fail because (1). This means that the ~showbug~ executable does not work in this build.
+3) The intention is to add subcommand support as listed by meng in the feature request, so the flags will be changed to subcommands in a future build
+
+
+
+
+
 This is a bnfc-based parser for the draft L4 language.
 
 * INSTALLATION

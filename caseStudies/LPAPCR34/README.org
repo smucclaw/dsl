@@ -393,12 +393,7 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
     ( "34" :@ [ ( "en" , "Thirty Four, part One" ) ] )
 , DRule
     { rulename = "34.1" :@ [ ( "en" , "Prohibitions" ) ]
-    , party = "LP" :@
-        [
-            ( "en"
-            , "Legal Practitioner"
-            )
-        ]
+    , party = "LP" :@ [ ( "en" , "Legal Practitioner" ) ]
     , dmodal = DShant
     , action = Compound
         ( "accept" :@ [ ( "en" , "accept" ) ] )
@@ -410,20 +405,16 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
             [ Compound
                 ( Any
                     [ Cons
-                        ( "detracts" :@ [ ( "en" , "detracts" ) ]
-                        ) ( "from" :@ [] )
+                        ( "detracts" :@ [ ( "en" , "detracts" ) ] ) ( "from" :@ [] )
                     , Cons
-                        ( "incompat" :@ [ ( "en" , "is incompatible" ) ]
-                        ) ( "with" :@ [] )
+                        ( "incompat" :@ [ ( "en" , "is incompatible" ) ] ) ( "with" :@ [] )
                     , Cons
-                        ( "derogates" :@ [ ( "en" , "derogates" ) ]
-                        ) ( "from" :@ [] )
+                        ( "derogates" :@ [ ( "en" , "derogates" ) ] ) ( "from" :@ [] )
                     ]
                 )
                 [ TKey "Business"
                 , BinOp
-                    ( "dignity" :@ [ ( "en" , "dignity" ) ]
-                    ) ( "of" :@ [] )
+                    ( "dignity" :@ [ ( "en" , "dignity" ) ] ) ( "of" :@ [] )
                     ( "prof" :@ [ ( "en" , "legal profession" ) ]
                     )
                 ]
@@ -432,18 +423,10 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                 [ TKey "Business"
                 , Any
                     [ BinOp
-                        ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
-                            ( "occ" :@ [ ( "en" , "primary occupation" ) ] )
-                        ) ( "of" :@ [] )
+                        ( BinOp ( TKey "LP" ) ( "'s" :@ [] ) ( "occ" :@ [ ( "en" , "primary occupation" ) ] ) ) ( "of" :@ [] )
                         ( BinOp
-                            ( "practising" :@ [ ( "en" , "practising" ) ]
-                            ) ( "as" :@ [] )
-                            ( "lawyer" :@
-                                [
-                                    ( "en"
-                                    , "lawyer"
-                                    )
-                                ]
+                            ( "practising" :@ [ ( "en" , "practising" ) ] ) ( "as" :@ [] )
+                            ( "lawyer" :@ [ ( "en" , "lawyer" ) ]
                             )
                         )
                     , BinOp ( TKey "LP" ) ( "'s" :@ [] )
@@ -456,8 +439,7 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                             )
                         )
                     , BinOp
-                        ( "representation" :@ [ ( "en" , "representation" ) ]
-                        ) ( "of" :@ [] )
+                        ( "representation" :@ [ ( "en" , "representation" ) ] ) ( "of" :@ [] )
                         ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
                             ( "clients" :@ [ ( "en" , "clients" ) ]
                             )
@@ -465,12 +447,11 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                     ]
                 ]
             , Compound
-                ( "is likely to" :@ [ ( "en" , "is likely to" ) ]
-                )
+                ( "is likely to" :@ [ ( "en" , "is likely to" ) ] )
                 [ TKey "Business"
                 , BinOp
-                    ( "unfairly attract business" :@ [ ( "en" , "unfairly attract business" ) ]
-                    ) ( "in" :@ [] )
+                    ( "unfairly attract business" :@ [ ( "en" , "unfairly attract business" ) ] )
+                    ( "in" :@ [] )
                     ( "practice of law" :@ [ ( "en" , "practice of law" ) ]
                     )
                 ]
@@ -482,8 +463,8 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                     ( Any
                         [ Cons
                             ( BinOp
-                                ( "sharing" :@ [ ( "en" , "sharing" ) ]
-                                ) ( "of" :@ [] )
+                                ( "sharing" :@ [ ( "en" , "sharing" ) ] )
+                                ( "of" :@ [] )
                                 ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
                                     ( "fees" :@ [ ( "en" , "fees" ) ] )
                                 )
@@ -497,32 +478,26 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                         ]
                     )
                     ( BinOp
-                        ( Any
-                            [ "unauthorised person" :@ [ ( "en" , "unauthorised person" ) ]
-                            ]
-                        ) ( "for" :@ [] )
+                        ( Any [ "unauthorised person" :@ [ ( "en" , "unauthorised person" ) ] ] )
+                        ( "for" :@ [] )
                         ( BinOp
-                            ( "legal work performed" :@ [ ( "en" , "legal work performed" ) ]
-                            ) ( "by" :@ [] ) ( TKey "LP" )
+                            ( "legal work performed" :@ [ ( "en" , "legal work performed" ) ] )
+                            ( "by" :@ [] )
+                            ( TKey "LP" )
                         )
                     )
                 ]
             , Compound
-                ( "isIn" :@ [ ( "en" , "is in" ) ]
-                )
-                [ TKey "Business"
-                , "Schedule1" :@ [ ( "en" , "First Schedule" ) ]
-                ]
+                ( "isIn" :@ [ ( "en" , "is in" ) ] )
+                [ TKey "Business" , "Schedule1" :@ [ ( "en" , "First Schedule" ) ] ]
             , Compound
-                ( "isProhibitedBy" :@ [ ( "en" , "is prohibited by" ) ]
-                )
+                ( "isProhibitedBy" :@ [ ( "en" , "is prohibited by" ) ] )
                 [ TKey "Business"
                 , Any
                     [ "Act" :@ [ ( "en" , "Act" ) ]
                     , Any
                         [ "these Rules" :@ [ ( "en" , "these Rules" ) ]
-                        , "any other subsidiary legislation made under the Act" :@ [ ( "en" , "any other subsidiary legislation made under the Act" )
-                            ]
+                        , "any other subsidiary legislation made under the Act" :@ [ ( "en" , "any other subsidiary legislation made under the Act" ) ]
                         ]
                     , Cons
                         ( And
@@ -530,8 +505,8 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                             , "guidance notes" :@ [ ( "en" , "guidance notes" ) ]
                             , "rulings" :@ [ ( "en" , "rulings" ) ]
                             ]
-                        )
-                        ( "issued under section 71(6) of the Act" :@ [ ( "en" , "issued under section 71(6) of the Act" ) ]
+                            )
+                            ( "issued under section 71(6) of the Act" :@ [ ( "en" , "issued under section 71(6) of the Act" ) ]
                         )
                     , Cons
                         ( And
@@ -541,8 +516,8 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                             ]
                         )
                         ( BinOp
-                            ( "relating" :@ [ ( "en" , "relating" ) ]
-                            ) ( "to" :@ [] )
+                            ( "relating" :@ [ ( "en" , "relating" ) ] )
+                            ( "to" :@ [] )
                             ( Cons
                                 ( And
                                     [ "professional practice" :@ [ ( "en" , "professional practice" ) ]
@@ -552,8 +527,8 @@ Here's what the output looks like, with perhaps a little more pretty-printing th
                                     ]
                                 )
                                 ( BinOp
-                                    ( "issued" :@ [ ( "en" , "issued" ) ]
-                                    ) ( "by" :@ [] )
+                                    ( "issued" :@ [ ( "en" , "issued" ) ] )
+                                    ( "by" :@ [] )
                                     ( Any
                                         [ "Council" :@ [ ( "en" , "Council" ) ]
                                         , "Society" :@ [ ( "en" , "Society" ) ]

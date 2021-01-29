@@ -186,15 +186,14 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
 *** Second Try, all in one giant block
 
-**** As L4
+**** As pseudo-L4
 #+begin_src text :tangle test/section34-1.l4
   SECTION 34.1 :en:"Thirty Four, Part One"
 
      RULE 34.1.a ISA DeonticRule
     PARTY LegalPractitioner
-    SHANT accept(Executive_appointment)
-     WHEN associatedWith(Executive_appointment, Business)
-      AND any [ Business [ detracts_from
+    SHANT accept(executive_appointment, Business)
+     WHEN any [ Business [ detracts_from
                          , is_incompatible_with
                          | derogates_from ] the_dignity_of the_legal_profession
               , Business materially_interferes_with [ LegalPractitioner's primary_occupation_of_practising_as_a_lawyer
@@ -232,20 +231,20 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
   data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
     deriving (Show, Eq)
 
-  data TermExpr = NL String [NLTag]            -- "potato" `TENL` "Solanum tuberosum"
+  data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "potato" :@ [("en","Solanum Tuberosum")]
                 | TKey Key                     -- "potato"
-                | All [TermExpr]               -- and
-                | Any [TermExpr]               -- or
+                | All [TermExpr]               -- and -- each term must evaluate true
+                | Any [TermExpr]               -- or  -- only one term is needed to be true
                 | And [TermExpr]               -- set union
                 | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
-                | Cons TermExpr TermExpr
-                | BinOp TermExpr TermExpr TermExpr -- ace "of" bass
+                | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
+                | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
     deriving (Show, Eq)
 
   type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
   type NLTag = (Key,String)
 
-  data Stm = Section TermExpr -- first TermExpr should always be an NL
+  data Stm = Section TermExpr -- first TermExpr should always be an NL expression (:@)
            | DRule { rulename :: TermExpr
                    , party  :: TermExpr
                    , dmodal :: Deontic
@@ -265,48 +264,48 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
 **** As Raw Haskell
 
-Given only those types, and the structure above, we construct an AST. Subsequently we will write a parser that turns the L4 syntax into this AST. For now we take the eDSL approach with a bit of syntactic sugar, and write the AST from scratch.
+Given only those types, and the source text above, we construct an AST. Subsequently we will write a parser that turns the L4 syntax above into this AST.
+
+For now we take the eDSL approach with a bit of syntactic sugar, and write the AST from scratch.
 
 #+begin_src haskell :noweb-ref 34-haskell
 
-    section34 :: [Stm]
-    section34 = [ (§) ("34" 💬 "Thirty Four, part One")
-                , section34_1 ]
+  section34 :: [Stm]
+  section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")]) -- subsequently we speechbubble with English as default
+              , section34_1 ]
 
-    section34_1 :: Stm
-    section34_1 = (§§) ("34.1" 💬 "Prohibitions")
-                       ("LP" 💬 "Legal Practitioner")
-                       mustNot
-                       (en_ "accept" ⏩ ["ExecA" 💬 "Executive Appointment"])
-                       (Just (All [ "ExecA" 👉 ("assocWith" 💬 "associated with") $ (en_ "Business")
-                                  , Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)
-                                                             , ("incompat" 💬 "is incompatible" `_with`)
-                                                             , (en_ "derogates" `_from`)
-                                                             ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")
-                                        , "Business" 👉 (en_ "materially interferes with") $
-                                          Any [ "LP" `_'s` ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
-                                              , "LP" `_'s` en_ "availability to those who may seek" `cons` "LP" `_'s` en_ "services as a lawyer"
-                                              , en_ "representation" `of_` "LP" `_'s` en_ "clients" ]
-                                        , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business in the practice of law")
-                                        , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "the practice of law")
-                                        , "Business" 👉 (en_ "involves")     $ (en_ "sharing") `of_` "LP" `_'s` en_ "fees" `with_` (Any [ (en_ "payment" `of_` en_ "commission" `_to`)
-                                                                                                                                        , Any [ en_ "unauthorised person" `for_` en_ "legal work performed" `by_` (TKey "LP") ]
-                                                                                                                                        ])
-                                        , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
-                                        , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
-                                          Any [ en_ "Act"
-                                              , Any [ en_ "these Rules"
-                                                    , en_ "any other subsidiary legislation made under the Act" ]
-                                              , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                                `cons` en_ "issued under section 71(6) of the Act"
-                                              , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                                `cons` en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
-                                                `cons` en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
-                                            ]
-                                        ]
-                                  ]
-                             )
-                       )
+  section34_1 :: Stm
+  section34_1 = (§§) ("34.1" 💬 "Prohibitions")
+                     ("LP" 💬 "Legal Practitioner")
+                     mustNot
+                     (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
+                     (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
+                                                 , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
+                                                 , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
+                                                 ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
+                            , "Business" 👉 (en_ "materially interferes with") $
+                              Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
+                                  , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
+                                  , en_ "representation" `of_` lp's ( en_ "clients" ) ]
+                            , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
+                            , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
+                                                                     , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
+                                                                 Any [ en_ "unauthorised person" ] `for_`
+                                                                 en_ "legal work performed" `by_`
+                                                                 (TKey "LP") )
+                            , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
+                            , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
+                              Any [ en_ "Act"
+                                  , Any [ en_ "these Rules"
+                                        , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
+                                  , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                                    <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
+                                  , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                                    <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
+                                    <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
+                                ]
+                            ]
+                     )
 
 
 #+end_src
@@ -316,63 +315,72 @@ Emacs users may need to put this in their =.emacs=:
 (set-fontset-font t 'symbol "Apple Color Emoji")
 #+end_src
 
+The emojis above are part of the syntactic sugar used to create the actual AST.
 
 #+begin_src haskell :noweb-ref 34-haskell
-
-  -- syntactic sugar for constructing common types
+  -- by default, we construct an English term, but this could evolve toward wordnet
   (💬) :: String -> String -> TermExpr
   infixr 7 💬
-  ex 💬 tag = NL ex [("en",tag)]
+  ex 💬 tag = ex :@ [("en",tag)]
 
-  -- syntactic sugar for constructing common types
   en_ :: String -> TermExpr
-  en_ ex = NL ex [("en",ex)]
+  en_ ex = ex :@ [("en",ex)]
 
   nl_ :: String -> TermExpr
-  nl_ ex = NL ex []
+  nl_ ex = ex :@ []
 
-  -- syntactic sugar for Compound
+  -- syntactic sugar for a prolog-style Compound term: lhs(r,h,s)
   (⏩) :: TermExpr -> [TermExpr] -> TermExpr
   infixr 5 ⏩
   lhs ⏩ rhs = Compound lhs rhs
 
   -- executive appointment IS associatedWith Something
+  -- becomes, in prolog, associatedWith(ExecutiveAppointment, Something)
+  -- which is basically a bit of a flip and rearrangement of the above
   (👉) :: Key -> TermExpr -> TermExpr -> TermExpr
   infixr 5 👉
-  lhs 👉 compound = \rhs -> Compound compound [TKey lhs, rhs]
+  lhs 👉 compound = \rhs -> compound ⏩ [TKey lhs, rhs]
 
+  -- section marker. this always has to be wrapped in () because it's a section?
   (§) :: TermExpr -> Stm
-  (§) = Section -- this always has to be wrapped in () because it's a section
+  (§) = Section
 
-  type MkDRule = TermExpr -> TermExpr -> Deontic -> TermExpr -> Maybe TermExpr -> Stm
+  -- deontic rule -- party x must y
+  type MkDRule = TermExpr -> TermExpr -> Deontic -> TermExpr -> TermExpr -> Stm
   (§§) :: MkDRule
-  (§§) = DRule
+  (§§) a b c d e = DRule a b c d (Just e)
 
-  cons :: TermExpr -> TermExpr -> TermExpr
-  cons = Cons
-  infixr 6 `cons`
+  -- constitutive rule -- define x as y
+  type MkCRule = TermExpr -> TermExpr -> TermExpr -> TermExpr -> Stm
+  (§=§) :: MkCRule
+  (§=§) a b c d = CRule a b c (Just d)
+
+  instance Semigroup TermExpr where (<>) = Cons
 
   _'s :: Key -> TermExpr -> TermExpr
   infixr 6 `_'s`
   x `_'s` y = TKey x `possessive` y
 
+  -- we hardcode "LP" to mean Legal Practitioner
+  lp's = _'s "LP"
+
   mustNot = DShant
-  mayNot = DShant
-  must = DMust
-  may = DMay
+  mayNot  = DShant
+  must    = DMust
+  may     = DMay
 
   binop op x y = BinOp x (nl_ op) y
 
   -- this is a sign we need to learn Template Haskell
-  infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x `cons` (nl_ "of")
-  infixr 6 `to_`;     to_ = binop "to";      infixr 5 `_to`;    _to  x = x `cons` (nl_ "to")
-  infixr 6 `as_`;     as_ = binop "as";      infixr 5 `_as`;    _as  x = x `cons` (nl_ "as")
-  infixr 6 `in_`;     in_ = binop "in";      infixr 5 `_in`;    _in  x = x `cons` (nl_ "in")
-  infixr 6 `is_`;     is_ = binop "is";      infixr 5 `_is`;    _is  x = x `cons` (nl_ "is")
-  infixr 6 `by_`;     by_ = binop "by";      infixr 5 `_by`;    _by  x = x `cons` (nl_ "by")
-  infixr 6 `for_`;   for_ = binop "for";     infixr 5 `_for`;   _for x = x `cons` (nl_ "for")
-  infixr 6 `with_`; with_ = binop "with";    infixr 5 `_with`; _with x = x `cons` (nl_ "with")
-  infixr 6 `from_`; from_ = binop "from";    infixr 5 `_from`; _from x = x `cons` (nl_ "from")
+  infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x <> (nl_ "of")
+  infixr 6 `to_`;     to_ = binop "to";      infixr 5 `_to`;    _to  x = x <> (nl_ "to")
+  infixr 6 `as_`;     as_ = binop "as";      infixr 5 `_as`;    _as  x = x <> (nl_ "as")
+  infixr 6 `in_`;     in_ = binop "in";      infixr 5 `_in`;    _in  x = x <> (nl_ "in")
+  infixr 6 `is_`;     is_ = binop "is";      infixr 5 `_is`;    _is  x = x <> (nl_ "is")
+  infixr 6 `by_`;     by_ = binop "by";      infixr 5 `_by`;    _by  x = x <> (nl_ "by")
+  infixr 6 `for_`;   for_ = binop "for";     infixr 5 `_for`;   _for x = x <> (nl_ "for")
+  infixr 6 `with_`; with_ = binop "with";    infixr 5 `_with`; _with x = x <> (nl_ "with")
+  infixr 6 `from_`; from_ = binop "from";    infixr 5 `_from`; _from x = x <> (nl_ "from")
 
   infixr 6 `possessive`
   possessive = binop "'s"
@@ -427,7 +435,7 @@ This is a work in progress.
   parseNLStr = do
     exPart    <- lexeme $ some (alphaNumChar <|> char '.')
     tagsPart  <- many (lexeme parseTag)
-    return $ NL exPart tagsPart
+    return $ exPart :@ tagsPart
 
   -- :en:"Some String"
   parseTag :: Parser NLTag
@@ -438,13 +446,13 @@ This is a work in progress.
 
   -- sooner or later we will need to think about https://github.com/glebec/left-recursion
   parseTermExpr :: Parser TermExpr
-  parseTermExpr = return $ NL "burf" []
+  parseTermExpr = return $ "burf" :@ []
     
 #+end_src
 
-**** A simple app prints the manually defined
+**** The STDIN parser is on hold at the moment
 
-#+begin_src haskell :noweb-ref 34-app
+#+begin_src haskell :noweb-ref 34-app-parse
   someFunc :: IO ()
   someFunc = do
     myinput <- getContents
@@ -455,13 +463,20 @@ This is a work in progress.
     print ast
 #+end_src
 
+**** Instead we will just print the manually generated AST
+#+begin_src haskell :noweb-ref 34-app
+  someFunc :: IO ()
+  someFunc = do
+    pPrint section34
+#+end_src
+
 **** Let's try outputting to Prolog
 
 #+begin_src haskell :noweb-ref 34-prolog
   stmToProlog :: Stm -> String
-  stmTorolog (Section te)       = unlines [ unwords [ "% SECTION", teToProlog te ] ]
-  stmTorolog (DRule rn p d a w) = unlines [ unwords [ "%    RULE", teToProlog rn ],
-                                            unwords [ "%   PARTY", teToProlog p ]
+  stmTorolog (Section te)       = unlines [ unwords [ "%% SECTION", teToProlog te ] ]
+  stmTorolog (DRule rn p d a w) = unlines [ unwords [ "%%  D RULE", teToProlog rn ],
+                                            unwords [ "%%   PARTY", teToProlog p ]
                                           ]
   -- rule_34_1(party(LegalPractitioner), shant, accept(ExecA)) :- assocWith(ExecA, Business),
   --    detracts_from
@@ -490,6 +505,7 @@ This is a work in progress.
   import Data.Char (toLower)
   import Control.Monad (forM_)
   import qualified Text.PrettyPrint.Boxes as Bx
+  import Text.Pretty.Simple (pPrint, pShow)
   type Parser = Parsec Void Text
 
   sc :: Parser ()

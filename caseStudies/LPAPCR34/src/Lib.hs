@@ -25,22 +25,6 @@ lexeme = L.lexeme sc
 
 stringLiteral = char '"' >> manyTill L.charLiteral (char '"')
 
-data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
-  deriving (Show, Eq)
-
-data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "potato" :@ [("en","Solanum Tuberosum")]
-              | TKey Key                     -- "potato"
-              | All [TermExpr]               -- and -- each term must evaluate true
-              | Any [TermExpr]               -- or  -- only one term is needed to be true
-              | And [TermExpr]               -- set union
-              | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
-              | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
-              | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
-  deriving (Show, Eq)
-
-type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
-type NLTag = (Key,String)
-
 data Stm = Section TermExpr -- first TermExpr should always be an NL expression (:@)
          | DRule { rulename :: TermExpr
                  , party  :: TermExpr
@@ -54,6 +38,19 @@ data Stm = Section TermExpr -- first TermExpr should always be an NL expression 
                  , when :: Maybe TermExpr
                  }
   deriving (Show, Eq)
+
+data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "potato" :@ [("en","Solanum Tuberosum")]
+              | TKey Key                     -- "potato"
+              | All [TermExpr]               -- and -- each element must evaluate true
+              | Any [TermExpr]               -- or  -- only one element is needed to be true
+              | And [TermExpr]               -- set union! inclusive "and" is not a logical "and"! more of an "or"
+              | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
+              | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
+              | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
+  deriving (Show, Eq)
+
+type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
+type NLTag = (Key,String)
 
 data Deontic = DMust | DMay | DShant deriving (Show, Eq)
 
@@ -121,38 +118,38 @@ section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")]) -- subsequently we
             , section34_1 ]
 
 section34_1 :: Stm
-section34_1 = (§§) ("34.1" 💬 "Prohibitions")
-                   ("LP" 💬 "Legal Practitioner")
-                   mustNot
-                   (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
-                   (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
-                                               , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
-                                               , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
-                                               ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
-                          , "Business" 👉 (en_ "materially interferes with") $
-                            Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
-                                , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
-                                , en_ "representation" `of_` lp's ( en_ "clients" ) ]
-                          , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
-                          , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
-                                                                   , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
-                                                               Any [ en_ "unauthorised person" ] `for_`
-                                                               en_ "legal work performed" `by_`
-                                                               (TKey "LP") )
-                          , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
-                          , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
-                            Any [ en_ "Act"
-                                , Any [ en_ "these Rules"
-                                      , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
-                                , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                  <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
-                                , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                  <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
-                                  <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
-                              ]
-                          ]
-                   )
-
+section34_1 =
+  (§§) ("34.1" 💬 "Prohibitions")
+  ("LP" 💬 "Legal Practitioner")
+  mustNot
+  (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
+  (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
+                              , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
+                              , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
+                              ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
+         , "Business" 👉 (en_ "materially interferes with") $
+           Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
+               , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
+               , en_ "representation" `of_` lp's ( en_ "clients" ) ]
+         , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
+         , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
+                                                  , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
+                                              Any [ en_ "unauthorised person" ] `for_`
+                                              en_ "legal work performed" `by_`
+                                              (TKey "LP") )
+         , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
+         , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
+           Any [ en_ "Act"
+               , Any [ en_ "these Rules"
+                     , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
+               , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                 <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
+               , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                 <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
+                 <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
+             ]
+         ]
+  )
 
 -- by default, we construct an English term, but this could evolve toward wordnet
 (💬) :: String -> String -> TermExpr

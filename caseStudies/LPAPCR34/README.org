@@ -228,22 +228,6 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 **** Our front-end uses a few simple types
 
 #+begin_src haskell :noweb-ref 34-types
-  data Conj = AndC | OrC | CommaC | AnyC | UnionC | IntersectC | RunOn
-    deriving (Show, Eq)
-
-  data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "potato" :@ [("en","Solanum Tuberosum")]
-                | TKey Key                     -- "potato"
-                | All [TermExpr]               -- and -- each term must evaluate true
-                | Any [TermExpr]               -- or  -- only one term is needed to be true
-                | And [TermExpr]               -- set union
-                | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
-                | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
-                | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
-    deriving (Show, Eq)
-
-  type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
-  type NLTag = (Key,String)
-
   data Stm = Section TermExpr -- first TermExpr should always be an NL expression (:@)
            | DRule { rulename :: TermExpr
                    , party  :: TermExpr
@@ -258,15 +242,28 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
                    }
     deriving (Show, Eq)
 
+  data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "potato" :@ [("en","Solanum Tuberosum")]
+                | TKey Key                     -- "potato"
+                | All [TermExpr]               -- and -- each element must evaluate true
+                | Any [TermExpr]               -- or  -- only one element is needed to be true
+                | And [TermExpr]               -- set union! inclusive "and" is not a logical "and"! more of an "or"
+                | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
+                | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
+                | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
+    deriving (Show, Eq)
+
+  type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
+  type NLTag = (Key,String)
+
   data Deontic = DMust | DMay | DShant deriving (Show, Eq)
 
 #+end_src
 
 **** As Raw Haskell
 
-Given only those types, and the source text above, we construct an AST. Subsequently we will write a parser that turns the L4 syntax above into this AST.
+Given only those types, and the source text above, we write an AST by hand. Subsequently we will write a parser that turns the L4 syntax above into this AST.
 
-For now we take the eDSL approach with a bit of syntactic sugar, and write the AST from scratch.
+For now we take the eDSL approach with a bit of syntactic sugar, and write the AST from scratch. There are emoji galore below, so I hope your editor can view them.
 
 #+begin_src haskell :noweb-ref 34-haskell
 
@@ -275,38 +272,38 @@ For now we take the eDSL approach with a bit of syntactic sugar, and write the A
               , section34_1 ]
 
   section34_1 :: Stm
-  section34_1 = (§§) ("34.1" 💬 "Prohibitions")
-                     ("LP" 💬 "Legal Practitioner")
-                     mustNot
-                     (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
-                     (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
-                                                 , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
-                                                 , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
-                                                 ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
-                            , "Business" 👉 (en_ "materially interferes with") $
-                              Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
-                                  , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
-                                  , en_ "representation" `of_` lp's ( en_ "clients" ) ]
-                            , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
-                            , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
-                                                                     , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
-                                                                 Any [ en_ "unauthorised person" ] `for_`
-                                                                 en_ "legal work performed" `by_`
-                                                                 (TKey "LP") )
-                            , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
-                            , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
-                              Any [ en_ "Act"
-                                  , Any [ en_ "these Rules"
-                                        , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
-                                  , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                    <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
-                                  , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                                    <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
-                                    <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
-                                ]
-                            ]
-                     )
-
+  section34_1 =
+    (§§) ("34.1" 💬 "Prohibitions")
+    ("LP" 💬 "Legal Practitioner")
+    mustNot
+    (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
+    (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
+                                , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
+                                , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
+                                ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
+           , "Business" 👉 (en_ "materially interferes with") $
+             Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
+                 , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
+                 , en_ "representation" `of_` lp's ( en_ "clients" ) ]
+           , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
+           , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
+                                                    , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
+                                                Any [ en_ "unauthorised person" ] `for_`
+                                                en_ "legal work performed" `by_`
+                                                (TKey "LP") )
+           , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
+           , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
+             Any [ en_ "Act"
+                 , Any [ en_ "these Rules"
+                       , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
+                 , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                   <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
+                 , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                   <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
+                   <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
+               ]
+           ]
+    )
 
 #+end_src
 
@@ -386,6 +383,193 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   possessive = binop "'s"
 
 #+end_src
+
+**** Pretty-Printed AST
+
+Here's what the output looks like, with perhaps a little more pretty-printing than really necessary
+
+#+begin_example
+[ Section
+    ( "34" :@ [ ( "en" , "Thirty Four, part One" ) ] )
+, DRule
+    { rulename = "34.1" :@ [ ( "en" , "Prohibitions" ) ]
+    , party = "LP" :@
+        [
+            ( "en"
+            , "Legal Practitioner"
+            )
+        ]
+    , dmodal = DShant
+    , action = Compound
+        ( "accept" :@ [ ( "en" , "accept" ) ] )
+        [ "execA" :@ [ ( "en" , "executive appointment" ) ]
+        , "Business" :@ [ ( "en" , "business" ) ]
+        ]
+    , when = Just
+        ( Any
+            [ Compound
+                ( Any
+                    [ Cons
+                        ( "detracts" :@ [ ( "en" , "detracts" ) ]
+                        ) ( "from" :@ [] )
+                    , Cons
+                        ( "incompat" :@ [ ( "en" , "is incompatible" ) ]
+                        ) ( "with" :@ [] )
+                    , Cons
+                        ( "derogates" :@ [ ( "en" , "derogates" ) ]
+                        ) ( "from" :@ [] )
+                    ]
+                )
+                [ TKey "Business"
+                , BinOp
+                    ( "dignity" :@ [ ( "en" , "dignity" ) ]
+                    ) ( "of" :@ [] )
+                    ( "prof" :@ [ ( "en" , "legal profession" ) ]
+                    )
+                ]
+            , Compound
+                ( "materially interferes with" :@ [ ( "en" , "materially interferes with" ) ] )
+                [ TKey "Business"
+                , Any
+                    [ BinOp
+                        ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
+                            ( "occ" :@ [ ( "en" , "primary occupation" ) ] )
+                        ) ( "of" :@ [] )
+                        ( BinOp
+                            ( "practising" :@ [ ( "en" , "practising" ) ]
+                            ) ( "as" :@ [] )
+                            ( "lawyer" :@
+                                [
+                                    ( "en"
+                                    , "lawyer"
+                                    )
+                                ]
+                            )
+                        )
+                    , BinOp ( TKey "LP" ) ( "'s" :@ [] )
+                        ( Cons
+                            ( "availability to those who may seek" :@ [ ( "en" , "availability to those who may seek" ) ]
+                            )
+                            ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
+                                ( "services as a lawyer" :@ [ ( "en" , "services as a lawyer" ) ]
+                                )
+                            )
+                        )
+                    , BinOp
+                        ( "representation" :@ [ ( "en" , "representation" ) ]
+                        ) ( "of" :@ [] )
+                        ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
+                            ( "clients" :@ [ ( "en" , "clients" ) ]
+                            )
+                        )
+                    ]
+                ]
+            , Compound
+                ( "is likely to" :@ [ ( "en" , "is likely to" ) ]
+                )
+                [ TKey "Business"
+                , BinOp
+                    ( "unfairly attract business" :@ [ ( "en" , "unfairly attract business" ) ]
+                    ) ( "in" :@ [] )
+                    ( "practice of law" :@ [ ( "en" , "practice of law" ) ]
+                    )
+                ]
+            , Compound
+                ( "involves" :@ [ ( "en" , "involves" ) ]
+                )
+                [ TKey "Business"
+                , Cons
+                    ( Any
+                        [ Cons
+                            ( BinOp
+                                ( "sharing" :@ [ ( "en" , "sharing" ) ]
+                                ) ( "of" :@ [] )
+                                ( BinOp ( TKey "LP" ) ( "'s" :@ [] )
+                                    ( "fees" :@ [ ( "en" , "fees" ) ] )
+                                )
+                            ) ( "with" :@ [] )
+                        , Cons
+                            ( BinOp
+                                ( "payment" :@ [ ( "en" , "payment" ) ]
+                                ) ( "of" :@ [] )
+                                ( "commission" :@ [ ( "en" , "commission" ) ] )
+                            ) ( "to" :@ [] )
+                        ]
+                    )
+                    ( BinOp
+                        ( Any
+                            [ "unauthorised person" :@ [ ( "en" , "unauthorised person" ) ]
+                            ]
+                        ) ( "for" :@ [] )
+                        ( BinOp
+                            ( "legal work performed" :@ [ ( "en" , "legal work performed" ) ]
+                            ) ( "by" :@ [] ) ( TKey "LP" )
+                        )
+                    )
+                ]
+            , Compound
+                ( "isIn" :@ [ ( "en" , "is in" ) ]
+                )
+                [ TKey "Business"
+                , "Schedule1" :@ [ ( "en" , "First Schedule" ) ]
+                ]
+            , Compound
+                ( "isProhibitedBy" :@ [ ( "en" , "is prohibited by" ) ]
+                )
+                [ TKey "Business"
+                , Any
+                    [ "Act" :@ [ ( "en" , "Act" ) ]
+                    , Any
+                        [ "these Rules" :@ [ ( "en" , "these Rules" ) ]
+                        , "any other subsidiary legislation made under the Act" :@ [ ( "en" , "any other subsidiary legislation made under the Act" )
+                            ]
+                        ]
+                    , Cons
+                        ( And
+                            [ "practice directions" :@ [ ( "en" , "practice directions" ) ]
+                            , "guidance notes" :@ [ ( "en" , "guidance notes" ) ]
+                            , "rulings" :@ [ ( "en" , "rulings" ) ]
+                            ]
+                        )
+                        ( "issued under section 71(6) of the Act" :@ [ ( "en" , "issued under section 71(6) of the Act" ) ]
+                        )
+                    , Cons
+                        ( And
+                            [ "practice directions" :@ [ ( "en" , "practice directions" ) ]
+                            , "guidance notes" :@ [ ( "en" , "guidance notes" ) ]
+                            , "rulings" :@ [ ( "en" , "rulings" ) ]
+                            ]
+                        )
+                        ( BinOp
+                            ( "relating" :@ [ ( "en" , "relating" ) ]
+                            ) ( "to" :@ [] )
+                            ( Cons
+                                ( And
+                                    [ "professional practice" :@ [ ( "en" , "professional practice" ) ]
+                                    , "etiquette" :@ [ ( "en" , "etiquette" ) ]
+                                    , "conduct" :@ [ ( "en" , "conduct" ) ]
+                                    , "discipline" :@ [ ( "en" , "discipline" ) ]
+                                    ]
+                                )
+                                ( BinOp
+                                    ( "issued" :@ [ ( "en" , "issued" ) ]
+                                    ) ( "by" :@ [] )
+                                    ( Any
+                                        [ "Council" :@ [ ( "en" , "Council" ) ]
+                                        , "Society" :@ [ ( "en" , "Society" ) ]
+                                        ]
+                                    )
+                                )
+                            )
+                        )
+                    ]
+                ]
+            ]
+        )
+    }
+]
+
+#+end_example
 
 **** The Parser
 

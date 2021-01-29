@@ -8,6 +8,7 @@ import Control.Monad      ( when )
 import Options.Applicative.Simple
 
 import Text.Pretty.Simple
+import Data.Maybe (isJust)
 import qualified Data.Text.Lazy as T
 import LexL    ( Token )
 import ParL    ( pTops, myLexer )
@@ -44,18 +45,7 @@ run v gr p inOpt s = case p ts of
       exitFailure
     Right tree -> do
       putStrLn "\nParse Successful!"
-      -- output format logic needs to go here
-      --case gfOut inOpt of 
-        --Just "" -> putStrLn "gf in ENG"
-        --Just x  -> putStrLn $ "gf in " <> x
-        --Nothing -> pure ()
-      if allOutputs inOpt 
-        then pure () -- this needs to output everything
-        else do
-           when (dot inOpt) (showTree "dot" gr v tree) >>
-             when (ast inOpt) (showTree "ast" gr v tree) >>
-                 when (json inOpt) (showTree "json" gr v tree)
-
+      showTree inOpt gr v tree
 
       exitSuccess
   where
@@ -68,34 +58,41 @@ simpleParseTree = pTops . myLLexer
 prettyPrintParseTree :: String -> Either String T.Text
 prettyPrintParseTree = fmap pShowNoColor . simpleParseTree
 
-
-showTree :: String -> PGF -> Int -> Tops -> IO ()
-showTree str gr v tree0
+showTree :: InputOpts -> PGF -> Int -> Tops -> IO ()
+showTree inOpts gr v tree0
  = let tree = rewriteTree tree0 
-       ruleList = getRules tree in do
-    case str of 
-      "ast" -> do 
-        -- ast output
-        printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
-        printMsg "Linearized tree" $ printTree tree
-      -- gf output
-      "gf" -> do
-        printMsg "In English" $ bnfc2str gr tree
-      
-      "eh?" -> do 
-      -- not quite sure what this is for
-        printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
-        printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
-        printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
-      "png" -> do
-      -- i presume this allows png output
-        printMsg "As Graph" ""
-        printGraph ruleList
-      "dot" -> do
-      -- dotfile output 
+       ruleList = getRules tree 
+       wantAll f = (allOutputs inOpts || f inOpts)
+    in do
+    when (wantAll ast) (do
+      -- ast output
+      printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
+      printMsg "Linearized tree" $ printTree tree
+                              ) >>
+      when (wantAll dot) (do
+        -- dotfile output 
         printMsg "As Dotfile" ""
         putStrLn $ showDot ruleList
         writeFile "graph.dot" (showDot ruleList)
+                                ) >>
+        when (wantAll json) (do
+          -- json output
+          printMsg "As Json" ""
+          return ()
+                                   ) >>
+          when (wantAll png) (do
+            -- png output
+            printMsg "As Graph" ""
+            printGraph ruleList
+                                    ) >>
+            when (wantAll (isJust . gfOut)) (do
+              -- gf output currently only in ENG
+              printMsg "In English" $ bnfc2str gr tree
+                                        )
+      ---- not quite sure what this is for, gotta ask andreas
+        --printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
+        --printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
+        --printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
 
@@ -115,8 +112,10 @@ data InputOpts = InputOpts
   , dot         :: Bool
   , ast         :: Bool
   , json        :: Bool
+  , png         :: Bool
   , gfOut       :: Maybe String
   , silent      :: Bool
+  , files       :: Maybe String
   } deriving Show
 
 
@@ -135,6 +134,9 @@ optsParse = InputOpts <$>
   <*> switch
         ( long "json"
        <> help "Enables JSON output" )
+  <*> switch
+        ( long "png"
+       <> help "Enables PNG output" )
   <*> optional (strOption 
         ( long "gf" 
        <> help "Generates NLG output in chosen lanugage" 
@@ -143,6 +145,10 @@ optsParse = InputOpts <$>
         ( long "silent"
        <> short 's'
        <> help "Enables silent output" )
+  <*> optional (strOption 
+        ( long "files"
+       <> metavar "<filenames>"
+       <> help "Files to be processed" ))
 
 
 main :: IO ()
@@ -153,10 +159,12 @@ main = do
                               optsParse
                               empty
                               
-  stdin <- getContents
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  run vb gr pTops opts stdin
+  case files opts of 
+    Just fs -> print fs
+      -- mapM_ (runFile 2 gr pTops) fs
+    Nothing -> getContents >>= run vb gr pTops opts  
 
 
 
@@ -166,17 +174,5 @@ main = do
   --gr <- readPGF "src-l4/Top.pgf"
   --case args of
     --["--help"] -> usage
-    --[] -> getContents >>= run 2 gr pTops
-    --"-s":fs -> mapM_ (runFile 0 gr pTops) fs
+    --[]     --"-s":fs -> mapM_ (runFile 0 gr pTops) fs
     --fs -> mapM_ (runFile 2 gr pTops) fs
-
---usage :: IO ()
---usage = do
-  --putStrLn $ unlines
-    --[ "usage: Call with one of the following argument combinations:"
-    --, "  --help          Display this help message."
-    --, "  (no arguments)  Parse stdin verbosely."
-    --, "  (files)         Parse content of files verbosely."
-    --, "  -s (files)      Silent mode. Parse content of files silently."
-    --]
-  --exitFailure

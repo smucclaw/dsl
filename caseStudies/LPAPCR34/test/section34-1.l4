@@ -1,0 +1,35 @@
+SECTION 34.1 :en:"Thirty Four, Part One"
+
+   RULE 34.1.a ISA DeonticRule
+  PARTY LegalPractitioner
+  SHANT accept(executive_appointment, Business)
+   WHEN any [ Business [ detracts_from
+                       , is_incompatible_with
+                       | derogates_from ] the_dignity_of the_legal_profession
+            , Business materially_interferes_with [ LegalPractitioner's primary_occupation_of_practising_as_a_lawyer
+                                                  , availability_to those_who may_seek LegalPractitioner's services_as_a_lawyer
+                                                  | the_representation_of LegalPractitioner's clients ]
+            , Business is_likely_to unfairly attract_business_in the_practice_of_law
+            , Business involves [ the_sharing_of LegalPractitioner's fees with
+                                | the_payment_of a_commission to ]
+                                (any unauthorised_person)
+                                for (legal_work performed_by LegalPractitioner)
+            , Business is in FirstSchedule
+            , Business is prohibited_by [ the_Act
+                                        , [ these_Rules
+                                          | any_other_subsidiary_legislation
+                                            made_under the_Act ]
+                                        , any [ practice_directions
+                                              , guidance_notes
+                                              U rulings ]
+                                          issued_under section_71(6)_of the_Act
+                                        | any [ practice_directions
+                                              , guidance_notes
+                                              U rulings ]
+                                          relating_to [ professional_practice
+                                                      , etiquette
+                                                      , conduct
+                                                      & discipline ]
+                                          issued_by [ the_Council | the_Society ]
+                                        ]
+            ]

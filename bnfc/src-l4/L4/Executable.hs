@@ -56,40 +56,33 @@ prettyPrintParseTree :: String -> Either String T.Text
 prettyPrintParseTree = fmap pShowNoColor . simpleParseTree
 
 showTree :: InputOpts -> PGF -> Int -> Tops -> IO ()
-showTree inOpts gr v tree0
- = let tree = rewriteTree tree0 
-       ruleList = getRules tree 
-       wantAll f = (allOutputs inOpts || f inOpts)
-    in do
-    when (wantAll ast) (do
-      -- ast output
-      printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
-      printMsg "Linearized tree" $ printTree tree
-                              ) >>
-      when (wantAll dot) (do
-        -- dotfile output 
-        printMsg "As Dotfile" ""
-        putStrLn $ showDot ruleList
-        writeFile "graph.dot" (showDot ruleList)
-                                ) >>
-        when (wantAll json) (do
-          -- json output
-          printMsg "As Json" ""
-          return ()
-                                   ) >>
-          when (wantAll png) (do
-            -- png output
-            printMsg "As Graph" ""
-            printGraph ruleList
-                                    ) >>
-            when (wantAll (isJust . gfOut)) (do
-              -- not quite sure what this is for, but leaving it within the gf section...
-              printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
-              printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
-              printMsg "Rule to Exit" $ T.unpack (pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList)
-              -- gf output currently only in ENG (as stated in a previous commit)
-              printMsg "In English" $ bnfc2str gr tree
-                                            )
+showTree inOpts gr v tree0 = do
+  let tree = rewriteTree tree0 
+      ruleList = getRules tree 
+      wantAll f = (allOutputs inOpts || f inOpts)
+  when (wantAll ast) $ do
+    -- ast output
+    printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
+    printMsg "Linearized tree" $ printTree tree
+  when (wantAll dot) $ do
+    -- dotfile output 
+    printMsg "As Dotfile" ""
+    putStrLn $ showDot ruleList
+    writeFile "graph.dot" (showDot ruleList)
+  when (wantAll json) $ do
+    -- json output
+    printMsg "As Json" ""
+    return ()
+  when (wantAll png) $ do
+    printMsg "As Graph" ""
+    printGraph ruleList
+  when (wantAll (isJust . gfOut)) $ do
+    -- not quite sure what this is for, but leaving it within the gf section...
+    printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
+    printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
+    printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
+    -- gf output currently only in ENG (as stated in a previous commit)
+    printMsg "In English" $ bnfc2str gr tree
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
 
@@ -144,9 +137,9 @@ optsParse = InputOpts <$>
 
 main :: IO ()
 main = do 
-  (opts, ()) <- simpleOptions "VERSION x.xx.x"
+  (opts, ()) <- simpleOptions "v0.1.2"
                               "l4 - a parser for the l4 language"
-                              "\n\nThis is a sample description"
+                              "This is a sample description"
                               optsParse
                               empty
   stdin <- getContents

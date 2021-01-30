@@ -9,7 +9,7 @@ subdirs :
 	mkdir -p src-bnfc l4 out
 
 out/test.out : l4/test.l4 src-bnfc/AbsL.hs
-	stack run l4 l4/test.l4 > out/test.out 2> out/test.err || stack run showbug l4/test.l4 out/test.out out/test.err
+	stack run l4 < l4/test.l4 > out/test.out 2> out/test.err || stack run showbug l4/test.l4 out/test.out out/test.err
 	dot -Tpng graph.dot > graph.png
 
 src-bnfc/AbsL.hs : l4.bnfc src-l4/Top.hs

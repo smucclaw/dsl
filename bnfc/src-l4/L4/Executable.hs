@@ -63,20 +63,18 @@ showTree inOpts gr v tree0 = do
       ruleList = getRules tree 
       want f = format inOpts `elem` [Fall, f]
   when (want Fast) $ do
-    -- ast output
-    printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
-    printMsg "Linearized tree" $ printTree tree
+    print $ T.unpack (pShowNoColor tree)
+  when (want Flin) $ do
+    putStrLn $ printTree tree
   when (want Fgraph) $ do -- the fgl version of what becomes the dotfile
-    printMsg "As Graph" ""
     printGraph ruleList
   when (want Fdot) $ do
     -- dotfile output 
-    printMsg "As Dotfile" ""
     putStrLn $ showDot ruleList
     writeFile "graph.dot" (showDot ruleList)
   when (want Fjson) $ do
     -- json output
-    printMsg "As Json" ""
+    putStrLn $ "{ \"under construction\": \"true\" }"
   when (want Fmisc) $ do
     -- not quite sure what this is for
     let miscopts x = x `elem` misc inOpts
@@ -85,7 +83,7 @@ showTree inOpts gr v tree0 = do
     when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
   when (want Fgf) $ do
     -- gf output currently only in ENG (as stated in a previous commit)
-    printMsg "In English" $ bnfc2str gr tree
+    print $ bnfc2str gr tree
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
 
@@ -99,7 +97,7 @@ rewriteTree (Toplevel tops) = Toplevel $ do
       rewrite innerRule
     otherwise -> rewrite r
 
-data Format = Fall | Fdot | Fast | Fjson | Fgraph | Fgf | Fmisc deriving (Show, Eq)
+data Format = Fall | Fdot | Fast | Flin | Fjson | Fgraph | Fgf | Fmisc deriving (Show, Eq)
 data GFlang   = GFeng  | GFmalay deriving (Show, Eq)
 data MiscOpts = Mnames | Mnamelist | Mexits deriving (Show, Eq)
 
@@ -108,6 +106,7 @@ parseFormat = eitherReader $ \format -> case (toLower <$> format) of
   "all"   -> Right Fall
   "dot"   -> Right Fdot
   "ast"   -> Right Fast
+  "lin"   -> Right Flin
   "json"  -> Right Fjson
   "graph" -> Right Fgraph
   "gf"    -> Right Fgf

@@ -1,66 +1,20 @@
 #+TITLE: bnfc parser for L4
 
-* ATTN: IDE team
-
-Hello hello, this is currently a work-in-progress branch of the main build. It contains the features that you need, i.e. enabling single-format output of dot and gf, but some of its quirks have not yet been ironed out.
-
-**Installation (Specific only to this branch):
-
-Running ~stack run -- l4~ once after switching to this branch should compile the executables for you. 
-Afterwhich, 
-
-to enable dot-only output, run 'stack exec -- l4 --dot < l4/test.l4 > out/test.out'
-to enable gf-only ouput, run 'stack exec -- l4 --gf EN < l4/test.l4 > out/test.out'
-
-
-** Miscellanous
-For now, the quirks of this build are as follows:
-1) This version of the l4 executable only supports IO with STDIN and STDOUT, so you will have to use '<' and '>' to denote any file IO.
-2) If you follow the build-process listed below in ~INSTALLATION~, it will fail because (1). This means that the ~showbug~ executable does not work in this build.
-3) The intention is to add subcommand support as listed by meng in the feature request, so the flags will be changed to subcommands in a future build
-
-
-
-
-
-This is a bnfc-based parser for the draft L4 language.
-
-* INSTALLATION
-
-The primary method of getting the l4 compiler on your system right now, requires having the ~nix~ package manager installed on your system. We utilize ~direnv~ to handle the pre-requisite BNFC installation automatically so that there is no need to compile from source.
-
-
-Install direnv using nix-env:
-
-#+begin_src shell
-nix-env -iA direnv
-#+end_src
-
-Once installation is complete, you will need to hook direnv into your shell of choice (bash/zsh/fish/etc). Follow the instructions here: https://direnv.net/docs/hook.html
-
-After you've done that, cd into the ~smucclaw/dsl/bnfc directory. There will be a message popup that warns you about the blocking of a .envrc file. Follow the instructions given within the message to unblock it. direnv will then construct a local environment based upon the contents of the .envrc file. There will be some time needed for it to set up, so brew yourself your beverage of choice and come back in a bit. 
-
-Once complete, run the following to get the ~l4~ and ~showbug~ executables.
-
-#+begin_example
-nix-shell --run make
-#+end_example
-
-After which, you should see an output that is the same as listed below in "Running the test4.14".
-
-
-The ~l4~ and ~showbug~ executables will only be available through the nix-shell. See the Makefile for more details.
-
-* Why is there a showbug executable?
-
-The ~showbug~ executable is used to make bnfc's error messages a little bit more readable, converting "syntax error at line M, column N" to show the actual source of the error.
-
-
 * Running
 
 Running ~nix-shell --run make~ from the ~bnfc/~ directory should tangle the relevant code from the README.org source, then compile the parser, and run the parser on the sample L4 code.
 
-* Running the test4.l4
+** To get GF output
+
+to enable gf-only ouput, run =stack run -- l4 --format gf < l4/test.l4 > out/test.out=
+
+You can choose a specific language by running =--gflang en= (default) or =my= (future).
+
+** To get Dot output
+
+to enable dot-only output, run =stack run -- l4 --format dot < l4/test.l4 > out/test.out=
+
+** Running the test4.l4
 
 Meng keeps a set of "test cases" in ~l4/test4.l4~, leading to this invocation:
 
@@ -739,6 +693,42 @@ RULE showMatches MATCHTYPE {
 #+end_example
 
 
+* INSTALLATION
+
+The primary method of getting the l4 compiler on your system right now, requires having the ~nix~ package manager installed on your system. We utilize ~direnv~ to handle the pre-requisite BNFC installation automatically so that there is no need to compile from source.
+
+
+Install direnv using nix-env:
+
+#+begin_src shell
+nix-env -iA direnv
+#+end_src
+
+Once installation is complete, you will need to hook direnv into your shell of choice (bash/zsh/fish/etc). Follow the instructions here: https://direnv.net/docs/hook.html
+
+After you've done that, cd into the ~smucclaw/dsl/bnfc directory. There will be a message popup that warns you about the blocking of a .envrc file. Follow the instructions given within the message to unblock it. direnv will then construct a local environment based upon the contents of the .envrc file. There will be some time needed for it to set up, so brew yourself your beverage of choice and come back in a bit. 
+
+Once complete, run the following to get the ~l4~ and ~showbug~ executables.
+
+#+begin_example
+nix-shell --run make
+#+end_example
+
+After which, you should see an output that is the same as listed below in "Running the test4.14".
+
+If you want to run the =l4= executable out of PATH, install it with =nix-shell --run 'stack install'= so you don't need to invoke all the nix and stack infrastructure each time.
+
+* Why is there a showbug executable?
+
+The ~showbug~ executable is used to make bnfc's error messages a little bit more readable, converting "syntax error at line M, column N" to show the actual source of the error.
+
+
+* Roadmap
+
+1. The intention is to add command/subcommand support as listed by meng in the feature request, so the flags will be changed to subcommands in a future build
+
+This is a bnfc-based parser for the draft L4 language.
+
 * Apology to Junior Researchers
 
 I know I wanted you to learn parser combinators before coming to this. It may therefore come as a bit of a rude surprise to learn that our approach here is BNFC-based, not Parsec- or MegaParsec-based.
@@ -750,3 +740,5 @@ For this slight impedance mismatch I apologize. However, the theory you've read 
 We may use a combinator-based parser in a future iteration of this codebase.
 
 You may need to read [[https://www.haskell.org/happy/][Happy documentation]] to learn about BNFC's "output" format.
+
+Also, the src-L4/L4/Executable.hs uses optparse-applicative, which (almost) uses a monadic Parser combinator.

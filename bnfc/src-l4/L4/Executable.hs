@@ -7,8 +7,12 @@ import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
 import Options.Applicative.Simple
 
+import Data.List.Split (splitOn)
+import Data.Either (lefts, rights)
 import Text.Pretty.Simple
 import Data.Maybe (isJust)
+import Data.Char (toLower)
+import Data.List (intercalate)
 import qualified Data.Text.Lazy as T
 import LexL    ( Token )
 import ParL    ( pTops, myLexer )
@@ -41,9 +45,7 @@ run v gr p inOpt s = case p ts of
       putStrLn notTree
       exitFailure
     Right tree -> do
-      putStrLn "\nParse Successful!"
       showTree inOpt gr v tree
-
       exitSuccess
   where
   ts = myLLexer s
@@ -59,28 +61,29 @@ showTree :: InputOpts -> PGF -> Int -> Tops -> IO ()
 showTree inOpts gr v tree0 = do
   let tree = rewriteTree tree0 
       ruleList = getRules tree 
-      wantAll f = (allOutputs inOpts || f inOpts)
-  when (wantAll ast) $ do
+      want f = format inOpts `elem` [Fall, f]
+  when (want Fast) $ do
     -- ast output
     printMsg "Abstract Syntax" $ T.unpack (pShowNoColor tree)
     printMsg "Linearized tree" $ printTree tree
-  when (wantAll dot) $ do
+  when (want Fgraph) $ do -- the fgl version of what becomes the dotfile
+    printMsg "As Graph" ""
+    printGraph ruleList
+  when (want Fdot) $ do
     -- dotfile output 
     printMsg "As Dotfile" ""
     putStrLn $ showDot ruleList
     writeFile "graph.dot" (showDot ruleList)
-  when (wantAll json) $ do
+  when (want Fjson) $ do
     -- json output
     printMsg "As Json" ""
-    return ()
-  when (wantAll png) $ do
-    printMsg "As Graph" ""
-    printGraph ruleList
-  when (wantAll (isJust . gfOut)) $ do
-    -- not quite sure what this is for, but leaving it within the gf section...
-    printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
-    printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
-    printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
+  when (want Fmisc) $ do
+    -- not quite sure what this is for
+    let miscopts x = x `elem` misc inOpts
+    when (miscopts Mnames)    $ printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
+    when (miscopts Mnamelist) $ printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
+    when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
+  when (want Fgf) $ do
     -- gf output currently only in ENG (as stated in a previous commit)
     printMsg "In English" $ bnfc2str gr tree
   where
@@ -96,44 +99,70 @@ rewriteTree (Toplevel tops) = Toplevel $ do
       rewrite innerRule
     otherwise -> rewrite r
 
+data Format = Fall | Fdot | Fast | Fjson | Fgraph | Fgf | Fmisc deriving (Show, Eq)
+data GFlang   = GFeng  | GFmalay deriving (Show, Eq)
+data MiscOpts = Mnames | Mnamelist | Mexits deriving (Show, Eq)
+
+parseFormat :: ReadM Format
+parseFormat = eitherReader $ \format -> case (toLower <$> format) of
+  "all"   -> Right Fall
+  "dot"   -> Right Fdot
+  "ast"   -> Right Fast
+  "json"  -> Right Fjson
+  "graph" -> Right Fgraph
+  "gf"    -> Right Fgf
+  "misc"  -> Right Fmisc
+  _       -> Left $ "unable to parse format " ++ format
+
+parseGFlang :: ReadM GFlang
+parseGFlang = eitherReader $ \lang -> case (toLower <$> lang) of
+  "eng"   -> Right GFeng
+  "en"    -> Right GFeng
+  "malay" -> Right GFmalay
+  "my"    -> Right GFmalay
+  _       -> Left $ "unable to parse GF language " ++ lang
+
+parseMiscOpts :: ReadM [MiscOpts]
+parseMiscOpts = eitherReader $ \miscopts ->
+  (let firstParse = [ case (toLower <$> misc) of
+                        "names"    -> Right Mnames
+                        "namelist" -> Right Mnamelist
+                        "exits"    -> Right Mexits
+                        x          -> Left $ "unable to parse miscellaneous option " ++ x
+                    | misc <- splitOn "," miscopts ]
+   in if (not (null (lefts firstParse)))
+      then Left  (intercalate "; " (lefts firstParse))
+      else Right (rights firstParse)
+  )
 
 data InputOpts = InputOpts 
-  { allOutputs  :: Bool
-  , dot         :: Bool
-  , ast         :: Bool
-  , json        :: Bool
-  , png         :: Bool
-  , gfOut       :: Maybe String
+  { format      :: Format
+  , gflang      :: GFlang
+  , misc        :: [MiscOpts]
   , silent      :: Bool
   } deriving Show
 
-
 optsParse :: Parser InputOpts
 optsParse = InputOpts <$>
-      switch 
-        ( long "all"
-       <> short 'a'
-       <> help "Generates all possible output formats (natLang defaults to EN)" )
-  <*> switch 
-        ( long "dot"
-       <> help "Enables graphviz DOT language output" )
-  <*> switch
-        ( long "ast"
-       <> help "Enables AST output" )
-  <*> switch
-        ( long "json"
-       <> help "Enables JSON output" )
-  <*> switch
-        ( long "png"
-       <> help "Enables PNG output" )
-  <*> optional (strOption 
-        ( long "gf" 
-       <> help "Generates NLG output in chosen lanugage" 
-       <> metavar "<language>" ))
+      option parseFormat
+        ( long "format"
+          <> short 'f'
+          <> value Fall
+          <> help "Output format (all, dot, ast, json, png, gf) (default all)" )
+  <*> option parseGFlang
+        ( long "gflang"
+          <> value GFeng
+          <> help "GF language (en, my) (default en)" )
+  <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
+        ( long "misc"
+          <> value [Mnames, Mnamelist, Mexits]
+          <> help "miscellaneous options (names, namelist, exits)" )
   <*> switch
         ( long "silent"
        <> short 's'
        <> help "Enables silent output" )
+
+
 
 main :: IO ()
 main = do 

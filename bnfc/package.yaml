@@ -30,6 +30,8 @@ dependencies:
 - split
 - gf
 - optparse-simple
+- split
+
 
 ghc-options:
 - -Wall

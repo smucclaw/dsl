@@ -48,10 +48,13 @@ data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "po
               | All [TermExpr]               -- and -- each element must evaluate true
               | Any [TermExpr]               -- or  -- only one element is needed to be true
               | And [TermExpr]               -- set union! inclusive "and" is not a logical "and"! more of an "or"
-              | Compound TermExpr [TermExpr] -- foo(bar, baz) what Prolog calls a compound term, but looks like a function to everyone else
-              | Cons TermExpr TermExpr       -- used to linearly string together increasingly lengthy sentences -- you will recognize this as a cons-list from LISP
-              | BinOp TermExpr TermExpr TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
+              | BinOp TermExpr BinOp TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
   deriving (Show, Eq)
+
+data BinOp = Cons
+           | Compound
+           | TE2 TermExpr
+           deriving (Show, Eq)
 
 type Key = String               -- ideally spaceless but can contain spaces. Maybe a Mk to s/ /_/g
 type NLTag = (Key,String)
@@ -121,7 +124,8 @@ stmToPlain (Section te) = plain te
 stmToProlog :: Stm -> PP.Doc
 stmToProlog (Section te) = PP.text "%% " <> PP.text (stmToL4 (Section te))
 stmToProlog (DRule rn p d a w) =
-  let headP = PP.text "drule" PP.<> parencomma [ teToProlog p
+  let headP = PP.text "drule" PP.<> parencomma [ PP.doubleQuotes (PP.text $ plain rn)
+                                               , teToProlog p
                                                , PP.text (toLower <$> dshow d)
                                                , teToProlog a ]
       varargs = teToProlog p : unwrapP a
@@ -137,19 +141,17 @@ asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (z
 asPrologSubrule :: [PP.Doc] -> (Char, TermExpr) -> PP.Doc
 asPrologSubrule varargs (ruleNum, te) =
   PP.hang
-  (PP.text "subRule" PP.<> parencomma ([ PP.text ("subRule_"++[ruleNum]) ] ++ varargs) PP.<+> (PP.text ":-"))
+  (PP.text "\nsubRule" PP.<> parencomma ([ PP.text ("subRule_"++[ruleNum]) ] ++ varargs) PP.<+> (PP.text ":-"))
   5
   ((teToProlog te) PP.<> PP.char '.')
 
 
 unwrapP :: TermExpr -> [PP.Doc]
-unwrapP (Compound te termexprs) = teToProlog <$> termexprs
 unwrapP (mainex :@ nltags) = [PP.text $ tr " " "_" mainex]
 unwrapP (TKey tkey)        = [PP.text $ tr " " "_" tkey]
 unwrapP (All termexprs)    = teToProlog <$> termexprs
 unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
 unwrapP (And termexprs)          = teToProlog <$> termexprs
-unwrapP (Cons te1 te2)           = [teToProlog te1, teToProlog te2]
 unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
 
 parencomma docs = PP.parens (PP.hsep $ PP.punctuate (PP.char ',') docs)
@@ -160,27 +162,20 @@ teToProlog orig@(TKey tkey)        = PP.text $ plain orig
 teToProlog (All termexprs)    = PP.text "TODO All"
 teToProlog orig@(Any termexprs)     = PP.nest 8 $ PP.vcat $ PP.punctuate (PP.text "; ") (teToProlog <$> termexprs)
 teToProlog (And termexprs)          = PP.text "TODO And"
-teToProlog (Cons te1 te2)           = teToProlog te1 <> PP.char '_' <> teToProlog te2
-teToProlog orig@(Compound (Any lhss) termexprs) = teToProlog (Any ((\lhs -> (Compound lhs termexprs)) <$> lhss))
-teToProlog orig@(Compound lhs [tk,Any rhss]) = teToProlog (Any ((\rhs -> (Compound lhs [tk,rhs])) <$> rhss))
-teToProlog orig@(Compound te1 termexprs)  = teToProlog te1 <> parencomma (teToProlog <$> termexprs)
-teToProlog orig@(BinOp (BinOp tk1 ("'s" :@ []) tk2) ("of" :@ []) te3) = teToProlog tk2 <> PP.text "_of" <> parencomma [teToProlog tk1, teToProlog te3]
-teToProlog orig@(BinOp te1 ("of" :@ []) te3) = teToProlog te1 <> PP.text "_of" <> parencomma [teToProlog te3]
-teToProlog orig@(BinOp te1 ("'s" :@ []) te3) = teToProlog te3 <> parencomma [teToProlog te1]
-teToProlog orig@(BinOp te1 bo2 te3)          = teToProlog te1 <> parencomma [teToProlog bo2, teToProlog te3]
+teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = PP.text (x ++ "_" ++ y)
+teToProlog orig@(BinOp te1 Cons te2) = (PP.text "compl") <> parencomma [teToProlog te1, teToProlog te2]
+teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
+teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
+teToProlog orig@(BinOp (All lhss) co rhs) = teToProlog (All ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
+teToProlog orig@(BinOp lhs co (All rhss)) = teToProlog (All ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
+teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> PP.text "_of" <> parencomma [teToProlog tk1, teToProlog te3]
+teToProlog orig@(BinOp te1 Compound te2)     = teToProlog te1 <> parencomma [teToProlog te2]
+teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = PP.text "of" <> parencomma [teToProlog te3, teToProlog te1]
+teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = PP.text prep <> parencomma [teToProlog te1, teToProlog te3]
 
 plain :: TermExpr -> String
 plain (mainex :@ nltags) = tr " " "_" mainex
 plain (TKey tkey)        = tr " " "_" tkey
-plain (All termexprs)    = "TODO " ++ intercalate ", " (plain <$> termexprs)
-plain orig@(Any termexprs)     = "any of: [" ++ intercalate ", " (plain <$> termexprs) ++ "]"
-plain (And termexprs)          = "all of: [" ++ intercalate ", " (plain <$> termexprs) ++ "]"
-plain (Cons te1 te2)           = unwords [ plain te1, plain te2 ]
-plain orig@(Compound (Any lhss) termexprs) = plain (Any ((\lhs -> (Compound lhs termexprs)) <$> lhss))
-plain orig@(Compound te1 termexprs)        = plain te1 <> "(" <> intercalate ", " (plain <$> termexprs)  <> ")"
-plain orig@(BinOp te1 ("'s" :@ []) te3)    = plain te3 <> "(" <> plain te1           <> ")"
-plain orig@(BinOp te1 ("of" :@ []) te3)    = plain te1 <> "(" <> intercalate ", " ["of", plain te3]      <> ")"
-plain orig@(BinOp te1 bo2 te3)             = plain te1 <> "(" <> intercalate ", " (plain <$> [bo2, te3]) <> ")"
 
 
 -- tr "abc" "123" "a cow" -> "1 3ow"
@@ -210,9 +205,7 @@ teToL4 ctx (TKey tkey)        = tkey
 teToL4 ctx (All termexprs)    = "TODO All"
 teToL4 ctx orig@(Any termexprs)     = "TODO Any"
 teToL4 ctx (And termexprs)          = "TODO And"
-teToL4 ctx (Cons te1 te2)           = "TODO Cons"
-teToL4 ctx orig@(Compound te1 termexprs) = teToL4' ctx orig te1 ++ "(" ++ intercalate "," ((teToL4' ctx orig) <$> termexprs) ++ ")"
-teToL4 ctx orig@(BinOp te1 bo2 te3)      = teToL4' ctx orig bo2 ++ "(" ++ teToL4' ctx orig te1 ++ " , " ++ teToL4' ctx orig te3 ++ ")"
+teToL4 ctx orig@(BinOp te1 bo2 te3)      = show (bo2) ++ "(" ++ teToL4' ctx orig te1 ++ " , " ++ teToL4' ctx orig te3 ++ ")"
 
 teToL4' ctx orig = teToL4 (ctx { stack = orig : stack ctx })
 
@@ -269,14 +262,18 @@ nl_ ex = ex :@ []
 -- syntactic sugar for a prolog-style Compound term: lhs(r,h,s)
 (⏩) :: TermExpr -> [TermExpr] -> TermExpr
 infixr 5 ⏩
-lhs ⏩ rhs = Compound lhs rhs
+lhs ⏩ rhs = BinOp lhs Compound (telist2conslist rhs)
+
+telist2conslist :: [TermExpr] -> TermExpr
+telist2conslist (te:[]) = te
+telist2conslist (t:tes) = BinOp t Cons (telist2conslist tes)
 
 -- executive appointment IS associatedWith Something
 -- becomes, in prolog, associatedWith(ExecutiveAppointment, Something)
 -- which is basically a bit of a flip and rearrangement of the above
 (👉) :: Key -> TermExpr -> TermExpr -> TermExpr
 infixr 5 👉
-lhs 👉 compound = \rhs -> compound ⏩ [TKey lhs, rhs]
+lhs 👉 compound = \rhs -> BinOp compound Compound (telist2conslist [TKey lhs, rhs])
 
 -- section marker. this always has to be wrapped in () because it's a section?
 (§) :: TermExpr -> Stm
@@ -292,7 +289,7 @@ type MkCRule = TermExpr -> TermExpr -> TermExpr -> TermExpr -> Stm
 (§=§) :: MkCRule
 (§=§) a b c d = CRule a b c (Just d)
 
-instance Semigroup TermExpr where (<>) = Cons
+instance Semigroup TermExpr where (<>) x y = BinOp x Cons y
 
 _'s :: Key -> TermExpr -> TermExpr
 infixr 6 `_'s`
@@ -309,7 +306,7 @@ dshow DShant = "SHANT"
 dshow DMust  = "MUST"
 dshow DMay   = "MAY"
 
-binop op x y = BinOp x (nl_ op) y
+binop op x y = BinOp x (TE2 (op :@ [])) y
 
 -- this is a sign we need to learn Template Haskell
 infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x <> (nl_ "of")

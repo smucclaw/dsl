@@ -81,7 +81,7 @@ showTree inOpts gr v tree0 = do
     when (miscopts Mnames)    $ printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
     when (miscopts Mnamelist) $ printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
     when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
-  when (want Fgf) $ do
+  when (want $ Fgf GFeng) $ do  -- hardcoding GFeng for now
     -- gf output currently only in ENG (as stated in a previous commit)
     print $ bnfc2str gr tree
   where
@@ -97,7 +97,7 @@ rewriteTree (Toplevel tops) = Toplevel $ do
       rewrite innerRule
     otherwise -> rewrite r
 
-data Format = Fall | Fdot | Fast | Flin | Fjson | Fgraph | Fgf | Fmisc deriving (Show, Eq)
+data Format = Fall | Fdot | Fast | Flin | Fjson | Fgraph | Fgf GFlang | Fmisc deriving (Show, Eq)
 data GFlang   = GFeng  | GFmalay deriving (Show, Eq)
 data MiscOpts = Mnames | Mnamelist | Mexits deriving (Show, Eq)
 
@@ -109,7 +109,7 @@ parseFormat = eitherReader $ \format -> case (toLower <$> format) of
   "lin"   -> Right Flin
   "json"  -> Right Fjson
   "graph" -> Right Fgraph
-  "gf"    -> Right Fgf
+  "gf"    -> Right (Fgf GFeng)
   "misc"  -> Right Fmisc
   _       -> Left $ "unable to parse format " ++ format
 
@@ -134,15 +134,15 @@ parseMiscOpts = eitherReader $ \miscopts ->
       else Right (rights firstParse)
   )
 
-data InputOpts = InputOpts 
-  { format      :: Format
-  , gflang      :: GFlang
-  , misc        :: [MiscOpts]
-  , silent      :: Bool
+data InputOpts' = InputOpts'
+  { format'      :: Format
+  , gflang'      :: GFlang
+  , misc'        :: [MiscOpts]
+  , silent'      :: Bool
   } deriving Show
 
-optsParse :: Parser InputOpts
-optsParse = InputOpts <$>
+optsParse' :: Parser InputOpts'
+optsParse' = InputOpts' <$>
       option parseFormat
         ( long "format"
           <> short 'f'
@@ -161,15 +161,50 @@ optsParse = InputOpts <$>
        <> short 's'
        <> help "Enables silent output" )
 
+data InputOpts = InputOpts 
+  { format :: Format 
+  , misc   :: [MiscOpts]
+  , silent :: Bool
+  } deriving Show
 
+optsGF :: Parser GFlang
+optsGF = argument parseGFlang
+        ( value GFeng
+       <> help "GF language (en, my) (default en)" )
+
+optsParse :: Parser InputOpts
+optsParse = InputOpts <$>
+      subparser
+        ( command "all" (info (pure Fall) (progDesc "Prints all available formats"))
+       <> command "dot" (info (pure Fdot) (progDesc "Prints dot format only"))
+       <> command "ast" (info (pure Fast) (progDesc "Prints ast format only"))
+       <> command "json" (info (pure Fjson) (progDesc "Prints json format only"))
+       <> command "png" (info (pure Fgraph) (progDesc "Prints png format only"))
+       <> command "gf" (info (Fgf <$> optsGF) 
+            ( fullDesc 
+           <> progDesc "Prints natlang only")))
+  <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
+        ( long "misc"
+          <> value [Mnames, Mnamelist, Mexits]
+          <> help "miscellaneous options (names, namelist, exits)" )
+  <*> switch
+        ( long "silent"
+       <> short 's'
+       <> help "Enables silent output" )
 
 main :: IO ()
 main = do 
-  (opts, ()) <- simpleOptions "v0.1.2"
-                              "l4 - a parser for the l4 language"
-                              "This is a sample description"
-                              optsParse
-                              empty
+  let optsParse'' = info (optsParse <**> helper) 
+                        (  fullDesc
+                        <> header "l4 - a parser for the l4 language"
+                        <> progDesc "This is a sample description"
+                        )
+  opts <- execParser optsParse'' 
+  --(opts, ()) <- simpleOptions "v0.1.2"
+                              --"l4 - a parser for the l4 language"
+                              --"This is a sample description"
+                              --optsParse
+                              --empty
   stdin <- getContents
                               
   let vb = if silent opts then 0 else 2

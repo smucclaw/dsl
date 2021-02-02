@@ -81,8 +81,9 @@ showTree inOpts gr v tree0 = do
     when (miscopts Mnames)    $ printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
     when (miscopts Mnamelist) $ printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
     when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
-  when (want $ Fgf GFeng) $ do  -- hardcoding GFeng for now
+  when (want $ Fgf GFeng) $ do  -- hardcoding GFeng for now; 
     -- gf output currently only in ENG (as stated in a previous commit)
+    -- TODO :: Find a way to handle the various gf language options
     print $ bnfc2str gr tree
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
@@ -174,7 +175,6 @@ main = do
                               
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  print opts
-  --run vb gr pTops opts stdin 
+  run vb gr pTops opts stdin 
 
 

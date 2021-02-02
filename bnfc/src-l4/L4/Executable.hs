@@ -134,43 +134,14 @@ parseMiscOpts = eitherReader $ \miscopts ->
       else Right (rights firstParse)
   )
 
-data InputOpts' = InputOpts'
-  { format'      :: Format
-  , gflang'      :: GFlang
-  , misc'        :: [MiscOpts]
-  , silent'      :: Bool
-  } deriving Show
-
-optsParse' :: Parser InputOpts'
-optsParse' = InputOpts' <$>
-      option parseFormat
-        ( long "format"
-          <> short 'f'
-          <> value Fall
-          <> help "Output format (all, dot, ast, json, png, gf) (default all)" )
-  <*> option parseGFlang
-        ( long "gflang"
-          <> value GFeng
-          <> help "GF language (en, my) (default en)" )
-  <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
-        ( long "misc"
-          <> value [Mnames, Mnamelist, Mexits]
-          <> help "miscellaneous options (names, namelist, exits)" )
-  <*> switch
-        ( long "silent"
-       <> short 's'
-       <> help "Enables silent output" )
-
 data InputOpts = InputOpts 
   { format :: Format 
   , misc   :: [MiscOpts]
   , silent :: Bool
   } deriving Show
 
-optsGF :: Parser GFlang
-optsGF = argument parseGFlang
-        ( value GFeng
-       <> help "GF language (en, my) (default en)" )
+optsGF :: Parser GFlang 
+optsGF = argument parseGFlang (value GFeng)
 
 optsParse :: Parser InputOpts
 optsParse = InputOpts <$>
@@ -180,9 +151,9 @@ optsParse = InputOpts <$>
        <> command "ast" (info (pure Fast) (progDesc "Prints ast format only"))
        <> command "json" (info (pure Fjson) (progDesc "Prints json format only"))
        <> command "png" (info (pure Fgraph) (progDesc "Prints png format only"))
-       <> command "gf" (info (Fgf <$> optsGF) 
+       <> command "gf" (info (Fgf <$> optsGF)             
             ( fullDesc 
-           <> progDesc "Prints natlang only")))
+           <> progDesc "Prints natlang only; GF language (en, my) (default en)")))
   <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
         ( long "misc"
           <> value [Mnames, Mnamelist, Mexits]
@@ -193,21 +164,17 @@ optsParse = InputOpts <$>
        <> help "Enables silent output" )
 
 main :: IO ()
-main = do 
-  let optsParse'' = info (optsParse <**> helper) 
-                        (  fullDesc
-                        <> header "l4 - a parser for the l4 language"
-                        <> progDesc "This is a sample description"
-                        )
-  opts <- execParser optsParse'' 
-  --(opts, ()) <- simpleOptions "v0.1.2"
-                              --"l4 - a parser for the l4 language"
-                              --"This is a sample description"
-                              --optsParse
-                              --empty
+main = do  
+  (opts, ()) <- simpleOptions "v0.1.2"
+                              "l4 - a parser for the l4 language"
+                              "This is a sample description"
+                              optsParse
+                              empty
   stdin <- getContents
                               
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  run vb gr pTops opts stdin 
+  print opts
+  --run vb gr pTops opts stdin 
+
 

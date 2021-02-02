@@ -125,6 +125,7 @@ stmToProlog :: Stm -> PP.Doc
 stmToProlog (Section te) = PP.text "%% " <> PP.text (stmToL4 (Section te))
 stmToProlog (DRule rn p d a w) =
   let headP = PP.text "drule" PP.<> parencomma [ PP.doubleQuotes (PP.text $ plain rn)
+                                               , PP.text $ "SubRuleName"
                                                , teToProlog p
                                                , PP.text (toLower <$> dshow d)
                                                , teToProlog a ]
@@ -211,7 +212,8 @@ teToL4' ctx orig = teToL4 (ctx { stack = orig : stack ctx })
 
 
 section34 :: [Stm]
-section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")]) -- subsequently we speechbubble with English as default
+section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")
+                           ,("se","lasdkjklasdjf")]) -- subsequently we speechbubble with English as default
             , section34_1 ]
 
 section34_1 :: Stm
@@ -219,17 +221,17 @@ section34_1 =
   (§§) ("34.1" 💬 "Prohibitions")
   ("LP" 💬 "Legal Practitioner")
   mustNot
-  (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"]) -- prolog: drule(LP,shant,accept(execA,Business)) :- subRule(Violations, LP, Business)
-  (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
-                              , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
-                              , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
-                              ] $ (en_ "dignity") `of_` ("profession" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
+  (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"])
+  (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                        -- [ (1 +),
+                              , ("incompat" 💬 "is incompatible" `_with`)    --   (2 *),
+                              , (en_ "derogates" `_from`)                    --   (10 -) ] <*> [400] = [401, 800, -390]
+                              ] $ (en_ "dignity") `of_` ("profession" 💬 "legal profession")
          , "Business" 👉 (en_ "materially interferes with") $
            Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
-               , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
+               , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer")
                , en_ "representation" `of_` lp's ( en_ "clients" ) ]
          , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
-         , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`) -- how to structure a ditransitive, ternary preposition?
+         , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`)
                                                   , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
                                               Any [ en_ "unauthorised person" ] `for_`
                                               en_ "legal work performed" `by_`
@@ -252,6 +254,10 @@ section34_1 =
 (💬) :: String -> String -> TermExpr
 infixr 7 💬
 ex 💬 tag = ex :@ [("en",tag)]
+
+(🔤) :: String -> String -> TermExpr
+infixr 7 🔤
+ex 🔤 tag = ex :@ [("wordnet",tag)]  
 
 en_ :: String -> TermExpr
 en_ ex = ex :@ [("en",ex)]

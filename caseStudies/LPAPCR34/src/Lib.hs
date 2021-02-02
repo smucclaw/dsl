@@ -10,7 +10,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Text (Text, pack, unpack)
 import Data.Void
-import Data.List (nub, permutations, sort, sortOn, intercalate)
+import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
 import Data.Char (toLower)
 import qualified Text.PrettyPrint as PP
 import Control.Monad (forM_)
@@ -115,6 +115,9 @@ parseTag = do
 parseTermExpr :: Parser TermExpr
 parseTermExpr = return $ "burf" :@ []
 
+stmToPlain :: Stm -> String
+stmToPlain (Section te) = plain te
+
 stmToProlog :: Stm -> PP.Doc
 stmToProlog (Section te) = PP.text "%% " <> PP.text (stmToL4 (Section te))
 stmToProlog (DRule rn p d a w) =
@@ -141,8 +144,8 @@ asPrologSubrule varargs (ruleNum, te) =
 
 unwrapP :: TermExpr -> [PP.Doc]
 unwrapP (Compound te termexprs) = teToProlog <$> termexprs
-unwrapP (mainex :@ nltags) = [PP.text mainex]
-unwrapP (TKey tkey)        = [PP.text tkey]
+unwrapP (mainex :@ nltags) = [PP.text $ tr " " "_" mainex]
+unwrapP (TKey tkey)        = [PP.text $ tr " " "_" tkey]
 unwrapP (All termexprs)    = teToProlog <$> termexprs
 unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
 unwrapP (And termexprs)          = teToProlog <$> termexprs
@@ -152,15 +155,36 @@ unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
 parencomma docs = PP.parens (PP.hsep $ PP.punctuate (PP.char ',') docs)
 
 teToProlog :: TermExpr -> PP.Doc
-teToProlog (mainex :@ nltags) = PP.text mainex
-teToProlog (TKey tkey)        = PP.text tkey
+teToProlog orig@(mainex :@ nltags) = PP.text $ plain orig
+teToProlog orig@(TKey tkey)        = PP.text $ plain orig
 teToProlog (All termexprs)    = PP.text "TODO All"
-teToProlog orig@(Any termexprs)     = PP.text "TODO Any"
+teToProlog orig@(Any termexprs)     = PP.nest 8 $ PP.vcat $ PP.punctuate (PP.text "; ") (teToProlog <$> termexprs)
 teToProlog (And termexprs)          = PP.text "TODO And"
-teToProlog (Cons te1 te2)           = PP.text "TODO Cons"
-teToProlog orig@(Compound te1 termexprs) = teToProlog te1 <> parencomma (teToProlog <$> termexprs)
-teToProlog orig@(BinOp te1 bo2 te3)      = teToProlog bo2 <> parencomma [teToProlog te1, teToProlog te3]
+teToProlog (Cons te1 te2)           = teToProlog te1 <> PP.char '_' <> teToProlog te2
+teToProlog orig@(Compound (Any lhss) termexprs) = teToProlog (Any ((\lhs -> (Compound lhs termexprs)) <$> lhss))
+teToProlog orig@(Compound lhs [tk,Any rhss]) = teToProlog (Any ((\rhs -> (Compound lhs [tk,rhs])) <$> rhss))
+teToProlog orig@(Compound te1 termexprs)  = teToProlog te1 <> parencomma (teToProlog <$> termexprs)
+teToProlog orig@(BinOp (BinOp tk1 ("'s" :@ []) tk2) ("of" :@ []) te3) = teToProlog tk2 <> PP.text "_of" <> parencomma [teToProlog tk1, teToProlog te3]
+teToProlog orig@(BinOp te1 ("of" :@ []) te3) = teToProlog te1 <> PP.text "_of" <> parencomma [teToProlog te3]
+teToProlog orig@(BinOp te1 ("'s" :@ []) te3) = teToProlog te3 <> parencomma [teToProlog te1]
+teToProlog orig@(BinOp te1 bo2 te3)          = teToProlog te1 <> parencomma [teToProlog bo2, teToProlog te3]
 
+plain :: TermExpr -> String
+plain (mainex :@ nltags) = tr " " "_" mainex
+plain (TKey tkey)        = tr " " "_" tkey
+plain (All termexprs)    = "TODO " ++ intercalate ", " (plain <$> termexprs)
+plain orig@(Any termexprs)     = "any of: [" ++ intercalate ", " (plain <$> termexprs) ++ "]"
+plain (And termexprs)          = "all of: [" ++ intercalate ", " (plain <$> termexprs) ++ "]"
+plain (Cons te1 te2)           = unwords [ plain te1, plain te2 ]
+plain orig@(Compound (Any lhss) termexprs) = plain (Any ((\lhs -> (Compound lhs termexprs)) <$> lhss))
+plain orig@(Compound te1 termexprs)        = plain te1 <> "(" <> intercalate ", " (plain <$> termexprs)  <> ")"
+plain orig@(BinOp te1 ("'s" :@ []) te3)    = plain te3 <> "(" <> plain te1           <> ")"
+plain orig@(BinOp te1 ("of" :@ []) te3)    = plain te1 <> "(" <> intercalate ", " ["of", plain te3]      <> ")"
+plain orig@(BinOp te1 bo2 te3)             = plain te1 <> "(" <> intercalate ", " (plain <$> [bo2, te3]) <> ")"
+
+
+-- tr "abc" "123" "a cow" -> "1 3ow"
+tr x y cs = [ maybe c (y !!) eI | c <- cs, let eI = elemIndex c x ]
 
 stmToL4 :: Stm -> String
 stmToL4 (Section te)       = unlines [ unwords [ "SECTION",             teToL4 toplevel te ] ]
@@ -206,7 +230,7 @@ section34_1 =
   (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                               -- prolog: subRule(rule1a, LP, Business) :- detracts(Business, dignity(prof));
                               , ("incompat" 💬 "is incompatible" `_with`)           --                                          incompat(Business, dignity(prof));
                               , (en_ "derogates" `_from`)                           --                                          derogates(Business, dignity(prof)).
-                              ] $ (en_ "dignity") `of_` ("prof" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
+                              ] $ (en_ "dignity") `of_` ("profession" 💬 "legal profession")  --    detracts(Business,dignity(prof)) :- askUser("does the Business detract from the dignity of the profession?").
          , "Business" 👉 (en_ "materially interferes with") $
            Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
                , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer") -- needs more structure? rephrase using BinOp? Cons?
@@ -308,9 +332,11 @@ someFunc myinput = do
                    Right rhs -> rhs
   (opts,runCmd) <-
     simpleOptions "v0.01" "lpapcr34" "an early L4 prototype for section 34" (pure ()) $
-    do addSubCommands "pretty" "pretty-print" (
+    do addSubCommands "pretty" "pretty    ast | stdin" (
          do addCommand "ast"   "the manual AST" (const (pPrint section34)) (pure ())
             addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
          )
+       -- i think there is a bug in optparse-simple, honestly
        addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . PP.render . stmToProlog) section34)) (pure ())
+       addCommand "plain"  "output to plain"  (const (mapM_ (putStrLn .             stmToPlain)  section34)) (pure ())
   runCmd

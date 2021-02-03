@@ -5,7 +5,7 @@ module L4.Executable where
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
-import Options.Applicative.Simple
+import Options.Applicative
 
 import Data.List.Split (splitOn)
 import Data.Either (lefts, rights)
@@ -158,8 +158,8 @@ optsParse = InputOpts <$>
        <> command "json" (info (pure Fjson) (progDesc "Prints json format only"))
        <> command "png" (info (pure Fgraph) (progDesc "Prints png format only"))
        <> command "gf2" (info (subparser (command "en" (info (pure (Fgf GFeng))   (progDesc "tell GF to output english")) <>
-                                          command "my" (info (pure (Fgf GFmalay)) (progDesc "tell GF to output malay")))
-                              <**> helper)
+                                                             command "my" (info (pure (Fgf GFmalay)) (progDesc "tell GF to output malay")))
+                                                  <**> helper)
                          (fullDesc <> progDesc "subcommand: en, my"))
        <> command "gf" (info (Fgf <$> optsGF <**> helper)
                         ( fullDesc 
@@ -176,15 +176,14 @@ optsParse = InputOpts <$>
 
 main :: IO ()
 main = do  
-  (opts, ()) <- simpleOptions "v0.1.2"
-                              "l4 - a parser for the l4 language"
-                              "This is a sample description"
-                              optsParse
-                              empty
+  let optsParse' = info optsParse (fullDesc <> progDesc "l4 - a parser for l4")
+  opts <- customExecParser (prefs showHelpOnError) optsParse'
+
   stdin <- getContents
                               
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  run vb gr pTops opts stdin 
+  print opts
+  --run vb gr pTops opts stdin 
 
 

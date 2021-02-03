@@ -9,6 +9,9 @@ import Data.List.Split (splitOn)
 import Data.List (intercalate)
 import Data.Char (isUpper, isLower)
 
+-- for use by L4/Executable and by ToGF.hs
+data GFlang   = GFeng  | GFmalay deriving (Show, Eq)
+
 data BoolGroup a = AndGroup [a]
                  |  OrGroup [a]
                  |  IdGroup  a

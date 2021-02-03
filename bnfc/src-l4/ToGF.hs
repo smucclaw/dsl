@@ -3,7 +3,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module ToGF
-  ( bnfc2str,
+  ( bnfc2lang, bnfc2str
   )
 where
 
@@ -12,6 +12,13 @@ import Data.Char (toLower)
 import Data.Maybe (mapMaybe)
 import PGF (Expr, PGF, linearizeAll, showExpr)
 import Top
+import L4 (GFlang)
+
+bnfc2lang :: GFlang -> PGF -> Tops -> String
+bnfc2lang somelang = bnfc2str
+-- TODO: be able to distinguish english output from malay etc.
+-- GFlang is GFeng | GFmalay | ...
+-- maybe we switch to just a String?
 
 -- BNFC to GF tree
 

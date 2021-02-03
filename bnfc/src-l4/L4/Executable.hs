@@ -22,7 +22,7 @@ import AbsL    ( Tops(..), Rule(..), RuleBody(..), MatchVars(..), Toplevels(..) 
 import LayoutL ( resolveLayout )
 import ToGraphViz
 import L4
-import ToGF (bnfc2str)
+import ToGF (bnfc2lang)
 import PGF (PGF, readPGF)
 
 
@@ -61,33 +61,35 @@ showTree :: InputOpts -> PGF -> Int -> Tops -> IO ()
 showTree inOpts gr v tree0 = do
   let tree = rewriteTree tree0 
       ruleList = getRules tree 
-      want f = format inOpts `elem` [Fall, f]
-  when (want Fast) $ do
+      want f = format inOpts `elem` [Fall] || f (format inOpts)
+  when (want (==Fast)) $ do
     print $ T.unpack (pShowNoColor tree)
-  when (want Flin) $ do
+  when (want (==Flin)) $ do
     putStrLn $ printTree tree
-  when (want Fgraph) $ do -- the fgl version of what becomes the dotfile
+  when (want (==Fgraph)) $ do -- the fgl version of what becomes the dotfile
     printGraph ruleList
-  when (want Fdot) $ do
+  when (want (==Fdot)) $ do
     -- dotfile output 
     putStrLn $ showDot ruleList
     writeFile "graph.dot" (showDot ruleList)
-  when (want Fjson) $ do
+  when (want (==Fjson)) $ do
     -- json output
     putStrLn $ "{ \"under construction\": \"true\" }"
-  when (want Fmisc) $ do
+  when (want (==Fmisc)) $ do
     -- not quite sure what this is for
     let miscopts x = x `elem` misc inOpts
     when (miscopts Mnames)    $ printMsg "Just the Names" $ unlines $ showRuleName <$> ruleList
     when (miscopts Mnamelist) $ printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
     when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
-  when (want $ Fgf GFeng) $ do  -- hardcoding GFeng for now; 
-    -- gf output currently only in ENG (as stated in a previous commit)
-    -- TODO :: Find a way to handle the various gf language options
-    print $ bnfc2str gr tree
+  when (want wantGF) $ do
+    print $ bnfc2lang (getGFlang (format inOpts)) gr tree
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
-
+    wantGF (Fgf _) = True
+    wantGF Fall    = True
+    wantGF _       = False
+    getGFlang (Fgf gflang) = gflang
+    getGFlang Fall         = GFeng -- default to english
 
 rewriteTree :: Tops -> Tops
 rewriteTree (Toplevel tops) = Toplevel $ do
@@ -99,7 +101,8 @@ rewriteTree (Toplevel tops) = Toplevel $ do
     otherwise -> rewrite r
 
 data Format = Fall | Fdot | Fast | Flin | Fjson | Fgraph | Fgf GFlang | Fmisc deriving (Show, Eq)
-data GFlang   = GFeng  | GFmalay deriving (Show, Eq)
+
+-- GFlang is defined in L4.hs
 data MiscOpts = Mnames | Mnamelist | Mexits deriving (Show, Eq)
 
 parseFormat :: ReadM Format
@@ -142,7 +145,9 @@ data InputOpts = InputOpts
   } deriving Show
 
 optsGF :: Parser GFlang 
-optsGF = argument parseGFlang (value GFeng)
+optsGF = argument parseGFlang (value GFeng
+                               <> help "GF language -- en or my"
+                              )
 
 optsParse :: Parser InputOpts
 optsParse = InputOpts <$>
@@ -152,9 +157,10 @@ optsParse = InputOpts <$>
        <> command "ast" (info (pure Fast) (progDesc "Prints ast format only"))
        <> command "json" (info (pure Fjson) (progDesc "Prints json format only"))
        <> command "png" (info (pure Fgraph) (progDesc "Prints png format only"))
-       <> command "gf" (info (Fgf <$> optsGF)             
-            ( fullDesc 
-           <> progDesc "Prints natlang only; GF language (en, my) (default en)")))
+       <> command "gf" (info (Fgf <$> optsGF <**> helper)
+                        ( fullDesc 
+                          <> progDesc "Prints natlang only; GF language (en, my) (default en)"
+                        ) ) )
   <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
         ( long "misc"
           <> value [Mnames, Mnamelist, Mexits]

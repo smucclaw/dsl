@@ -29,7 +29,7 @@ dependencies:
 - graphviz
 - split
 - gf
-- optparse-simple
+- optparse-applicative
 - split
 
 

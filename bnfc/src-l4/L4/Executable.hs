@@ -157,14 +157,11 @@ optsParse = InputOpts <$>
        <> command "ast" (info (pure Fast) (progDesc "Prints ast format only"))
        <> command "json" (info (pure Fjson) (progDesc "Prints json format only"))
        <> command "png" (info (pure Fgraph) (progDesc "Prints png format only"))
-       <> command "gf2" (info (subparser (command "en" (info (pure (Fgf GFeng))   (progDesc "tell GF to output english")) <>
-                                                             command "my" (info (pure (Fgf GFmalay)) (progDesc "tell GF to output malay")))
-                                                  <**> helper)
-                         (fullDesc <> progDesc "subcommand: en, my"))
-       <> command "gf" (info (Fgf <$> optsGF <**> helper)
-                        ( fullDesc 
-                          <> progDesc "Prints natlang only; GF language (en, my) (default en)"
-                        ) ) )
+       <> command "gf" (info (subparser (command "en" (info (pure (Fgf GFeng))   (progDesc "tell GF to output english")) <>
+                                         command "my" (info (pure (Fgf GFmalay)) (progDesc "tell GF to output malay")))
+                              <**> helper)
+                          (fullDesc <> progDesc "subcommand: en, my"))
+                        ) 
   <*> option parseMiscOpts -- > nix-shell --run 'stack run -- l4 --format misc --misc names < l4/test.l4'
         ( long "misc"
           <> value [Mnames, Mnamelist, Mexits]
@@ -183,7 +180,6 @@ main = do
                               
   let vb = if silent opts then 0 else 2
   gr <- readPGF "src-l4/Top.pgf"
-  print opts
-  --run vb gr pTops opts stdin 
+  run vb gr pTops opts stdin 
 
 

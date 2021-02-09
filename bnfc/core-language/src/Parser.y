@@ -59,7 +59,7 @@ Program : ClassDecls               { Program (reverse $1) }
 
 ClassDecls :                       { [] }
            | ClassDecls ClassDecl  { $2 : $1 }
-ClassDecl : class VAR ClassDef     { ClassDecl (ClsNm $2) $3 }
+ClassDecl : class VAR Annot ClassDef     { ClassDecl (AClsNm $2 $3) $4 }
 
 ClassDef :  '{' FieldDecls '}'     { ClassDef (Just (ClsNm "Object")) (reverse $2) }
          |   extends VAR '{' FieldDecls '}'    
@@ -93,7 +93,7 @@ Atom : '(' Expr ')'                { $2 }
 
 
 -- Annotations for GF
-Annot : '(' NUM ')'                 { $2 }
+Annot : '(' NUM ')'                 { GFAnnot $2 }
 
 
 {

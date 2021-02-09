@@ -5,8 +5,14 @@ module Syntax where
 -- Definition of expressions
 ----------------------------------------------------------------------
 
+-- GF Annotations to names
+newtype GFAnnot = GFAnnot Integer
+  deriving (Eq, Ord, Show, Read)
+
 ----- Names 
 newtype VarName = VarNm String
+  deriving (Eq, Ord, Show, Read)
+data AnnotClassName = AClsNm String GFAnnot
   deriving (Eq, Ord, Show, Read)
 newtype ClassName = ClsNm String
   deriving (Eq, Ord, Show, Read)
@@ -16,7 +22,6 @@ newtype RuleName = RlNm String
   deriving (Eq, Ord, Show, Read)
 newtype PartyName = PtNm String
   deriving (Eq, Ord, Show, Read)
-
 
 
 ----- Program
@@ -43,10 +48,10 @@ data ClassDef t = ClassDef t [FieldDecl]
   deriving (Eq, Ord, Show, Read)
 
 -- declares class with ClassName and definition as of ClassDef
-data ClassDecl t = ClassDecl ClassName (ClassDef t)
+data ClassDecl t = ClassDecl AnnotClassName (ClassDef t)
   deriving (Eq, Ord, Show, Read)
 
-name_of_class_decl :: ClassDecl t -> ClassName
+name_of_class_decl :: ClassDecl t -> AnnotClassName
 name_of_class_decl (ClassDecl cn _) = cn
 
 def_of_class_decl :: ClassDecl t -> ClassDef t
@@ -68,7 +73,10 @@ rules_of_module (Mdl _ rls) = rls
 
 -- Custom Classes and Preable Module
 -- some custom classes - should eventually go into a prelude and not be hard-wired
-objectC = ClassDecl (ClsNm "Object") (ClassDef Nothing [])
+objectC = ClassDecl (AClsNm "Object" (GFAnnot 0)) (ClassDef Nothing [])
+
+{-
+TODO: the following should be defined in concrete syntax in a preamble.
 
 -- QualifiedNumeric class with val field
 -- TODO: should its type be IntT or a FloatT?
@@ -94,7 +102,9 @@ eventC  = ClassDecl (ClsNm "Event")
                   (ClassDef (Just (ClsNm "Object"))
                    [FieldDecl (FldNm "time") (ClassT (ClsNm "Time"))])
 customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs ++ [eventC]
+-}
 
+customCs = [objectC]
 preambleMdl = Mdl customCs []
 
 ----- Expressions 

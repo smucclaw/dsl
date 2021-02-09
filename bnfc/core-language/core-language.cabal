@@ -15,8 +15,11 @@ extra-source-files:  README.org
 
 library
   exposed-modules:
+                  -- generated
+                  Lexer
+                  Parser
                   -- from src
-                  AbsSyntax
+                  Syntax
                   ExampleInput
                   Exec
                   RuleToTa
@@ -41,6 +44,9 @@ library
                      , pretty-simple
                      , split
                      , text
+                     -- required for lexer and parser
+                     , haskeline  >= 0.7
+                     , mtl        >= 2.2 && <2.4
   default-language: Haskell2010
                        
 executable core-language
@@ -48,3 +54,13 @@ executable core-language
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , array
+                     , haskeline  >= 0.7
+                     , mtl        >= 2.2 && <2.4
+  build-tools:         alex, happy
+  other-modules:
+                Lexer,
+                Parser,
+                Syntax
+                
+                

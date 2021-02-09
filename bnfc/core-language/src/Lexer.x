@@ -26,6 +26,8 @@ tokens :-
   "#".*                         ;
 
   -- Syntax
+  class                         { \s -> TokenClass }
+  extends                       { \s -> TokenExtends }
   let                           { \s -> TokenLet }
   True                          { \s -> TokenTrue }
   False                         { \s -> TokenFalse }
@@ -43,19 +45,24 @@ tokens :-
   \:                            { \s -> TokenColon }
   \(                            { \s -> TokenLParen }
   \)                            { \s -> TokenRParen }
+  \{                            { \s -> TokenLBrace }
+  \}                            { \s -> TokenRBrace }
   $alpha [$alpha $digit \_ \']* { \s -> TokenSym s }
 
 {
 
 data Token 
-  = TokenLet
+  =
+    TokenClass
+  | TokenExtends
+  | TokenLet
   | TokenTrue
   | TokenFalse
   | TokenBool
   | TokenIn
   | TokenInt
   | TokenLambda
-  | TokenNum Int
+  | TokenNum Integer
   | TokenSym String
   | TokenArrow
   | TokenEq
@@ -64,6 +71,8 @@ data Token
   | TokenSub
   | TokenMul
   | TokenColon
+  | TokenLBrace
+  | TokenRBrace
   | TokenLParen
   | TokenRParen
   | TokenEOF

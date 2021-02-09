@@ -18,9 +18,10 @@ newtype PartyName = PtNm String
   deriving (Eq, Ord, Show, Read)
 
 
+
 ----- Program
 
-data Program t = Program (ClassDecl t)
+data Program t = Program [ClassDecl t] -- [VarDeclDefn]
   deriving (Eq, Ord, Show, Read)
 
 ----- Types 
@@ -38,7 +39,7 @@ data FieldDecl = FieldDecl FieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations
-data ClassDef t = ClassDef t [FieldDecl] 
+data ClassDef t = ClassDef t [FieldDecl]
   deriving (Eq, Ord, Show, Read)
 
 -- declares class with ClassName and definition as of ClassDef

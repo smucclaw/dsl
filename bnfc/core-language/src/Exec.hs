@@ -3,7 +3,7 @@
 module Exec where
 
 import Data.List
-import AbsSyntax
+import Syntax
 import Typing
 
 lift_uarith_op :: UArithOp -> Val -> Val

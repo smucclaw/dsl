@@ -3,7 +3,7 @@
 module Test where
 
 import Data.List
-import AbsSyntax
+import Syntax
 import Typing
 import Exec
 import TaToUppaal
@@ -28,7 +28,7 @@ import TaToUppaal
 -- $> elaborate_fields_in_class_decls (elaborate_supers_in_class_decls customCs)
 
 -- Cyclic superclass hierarchy:
--- $> super_classes_decls [ClsDecl (ClsNm "Foo") (ClsDef (Just (ClsNm "Bar")) []), ClsDecl (ClsNm "Bar") (ClsDef (Just (ClsNm "Foo")) [])]
+-- $> super_classes_decls [ClassDecl (ClsNm "Foo") (ClassDef (Just (ClsNm "Bar")) []), ClassDecl (ClsNm "Bar") (ClassDef (Just (ClsNm "Foo")) [])]
 
 
 -- $> elaborate_module (Mdl customCs [])

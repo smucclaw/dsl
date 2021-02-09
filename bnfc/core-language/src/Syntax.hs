@@ -1,5 +1,5 @@
 
-module AbsSyntax where
+module Syntax where
 
 ----------------------------------------------------------------------
 -- Definition of expressions
@@ -18,6 +18,11 @@ newtype PartyName = PtNm String
   deriving (Eq, Ord, Show, Read)
 
 
+----- Program
+
+data Program t = Program (ClassDecl t)
+  deriving (Eq, Ord, Show, Read)
+
 ----- Types 
 data Tp
   = BoolT
@@ -29,25 +34,25 @@ data Tp
 
 -- Field attributes: for example cardinality restrictions
 -- data FieldAttribs = FldAtt
-data FieldDecl = FldDecl FieldName Tp -- FieldAttribs
+data FieldDecl = FieldDecl FieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations
-data ClassDef t = ClsDef t [FieldDecl] 
+data ClassDef t = ClassDef t [FieldDecl] 
   deriving (Eq, Ord, Show, Read)
 
 -- declares class with ClassName and definition as of ClassDef
-data ClassDecl t = ClsDecl ClassName (ClassDef t)
+data ClassDecl t = ClassDecl ClassName (ClassDef t)
   deriving (Eq, Ord, Show, Read)
 
 name_of_class_decl :: ClassDecl t -> ClassName
-name_of_class_decl (ClsDecl cn _) = cn
+name_of_class_decl (ClassDecl cn _) = cn
 
 def_of_class_decl :: ClassDecl t -> ClassDef t
-def_of_class_decl (ClsDecl _ cd) = cd
+def_of_class_decl (ClassDecl _ cd) = cd
 
 fields_of_class_def :: ClassDef t -> [FieldDecl]
-fields_of_class_def (ClsDef scn fds) = fds
+fields_of_class_def (ClassDef scn fds) = fds
 
 data GeneralRule = TBD
   deriving (Eq, Ord, Show, Read)
@@ -62,31 +67,31 @@ rules_of_module (Mdl _ rls) = rls
 
 -- Custom Classes and Preable Module
 -- some custom classes - should eventually go into a prelude and not be hard-wired
-objectC = ClsDecl (ClsNm "Object") (ClsDef Nothing [])
+objectC = ClassDecl (ClsNm "Object") (ClassDef Nothing [])
 
 -- QualifiedNumeric class with val field
 -- TODO: should its type be IntT or a FloatT?
-qualifNumC = ClsDecl (ClsNm "QualifiedNumeric")
-                    (ClsDef (Just (ClsNm "Object"))
-                            [FldDecl (FldNm "val") IntT])
+qualifNumC = ClassDecl (ClsNm "QualifiedNumeric")
+                    (ClassDef (Just (ClsNm "Object"))
+                            [FieldDecl (FldNm "val") IntT])
 
 -- Currency as QualifiedNumeric, with specific currencies (SGD, USD) as subclasses
-currencyC = ClsDecl (ClsNm "Currency")
-                    (ClsDef (Just (ClsNm "QualifiedNumeric")) [])
-currencyCs = [ClsDecl (ClsNm "SGD") (ClsDef (Just (ClsNm "Currency")) []),
-              ClsDecl (ClsNm "USD") (ClsDef (Just (ClsNm "Currency")) [])]
+currencyC = ClassDecl (ClsNm "Currency")
+                    (ClassDef (Just (ClsNm "QualifiedNumeric")) [])
+currencyCs = [ClassDecl (ClsNm "SGD") (ClassDef (Just (ClsNm "Currency")) []),
+              ClassDecl (ClsNm "USD") (ClassDef (Just (ClsNm "Currency")) [])]
   
 -- Time as QualifiedNumeric, with Year, Month, Day etc. as subclasses
 -- TODO: treatment of time needs a second thought
 --       (so far no distinction between time point and duration)
-timeC = ClsDecl (ClsNm "Time")
-                    (ClsDef (Just (ClsNm "QualifiedNumeric")) [])
-timeCs = [ClsDecl (ClsNm "Year") (ClsDef (Just (ClsNm "Time")) []),
-          ClsDecl (ClsNm "Day") (ClsDef (Just (ClsNm "Time")) [])]
+timeC = ClassDecl (ClsNm "Time")
+                    (ClassDef (Just (ClsNm "QualifiedNumeric")) [])
+timeCs = [ClassDecl (ClsNm "Year") (ClassDef (Just (ClsNm "Time")) []),
+          ClassDecl (ClsNm "Day") (ClassDef (Just (ClsNm "Time")) [])]
 
-eventC  = ClsDecl (ClsNm "Event")
-                  (ClsDef (Just (ClsNm "Object"))
-                   [FldDecl (FldNm "time") (ClassT (ClsNm "Time"))])
+eventC  = ClassDecl (ClsNm "Event")
+                  (ClassDef (Just (ClsNm "Object"))
+                   [FieldDecl (FldNm "time") (ClassT (ClsNm "Time"))])
 customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs ++ [eventC]
 
 preambleMdl = Mdl customCs []
@@ -151,7 +156,13 @@ data Exp t
     | ListE t ListOp [Exp t]                    -- list expression
     deriving (Eq, Ord, Show, Read)
 
- 
+
+-- Cmd t is a command of type t
+data Cmd t
+    = Skip                                      -- Do nothing
+    | VAssign VarName (Exp t)                   -- Assignment to variable
+    | FAssign (Exp t) FieldName (Exp t)         -- Assignment to field
+  deriving (Eq, Ord, Show, Read)
 
 ----------------------------------------------------------------------
 -- Definition of Timed Automata
@@ -182,9 +193,20 @@ action_name :: Action -> [ClassName]
 action_name Internal = []
 action_name (Act cn s) = [cn]
 
+-- Transition condition: clock constraints and Boolean expression
+data TransitionCond t = TransCond [ClConstr] (Exp t)
+  deriving (Eq, Ord, Show, Read)
+
+-- Transition action: synchronization action; clock resets; and execution of command (typically assignments)
+data TransitionAction t = TransAction Action [Clock] (Cmd t)
+  deriving (Eq, Ord, Show, Read)
+
+transition_action_name :: TransitionAction t -> [ClassName]
+transition_action_name (TransAction act _ _) = action_name act
+
 -- Transition relation from location to location via Action,
 -- provided [ClConstr] are satisfied; and resetting [Clock]
-data Transition = Trans Loc [ClConstr] Action [Clock] Loc
+data Transition t = Trans Loc (TransitionCond t) (TransitionAction t) Loc
   deriving (Eq, Ord, Show, Read)
 
 -- Timed Automaton having:
@@ -200,12 +222,12 @@ data Transition = Trans Loc [ClConstr] Action [Clock] Loc
 -- for AP a type of atomic propositioons and which is here taken to be [(Loc, Exp t)].
 -- Note: the set of locations, actions, clocks could in principle be inferred from the remaining info.
 -- Type parameter t: type of expressions: () or Tp, see function Typing/tp_expr
--- Type parameter e: 
-data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
+data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition t] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
   deriving (Eq, Ord, Show, Read)
 
 -- Timed Automata System: a set of TAs running in parallel
-data TASys t = TmdAutSys [TA t]
+-- Type parameter ext: Environment-specific extension
+data TASys t ext = TmdAutSys [TA t] ext
   deriving (Eq, Ord, Show, Read)
 
 name_of_ta :: TA t -> String

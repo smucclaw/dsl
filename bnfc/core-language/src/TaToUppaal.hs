@@ -2,13 +2,18 @@
 -- see https://www.it.uu.se/research/group/darts/uppaal/help.php?file=System_Descriptions/Model.shtml
 
 module TaToUppaal where
-import AbsSyntax
+import Syntax
 import Data.List
 
--- TODO: move into preamble file - better use predefined nub
-remove_duplicates :: Eq a => [a] -> [a]
-remove_duplicates = foldl (\r x -> if elem x r then r else x : r) []
+----------------------------------------------------------------------
+-- Uppaal extensions of abstract syntax
+----------------------------------------------------------------------
 
+data UppaalExtension = UpaExt [ClassDecl (Maybe ClassName)]
+
+----------------------------------------------------------------------
+-- Linearization of TASys
+----------------------------------------------------------------------
 
 channels_to_uppaal :: [ClassName] -> String
 channels_to_uppaal chans = "chan " ++ (intercalate ", " (map (\(ClsNm nm) -> nm) chans)) ++ ";\n"
@@ -67,15 +72,22 @@ action_to_uppaal Internal = ""
 action_to_uppaal (Act (ClsNm cnm) Snd) = "sync " ++ cnm ++ "!; "
 action_to_uppaal (Act (ClsNm cnm) Rec) = "sync " ++ cnm ++ "?; "
 
-transition_to_uppaal :: Transition -> String
-transition_to_uppaal (Trans l1@(Lc l1n) ccs a clks l2@(Lc l2n)) =
-  "    " ++ l1n ++ " -> " ++ l2n ++ " {" ++
-  clock_constrs_to_uppaal " guard " ccs "; " ++
+transition_cond_to_uppaal :: TransitionCond t -> String
+transition_cond_to_uppaal (TransCond ccs e) = clock_constrs_to_uppaal " guard " ccs "; "
+
+transition_action_to_uppaal :: TransitionAction t -> String
+transition_action_to_uppaal (TransAction a clks c) =
   action_to_uppaal a ++
-  clock_resets_to_uppaal clks ++
+  clock_resets_to_uppaal clks  
+
+transition_to_uppaal :: Transition t -> String
+transition_to_uppaal (Trans l1@(Lc l1n) trcond tract l2@(Lc l2n)) =
+  "    " ++ l1n ++ " -> " ++ l2n ++ " {" ++
+  transition_cond_to_uppaal trcond ++
+  transition_action_to_uppaal tract ++
   "}"
 
-transitions_to_uppaal :: [Transition] -> String
+transitions_to_uppaal :: [Transition t] -> String
 transitions_to_uppaal trans = "trans\n" ++ (intercalate ",\n" (map transition_to_uppaal trans)) ++ ";\n"
 
 process_to_uppaal :: TA t -> String
@@ -88,9 +100,9 @@ process_to_uppaal (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lb
   "\n}\n"
   
 
-ta_sys_to_uppaal :: TASys Tp -> String
-ta_sys_to_uppaal (TmdAutSys tas) =
-  let chans = remove_duplicates (concatMap channels_of_ta tas)
+ta_sys_to_uppaal :: TASys Tp ext -> String
+ta_sys_to_uppaal (TmdAutSys tas ext) =
+  let chans = nub (concatMap channels_of_ta tas)
       nms = (map name_of_ta tas) 
   in
     channels_to_uppaal chans ++

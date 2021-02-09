@@ -3,7 +3,7 @@
 module RuleToTa where
 import Data.List
 import AbsL
-import AbsSyntax
+import Syntax
 import TaToUppaal
 -- import ExampleInput
 
@@ -202,22 +202,22 @@ internalFieldTpToTp "Int" = IntT
 internalFieldTpToTp nm = ClassT (ClsNm nm)
 
 internalFieldToFieldDecl :: (String, String) -> FieldDecl
-internalFieldToFieldDecl (fnm, ftp) = FldDecl (FldNm fnm) (internalFieldTpToTp ftp)
+internalFieldToFieldDecl (fnm, ftp) = FieldDecl (FldNm fnm) (internalFieldTpToTp ftp)
 
 sdrToClassDecl :: SimpleDefRule -> ClassDecl (Maybe ClassName)
-sdrToClassDecl (DefRule cn scn flds) = ClsDecl (ClsNm cn) (ClsDef (Just (ClsNm scn)) (map internalFieldToFieldDecl flds))
+sdrToClassDecl (DefRule cn scn flds) = ClassDecl (ClsNm cn) (ClassDef (Just (ClsNm scn)) (map internalFieldToFieldDecl flds))
 
 ----------------------------------------------------------------------
 -- Translation Event Rules (internal representation) to Timed Automata
 ----------------------------------------------------------------------
 
-serToTransition :: SimpleEventRule -> [Transition]
+serToTransition :: SimpleEventRule -> [Transition Tp]
 serToTransition (EvRule2State rn gv pt act (Hence hcs)) =
   let start_loc = Lc gv
       end_loc = Lc (head hcs)
       clcstr = []    -- temporarily
       clreset = []   -- temporarily
-  in [Trans start_loc clcstr act clreset end_loc]
+  in [Trans start_loc (TransCond clcstr (ValE BoolT (BoolV True))) (TransAction act clreset Skip) end_loc]
 serToTransition (EvRule3State rn gv upon pt act (Hence hcs)) =
   let start_loc = Lc gv
       interm_loc = Lc rn
@@ -226,8 +226,8 @@ serToTransition (EvRule3State rn gv upon pt act (Hence hcs)) =
       clreset1 = []   -- temporarily
       clcstr2 = []    -- temporarily
       clreset2 = []   -- temporarily
-  in [Trans start_loc clcstr1 upon clreset1 interm_loc,
-      Trans interm_loc clcstr2 act clreset2 end_loc]
+  in [Trans start_loc (TransCond clcstr1 (ValE BoolT (BoolV True))) (TransAction upon clreset1 Skip) interm_loc,
+      Trans interm_loc (TransCond clcstr2 (ValE BoolT (BoolV True))) (TransAction act clreset2 Skip) end_loc]
 
 {-
  [
@@ -245,10 +245,10 @@ quotientByResult f (x:xs) =
       (pos, neg) = partition (\e -> ec == (f e)) xs 
   in (ec, (x:pos)) : quotientByResult f neg
 
-transitionsToTA :: (PartyName, [Transition]) -> TA t
+transitionsToTA :: (PartyName, [Transition Tp]) -> TA Tp
 transitionsToTA ((PtNm pn), trans) =
-  let locs = nub (concatMap (\(Trans l1 _ _ _ l2) -> [l1, l2]) trans)
-      chans = nub (concatMap (\(Trans _ _ act _ _) -> action_name act) trans)
+  let locs = nub (concatMap (\(Trans l1 _ _ l2) -> [l1, l2]) trans)
+      chans = nub (concatMap (\(Trans _ _ tract _) -> transition_action_name tract) trans)
       clcks = []   -- TODO
       init_loc = [Lc "Start"]   -- TODO
       invs = []    -- TODO
@@ -256,11 +256,11 @@ transitionsToTA ((PtNm pn), trans) =
   in TmdAut pn locs chans clcks trans init_loc invs lbls
 
 -- TODO: exact type parameter of TASys to be determined
-sersToTASys :: [SimpleEventRule] -> TASys t
+sersToTASys :: [SimpleEventRule] -> TASys Tp [a]
 sersToTASys sers =
   let ruleQuot = quotientByResult serPartyName sers
       transQuot = map (\(p, rls) -> (p, concatMap serToTransition rls)) ruleQuot
-  in TmdAutSys (map transitionsToTA transQuot)
+  in TmdAutSys (map transitionsToTA transQuot) []
 
 ----------------------------------------------------------------------
 
@@ -319,7 +319,7 @@ rewriteTree (Toplevel tops) = Toplevel $ do
 
 -- generate Uppaal code from L4 file
 -- for example:
--- genUppaal "../l4/deon_bike_meng_detail.l4" "/home/strecker/Systems/Uppaal/Examples/deon_bike_gen.xta"
+-- genUppaal "../../l4/deon_bike_meng_detail.l4" "/home/strecker/Systems/Uppaal/Examples/deon_bike_gen.xta"
 genUppaal :: String -> String -> IO ()
 genUppaal f_in f_out = runFile 2 pTops f_in f_out
 

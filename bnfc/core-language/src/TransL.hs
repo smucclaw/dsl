@@ -3,7 +3,7 @@
 module TransL where
 
 import qualified AbsL
-import AbsSyntax
+import Syntax
 
 type Err = Either String
 type Result = Err String

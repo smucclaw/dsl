@@ -66,7 +66,7 @@ ClassDef :  '{' FieldDecls '}'     { ClassDef (Just (ClsNm "Object")) (reverse $
                                    { ClassDef (Just (ClsNm $2)) (reverse $4) }
 FieldDecls :                       { [] }
            | FieldDecls FieldDecl  { $2 : $1 }
-FieldDecl : VAR ':' Tp             { FieldDecl (FldNm $1) $3 }
+FieldDecl : VAR Annot ':' Tp             { FieldDecl (AFldNm $1 $2) $4 }
 
 Tp   : Bool                       { BoolT }
      | Int                        { IntT }

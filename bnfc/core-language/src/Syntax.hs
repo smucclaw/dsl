@@ -18,6 +18,8 @@ newtype ClassName = ClsNm String
   deriving (Eq, Ord, Show, Read)
 newtype FieldName = FldNm String
   deriving (Eq, Ord, Show, Read)
+data AnnotFieldName = AFldNm String GFAnnot
+  deriving (Eq, Ord, Show, Read)
 newtype RuleName = RlNm String
   deriving (Eq, Ord, Show, Read)
 newtype PartyName = PtNm String
@@ -40,7 +42,7 @@ data Tp
 
 -- Field attributes: for example cardinality restrictions
 -- data FieldAttribs = FldAtt
-data FieldDecl = FieldDecl FieldName Tp -- FieldAttribs
+data FieldDecl = FieldDecl AnnotFieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations

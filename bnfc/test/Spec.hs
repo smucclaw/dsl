@@ -56,8 +56,8 @@ runL4ReadmeExample :: TestTree
 runL4ReadmeExample =
   testGroup "l4 parses l4 files"
     [ -- testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing
-      testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing,
-      testProgram "Run l4 on the bike example" "l4" ["l4/deon_bike_meng.l4"] Nothing
+      testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing
+      -- , testProgram "Run l4 on the bike example" "l4" ["l4/deon_bike_meng.l4"] Nothing
     ]
 
 simpleTest :: IO ()

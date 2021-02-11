@@ -1,0 +1,200 @@
+// this is auto-generated from README.org. Use C-c C-v C-t to output a fresh version of this file.
+module Foo.Bar.Baz where
+import ContractLaw
+
+RULE  1 SaleRestricted
+         :en:"The Sale of Cabbages is Restricted."
+         :se:"Försäljning av kål är begränsad."
+  PARTY NOBODY      AS P1
+    MAY sell Item   AS sale
+   WHEN Item IS cabbage
+ UNLESS sale IS onLegalDate
+     OR UNLIKELY P1 HAS Exemption.from ~ [DirectorOfAgriculture]
+  HENCE ReturnPolicy
+  WHERE sale IS onLegalDate
+          WHEN sale.date ~ LegalDates
+          WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
+RULE   4 Cabbage
+  DEFINE Item IS cabbage
+    WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]
+
+RULE   5 Price
+   GIVEN cabbage, weight, president, taxRate
+  DEFINE cabbage.price = (1+taxRate) * CASE president MATCHES Biden -> weight * 1.1
+                                                              Trump -> weight * 0.9
+
+RULE  2 ReturnPolicy  // the "hence" target of rule 1 above
+  GIVEN sale          // defined in rule 1 above
+  PARTY Buyer
+    MAY return Item
+ BEFORE sale.date + 3 WEEKS
+  HENCE Net3          // targets rule 3 below
+
+RULE  3 Net3          // the "hence" target of rule 2 above
+  GIVEN return        // defined in rule 2 above
+  PARTY Seller
+   MUST refund Amount
+ BEFORE return.date + 3 DAYS
+  WHERE Amount = $sale.cash * 90%
+RULE    Quorum
+ DEFINE OrdinaryMeeting IS Quorate
+   WHEN SUM(OrdinaryMeeting.attendees.votingShares) > 50% * SUM(company.members.All.votingShares)
+  WHERE company = OrdinaryMeeting.company
+RULE    noblePotato4
+ DEFINE Item IS noble
+   WHEN AT LEAST 2 OF Item.previousOwners
+        EACH SATISFIES
+        AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
+                      , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
+RULE mkSpud2
+  ENTITY spud2
+     ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+         previousOwners = [ alice, bob, charlie, daryl ]
+RULE mkAlice   ENTITY alice   ISA Human WITH isNoble = true
+RULE mkBob     ENTITY bob     ISA Human WITH isNoble = false
+RULE mkCharlie ENTITY charlie ISA Human WITH isNoble = true
+RULE mkDaryl   ENTITY daryl   ISA Human WITH isNoble = false
+
+RULE  2 edible
+ DEFINE Item IS EdiblePotato
+            AND TastyFood
+   WHEN Item IS Potato
+    AND Item IS Edible
+RULE  3 isPotato
+ DEFINE Item IS Potato
+   WHEN Item.species ~ ["Solanum tuberosum" | "Mister Potatohead"]
+
+// an OR-LIST expands to
+// isPotato(Item) :- species(Item, "Solanum tuberosum"); species(Item, "Mister Potatohead").
+//                                                     ^
+// an AND-list would expand to
+// isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
+//                                                     ^
+
+RULE     noblePotato
+  DEFINE Item IS Noble
+    WHEN Item ISA Potato
+     AND Item.previousOwners.First  IS Noble -- binds alice to First
+     AND Item.previousOwners.Second IS Noble -- binds charlie to Second
+
+
+RULE     noblePotato2
+  DEFINE Potato IS Noble
+    WHEN Potato.previousOwners.isNoble >= 2
+
+RULE     noblePotato3
+  DEFINE Potato IS Noble
+    WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble -- binds alice to Owner1 and charlie to Owner2
+
+RULE mkSpud1
+  ENTITY spud10 ISA Item
+  ENTITY spud1 ISA Item
+    WITH species  = "Solanum tuberosum"
+         isEdible = true
+RULE mkVeggieBar
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+RULE    Business
+  DEFINE Business
+     ISA Record
+    WITH address = [ String ]
+         id      = [ { idtype = "UEN" , idval = UENString }
+                   | { idtype = String, idval = String } ]
+         name    = String
+         owner   = Person
+RULE     Person
+  DEFINE Person
+     ISA Record
+    WITH address = [ String ]
+         id      = [ { idtype = "UEN" , idval = UENString }
+                   | { idtype = String, idval = String }
+                   ]
+         name    = String
+         type    = [ "Natural" , "Corporate" | "Trust" ]
+
+RULE Human     DEFINE Human     ISA Person WITH type = "Natural"
+RULE Company   DEFINE Company   ISA Person WITH type = "Corporate"
+RULE Signatory DEFINE Signatory ISA Human  WITH principal = [ Person ]
+
+RULE     Signatories
+  DEFINE Document
+     ISA Record
+    WITH parties     = [ Person ]
+         signatories = [ Signatory ]
+         witnesses   = [ Human ]
+    WHEN [ "each signatory has a principal which is a party"
+         , "each party is a principal of a signatory"
+         , "number of witnesses >= 2"
+         & "no witness is a party" ]
+
+RULE     UENString
+  DEFINE String
+     ISA UENString
+    WHEN . ~ regex.pcre("^\"\\d{9,10}[[:alpha:]]$\"")
+RULE mkMinor
+ DEFINE Minor
+    ISA Human
+   WHEN CASE self.nationality MATCHES ["US", "SG"]             -> self.age < 21
+                                      ["NZ", "TW", "TH", "JP"] -> self.age < 20
+                                      otherwise                -> self.age < 18
+RULE mkBlackSwan
+  ENTITY blackSwan
+     ISA Human
+    WITH birthdate = { xtime = 2020-09-10, value = 1981-06-09 }
+      // a person can have multiple nationalities
+         nationality = [ { xtime = 2020-09-10, value = "IL", vtime = 1981-06-09 TO PRESENT }
+                       , { xtime = 2020-09-10, value = "US"                                } ]
+//       a person can have multiple names
+         fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
+RULE mkCeleb
+   GIVEN Tabloid HAVING ceaselessCoverage
+  ENTITY celebXY
+     ISA Couple
+    WITH xtime = 2020-01-01; maritalStatus = dating
+         xtime = 2020-07-01; maritalStatus = married
+         xtime = 2020-09-01; maritalStatus = married;  vtime = 2020-06-01 TO PRESENT
+         xtime = 2020-12-01; maritalStatus = married;  vtime = 2020-06-01 TO 2020-11-01
+         xtime = 2020-12-01; maritalStatus = divorced; vtime = 2020-11-01 TO PRESENT
+SCENARIO alicePregnancy
+   TRACE 2020-08-01 Alice knew { pregnancy = true }
+         2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
+         2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
+         2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
+RULE buyCabbage
+ ENTITY buyCabbage
+    ISA ContractOfSale
+   WITH date         = 2020-09-10
+        jurisdiction = SG
+        buyer        = blackSwan
+        seller       = veggieBar
+        buyer.consideration  = :USD: 10
+        seller.consideration = [ item1, item2 ]
+   ASOF 2020-09-10
+  WHERE item1 ISA  Item
+              WITH category = "vegetable"
+                   species  = "Brassica oleracea"
+                   cultivar = "capitata"
+SCENARIO saleHistory
+  WITH parties = [ blackSwan, veggieBar ]
+ TRACE 2020-09-01T1210 blackSwan offers     offerDetails
+       2020-09-01T1211 veggieBar accepts    offerDetails
+       2020-09-01T1212 blackSwan pays       veggieBar $10
+       2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
+  ASOF 2020-09-10
+ WHERE offerDetails = { blackSwan.consideration = $10
+                      , veggieBar.consideration = [ item1, item2 ] }
+       item1 ISA Item
+             WITH category = "vegetable"
+                  species  = "Brassica oleracea"
+                  cultivar = "capitata"
+                  quantity = 1
+       item2 ISA Item
+             WITH category = "beverage"
+                  brand    = "Acme Water"
+                  model    = "750mL"
+                  quantity = 1

@@ -26,6 +26,14 @@ newtype PartyName = PtNm String
   deriving (Eq, Ord, Show, Read)
 
 
+annotClassName2ClassName :: AnnotClassName -> ClassName
+annotClassName2ClassName (AClsNm cn a) = ClsNm cn
+
+annotFieldName2FieldName :: AnnotFieldName -> FieldName
+annotFieldName2FieldName (AFldNm fn a) = FldNm fn
+
+
+
 ----- Program
 
 data Program ct at = Program [ClassDecl ct] [VarDecl] [Assertion at]

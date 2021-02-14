@@ -406,6 +406,8 @@ Here's the truth table for how the parts interact
 | present | absent  | evaluate when   |
 | present | present | as below        |
 
+Unless is problematic. See Allen: Language, Law, and Logic https://drive.google.com/file/d/1i8xIvsjg7Zb_DjOCQJjze4qs3czq7iwy/view?usp=sharing
+
 Here's a possible truth table for how the When/Unless limbs desugar. The size of this table is a sign that maybe we need to rethink this.
 
 | Party     | DeonticExpr | WHEN  | UNLESS | means           | HENCE |

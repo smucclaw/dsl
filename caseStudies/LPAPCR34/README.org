@@ -229,15 +229,14 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
 
 #+begin_src haskell :noweb-ref 34-types
   data Stm = Section TermExpr -- first TermExpr should always be an NL expression (:@)
-           | DRule { rulename :: TermExpr
+           | DRule { rulename :: TermExpr -- deontic rule
                    , party  :: TermExpr
                    , dmodal :: Deontic
                    , action :: TermExpr
                    , when   :: Maybe TermExpr
                    }
-           | CRule { rulename :: TermExpr
-                   , item :: TermExpr
-                   , body :: TermExpr
+           | CRule { item :: TermExpr
+                   , body :: [TermExpr]
                    , when :: Maybe TermExpr
                    }
     deriving (Show, Eq)
@@ -248,10 +247,18 @@ scenario: a lawyer wants to make an indie movie on the side because of his lifel
                 | Any [TermExpr]               -- or  -- only one element is needed to be true
                 | And [TermExpr]               -- set union! inclusive "and" is not a logical "and"! more of an "or"
                 | BinOp TermExpr BinOp TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
+                | UnOp UnOp TermExpr
+                | Prim PrimType
+                | TE0                          -- nil
+    deriving (Show, Eq)
+
+  data UnOp = HasAttr
     deriving (Show, Eq)
 
   data BinOp = Cons
              | Compound
+             | HasType
+             | HasValue
              | TE2 TermExpr
              deriving (Show, Eq)
 
@@ -270,44 +277,44 @@ For now we take the eDSL approach with a bit of syntactic sugar, and write the A
 
 #+begin_src haskell :noweb-ref 34-haskell
 
-    section34 :: [Stm]
-    section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")
-                               ,("se","lasdkjklasdjf")]) -- subsequently we speechbubble with English as default
-                , section34_1 ]
+  section34 :: [Stm]
+  section34 = [ (§) ("34" :@ [("en","Thirty Four, part One")
+                             ,("se","lasdkjklasdjf")]) -- subsequently we speechbubble with English as default
+              , section34_1 ]
 
-    section34_1 :: Stm
-    section34_1 =
-      (§§) ("34.1" 💬 "Prohibitions")
-      ("LP" 💬 "Legal Practitioner")
-      mustNot
-      (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"])
-      (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                        -- [ (1 +),
-                                  , ("incompat" 💬 "is incompatible" `_with`)    --   (2 *),
-                                  , (en_ "derogates" `_from`)                    --   (10 -) ] <*> [400] = [401, 800, -390]
-                                  ] $ (en_ "dignity") `of_` ("profession" 💬 "legal profession")
-             , "Business" 👉 (en_ "materially interferes with") $
-               Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
-                   , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer")
-                   , en_ "representation" `of_` lp's ( en_ "clients" ) ]
-             , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
-             , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`)
-                                                      , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
-                                                  Any [ en_ "unauthorised person" ] `for_`
-                                                  en_ "legal work performed" `by_`
-                                                  (TKey "LP") )
-             , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
-             , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
-               Any [ en_ "Act"
-                   , Any [ en_ "these Rules"
-                         , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
-                   , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                     <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
-                   , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
-                     <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
-                     <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
-                 ]
-             ]
-      )
+  section34_1 :: Stm
+  section34_1 =
+    (§§) ("34.1" 💬 "Prohibitions")
+    ("LP" 💬 "Legal Practitioner")
+    mustNot
+    (en_ "accept" ⏩ ["execA" 💬 "executive appointment", "Business" 💬 "business"])
+    (Any [ "Business" 👉 Any [ (en_ "detracts" `_from`)                        -- [ (1 +),
+                                , ("incompat" 💬 "is incompatible" `_with`)    --   (2 *),
+                                , (en_ "derogates" `_from`)                    --   (10 -) ] <*> [400] = [401, 800, -390]
+                                ] $ (en_ "dignity") `of_` ("profession" 💬 "legal profession")
+           , "Business" 👉 (en_ "materially interferes with") $
+             Any [ lp's ("occ" 💬 "primary occupation") `of_` (en_ "practising") `as_` (en_ "lawyer")
+                 , lp's $ en_ "availability to those who may seek" <> lp's (en_ "services as a lawyer")
+                 , en_ "representation" `of_` lp's ( en_ "clients" ) ]
+           , "Business" 👉 (en_ "is likely to") $ (en_ "unfairly attract business") `in_` (en_ "practice of law")
+           , "Business" 👉 (en_ "involves") $ ( Any [ ((en_ "sharing") `of_` (lp's (en_ "fees")) `_with`)
+                                                    , (en_ "payment" `of_` en_ "commission" `_to`) ] <>
+                                                Any [ en_ "unauthorised person" ] `for_`
+                                                en_ "legal work performed" `by_`
+                                                (TKey "LP") )
+           , "Business" 👉 ("isIn" 💬 "is in") $ ("Schedule1" 💬 "First Schedule")
+           , "Business" 👉 ("isProhibitedBy" 💬 "is prohibited by") $
+             Any [ en_ "Act"
+                 , Any [ en_ "these Rules"
+                       , en_ "any other subsidiary legislation made under the Act" ] -- not enough structure?
+                 , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                   <> en_ "issued under section 71(6) of the Act" -- should "under" be a preposition like the others?
+                 , And [ en_ "practice directions", en_ "guidance notes", en_ "rulings" ]
+                   <> en_ "relating" `to_` And [ en_ "professional practice", en_ "etiquette", en_ "conduct", en_ "discipline" ]
+                   <> en_ "issued" `by_` Any [ en_ "Council", en_ "Society" ]
+               ]
+           ]
+    )
 
 #+end_src
 
@@ -325,9 +332,35 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   ex 💬 tag = ex :@ [("en",tag)]
 
   -- wordnet!
-  (🔤) :: String -> String -> TermExpr
+  (🔤) :: String -> Integer -> TermExpr
   infixr 7 🔤
-  ex 🔤 tag = ex :@ [("wordnet",tag)]  
+  ex 🔤 tag = ex :@ [("wordnet",show tag)]
+
+  (📭) :: TermExpr -> TermExpr -> TermExpr
+  infix 6 📭
+  var 📭 typ = BinOp var HasType typ
+
+  (📩) :: String -> PrimType -> TermExpr
+  infix 7 📩
+  var 📩 val = BinOp (var 💬 var) HasValue (Prim val)
+
+  data PrimType
+    = L4True | L4False
+    | L4S String
+    deriving (Show, Eq)
+
+  isa = (📭)
+  infix 6 `isa`
+
+  (📪) = typ
+  typ = "Type" 💬 "Base Type"
+  bool = "Bool" 💬 "Primitive Type Boolean"
+  str = "String" 💬 "Primitive Type String"
+
+  (§=) = (📬)
+  (📬) :: TermExpr -> String -> TermExpr
+  infix 6 📬
+  obj 📬 t = BinOp obj HasType (t 💬 "User Defined Type")
 
   en_ :: String -> TermExpr
   en_ ex = ex :@ [("en",ex)]
@@ -343,6 +376,10 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   telist2conslist :: [TermExpr] -> TermExpr
   telist2conslist (te:[]) = te
   telist2conslist (t:tes) = BinOp t Cons (telist2conslist tes)
+
+  -- StringValue -> BinOp "hasAttr" Compound StringValue
+  hasAttr :: TermExpr -> TermExpr
+  hasAttr te = UnOp HasAttr te
 
   -- executive appointment IS associatedWith Something
   -- becomes, in prolog, associatedWith(ExecutiveAppointment, Something)
@@ -360,10 +397,22 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   (§§) :: MkDRule
   (§§) a b c d e = DRule a b c d (Just e)
 
-  -- constitutive rule -- define x as y
-  type MkCRule = TermExpr -> TermExpr -> TermExpr -> TermExpr -> Stm
+  -- constitutive rule
+  {- DEFINE x ISA Type
+       WITH attribute ISA String
+            attribute2 ISA Boolean
+  -} 
+  type MkCRule = TermExpr -> [TermExpr] -> Stm
   (§=§) :: MkCRule
-  (§=§) a b c d = CRule a b c (Just d)
+  (§=§) item body = CRule item body Nothing
+
+  -- attribute constructors
+  type MkDef = TermExpr -> TermExpr -> TermExpr
+  (§.=§) :: MkDef
+  (§.=§) a b = BinOp a HasType b
+
+  (§.=) :: MkDef
+  (§.=) a b = BinOp a HasValue b
 
   instance Semigroup TermExpr where (<>) x y = BinOp x Cons y
 
@@ -893,11 +942,10 @@ This is a work in progress.
   -- DEFINE X IS BLAH
   parseConstitutiveRule :: Parser Stm
   parseConstitutiveRule = do
-    ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "ConstitutiveRule" <* some newline
     item     <- space *> lexeme "DEFINE"  *> parseNLStr <*                                         some newline
-    body     <-          lexeme parseTermExpr <* some newline
+    body     <-     many (lexeme parseTermExpr <* some newline)
     when     <- optional (space *> lexeme "WHEN" *> parseTermExpr)
-    return (CRule ruleName item body when)
+    return (CRule item body when)
 
   -- SomeString :en:"Some String"
   parseNLStr :: Parser TermExpr
@@ -930,6 +978,7 @@ This is a work in progress.
       simpleOptions "v0.01" "lpapcr34" "an early L4 prototype for section 34" (pure ()) $
       do addSubCommands "pretty" "pretty    ast | stdin" (
            do addCommand "ast"   "the manual AST" (const (pPrint section34)) (pure ())
+              addCommand "baby"  "the baby AST"   (const (pPrint superSimple1)) (pure ())
               addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
            )
          -- i think there is a bug in optparse-simple, honestly
@@ -939,6 +988,87 @@ This is a work in progress.
 #+end_src
 
 **** Let's try outputting to Prolog
+
+First, a little theory.
+
+Prolog is cool with compound terms: anywhere you can have a =plain(term)=, you can =have(a(compound(term)))=.
+
+Now, the AST contains a lot of structure, the =BinOp= tree is basically expressive enough to do any kind of GF-style natural language grammar, e.g. "half of a potato" would be broken out to the (mostly binary) tree =of(half,a(potato))=.
+
+Prolog doesn't need quite that much structure: typically we would just deal with that notion as a single concept =half_of_a_potato=.
+
+To get that we linearize the tree DFS left-to-right; if the compound term has only one argument, we treat the argument as a right argument: so it's really =of(half,a((),potato))=.
+
+What if the semantics require a different kind of break down? What if we want =half_of(a_potato)=? We'll cross this bridge when we come to it.
+
+So, that's the basic theory behind linearization of the AST to Prolog.
+
+What special cases might we need to consider?
+
+In the AST Meng defined =compl= as "complement", when it's not obvious what the connector? preposition? should be: "half a potato". The "of" is dropped, so we just use "compl" as the binary operator; and when we linearize, we just drop that too.
+
+What if a term involves a variable? Like, suppose we have "half of a green Fruit". We don't want to say =half_of_a_green_Fruit= because that jams the =Fruit= variable into the term; it should be separate.
+
+What would work? Let's work toward more structure:
+
+1. =half_of_a_green_Fruit= -- not enough structure
+2. =half_of_a_green(Fruit)= -- Fruit stands alone, good
+3. =half_of_a(green,Fruit)= -- looking ahead to the future, we will probably want to have =(Color,Fruit)= in the future
+4. =half_of(a(green,Fruit))= -- we know from grammar that the "a" determiner applies to "green fruit", so we try to structure it accordingly
+5. =of(half,a(green,Fruit))= -- this is a fully structured version, at least where Prolog is concerned
+
+But we note that this structure doesn't really match the "binary tree" we described above: a linearization of =a(green,Fruit)= would give "green a Fruit". So we should keep in mind that the binary tree in the AST doesn't look exactly the same as a binary tree in Prolog.
+
+In the AST, the binary tree would be something like:
+
+- of
+  - half
+  - ()
+    - a
+    - ()
+      - green
+      - fruit
+
+What's up with that ()? It's needed if we have a rule that we linearize a =BinOp l op s= to =l op s=.
+
+This is awkward. How are we to represent something like =a happy beautiful green fruit=?
+
+- ()
+  - a
+  - ()
+    - happy
+    - ()
+      - beautiful
+      - ()
+        - green
+          - ()
+          - fruit
+
+All the left-hand elements are nil. Honestly, this feels more like a list than a binary tree; to be precise, a cons-list.
+
+- Cons
+  - a
+  - Cons
+    - happy
+    - Cons
+      - beautiful
+      - Cons
+        - green
+        - fruit
+
+So, fine, we have argued ourselves into having =Cons= as a =BinOp= data constructor.
+
+Back to the original question: how do we linearize? We know that linearization is affected by whether a node is a =Variable= (uppercase) or a non-variable =term=.
+
+Let's look at some desired inputs and outputs; from that, we'll know what code to write.
+
+The location probably affects the linearization, too, so let's keep a input column for that.
+
+
+| Input                                                                 | location | Output        |
+|-----------------------------------------------------------------------+----------+---------------|
+| BinOp ( "detracts" :@ [ ( "en" , "detracts" ) ] ) Cons ( "from" :@ [] |          | detracts_from |
+|                                                                       |          |               |
 
 #+begin_src haskell :noweb-ref 34-prolog
   stmToPlain :: Stm -> String
@@ -1139,6 +1269,41 @@ BUT NOT
 There is synecdoche going on here -- 34.1.b is a predicate constraining businesses, but 34.5 casts it to a deontic deny, implicitly including the context of the introductory text of 34.1 above in the "parent".
 
 ** Section 6
+
+* Let's also do the super simple case that we whiteboarded in January:
+
+#+begin_src haskell :noweb-ref 34-haskell
+  superSimple1 :: [Stm]
+  superSimple1 =
+    [ (§=§) ("Business" 🔤 12345 📭 typ)
+      [ "is_operating" 🔤 23456 📭 bool
+      , "bus_name" 💬 "Business Name" 📭 str
+      ]
+    , (§=§) ("megaCorp" 💬 "Mega Corporation" 📬 "Business")
+      [ "is_operating" 📩 L4True
+      , "bus_name" 📩 (L4S "Mega")
+      ]
+    ]
+#+end_src
+
+The original whiteboard text, btw:
+
+#+begin_src text :tangle test/supersimple.l4
+  Type Business (12345):
+    is_operating (23456): boolean
+    bus_name: string
+
+  megaCorp : Business
+
+  megaCorp.is_operating = true
+  megaCorp.bus_name = "Mega"
+
+  QUERY
+    megaCorp.is_operating
+#+end_src
+
+A Megaparsec parser for the above has been done by Jacob, see =sandbox/jacobtan/baby-l4=
+
 
 * Language Notes
 

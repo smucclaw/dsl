@@ -30,15 +30,14 @@ lexeme = L.lexeme sc
 stringLiteral = char '"' >> manyTill L.charLiteral (char '"')
 
 data Stm = Section TermExpr -- first TermExpr should always be an NL expression (:@)
-         | DRule { rulename :: TermExpr
+         | DRule { rulename :: TermExpr -- deontic rule
                  , party  :: TermExpr
                  , dmodal :: Deontic
                  , action :: TermExpr
                  , when   :: Maybe TermExpr
                  }
-         | CRule { rulename :: TermExpr
-                 , item :: TermExpr
-                 , body :: TermExpr
+         | CRule { item :: TermExpr
+                 , body :: [TermExpr]
                  , when :: Maybe TermExpr
                  }
   deriving (Show, Eq)
@@ -49,10 +48,18 @@ data TermExpr = String :@ [NLTag]            -- infix constructor for NL:    "po
               | Any [TermExpr]               -- or  -- only one element is needed to be true
               | And [TermExpr]               -- set union! inclusive "and" is not a logical "and"! more of an "or"
               | BinOp TermExpr BinOp TermExpr -- ace "of" bass, useful when either lhs or rhs term is itself an All/Any list
+              | UnOp UnOp TermExpr
+              | Prim PrimType
+              | TE0                          -- nil
+  deriving (Show, Eq)
+
+data UnOp = HasAttr
   deriving (Show, Eq)
 
 data BinOp = Cons
            | Compound
+           | HasType
+           | HasValue
            | TE2 TermExpr
            deriving (Show, Eq)
 
@@ -94,11 +101,10 @@ parseDeonticRule = do
 -- DEFINE X IS BLAH
 parseConstitutiveRule :: Parser Stm
 parseConstitutiveRule = do
-  ruleName <- space *> lexeme "RULE"    *> parseNLStr <* lexeme "ISA" <* lexeme "ConstitutiveRule" <* some newline
   item     <- space *> lexeme "DEFINE"  *> parseNLStr <*                                         some newline
-  body     <-          lexeme parseTermExpr <* some newline
+  body     <-     many (lexeme parseTermExpr <* some newline)
   when     <- optional (space *> lexeme "WHEN" *> parseTermExpr)
-  return (CRule ruleName item body when)
+  return (CRule item body when)
 
 -- SomeString :en:"Some String"
 parseNLStr :: Parser TermExpr
@@ -255,9 +261,36 @@ section34_1 =
 infixr 7 💬
 ex 💬 tag = ex :@ [("en",tag)]
 
-(🔤) :: String -> String -> TermExpr
+-- wordnet!
+(🔤) :: String -> Integer -> TermExpr
 infixr 7 🔤
-ex 🔤 tag = ex :@ [("wordnet",tag)]  
+ex 🔤 tag = ex :@ [("wordnet",show tag)]
+
+(📭) :: TermExpr -> TermExpr -> TermExpr
+infix 6 📭
+var 📭 typ = BinOp var HasType typ
+
+(📩) :: String -> PrimType -> TermExpr
+infix 7 📩
+var 📩 val = BinOp (var 💬 var) HasValue (Prim val)
+
+data PrimType
+  = L4True | L4False
+  | L4S String
+  deriving (Show, Eq)
+
+isa = (📭)
+infix 6 `isa`
+
+(📪) = typ
+typ = "Type" 💬 "Base Type"
+bool = "Bool" 💬 "Primitive Type Boolean"
+str = "String" 💬 "Primitive Type String"
+
+(§=) = (📬)
+(📬) :: TermExpr -> String -> TermExpr
+infix 6 📬
+obj 📬 t = BinOp obj HasType (t 💬 "User Defined Type")
 
 en_ :: String -> TermExpr
 en_ ex = ex :@ [("en",ex)]
@@ -273,6 +306,10 @@ lhs ⏩ rhs = BinOp lhs Compound (telist2conslist rhs)
 telist2conslist :: [TermExpr] -> TermExpr
 telist2conslist (te:[]) = te
 telist2conslist (t:tes) = BinOp t Cons (telist2conslist tes)
+
+-- StringValue -> BinOp "hasAttr" Compound StringValue
+hasAttr :: TermExpr -> TermExpr
+hasAttr te = UnOp HasAttr te
 
 -- executive appointment IS associatedWith Something
 -- becomes, in prolog, associatedWith(ExecutiveAppointment, Something)
@@ -290,10 +327,22 @@ type MkDRule = TermExpr -> TermExpr -> Deontic -> TermExpr -> TermExpr -> Stm
 (§§) :: MkDRule
 (§§) a b c d e = DRule a b c d (Just e)
 
--- constitutive rule -- define x as y
-type MkCRule = TermExpr -> TermExpr -> TermExpr -> TermExpr -> Stm
+-- constitutive rule
+{- DEFINE x ISA Type
+     WITH attribute ISA String
+          attribute2 ISA Boolean
+-} 
+type MkCRule = TermExpr -> [TermExpr] -> Stm
 (§=§) :: MkCRule
-(§=§) a b c d = CRule a b c (Just d)
+(§=§) item body = CRule item body Nothing
+
+-- attribute constructors
+type MkDef = TermExpr -> TermExpr -> TermExpr
+(§.=§) :: MkDef
+(§.=§) a b = BinOp a HasType b
+
+(§.=) :: MkDef
+(§.=) a b = BinOp a HasValue b
 
 instance Semigroup TermExpr where (<>) x y = BinOp x Cons y
 
@@ -328,6 +377,17 @@ infixr 6 `from_`; from_ = binop "from";    infixr 5 `_from`; _from x = x <> (nl_
 infixr 6 `possessive`
 possessive = binop "'s"
 
+superSimple1 :: [Stm]
+superSimple1 =
+  [ (§=§) ("Business" 🔤 12345 📭 typ)
+    [ "is_operating" 🔤 23456 📭 bool
+    , "bus_name" 💬 "Business Name" 📭 str
+    ]
+  , (§=§) ("megaCorp" 💬 "Mega Corporation" 📬 "Business")
+    [ "is_operating" 📩 L4True
+    , "bus_name" 📩 (L4S "Mega")
+    ]
+  ]
 someFunc :: String -> IO ()
 someFunc myinput = do
   let stdinAST = case parse parseL4 "parsing L4 toplevel" (pack myinput) of
@@ -337,6 +397,7 @@ someFunc myinput = do
     simpleOptions "v0.01" "lpapcr34" "an early L4 prototype for section 34" (pure ()) $
     do addSubCommands "pretty" "pretty    ast | stdin" (
          do addCommand "ast"   "the manual AST" (const (pPrint section34)) (pure ())
+            addCommand "baby"  "the baby AST"   (const (pPrint superSimple1)) (pure ())
             addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
          )
        -- i think there is a bug in optparse-simple, honestly

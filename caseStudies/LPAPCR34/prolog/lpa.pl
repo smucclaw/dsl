@@ -23,7 +23,7 @@ incompat_with(pizza, of(dignity, profession)) :- false.
 derogates_from(pizza, of(dignity, profession)) :- false.
 
 % facts: for some reason, Alice can keep her drinking under control,
-% materially_interferes_with(wine, occ_of(alice, as(practising, lawyer))) :- false.
+materially_interferes_with(wine, occ_of(alice, as(practising, lawyer))) :- false.
 
 % "does the wine business materially interfere with alice's ability to practise as a lawyer?"
 

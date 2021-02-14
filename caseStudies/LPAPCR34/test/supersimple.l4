@@ -1,0 +1,11 @@
+Type Business (12345):
+  is_operating (23456): boolean
+  bus_name: string
+
+megaCorp : Business
+
+megaCorp.is_operating = true
+megaCorp.bus_name = "Mega"
+
+QUERY
+  megaCorp.is_operating

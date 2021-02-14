@@ -5,11 +5,11 @@ import ContractLaw
 RULE  1 SaleRestricted
          :en:"The Sale of Cabbages is Restricted."
          :se:"Försäljning av kål är begränsad."
-  PARTY NOBODY      AS P1
+  PARTY NOBODY      AS seller
     MAY sell Item   AS sale
    WHEN Item IS cabbage
  UNLESS sale IS onLegalDate
-     OR UNLIKELY P1 HAS Exemption.from ~ [DirectorOfAgriculture]
+     OR UNLIKELY seller HAS Exemption(from=DirectorOfAgriculture)
   HENCE ReturnPolicy
   WHERE sale IS onLegalDate
           WHEN sale.date ~ LegalDates
@@ -36,16 +36,7 @@ RULE  3 Net3          // the "hence" target of rule 2 above
    MUST refund Amount
  BEFORE return.date + 3 DAYS
   WHERE Amount = $sale.cash * 90%
-RULE    Quorum
- DEFINE OrdinaryMeeting IS Quorate
-   WHEN SUM(OrdinaryMeeting.attendees.votingShares) > 50% * SUM(company.members.All.votingShares)
-  WHERE company = OrdinaryMeeting.company
-RULE    noblePotato4
- DEFINE Item IS noble
-   WHEN AT LEAST 2 OF Item.previousOwners
-        EACH SATISFIES
-        AT LEAST 1 OF [ isKing, isQueen, isPrince, isPrincess
-                      , isDuke, isDuchess, isEarl, isCountess ] DISTINCT,NO-REPEATS
+
 RULE mkSpud2
   ENTITY spud2
      ISA Item
@@ -58,8 +49,8 @@ RULE mkCharlie ENTITY charlie ISA Human WITH isNoble = true
 RULE mkDaryl   ENTITY daryl   ISA Human WITH isNoble = false
 
 RULE  2 edible
- DEFINE Item IS EdiblePotato
-            AND TastyFood
+ DEFINE Item IS (EdiblePotato
+            AND TastyFood)
    WHEN Item IS Potato
     AND Item IS Edible
 RULE  3 isPotato
@@ -73,32 +64,6 @@ RULE  3 isPotato
 // isPotato(Item) :- species(Item, "Solanum tuberosum"), species(Item, "Mister Potatohead").
 //                                                     ^
 
-RULE     noblePotato
-  DEFINE Item IS Noble
-    WHEN Item ISA Potato
-     AND Item.previousOwners.First  IS Noble -- binds alice to First
-     AND Item.previousOwners.Second IS Noble -- binds charlie to Second
-
-
-RULE     noblePotato2
-  DEFINE Potato IS Noble
-    WHEN Potato.previousOwners.isNoble >= 2
-
-RULE     noblePotato3
-  DEFINE Potato IS Noble
-    WHEN Potato.previousOwners.[Owner1,Owner2] IS Noble -- binds alice to Owner1 and charlie to Owner2
-
-RULE mkSpud1
-  ENTITY spud10 ISA Item
-  ENTITY spud1 ISA Item
-    WITH species  = "Solanum tuberosum"
-         isEdible = true
-RULE mkVeggieBar
-  ENTITY veggieBar
-     ISA Business
-    WITH address = [ "1 Veggie Way" ]
-         id      = { idtype = "UEN", idval = "202000000A" }
-         name    = "The Veggie Bar Pte. Ltd."
 RULE    Business
   DEFINE Business
      ISA Record
@@ -142,6 +107,14 @@ RULE mkMinor
    WHEN CASE self.nationality MATCHES ["US", "SG"]             -> self.age < 21
                                       ["NZ", "TW", "TH", "JP"] -> self.age < 20
                                       otherwise                -> self.age < 18
+
+RULE mkVeggieBar
+  ENTITY veggieBar
+     ISA Business
+    WITH address = [ "1 Veggie Way" ]
+         id      = { idtype = "UEN", idval = "202000000A" }
+         name    = "The Veggie Bar Pte. Ltd."
+
 RULE mkBlackSwan
   ENTITY blackSwan
      ISA Human
@@ -151,20 +124,7 @@ RULE mkBlackSwan
                        , { xtime = 2020-09-10, value = "US"                                } ]
 //       a person can have multiple names
          fullname    = [ { xtime = 2020-09-10, value = ["Neta-Lee Hershlag", "Natalie Portman"] } ]
-RULE mkCeleb
-   GIVEN Tabloid HAVING ceaselessCoverage
-  ENTITY celebXY
-     ISA Couple
-    WITH xtime = 2020-01-01; maritalStatus = dating
-         xtime = 2020-07-01; maritalStatus = married
-         xtime = 2020-09-01; maritalStatus = married;  vtime = 2020-06-01 TO PRESENT
-         xtime = 2020-12-01; maritalStatus = married;  vtime = 2020-06-01 TO 2020-11-01
-         xtime = 2020-12-01; maritalStatus = divorced; vtime = 2020-11-01 TO PRESENT
-SCENARIO alicePregnancy
-   TRACE 2020-08-01 Alice knew { pregnancy = true }
-         2020-09-01 Alice told Bob { knownBy = Alice, pregnancy = true }
-         2020-09-01 Alice knew { knownBy = Bob,  vtime = 2020-09-04, beliefs = { knownBy = Alice, pregnancy = true } }
-         2020-10-01 Bob   knew { knownBy = Alice, beliefs = { knownBy = Alice, pregnancy = true, vtime = 2020-09-01 }, vtime = 2020-09-10 }
+
 RULE buyCabbage
  ENTITY buyCabbage
     ISA ContractOfSale
@@ -183,8 +143,8 @@ SCENARIO saleHistory
   WITH parties = [ blackSwan, veggieBar ]
  TRACE 2020-09-01T1210 blackSwan offers     offerDetails
        2020-09-01T1211 veggieBar accepts    offerDetails
-       2020-09-01T1212 blackSwan pays       veggieBar $10
-       2020-09-01T1213 veggieBar deliversTo blackSwan [ item1, item2 ]
+       2020-09-01T1212 blackSwan pays       to=veggieBar amount=$10
+       2020-09-01T1213 veggieBar delivers   to=blackSwan items=[ item1, item2 ]
   ASOF 2020-09-10
  WHERE offerDetails = { blackSwan.consideration = $10
                       , veggieBar.consideration = [ item1, item2 ] }

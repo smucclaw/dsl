@@ -5,104 +5,53 @@ Toplevel
                 [ ObjAttrElemIdent ( Ident "alicePregnancy" ) ]
             ) WithLimb1
             ( TraceExpr1
-                [ LogEvent1
+                [ LogEventDirObj
                     ( Iso8601YYYYMMDD ( YYYYMMDD "2020-08-01" ) )
                     ( OA_dots
                         [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "knew" ) ]
-                    )
-                    [ BlahExp
-                        ( BracesE
-                            ( BraceList1
-                                [ CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "pregnancy" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( ConstE
-                                            ( BoolV_T ( TrueBool "true" ) )
-                                        )
-                                    )
-                                ]
-                            )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "knew" ) )
+                            ] OptLangStrings1
                         )
-                    ]
-                , LogEvent1
+                    )
+                    ( BracesE
+                        ( BraceList1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                , LogEventDirObj
                     ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
                     ( OA_dots
                         [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "told" ) ]
-                    )
-                    [ BlahExp
-                        ( ObjME
-                            ( OMNoAargs
-                                [ UnifyElemObjAttrElem
-                                    ( ObjAttrElemUIdent ( UIdent "Bob" ) )
-                                ] OptLangStrings1
-                            )
-                        )
-                    , BlahExp
-                        ( BracesE
-                            ( BraceList1
+                    ( ObjME
+                        ( OMArgs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "told" ) )
+                            ]
+                            ( Args1
                                 [ CComma
                                     ( CompE
                                         ( ObjME
                                             ( OMNoAargs
                                                 [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "knownBy" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Alice" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                    )
-                                , CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "pregnancy" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( ConstE
-                                            ( BoolV_T ( TrueBool "true" ) )
-                                        )
-                                    )
-                                ]
-                            )
-                        )
-                    ]
-                , LogEvent1
-                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
-                    ( OA_dots
-                        [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
-                    )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "knew" ) ]
-                    )
-                    [ BlahExp
-                        ( BracesE
-                            ( BraceList1
-                                [ CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                    ( ObjAttrElemIdent ( Ident "to" ) )
                                                 ] OptLangStrings1
                                             )
                                         ) BCmp_Eq1
@@ -114,177 +63,248 @@ Toplevel
                                             )
                                         )
                                     )
-                                , CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "vtime" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( TempE
-                                            ( DateTimeIso8601
-                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-04" ) )
-                                            )
-                                        )
-                                    )
-                                , CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "beliefs" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( BracesE
-                                            ( BraceList1
-                                                [ CComma
-                                                    ( CompE
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "knownBy" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        ) BCmp_Eq1
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemUIdent ( UIdent "Alice" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( CompE
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "pregnancy" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        ) BCmp_Eq1
-                                                        ( ConstE
-                                                            ( BoolV_T ( TrueBool "true" ) )
-                                                        )
-                                                    )
-                                                ]
-                                            )
-                                        )
-                                    )
                                 ]
-                            )
+                            ) OptLangStrings1
                         )
-                    ]
-                , LogEvent1
+                    )
+                    ( BracesE
+                        ( BraceList1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ConstE
+                                        ( BoolV_T ( TrueBool "true" ) )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                , LogEventDirObj
+                    ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                    ( OA_dots
+                        [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
+                    )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "knew" ) )
+                            ] OptLangStrings1
+                        )
+                    )
+                    ( BracesE
+                        ( BraceList1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Bob" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-04" ) )
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "beliefs" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( BracesE
+                                        ( BraceList1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ConstE
+                                                        ( BoolV_T ( TrueBool "true" ) )
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                , LogEventDirObj
                     ( Iso8601YYYYMMDD ( YYYYMMDD "2020-10-01" ) )
                     ( OA_dots
                         [ ObjAttrElemUIdent ( UIdent "Bob" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "knew" ) ]
-                    )
-                    [ BlahExp
-                        ( BracesE
-                            ( BraceList1
-                                [ CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "knownBy" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemUIdent ( UIdent "Alice" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        )
-                                    )
-                                , CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "beliefs" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( BracesE
-                                            ( BraceList1
-                                                [ CComma
-                                                    ( CompE
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "knownBy" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        ) BCmp_Eq1
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemUIdent ( UIdent "Alice" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( CompE
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "pregnancy" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        ) BCmp_Eq1
-                                                        ( ConstE
-                                                            ( BoolV_T ( TrueBool "true" ) )
-                                                        )
-                                                    )
-                                                , CComma
-                                                    ( CompE
-                                                        ( ObjME
-                                                            ( OMNoAargs
-                                                                [ UnifyElemObjAttrElem
-                                                                    ( ObjAttrElemIdent ( Ident "vtime" ) )
-                                                                ] OptLangStrings1
-                                                            )
-                                                        ) BCmp_Eq1
-                                                        ( TempE
-                                                            ( DateTimeIso8601
-                                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
-                                                            )
-                                                        )
-                                                    )
-                                                ]
-                                            )
-                                        )
-                                    )
-                                , CComma
-                                    ( CompE
-                                        ( ObjME
-                                            ( OMNoAargs
-                                                [ UnifyElemObjAttrElem
-                                                    ( ObjAttrElemIdent ( Ident "vtime" ) )
-                                                ] OptLangStrings1
-                                            )
-                                        ) BCmp_Eq1
-                                        ( TempE
-                                            ( DateTimeIso8601
-                                                ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
-                                            )
-                                        )
-                                    )
-                                ]
-                            )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "knew" ) )
+                            ] OptLangStrings1
                         )
-                    ]
+                    )
+                    ( BracesE
+                        ( BraceList1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "beliefs" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( BracesE
+                                        ( BraceList1
+                                            [ CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "knownBy" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemUIdent ( UIdent "Alice" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "pregnancy" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( ConstE
+                                                        ( BoolV_T ( TrueBool "true" ) )
+                                                    )
+                                                )
+                                            , CComma
+                                                ( CompE
+                                                    ( ObjME
+                                                        ( OMNoAargs
+                                                            [ UnifyElemObjAttrElem
+                                                                ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                                            ] OptLangStrings1
+                                                        )
+                                                    ) BCmp_Eq1
+                                                    ( TempE
+                                                        ( DateTimeIso8601
+                                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-01" ) )
+                                                        )
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "vtime" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( TempE
+                                        ( DateTimeIso8601
+                                            ( Iso8601YYYYMMDD ( YYYYMMDD "2020-09-10" ) )
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
                 ]
             ) AsofNull WhereLimb0
         )

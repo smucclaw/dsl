@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module EmbeddedDSL where
+module L4.EmbeddedDSL where
 
 import AbsL
 import Control.Monad.Trans.Writer

@@ -48,7 +48,7 @@ Toplevel
                         )
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -56,15 +56,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ]
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            )
                             ( OptAsAlias1
                                 ( AsAlias
                                     ( OA_dots
@@ -427,7 +421,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMay OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -435,15 +429,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            ) OptAsAlias0
                         )
                     )
                     ( DLLimb TRBefore
@@ -500,7 +488,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMust OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -508,15 +496,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Amount" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Amount" ) ]
+                            ) OptAsAlias0
                         )
                     )
                     ( DLLimb TRBefore
@@ -2286,132 +2268,144 @@ Toplevel
                 ]
             )
             ( TraceExpr1
-                [ LogEvent1
+                [ LogEventDirObj
                     ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1210" ) )
                     ( OA_dots
                         [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "offers" ) ]
-                    )
-                    [ BlahExp
-                        ( ObjME
-                            ( OMNoAargs
-                                [ UnifyElemObjAttrElem
-                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
-                                ] OptLangStrings1
-                            )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "offers" ) )
+                            ] OptLangStrings1
                         )
-                    ]
-                , LogEvent1
+                    )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                            ] OptLangStrings1
+                        )
+                    )
+                , LogEventDirObj
                     ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1211" ) )
                     ( OA_dots
                         [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "accepts" ) ]
-                    )
-                    [ BlahExp
-                        ( ObjME
-                            ( OMNoAargs
-                                [ UnifyElemObjAttrElem
-                                    ( ObjAttrElemIdent ( Ident "offerDetails" ) )
-                                ] OptLangStrings1
-                            )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "accepts" ) )
+                            ] OptLangStrings1
                         )
-                    ]
-                , LogEvent1
+                    )
+                    ( ObjME
+                        ( OMNoAargs
+                            [ UnifyElemObjAttrElem
+                                ( ObjAttrElemIdent ( Ident "offerDetails" ) )
+                            ] OptLangStrings1
+                        )
+                    )
+                , LogEventAny
                     ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1212" ) )
                     ( OA_dots
                         [ ObjAttrElemIdent ( Ident "blackSwan" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "pays" ) ]
+                    ( OMArgs
+                        [ UnifyElemObjAttrElem
+                            ( ObjAttrElemIdent ( Ident "pays" ) )
+                        ]
+                        ( Args1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "to" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "veggieBar" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "amount" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( CurrE CurrDollar
+                                        ( ConstE ( IntV 10 ) )
+                                    )
+                                )
+                            ]
+                        ) OptLangStrings1
                     )
-                    [ BlahExp
-                        ( CompE
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "to" ) )
-                                    ] OptLangStrings1
-                                )
-                            ) BCmp_Eq1
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "veggieBar" ) )
-                                    ] OptLangStrings1
-                                )
-                            )
-                        )
-                    , BlahExp
-                        ( CompE
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "amount" ) )
-                                    ] OptLangStrings1
-                                )
-                            ) BCmp_Eq1
-                            ( CurrE CurrDollar
-                                ( ConstE ( IntV 10 ) )
-                            )
-                        )
-                    ]
-                , LogEvent1
+                , LogEventAny
                     ( Iso8601YYYYMMDDTHHMM ( YYYYMMDDTHHMM "2020-09-01T1213" ) )
                     ( OA_dots
                         [ ObjAttrElemIdent ( Ident "veggieBar" ) ]
                     )
-                    ( OA_dots
-                        [ ObjAttrElemIdent ( Ident "delivers" ) ]
+                    ( OMArgs
+                        [ UnifyElemObjAttrElem
+                            ( ObjAttrElemIdent ( Ident "delivers" ) )
+                        ]
+                        ( Args1
+                            [ CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "to" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "blackSwan" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    )
+                                )
+                            , CComma
+                                ( CompE
+                                    ( ObjME
+                                        ( OMNoAargs
+                                            [ UnifyElemObjAttrElem
+                                                ( ObjAttrElemIdent ( Ident "items" ) )
+                                            ] OptLangStrings1
+                                        )
+                                    ) BCmp_Eq1
+                                    ( ListE
+                                        ( ListComma
+                                            [ ObjME
+                                                ( OMNoAargs
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "item1" ) )
+                                                    ] OptLangStrings1
+                                                )
+                                            , ObjME
+                                                ( OMNoAargs
+                                                    [ UnifyElemObjAttrElem
+                                                        ( ObjAttrElemIdent ( Ident "item2" ) )
+                                                    ] OptLangStrings1
+                                                )
+                                            ]
+                                        )
+                                    )
+                                )
+                            ]
+                        ) OptLangStrings1
                     )
-                    [ BlahExp
-                        ( CompE
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "to" ) )
-                                    ] OptLangStrings1
-                                )
-                            ) BCmp_Eq1
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "blackSwan" ) )
-                                    ] OptLangStrings1
-                                )
-                            )
-                        )
-                    , BlahExp
-                        ( CompE
-                            ( ObjME
-                                ( OMNoAargs
-                                    [ UnifyElemObjAttrElem
-                                        ( ObjAttrElemIdent ( Ident "items" ) )
-                                    ] OptLangStrings1
-                                )
-                            ) BCmp_Eq1
-                            ( ListE
-                                ( ListComma
-                                    [ ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "item1" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    , ObjME
-                                        ( OMNoAargs
-                                            [ UnifyElemObjAttrElem
-                                                ( ObjAttrElemIdent ( Ident "item2" ) )
-                                            ] OptLangStrings1
-                                        )
-                                    ]
-                                )
-                            )
-                        )
-                    ]
                 ]
             )
             ( Asof

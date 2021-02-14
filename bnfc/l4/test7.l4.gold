@@ -129,29 +129,49 @@ Toplevel
                     ( DeonticLimb1 DEMay OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "pay" ) )
-                                    ] OptLangStrings1
+                                    ]
+                                    ( Args1
+                                        [ CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "to" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        , CComma
+                                            ( CompE
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "price" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                ) BCmp_Eq1
+                                                ( ObjME
+                                                    ( OMNoAargs
+                                                        [ UnifyElemObjAttrElem
+                                                            ( ObjAttrElemIdent ( Ident "salePrice" ) )
+                                                        ] OptLangStrings1
+                                                    )
+                                                )
+                                            )
+                                        ]
+                                    ) OptLangStrings1
                                 )
-                            )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Seller" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            , BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "salePrice" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ) OptAsAlias0
                         )
                     ) DL0
                 )
@@ -185,7 +205,7 @@ Toplevel
                         ) OptAsAlias0
                     )
                     ( DeonticLimb1 DEMust OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -193,15 +213,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemIdent ( Ident "goods" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemIdent ( Ident "goods" ) ]
+                            ) OptAsAlias0
                         )
                     )
                     ( DLLimb TRBefore

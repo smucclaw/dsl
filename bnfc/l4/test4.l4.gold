@@ -1263,7 +1263,7 @@ Toplevel
                     )
                 , MatchVars13
                     ( DeonticLimb1 DEShant OptLangStrings1
-                        ( ActionSingle
+                        ( ActionDirObj
                             ( ObjME
                                 ( OMNoAargs
                                     [ UnifyElemObjAttrElem
@@ -1271,15 +1271,9 @@ Toplevel
                                     ] OptLangStrings1
                                 )
                             )
-                            [ BlahExp
-                                ( ObjME
-                                    ( OMNoAargs
-                                        [ UnifyElemObjAttrElem
-                                            ( ObjAttrElemUIdent ( UIdent "Item" ) )
-                                        ] OptLangStrings1
-                                    )
-                                )
-                            ] OptAsAlias0
+                            ( OA_dots
+                                [ ObjAttrElemUIdent ( UIdent "Item" ) ]
+                            ) OptAsAlias0
                         )
                     )
                 , MatchVars8

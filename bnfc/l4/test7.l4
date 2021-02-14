@@ -9,7 +9,7 @@ RULE mkContract
 
 RULE contractStart
    PARTY Buyer
-     MAY pay Seller salePrice
+     MAY pay(to=Seller, price=salePrice)
    HENCE delivery
 
 RULE delivery
@@ -18,4 +18,3 @@ RULE delivery
  BEFORE contractStart + 2 DAYS
   HENCE FULFILLED
    LEST BREACH
-

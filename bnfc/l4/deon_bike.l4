@@ -14,7 +14,7 @@ RULE mkContract
 
 RULE contractStartBuyer
    PARTY Buyer
-   MAY order Seller BikeSale
+   MAY order(from=Seller, item=BikeSale) -- ?? /Inari adjusting examples to deprecate [Blah]
    HENCE sent_order
 
 RULE sent_order
@@ -33,7 +33,7 @@ RULE received_item
 RULE contractStartSeller
    UPON order
    PARTY Seller
-   MUST order 
+   MUST order
    HENCE received_order
 
 RULE received_order

@@ -45,6 +45,8 @@ library:
   source-dirs:
     - src-bnfc
     - src-l4
+  dependencies:
+    - transformers
 
 executables:
   l4:

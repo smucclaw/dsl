@@ -416,7 +416,7 @@ attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
 attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
 
 showTSval (Prim L4True) = "true"
-showTSval (Prim L4False) = "true"
+showTSval (Prim L4False) = "false"
 showTSval (Prim (L4S str)) = "\"" ++ str ++ "\"" -- TODO: need to properly stringify by escaping internal " etc
 showTSval x = show x
 
@@ -425,9 +425,6 @@ printStms To_TS stms = mapM_ (putStrLn . show . stm2ts) stms
 typecast To_TS "Bool" = "boolean"
 typecast To_TS "String" = "string"
 typecast target y = y
-
-
-
 
 
 

@@ -1425,6 +1425,8 @@ desired output:
   }
 #+end_src
 
+A little transpiler to Typescript:
+
 #+begin_src haskell :noweb-ref 34-haskell
   data Target = To_TS deriving (Show, Eq)
 
@@ -1452,7 +1454,7 @@ desired output:
   attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
 
   showTSval (Prim L4True) = "true"
-  showTSval (Prim L4False) = "true"
+  showTSval (Prim L4False) = "false"
   showTSval (Prim (L4S str)) = "\"" ++ str ++ "\"" -- TODO: need to properly stringify by escaping internal " etc
   showTSval x = show x
 
@@ -1461,9 +1463,6 @@ desired output:
   typecast To_TS "Bool" = "boolean"
   typecast To_TS "String" = "string"
   typecast target y = y
-
-
-
 #+end_src
 
 ** Extraction to English

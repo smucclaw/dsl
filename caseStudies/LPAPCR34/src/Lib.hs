@@ -438,9 +438,10 @@ someFunc myinput = do
                    Right rhs -> rhs
   (opts,runCmd) <-
     simpleOptions "v0.01" "lpapcr34" "an early L4 prototype for section 34" (pure ()) $
-    do addSubCommands "pretty" "pretty    ast | stdin" (
+    do addSubCommands "pretty" "pretty-print" (
          do addCommand "ast"   "the manual AST" (const (pPrint section34)) (pure ())
             addCommand "baby"  "the baby AST"   (const (pPrint superSimple1)) (pure ())
+            addCommand "babyts"  "the baby AST as typescript"   (const (printStms To_TS superSimple1)) (pure ())
             addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
          )
        -- i think there is a bug in optparse-simple, honestly

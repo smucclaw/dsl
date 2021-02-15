@@ -1179,6 +1179,8 @@ The location probably affects the linearization, too, so let's keep a input colu
   import Text.Megaparsec.Char
   import qualified Text.Megaparsec.Char.Lexer as L
   import Data.Text (Text, pack, unpack)
+  import qualified Data.Text.IO as TIO
+  import qualified Prettyprinter as Pp
   import Data.Void
   import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
   import Data.Char (toLower)
@@ -1272,21 +1274,7 @@ There is synecdoche going on here -- 34.1.b is a predicate constraining business
 
 * Let's also do the super simple case that we whiteboarded in January:
 
-#+begin_src haskell :noweb-ref 34-haskell
-  superSimple1 :: [Stm]
-  superSimple1 =
-    [ (§=§) ("Business" 🔤 12345 📭 typ)
-      [ "is_operating" 🔤 23456 📭 bool
-      , "bus_name" 💬 "Business Name" 📭 str
-      ]
-    , (§=§) ("megaCorp" 💬 "Mega Corporation" 📬 "Business")
-      [ "is_operating" 📩 L4True
-      , "bus_name" 📩 (L4S "Mega")
-      ]
-    ]
-#+end_src
-
-The original whiteboard text, btw:
+** The original whiteboard text:
 
 #+begin_src text :tangle test/supersimple.l4
   Type Business (12345):
@@ -1302,8 +1290,198 @@ The original whiteboard text, btw:
     megaCorp.is_operating
 #+end_src
 
-A Megaparsec parser for the above has been done by Jacob, see =sandbox/jacobtan/baby-l4=
+** A Megaparsec parser
 
+has been done by Jacob, see =sandbox/jacobtan/baby-l4=
+
+A future version of that parser could construct the following AST:
+
+** eDSL AST
+
+For now we hand-write the semantics of the case in an AST / IR:
+
+#+begin_src haskell :noweb-ref 34-haskell
+  superSimple1 :: [Stm]
+  superSimple1 =
+    [ (§=§) ("Business" 🔤 12345 📭 typ)
+      [ "is_operating" 🔤 23456 📭 bool
+      , "bus_name" 💬 "Business Name" 📭 str
+      ]
+    , (§=§) ("megaCorp" 💬 "Mega Corporation" 📬 "Business")
+      [ "is_operating" 📩 L4True
+      , "bus_name" 📩 (L4S "Mega")
+      ]
+    ]
+#+end_src
+
+** It pretty-prints to this:
+
+#+begin_src haskell
+[ CRule
+    { item = BinOp
+        ( "Business" :@
+            [
+                ( "wordnet"
+                , "12345"
+                )
+            ]
+        ) HasType
+        ( "Type" :@
+            [
+                ( "en"
+                , "Base Type"
+                )
+            ]
+        )
+    , body =
+        [ BinOp
+            ( "is_operating" :@
+                [
+                    ( "wordnet"
+                    , "23456"
+                    )
+                ]
+            ) HasType
+            ( "Bool" :@
+                [
+                    ( "en"
+                    , "Primitive Type Boolean"
+                    )
+                ]
+            )
+        , BinOp
+            ( "bus_name" :@
+                [
+                    ( "en"
+                    , "Business Name"
+                    )
+                ]
+            ) HasType
+            ( "String" :@
+                [
+                    ( "en"
+                    , "Primitive Type String"
+                    )
+                ]
+            )
+        ]
+    , when = Nothing
+    }
+, CRule
+    { item = BinOp
+        ( "megaCorp" :@
+            [
+                ( "en"
+                , "Mega Corporation"
+                )
+            ]
+        ) HasType
+        ( "Business" :@
+            [
+                ( "en"
+                , "User Defined Type"
+                )
+            ]
+        )
+    , body =
+        [ BinOp
+            ( "is_operating" :@
+                [
+                    ( "en"
+                    , "is_operating"
+                    )
+                ]
+            ) HasValue ( Prim L4True )
+        , BinOp
+            ( "bus_name" :@
+                [
+                    ( "en"
+                    , "bus_name"
+                    )
+                ]
+            ) HasValue
+            ( Prim ( L4S "Mega" ) )
+        ]
+    , when = Nothing
+    }
+]
+
+#+end_src
+
+** Extraction to Typescript
+
+desired output:
+
+#+begin_src typescript :tangle test/mega.ts
+  interface Business {
+    is_operating : boolean;
+    bus_name : string;
+  }
+
+  let megaCorp : Business = {
+    is_operating: true,
+    bus_name: "Mega"
+  }
+#+end_src
+
+#+begin_src haskell :noweb-ref 34-haskell
+  data Target = To_TS deriving (Show, Eq)
+
+  -- we'll use https://hackage.haskell.org/package/prettyprinter-1.7.0/docs/Prettyprinter.html
+  -- interface definition
+  stm2ts (CRule (BinOp (te1 :@ _) HasType ("Type" :@ _)) crb crmw) =
+    Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["interface", Pp.pretty te1, Pp.lbrace]
+                                  :
+                                  (attrdef To_TS <$> crb)))
+            , Pp.rbrace ]
+  -- instance definition
+  stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
+    Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["let", Pp.pretty te1, Pp.colon, Pp.pretty te2, Pp.equals, Pp.lbrace]
+                                  :
+                                  (attrdef To_TS <$> crb)))
+            , Pp.rbrace ]
+
+  -- type definition inside interface
+  attrdef To_TS (BinOp (te1 :@ _) HasType (te2 :@_)) =
+    Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (typecast To_TS te2) Pp.<> Pp.pretty (";"::String)
+
+  -- attribute definition inside instance
+  attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
+    Pp.pretty te1 Pp.<+> Pp.equals Pp.<+> Pp.pretty (showTSval te2) Pp.<> Pp.pretty (";"::String)
+  attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
+
+  showTSval (Prim L4True) = "true"
+  showTSval (Prim L4False) = "true"
+  showTSval (Prim (L4S str)) = "\"" ++ str ++ "\"" -- TODO: need to properly stringify by escaping internal " etc
+  showTSval x = show x
+
+  printStms To_TS stms = mapM_ (putStrLn . show . stm2ts) stms
+
+  typecast To_TS "Bool" = "boolean"
+  typecast To_TS "String" = "string"
+  typecast target y = y
+
+
+
+#+end_src
+
+** Extraction to English
+
+#+begin_src haskell :noweb-ref 34-haskell
+
+#+end_src
+
+** Extraction to Python
+
+#+begin_src haskell :noweb-ref 34-haskell
+
+#+end_src
+
+** Extraction to Hyperledger Concerto
+
+#+begin_src haskell :noweb-ref 34-haskell
+
+#+end_src
 
 * Language Notes
 

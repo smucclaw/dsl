@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6c89445c88d19d5956c68d7fb91e7512d93c00a9ad975a10448ff2f513f2c659
+-- hash: fcd3fc89f2e477ca4ebf85223361ea1cd84e39f4062a06ae1bbfe19cb380c659
 
 name:           LPAPCR34
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
     , optparse-simple
     , pretty
     , pretty-simple
+    , prettyprinter
     , prolog
     , text
   default-language: Haskell2010
@@ -60,6 +61,7 @@ executable LPAPCR34-exe
     , optparse-simple
     , pretty
     , pretty-simple
+    , prettyprinter
     , prolog
     , text
   default-language: Haskell2010
@@ -81,6 +83,7 @@ test-suite LPAPCR34-test
     , optparse-simple
     , pretty
     , pretty-simple
+    , prettyprinter
     , prolog
     , text
   default-language: Haskell2010

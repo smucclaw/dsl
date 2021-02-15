@@ -27,6 +27,7 @@ dependencies:
 - boxes
 - pretty-simple
 - pretty
+- prettyprinter
 - optparse-simple
 - prolog
 

@@ -9,6 +9,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Text (Text, pack, unpack)
+import qualified Data.Text.IO as TIO
+import qualified Prettyprinter as Pp
 import Data.Void
 import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
 import Data.Char (toLower)
@@ -388,6 +390,47 @@ superSimple1 =
     , "bus_name" 📩 (L4S "Mega")
     ]
   ]
+data Target = To_TS deriving (Show, Eq)
+
+-- we'll use https://hackage.haskell.org/package/prettyprinter-1.7.0/docs/Prettyprinter.html
+-- interface definition
+stm2ts (CRule (BinOp (te1 :@ _) HasType ("Type" :@ _)) crb crmw) =
+  Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["interface", Pp.pretty te1, Pp.lbrace]
+                                :
+                                (attrdef To_TS <$> crb)))
+          , Pp.rbrace ]
+-- instance definition
+stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
+  Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["let", Pp.pretty te1, Pp.colon, Pp.pretty te2, Pp.equals, Pp.lbrace]
+                                :
+                                (attrdef To_TS <$> crb)))
+          , Pp.rbrace ]
+
+-- type definition inside interface
+attrdef To_TS (BinOp (te1 :@ _) HasType (te2 :@_)) =
+  Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (typecast To_TS te2) Pp.<> Pp.pretty (";"::String)
+
+-- attribute definition inside instance
+attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
+  Pp.pretty te1 Pp.<+> Pp.equals Pp.<+> Pp.pretty (showTSval te2) Pp.<> Pp.pretty (";"::String)
+attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
+
+showTSval (Prim L4True) = "true"
+showTSval (Prim L4False) = "true"
+showTSval (Prim (L4S str)) = "\"" ++ str ++ "\"" -- TODO: need to properly stringify by escaping internal " etc
+showTSval x = show x
+
+printStms To_TS stms = mapM_ (putStrLn . show . stm2ts) stms
+
+typecast To_TS "Bool" = "boolean"
+typecast To_TS "String" = "string"
+typecast target y = y
+
+
+
+
+
+
 someFunc :: String -> IO ()
 someFunc myinput = do
   let stdinAST = case parse parseL4 "parsing L4 toplevel" (pack myinput) of

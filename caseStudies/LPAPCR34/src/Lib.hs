@@ -403,7 +403,7 @@ stm2ts (CRule (BinOp (te1 :@ _) HasType ("Type" :@ _)) crb crmw) =
 stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
   Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["let", Pp.pretty te1, Pp.colon, Pp.pretty te2, Pp.equals, Pp.lbrace]
                                 :
-                                (attrdef To_TS <$> crb)))
+                                (Pp.punctuate Pp.comma (attrdef To_TS <$> crb))))
           , Pp.rbrace ]
 
 -- type definition inside interface
@@ -412,7 +412,9 @@ attrdef To_TS (BinOp (te1 :@ _) HasType (te2 :@_)) =
 
 -- attribute definition inside instance
 attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
-  Pp.pretty te1 Pp.<+> Pp.equals Pp.<+> Pp.pretty (showTSval te2) Pp.<> Pp.pretty (";"::String)
+  Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (showTSval te2)
+
+-- catch-all
 attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
 
 showTSval (Prim L4True) = "true"

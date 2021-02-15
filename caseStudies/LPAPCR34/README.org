@@ -983,8 +983,8 @@ This is a work in progress.
               addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
            )
          -- i think there is a bug in optparse-simple, honestly
-         addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . PP.render . stmToProlog) section34)) (pure ())
-         addCommand "plain"  "output to plain"  (const (mapM_ (putStrLn .             stmToPlain)  section34)) (pure ())
+         addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . show . stmToProlog) section34)) (pure ())
+         addCommand "plain"  "output to plain"  (const (mapM_ (putStrLn .        stmToPlain)  section34)) (pure ())
     runCmd
 #+end_src
 
@@ -1440,8 +1440,8 @@ A little transpiler to Typescript:
   -- instance definition
   stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
     Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["let", Pp.pretty te1, Pp.colon, Pp.pretty te2, Pp.equals, Pp.lbrace]
-                                  :
-                                  (attrdef To_TS <$> crb)))
+                                  : -- alternatively, use encloseSep, but that does a hanging indent.
+                                  (Pp.punctuate Pp.comma (attrdef To_TS <$> crb))))
             , Pp.rbrace ]
 
   -- type definition inside interface
@@ -1450,7 +1450,9 @@ A little transpiler to Typescript:
 
   -- attribute definition inside instance
   attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
-    Pp.pretty te1 Pp.<+> Pp.equals Pp.<+> Pp.pretty (showTSval te2) Pp.<> Pp.pretty (";"::String)
+    Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (showTSval te2)
+
+  -- catch-all
   attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
 
   showTSval (Prim L4True) = "true"

@@ -24,9 +24,7 @@ dependencies:
 - megaparsec
 - containers
 - text
-- boxes
 - pretty-simple
-- pretty
 - prettyprinter
 - optparse-simple
 - prolog

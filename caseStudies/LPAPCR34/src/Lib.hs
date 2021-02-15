@@ -10,14 +10,13 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Text (Text, pack, unpack)
 import qualified Data.Text.IO as TIO
-import qualified Prettyprinter as Pp
+import Prettyprinter hiding (space)
+import qualified Prettyprinter as PP
 import Data.Void
 import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
 import Data.Char (toLower)
-import qualified Text.PrettyPrint as PP
 import Control.Monad (forM_)
 import qualified Data.Map.Lazy as Map
-import qualified Text.PrettyPrint.Boxes as Bx
 import Text.Pretty.Simple (pPrint, pShow)
 import Options.Applicative.Simple (simpleOptions, addCommand, addSubCommands)
 import Language.Prolog
@@ -129,63 +128,62 @@ parseTermExpr = return $ "burf" :@ []
 stmToPlain :: Stm -> String
 stmToPlain (Section te) = plain te
 
-stmToProlog :: Stm -> PP.Doc
-stmToProlog (Section te) = PP.text "%% " <> PP.text (stmToL4 (Section te))
+stmToProlog :: Stm -> Doc ann
+stmToProlog (Section te) = "%% " <> pretty (stmToL4 (Section te))
 stmToProlog (DRule rn p d a w) =
-  let headP = PP.text "drule" PP.<> parencomma [ PP.doubleQuotes (PP.text $ plain rn)
-                                               , PP.text $ "SubRuleName"
+  let headP = "drule" <> parencomma [ dquotes (pretty $ plain rn)
+                                               , "SubRuleName"
                                                , teToProlog p
-                                               , PP.text (toLower <$> dshow d)
+                                               , pretty ((toLower <$> dshow d) :: String)
                                                , teToProlog a ]
       varargs = teToProlog p : unwrapP a
-  in PP.vcat ( [ if null w
-                 then headP PP.<> PP.char '.'
-                 else headP PP.<+> PP.text ":-" PP.$$ (PP.nest 4 $ PP.text "subRule" PP.<> parencomma (PP.text "SubRuleName" : varargs) PP.<> PP.char '.')
+  in vsep ( [ if null w
+                 then headP <> pretty '.'
+                 else nest 4 (headP <+> ":-" <+> ("subRule" <> parencomma ("SubRuleName" : varargs) <> pretty '.') )
                ] ++ asPrologSubrules w varargs )
 
-asPrologSubrules :: Maybe TermExpr -> [PP.Doc] -> [PP.Doc]
-asPrologSubrules Nothing _ = [PP.empty]
+asPrologSubrules :: Maybe TermExpr -> [Doc ann] -> [Doc ann]
+asPrologSubrules Nothing _ = [emptyDoc]
 asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (zip ['A'..] termexprs)
 
-asPrologSubrule :: [PP.Doc] -> (Char, TermExpr) -> PP.Doc
+asPrologSubrule :: [Doc ann] -> (Char, TermExpr) -> Doc ann
 asPrologSubrule varargs (ruleNum, te) =
-  PP.hang
-  (PP.text "\nsubRule" PP.<> parencomma ([ PP.text ("subRule_"++[ruleNum]) ] ++ varargs) PP.<+> (PP.text ":-"))
-  5
-  ((teToProlog te) PP.<> PP.char '.')
+  hang 5
+  ("\nsubRule" <> parencomma ([ pretty ("subRule_"++[ruleNum]) ] ++ varargs) <+> (":-") <> line <> (teToProlog te) <> pretty '.')
 
 
-unwrapP :: TermExpr -> [PP.Doc]
-unwrapP (mainex :@ nltags) = [PP.text $ tr " " "_" mainex]
-unwrapP (TKey tkey)        = [PP.text $ tr " " "_" tkey]
+unwrapP :: TermExpr -> [Doc ann]
+unwrapP (mainex :@ nltags) = [pretty $ tr_ mainex]
+unwrapP (TKey tkey)        = [pretty $ tr_ tkey]
 unwrapP (All termexprs)    = teToProlog <$> termexprs
 unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
 unwrapP (And termexprs)          = teToProlog <$> termexprs
 unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
 
-parencomma docs = PP.parens (PP.hsep $ PP.punctuate (PP.char ',') docs)
+parencomma docs = parens (hsep $ punctuate (pretty ',') docs)
 
-teToProlog :: TermExpr -> PP.Doc
-teToProlog orig@(mainex :@ nltags) = PP.text $ plain orig
-teToProlog orig@(TKey tkey)        = PP.text $ plain orig
-teToProlog (All termexprs)    = PP.text "TODO All"
-teToProlog orig@(Any termexprs)     = PP.nest 8 $ PP.vcat $ PP.punctuate (PP.text "; ") (teToProlog <$> termexprs)
-teToProlog (And termexprs)          = PP.text "TODO And"
-teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = PP.text (x ++ "_" ++ y)
-teToProlog orig@(BinOp te1 Cons te2) = (PP.text "compl") <> parencomma [teToProlog te1, teToProlog te2]
+teToProlog :: TermExpr -> Doc ann
+teToProlog orig@(mainex :@ nltags) = pretty $ plain orig
+teToProlog orig@(TKey tkey)        = pretty $ plain orig
+teToProlog (All termexprs)    = "TODO All"
+teToProlog orig@(Any termexprs)     = nest 8 $ vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
+teToProlog (And termexprs)          = "TODO And"
+teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = pretty (x ++ "_" ++ y :: String)
+teToProlog orig@(BinOp te1 Cons te2) = ("compl") <> parencomma [teToProlog te1, teToProlog te2]
 teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
 teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
 teToProlog orig@(BinOp (All lhss) co rhs) = teToProlog (All ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
 teToProlog orig@(BinOp lhs co (All rhss)) = teToProlog (All ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
-teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> PP.text "_of" <> parencomma [teToProlog tk1, teToProlog te3]
+teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> "_of" <> parencomma [teToProlog tk1, teToProlog te3]
 teToProlog orig@(BinOp te1 Compound te2)     = teToProlog te1 <> parencomma [teToProlog te2]
-teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = PP.text "of" <> parencomma [teToProlog te3, teToProlog te1]
-teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = PP.text prep <> parencomma [teToProlog te1, teToProlog te3]
+teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = "of" <> parencomma [teToProlog te3, teToProlog te1]
+teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = pretty prep <> parencomma [teToProlog te1, teToProlog te3]
 
 plain :: TermExpr -> String
-plain (mainex :@ nltags) = tr " " "_" mainex
-plain (TKey tkey)        = tr " " "_" tkey
+plain (mainex :@ nltags) = tr_ mainex
+plain (TKey tkey)        = tr_ tkey
 
+tr_ = tr " " "_"
 
 -- tr "abc" "123" "a cow" -> "1 3ow"
 tr x y cs = [ maybe c (y !!) eI | c <- cs, let eI = elemIndex c x ]
@@ -205,7 +203,7 @@ toplevel = Ctx []
 
 data Context = Ctx { stack    :: [TermExpr] } deriving (Show, Eq)
 
-ppTE ctx orig@(Any termexprs)     = "Any " ++ (PP.render $ PP.brackets (PP.hcat $ PP.punctuate (PP.char ',') (PP.text . (teToL4' ctx orig) <$> termexprs )))
+ppTE ctx orig@(Any termexprs)     = "Any " ++ (show $ brackets (hcat $ punctuate (comma) (pretty . (teToL4' ctx orig) <$> termexprs )))
 
 -- this Context thing really should be a State monad
 teToL4 :: Context -> TermExpr -> String
@@ -394,28 +392,30 @@ data Target = To_TS deriving (Show, Eq)
 
 -- we'll use https://hackage.haskell.org/package/prettyprinter-1.7.0/docs/Prettyprinter.html
 -- interface definition
+stm2ts :: Stm -> Doc ann
 stm2ts (CRule (BinOp (te1 :@ _) HasType ("Type" :@ _)) crb crmw) =
-  Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["interface", Pp.pretty te1, Pp.lbrace]
+  vsep [ nest 2 (vsep (hsep ["interface", pretty te1, lbrace]
                                 :
                                 (attrdef To_TS <$> crb)))
-          , Pp.rbrace ]
+          , rbrace ]
 -- instance definition
 stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
-  Pp.vsep [ Pp.nest 2 (Pp.vsep (Pp.hsep ["let", Pp.pretty te1, Pp.colon, Pp.pretty te2, Pp.equals, Pp.lbrace]
-                                :
-                                (Pp.punctuate Pp.comma (attrdef To_TS <$> crb))))
-          , Pp.rbrace ]
+  vsep [ nest 2 (vsep (hsep ["let", pretty te1, colon, pretty te2, equals, lbrace]
+                                : -- alternatively, use encloseSep, but that does a hanging indent.
+                                (punctuate comma (attrdef To_TS <$> crb))))
+          , rbrace ]
 
 -- type definition inside interface
+attrdef :: Target -> TermExpr -> Doc ann
 attrdef To_TS (BinOp (te1 :@ _) HasType (te2 :@_)) =
-  Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (typecast To_TS te2) Pp.<> Pp.pretty (";"::String)
+  pretty te1 <+> colon <+> pretty (typecast To_TS te2) <> semi
 
 -- attribute definition inside instance
 attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
-  Pp.pretty te1 Pp.<+> Pp.colon Pp.<+> Pp.pretty (showTSval te2)
+  pretty te1 <+> colon <+> pretty (showTSval te2)
 
 -- catch-all
-attrdef target y = Pp.hsep (Pp.pretty <$> [ ("// unimplemented: " :: String), show target, show y])
+attrdef target y = hsep (pretty <$> [ ("// unimplemented: " :: String), show target, show y])
 
 showTSval (Prim L4True) = "true"
 showTSval (Prim L4False) = "false"
@@ -444,6 +444,6 @@ someFunc myinput = do
             addCommand "stdin" "parsed STDIN"   (const (pPrint stdinAST))  (pure ())
          )
        -- i think there is a bug in optparse-simple, honestly
-       addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . PP.render . stmToProlog) section34)) (pure ())
-       addCommand "plain"  "output to plain"  (const (mapM_ (putStrLn .             stmToPlain)  section34)) (pure ())
+       addCommand "prolog" "output to prolog" (const (mapM_ (putStrLn . show . stmToProlog) section34)) (pure ())
+       addCommand "plain"  "output to plain"  (const (mapM_ (putStrLn .        stmToPlain)  section34)) (pure ())
   runCmd

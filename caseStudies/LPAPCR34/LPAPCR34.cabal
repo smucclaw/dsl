@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fcd3fc89f2e477ca4ebf85223361ea1cd84e39f4062a06ae1bbfe19cb380c659
+-- hash: f5f56b68013cfb47cc348e2bd225f6c58a8b7b9c3c98a79d8d6c6f6345afcff3
 
 name:           LPAPCR34
 version:        0.1.0.0
@@ -34,11 +34,9 @@ library
       src
   build-depends:
       base >=4.7 && <5
-    , boxes
     , containers
     , megaparsec
     , optparse-simple
-    , pretty
     , pretty-simple
     , prettyprinter
     , prolog
@@ -55,11 +53,9 @@ executable LPAPCR34-exe
   build-depends:
       LPAPCR34
     , base >=4.7 && <5
-    , boxes
     , containers
     , megaparsec
     , optparse-simple
-    , pretty
     , pretty-simple
     , prettyprinter
     , prolog
@@ -77,11 +73,9 @@ test-suite LPAPCR34-test
   build-depends:
       LPAPCR34
     , base >=4.7 && <5
-    , boxes
     , containers
     , megaparsec
     , optparse-simple
-    , pretty
     , pretty-simple
     , prettyprinter
     , prolog

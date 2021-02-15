@@ -10,8 +10,8 @@ newtype GFAnnot = GFAnnot Integer
   deriving (Eq, Ord, Show, Read)
 
 ----- Names 
-newtype VarName = VarNm String
-  deriving (Eq, Ord, Show, Read)
+type VarName = String
+--  deriving (Eq, Ord, Show, Read)
 data AnnotClassName = AClsNm String GFAnnot
   deriving (Eq, Ord, Show, Read)
 newtype ClassName = ClsNm String
@@ -26,6 +26,7 @@ newtype PartyName = PtNm String
   deriving (Eq, Ord, Show, Read)
 
 
+
 annotClassName2ClassName :: AnnotClassName -> ClassName
 annotClassName2ClassName (AClsNm cn a) = ClsNm cn
 
@@ -36,7 +37,7 @@ annotFieldName2FieldName (AFldNm fn a) = FldNm fn
 
 ----- Program
 
-data Program ct at = Program [ClassDecl ct] [VarDecl] [Assertion at]
+data Program ct et = Program [ClassDecl ct] [VarDecl] [Rule et] [Assertion et] 
   deriving (Eq, Ord, Show, Read)
 
 ----- Types 
@@ -45,6 +46,7 @@ data Tp
   | IntT
   | ClassT ClassName
   | FunT Tp Tp
+  | TupleT [Tp]
   | ErrT
   deriving (Eq, Ord, Show, Read)
 
@@ -151,7 +153,7 @@ data BComparOp = BCeq | BClt | BClte | BCgt | BCgte | BCne
   deriving (Eq, Ord, Show, Read)
 
 -- binary boolean operators
-data BBoolOp = BBand | BBor
+data BBoolOp = BBimpl | BBor | BBand
   deriving (Eq, Ord, Show, Read)
 
 -- binary operators (union of the above)
@@ -165,6 +167,15 @@ data BinOp
 data ListOp = AndList | OrList | XorList | CommaList
     deriving (Eq, Ord, Show, Read)
 
+data Pattern 
+    = VarP String
+    | VarListP [String]
+    deriving (Eq, Ord, Show, Read)
+
+data Quantif = All | Ex 
+    deriving (Eq, Ord, Show, Read)
+
+
 -- Exp t is an expression of type t (to be determined during type checking / inference)
 data Exp t
     = ValE t Val                                -- value
@@ -173,9 +184,11 @@ data Exp t
     | BinOpE t BinOp (Exp t) (Exp t)            -- binary operator
     | IfThenElseE t (Exp t) (Exp t) (Exp t)     -- conditional
     | AppE t (Exp t) (Exp t)                    -- function application
-    | FunE t VarName Tp (Exp t)                 -- function abstraction
+    | FunE t Pattern Tp (Exp t)                 -- function abstraction
+    | QuantifE t Quantif VarName Tp (Exp t)         -- quantifier
     | ClosE t [(VarName, Exp t)] (Exp t)        -- closure  (not externally visible)
     | FldAccE t (Exp t) FieldName               -- field access
+    | TupleE t [Exp t]                          -- tuples
     | CastE t Tp (Exp t)                        -- cast to type
     | ListE t ListOp [Exp t]                    -- list expression
     deriving (Eq, Ord, Show, Read)
@@ -188,6 +201,9 @@ data Cmd t
     | FAssign (Exp t) FieldName (Exp t)         -- Assignment to field
   deriving (Eq, Ord, Show, Read)
 
+
+data Rule t = Rule VarName [VarDecl] (Exp t) (Exp t)
+  deriving (Eq, Ord, Show, Read)
 
 data Assertion t = Assertion (Exp t)
   deriving (Eq, Ord, Show, Read)

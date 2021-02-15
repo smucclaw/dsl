@@ -26,32 +26,58 @@ tokens :-
   "#".*                         ;
 
   -- Syntax
+  -- Structuring elements of an L4 file
+  
   assert                        { \s -> TokenAssert }
   class                         { \s -> TokenClass }
   decl                          { \s -> TokenDecl }
   defn                          { \s -> TokenDefn }
   extends                       { \s -> TokenExtends }
+  rule                          { \s -> TokenRule }
+
+  -- Types
+  Bool                          { \s -> TokenBool }
+  Int                           { \s -> TokenInt }
+
+  -- Expressions
   let                           { \s -> TokenLet }
+  in                            { \s -> TokenIn }
+  not                           { \s -> TokenNot }
+  all                           { \s -> TokenAll }
+  ex                            { \s -> TokenEx }
+  if                            { \s -> TokenIf }
+  then                          { \s -> TokenThen }
+  else                          { \s -> TokenElse }
+  for                           { \s -> TokenFor }
   True                          { \s -> TokenTrue }
   False                         { \s -> TokenFalse }
-  Bool                          { \s -> TokenBool }
-  in                            { \s -> TokenIn }
-  Int                           { \s -> TokenInt }
-  $digit+                       { \s -> TokenNum (read s) }
+
+  -- Symbols
   "->"                          { \s -> TokenArrow }
-  \.                            { \s -> TokenDot }
   \\                            { \s -> TokenLambda }
+  "-->"                         { \s -> TokenImpl }
+  "||"                          { \s -> TokenOr }
+  "&&"                          { \s -> TokenAnd }
   \=                            { \s -> TokenEq }
   \<                            { \s -> TokenLt }
+  \>                           { \s -> TokenGt }
   [\+]                          { \s -> TokenAdd }
   [\-]                          { \s -> TokenSub }
   [\*]                          { \s -> TokenMul }
+  "/"                           { \s -> TokenDiv }
+  "%"                           { \s -> TokenMod }
+  \.                            { \s -> TokenDot }
+  \,                            { \s -> TokenComma }
   \:                            { \s -> TokenColon }
   \(                            { \s -> TokenLParen }
   \)                            { \s -> TokenRParen }
   \{                            { \s -> TokenLBrace }
   \}                            { \s -> TokenRBrace }
+ 
+  -- Numbers and identifiers
+  $digit+                       { \s -> TokenNum (read s) }
   $alpha [$alpha $digit \_ \']* { \s -> TokenSym s }
+
 
 {
 
@@ -62,28 +88,47 @@ data Token
   | TokenDecl
   | TokenDefn
   | TokenExtends
+  | TokenRule
+
+  | TokenBool
+  | TokenInt
+
   | TokenLet
+  | TokenIn
+  | TokenNot
+  | TokenAll
+  | TokenEx
+  | TokenIf
+  | TokenThen
+  | TokenElse
+  | TokenFor
   | TokenTrue
   | TokenFalse
-  | TokenBool
-  | TokenIn
-  | TokenInt
-  | TokenDot
+  
   | TokenLambda
-  | TokenNum Integer
-  | TokenSym String
   | TokenArrow
+  | TokenImpl
+  | TokenOr
+  | TokenAnd
   | TokenEq
   | TokenLt
+  | TokenGt
   | TokenAdd
   | TokenSub
   | TokenMul
+  | TokenDiv
+  | TokenMod
+  | TokenDot
+  | TokenComma
   | TokenColon
   | TokenLBrace
   | TokenRBrace
   | TokenLParen
   | TokenRParen
   | TokenEOF
+
+  | TokenNum Integer
+  | TokenSym String
   deriving (Eq,Show)
 
 scanTokens :: String -> Except String [Token]

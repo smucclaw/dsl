@@ -9,6 +9,7 @@ module Parser (
 import Lexer
 import Syntax
 
+import Prelude
 import Control.Monad.Except
 
 }
@@ -30,38 +31,63 @@ import Control.Monad.Except
     decl    { TokenDecl }
     defn    { TokenDefn }
     extends { TokenExtends }
---    let   { TokenLet }
+    rule    { TokenRule }
+
+    Bool  { TokenBool }
+    Int   { TokenInt }
+
+    let   { TokenLet }
+    in    { TokenIn }
+    not   { TokenNot }
+    all   { TokenAll }
+    ex    { TokenEx }
+    if    { TokenIf }
+    then  { TokenThen }
+    else  { TokenElse }
+    for   { TokenFor }
     true  { TokenTrue }
     false { TokenFalse }
-    Bool  {TokenBool}
---    in    { TokenIn }
-    Int   {TokenInt}
-    NUM   { TokenNum $$ }
-    VAR   { TokenSym $$ }
-    '.'   { TokenDot }
+    
     '\\'  { TokenLambda }
     '->'  { TokenArrow }
+    '-->' { TokenImpl }
+    '||'  { TokenOr }
+    '&&'  { TokenAnd }
     '='   { TokenEq }
     '<'   { TokenLt }
+    '>'   { TokenGt }
     '+'   { TokenAdd }
     '-'   { TokenSub }
     '*'   { TokenMul }
+    '/'   { TokenDiv }
+    '%'   { TokenMod }
+    '.'   { TokenDot }
+    ','   { TokenComma }
     ':'   { TokenColon }
     '('   { TokenLParen }
     ')'   { TokenRParen }
     '{'   { TokenLBrace }
     '}'   { TokenRBrace }
 
+    NUM   { TokenNum $$ }
+    VAR   { TokenSym $$ }
+
 -- Operators
-%left '<' '='
-%left '+' '-'
-%left '*'
 %right '->'
 %left '.'
+%nonassoc if then else
+%right '-->'
+%right '||'
+%right '&&'
+%left not
+%nonassoc '<' '=' '>'
+%left '+' '-'
+%left '*' '/' '%'
+%left AMINUS
 %%
 
-Program : ClassDecls VarDecls  Assertions
-                                   { Program (reverse $1)  (reverse $2) (reverse $3) }
+Program : ClassDecls GlobalVarDecls Rules Assertions
+                                   { Program (reverse $1)  (reverse $2) (reverse $3) (reverse $4) }
 
 ClassDecls :                       { [] }
            | ClassDecls ClassDecl  { $2 : $1 }
@@ -75,47 +101,90 @@ FieldDecls :                       { [] }
 
 FieldDecl : VAR Annot ':' Tp             { FieldDecl (AFldNm $1 $2) $4 }
 
-VarDecls :                         { [] }
-         | VarDecls VarDecl        { $2 : $1 }
+GlobalVarDecls :                         { [] }
+         | GlobalVarDecls GlobalVarDecl  { $2 : $1 }
 
-VarDecl : decl VAR ':' Tp          { VarDecl (VarNm $2) $4 }
+GlobalVarDecl : decl VAR ':' Tp          { VarDecl $2 $4 }
+
+VarDeclsCommaSep :  VarDecl              { [$1] }
+         | VarDeclsCommaSep  ',' VarDecl { $3 : $1 }
+
+VarDecl : VAR ':' Tp                     { VarDecl $1 $3 }
+
 
 Assertions :                       { [] }
            | Assertions Assertion  { $2 : $1 }
 Assertion : assert Expr            { Assertion $2 }
 
 -- Atomic type
-ATp   : Bool                       { BoolT }
+ATp   : Bool                      { BoolT }
      | Int                        { IntT }
      | VAR                        { ClassT (ClsNm $1) }
-     | '(' Tp ')'                 { $2 }
+     | '(' TpsCommaSep ')'        { let tcs = $2 in if length tcs == 1 then head tcs else TupleT (reverse tcs) }
+
+TpsCommaSep :                      { [] }
+            | Tp                   { [$1] }
+            | TpsCommaSep ',' Tp   { $3 : $1 }
 
 Tp   : ATp                        { $1 }
      | Tp '->' Tp                 { FunT $1 $3 }
 
-Expr : '\\' VAR ':' ATp '->' Expr   { FunE () (VarNm $2) $4 $6 }
-     | Form                        { $1 }
 
-Form : Form '<' Form               { BinOpE () (BCompar BClt) $1 $3 }
-     | Form '=' Form               { BinOpE () (BCompar BCeq) $1 $3 }
-     | Form '+' Form               { BinOpE () (BArith BAadd) $1 $3 }
-     | Form '-' Form               { BinOpE () (BArith BAsub) $1 $3 }
-     | Form '*' Form               { BinOpE () (BArith BAmul) $1 $3 }
-     | Fact                        { $1 }
+Pattern : VAR                      { VarP $1 }
+    | '(' VarsCommaSep ')'         { let vcs = $2 in if length vcs == 1 then VarP (head vcs) else VarListP (reverse vcs) }
 
-Fact : Fact Atom                   { AppE () $1 $2 }
-     | Acc                         { $1 }
+VarsCommaSep :                      { [] }
+            | VAR                   { [$1] }
+            | VarsCommaSep ',' VAR  { $3 : $1 }
+
+Expr : '\\' Pattern ':' ATp '->' Expr  { FunE () $2 $4 $6 }
+     | all VAR ':' Tp '.' Expr         { QuantifE () All $2 $4 $6 }
+     | ex VAR ':' Tp '.' Expr          { QuantifE () Ex $2 $4 $6 }
+     | Expr '-->' Expr             { BinOpE () (BBool BBimpl) $1 $3 }
+     | Expr '||' Expr              { BinOpE () (BBool BBor) $1 $3 }
+     | Expr '&&' Expr              { BinOpE () (BBool BBand) $1 $3 }
+     | if Expr then Expr else Expr { IfThenElseE () $2 $4 $6 }
+     | not Expr                    { UnaOpE () (UBool UBneg) $2 }
+     | Expr '<' Expr               { BinOpE () (BCompar BClt) $1 $3 }
+     | Expr '>' Expr               { BinOpE () (BCompar BCgt) $1 $3 }
+     | Expr '=' Expr               { BinOpE () (BCompar BCeq) $1 $3 }
+     | Expr '+' Expr               { BinOpE () (BArith BAadd) $1 $3 }
+     | Expr '-' Expr               { BinOpE () (BArith BAsub) $1 $3 }
+     | '-' Expr %prec AMINUS       { UnaOpE () (UArith UAminus) $2 }
+     | Expr '*' Expr               { BinOpE () (BArith BAmul) $1 $3 }
+     | Expr '/' Expr               { BinOpE () (BArith BAdiv) $1 $3 }
+     | Expr '%' Expr               { BinOpE () (BArith BAmod) $1 $3 }
+     | App                         { $1 }
+
+App : App Acc                     { AppE () $1 $2 }
+    | Acc                          { $1 }
 
 -- field access
 Acc : Acc '.' VAR                  { FldAccE () $1 (FldNm $3) }
     | Atom                         { $1 }
 
-Atom : '(' Expr ')'                { $2 }
+Atom : '(' ExprsCommaSep ')'       { let ecs = $2 in if length ecs == 1 then head ecs else TupleE () (reverse ecs) }
      | NUM                         { ValE () (IntV $1) }
-     | VAR                         { VarE () (VarNm $1) }
+     | VAR                         { VarE () $1 }
      | true                        { ValE () (BoolV True) }
      | false                       { ValE () (BoolV False) }
 
+ExprsCommaSep :                      { [] }
+            | Expr                   { [$1] }
+            | ExprsCommaSep ',' Expr  { $3 : $1 }
+
+
+Rules  :                       { [] }
+       | Rules Rule            { $2 : $1}
+Rule:  RuleName RuleVarDecls RulePrecond RuleConcl { Rule $1 $2 $3 $4 }
+
+RuleName: rule '<' VAR '>'     { $3 }
+
+RuleVarDecls :                       { [] }
+             | for VarDeclsCommaSep  { reverse $2 }
+
+RulePrecond : if Expr      { $2 }
+RuleConcl   : then Expr    { $2 }
 
 -- Annotations for GF
 Annot : '(' NUM ')'                 { GFAnnot $2 }

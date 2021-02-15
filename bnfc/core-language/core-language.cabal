@@ -24,7 +24,7 @@ library
                   --Exec
                   --RuleToTa
                   --TaToUppaal
-                  Typing
+                  -- Typing
                   -- from src-bnfc
                   AbsL
                   ErrM

@@ -268,7 +268,7 @@ tp_cmd env (VAssign v e) =
     in
       if (tp_var env v) == tp_of_expr te
       then VAssign v te
-      else error ("types do not correspond in assignment to " ++ (case v of (VarNm n) -> n))
+      else error ("types do not correspond in assignment to " ++ v)
 
 
 ----------------------------------------------------------------------

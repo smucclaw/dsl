@@ -126,6 +126,7 @@ preambleMdl = Mdl customCs []
 data Val
     = BoolV Bool
     | IntV Integer
+    -- TODO: instead of RecordV, introduce RecordE in type Expr
     | RecordV ClassName [(FieldName, Val)]
     | ErrV
   deriving (Eq, Ord, Show, Read)
@@ -176,36 +177,36 @@ data Quantif = All | Ex
     deriving (Eq, Ord, Show, Read)
 
 
--- Exp t is an expression of type t (to be determined during type checking / inference)
-data Exp t
+-- Expr t is an expression of type t (to be determined during type checking / inference)
+data Expr t
     = ValE t Val                                -- value
     | VarE t VarName                            -- variable
-    | UnaOpE t UnaOp (Exp t)                    -- unary operator
-    | BinOpE t BinOp (Exp t) (Exp t)            -- binary operator
-    | IfThenElseE t (Exp t) (Exp t) (Exp t)     -- conditional
-    | AppE t (Exp t) (Exp t)                    -- function application
-    | FunE t Pattern Tp (Exp t)                 -- function abstraction
-    | QuantifE t Quantif VarName Tp (Exp t)         -- quantifier
-    | ClosE t [(VarName, Exp t)] (Exp t)        -- closure  (not externally visible)
-    | FldAccE t (Exp t) FieldName               -- field access
-    | TupleE t [Exp t]                          -- tuples
-    | CastE t Tp (Exp t)                        -- cast to type
-    | ListE t ListOp [Exp t]                    -- list expression
+    | UnaOpE t UnaOp (Expr t)                    -- unary operator
+    | BinOpE t BinOp (Expr t) (Expr t)            -- binary operator
+    | IfThenElseE t (Expr t) (Expr t) (Expr t)     -- conditional
+    | AppE t (Expr t) (Expr t)                    -- function application
+    | FunE t Pattern Tp (Expr t)                 -- function abstraction
+    | QuantifE t Quantif VarName Tp (Expr t)         -- quantifier
+    | ClosE t [(VarName, Expr t)] (Expr t)        -- closure  (not externally visible)
+    | FldAccE t (Expr t) FieldName               -- field access
+    | TupleE t [Expr t]                          -- tuples
+    | CastE t Tp (Expr t)                        -- cast to type
+    | ListE t ListOp [Expr t]                    -- list expression
     deriving (Eq, Ord, Show, Read)
 
 
 -- Cmd t is a command of type t
 data Cmd t
     = Skip                                      -- Do nothing
-    | VAssign VarName (Exp t)                   -- Assignment to variable
-    | FAssign (Exp t) FieldName (Exp t)         -- Assignment to field
+    | VAssign VarName (Expr t)                   -- Assignment to variable
+    | FAssign (Expr t) FieldName (Expr t)         -- Assignment to field
   deriving (Eq, Ord, Show, Read)
 
 
-data Rule t = Rule VarName [VarDecl] (Exp t) (Exp t)
+data Rule t = Rule VarName [VarDecl] (Expr t) (Expr t)
   deriving (Eq, Ord, Show, Read)
 
-data Assertion t = Assertion (Exp t)
+data Assertion t = Assertion (Expr t)
   deriving (Eq, Ord, Show, Read)
 
 ----------------------------------------------------------------------
@@ -238,7 +239,7 @@ action_name Internal = []
 action_name (Act cn s) = [cn]
 
 -- Transition condition: clock constraints and Boolean expression
-data TransitionCond t = TransCond [ClConstr] (Exp t)
+data TransitionCond t = TransCond [ClConstr] (Expr t)
   deriving (Eq, Ord, Show, Read)
 
 -- Transition action: synchronization action; clock resets; and execution of command (typically assignments)
@@ -263,10 +264,10 @@ data Transition t = Trans Loc (TransitionCond t) (TransitionAction t) Loc
 -- an invariant per location and
 -- a labelling (an expression true in the location).
 -- Major extension: "Labeling function" which is typically taken to be Loc -> AP -> Bool
--- for AP a type of atomic propositioons and which is here taken to be [(Loc, Exp t)].
+-- for AP a type of atomic propositioons and which is here taken to be [(Loc, Expr t)].
 -- Note: the set of locations, actions, clocks could in principle be inferred from the remaining info.
--- Type parameter t: type of expressions: () or Tp, see function Typing/tp_expr
-data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition t] [Loc] [(Loc, [ClConstr])] [(Loc, Exp t)]
+-- Type parameter t: type of expressions: () or Tp, see function Typing/tpExprr
+data TA t = TmdAut String [Loc] [ClassName] [Clock] [Transition t] [Loc] [(Loc, [ClConstr])] [(Loc, Expr t)]
   deriving (Eq, Ord, Show, Read)
 
 -- Timed Automata System: a set of TAs running in parallel
@@ -292,7 +293,7 @@ channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls)
 
 data Event t
   = EventClConstr ClConstr
-  | EventCond (Exp t)
+  | EventCond (Expr t)
   deriving (Eq, Ord, Show, Read)
 
 -- only Must and May, assuming that Shant can be compiled away during syntax analysis

@@ -1,0 +1,42 @@
+digraph {
+    subgraph cluster_0 {
+        graph [label=IN
+              ,labeljust=l
+              ,style=invis];
+        1 [label=OrderBike];
+        4 [label=ReceivesPay];
+        6 [label=AwaitDeliverBike];
+        12 [label=AwaitBuyerPays];
+    }
+    subgraph cluster_1 {
+        graph [label=OUT
+              ,labeljust=r
+              ,style=invis];
+        17 [label=BREACH];
+        18 [label=FULFILLED];
+    }
+    1 -> 6 [headport=n
+           ,tailport=se
+           ,color=blue];
+    1 -> 18 [headport=n
+            ,tailport=sw
+            ,color=brown];
+    4 -> 17 [headport=n
+            ,tailport=sw
+            ,color=brown];
+    4 -> 18 [headport=n
+            ,tailport=se
+            ,color=blue];
+    6 -> 12 [headport=n
+            ,tailport=se
+            ,color=blue];
+    6 -> 17 [headport=n
+            ,tailport=sw
+            ,color=brown];
+    12 -> 17 [headport=n
+             ,tailport=sw
+             ,color=brown];
+    12 -> 18 [headport=n
+             ,tailport=se
+             ,color=blue];
+}

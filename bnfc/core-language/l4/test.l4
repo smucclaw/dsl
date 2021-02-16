@@ -1,3 +1,5 @@
+# Comments with sharp
+
 class Business (1234) {
   is_legal (89): Bool
 }
@@ -10,4 +12,15 @@ class Boo (345) extends Foo {
 decl megacorp : Business
 
 assert
-megacorp.is_legal = True
+# (\x : () -> x * x)  3
+# megacorp.is_legal = True
+# all x : Int. ex y : Int. x < y || not x = y && z = 5
+
+# if x < 3 + 4 then x && z < 3 else if x = 4 then 5 else 6
+
+      
+# OK:
+# \ (x, y) : (Int, Int) -> x < y + 3
+# \x : Int -> \y : Int -> x < y + 3
+# \x : Int -> \y : Int -> (f x).foo.zoo 
+

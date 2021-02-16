@@ -22,23 +22,24 @@ library
                   Syntax
                   --ExampleInput
                   --Exec
+                  InterfaceNunchaku
                   --RuleToTa
                   --TaToUppaal
-                  -- Typing
+                  Typing
                   -- from src-bnfc
-                  AbsL
-                  ErrM
-                  LayoutL
-                  LexL
-                  ParL
-                  PrintL
-                  SkelL
+                  --AbsL
+                  --ErrM
+                  --LayoutL
+                  --LexL
+                  --ParL
+                  --PrintL
+                  --SkelL
                   -- from src-l4
-                  L4
+                  --L4
   hs-source-dirs:
      src
-     src-bnfc
-     src-l4
+     --src-bnfc
+     --src-l4
   build-depends:       base >= 4.7 && < 5
                      , array
                      , pretty-simple
@@ -61,6 +62,7 @@ executable core-language
   other-modules:
                 Lexer,
                 Parser,
-                Syntax
+                Syntax,
+                Typing
                 
                 

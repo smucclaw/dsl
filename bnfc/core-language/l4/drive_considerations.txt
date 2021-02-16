@@ -1,0 +1,39 @@
+Scenario for types of cars being allowed to drive on certain kinds of roads:
+
+TERMINOLOGY:
+
+base class: day
+work days are a subclass of day
+holidays are a subclass of day
+work days and holidays are distinct
+(possibly also: every day is either a work day or a holiday)
+
+base class: road
+main roads are a subclass of road
+side roads are a subclass of road
+main and side roads are distinct
+(possibly also: every road is either a main or a side road)
+
+base class: vehicle
+ambulance is a subclass of vehicle
+
+DECLARATION:
+
+Drive : Vehicle -> Road -> Day -> Bool
+
+
+RULES:
+
+R1:
+Subject to R2:
+Any kind of car may drive on any kind of road on any day.
+
+
+R2:
+Subject to R3:
+On holidays, cars must not drive on side roads.
+
+R3: 
+Ambulances may drive on any kind of road at any time.
+
+

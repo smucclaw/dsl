@@ -16,7 +16,7 @@ lift_ubool_op u c = case (u, c) of
   (UBneg, BoolV b) -> BoolV (not b)
   _ -> ErrV
 
-lift_unaop_expr :: UnaOp -> Exp Tp -> Exp Tp
+lift_unaop_expr :: UnaOp -> Expr Tp -> Expr Tp
 lift_unaop_expr uop e = case (uop, e) of
   (UArith u, ValE t c) -> ValE t (lift_uarith_op u c)
   (UBool u, ValE t c) -> ValE t (lift_ubool_op u c)
@@ -36,11 +36,11 @@ lift_barith_op ba c1 c2 = case (c1, c2) of
   _ -> ErrV
 
 
-lift_binop_expr :: BinOp -> Exp Tp -> Exp Tp -> Exp Tp
+lift_binop_expr :: BinOp -> Expr Tp -> Expr Tp -> Expr Tp
 lift_binop_expr bop e1 e2 = case (bop, e1, e2) of
     (BArith ba, ValE t1 c1, ValE t2 c2) -> ValE (tp_barith t1 t2 ba) (lift_barith_op ba c1 c2)
     
-constr_clos :: Tp -> Exp Tp -> Exp Tp -> Exp Tp
+constr_clos :: Tp -> Expr Tp -> Expr Tp -> Expr Tp
 constr_clos rtp f a = case f of
   ClosE t cbd (FunE _ v _ e) -> ClosE rtp ((v, a):cbd) e
   _ -> error "application of non-function"
@@ -52,7 +52,7 @@ constr_clos rtp f a = case f of
 -- All closure expressions are supposed to be closure-evaluated,
 -- which means that for every closure of the form (ClosE t1 cbd e),
 -- the expressions in cbd are evaluated and the closures in cbd are closure-evaluated
-eval_expr :: [(VarName, Exp Tp)] -> Exp Tp -> Exp Tp
+eval_expr :: [(VarName, Expr Tp)] -> Expr Tp -> Expr Tp
 eval_expr bd x = case x of
   ValE t c -> ValE t c
   VarE t v ->

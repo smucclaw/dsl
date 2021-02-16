@@ -1,0 +1,71 @@
+
+Rules as implications: Mutual exclusion of May and MustNot not provable
+
+
+MayCond --> MayAccept
+MustNotCond --> MustNotAccept
+|-
+~ (MayAccept && MustNotAccept)
+
+
+equiv to:
+
+MayCond --> MayAccept
+MustNotCond --> MustNotAccept
+(MayAccept && MustNotAccept)
+|-
+False
+
+which is not valid: put MayAccept = MustNotAccept = 1 which satisfies precond independently of MayCond and MustNotCond
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rules as implications: Exhaustiveness of May and MustNot may be provable:
+
+MayCond --> MayAccept
+MustNotCond --> MustNotAccept
+|-
+(MayAccept || MustNotAccept)
+
+Assume MustNotCond = ~ MayCond. Then:
+
+MayCond --> MayAccept
+~MayCond --> MustNotAccept
+|-
+(MayAccept || MustNotAccept)
+
+Assume MayCond. Then concl true.
+Assume ~MayCond. Then concl true.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rules as implications:
+
+What happens with "subject to" and similar clauses if rules are not
+equivalences ???
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Inductive closure of implications:
+
+R1:
+all x : T1. Pre1(x) --> Concl(x)
+
+R2:
+all x : T2. Pre2(x) --> Concl(x)
+
+(say: T2 subtype of T1)
+
+Relativization:
+
+all x . T1(x) --> Pre1(x) --> Concl(x)
+all x . T2(x) --> Pre2(x) --> Concl(x)
+
+Rewriting:
+all x . (T1(x) && Pre1(x)) --> Concl(x)
+all x . (T2(x) && Pre2(x)) --> Concl(x)
+
+Inductive closure adds:
+
+all x. Concl(x) --> (T1(x) && Pre1(x)) || (T2(x) && Pre2(x))
+

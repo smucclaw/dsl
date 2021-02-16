@@ -1,0 +1,46 @@
+
+
+class Business (0) {
+}
+
+class LawRelatedService (0) extends Business {
+}
+
+class BusinessEntity (0) {
+}
+
+class Appointment (0) {
+}
+
+class LegalPractitioner (0) {
+}
+
+class LocumSolicitor (0) extends LegalPractitioner {
+}
+
+decl AssociatedWith: LegalPractitioner -> Appointment -> Bool
+decl AssociatedWithApp: Appointment -> BusinessEntity -> Bool
+
+# use the following declarations instead of the commented 'extends' classes ??
+# decl LawRelatedService: Business -> Bool
+# decl LocumSolicitor: LegalPractitioner -> Bool
+
+
+# SECTION 34
+
+rule <r1a>
+for lpr: LegalPractitioner, app: Appointment
+if (ex bsn : Business. AssociatedWith app bsn && IncompatibleDignity bsn)
+then MustNotAcceptApp lpr app
+
+
+# first condition of IF: neg. of precond of rule 1a
+rule <r5>
+# for lpr: LegalPractitioner, app: Appointment
+# Integrated the fact LocumSolicitor lpr in the declaration
+for lpr: LocumSolicitor, app: Appointment
+if not (ex bsn : Business. AssociatedWith app bsn && IncompatibleDignity bsn) &&
+   (all bse : BusinessEntity. AssociatedWithApp app bse -->
+                  not (ex srv : Business.  LawRelatedService srv && Provides bse srv) &&
+                  ConditionsSecondSchedule lpr bse)
+then MayAcceptApp lpr app

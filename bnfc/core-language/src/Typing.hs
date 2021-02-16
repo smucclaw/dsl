@@ -159,14 +159,14 @@ tp_constval env x = case x of
          else error ("record fields do not correspond to fields of class " ++ (case cn of (ClsNm n) -> n))
        _ -> error "internal error: duplicate class definition"
 
-tp_var :: Environment t -> VarName -> Tp
-tp_var env v =
+tpVar :: Environment t -> VarName -> Tp
+tpVar env v =
   case lookup v (locals_of_env env) of
     Nothing -> ErrT
     Just t -> t  
 
-tp_of_expr :: Exp t -> t
-tp_of_expr x = case x of
+tpOfExpr :: Expr t -> t
+tpOfExpr x = case x of
   ValE t _      -> t
   VarE t _        -> t
   UnaOpE t _ _    -> t
@@ -212,61 +212,71 @@ cast_compatible :: Tp -> Tp -> Bool
 cast_compatible te ctp = True
 
 
-push_vardecl_env :: VarName -> Tp -> Environment t -> Environment t
-push_vardecl_env vn t (Env md (LVD vds)) = Env md (LVD ((vn, t):vds))
+pushVardeclEnv :: Pattern -> Tp -> Environment t -> Environment t
+pushVardeclEnv (VarP vn) t (Env md (LVD vds)) = Env md (LVD ((vn, t):vds))
+pushVardeclEnv (VarListP vns) (TupleT ts) (Env md (LVD vds)) = Env md (LVD ((zip vns ts) ++vds))
 
+compatiblePatternType :: Pattern -> Tp -> Bool
+compatiblePatternType (VarP vn) t = True
+compatiblePatternType (VarListP vns) (TupleT ts) = (length vns == length ts)
+compatiblePatternType _ _ = False
 
 -- TODO: FldAccE, ListE
-tp_expr :: Environment t -> Exp () -> Exp Tp
-tp_expr env x = case x of
+tpExpr :: Environment t -> Expr () -> Expr Tp
+tpExpr env x = case x of
   ValE () c -> ValE (tp_constval env c) c
-  VarE () v -> VarE (tp_var env v) v
+  VarE () v -> VarE (tpVar env v) v
   UnaOpE () uop e -> 
-    let te = (tp_expr env e)
-        t   = tp_unaop (tp_of_expr te) uop
+    let te = (tpExpr env e)
+        t   = tp_unaop (tpOfExpr te) uop
     in  UnaOpE t uop te
   BinOpE () bop e1 e2 ->
-    let te1 = (tp_expr env e1)
-        te2 = (tp_expr env e2)
-        t   = tp_binop (tp_of_expr te1) (tp_of_expr te2) bop
+    let te1 = (tpExpr env e1)
+        te2 = (tpExpr env e2)
+        t   = tp_binop (tpOfExpr te1) (tpOfExpr te2) bop
     in  BinOpE t bop te1 te2
   IfThenElseE () c e1 e2 -> 
-    let tc = (tp_expr env c)
-        te1 = (tp_expr env e1)
-        te2 = (tp_expr env e2)
+    let tc = (tpExpr env c)
+        te1 = (tpExpr env e1)
+        te2 = (tpExpr env e2)
     in
-      if tp_of_expr tc == BoolT && (tp_of_expr te1) == (tp_of_expr te2)
-      then IfThenElseE (tp_of_expr te1) tc te1 te2
+      if tpOfExpr tc == BoolT && (tpOfExpr te1) == (tpOfExpr te2)
+      then IfThenElseE (tpOfExpr te1) tc te1 te2
       else  IfThenElseE ErrT tc te1 te2
   AppE () fe ae -> 
-    let tfe = (tp_expr env fe)
-        tae = (tp_expr env ae)
-        tf = (tp_of_expr tfe)
-        ta = (tp_of_expr tae)
+    let tfe = (tpExpr env fe)
+        tae = (tpExpr env ae)
+        tf = (tpOfExpr tfe)
+        ta = (tpOfExpr tae)
     in case tf of
       FunT tpar tbody ->
         if tpar == ta
         then AppE tbody tfe tae
         else AppE ErrT tfe tae
       _ -> AppE ErrT tfe tae
-  FunE () v tparam e -> 
-    let te = (tp_expr (push_vardecl_env v tparam env) e)
-        t   = (tp_of_expr te)
-    in FunE (FunT tparam t) v tparam te
+  FunE () pt tparam e -> 
+    let te = (tpExpr (pushVardeclEnv pt tparam env) e)
+        t   = (tpOfExpr te)
+    in  
+      -- TODO: the test should come before the recursive call
+      -- because pushVardeclEnv may lead to a Haskell match failure.
+      if compatiblePatternType pt tparam
+      then FunE (FunT tparam t) pt tparam te
+      else FunE ErrT pt tparam te
   -- ClosE: no explicit typing because not externally visible
   CastE () ctp e ->        
-    let te = (tp_expr env e)
-    in if cast_compatible (tp_of_expr te) ctp
+    let te = (tpExpr env e)
+    in if cast_compatible (tpOfExpr te) ctp
        then CastE ctp ctp te
        else CastE ErrT ctp te
 
 
-tp_cmd :: Environment t -> Cmd () -> Cmd Tp
-tp_cmd env Skip = Skip
-tp_cmd env (VAssign v e) =
-    let te = tp_expr env e
+tpCmd :: Environment t -> Cmd () -> Cmd Tp
+tpCmd env Skip = Skip
+tpCmd env (VAssign v e) =
+    let te = tpExpr env e
     in
-      if (tp_var env v) == tp_of_expr te
+      if (tpVar env v) == tpOfExpr te
       then VAssign v te
       else error ("types do not correspond in assignment to " ++ v)
 
@@ -311,10 +321,10 @@ well_formed_transition ta_locs ta_act_clss ta_clks (Trans l1 trcond tract l2) =
   well_formed_transition_action ta_act_clss ta_clks tract
 
 type_transition_cond :: Environment [ClassName] -> TransitionCond () -> TransitionCond Tp
-type_transition_cond env (TransCond ccs e) = (TransCond ccs (tp_expr env e))
+type_transition_cond env (TransCond ccs e) = (TransCond ccs (tpExpr env e))
 
 type_transition_action :: Environment [ClassName] -> TransitionAction () -> TransitionAction Tp
-type_transition_action env (TransAction act clks c) = (TransAction act clks (tp_cmd env c))
+type_transition_action env (TransAction act clks c) = (TransAction act clks (tpCmd env c))
 
 type_transition :: Environment [ClassName] -> Transition () -> Transition Tp
 type_transition env (Trans l1 trcond tract l2) =
@@ -328,10 +338,10 @@ well_formed_ta env (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs l
     all (\(l, ccs) -> elem l ta_locs && list_subset (map clock_of_constraint ccs) ta_clks) invs
   then
     let lbls_locs = map fst lbls
-        tes = map (tp_expr env) (map snd lbls)
+        tes = map (tpExpr env) (map snd lbls)
         ttrans = map (type_transition env) trans
     in
-      if all (\l -> elem l ta_locs) lbls_locs && all (\te -> tp_of_expr te == BoolT) tes
+      if all (\l -> elem l ta_locs) lbls_locs && all (\te -> tpOfExpr te == BoolT) tes
       then (TmdAut nm ta_locs ta_act_clss ta_clks ttrans init_locs invs (zip lbls_locs tes))
       else error "ill-formed timed automaton (labels)"
   else error "ill-formed timed automaton (transitions)"

@@ -1,0 +1,16 @@
+Warning: names not unique: AsAlias Asof Import OptOf PEvery PNobody PartyLimb Rule UBool_Not2
+This can be an error in other backends.
+
+363 rules accepted
+
+Use Alex 3.0 to compile LexL.x.
+writing new file ./AbsL.hs
+writing new file ./PrintL.hs
+writing new file ./LexL.x
+writing new file ./LayoutL.hs
+writing new file ./ParL.y
+writing new file ./TestL.hs
+writing new file ./ErrM.hs
+writing new file ./SkelL.hs
+writing new file ./DocL.txt
+writing new file ./Makefile

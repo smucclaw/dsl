@@ -1,5 +1,9 @@
 cradle:
   stack:
+    - path: "./.stack-work/dist/x86_64-osx-nix/Cabal-3.0.1.0/build/Parser.hs"
+      component: "core-language:lib"
+    - path: "./.stack-work/dist/x86_64-osx-nix/Cabal-3.0.1.0/build/Lexer.hs"
+      component: "core-language:lib"
     - path: "./src"
       component: "core-language:lib"
 

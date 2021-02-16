@@ -1,0 +1,22 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "core-language:lib"
+
+    - path: "./src-bnfc"
+      component: "core-language:lib"
+
+    - path: "./src-l4"
+      component: "core-language:lib"
+
+    - path: "./src/Main.hs"
+      component: "core-language:exe:core-language"
+
+    - path: "./src/Lexer.hs"
+      component: "core-language:exe:core-language"
+
+    - path: "./src/Parser.hs"
+      component: "core-language:exe:core-language"
+
+    - path: "./src/Syntax.hs"
+      component: "core-language:exe:core-language"

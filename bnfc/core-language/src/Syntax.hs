@@ -9,13 +9,14 @@ module Syntax where
 newtype GFAnnot = GFAnnot Integer
   deriving (Eq, Ord, Show, Read)
 
------ Names 
+----- Names
 newtype VarName = VarNm String
   deriving (Eq, Ord, Show, Read)
 data AnnotClassName = AClsNm String GFAnnot
   deriving (Eq, Ord, Show, Read)
-newtype ClassName = ClsNm String
+newtype ClassName = ClsNm {clsNmStr :: String }
   deriving (Eq, Ord, Show, Read)
+
 newtype FieldName = FldNm String
   deriving (Eq, Ord, Show, Read)
 data AnnotFieldName = AFldNm String GFAnnot
@@ -28,10 +29,10 @@ newtype PartyName = PtNm String
 
 ----- Program
 
-data Program t = Program [ClassDecl t] -- [VarDeclDefn]
+newtype Program t = Program [ClassDecl t] -- [VarDeclDefn]
   deriving (Eq, Ord, Show, Read)
 
------ Types 
+----- Types
 data Tp
   = BoolT
   | IntT
@@ -49,29 +50,27 @@ data FieldDecl = FieldDecl AnnotFieldName Tp -- FieldAttribs
 data ClassDef t = ClassDef t [FieldDecl]
   deriving (Eq, Ord, Show, Read)
 
--- declares class with ClassName and definition as of ClassDef
-data ClassDecl t = ClassDecl AnnotClassName (ClassDef t)
-  deriving (Eq, Ord, Show, Read)
-
-name_of_class_decl :: ClassDecl t -> AnnotClassName
-name_of_class_decl (ClassDecl cn _) = cn
-
-def_of_class_decl :: ClassDecl t -> ClassDef t
-def_of_class_decl (ClassDecl _ cd) = cd
-
 fields_of_class_def :: ClassDef t -> [FieldDecl]
 fields_of_class_def (ClassDef scn fds) = fds
 
+-- declares class with ClassName and definition as of ClassDef
+data ClassDecl t = ClassDecl
+  { classDeclAnnotName :: AnnotClassName
+  , classDeclDef :: ClassDef t
+  } deriving (Eq, Ord, Show, Read)
+
+classDeclName :: ClassDecl t -> ClassName
+classDeclName = unAnnotClassName . classDeclAnnotName
+
+unAnnotClassName :: AnnotClassName -> ClassName
+unAnnotClassName (AClsNm s ann) = ClsNm s
+
 data GeneralRule = TBD
   deriving (Eq, Ord, Show, Read)
-data Module t = Mdl [ClassDecl t] [GeneralRule]
-  deriving (Eq, Ord, Show, Read)
-
-class_decls_of_module :: Module t -> [ClassDecl t]
-class_decls_of_module (Mdl cds _) = cds
-
-rules_of_module :: Module t -> [GeneralRule]
-rules_of_module (Mdl _ rls) = rls
+data Module t = Mdl
+  { moduleClassDecls :: [ClassDecl t]
+  , moduleRules :: [GeneralRule]
+  } deriving (Eq, Ord, Show, Read)
 
 -- Custom Classes and Preable Module
 -- some custom classes - should eventually go into a prelude and not be hard-wired
@@ -91,7 +90,7 @@ currencyC = ClassDecl (ClsNm "Currency")
                     (ClassDef (Just (ClsNm "QualifiedNumeric")) [])
 currencyCs = [ClassDecl (ClsNm "SGD") (ClassDef (Just (ClsNm "Currency")) []),
               ClassDecl (ClsNm "USD") (ClassDef (Just (ClsNm "Currency")) [])]
-  
+
 -- Time as QualifiedNumeric, with Year, Month, Day etc. as subclasses
 -- TODO: treatment of time needs a second thought
 --       (so far no distinction between time point and duration)
@@ -109,7 +108,7 @@ customCs = [objectC, qualifNumC, currencyC] ++ currencyCs ++ [timeC] ++ timeCs +
 customCs = [objectC]
 preambleMdl = Mdl customCs []
 
------ Expressions 
+----- Expressions
 data Val
     = BoolV Bool
     | IntV Integer

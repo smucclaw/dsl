@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 
 module Syntax where
 
@@ -12,15 +13,24 @@ newtype GFAnnot = GFAnnot Integer
 ----- Names
 newtype VarName = VarNm String
   deriving (Eq, Ord, Show, Read)
-data AnnotClassName = AClsNm String GFAnnot
-  deriving (Eq, Ord, Show, Read)
-newtype ClassName = ClsNm {clsNmStr :: String }
+data AnnotClassName a = AClsNm { clsNmStr :: String, clsNmAnnot :: a }
   deriving (Eq, Ord, Show, Read)
 
-newtype FieldName = FldNm String
+type GFAnnotClassName = AnnotClassName GFAnnot
+type ClassName = AnnotClassName ()
+
+pattern ClsNm :: String -> ClassName
+pattern ClsNm nm = AClsNm nm ()
+
+data AnnotFieldName a = AFldNm { fldNmStr :: String, fldNmAnnot :: a }
   deriving (Eq, Ord, Show, Read)
-data AnnotFieldName = AFldNm String GFAnnot
-  deriving (Eq, Ord, Show, Read)
+
+type GFAnnotFieldName = AnnotFieldName GFAnnot
+type FieldName = AnnotFieldName ()
+
+pattern FldNm :: String -> FieldName
+pattern FldNm a = AFldNm a ()
+
 newtype RuleName = RlNm String
   deriving (Eq, Ord, Show, Read)
 newtype PartyName = PtNm String
@@ -43,7 +53,7 @@ data Tp
 
 -- Field attributes: for example cardinality restrictions
 -- data FieldAttribs = FldAtt
-data FieldDecl = FieldDecl AnnotFieldName Tp -- FieldAttribs
+data FieldDecl = FieldDecl GFAnnotFieldName Tp -- FieldAttribs
   deriving (Eq, Ord, Show, Read)
 
 -- superclass, list of field declarations
@@ -55,15 +65,15 @@ fields_of_class_def (ClassDef scn fds) = fds
 
 -- declares class with ClassName and definition as of ClassDef
 data ClassDecl t = ClassDecl
-  { classDeclAnnotName :: AnnotClassName
+  { classDeclAnnotName :: GFAnnotClassName
   , classDeclDef :: ClassDef t
   } deriving (Eq, Ord, Show, Read)
 
 classDeclName :: ClassDecl t -> ClassName
-classDeclName = unAnnotClassName . classDeclAnnotName
+classDeclName = unGFAnnotClassName . classDeclAnnotName
 
-unAnnotClassName :: AnnotClassName -> ClassName
-unAnnotClassName (AClsNm s ann) = ClsNm s
+unGFAnnotClassName :: GFAnnotClassName -> ClassName
+unGFAnnotClassName (AClsNm s ann) = ClsNm s
 
 data GeneralRule = TBD
   deriving (Eq, Ord, Show, Read)
@@ -112,7 +122,7 @@ preambleMdl = Mdl customCs []
 data Val
     = BoolV Bool
     | IntV Integer
-    | RecordV ClassName [(FieldName, Val)]
+    | RecordV ClassName [(GFAnnotFieldName, Val)]
     | ErrV
   deriving (Eq, Ord, Show, Read)
 
@@ -180,7 +190,7 @@ data Cmd t
 -- Definition of Timed Automata
 ----------------------------------------------------------------------
 
-data Clock = Cl String
+newtype Clock = Cl String
   deriving (Eq, Ord, Show, Read)
 
 -- Clock constraint of the form x < c.
@@ -188,7 +198,7 @@ data Clock = Cl String
 data ClConstr = ClCn Clock BComparOp Integer
   deriving (Eq, Ord, Show, Read)
 
-data Loc = Lc String
+newtype Loc = Lc String
   deriving (Eq, Ord, Show, Read)
 
 -- Synchronization type: send or receive

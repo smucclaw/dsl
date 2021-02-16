@@ -31,10 +31,10 @@ locals_of_env (Env _ (LVD ls)) = ls
 ----------------------------------------------------------------------
 
 class_def_assoc :: [ClassDecl t] -> [(ClassName, ClassDef t)]
-class_def_assoc = map (\(ClassDecl cn cdf) -> (unAnnotClassName cn, cdf))
+class_def_assoc = map (\(ClassDecl cn cdf) -> (unGFAnnotClassName cn, cdf))
 
 field_assoc ::  [ClassDecl t] -> [(ClassName, [FieldDecl])]
-field_assoc = map (\(ClassDecl cn cdf) -> (unAnnotClassName cn, fields_of_class_def cdf))
+field_assoc = map (\(ClassDecl cn cdf) -> (unGFAnnotClassName cn, fields_of_class_def cdf))
 
 
 -- For a class name 'cn', returns the list of the names of the superclasses of 'cn'
@@ -64,7 +64,8 @@ super_classes_decls cds =
 elaborate_supers_in_class_decls :: [ClassDecl (Maybe ClassName)] -> [ClassDecl [ClassName]]
 elaborate_supers_in_class_decls cds =
   let cdf_assoc = class_def_assoc cds
-  in map (\(ClassDecl cn (ClassDef mcn fds)) -> ClassDecl cn (ClassDef (tail (super_classes cdf_assoc [] cn)) fds)) cds
+  in map (\(ClassDecl cn (ClassDef mcn fds)) ->
+    ClassDecl cn (ClassDef (tail (super_classes cdf_assoc [] (unGFAnnotClassName cn))) fds)) cds
 
 
 local_fields :: [(ClassName, [FieldDecl])] -> ClassName -> [FieldDecl]

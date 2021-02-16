@@ -7,11 +7,11 @@ process :: String -> IO ()
 process input = do
   let ast = parseProgram input
   case ast of
-    Right ast -> putStrLn (show ast)
+    Right ast -> print ast
     Left err -> do
       putStrLn "Parser Error:"
       print err
-      
+
 main :: IO ()
 main = do
   args <- getArgs

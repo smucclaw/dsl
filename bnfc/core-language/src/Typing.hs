@@ -4,6 +4,7 @@ module Typing where
 
 import Data.List
 import Syntax
+import Data.Maybe (fromMaybe)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 ----------------------------------------------------------------------
@@ -48,7 +49,7 @@ super_classes cdf_assoc visited cn =
     Just (ClassDef Nothing _) -> reverse (cn : visited)
     -- class has super-class with name scn
     Just (ClassDef (Just scn) _) ->
-      if elem scn visited
+      if scn `elem` visited
       then error ("cyclic superclass hierarchy for class " ++ clsNmStr cn)
       else super_classes cdf_assoc (cn : visited) scn
 
@@ -63,21 +64,18 @@ super_classes_decls cds =
 elaborate_supers_in_class_decls :: [ClassDecl (Maybe ClassName)] -> [ClassDecl [ClassName]]
 elaborate_supers_in_class_decls cds =
   let cdf_assoc = class_def_assoc cds
-  in map (\(ClassDecl cn (ClassDef mcn fds)) -> (ClassDecl cn (ClassDef (tail (super_classes cdf_assoc [] cn)) fds))) cds
+  in map (\(ClassDecl cn (ClassDef mcn fds)) -> ClassDecl cn (ClassDef (tail (super_classes cdf_assoc [] cn)) fds)) cds
 
 
 local_fields :: [(ClassName, [FieldDecl])] -> ClassName -> [FieldDecl]
-local_fields fd_assoc cn =
-  case lookup cn fd_assoc of
-    Nothing -> []
-    Just fds -> fds
+local_fields fd_assoc cn = fromMaybe [] (lookup cn fd_assoc)
 
 -- in a class declaration, replace the list of local fields of the class by the list of all fields (local and inherited)
 elaborate_fields_in_class_decls :: [ClassDecl [ClassName]] -> [ClassDecl [ClassName]]
 elaborate_fields_in_class_decls cds =
   let fd_assoc = field_assoc cds
   in map (\(ClassDecl cn (ClassDef scs locfds)) ->
-            (ClassDecl cn (ClassDef scs (locfds ++ (concatMap (local_fields fd_assoc) scs))))) cds
+            ClassDecl cn (ClassDef scs (locfds ++ concatMap (local_fields fd_assoc) scs))) cds
 
 
 -- the class decl does not reference an undefined superclass
@@ -86,9 +84,7 @@ defined_superclass cns cdc =
   case cdc of
     (ClassDecl cn (ClassDef Nothing _)) -> True
     (ClassDecl cn (ClassDef (Just scn) _)) ->
-      if elem scn cns
-      then True
-      else error ("undefined superclass for class " ++ clsNmStr cn)
+      elem scn cns || error ("undefined superclass for class " ++ clsNmStr cn)
 
 
 hasDuplicates :: (Ord a) => [a] -> Bool
@@ -115,7 +111,7 @@ elaborate_module md =
   then
     case md of
       Mdl cds rls ->
-        let ecdcs = (elaborate_fields_in_class_decls (elaborate_supers_in_class_decls cds))
+        let ecdcs = elaborate_fields_in_class_decls (elaborate_supers_in_class_decls cds)
         in
           if all well_formed_field_decls ecdcs
           then Mdl ecdcs rls
@@ -129,7 +125,7 @@ strict_superclasses_of md cn = case lookup cn (class_def_assoc (moduleClassDecls
   Just (ClassDef supcls _) -> supcls
 
 is_strict_subclass_of :: Module [ClassName] -> ClassName -> ClassName -> Bool
-is_strict_subclass_of md subcl supercl = elem subcl (strict_superclasses_of md subcl)
+is_strict_subclass_of md subcl supercl = subcl `elem` strict_superclasses_of md subcl
 
 is_subclass_of :: Module [ClassName] -> ClassName -> ClassName -> Bool
 is_subclass_of md subcl supercl = subcl == supercl || is_strict_subclass_of md subcl supercl
@@ -159,10 +155,7 @@ tp_constval env x = case x of
        _ -> error "internal error: duplicate class definition"
 
 tp_var :: Environment t -> VarName -> Tp
-tp_var env v =
-  case lookup v (locals_of_env env) of
-    Nothing -> ErrT
-    Just t -> t
+tp_var env v = fromMaybe ErrT (lookup v (locals_of_env env))
 
 tp_of_expr :: Exp t -> t
 tp_of_expr x = case x of
@@ -190,13 +183,13 @@ tp_unaop t uop = case uop of
 
 
 tp_barith :: Tp -> Tp -> BArithOp -> Tp
-tp_barith t1 t2 ba = if (t1 == t2) && t1 == IntT then IntT else ErrT
+tp_barith t1 t2 ba = if t1 == t2 && t1 == IntT then IntT else ErrT
 
 tp_bcompar :: Tp -> Tp -> BComparOp -> Tp
-tp_bcompar t1 t2 bc = if (t1 == t2) then BoolT else ErrT
+tp_bcompar t1 t2 bc = if t1 == t2 then BoolT else ErrT
 
 tp_bbool :: Tp -> Tp -> BBoolOp -> Tp
-tp_bbool t1 t2 bc = if (t1 == t2) && t1 == BoolT then BoolT else ErrT
+tp_bbool t1 t2 bc = if t1 == t2 && t1 == BoolT then BoolT else ErrT
 
 tp_binop :: Tp -> Tp -> BinOp -> Tp
 tp_binop t1 t2 bop = case bop of
@@ -221,27 +214,27 @@ tp_expr env x = case x of
   ValE () c -> ValE (tp_constval env c) c
   VarE () v -> VarE (tp_var env v) v
   UnaOpE () uop e ->
-    let te = (tp_expr env e)
+    let te = tp_expr env e
         t   = tp_unaop (tp_of_expr te) uop
     in  UnaOpE t uop te
   BinOpE () bop e1 e2 ->
-    let te1 = (tp_expr env e1)
-        te2 = (tp_expr env e2)
+    let te1 = tp_expr env e1
+        te2 = tp_expr env e2
         t   = tp_binop (tp_of_expr te1) (tp_of_expr te2) bop
     in  BinOpE t bop te1 te2
   IfThenElseE () c e1 e2 ->
-    let tc = (tp_expr env c)
-        te1 = (tp_expr env e1)
-        te2 = (tp_expr env e2)
+    let tc = tp_expr env c
+        te1 = tp_expr env e1
+        te2 = tp_expr env e2
     in
-      if tp_of_expr tc == BoolT && (tp_of_expr te1) == (tp_of_expr te2)
+      if tp_of_expr tc == BoolT && tp_of_expr te1 == tp_of_expr te2
       then IfThenElseE (tp_of_expr te1) tc te1 te2
       else  IfThenElseE ErrT tc te1 te2
   AppE () fe ae ->
-    let tfe = (tp_expr env fe)
-        tae = (tp_expr env ae)
-        tf = (tp_of_expr tfe)
-        ta = (tp_of_expr tae)
+    let tfe = tp_expr env fe
+        tae = tp_expr env ae
+        tf = tp_of_expr tfe
+        ta = tp_of_expr tae
     in case tf of
       FunT tpar tbody ->
         if tpar == ta
@@ -249,12 +242,12 @@ tp_expr env x = case x of
         else AppE ErrT tfe tae
       _ -> AppE ErrT tfe tae
   FunE () v tparam e ->
-    let te = (tp_expr (push_vardecl_env v tparam env) e)
-        t   = (tp_of_expr te)
+    let te = tp_expr (push_vardecl_env v tparam env) e
+        t   = tp_of_expr te
     in FunE (FunT tparam t) v tparam te
   -- ClosE: no explicit typing because not externally visible
   CastE () ctp e ->
-    let te = (tp_expr env e)
+    let te = tp_expr env e
     in if cast_compatible (tp_of_expr te) ctp
        then CastE ctp ctp te
        else CastE ErrT ctp te
@@ -265,7 +258,7 @@ tp_cmd env Skip = Skip
 tp_cmd env (VAssign v e) =
     let te = tp_expr env e
     in
-      if (tp_var env v) == tp_of_expr te
+      if tp_var env v == tp_of_expr te
       then VAssign v te
       else error ("types do not correspond in assignment to " ++ (case v of (VarNm n) -> n))
 
@@ -289,7 +282,7 @@ distinct (x : xs) =  notElem x xs && distinct xs
 
 well_formed_action :: [ClassName] -> Action -> Bool
 well_formed_action ta_act_clss Internal = True
-well_formed_action ta_act_clss (Act cn _) = elem cn ta_act_clss
+well_formed_action ta_act_clss (Act cn _) = cn `elem` ta_act_clss
 
 
 -- TODO: still type-check expression e
@@ -310,14 +303,14 @@ well_formed_transition ta_locs ta_act_clss ta_clks (Trans l1 trcond tract l2) =
   well_formed_transition_action ta_act_clss ta_clks tract
 
 type_transition_cond :: Environment [ClassName] -> TransitionCond () -> TransitionCond Tp
-type_transition_cond env (TransCond ccs e) = (TransCond ccs (tp_expr env e))
+type_transition_cond env (TransCond ccs e) = TransCond ccs (tp_expr env e)
 
 type_transition_action :: Environment [ClassName] -> TransitionAction () -> TransitionAction Tp
-type_transition_action env (TransAction act clks c) = (TransAction act clks (tp_cmd env c))
+type_transition_action env (TransAction act clks c) = TransAction act clks (tp_cmd env c)
 
 type_transition :: Environment [ClassName] -> Transition () -> Transition Tp
 type_transition env (Trans l1 trcond tract l2) =
-  (Trans l1 (type_transition_cond env trcond) (type_transition_action env tract) l2)
+  Trans l1 (type_transition_cond env trcond) (type_transition_action env tract) l2
 
 well_formed_ta :: Environment [ClassName] -> TA () -> TA Tp
 well_formed_ta env (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls) =
@@ -327,11 +320,11 @@ well_formed_ta env (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs l
     all (\(l, ccs) -> elem l ta_locs && list_subset (map clock_of_constraint ccs) ta_clks) invs
   then
     let lbls_locs = map fst lbls
-        tes = map (tp_expr env) (map snd lbls)
+        tes = map (tp_expr env . snd) lbls
         ttrans = map (type_transition env) trans
     in
-      if all (\l -> elem l ta_locs) lbls_locs && all (\te -> tp_of_expr te == BoolT) tes
-      then (TmdAut nm ta_locs ta_act_clss ta_clks ttrans init_locs invs (zip lbls_locs tes))
+      if all (`elem` ta_locs) lbls_locs && all (\te -> tp_of_expr te == BoolT) tes
+      then TmdAut nm ta_locs ta_act_clss ta_clks ttrans init_locs invs (zip lbls_locs tes)
       else error "ill-formed timed automaton (labels)"
   else error "ill-formed timed automaton (transitions)"
 

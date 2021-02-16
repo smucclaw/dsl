@@ -168,7 +168,7 @@ teToProlog orig@(TKey tkey)        = pretty $ plain orig
 teToProlog (All termexprs)    = "TODO All"
 teToProlog orig@(Any termexprs)     = nest 8 $ vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
 teToProlog (And termexprs)          = "TODO And"
-teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = pretty (x ++ "_" ++ y :: String)
+teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = pretty (x ++ "_" ++ y)
 teToProlog orig@(BinOp te1 Cons te2) = ("compl") <> parencomma [teToProlog te1, teToProlog te2]
 teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
 teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
@@ -385,7 +385,7 @@ superSimple1 =
     ]
   , (§=§) ("megaCorp" 💬 "Mega Corporation" 📬 "Business")
     [ "is_operating" 📩 L4True
-    , "bus_name" 📩 (L4S "Mega")
+    , "bus_name" 📩 L4S "Mega"
     ]
   ]
 data Target = To_TS deriving (Show, Eq)
@@ -405,17 +405,17 @@ stm2ts (CRule (BinOp (te1 :@ _) HasType (te2 :@ _)) crb crmw) =
                                 (punctuate comma (attrdef To_TS <$> crb))))
           , rbrace ]
 
--- type definition inside interface
+-- attribute type definition inside interface
 attrdef :: Target -> TermExpr -> Doc ann
 attrdef To_TS (BinOp (te1 :@ _) HasType (te2 :@_)) =
   pretty te1 <+> colon <+> pretty (typecast To_TS te2) <> semi
 
--- attribute definition inside instance
+-- attribute value definition inside instance
 attrdef To_TS (BinOp (te1 :@ _) HasValue te2) =
   pretty te1 <+> colon <+> pretty (showTSval te2)
 
--- catch-all
-attrdef target y = hsep (pretty <$> [ ("// unimplemented: " :: String), show target, show y])
+-- attribute catch-all
+attrdef target y = hsep (pretty <$> [ "// attrdef unimplemented: ", show target, show y])
 
 showTSval (Prim L4True) = "true"
 showTSval (Prim L4False) = "false"

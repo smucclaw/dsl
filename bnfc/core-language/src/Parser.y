@@ -21,6 +21,7 @@ import Control.Monad.Except
 %tokentype { Token }
 
 -- Parser monad
+-- %monad { Except String } { (>>=) } { return }
 %monad { Except String } { (>>=) } { return }
 %error { parseError }
 
@@ -102,6 +103,10 @@ Annot : '(' NUM ')'                 { GFAnnot $2 }
 parseError :: [Token] -> Except String a
 parseError (l:ls) = throwError (show l)
 parseError [] = throwError "Unexpected end of Input"
+
+-- parseError :: Token -> P a
+-- parseError = getLineNo `thenP` \line ->
+--              failP (show line ++ ": parse error")
 
 parseProgram:: String -> Either String (Program (Maybe ClassName))
 parseProgram input = runExcept $ do

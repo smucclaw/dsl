@@ -1,4 +1,5 @@
 {
+{- HLINT ignore -}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Parser (
@@ -16,7 +17,7 @@ import Control.Monad.Except
 -- Entry point
 %name program Program
 
--- Lexer structure 
+-- Lexer structure
 %tokentype { Token }
 
 -- Parser monad
@@ -62,7 +63,7 @@ ClassDecls :                       { [] }
 ClassDecl : class VAR Annot ClassDef     { ClassDecl (AClsNm $2 $3) $4 }
 
 ClassDef :  '{' FieldDecls '}'     { ClassDef (Just (ClsNm "Object")) (reverse $2) }
-         |   extends VAR '{' FieldDecls '}'    
+         |   extends VAR '{' FieldDecls '}'
                                    { ClassDef (Just (ClsNm $2)) (reverse $4) }
 FieldDecls :                       { [] }
            | FieldDecls FieldDecl  { $2 : $1 }
@@ -110,5 +111,5 @@ parseProgram input = runExcept $ do
 -- still needed ???
 -- parseTokens :: String -> Either String [Token]
 -- parseTokens = runExcept . scanTokens
-    
+
 }

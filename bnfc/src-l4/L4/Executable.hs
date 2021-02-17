@@ -82,7 +82,7 @@ showTree inOpts gr v tree0 = do
     when (miscopts Mnamelist) $ printMsg "Dictionary of Name to Rule" $ T.unpack (pShow $ nameList ruleList)
     when (miscopts Mexits)    $ printMsg "Rule to Exit" $ T.unpack $ pShow $ (\r -> (showRuleName r, ruleExits r)) <$> ruleList
   when (want wantGF) $ do
-    print $ bnfc2lang (getGFlang (format inOpts)) gr tree
+    putStrLn $ bnfc2lang (getGFlang (format inOpts)) gr tree
   where
     printMsg msg result = putStrV v $ "\n[" ++ msg ++ "]\n\n" ++ result
     wantGF (Fgf _) = True

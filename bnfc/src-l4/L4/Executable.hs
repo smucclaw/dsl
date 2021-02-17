@@ -105,26 +105,6 @@ data Format = Fall | Fdot | Fast | Flin | Fjson | Fgraph | Fgf GFlang | Fmisc de
 -- GFlang is defined in L4.hs
 data MiscOpts = Mnames | Mnamelist | Mexits deriving (Show, Eq)
 
-parseFormat :: ReadM Format
-parseFormat = eitherReader $ \format -> case (toLower <$> format) of
-  "all"   -> Right Fall
-  "dot"   -> Right Fdot
-  "ast"   -> Right Fast
-  "lin"   -> Right Flin
-  "json"  -> Right Fjson
-  "graph" -> Right Fgraph
-  "gf"    -> Right (Fgf GFeng)
-  "misc"  -> Right Fmisc
-  _       -> Left $ "unable to parse format " ++ format
-
-parseGFlang :: ReadM GFlang
-parseGFlang = eitherReader $ \lang -> case (toLower <$> lang) of
-  "eng"   -> Right GFeng
-  "en"    -> Right GFeng
-  "malay" -> Right GFmalay
-  "my"    -> Right GFmalay
-  _       -> Left $ "unable to parse GF language " ++ lang
-
 parseMiscOpts :: ReadM [MiscOpts]
 parseMiscOpts = eitherReader $ \miscopts ->
   (let firstParse = [ case (toLower <$> misc) of
@@ -143,11 +123,6 @@ data InputOpts = InputOpts
   , misc   :: [MiscOpts]
   , silent :: Bool
   } deriving Show
-
-optsGF :: Parser GFlang 
-optsGF = argument parseGFlang (value GFeng
-                               <> help "GF language -- en or my"
-                              )
 
 optsParse :: Parser InputOpts
 optsParse = InputOpts <$>

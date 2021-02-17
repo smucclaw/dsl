@@ -139,22 +139,22 @@ RULE buyCabbage
               WITH category = "vegetable"
                    species  = "Brassica oleracea"
                    cultivar = "capitata"
-SCENARIO saleHistory
-  WITH parties = [ blackSwan, veggieBar ]
- TRACE 2020-09-01T1210 blackSwan offers     offerDetails
-       2020-09-01T1211 veggieBar accepts    offerDetails
-       2020-09-01T1212 blackSwan pays       (to=veggieBar, amount=$10)
-       2020-09-01T1213 veggieBar delivers   (to=blackSwan, items=[ item1, item2 ])
-  ASOF 2020-09-10
- WHERE offerDetails = { blackSwan.consideration = $10
-                      , veggieBar.consideration = [ item1, item2 ] }
-       item1 ISA Item
-             WITH category = "vegetable"
-                  species  = "Brassica oleracea"
-                  cultivar = "capitata"
-                  quantity = 1
-       item2 ISA Item
-             WITH category = "beverage"
-                  brand    = "Acme Water"
-                  model    = "750mL"
-                  quantity = 1
+-- SCENARIO saleHistory
+--   WITH parties = [ blackSwan, veggieBar ]
+--  TRACE 2020-09-01T1210 blackSwan offers     offerDetails
+--        2020-09-01T1211 veggieBar accepts    offerDetails
+--        2020-09-01T1212 blackSwan pays       (to=veggieBar, amount=$10)
+--        2020-09-01T1213 veggieBar delivers   (to=blackSwan, items=[ item1, item2 ])
+--   ASOF 2020-09-10
+--  WHERE offerDetails = { blackSwan.consideration = $10
+--                       , veggieBar.consideration = [ item1, item2 ] }
+--        item1 ISA Item
+--              WITH category = "vegetable"
+--                   species  = "Brassica oleracea"
+--                   cultivar = "capitata"
+--                   quantity = 1
+--        item2 ISA Item
+--              WITH category = "beverage"
+--                   brand    = "Acme Water"
+--                   model    = "750mL"
+--                   quantity = 1

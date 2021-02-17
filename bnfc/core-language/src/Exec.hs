@@ -55,7 +55,8 @@ constr_clos rtp f a = case f of
 eval_expr :: [(VarName, Expr Tp)] -> Expr Tp -> Expr Tp
 eval_expr bd x = case x of
   ValE t c -> ValE t c
-  VarE t v ->
+  # TODO: take into account dB indices
+  VarE t v i ->
     case lookup v bd of
       Nothing -> ValE ErrT ErrV
       Just e -> e

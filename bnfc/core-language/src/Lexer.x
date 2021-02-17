@@ -43,8 +43,8 @@ tokens :-
   let                           { \s -> TokenLet }
   in                            { \s -> TokenIn }
   not                           { \s -> TokenNot }
-  all                           { \s -> TokenAll }
-  ex                            { \s -> TokenEx }
+  forall                        { \s -> TokenForall }
+  exists                        { \s -> TokenExists }
   if                            { \s -> TokenIf }
   then                          { \s -> TokenThen }
   else                          { \s -> TokenElse }
@@ -96,8 +96,8 @@ data Token
   | TokenLet
   | TokenIn
   | TokenNot
-  | TokenAll
-  | TokenEx
+  | TokenForall
+  | TokenExists
   | TokenIf
   | TokenThen
   | TokenElse

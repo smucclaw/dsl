@@ -12,17 +12,27 @@ import Syntax
 -- Typing is done in an environment, composed of
 -- the global decls of a module and
 -- local variable declarations
+data GlobalVarDecls = GVD [(VarName, Tp)]
+  deriving (Eq, Ord, Show, Read)
 data LocalVarDecls = LVD [(VarName, Tp)]
   deriving (Eq, Ord, Show, Read)
-data Environment t = Env (Module t) LocalVarDecls
+data Environment t = Env (Module t) GlobalVarDecls LocalVarDecls
   deriving (Eq, Ord, Show, Read)
 
 module_of_env :: Environment t -> Module t
-module_of_env (Env m _) = m
+module_of_env (Env m _ _) = m
+
+globals_of_env :: Environment t -> [(VarName,Tp)]
+globals_of_env (Env _ (GVD gs) _) = gs
 
 locals_of_env :: Environment t -> [(VarName,Tp)]
-locals_of_env (Env _ (LVD ls)) = ls
+locals_of_env (Env _ _ (LVD ls)) = ls
 
+initialEnvOfProgram :: Program (Maybe ct) et -> Environment (Maybe ct)
+initialEnvOfProgram (Program cds gvs rls ass) = 
+  let initialModule = (Mdl (customCs ++ cds) [])
+      initialGvs = GVD (map (\(VarDecl vn t) -> (vn, t)) gvs)
+  in Env initialModule initialGvs (LVD [])
 
 ----------------------------------------------------------------------
 -- Class manipulation
@@ -159,17 +169,11 @@ tp_constval env x = case x of
          else error ("record fields do not correspond to fields of class " ++ (case cn of (ClsNm n) -> n))
        _ -> error "internal error: duplicate class definition"
 
-tpVar :: Environment t -> VarName -> Tp
-tpVar env v =
-  case lookup v (locals_of_env env) of
-    Nothing -> ErrT
-    Just t -> t  
-
 tpOfExpr :: Expr t -> t
 tpOfExpr x = case x of
   ValE t _      -> t
-  VarE t _        -> t
-  UnaOpE t _ _    -> t
+  VarE t _      -> t
+  UnaOpE t _ _  -> t
   BinOpE t _ _ _  -> t
   IfThenElseE t _ _ _ -> t
   AppE t _ _  -> t
@@ -212,9 +216,32 @@ cast_compatible :: Tp -> Tp -> Bool
 cast_compatible te ctp = True
 
 
+-- typing of a variable that is initially (after parsing) only known by its name
+tpVar :: Environment t -> Var -> Tp
+tpVar env (GlobalVar vn) =
+  case lookup vn (globals_of_env env) of
+    Nothing -> (case lookup vn (locals_of_env env) of
+                Nothing -> ErrT
+                Just t -> t)
+    Just t -> t
+tpVar env (LocalVar _) = error "internal error: for type checking, variable should be GlobalVar"
+
+varIndexInEnv :: Environment t -> VarName -> Int
+varIndexInEnv (Env md _ (LVD vds)) vn =  
+  case elemIndex vn (map fst vds) of 
+    Nothing -> 0    -- tpVar will detect the problem
+    Just n -> n
+
+varIdentityInEnv :: Environment t -> Var -> Var
+varIdentityInEnv (Env md _ (LVD vds)) (GlobalVar vn) = 
+  case elemIndex vn (map fst vds) of 
+    Nothing -> (GlobalVar vn)
+    Just n -> (LocalVar n)
+varIdentityInEnv env (LocalVar _) = error "internal error: for type checking, variable should be GlobalVar"
+
 pushVardeclEnv :: Pattern -> Tp -> Environment t -> Environment t
-pushVardeclEnv (VarP vn) t (Env md (LVD vds)) = Env md (LVD ((vn, t):vds))
-pushVardeclEnv (VarListP vns) (TupleT ts) (Env md (LVD vds)) = Env md (LVD ((zip vns ts) ++vds))
+pushVardeclEnv (VarP vn) t (Env md gv (LVD vds)) = Env md gv (LVD ((vn, t):vds))
+pushVardeclEnv (VarListP vns) (TupleT ts) (Env md gv (LVD vds)) = Env md gv (LVD ((zip vns ts) ++vds))
 
 compatiblePatternType :: Pattern -> Tp -> Bool
 compatiblePatternType (VarP vn) t = True
@@ -225,7 +252,7 @@ compatiblePatternType _ _ = False
 tpExpr :: Environment t -> Expr () -> Expr Tp
 tpExpr env x = case x of
   ValE () c -> ValE (tp_constval env c) c
-  VarE () v -> VarE (tpVar env v) v
+  VarE () v -> VarE (tpVar env v) (varIdentityInEnv env v)
   UnaOpE () uop e -> 
     let te = (tpExpr env e)
         t   = tp_unaop (tpOfExpr te) uop
@@ -271,6 +298,7 @@ tpExpr env x = case x of
        else CastE ErrT ctp te
 
 
+
 tpCmd :: Environment t -> Cmd () -> Cmd Tp
 tpCmd env Skip = Skip
 tpCmd env (VAssign v e) =
@@ -278,7 +306,7 @@ tpCmd env (VAssign v e) =
     in
       if (tpVar env v) == tpOfExpr te
       then VAssign v te
-      else error ("types do not correspond in assignment to " ++ v)
+      else error ("types do not correspond in assignment")
 
 
 ----------------------------------------------------------------------

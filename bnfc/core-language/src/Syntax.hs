@@ -131,6 +131,11 @@ data Val
     | ErrV
   deriving (Eq, Ord, Show, Read)
 
+data Var 
+    = GlobalVar VarName
+    | LocalVar Int
+  deriving (Eq, Ord, Show, Read)
+
 -- unary arithmetic operators
 data UArithOp = UAminus
   deriving (Eq, Ord, Show, Read)
@@ -180,25 +185,25 @@ data Quantif = All | Ex
 -- Expr t is an expression of type t (to be determined during type checking / inference)
 data Expr t
     = ValE t Val                                -- value
-    | VarE t VarName                            -- variable
-    | UnaOpE t UnaOp (Expr t)                    -- unary operator
-    | BinOpE t BinOp (Expr t) (Expr t)            -- binary operator
-    | IfThenElseE t (Expr t) (Expr t) (Expr t)     -- conditional
-    | AppE t (Expr t) (Expr t)                    -- function application
-    | FunE t Pattern Tp (Expr t)                 -- function abstraction
-    | QuantifE t Quantif VarName Tp (Expr t)         -- quantifier
-    | ClosE t [(VarName, Expr t)] (Expr t)        -- closure  (not externally visible)
-    | FldAccE t (Expr t) FieldName               -- field access
-    | TupleE t [Expr t]                          -- tuples
-    | CastE t Tp (Expr t)                        -- cast to type
-    | ListE t ListOp [Expr t]                    -- list expression
+    | VarE t Var                                -- variable
+    | UnaOpE t UnaOp (Expr t)                   -- unary operator
+    | BinOpE t BinOp (Expr t) (Expr t)          -- binary operator
+    | IfThenElseE t (Expr t) (Expr t) (Expr t)  -- conditional
+    | AppE t (Expr t) (Expr t)                  -- function application
+    | FunE t Pattern Tp (Expr t)                -- function abstraction
+    | QuantifE t Quantif VarName Tp (Expr t)    -- quantifier
+    | ClosE t [(VarName, Expr t)] (Expr t)      -- closure  (not externally visible)
+    | FldAccE t (Expr t) FieldName              -- field access
+    | TupleE t [Expr t]                         -- tuples
+    | CastE t Tp (Expr t)                       -- cast to type
+    | ListE t ListOp [Expr t]                   -- list expression
     deriving (Eq, Ord, Show, Read)
 
 
 -- Cmd t is a command of type t
 data Cmd t
     = Skip                                      -- Do nothing
-    | VAssign VarName (Expr t)                   -- Assignment to variable
+    | VAssign Var (Expr t)                   -- Assignment to variable
     | FAssign (Expr t) FieldName (Expr t)         -- Assignment to field
   deriving (Eq, Ord, Show, Read)
 
@@ -289,7 +294,6 @@ channels_of_ta (TmdAut nm ta_locs ta_act_clss ta_clks trans init_locs invs lbls)
 -- CURRENTLY NOT USED, rather see the translations in RuleToTa.hs
 
 -- NB: Event rules as opposed to rules defining terminology etc.
-
 
 data Event t
   = EventClConstr ClConstr

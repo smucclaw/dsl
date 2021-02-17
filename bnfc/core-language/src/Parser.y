@@ -36,17 +36,17 @@ import Control.Monad.Except
     Bool  { TokenBool }
     Int   { TokenInt }
 
-    let   { TokenLet }
-    in    { TokenIn }
-    not   { TokenNot }
-    all   { TokenAll }
-    ex    { TokenEx }
-    if    { TokenIf }
-    then  { TokenThen }
-    else  { TokenElse }
-    for   { TokenFor }
-    true  { TokenTrue }
-    false { TokenFalse }
+    let    { TokenLet }
+    in     { TokenIn }
+    not    { TokenNot }
+    forall { TokenForall }
+    exists { TokenExists }
+    if     { TokenIf }
+    then   { TokenThen }
+    else   { TokenElse }
+    for    { TokenFor }
+    true   { TokenTrue }
+    false  { TokenFalse }
     
     '\\'  { TokenLambda }
     '->'  { TokenArrow }
@@ -138,8 +138,8 @@ VarsCommaSep :                      { [] }
             | VarsCommaSep ',' VAR  { $3 : $1 }
 
 Expr : '\\' Pattern ':' ATp '->' Expr  { FunE () $2 $4 $6 }
-     | all VAR ':' Tp '.' Expr         { QuantifE () All $2 $4 $6 }
-     | ex VAR ':' Tp '.' Expr          { QuantifE () Ex $2 $4 $6 }
+     | forall VAR ':' Tp '.' Expr      { QuantifE () All $2 $4 $6 }
+     | exists VAR ':' Tp '.' Expr      { QuantifE () Ex $2 $4 $6 }
      | Expr '-->' Expr             { BinOpE () (BBool BBimpl) $1 $3 }
      | Expr '||' Expr              { BinOpE () (BBool BBor) $1 $3 }
      | Expr '&&' Expr              { BinOpE () (BBool BBand) $1 $3 }
@@ -165,7 +165,7 @@ Acc : Acc '.' VAR                  { FldAccE () $1 (FldNm $3) }
 
 Atom : '(' ExprsCommaSep ')'       { let ecs = $2 in if length ecs == 1 then head ecs else TupleE () (reverse ecs) }
      | NUM                         { ValE () (IntV $1) }
-     | VAR                         { VarE () $1 }
+     | VAR                         { VarE () (GlobalVar $1) }
      | true                        { ValE () (BoolV True) }
      | false                       { ValE () (BoolV False) }
 

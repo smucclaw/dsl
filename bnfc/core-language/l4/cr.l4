@@ -1,8 +1,15 @@
 
+# lexion
+# Business --> business_2 from WordNet
 
-class Business (0) {
-      foo (3): Int
-      bar (4): Bool -> (Int,Int)
+# Business.value --> foo_42 from Sumo
+
+# BusinessEntity.value --> foo_43 from WordNet
+
+
+class Business (132) {
+      # foo (234): Int
+      # bar (346): Bool -> (Int,Int)
 }
 
 class LawRelatedService (0) extends Business {
@@ -14,7 +21,10 @@ class BusinessEntity (0) {
 class Appointment (0) {
 }
 
-class LegalPractitioner (0) {
+class Person (0) {
+}
+
+class LegalPractitioner (0) extends Person {
 }
 
 class LocumSolicitor (0) extends LegalPractitioner {
@@ -32,7 +42,7 @@ decl AssociatedWithApp: Appointment -> BusinessEntity -> Bool
 
 rule <r1a>
 for lpr: LegalPractitioner, app: Appointment
-if (exists bsn : Business. AssociatedWith app bsn && IncompatibleDignity bsn)
+if (exists bsn : Business. AssociatedWithApp app bsn && IncompatibleDignity bsn)
 then MustNotAcceptApp lpr app
 
 

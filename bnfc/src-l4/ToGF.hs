@@ -112,7 +112,11 @@ deontic2gf (DeonticLimb1 deonexpr langstrs actionl) = deonticFun $ action2gf act
 
 action2gf :: ActionLimb -> GActionAlias
 action2gf (ActionSingle (ExpAction a) OptAsAlias0) = GAAlias a
-action2gf (ActionSingle (ExpAction a) alias) = GAAlias a -- TODO: use actual alias
+action2gf (ActionSingle (ExpAction a)   alias) = GAAlias a -- TODO: use actual alias
+action2gf (ActionDirObj (ExpAction a) _ alias) = GAAlias a  -- TODO: use actual alias
+action2gf (ActionDirObj _ _ _) = GFailure
+-- l4: action2gf doesn't handle yet ActionDirObj (ObjME (OMNoAargs [UnifyElemObjAttrElem (ObjAttrElemIdent (Ident "sell"))] OptLangStrings1)) (OA_dots [ObjAttrElemUIdent (UIdent "Item")]) (OptAsAlias1 (AsAlias (OA_dots [ObjAttrElemIdent (Ident "sale")])))
+
 -- action2gf (ActionSingle e alias) =
 --   -- Object is in the BlahExp, transform into => structure
 --   action2gf (ActionSingle (RelE e BRel_Fat obj) blahs alias')

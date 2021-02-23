@@ -6,7 +6,7 @@ import System.FilePath (takeBaseName)
 import System.Process (callProcess)
 import Test.Tasty (defaultMain, testGroup, TestTree)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
-import Test.Tasty.Program (testProgram)
+-- import Test.Tasty.Program (testProgram)
 import Showbug (showErrorCoordinates)
 import Control.Exception ( try, ErrorCall(..), throwIO )
 import Control.Exception.Base (evaluate)
@@ -54,9 +54,12 @@ tests =
 
 runL4ReadmeExample :: TestTree
 runL4ReadmeExample =
-  testGroup "l4 parses l4 files"
+  testGroup "l4 integration tests"
+    --- TODO:
+    --- * Use the proper command line syntax
+    --- * Use some better testing tool than `testProgram`, which doesn't output the errors
     [ -- testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing
-      testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing
+      -- testProgram "Run l4 on the readme examples" "l4" ["l4/test.l4"] Nothing
       -- , testProgram "Run l4 on the bike example" "l4" ["l4/deon_bike_meng.l4"] Nothing
     ]
 

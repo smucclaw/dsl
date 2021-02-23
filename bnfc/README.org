@@ -6,13 +6,13 @@ Running ~nix-shell --run make~ from the ~bnfc/~ directory should tangle the rele
 
 ** To get GF output
 
-to enable gf-only ouput, run =stack run -- l4 --format gf < l4/test.l4 > out/test.out=
+to enable gf-only ouput, run =stack run -- l4 gf en < l4/test.l4 > out/test.out=
 
-You can choose a specific language by running =--gflang en= (default) or =my= (future).
+You can choose a specific language by using the =en= (default) or =my= (future) modifier.
 
 ** To get Dot output
 
-to enable dot-only output, run =stack run -- l4 --format dot < l4/test.l4 > out/test.out=
+to enable dot-only output, run =stack run -- l4 dot < l4/test.l4 > out/test.out=
 
 ** Running the test4.l4
 

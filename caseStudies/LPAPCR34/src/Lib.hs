@@ -13,7 +13,7 @@ import qualified Data.Text.IO as TIO
 import Prettyprinter hiding (space)
 import qualified Prettyprinter as PP
 import Data.Void
-import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
+import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex, intersperse)
 import Data.Char (toLower)
 import Control.Monad (forM_)
 import qualified Data.Map.Lazy as Map
@@ -132,15 +132,15 @@ stmToProlog :: Stm -> Doc ann
 stmToProlog (Section te) = "%% " <> pretty (stmToL4 (Section te))
 stmToProlog (DRule rn p d a w) =
   let headP = "drule" <> parencomma [ dquotes (pretty $ plain rn)
-                                               , "SubRuleName"
-                                               , teToProlog p
-                                               , pretty ((toLower <$> dshow d) :: String)
-                                               , teToProlog a ]
+                                    , "SubRuleName"
+                                    , teToProlog p
+                                    , pretty ((toLower <$> dshow d) :: String)
+                                    , teToProlog a ]
       varargs = teToProlog p : unwrapP a
   in vsep ( [ if null w
                  then headP <> pretty '.'
-                 else nest 4 (headP <+> ":-" <+> ("subRule" <> parencomma ("SubRuleName" : varargs) <> pretty '.') )
-               ] ++ asPrologSubrules w varargs )
+                 else hang 4 (headP <+> ":-" <+> ("subRule" <> parencomma ("SubRuleName" : varargs) <> pretty '.') )
+               ] ++ (intersperse line' (asPrologSubrules w varargs)) )
 
 asPrologSubrules :: Maybe TermExpr -> [Doc ann] -> [Doc ann]
 asPrologSubrules Nothing _ = [emptyDoc]
@@ -149,7 +149,7 @@ asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (z
 asPrologSubrule :: [Doc ann] -> (Char, TermExpr) -> Doc ann
 asPrologSubrule varargs (ruleNum, te) =
   hang 5
-  ("\nsubRule" <> parencomma ([ pretty ("subRule_"++[ruleNum]) ] ++ varargs) <+> (":-") <> line <> (teToProlog te) <> pretty '.')
+  ("subRule" <> parencomma ([ pretty ("subRule_"++[ruleNum]) ] ++ varargs) <+> (":-") <> line <> (teToProlog te) <> pretty '.')
 
 
 unwrapP :: TermExpr -> [Doc ann]
@@ -158,26 +158,73 @@ unwrapP (TKey tkey)        = [pretty $ tr_ tkey]
 unwrapP (All termexprs)    = teToProlog <$> termexprs
 unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
 unwrapP (And termexprs)          = teToProlog <$> termexprs
+unwrapP orig@(BinOp te1 Compound te3) = [teToProlog te3]
 unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
 
 parencomma docs = parens (hsep $ punctuate (pretty ',') docs)
+
+data NLConj = NLAny | NLAnd | NLAll | NLJust deriving (Show, Eq)
+-- we convert the TermExpr AST into a tree of pretty-printable strings -- Natural Language Intermediate Representation
+data NLIR = Tree (NLConj, Doc ()) deriving (Show)
+-- this is especially useful in the expansion of "any" and "all" subexpressions to disjunctive normal form:
+-- input:      [ foo, any [bar, baz], quux ]
+-- output: any [ foo bar quux, foo baz quux ]
+-- input:      [ foo, any [bar, baz], all [fee, fie], quux]
+-- output: any [ foo bar (fee and fie) quux, foo baz (fee and fie) quux ] ]
+-- then we compose the NLR into prolog formulas
+
+
 
 teToProlog :: TermExpr -> Doc ann
 teToProlog orig@(mainex :@ nltags) = pretty $ plain orig
 teToProlog orig@(TKey tkey)        = pretty $ plain orig
 teToProlog (All termexprs)    = "TODO All"
-teToProlog orig@(Any termexprs)     = nest 8 $ vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
+teToProlog orig@(Any termexprs)     = vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
 teToProlog (And termexprs)          = "TODO And"
-teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = pretty (x ++ "_" ++ y)
-teToProlog orig@(BinOp te1 Cons te2) = ("compl") <> parencomma [teToProlog te1, teToProlog te2]
+teToProlog orig@(BinOp x Cons te2@(y :@ _))
+  | isPrep y  = teToProlog x <>          "_" <> teToProlog te2
+  | otherwise = teToProlog x <> comma <> " " <> teToProlog te2
+teToProlog orig@(BinOp x Cons y)          = teToProlog x <> comma <> " " <> teToProlog y
 teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
 teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
 teToProlog orig@(BinOp (All lhss) co rhs) = teToProlog (All ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
 teToProlog orig@(BinOp lhs co (All rhss)) = teToProlog (All ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
 teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> "_of" <> parencomma [teToProlog tk1, teToProlog te3]
 teToProlog orig@(BinOp te1 Compound te2)     = teToProlog te1 <> parencomma [teToProlog te2]
-teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = "of" <> parencomma [teToProlog te3, teToProlog te1]
+teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3@(te3a :@ _)) = teToProlog te3 <> parencomma [teToProlog te1] -- step 1
+teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3@(BinOp te3a Cons te3c)) = teToProlog te3a <> parencomma [teToProlog te1, teToProlog te3c] -- step 3
+teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = "unhandled deep BinOp for " <> teToProlog te1
+teToProlog orig@(BinOp te1 (TE2 ("of" :@ [])) te3) = teToProlog te1 <> "_of_" <> teToProlog te3
+teToProlog orig@(BinOp te1 (TE2 ("as" :@ [])) te3) = teToProlog te1 <> "_as_" <> teToProlog te3
 teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = pretty prep <> parencomma [teToProlog te1, teToProlog te3]
+
+{- INPUT
+   , BinOp
+       ( TKey "LP" )
+       ( TE2 ( "'s" :@ [] ) )
+       ( BinOp
+           ( "availability to those who may seek" :@ [ ( "en" , "availability to those who may seek" ) ] )
+           Cons
+           ( BinOp
+               ( TKey "LP" )
+               ( TE2 ( "'s" :@ [] ) )
+               ( "services as a lawyer" :@ [ ( "en" , "services as a lawyer" ) ] )
+           )
+       )
+  OUTPUT
+  availability_to_those_who_may_seek(LP, services_as_a_lawyer(LP))
+
+  step 1: BinOp (TKey LP , TE2 's, services as a lawyer
+          services_as_a_alwyer(LP)
+
+  step 2: BinOp (availability, Cons, step1)
+          \x -> availability(x, step1)
+  in practice we bypass this step
+
+  step 3: BinOp (TKey LP, TE2 's, step2)
+          availabiilty(LP, step1)
+
+-}
 
 plain :: TermExpr -> String
 plain (mainex :@ nltags) = tr_ mainex

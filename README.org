@@ -310,6 +310,26 @@ If we were converting to Flora-2 we would be more intelligent about classes and 
 
 Incidentally, astute readers may remark: "surely ~IS~ and ~ISA~ syntax here is a special case of some more generic n-place arity relational syntax for FOL" -- and you would be right. ~IS~ and ~ISA~ should be macros. This refactoring of the language will happen soon.
 
+What would the overall rule look like in Prolog? Something like this -- drafted for presentation purposes
+
+#+begin_src prolog
+  rule(1,  saleRestricted, P1, shant, sell(Item)) :- is(Item, cabbage).
+
+  rule(1a, salePossible,   P1, may,   sell(Item)) :- is(Item,cabbage),
+                                                     onLegalDate(sell(Item)),
+                                                     holds(P1, exemption, {from=DirectorOfAgriculture}).
+
+  rule(2a, whatIsACabbage, is(Item,cabbage))      :- in(Item.species, ["Brassica chinensis"
+                                                                      ,"Brassica oleracea"]),
+                                                     deems(DirectorOfAgriculture)).
+
+  rule(2b, whatIsALegalDate,
+       is(onLegalDate(sell(Item))))               :- in(sell(Item).date,
+                                                     external({url="https://www.almanac.com/astronomy/moon/full/"})).
+
+
+#+end_src
+
 ** Limbs
 
 The body of a rule may include one or more limbs. In the above examples, we have already seen some limbs in action.

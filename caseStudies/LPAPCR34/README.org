@@ -434,18 +434,29 @@ The emojis above are part of the syntactic sugar used to create the actual AST.
   binop op x y = BinOp x (TE2 (op :@ [])) y
 
   -- this is a sign we need to learn Template Haskell
-  infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x <> (nl_ "of")
-  infixr 6 `to_`;     to_ = binop "to";      infixr 5 `_to`;    _to  x = x <> (nl_ "to")
-  infixr 6 `as_`;     as_ = binop "as";      infixr 5 `_as`;    _as  x = x <> (nl_ "as")
-  infixr 6 `in_`;     in_ = binop "in";      infixr 5 `_in`;    _in  x = x <> (nl_ "in")
-  infixr 6 `is_`;     is_ = binop "is";      infixr 5 `_is`;    _is  x = x <> (nl_ "is")
-  infixr 6 `by_`;     by_ = binop "by";      infixr 5 `_by`;    _by  x = x <> (nl_ "by")
-  infixr 6 `for_`;   for_ = binop "for";     infixr 5 `_for`;   _for x = x <> (nl_ "for")
+  infixr 6 `of_`;     of_ = binop "of";      infixr 5 `_of`;    _of  x = x <> (nl_ "of")  
+  infixr 6 `to_`;     to_ = binop "to";      infixr 5 `_to`;    _to  x = x <> (nl_ "to")  
+  infixr 6 `as_`;     as_ = binop "as";      infixr 5 `_as`;    _as  x = x <> (nl_ "as")  
+  infixr 6 `in_`;     in_ = binop "in";      infixr 5 `_in`;    _in  x = x <> (nl_ "in")  
+  infixr 6 `is_`;     is_ = binop "is";      infixr 5 `_is`;    _is  x = x <> (nl_ "is")  
+  infixr 6 `by_`;     by_ = binop "by";      infixr 5 `_by`;    _by  x = x <> (nl_ "by")  
+  infixr 6 `for_`;   for_ = binop "for";     infixr 5 `_for`;   _for x = x <> (nl_ "for") 
   infixr 6 `with_`; with_ = binop "with";    infixr 5 `_with`; _with x = x <> (nl_ "with")
   infixr 6 `from_`; from_ = binop "from";    infixr 5 `_from`; _from x = x <> (nl_ "from")
 
   infixr 6 `possessive`
   possessive = binop "'s"
+
+  isPrep "of" = True 
+  isPrep "to" = True 
+  isPrep "as" = True 
+  isPrep "in" = True 
+  isPrep "is" = True 
+  isPrep "by" = True 
+  isPrep "for" = True
+  isPrep "with" = True
+  isPrep "from" = True
+  isPrep _ = False   
 
 #+end_src
 
@@ -994,11 +1005,11 @@ First, a little theory.
 
 Prolog is cool with compound terms: anywhere you can have a =plain(term)=, you can =have(a(compound(term)))=.
 
-Now, the AST contains a lot of structure, the =BinOp= tree is basically expressive enough to do any kind of GF-style natural language grammar, e.g. "half of a potato" would be broken out to the (mostly binary) tree =of(half,a(potato))=.
+Now, the L4 AST contains a lot of structure. A =TermExpr= has a couple of tree constructors: =BinOp= and =UnaOp= are the "middle management" nodes in a tree whose leaves tend to be =:@= terms, perhaps parked under a =TKey= or =TE2=. This may not be enough to capture some exceptions, like ditransitive verbs, mentioned [[https://allthingslinguistic.com/post/100781064586/how-to-draw-syntax-trees-part-4-type-2-a][here]], but it gives us nearly as much rope as a GF-style natural language grammar.
 
 Prolog doesn't need quite that much structure: typically we would just deal with that notion as a single concept =half_of_a_potato=.
 
-To get that we linearize the tree DFS left-to-right; if the compound term has only one argument, we treat the argument as a right argument: so it's really =of(half,a((),potato))=.
+To get that we linearize the tree DFS left-to-right.
 
 What if the semantics require a different kind of break down? What if we want =half_of(a_potato)=? We'll cross this bridge when we come to it.
 
@@ -1014,50 +1025,13 @@ What would work? Let's work toward more structure:
 
 1. =half_of_a_green_Fruit= -- not enough structure
 2. =half_of_a_green(Fruit)= -- Fruit stands alone, good
-3. =half_of_a(green,Fruit)= -- looking ahead to the future, we will probably want to have =(Color,Fruit)= in the future
-4. =half_of(a(green,Fruit))= -- we know from grammar that the "a" determiner applies to "green fruit", so we try to structure it accordingly
-5. =of(half,a(green,Fruit))= -- this is a fully structured version, at least where Prolog is concerned
+3. =half_of_a(green,Fruit)= -- looking ahead to the future, we will probably want to have =(Color,Fruit)=
+4. =half_of(a(green,Fruit))= -- maybe the "a" determiner applies to "green fruit".
+5. =half_of(a(green),Fruit)= -- maybe the "a" determiner applies to "green".
+6. =of(half,a(green,Fruit))= -- this is a fully structured version, at least where Prolog is concerned
+7. =half(green(Fruit))= -- maybe Prolog would prefer this form? It all depends on the application.
 
-But we note that this structure doesn't really match the "binary tree" we described above: a linearization of =a(green,Fruit)= would give "green a Fruit". So we should keep in mind that the binary tree in the AST doesn't look exactly the same as a binary tree in Prolog.
-
-In the AST, the binary tree would be something like:
-
-- of
-  - half
-  - ()
-    - a
-    - ()
-      - green
-      - fruit
-
-What's up with that ()? It's needed if we have a rule that we linearize a =BinOp l op s= to =l op s=.
-
-This is awkward. How are we to represent something like =a happy beautiful green fruit=?
-
-- ()
-  - a
-  - ()
-    - happy
-    - ()
-      - beautiful
-      - ()
-        - green
-          - ()
-          - fruit
-
-All the left-hand elements are nil. Honestly, this feels more like a list than a binary tree; to be precise, a cons-list.
-
-- Cons
-  - a
-  - Cons
-    - happy
-    - Cons
-      - beautiful
-      - Cons
-        - green
-        - fruit
-
-So, fine, we have argued ourselves into having =Cons= as a =BinOp= data constructor.
+Note that this structure doesn't really match the "binary tree" we described above: a linearization of =a(green,Fruit)= would give "green a Fruit". So we should keep in mind that the binary tree in the AST doesn't look exactly the same as a binary tree in Prolog.
 
 Back to the original question: how do we linearize? We know that linearization is affected by whether a node is a =Variable= (uppercase) or a non-variable =term=.
 
@@ -1065,103 +1039,151 @@ Let's look at some desired inputs and outputs; from that, we'll know what code t
 
 The location probably affects the linearization, too, so let's keep a input column for that.
 
-
 | Input                                                                 | location | Output        |
 |-----------------------------------------------------------------------+----------+---------------|
 | BinOp ( "detracts" :@ [ ( "en" , "detracts" ) ] ) Cons ( "from" :@ [] |          | detracts_from |
 |                                                                       |          |               |
 
 #+begin_src haskell :noweb-ref 34-prolog
-  stmToPlain :: Stm -> String
-  stmToPlain (Section te) = plain te
+    stmToPlain :: Stm -> String
+    stmToPlain (Section te) = plain te
 
-  stmToProlog :: Stm -> Doc ann
-  stmToProlog (Section te) = "%% " <> pretty (stmToL4 (Section te))
-  stmToProlog (DRule rn p d a w) =
-    let headP = "drule" <> parencomma [ dquotes (pretty $ plain rn)
-                                                 , "SubRuleName"
-                                                 , teToProlog p
-                                                 , pretty ((toLower <$> dshow d) :: String)
-                                                 , teToProlog a ]
-        varargs = teToProlog p : unwrapP a
-    in vsep ( [ if null w
-                   then headP <> pretty '.'
-                   else nest 4 (headP <+> ":-" <+> ("subRule" <> parencomma ("SubRuleName" : varargs) <> pretty '.') )
-                 ] ++ asPrologSubrules w varargs )
+    stmToProlog :: Stm -> Doc ann
+    stmToProlog (Section te) = "%% " <> pretty (stmToL4 (Section te))
+    stmToProlog (DRule rn p d a w) =
+      let headP = "drule" <> parencomma [ dquotes (pretty $ plain rn)
+                                        , "SubRuleName"
+                                        , teToProlog p
+                                        , pretty ((toLower <$> dshow d) :: String)
+                                        , teToProlog a ]
+          varargs = teToProlog p : unwrapP a
+      in vsep ( [ if null w
+                     then headP <> pretty '.'
+                     else hang 4 (headP <+> ":-" <+> ("subRule" <> parencomma ("SubRuleName" : varargs) <> pretty '.') )
+                   ] ++ (intersperse line' (asPrologSubrules w varargs)) )
 
-  asPrologSubrules :: Maybe TermExpr -> [Doc ann] -> [Doc ann]
-  asPrologSubrules Nothing _ = [emptyDoc]
-  asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (zip ['A'..] termexprs)
+    asPrologSubrules :: Maybe TermExpr -> [Doc ann] -> [Doc ann]
+    asPrologSubrules Nothing _ = [emptyDoc]
+    asPrologSubrules (Just (Any termexprs)) varargs = asPrologSubrule varargs <$> (zip ['A'..] termexprs)
 
-  asPrologSubrule :: [Doc ann] -> (Char, TermExpr) -> Doc ann
-  asPrologSubrule varargs (ruleNum, te) =
-    hang 5
-    ("\nsubRule" <> parencomma ([ pretty ("subRule_"++[ruleNum]) ] ++ varargs) <+> (":-") <> line <> (teToProlog te) <> pretty '.')
+    asPrologSubrule :: [Doc ann] -> (Char, TermExpr) -> Doc ann
+    asPrologSubrule varargs (ruleNum, te) =
+      hang 5
+      ("subRule" <> parencomma ([ pretty ("subRule_"++[ruleNum]) ] ++ varargs) <+> (":-") <> line <> (teToProlog te) <> pretty '.')
 
 
-  unwrapP :: TermExpr -> [Doc ann]
-  unwrapP (mainex :@ nltags) = [pretty $ tr_ mainex]
-  unwrapP (TKey tkey)        = [pretty $ tr_ tkey]
-  unwrapP (All termexprs)    = teToProlog <$> termexprs
-  unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
-  unwrapP (And termexprs)          = teToProlog <$> termexprs
-  unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
+    unwrapP :: TermExpr -> [Doc ann]
+    unwrapP (mainex :@ nltags) = [pretty $ tr_ mainex]
+    unwrapP (TKey tkey)        = [pretty $ tr_ tkey]
+    unwrapP (All termexprs)    = teToProlog <$> termexprs
+    unwrapP orig@(Any termexprs)     = teToProlog <$> termexprs
+    unwrapP (And termexprs)          = teToProlog <$> termexprs
+    unwrapP orig@(BinOp te1 Compound te3) = [teToProlog te3]
+    unwrapP orig@(BinOp te1 bo2 te3) = [teToProlog te1, teToProlog te3]
 
-  parencomma docs = parens (hsep $ punctuate (pretty ',') docs)
+    parencomma docs = parens (hsep $ punctuate (pretty ',') docs)
 
-  teToProlog :: TermExpr -> Doc ann
-  teToProlog orig@(mainex :@ nltags) = pretty $ plain orig
-  teToProlog orig@(TKey tkey)        = pretty $ plain orig
-  teToProlog (All termexprs)    = "TODO All"
-  teToProlog orig@(Any termexprs)     = nest 8 $ vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
-  teToProlog (And termexprs)          = "TODO And"
-  teToProlog orig@(BinOp (x :@ _) Cons (y :@ _)) = pretty (x ++ "_" ++ y)
-  teToProlog orig@(BinOp te1 Cons te2) = ("compl") <> parencomma [teToProlog te1, teToProlog te2]
-  teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
-  teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
-  teToProlog orig@(BinOp (All lhss) co rhs) = teToProlog (All ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
-  teToProlog orig@(BinOp lhs co (All rhss)) = teToProlog (All ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
-  teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> "_of" <> parencomma [teToProlog tk1, teToProlog te3]
-  teToProlog orig@(BinOp te1 Compound te2)     = teToProlog te1 <> parencomma [teToProlog te2]
-  teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = "of" <> parencomma [teToProlog te3, teToProlog te1]
-  teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = pretty prep <> parencomma [teToProlog te1, teToProlog te3]
+    data NLConj = NLAny | NLAnd | NLAll | NLJust deriving (Show, Eq)
+    -- we convert the TermExpr AST into a tree of pretty-printable strings -- Natural Language Intermediate Representation
+    type NLTree NLConj String
+    type NLIR = Tree NLTree
+    -- this is especially useful in the expansion of "any" and "all" subexpressions to disjunctive normal form:
+    -- input:      [ foo, any [bar, baz], quux ]
+    -- output: any [ foo bar quux, foo baz quux ]
+    -- input:      [ foo, any [bar, baz], all [fee, fie], quux]
+    -- output: any [ foo bar (fee and fie) quux, foo baz (fee and fie) quux ] ]
+    -- then we compose the NLR into prolog formulas
+    sample :: NLIR
+    sample = Node (NLJust "the") [Node (NLAnd [ Node (NLJust "cat") []
+                                              , Node (NLJust "dog") []]
 
-  plain :: TermExpr -> String
-  plain (mainex :@ nltags) = tr_ mainex
-  plain (TKey tkey)        = tr_ tkey
+    teToProlog :: TermExpr -> Doc ann
+    teToProlog orig@(mainex :@ nltags) = pretty $ plain orig
+    teToProlog orig@(TKey tkey)        = pretty $ plain orig
+    teToProlog (All termexprs)    = "TODO All"
+    teToProlog orig@(Any termexprs)     = vcat $ punctuate (semi <> PP.space) (teToProlog <$> termexprs)
+    teToProlog (And termexprs)          = "TODO And"
+    teToProlog orig@(BinOp x Cons te2@(y :@ _))
+      | isPrep y  = teToProlog x <>          "_" <> teToProlog te2
+      | otherwise = teToProlog x <> comma <> " " <> teToProlog te2
+    teToProlog orig@(BinOp x Cons y)          = teToProlog x <> comma <> " " <> teToProlog y
+    teToProlog orig@(BinOp (Any lhss) co rhs) = teToProlog (Any ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
+    teToProlog orig@(BinOp lhs co (Any rhss)) = teToProlog (Any ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
+    teToProlog orig@(BinOp (All lhss) co rhs) = teToProlog (All ((\lhs -> (BinOp lhs co rhs)) <$> lhss)) -- compound or cons
+    teToProlog orig@(BinOp lhs co (All rhss)) = teToProlog (All ((\rhs -> (BinOp lhs co rhs)) <$> rhss))
+    teToProlog orig@(BinOp (BinOp tk1 (TE2 ("'s" :@ [])) tk2) (TE2 ("of" :@ [])) te3) = teToProlog tk2 <> "_of" <> parencomma [teToProlog tk1, teToProlog te3]
+    teToProlog orig@(BinOp te1 Compound te2)     = teToProlog te1 <> parencomma [teToProlog te2]
+    teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3@(te3a :@ _)) = teToProlog te3 <> parencomma [teToProlog te1] -- step 1
+    teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3@(BinOp te3a Cons te3c)) = teToProlog te3a <> parencomma [teToProlog te1, teToProlog te3c] -- step 3
+    teToProlog orig@(BinOp te1 (TE2 ("'s" :@ [])) te3) = "unhandled deep BinOp for " <> teToProlog te1
+    teToProlog orig@(BinOp te1 (TE2 ("of" :@ [])) te3) = teToProlog te1 <> "_of_" <> teToProlog te3
+    teToProlog orig@(BinOp te1 (TE2 ("as" :@ [])) te3) = teToProlog te1 <> "_as_" <> teToProlog te3
+    teToProlog orig@(BinOp te1 (TE2 (prep :@ [])) te3) = pretty prep <> parencomma [teToProlog te1, teToProlog te3]
 
-  tr_ = tr " " "_"
+    {- INPUT
+       , BinOp
+           ( TKey "LP" )
+           ( TE2 ( "'s" :@ [] ) )
+           ( BinOp
+               ( "availability to those who may seek" :@ [ ( "en" , "availability to those who may seek" ) ] )
+               Cons
+               ( BinOp
+                   ( TKey "LP" )
+                   ( TE2 ( "'s" :@ [] ) )
+                   ( "services as a lawyer" :@ [ ( "en" , "services as a lawyer" ) ] )
+               )
+           )
+      OUTPUT
+      availability_to_those_who_may_seek(LP, services_as_a_lawyer(LP))
 
-  -- tr "abc" "123" "a cow" -> "1 3ow"
-  tr x y cs = [ maybe c (y !!) eI | c <- cs, let eI = elemIndex c x ]
+      step 1: BinOp (TKey LP , TE2 's, services as a lawyer
+              services_as_a_alwyer(LP)
 
-  stmToL4 :: Stm -> String
-  stmToL4 (Section te)       = unlines [ unwords [ "SECTION",             teToL4 toplevel te ] ]
-  stmToL4 (DRule rn p d a w) = unlines [ unwords [ "   RULE",             teToL4 toplevel rn ]
-                                       , unwords [ "  PARTY",             teToL4 toplevel p ]
-                                       , unwords [ "  "  ++ dshow d,      teToL4 toplevel a ]
-                                       , unwords [ "   " ++ maybe "-- EVER"
-                                                                (("WHEN " ++) . teToL4 toplevel) w ]
+      step 2: BinOp (availability, Cons, step1)
+              \x -> availability(x, step1)
+      in practice we bypass this step
 
-                                       ]
-  -- rule_34_1(party(LegalPractitioner), shant, accept(ExecA)) :- assocWith(ExecA, Business),
-  --    detracts_from
-  toplevel = Ctx []
+      step 3: BinOp (TKey LP, TE2 's, step2)
+              availabiilty(LP, step1)
 
-  data Context = Ctx { stack    :: [TermExpr] } deriving (Show, Eq)
+    -}
 
-  ppTE ctx orig@(Any termexprs)     = "Any " ++ (show $ brackets (hcat $ punctuate (comma) (pretty . (teToL4' ctx orig) <$> termexprs )))
+    plain :: TermExpr -> String
+    plain (mainex :@ nltags) = tr_ mainex
+    plain (TKey tkey)        = tr_ tkey
 
-  -- this Context thing really should be a State monad
-  teToL4 :: Context -> TermExpr -> String
-  teToL4 ctx (mainex :@ nltags) = mainex
-  teToL4 ctx (TKey tkey)        = tkey
-  teToL4 ctx (All termexprs)    = "TODO All"
-  teToL4 ctx orig@(Any termexprs)     = "TODO Any"
-  teToL4 ctx (And termexprs)          = "TODO And"
-  teToL4 ctx orig@(BinOp te1 bo2 te3)      = show (bo2) ++ "(" ++ teToL4' ctx orig te1 ++ " , " ++ teToL4' ctx orig te3 ++ ")"
+    tr_ = tr " " "_"
 
-  teToL4' ctx orig = teToL4 (ctx { stack = orig : stack ctx })
+    -- tr "abc" "123" "a cow" -> "1 3ow"
+    tr x y cs = [ maybe c (y !!) eI | c <- cs, let eI = elemIndex c x ]
+
+    stmToL4 :: Stm -> String
+    stmToL4 (Section te)       = unlines [ unwords [ "SECTION",             teToL4 toplevel te ] ]
+    stmToL4 (DRule rn p d a w) = unlines [ unwords [ "   RULE",             teToL4 toplevel rn ]
+                                         , unwords [ "  PARTY",             teToL4 toplevel p ]
+                                         , unwords [ "  "  ++ dshow d,      teToL4 toplevel a ]
+                                         , unwords [ "   " ++ maybe "-- EVER"
+                                                                  (("WHEN " ++) . teToL4 toplevel) w ]
+
+                                         ]
+    -- rule_34_1(party(LegalPractitioner), shant, accept(ExecA)) :- assocWith(ExecA, Business),
+    --    detracts_from
+    toplevel = Ctx []
+
+    data Context = Ctx { stack    :: [TermExpr] } deriving (Show, Eq)
+
+    ppTE ctx orig@(Any termexprs)     = "Any " ++ (show $ brackets (hcat $ punctuate (comma) (pretty . (teToL4' ctx orig) <$> termexprs )))
+
+    -- this Context thing really should be a State monad
+    teToL4 :: Context -> TermExpr -> String
+    teToL4 ctx (mainex :@ nltags) = mainex
+    teToL4 ctx (TKey tkey)        = tkey
+    teToL4 ctx (All termexprs)    = "TODO All"
+    teToL4 ctx orig@(Any termexprs)     = "TODO Any"
+    teToL4 ctx (And termexprs)          = "TODO And"
+    teToL4 ctx orig@(BinOp te1 bo2 te3)      = show (bo2) ++ "(" ++ teToL4' ctx orig te1 ++ " , " ++ teToL4' ctx orig te3 ++ ")"
+
+    teToL4' ctx orig = teToL4 (ctx { stack = orig : stack ctx })
 
 #+end_src
 
@@ -1183,8 +1205,9 @@ The location probably affects the linearization, too, so let's keep a input colu
   import Prettyprinter hiding (space)
   import qualified Prettyprinter as PP
   import Data.Void
-  import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex)
+  import Data.List (nub, permutations, sort, sortOn, intercalate, elemIndex, intersperse)
   import Data.Char (toLower)
+  import Data.Tree
   import Control.Monad (forM_)
   import qualified Data.Map.Lazy as Map
   import Text.Pretty.Simple (pPrint, pShow)

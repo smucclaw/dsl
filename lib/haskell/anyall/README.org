@@ -1,0 +1,1 @@
+future home of the smucclaw-anyall hackage package.

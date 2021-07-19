@@ -1,0 +1,2 @@
+future home of the smucclaw-myrule hackage package.
+

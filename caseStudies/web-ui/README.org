@@ -90,11 +90,15 @@ EXPLANATION: Rule 34.1.a *prohibits* if the business detracts from, is incompati
 
 Logic: abduction.
 
-* Use Case 3: generating a signable instance of an legal contract based on parameters
+* Use Case 3: generating a signable instance of a legal contract by parameterizing a template
 
 Logic: lambda calculus.
 
+The UI collects input as needed to fill the template, and at the end generates a filled template in Word or PDF format.
+
 * Use Case 4: varying a template of a legal contract to represent tweaks to the "business logic"
+
+Let the user edit the L4 source and produce an output template.
 
 This becomes a problem in PLT.
 
@@ -122,7 +126,7 @@ The UI should, if possible, show all the relevant questions at once; if showing 
 
 ** Transparency: Show Tentative Answer + Explanation
 
-Based on information received so far, show what the answer, together with an explanation.
+Based on information received so far, show the answer, together with an explanation.
 
 The level of detail of the explanation should be user-toggle-able.
 

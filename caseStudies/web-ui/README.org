@@ -1,0 +1,150 @@
+#+TITLE: about the expert-system web UI
+#+OPTIONS: toc:nil
+
+* Background
+  :PROPERTIES:
+  :UNNUMBERED: true
+  :END:
+
+
+It feels like DocAssemble is 90% of what we want, but the other 10% gives us pause.
+
+Let's spec our requirements explicitly so we can actually agree on what we want.
+
+* Use Case 1: understanding and interacting with a collection of legal rules
+
+Logic: deduction.
+
+** Use Case 1a: Rule 34 of the LPAPCR
+- /As a:/ legal practitioner
+- /When I'm:/ considering taking an executive appointment outside of my current law firm
+- /I want to:/ understand the regulations enough to decide if I can or cannot take the executive appointment
+- /By:/ interactively traversing the decision tree and seeing how my inputs affect the overall answer
+- /By:/ obtaining an answer with justifications and explanations that link to the underlying legislation / regulations
+- /By:/ exploring what-if scenarios efficiently by changing my set of answers and seeing the result in some infographic-like format
+
+** Example Interaction
+
+Pretend this is a wireframe mock-up, but in mostly plain text.
+
+-----
+
+*** Screen 1
+
+Hi! I'm Jamie v2.0. What about you?
+
+- [X] I'm a legal practitioner
+- [X] currently working at a Singapore law firm
+- [X] considering taking an executive appointment with a business
+
+and I need to decide if I can take the appointment.
+
+I want to explore a scenario in which:
+
+- [ ] The business is undignified. /more.../
+
+ANSWER: [You may take the appointment.]
+
+-----
+
+*** Screen 2: after clicking on "more..."
+
+I want to explore a scenario in which:
+
+- [ ] The business is undignified /if:/
+  - [ ] The business detracts from the dignity of the legal profession;
+  - [ ] The business is incompatible with the dignity of the legal profession; or
+  - [ ] The business derogates from the dignity of the legal profession.
+
+ANSWER: [You may take the appointment.]
+
+-----
+
+*** Screen 3: after clicking on "incompatible with"
+
+I want to explore a scenario in which:
+
+- [X] The business is undignified /if:/
+  - [ ] The business detracts from the dignity of the legal profession;
+  - [X] The business is incompatible with the dignity of the legal profession; or
+  - [ ] The business derogates from the dignity of the legal profession.
+
+ANSWER: [You may NOT take the appointment.]
+
+EXPLANATION: Rule 34.1.a *prohibits* if the business detracts from, is incompatible with, or detracts from, the dignity of the legal profession.
+
+-----
+
+
+** Use Case 1b: PDPA
+- /As a:/ manager at a business in Singapore
+- /When I'm:/ told that my business may be involved in what may be a data breach
+- /I want to:/ understand the regulations enough to decide if my business needs to notify the users and/or the PDPC
+- /By:/ interactively traversing the decision tree and seeing how my inputs affect the overall answer
+- /By:/ obtaining an answer with justifications and explanations that link to the underlying legislation / regulations
+- /By:/ exploring what-if scenarios efficiently by changing my set of answers and seeing the result
+
+* Use Case 2: finding ways to achieve a desired goal, given constraints
+
+Logic: abduction.
+
+* Use Case 3: generating a signable instance of an legal contract based on parameters
+
+Logic: lambda calculus.
+
+* Use Case 4: varying a template of a legal contract to represent tweaks to the "business logic"
+
+This becomes a problem in PLT.
+
+* Components
+
+** Default Assumptions
+
+A collection of key/value config settings which represent a reasonable set of assumptions -- if we don't know anything about the user, we can begin the interview with these assumptions in place.
+
+We should ask the user to begin by reviewing those assumptions and editing whichever of them are not actually correct in this case.
+
+** Rule Engine
+
+*** Support for Client-only ("offline") & Server-enabled ("online") operation modes
+
+The rule engine should be available both client-side and server-side. Some use case applications may require one or the other.
+
+Why client-side? Because a user contemplating a certain course of action may be hesitant to explore the UI if they believe that their inputs are being recorded and could be used against them, even if those inputs are exploratory in nature. So the UI should assert that the rule engine runs entirely in the browser and does not phone home.
+
+Why server-side? Because, by policy, a business hosting the service may want to record the inputs and answers, to allow subsequent manual verification of the answers in high-stakes situations, and also to audit / debug the rule engine in cases where the advice was subsequently disputed. In this situation, the user is less concerned about getting in trouble, and more concerned that they are getting the correct answers.
+
+** Transparency: Show Upcoming Questions
+
+The UI should, if possible, show all the relevant questions at once; if showing all the relevant questions would make the UI massively unwieldy, show at least the next 5 or 10, so the user knows what's coming.
+
+** Transparency: Show Tentative Answer + Explanation
+
+Based on information received so far, show what the answer, together with an explanation.
+
+The level of detail of the explanation should be user-toggle-able.
+
+** Comprehensibility: Visualize the Decision Tree
+
+As much as possible, show how the inputs given so far cause the decision tree to
+- prune or rearrange itself (due to defeasibility)
+- compute a particular answer (after defeasibiilty has been fixed)
+
+** Answer Status: yes / no / unknown
+
+In the above wireframe we mock-up using checkboxes but actually we should probably have a ternary widget to show [ YES | UNKNOWN | NO ]. By default we start out with UNKNOWN selected and then the user has to affirmatively select YES or NO.
+
+* API Loop
+
+** UI to Rule Engine
+
+- This is the context
+- Here are the inputs I have gathered (or assumed) so far
+  - One of those inputs might be: Here is the goal that the user is driving at
+
+** Rule Engine to UI
+- Based on the inputs given,
+  - which rules apply?
+  - what answer is computed?
+  - what is the human-readable explanation?
+

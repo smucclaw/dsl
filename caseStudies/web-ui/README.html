@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-07-27 Tue 10:50 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>about the expert-system web UI</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Wong Meng Weng" />
+<script type="text/javascript">
+// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
+<!--/*--><![CDATA[/*><!--*/
+     function CodeHighlightOn(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.add("code-highlighted");
+         target.classList.add("code-highlighted");
+       }
+     }
+     function CodeHighlightOff(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.remove("code-highlighted");
+         target.classList.remove("code-highlighted");
+       }
+     }
+    /*]]>*///-->
+// @license-end
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">about the expert-system web UI</h1>
+
+<div id="outline-container-org498a1ec" class="outline-2">
+<h2 id="org498a1ec">Background</h2>
+<div class="outline-text-2" id="text-org498a1ec">
+<p>
+It feels like DocAssemble is 90% of what we want, but the other 10% gives us pause.
+</p>
+
+<p>
+Let's spec our requirements explicitly so we can actually agree on what we want.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf8a6575" class="outline-2">
+<h2 id="orgf8a6575"><span class="section-number-2">1</span> Use Case 1: understanding and interacting with a collection of legal rules</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Logic: deduction.
+</p>
+</div>
+
+<div id="outline-container-org920d7ce" class="outline-3">
+<h3 id="org920d7ce"><span class="section-number-3">1.1</span> Use Case 1a: Rule 34 of the LPAPCR</h3>
+<div class="outline-text-3" id="text-1-1">
+<ul class="org-ul">
+<li><i>As a:</i> legal practitioner</li>
+<li><i>When I'm:</i> considering taking an executive appointment outside of my current law firm</li>
+<li><i>I want to:</i> understand the regulations enough to decide if I can or cannot take the executive appointment</li>
+<li><i>By:</i> interactively traversing the decision tree and seeing how my inputs affect the overall answer</li>
+<li><i>By:</i> obtaining an answer with justifications and explanations that link to the underlying legislation / regulations</li>
+<li><i>By:</i> exploring what-if scenarios efficiently by changing my set of answers and seeing the result in some infographic-like format</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgc0ad754" class="outline-3">
+<h3 id="orgc0ad754"><span class="section-number-3">1.2</span> Example Interaction</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+Pretend this is a wireframe mock-up, but in mostly plain text.
+</p>
+
+<hr />
+</div>
+
+<div id="outline-container-orgfc8a1e3" class="outline-4">
+<h4 id="orgfc8a1e3"><span class="section-number-4">1.2.1</span> Screen 1</h4>
+<div class="outline-text-4" id="text-1-2-1">
+<p>
+Hi! I'm Jamie v2.0. What about you?
+</p>
+
+<ul class="org-ul">
+<li class="on"><code>[X]</code> I'm a legal practitioner</li>
+<li class="on"><code>[X]</code> currently working at a Singapore law firm</li>
+<li class="on"><code>[X]</code> considering taking an executive appointment with a business</li>
+</ul>
+
+<p>
+and I need to decide if I can take the appointment.
+</p>
+
+<p>
+I want to explore a scenario in which:
+</p>
+
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> The business is undignified. <i>more&#x2026;</i></li>
+</ul>
+
+<p>
+ANSWER: [You may take the appointment.]
+</p>
+
+<hr />
+</div>
+</div>
+
+<div id="outline-container-org9b3f65f" class="outline-4">
+<h4 id="org9b3f65f"><span class="section-number-4">1.2.2</span> Screen 2: after clicking on "more&#x2026;"</h4>
+<div class="outline-text-4" id="text-1-2-2">
+<p>
+I want to explore a scenario in which:
+</p>
+
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> The business is undignified <i>if:</i>
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> The business detracts from the dignity of the legal profession;</li>
+<li class="off"><code>[&#xa0;]</code> The business is incompatible with the dignity of the legal profession; or</li>
+<li class="off"><code>[&#xa0;]</code> The business derogates from the dignity of the legal profession.</li>
+</ul></li>
+</ul>
+
+<p>
+ANSWER: [You may take the appointment.]
+</p>
+
+<hr />
+</div>
+</div>
+
+<div id="outline-container-org51f9462" class="outline-4">
+<h4 id="org51f9462"><span class="section-number-4">1.2.3</span> Screen 3: after clicking on "incompatible with"</h4>
+<div class="outline-text-4" id="text-1-2-3">
+<p>
+I want to explore a scenario in which:
+</p>
+
+<ul class="org-ul">
+<li class="on"><code>[X]</code> The business is undignified <i>if:</i>
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> The business detracts from the dignity of the legal profession;</li>
+<li class="on"><code>[X]</code> The business is incompatible with the dignity of the legal profession; or</li>
+<li class="off"><code>[&#xa0;]</code> The business derogates from the dignity of the legal profession.</li>
+</ul></li>
+</ul>
+
+<p>
+ANSWER: [You may NOT take the appointment.]
+</p>
+
+<p>
+EXPLANATION: Rule 34.1.a <b>prohibits</b> if the business detracts from, is incompatible with, or detracts from, the dignity of the legal profession.
+</p>
+
+<hr />
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgd96e103" class="outline-3">
+<h3 id="orgd96e103"><span class="section-number-3">1.3</span> Use Case 1b: PDPA</h3>
+<div class="outline-text-3" id="text-1-3">
+<ul class="org-ul">
+<li><i>As a:</i> manager at a business in Singapore</li>
+<li><i>When I'm:</i> told that my business may be involved in what may be a data breach</li>
+<li><i>I want to:</i> understand the regulations enough to decide if my business needs to notify the users and/or the PDPC</li>
+<li><i>By:</i> interactively traversing the decision tree and seeing how my inputs affect the overall answer</li>
+<li><i>By:</i> obtaining an answer with justifications and explanations that link to the underlying legislation / regulations</li>
+<li><i>By:</i> exploring what-if scenarios efficiently by changing my set of answers and seeing the result</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org911a864" class="outline-2">
+<h2 id="org911a864"><span class="section-number-2">2</span> Use Case 2: finding ways to achieve a desired goal, given constraints</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Logic: abduction.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf7c9e07" class="outline-2">
+<h2 id="orgf7c9e07"><span class="section-number-2">3</span> Use Case 3: generating a signable instance of an legal contract based on parameters</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Logic: lambda calculus.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgea80e9d" class="outline-2">
+<h2 id="orgea80e9d"><span class="section-number-2">4</span> Use Case 4: varying a template of a legal contract to represent tweaks to the "business logic"</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+This becomes a problem in PLT.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8803fcd" class="outline-2">
+<h2 id="org8803fcd"><span class="section-number-2">5</span> Components</h2>
+<div class="outline-text-2" id="text-5">
+</div>
+<div id="outline-container-org338335a" class="outline-3">
+<h3 id="org338335a"><span class="section-number-3">5.1</span> Default Assumptions</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+A collection of key/value config settings which represent a reasonable set of assumptions &#x2013; if we don't know anything about the user, we can begin the interview with these assumptions in place.
+</p>
+
+<p>
+We should ask the user to begin by reviewing those assumptions and editing whichever of them are not actually correct in this case.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org880ffca" class="outline-3">
+<h3 id="org880ffca"><span class="section-number-3">5.2</span> Rule Engine</h3>
+<div class="outline-text-3" id="text-5-2">
+</div>
+<div id="outline-container-org075a5a2" class="outline-4">
+<h4 id="org075a5a2"><span class="section-number-4">5.2.1</span> Support for Client-only ("offline") &amp; Server-enabled ("online") operation modes</h4>
+<div class="outline-text-4" id="text-5-2-1">
+<p>
+The rule engine should be available both client-side and server-side. Some use case applications may require one or the other.
+</p>
+
+<p>
+Why client-side? Because a user contemplating a certain course of action may be hesitant to explore the UI if they believe that their inputs are being recorded and could be used against them, even if those inputs are exploratory in nature. So the UI should assert that the rule engine runs entirely in the browser and does not phone home.
+</p>
+
+<p>
+Why server-side? Because, by policy, a business hosting the service may want to record the inputs and answers, to allow subsequent manual verification of the answers in high-stakes situations, and also to audit / debug the rule engine in cases where the advice was subsequently disputed. In this situation, the user is less concerned about getting in trouble, and more concerned that they are getting the correct answers.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5560d61" class="outline-3">
+<h3 id="org5560d61"><span class="section-number-3">5.3</span> Transparency: Show Upcoming Questions</h3>
+<div class="outline-text-3" id="text-5-3">
+<p>
+The UI should, if possible, show all the relevant questions at once; if showing all the relevant questions would make the UI massively unwieldy, show at least the next 5 or 10, so the user knows what's coming.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2b81c72" class="outline-3">
+<h3 id="org2b81c72"><span class="section-number-3">5.4</span> Transparency: Show Tentative Answer + Explanation</h3>
+<div class="outline-text-3" id="text-5-4">
+<p>
+Based on information received so far, show what the answer, together with an explanation.
+</p>
+
+<p>
+The level of detail of the explanation should be user-toggle-able.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc4bc6cb" class="outline-3">
+<h3 id="orgc4bc6cb"><span class="section-number-3">5.5</span> Comprehensibility: Visualize the Decision Tree</h3>
+<div class="outline-text-3" id="text-5-5">
+<p>
+As much as possible, show how the inputs given so far cause the decision tree to
+</p>
+<ul class="org-ul">
+<li>prune or rearrange itself (due to defeasibility)</li>
+<li>compute a particular answer (after defeasibiilty has been fixed)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orga53abd8" class="outline-3">
+<h3 id="orga53abd8"><span class="section-number-3">5.6</span> Answer Status: yes / no / unknown</h3>
+<div class="outline-text-3" id="text-5-6">
+<p>
+In the above wireframe we mock-up using checkboxes but actually we should probably have a ternary widget to show [ YES | UNKNOWN | NO ]. By default we start out with UNKNOWN selected and then the user has to affirmatively select YES or NO.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org57a741d" class="outline-2">
+<h2 id="org57a741d"><span class="section-number-2">6</span> API Loop</h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-org00e98dd" class="outline-3">
+<h3 id="org00e98dd"><span class="section-number-3">6.1</span> UI to Rule Engine</h3>
+<div class="outline-text-3" id="text-6-1">
+<ul class="org-ul">
+<li>This is the context</li>
+<li>Here are the inputs I have gathered (or assumed) so far
+<ul class="org-ul">
+<li>One of those inputs might be: Here is the goal that the user is driving at</li>
+</ul></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org276a24a" class="outline-3">
+<h3 id="org276a24a"><span class="section-number-3">6.2</span> Rule Engine to UI</h3>
+<div class="outline-text-3" id="text-6-2">
+<ul class="org-ul">
+<li>Based on the inputs given,
+<ul class="org-ul">
+<li>which rules apply?</li>
+<li>what answer is computed?</li>
+<li>what is the human-readable explanation?</li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Wong Meng Weng</p>
+<p class="date">Created: 2021-07-27 Tue 10:50</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

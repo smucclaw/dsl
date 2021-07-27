@@ -1,2 +1,6 @@
 rando.hs
 Fibs100.hs
+*~
+*.o
+*.hi
+

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-07-27 Tue 10:50 -->
+<!-- 2021-07-27 Tue 10:58 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>about the expert-system web UI</title>
@@ -36,9 +36,9 @@
 <div id="content">
 <h1 class="title">about the expert-system web UI</h1>
 
-<div id="outline-container-org498a1ec" class="outline-2">
-<h2 id="org498a1ec">Background</h2>
-<div class="outline-text-2" id="text-org498a1ec">
+<div id="outline-container-orge6edd1b" class="outline-2">
+<h2 id="orge6edd1b">Background</h2>
+<div class="outline-text-2" id="text-orge6edd1b">
 <p>
 It feels like DocAssemble is 90% of what we want, but the other 10% gives us pause.
 </p>
@@ -49,16 +49,16 @@ Let's spec our requirements explicitly so we can actually agree on what we want.
 </div>
 </div>
 
-<div id="outline-container-orgf8a6575" class="outline-2">
-<h2 id="orgf8a6575"><span class="section-number-2">1</span> Use Case 1: understanding and interacting with a collection of legal rules</h2>
+<div id="outline-container-orgb09b6af" class="outline-2">
+<h2 id="orgb09b6af"><span class="section-number-2">1</span> Use Case 1: understanding and interacting with a collection of legal rules</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Logic: deduction.
 </p>
 </div>
 
-<div id="outline-container-org920d7ce" class="outline-3">
-<h3 id="org920d7ce"><span class="section-number-3">1.1</span> Use Case 1a: Rule 34 of the LPAPCR</h3>
+<div id="outline-container-org3fd7e61" class="outline-3">
+<h3 id="org3fd7e61"><span class="section-number-3">1.1</span> Use Case 1a: Rule 34 of the LPAPCR</h3>
 <div class="outline-text-3" id="text-1-1">
 <ul class="org-ul">
 <li><i>As a:</i> legal practitioner</li>
@@ -71,18 +71,22 @@ Logic: deduction.
 </div>
 </div>
 
-<div id="outline-container-orgc0ad754" class="outline-3">
-<h3 id="orgc0ad754"><span class="section-number-3">1.2</span> Example Interaction</h3>
+<div id="outline-container-org44b3e2e" class="outline-3">
+<h3 id="org44b3e2e"><span class="section-number-3">1.2</span> Example Interaction</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 Pretend this is a wireframe mock-up, but in mostly plain text.
 </p>
 
+<p>
+Note that the UI doesn't require a "submit" each time the form is modified &#x2013; what's on-screen changes immediately after the widgets are clicked, to improve the sense of interactivity.
+</p>
+
 <hr />
 </div>
 
-<div id="outline-container-orgfc8a1e3" class="outline-4">
-<h4 id="orgfc8a1e3"><span class="section-number-4">1.2.1</span> Screen 1</h4>
+<div id="outline-container-org14f675d" class="outline-4">
+<h4 id="org14f675d"><span class="section-number-4">1.2.1</span> Screen 1</h4>
 <div class="outline-text-4" id="text-1-2-1">
 <p>
 Hi! I'm Jamie v2.0. What about you?
@@ -114,8 +118,8 @@ ANSWER: [You may take the appointment.]
 </div>
 </div>
 
-<div id="outline-container-org9b3f65f" class="outline-4">
-<h4 id="org9b3f65f"><span class="section-number-4">1.2.2</span> Screen 2: after clicking on "more&#x2026;"</h4>
+<div id="outline-container-orgf80b5a6" class="outline-4">
+<h4 id="orgf80b5a6"><span class="section-number-4">1.2.2</span> Screen 2: after clicking on "more&#x2026;"</h4>
 <div class="outline-text-4" id="text-1-2-2">
 <p>
 I want to explore a scenario in which:
@@ -138,8 +142,8 @@ ANSWER: [You may take the appointment.]
 </div>
 </div>
 
-<div id="outline-container-org51f9462" class="outline-4">
-<h4 id="org51f9462"><span class="section-number-4">1.2.3</span> Screen 3: after clicking on "incompatible with"</h4>
+<div id="outline-container-org14f6a69" class="outline-4">
+<h4 id="org14f6a69"><span class="section-number-4">1.2.3</span> Screen 3: after clicking on "incompatible with"</h4>
 <div class="outline-text-4" id="text-1-2-3">
 <p>
 I want to explore a scenario in which:
@@ -168,8 +172,8 @@ EXPLANATION: Rule 34.1.a <b>prohibits</b> if the business detracts from, is inco
 </div>
 
 
-<div id="outline-container-orgd96e103" class="outline-3">
-<h3 id="orgd96e103"><span class="section-number-3">1.3</span> Use Case 1b: PDPA</h3>
+<div id="outline-container-org0322ed2" class="outline-3">
+<h3 id="org0322ed2"><span class="section-number-3">1.3</span> Use Case 1b: PDPA</h3>
 <div class="outline-text-3" id="text-1-3">
 <ul class="org-ul">
 <li><i>As a:</i> manager at a business in Singapore</li>
@@ -183,8 +187,8 @@ EXPLANATION: Rule 34.1.a <b>prohibits</b> if the business detracts from, is inco
 </div>
 </div>
 
-<div id="outline-container-org911a864" class="outline-2">
-<h2 id="org911a864"><span class="section-number-2">2</span> Use Case 2: finding ways to achieve a desired goal, given constraints</h2>
+<div id="outline-container-org4160682" class="outline-2">
+<h2 id="org4160682"><span class="section-number-2">2</span> Use Case 2: finding ways to achieve a desired goal, given constraints</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Logic: abduction.
@@ -192,8 +196,8 @@ Logic: abduction.
 </div>
 </div>
 
-<div id="outline-container-orgf7c9e07" class="outline-2">
-<h2 id="orgf7c9e07"><span class="section-number-2">3</span> Use Case 3: generating a signable instance of an legal contract based on parameters</h2>
+<div id="outline-container-org63acbaf" class="outline-2">
+<h2 id="org63acbaf"><span class="section-number-2">3</span> Use Case 3: generating a signable instance of an legal contract based on parameters</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Logic: lambda calculus.
@@ -201,8 +205,8 @@ Logic: lambda calculus.
 </div>
 </div>
 
-<div id="outline-container-orgea80e9d" class="outline-2">
-<h2 id="orgea80e9d"><span class="section-number-2">4</span> Use Case 4: varying a template of a legal contract to represent tweaks to the "business logic"</h2>
+<div id="outline-container-org14893db" class="outline-2">
+<h2 id="org14893db"><span class="section-number-2">4</span> Use Case 4: varying a template of a legal contract to represent tweaks to the "business logic"</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 This becomes a problem in PLT.
@@ -210,12 +214,12 @@ This becomes a problem in PLT.
 </div>
 </div>
 
-<div id="outline-container-org8803fcd" class="outline-2">
-<h2 id="org8803fcd"><span class="section-number-2">5</span> Components</h2>
+<div id="outline-container-orgff2719c" class="outline-2">
+<h2 id="orgff2719c"><span class="section-number-2">5</span> Components</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-org338335a" class="outline-3">
-<h3 id="org338335a"><span class="section-number-3">5.1</span> Default Assumptions</h3>
+<div id="outline-container-org0d6342f" class="outline-3">
+<h3 id="org0d6342f"><span class="section-number-3">5.1</span> Default Assumptions</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 A collection of key/value config settings which represent a reasonable set of assumptions &#x2013; if we don't know anything about the user, we can begin the interview with these assumptions in place.
@@ -227,12 +231,12 @@ We should ask the user to begin by reviewing those assumptions and editing which
 </div>
 </div>
 
-<div id="outline-container-org880ffca" class="outline-3">
-<h3 id="org880ffca"><span class="section-number-3">5.2</span> Rule Engine</h3>
+<div id="outline-container-orgd562d14" class="outline-3">
+<h3 id="orgd562d14"><span class="section-number-3">5.2</span> Rule Engine</h3>
 <div class="outline-text-3" id="text-5-2">
 </div>
-<div id="outline-container-org075a5a2" class="outline-4">
-<h4 id="org075a5a2"><span class="section-number-4">5.2.1</span> Support for Client-only ("offline") &amp; Server-enabled ("online") operation modes</h4>
+<div id="outline-container-orge4638dd" class="outline-4">
+<h4 id="orge4638dd"><span class="section-number-4">5.2.1</span> Support for Client-only ("offline") &amp; Server-enabled ("online") operation modes</h4>
 <div class="outline-text-4" id="text-5-2-1">
 <p>
 The rule engine should be available both client-side and server-side. Some use case applications may require one or the other.
@@ -249,8 +253,8 @@ Why server-side? Because, by policy, a business hosting the service may want to 
 </div>
 </div>
 
-<div id="outline-container-org5560d61" class="outline-3">
-<h3 id="org5560d61"><span class="section-number-3">5.3</span> Transparency: Show Upcoming Questions</h3>
+<div id="outline-container-org4c3539e" class="outline-3">
+<h3 id="org4c3539e"><span class="section-number-3">5.3</span> Transparency: Show Upcoming Questions</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 The UI should, if possible, show all the relevant questions at once; if showing all the relevant questions would make the UI massively unwieldy, show at least the next 5 or 10, so the user knows what's coming.
@@ -258,8 +262,8 @@ The UI should, if possible, show all the relevant questions at once; if showing 
 </div>
 </div>
 
-<div id="outline-container-org2b81c72" class="outline-3">
-<h3 id="org2b81c72"><span class="section-number-3">5.4</span> Transparency: Show Tentative Answer + Explanation</h3>
+<div id="outline-container-org7600cec" class="outline-3">
+<h3 id="org7600cec"><span class="section-number-3">5.4</span> Transparency: Show Tentative Answer + Explanation</h3>
 <div class="outline-text-3" id="text-5-4">
 <p>
 Based on information received so far, show what the answer, together with an explanation.
@@ -271,8 +275,8 @@ The level of detail of the explanation should be user-toggle-able.
 </div>
 </div>
 
-<div id="outline-container-orgc4bc6cb" class="outline-3">
-<h3 id="orgc4bc6cb"><span class="section-number-3">5.5</span> Comprehensibility: Visualize the Decision Tree</h3>
+<div id="outline-container-org9811093" class="outline-3">
+<h3 id="org9811093"><span class="section-number-3">5.5</span> Comprehensibility: Visualize the Decision Tree</h3>
 <div class="outline-text-3" id="text-5-5">
 <p>
 As much as possible, show how the inputs given so far cause the decision tree to
@@ -284,8 +288,8 @@ As much as possible, show how the inputs given so far cause the decision tree to
 </div>
 </div>
 
-<div id="outline-container-orga53abd8" class="outline-3">
-<h3 id="orga53abd8"><span class="section-number-3">5.6</span> Answer Status: yes / no / unknown</h3>
+<div id="outline-container-orga97c760" class="outline-3">
+<h3 id="orga97c760"><span class="section-number-3">5.6</span> Answer Status: yes / no / unknown</h3>
 <div class="outline-text-3" id="text-5-6">
 <p>
 In the above wireframe we mock-up using checkboxes but actually we should probably have a ternary widget to show [ YES | UNKNOWN | NO ]. By default we start out with UNKNOWN selected and then the user has to affirmatively select YES or NO.
@@ -294,12 +298,12 @@ In the above wireframe we mock-up using checkboxes but actually we should probab
 </div>
 </div>
 
-<div id="outline-container-org57a741d" class="outline-2">
-<h2 id="org57a741d"><span class="section-number-2">6</span> API Loop</h2>
+<div id="outline-container-org81ca3d9" class="outline-2">
+<h2 id="org81ca3d9"><span class="section-number-2">6</span> API Loop</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org00e98dd" class="outline-3">
-<h3 id="org00e98dd"><span class="section-number-3">6.1</span> UI to Rule Engine</h3>
+<div id="outline-container-orgc8a44b6" class="outline-3">
+<h3 id="orgc8a44b6"><span class="section-number-3">6.1</span> UI to Rule Engine</h3>
 <div class="outline-text-3" id="text-6-1">
 <ul class="org-ul">
 <li>This is the context</li>
@@ -311,8 +315,8 @@ In the above wireframe we mock-up using checkboxes but actually we should probab
 </div>
 </div>
 
-<div id="outline-container-org276a24a" class="outline-3">
-<h3 id="org276a24a"><span class="section-number-3">6.2</span> Rule Engine to UI</h3>
+<div id="outline-container-org6d68d87" class="outline-3">
+<h3 id="org6d68d87"><span class="section-number-3">6.2</span> Rule Engine to UI</h3>
 <div class="outline-text-3" id="text-6-2">
 <ul class="org-ul">
 <li>Based on the inputs given,
@@ -328,7 +332,7 @@ In the above wireframe we mock-up using checkboxes but actually we should probab
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Wong Meng Weng</p>
-<p class="date">Created: 2021-07-27 Tue 10:50</p>
+<p class="date">Created: 2021-07-27 Tue 10:58</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

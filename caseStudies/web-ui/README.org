@@ -27,6 +27,8 @@ Logic: deduction.
 
 Pretend this is a wireframe mock-up, but in mostly plain text.
 
+Note that the UI doesn't require a "submit" each time the form is modified -- what's on-screen changes immediately after the widgets are clicked, to improve the sense of interactivity.
+
 -----
 
 *** Screen 1

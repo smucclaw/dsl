@@ -1,13 +1,13 @@
 module AnyAll.Types where
 
-data Label =
-    Pre String
-  | PrePost String String
+data Label a =
+    Pre a
+  | PrePost a a
   deriving Show
 
-data Item =
-    Leaf String
-  | All Label [Item]
-  | Any Label [Item]
+data Item a =
+    Leaf a
+  | All (Label a) [Item a]
+  | Any (Label a) [Item a]
   deriving Show
 

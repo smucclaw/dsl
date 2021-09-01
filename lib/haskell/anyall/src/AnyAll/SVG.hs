@@ -28,7 +28,7 @@ line (x1, y1) (x2, y2) =
   line_ [ X1_ <<-* x1, X2_ <<-* x2, Y1_ <<-* y1, Y2_ <<-* y2
         , Stroke_ <<- "grey" ]
 
-item :: Double -> Double -> String -> Element
+item :: ToElement a => Double -> Double -> a -> Element
 item x y desc =
   let w = 20
   in
@@ -47,20 +47,20 @@ renderChain ((h,g):hgs) =
         <> line (10, 20) (10, h)
         <> move (0, h) (renderChain hgs)  )
 
-renderLeaf :: String -> (Height, Element)
+renderLeaf :: ToElement a => a -> (Height, Element)
 renderLeaf desc =
   let height = 25
       geom = item 0 0 desc
   in (height, geom)
 
-renderSuffix :: Double -> Double -> String -> (Height, Element)
+renderSuffix :: ToElement a => Double -> Double -> a -> (Height, Element)
 renderSuffix x y desc =
   let h = 20 -- h/w of imaginary box
       geom :: Element
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in (h, geom)
 
-renderAll :: Label -> [Item] -> (Height, Element)
+renderAll :: ToElement a => Label a -> [Item a] -> (Height, Element)
 renderAll (Pre prefix) childnodes =
   let
       hg = map renderItem childnodes
@@ -94,7 +94,7 @@ renderAll (PrePost prefix suffix) childnodes =
                    <> move (40, 30 + sum hs) fg  )
   in (height, geom)
 
-renderAny :: Label -> [Item] -> (Height, Element)
+renderAny :: ToElement a => Label a -> [Item a] -> (Height, Element)
 renderAny (Pre prefix) childnodes =
   let hg = map renderItem childnodes
       (hs, gs) = unzip hg
@@ -132,14 +132,14 @@ renderAny (PrePost prefix suffix) childnodes =
   in (height, geom)
 
 
-renderItem :: Item -> (Height, Element)
+renderItem :: ToElement a => Item a -> (Height, Element)
 renderItem (Leaf label) = renderLeaf label
 renderItem (All label args) = renderAll label args
 renderItem (Any label args) = renderAny label args
 
 toy :: (Height, Element)
 toy = renderItem $
-  All ( PrePost "You need all of" "to survive." )
+  All ( PrePost "You need all of" ("to survive." :: String) )
       [ Leaf "Item 1;"
       , Leaf "Item 2;"
       , Any ( Pre "Item 3 which may be satisfied by any of:" )

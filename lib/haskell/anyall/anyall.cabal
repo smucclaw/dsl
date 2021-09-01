@@ -16,7 +16,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
+    README.org
     ChangeLog.md
 
 source-repository head
@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       AnyAll
+      AnyAll.Relevance
       AnyAll.SVG
       AnyAll.Types
   other-modules:

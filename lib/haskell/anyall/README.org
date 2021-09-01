@@ -1,0 +1,29 @@
+#+TITLE: Yet Another AnyAll Library
+
+The And/Or Tree is a classic data structure in CS.
+
+Our implementation equips it with
+- a visualization engine (SVG)
+- a natural language target producing traditional conjunctive and disjunctive lists
+- a reduction calculus that paints elements of the tree
+
+* Reduction Calculus
+
+
+
+* Consumers of this library
+
+See:
+- https://github.com/smucclaw/sandbox/blob/default/jacobtan/Rule34-logic-gates/rule34-haskell/src/SandboxBuilder.hs#L8
+
+* Things we were not smart enough to do
+
+** use actual Data.Tree
+
+** use Trees That Grow
+
+https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pdf
+
+
+
+

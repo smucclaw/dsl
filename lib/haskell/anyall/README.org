@@ -9,7 +9,17 @@ Our implementation equips it with
 
 * Reduction Calculus
 
+"confirmed" means "Right" -- the user has provided some input, whether true, false, or unknown.
 
+** In a tree,
+*** if any element is dispositive
+**** View that element
+**** Hide all other elements
+*** else
+**** an element which is confirmed -> View
+**** an element which is not confirmed -> Ask
+** In an ALL tree, confirmed false (~Right (Just False)~) is dispositive
+** In an ANY tree, confirmed true (~Right (Just True)~) is dispositive
 
 * Consumers of this library
 

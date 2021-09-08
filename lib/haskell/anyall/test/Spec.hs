@@ -78,6 +78,12 @@ main = hspec $ do
                                       ,("drink", Right $ Just True)])
         `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",Ask),("run",View)]
 
+  describe "native2tree / tree2native" $ do
+    it "should round-trip mustSing" $ do
+      tree2native (native2tree mustSing) `shouldBe` mustSing
+    it "should round-trip mustDance" $ do
+      tree2native (native2tree mustDance) `shouldBe` mustDance
+
 
 mustSing :: Item SingLabel
 mustSing =
@@ -89,7 +95,7 @@ mustSing =
 
 mustDance :: Item SingLabel
 mustDance =
-  All (Pre "all three")
+  All (Pre "three of:")
   [ All (Pre "both")
     [ Leaf "walk"
     , Leaf "run" ]

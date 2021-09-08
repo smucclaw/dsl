@@ -6,6 +6,7 @@ import Data.Map.Strict ((!))
 import Data.List (any, all)
 import Debug.Trace
 import Control.Monad (when, guard)
+import Data.Maybe (isJust)
 
 -- given
 -- - a marking indicating which values are known;
@@ -26,9 +27,7 @@ relevant marking optimism (Any label items) = if dispositive marking (Any label 
 
 -- basically logical shortcut: given a marking, is this item dispositive?
 dispositive :: (Ord a, Show a) => Marking a -> Item a -> Bool
-dispositive marking x = case childrenValue marking x of
-                                 Just _    -> True
-                                 _         -> False
+dispositive marking x = isJust $ childrenValue marking x
 
 -- well, it depends on what values the children have.
 childrenValue :: (Ord a, Show a) => Marking a -> Item a -> Maybe Bool

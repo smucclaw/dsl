@@ -11,15 +11,35 @@ Our implementation equips it with
 
 "confirmed" means "Right" -- the user has provided some input, whether true, false, or unknown.
 
-** In a tree,
-*** if any element is dispositive
+Given any item, we can ask two questions:
+- is it dispositive?
+- what is its value: true, false, or neither?
+
+| node type | content value test | dispositive? | value?      |
+|-----------+--------------------+--------------+-------------|
+| Leaf x    | == Right Just y    | True         | Just y      |
+| Leaf x    | -                  | False        | either id x |
+| Any xs    | any (Just True)    | True         | Just True   |
+| Any xs    | all (Just False)   | True         | Just False  |
+| All xs    | all (Just True)    | True         | Just True   |
+| All xs    | any (Just False    | True         | Just False  |
+
+** given a Leaf node,
+*** it is dispositive if its value is a Right Just anything
+*** its value is its Maybe Bool
+** given an ALL tree
+
+
+, confirmed false (~Right (Just False)~) is dispositive
+** In an ANY tree, confirmed true (~Right (Just True)~) is dispositive
+
+** if any element is dispositive
 **** View that element
 **** Hide all other elements
 *** else
 **** an element which is confirmed -> View
 **** an element which is not confirmed -> Ask
-** In an ALL tree, confirmed false (~Right (Just False)~) is dispositive
-** In an ANY tree, confirmed true (~Right (Just True)~) is dispositive
+
 
 * Consumers of this library
 

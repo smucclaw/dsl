@@ -71,12 +71,65 @@ main = hspec $ do
         `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",Ask)]
 
   describe "with mustDance," $ do
+    it "should ask for everything when nothing is known" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Left Nothing)
+                                      ,("run",   Left Nothing)
+                                      ,("eat",   Left Nothing)
+                                      ,("drink", Left Nothing)])
+        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+
+    it "should ask for everything when everything is assumed true" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Left (Just True))
+                                      ,("run",   Left (Just True))
+                                      ,("eat",   Left (Just True))
+                                      ,("drink", Left (Just True))])
+        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+
+    it "should ask for everything when everything is assumed false" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Left (Just False))
+                                      ,("run",   Left (Just False))
+                                      ,("eat",   Left (Just False))
+                                      ,("drink", Left (Just False))])
+        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+
+    it "should handle a Walk=False by stopping" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Right (Just False))
+                                      ,("run",   Left (Just False))
+                                      ,("eat",   Left (Just False))
+                                      ,("drink", Left (Just False))])
+        `shouldBe` Map.fromList [("drink",Hide),("eat",Hide),("walk",View),("run",Hide)]
+
+    it "should handle a Run=False by stopping" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Left (Just False))
+                                      ,("run",   Right (Just False))
+                                      ,("eat",   Left (Just False))
+                                      ,("drink", Left (Just False))])
+        `shouldBe` Map.fromList [("drink",Hide),("eat",Hide),("walk",Hide),("run",View)]
+
+    it "should handle a Walk=True by remaining curious" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Right (Just True))
+                                      ,("run",   Left (Just False))
+                                      ,("eat",   Left (Just False))
+                                      ,("drink", Left (Just False))])
+        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",View),("run",Ask)]
+
+    it "should handle a Walk=True,Eat=False by remaining curious" $ do
+      rlv mustDance Ask (Map.fromList [("walk",  Right (Just True))
+                                      ,("run",   Left (Just False))
+                                      ,("eat",   Right (Just False))
+                                      ,("drink", Left (Just False))])
+        `shouldBe` Map.fromList [("drink",Ask),("eat",View),("walk",View),("run",Ask)]
+
+
+
     it "should demand walk even when Run=True, Drink=True" $ do
       rlv mustDance Ask (Map.fromList [("walk",  Left  $ Just True)
                                       ,("run",   Right $ Just True)
                                       ,("eat",   Left  $ Just True)
                                       ,("drink", Right $ Just True)])
         `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",Ask),("run",View)]
+
+
 
   describe "native2tree / tree2native" $ do
     it "should round-trip mustSing" $ do

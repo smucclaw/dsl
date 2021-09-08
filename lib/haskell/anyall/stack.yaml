@@ -42,6 +42,7 @@ packages:
 #
 extra-deps:
 - svg-builder-0.1.1
+
 # - github: gibiansky/IHaskell
 #   commit: refs/tags/GHC7
 

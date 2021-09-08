@@ -24,5 +24,7 @@ type Default a = Either (Maybe a) (Maybe a)
 
 type Marking a = Map.Map a (Default Bool)
 data ShouldView = View | Hide | Ask deriving (Eq, Show)
+
 type ShouldAsk a = Map.Map a ShouldView
+-- or should this be Item ShouldView, lol
 

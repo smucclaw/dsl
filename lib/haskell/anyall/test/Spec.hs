@@ -52,13 +52,13 @@ main = hspec $ do
                                      ,("drink", Left $ Just True)])
         `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",View)]
 
-    it "should stop given a confirmed Eat  =True in an And list" $ do
+    it "should stop given a confirmed Eat  =True in an Or list" $ do
       rlv mustSing Ask (Map.fromList [("walk",  Right $ Just True)
                                      ,("eat",   Right $ Just True)
                                      ,("drink", Left $ Just True)])
         `shouldBe` Map.fromList [("drink",Hide),("eat",View),("walk",View)]
 
-    it "should stop given a confirmed Drink=True in an And list" $ do
+    it "should stop given a confirmed Drink=True in an Or list" $ do
       rlv mustSing Ask (Map.fromList [("walk",  Right $ Just True)
                                      ,("eat",   Left  $ Just True)
                                      ,("drink", Right $ Just True)])

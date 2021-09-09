@@ -5,41 +5,70 @@ The And/Or Tree is a classic data structure in CS.
 Our implementation equips it with
 - a visualization engine (SVG)
 - a natural language target producing traditional conjunctive and disjunctive lists
-- a reduction calculus that paints elements of the tree
+- a relevance calculus that paints elements of the tree
 
-* Reduction Calculus
+* Relevance Calculus
 
-"confirmed" means "Right" -- the user has provided some input, whether true, false, or unknown.
+Given a tree, we ~evaluate~ its tentative value.
 
-Given any item, we can ask two questions:
-- is it dispositive?
-- what is its value: true, false, or neither?
+This happens under some evaluation strategy, either Hard (relying on human input only) or Soft (using defaults as well).
 
-| node type | content value test | dispositive? | value?      |
-|-----------+--------------------+--------------+-------------|
-| Leaf x    | == Right Just y    | True         | Just y      |
-| Leaf x    | -                  | False        | either id x |
-| Any xs    | any (Just True)    | True         | Just True   |
-| Any xs    | all (Just False)   | True         | Just False  |
-| All xs    | all (Just True)    | True         | Just True   |
-| All xs    | any (Just False    | True         | Just False  |
+Certain children are dispositive if they determine the value of the parent. In other words, if we short-circuit evaluation, /why/ did we short-circuit it? We can label each child as dispositive or not.
 
-** given a Leaf node,
-*** it is dispositive if its value is a Right Just anything
-*** its value is its Maybe Bool
-** given an ALL tree
+| evaluation strategy | Item | Item Predicate   | E B | B | value      | dispositive children   |
+|---------------------+------+------------------+-----+---+------------+------------------------|
+| Soft                | Leaf | Left Just True   | T . | T | Just True  | -                      |
+| Soft                | Leaf | Left Just False  | F . | F | Just False | -                      |
+| Soft                | Leaf | Left Nothing     | 0 . | 0 | Nothing    | -                      |
+| Soft                | Leaf | Right Just True  | . T | T | Just True  | -                      |
+| Soft                | Leaf | Right Just False | . F | F | Just False | -                      |
+| Soft                | Leaf | Right Nothing    | . 0 | 0 | Nothing    | -                      |
+| Hard                | Leaf | Left Just True   | T . | 0 | Nothing    | -                      |
+| Hard                | Leaf | Left Just False  | F . | 0 | Nothing    | -                      |
+| Hard                | Leaf | Left Nothing     | 0 . | 0 | Nothing    | -                      |
+| Hard                | Leaf | Right Just True  | . T | T | Just True  | -                      |
+| Hard                | Leaf | Right Just False | . F | F | Just False | -                      |
+| Hard                | Leaf | Right Nothing    | . 0 | 0 | Nothing    | -                      |
+| -                   | Any  | any Just True    | .T. | T | Just True  | filter =True children  |
+| -                   | Any  | all Just False   | FFF | F | Just False | filter =False children |
+| -                   | Any  | -                | FT. | 0 | Nothing    | -                      |
+| -                   | All  | any Just False   | .F. | F | Just False | filter =False children |
+| -                   | All  | all Just True    | TTT | T | Just True  | filter =True children  |
+| -                   | All  | -                | FT. | 0 | Nothing    | -                      |
 
+So, how does this affect what we display?
 
-, confirmed false (~Right (Just False)~) is dispositive
-** In an ANY tree, confirmed true (~Right (Just True)~) is dispositive
+Each Leaf item has a "first approximation" preference for ~ShouldView~ (~View|Hide|Ask~).
 
-** if any element is dispositive
-**** View that element
-**** Hide all other elements
-*** else
-**** an element which is confirmed -> View
-**** an element which is not confirmed -> Ask
+That preference gets overridden by the parent because the parent knows more about the context. For example, if a parent node is hidden, then every subtree could be hidden too.
 
+Each child may be a Leaf or itself a subtree of Any/All. We evaluate the child value and mark its 'a' with the appropriate ShouldView.
+
+Along the way we convert it from our native notation ~Item a~ to a more conventional ~Data.Tree~ format.
+
+The display style may be one of the following:
+- terse :: we hide as much as we can. This minimizes cognitive complexity.
+- normal :: we always show every piece of explicit user input, even if it was obsoleted by some other input. This means we may need to show parts of the trees along the way as needed to show those elements.
+- verbose :: we always show everything.
+
+| Item | Hard Value | ChildValue | set ShouldView to | Comment                                                        | Comment 2                  |
+|------+------------+------------+-------------------+----------------------------------------------------------------+----------------------------|
+| Leaf | Left       | -          | Ask               | first approximation: if I'm still a Left default, why not ask? |                            |
+| Leaf | Right      | -          | View              | if I've been configured by a human, show what they set.        |                            |
+| Any  | T          | T          | View              | dispositive, so show                                           |                            |
+| Any  | T          | -          | Hide              | no longer relevant                                             |                            |
+| Any  | F          | F          | View              | user input, so show                                            |                            |
+| Any  | F          | -          | Hide              |                                                                | this case should not occur |
+| Any  | 0          | . _        | View              | they selected something, so show it                            |                            |
+| Any  | 0          | -          | Ask               | not yet decided, so let them choose                            |                            |
+| All  | T          | T          | View              | dispositive, so show                                           |                            |
+| All  | T          | F          | View              |                                                                | this case should not occur |
+| All  | F          | F          | View              | dispositive, so show                                           |                            |
+| All  | F          | -          | Hide              |                                                                | this case should not occur |
+| All  | 0          | . _        | View              | they selected something, so show it                            |                            |
+| All  | 0          | -          | Ask               | not yet decided, so let them choose                            |                            |
+
+in terms of display UI, View and Ask are both shown, and are editable, but "ask" keeps it in the active area, while "view" scrolls it off the top of the screen.
 
 * Consumers of this library
 
@@ -48,12 +77,13 @@ See:
 
 * Things we were not smart enough to do
 
-** use actual Data.Tree
-
 ** use Trees That Grow
 
 https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pdf
 
 
+** switch to a DAG syntax
+
+a given node may supply more than one decision, so after the upgrade to Data.Tree we should probably continue to upgrade toward ~fgl~.
 
 

@@ -3,131 +3,281 @@ import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
 import qualified Data.Map.Strict as Map
-
-type SingLabel = String
+import Data.Tree
 
 main :: IO ()
 main = hspec $ do
-  let rlv item optimism marking = relevant marking optimism item
+  let rlv item marking = relevant Hard DPNormal marking Nothing item
   describe "with mustSing," $ do
     it "should ask for confirmation of assumptions, even if true" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Left $ Just True)
-                                     ,("eat",   Left $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask)]
+      rlv mustSing (Map.fromList [("walk",  Left $ Just True)
+                                 ,("eat",   Left $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "both"))
+        [ Node (Q Ask (Simply "walk") Nothing) []
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) []
+          ]
+        ]
 
     it "should ask for confirmation of assumptions, even if false" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Left $ Just False)
-                                     ,("eat",   Left $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask)]
+      rlv mustSing (Map.fromList [("walk",  Left $ Just False)
+                                 ,("eat",   Left $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "both"))
+        [ Node (Q Ask (Simply "walk") Nothing) []
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) []
+          ]
+        ]
 
     it "should ask for confirmation of assumptions, when Nothing" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Left   Nothing)
-                                     ,("eat",   Left $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask)]
+      rlv mustSing (Map.fromList [("walk",  Left   Nothing)
+                                 ,("eat",   Left $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "both"))
+        [ Node (Q Ask (Simply "walk") Nothing) []
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should consider a Walk=R False to be dispositive" $ do
-      flip dispositive mustSing (Map.fromList [("walk",  Right $ Just False)
-                                              ,("eat",   Left $ Just True)
-                                              ,("drink", Left $ Just True)])
-        `shouldBe` True
+      flip (dispositive Hard) mustSing (Map.fromList [("walk",  Right $ Just False)
+                                                     ,("eat",   Left $ Just True)
+                                                     ,("drink", Left $ Just True)])
+        `shouldBe` [Leaf "walk"]
 
     it "should consider a Walk=R True, Eat=R True to be dispositive" $ do
-      flip dispositive mustSing (Map.fromList [("walk",  Right $ Just True)
+      flip (dispositive Hard) mustSing (Map.fromList [("walk",  Right $ Just True)
                                               ,("eat",   Right $ Just True)
                                               ,("drink", Left $ Just True)])
-        `shouldBe` True
+        `shouldBe` [Leaf "walk", Leaf "eat"]
 
     it "should short-circuit a confirmed False in an And list" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Right $ Just False)
-                                     ,("eat",   Left $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Hide),("eat",Hide),("walk",View)]
+      rlv mustSing (Map.fromList [("walk",  Right $ Just False)
+                                 ,("eat",   Left $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "both"))
+        [ Node (Q View (Simply "walk") Nothing) []
+        , Node (Q Hide Or (Just $ Pre "either"))
+          [ Node (Q Hide (Simply "eat") Nothing) []
+          , Node (Q Hide (Simply "drink") Nothing) [] ] ]
 
-    it "should nest given a confirmed True in an And list" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Right $ Just True)
-                                     ,("eat",   Left $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",View)]
+    it "given a confirmed True in an And list, should recurse into the eat/drink limb" $ do
+      rlv mustSing (Map.fromList [("walk",  Right $ Just True)
+                                 ,("eat",   Left $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "both"))
+        [ Node (Q View (Simply "walk") Nothing) []
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should stop given a confirmed Eat  =True in an Or list" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Right $ Just True)
-                                     ,("eat",   Right $ Just True)
-                                     ,("drink", Left $ Just True)])
-        `shouldBe` Map.fromList [("drink",Hide),("eat",View),("walk",View)]
+      rlv mustSing (Map.fromList [("walk",  Right $ Just True)
+                                 ,("eat",   Right $ Just True)
+                                 ,("drink", Left $ Just True)])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "both"))
+        [ Node (Q View (Simply "walk") Nothing) []
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q Hide (Simply "drink") Nothing) [] ] ]
 
     it "should stop given a confirmed Drink=True in an Or list" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Right $ Just True)
-                                     ,("eat",   Left  $ Just True)
-                                     ,("drink", Right $ Just True)])
-        `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",View)]
+      rlv mustSing (Map.fromList [("walk",  Right $ Just True)
+                                 ,("eat",   Left  $ Just True)
+                                 ,("drink", Right $ Just True)])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "both"))
+        [ Node (Q View (Simply "walk") Nothing) []
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q Hide (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
 
     it "should demand walk even when Drink=True" $ do
-      rlv mustSing Ask (Map.fromList [("walk",  Left  $ Just True)
-                                     ,("eat",   Left  $ Just True)
-                                     ,("drink", Right $ Just True)])
-        `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",Ask)]
+      rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
+                                 ,("eat",   Left  $ Just True)
+                                 ,("drink", Right $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "both"))
+        [ Node (Q Ask (Simply "walk") Nothing) []
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q Hide (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
 
   describe "with mustDance," $ do
     it "should ask for everything when nothing is known" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Left Nothing)
-                                      ,("run",   Left Nothing)
-                                      ,("eat",   Left Nothing)
-                                      ,("drink", Left Nothing)])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+      rlv mustDance (Map.fromList [("walk",  Left Nothing)
+                                  ,("run",   Left Nothing)
+                                  ,("eat",   Left Nothing)
+                                  ,("drink", Left Nothing)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q Ask (Simply "run")  Nothing) []
+          ]
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should ask for everything when everything is assumed true" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Left (Just True))
-                                      ,("run",   Left (Just True))
-                                      ,("eat",   Left (Just True))
-                                      ,("drink", Left (Just True))])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+      rlv mustDance (Map.fromList [("walk",  Left (Just True))
+                                  ,("run",   Left (Just True))
+                                  ,("eat",   Left (Just True))
+                                  ,("drink", Left (Just True))])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q Ask (Simply "run")  Nothing) []
+          ]
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should ask for everything when everything is assumed false" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Left (Just False))
-                                      ,("run",   Left (Just False))
-                                      ,("eat",   Left (Just False))
-                                      ,("drink", Left (Just False))])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",Ask),("run",Ask)]
+      rlv mustDance (Map.fromList [("walk",  Left (Just False))
+                                  ,("run",   Left (Just False))
+                                  ,("eat",   Left (Just False))
+                                  ,("drink", Left (Just False))])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q Ask (Simply "run")  Nothing) []
+          ]
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should handle a Walk=False by stopping" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Right (Just False))
-                                      ,("run",   Left (Just False))
-                                      ,("eat",   Left (Just False))
-                                      ,("drink", Left (Just False))])
-        `shouldBe` Map.fromList [("drink",Hide),("eat",Hide),("walk",View),("run",Hide)]
+      rlv mustDance (Map.fromList [("walk",  Right (Just False))
+                                  ,("run",   Left (Just False))
+                                  ,("eat",   Left (Just False))
+                                  ,("drink", Left (Just False))])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "three of:"))
+        [ Node (Q View And (Just $ Pre "both"))
+          [ Node (Q View (Simply "walk") Nothing) []
+          , Node (Q Hide (Simply "run")  Nothing) []
+          ]
+        , Node (Q Hide Or (Just $ Pre "either"))
+          [ Node (Q Hide (Simply "eat") Nothing) []
+          , Node (Q Hide (Simply "drink") Nothing) [] ] ]
 
-    it "should handle a Run=False by stopping" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Left (Just False))
-                                      ,("run",   Right (Just False))
-                                      ,("eat",   Left (Just False))
-                                      ,("drink", Left (Just False))])
-        `shouldBe` Map.fromList [("drink",Hide),("eat",Hide),("walk",Hide),("run",View)]
+    it "should handle a Run=False by stopping (in future this will depend on displaypref" $ do
+      rlv mustDance (Map.fromList [("walk",  Left (Just False))
+                                  ,("run",   Right (Just False))
+                                  ,("eat",   Right (Just True))
+                                  ,("drink", Right (Just True))])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "three of:"))
+        [ Node (Q View And (Just $ Pre "both"))
+          [ Node (Q Hide (Simply "walk") Nothing) []
+          , Node (Q View (Simply "run")  Nothing) []
+          ]
+        , Node (Q Hide Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
 
-    it "should handle a Walk=True by remaining curious" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Right (Just True))
-                                      ,("run",   Left (Just False))
-                                      ,("eat",   Left (Just False))
-                                      ,("drink", Left (Just False))])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",Ask),("walk",View),("run",Ask)]
+    it "should handle a Walk=True by remaining curious about the run and the food" $ do
+      rlv mustDance (Map.fromList [("walk",  Right (Just True))
+                                  ,("run",   Left (Just False))
+                                  ,("eat",   Left (Just False))
+                                  ,("drink", Left (Just False))])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q View (Simply "walk") Nothing) []
+          , Node (Q Ask (Simply "run")  Nothing) []
+          ]
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q Ask (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
-    it "should handle a Walk=True,Eat=False by remaining curious" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Right (Just True))
-                                      ,("run",   Left (Just False))
-                                      ,("eat",   Right (Just False))
-                                      ,("drink", Left (Just False))])
-        `shouldBe` Map.fromList [("drink",Ask),("eat",View),("walk",View),("run",Ask)]
-
-
+    it "should handle a Walk=True,Eat=False by remaining curious about the run and the drink" $ do
+      rlv mustDance (Map.fromList [("walk",  Right (Just True))
+                                  ,("run",   Left (Just False))
+                                  ,("eat",   Right (Just False))
+                                  ,("drink", Left (Just False))])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q View (Simply "walk") Nothing) []
+          , Node (Q Ask (Simply "run")  Nothing) []
+          ]
+        , Node (Q Ask Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q Ask (Simply "drink") Nothing) [] ] ]
 
     it "should demand walk even when Run=True, Drink=True" $ do
-      rlv mustDance Ask (Map.fromList [("walk",  Left  $ Just True)
-                                      ,("run",   Right $ Just True)
-                                      ,("eat",   Left  $ Just True)
-                                      ,("drink", Right $ Just True)])
-        `shouldBe` Map.fromList [("drink",View),("eat",Hide),("walk",Ask),("run",View)]
+      rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
+                                  ,("run",   Right $ Just True)
+                                  ,("eat",   Left  $ Just True)
+                                  ,("drink", Right $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q View (Simply "run")  Nothing) []
+          ]
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q Hide (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
+
+    it "should demand walk even when Run=True, Eat=True" $ do
+      rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
+                                  ,("run",   Right $ Just True)
+                                  ,("eat",   Right $ Just True)
+                                  ,("drink", Left  $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q View (Simply "run")  Nothing) []
+          ]
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q Hide (Simply "drink") Nothing) [] ] ]
+
+    it "should demand walk even when Run=True, Eat=True, Drink=True" $ do
+      rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
+                                  ,("run",   Right $ Just True)
+                                  ,("eat",   Right $ Just True)
+                                  ,("drink", Right $ Just True)])
+        `shouldBe`
+        Node (Q Ask And (Just $ Pre "three of:"))
+        [ Node (Q Ask And (Just $ Pre "both"))
+          [ Node (Q Ask (Simply "walk") Nothing) []
+          , Node (Q View (Simply "run")  Nothing) []
+          ]
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
+
+    it "should show all when all true" $ do
+      rlv mustDance (Map.fromList [("walk",  Right $ Just True)
+                                  ,("run",   Right $ Just True)
+                                  ,("eat",   Right $ Just True)
+                                  ,("drink", Right $ Just True)])
+        `shouldBe`
+        Node (Q View And (Just $ Pre "three of:"))
+        [ Node (Q View And (Just $ Pre "both"))
+          [ Node (Q View (Simply "walk") Nothing) []
+          , Node (Q View (Simply "run")  Nothing) []
+          ]
+        , Node (Q View Or (Just $ Pre "either"))
+          [ Node (Q View (Simply "eat") Nothing) []
+          , Node (Q View (Simply "drink") Nothing) [] ] ]
 
 
 
@@ -137,6 +287,7 @@ main = hspec $ do
     it "should round-trip mustDance" $ do
       tree2native (native2tree mustDance) `shouldBe` mustDance
 
+type SingLabel = String
 
 mustSing :: Item SingLabel
 mustSing =

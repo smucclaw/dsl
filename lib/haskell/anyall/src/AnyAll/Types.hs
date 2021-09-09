@@ -9,6 +9,12 @@ data Label a =
   | PrePost a a
   deriving (Eq, Show)
 
+data Hardness = Soft -- use Left defaults
+              | Hard -- require Right input
+  deriving (Eq, Show)
+
+type AnswerToExplain = Bool
+
 data Item a =
     Leaf a
   | All (Label a) [Item a]
@@ -33,6 +39,10 @@ type Default a = Either (Maybe a) (Maybe a)
 type Marking a = Map.Map a (Default Bool)
 data ShouldView = View | Hide | Ask deriving (Eq, Show)
 
-type ShouldAsk a = Map.Map a ShouldView
--- or should this be Item ShouldView, lol
+data Q a = Q { shouldView :: ShouldView
+             , andOr      :: AndOr a
+             , prePost    :: Maybe (Label a) }
+           deriving (Eq, Show)
 
+data DisplayPref = DPTerse | DPNormal | DPVerbose
+  deriving (Eq, Show)

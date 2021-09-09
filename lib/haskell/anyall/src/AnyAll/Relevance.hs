@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 module AnyAll.Relevance where
 
 import AnyAll.Types
@@ -7,40 +9,67 @@ import Data.List (any, all)
 import Debug.Trace
 import Control.Monad (when, guard)
 import Data.Maybe (isJust)
+import Data.Either
+import Data.Tree
 
--- given
--- - a marking indicating which values are known;
--- - an and/or tree,
--- return a marking indicating which nodes in the tree are still of interest.
-relevant :: (Ord a, Show a) => Marking a -> ShouldView -> Item a -> ShouldAsk a
-relevant marking optimism (Leaf x) = case marking ! x of
-                                       Right _ -> Map.singleton x View
-                                       Left  _ -> Map.singleton x optimism
-relevant marking optimism (All label items) = let dis = dispositive marking (All label items)
-                                              in if -- trace ("is All " ++ show label ++ " " ++ show items ++ " dispositive? " ++ show dis)
-                                                    dis
-                                                 then Map.unions (relevant marking Hide <$> items)
-                                                 else Map.unions (relevant marking optimism <$> items)
-relevant marking optimism (Any label items) = if dispositive marking (Any label items)
-                                              then Map.unions (relevant marking Hide <$> items)
-                                              else Map.unions (relevant marking optimism <$> items)
+-- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
+relevant :: (Ord a, Show a) => Hardness -> DisplayPref -> Marking a -> Maybe Bool -> Item a -> Tree (Q a)
+relevant sh dp marking parentValue self =
+  let selfValue = evaluate sh marking self
+      initVis   = if | isJust parentValue -> if | parentValue == selfValue              -> View
+                                                | otherwise                             -> Hide
+                     | otherwise          -> if | isJust (evaluate Hard marking self)   -> View
+                                                | otherwise                             -> Ask
+      -- we are able to compute the initial visibility of the subtree; TODO we can modify it according to our display preference
+      paintedChildren = relevant sh dp marking selfValue <$> getChildren self
+      -- if i am myself hidden, then convert all my descendants' Ask to Hide
+      repaintedChildren = if initVis /= Hide then paintedChildren
+                          else fmap ask2hide <$> paintedChildren
+      -- the visibi
+      astree = case self of
+                 Leaf x -> case marking ! x of
+                             Left  _ -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing) []
+                             Right _ -> Node (Q View                                     (Simply x) Nothing) []
+                 Any label items -> Node (Q initVis  Or (Just label)) repaintedChildren
+                 All label items -> Node (Q initVis And (Just label)) repaintedChildren
+  in astree
+  where
+    getChildren (Leaf _) = []
+    getChildren (Any _ c) = c
+    getChildren (All _ c) = c
 
--- basically logical shortcut: given a marking, is this item dispositive?
-dispositive :: (Ord a, Show a) => Marking a -> Item a -> Bool
-dispositive marking x = isJust $ childrenValue marking x
+    ask2hide :: Q a -> Q a
+    ask2hide (Q Ask x y) = Q Hide x y
+    ask2hide x = x
+    
+-- which of my descendants are dispositive? i.e. contribute to the final result.
+-- TODO: this probably needs to be pruned some
 
--- well, it depends on what values the children have.
-childrenValue :: (Ord a, Show a) => Marking a -> Item a -> Maybe Bool
-childrenValue marking (Leaf x) = case marking ! x of
+dispositive :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> [Item a]
+dispositive sh marking self =
+  let selfValue  = evaluate sh marking self
+      recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
+  in case self of
+       Leaf x          -> if isJust selfValue then return self else mempty
+       Any label items -> recurse items
+       All label items -> recurse items
+
+-- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
+evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
+evaluate Soft marking (Leaf x) = case marking ! x of
+                                   Right (Just x) -> Just x
+                                   Left  (Just x) -> Just x
+                                   _              -> Nothing
+evaluate Hard marking (Leaf x) = case marking ! x of
                                    Right (Just x) -> Just x
                                    _              -> Nothing
-childrenValue marking (All label items)
-  | all (== Just True) (childrenValue marking <$> items) = Just True
-  | Just False `elem`  (childrenValue marking <$> items) = Just False
+evaluate sh marking (Any label items)
+  | Just True `elem`    (evaluate sh marking <$> items) = Just True
+  | all (== Just False) (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing
-childrenValue marking (Any label items)
-  | all (== Just False) (childrenValue marking <$> items) = Just False
-  | Just True `elem`    (childrenValue marking <$> items) = Just True
+evaluate sh marking (All label items)
+  | all (== Just True) (evaluate sh marking <$> items) = Just True
+  | Just False `elem`  (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing
 
 

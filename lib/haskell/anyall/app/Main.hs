@@ -23,7 +23,7 @@ main = do
     , Map.fromList [("walk",  Right $ Just True)
                    ,("run",   Right $ Just True)
                    ,("eat",   Right $ Just True)
-                   ,("drink", Right $ Just True)]
+                   ,("drink", Left  $ Just False)]
     , Map.fromList [("walk",  Right $ Just True)
                    ,("run",   Left  $ Just False)
                    ,("eat",   Right $ Just True)
@@ -39,11 +39,12 @@ main = do
                    [ Leaf "eat"
                    , Leaf "drink" ] ])
   putStrLn "* LEGEND"
-  putStrLn "  [    ]  Ask:  UI should ask user for input."
-  putStrLn "                Without this input, we cannot make a decision."
+  putStrLn ""
   putStrLn "  <    >  View: UI should display this node or subtree."
   putStrLn "                Typically this marks either past user input or a computed value."
-  putStrLn "  (    )  Hide: UI should not display subtree."
+  putStrLn "  [    ]  Ask:  UI should ask user for input."
+  putStrLn "                Without this input, we cannot make a decision."
+  putStrLn "  (    )  Hide: UI can hide subtree or display it in a faded, grayed-out way."
   putStrLn "                This subtree has been made irrelevant by other input."
   putStrLn ""
   putStrLn "   YES    user input True"

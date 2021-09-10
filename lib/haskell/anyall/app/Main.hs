@@ -44,3 +44,6 @@ main = do
   putStrLn "   yes    default True"
   putStrLn "    no    default False"
   putStrLn "          default Unknown"
+  putStrLn ""
+  putStrLn "  Hard mode means we ignore defaults and consider user input only."
+  putStrLn "  Soft mode means we consider defaults as well to arrive at the answer."

@@ -44,7 +44,7 @@ ppQTree i m = do
   let hresult = hardnormal m i
   print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel (softnormal m i))) View
   print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel (hresult))) View
-  print $ nest 3 $ "   ==" <+> docQ1 m hresult <> ppline
+  print $ nest 3 $ "   =" <+> docQ1 m hresult <> ppline
 
 
 

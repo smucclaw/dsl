@@ -94,4 +94,8 @@ https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pd
 
 a given node may supply more than one decision, so after the upgrade to Data.Tree we should probably continue to upgrade toward ~fgl~.
 
+** get input from Aeson
 
+** get input from a spreadsheet
+
+See https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1043543357

@@ -40,10 +40,11 @@ docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> p
 
 ppQTree :: Item TL.Text -> Marking TL.Text -> IO ()
 ppQTree i m = do
+  let hardresult = hardnormal m i
+      softresult = softnormal m i
   print $ "*"  <+> "Marking:" <+> (pretty $ Prelude.drop 9 $ show m) <> ppline
-  let hresult = hardnormal m i
-  print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel (softnormal m i))) View
-  print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel (hresult))) View
+  print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel softresult)) View
+  print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel hardresult)) View
   print $ nest 3 $ "   =" <+> docQ1 m hresult <> ppline
 
 

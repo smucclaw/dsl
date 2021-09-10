@@ -33,10 +33,10 @@ softnormal m = relevant Soft DPNormal m Nothing
 
 docQ1 :: Marking TL.Text -> Tree (Q TL.Text) -> Doc ann
 docQ1 m (Node (Q sv (Simply a)        pp              v) _) = markbox v sv <+> pretty a
-docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 3 (ppline <> vsep ((\i -> "&-" <+> docQ1 m i) <$> c))
-docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 3 (ppline <> vsep ((\i -> "&-" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
-docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 3 (ppline <> vsep ((\i -> "|-" <+> docQ1 m i) <$> c))
-docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 3 (ppline <> vsep ((\i -> "|-" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
+docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
+docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
+docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
+docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
 ppQTree :: Item TL.Text -> Marking TL.Text -> IO ()
 ppQTree i m = do

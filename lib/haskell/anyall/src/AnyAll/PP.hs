@@ -48,4 +48,9 @@ ppQTree i m = do
   print $ nest 3 $ "   =" <+> docQ1 m hresult <> ppline
 
 
+-- next steps:
+-- - output an HTML version QTree
+-- - output a JSON version of QTree
+-- - accept a JSON input of both the Item tree and the Marking store. use Aeson to parse
+
 

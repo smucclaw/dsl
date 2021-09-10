@@ -12,6 +12,14 @@ main :: IO ()
 main = do
   forM_
     [ Map.empty
+    , Map.fromList [("walk",  Left $ Just True)
+                   ,("run",   Left $ Just True)
+                   ,("eat",   Left $ Just True)
+                   ,("drink", Left $ Just False)]
+    , Map.fromList [("walk",  Left $ Just True)
+                   ,("run",   Left $ Just False)
+                   ,("eat",   Left $ Just True)
+                   ,("drink", Left $ Just False)]
     , Map.fromList [("walk",  Right $ Just True)
                    ,("run",   Right $ Just True)
                    ,("eat",   Right $ Just True)
@@ -37,6 +45,7 @@ main = do
   putStrLn "                Typically this marks either past user input or a computed value."
   putStrLn "  (    )  Hide: UI should not display subtree."
   putStrLn "                This subtree has been made irrelevant by other input."
+  putStrLn ""
   putStrLn "   YES    user input True"
   putStrLn "    NO    user input False"
   putStrLn "     ?    user input Unknown"

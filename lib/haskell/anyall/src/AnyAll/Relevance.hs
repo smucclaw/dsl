@@ -31,8 +31,8 @@ relevant sh dp marking parentValue self =
                          Just (Right b) -> Node (Q View                                     (Simply x) Nothing (Right b)) []
                          Just (Left  b) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left  b)) []
                          Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left Nothing)) []
-             Any label items -> Node (Q initVis  Or (Just label) (Left selfValue)) repaintedChildren
-             All label items -> Node (Q initVis And (Just label) (Left selfValue)) repaintedChildren
+             Any label items -> Node (ask2view (Q initVis  Or (Just label) (Left selfValue))) repaintedChildren
+             All label items -> Node (ask2view (Q initVis And (Just label) (Left selfValue))) repaintedChildren
   where
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c
@@ -41,6 +41,10 @@ relevant sh dp marking parentValue self =
     ask2hide :: Q a -> Q a
     ask2hide (Q Ask x y z) = Q Hide x y z
     ask2hide x = x
+    
+    ask2view :: Q a -> Q a
+    ask2view (Q Ask x y z) = Q View x y z
+    ask2view x = x
     
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some

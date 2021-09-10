@@ -41,8 +41,12 @@ data ShouldView = View | Hide | Ask deriving (Eq, Show)
 
 data Q a = Q { shouldView :: ShouldView
              , andOr      :: AndOr a
-             , prePost    :: Maybe (Label a) }
-           deriving (Eq, Show)
+             , prePost    :: Maybe (Label a)
+             , mark       :: Default Bool
+             } deriving (Eq, Show)
+
+type QTree a = Tree (Q a)
 
 data DisplayPref = DPTerse | DPNormal | DPVerbose
   deriving (Eq, Show)
+

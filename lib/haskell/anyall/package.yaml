@@ -25,6 +25,7 @@ dependencies:
 - containers
 - svg-builder
 - hspec
+- prettyprinter
 
 # - ihaskell
 

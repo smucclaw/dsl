@@ -4,7 +4,7 @@ module AnyAll.Relevance where
 
 import AnyAll.Types
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict ((!))
+import Data.Map.Strict (lookup)
 import Data.List (any, all)
 import Debug.Trace
 import Control.Monad (when, guard)
@@ -25,21 +25,21 @@ relevant sh dp marking parentValue self =
       -- if i am myself hidden, then convert all my descendants' Ask to Hide
       repaintedChildren = if initVis /= Hide then paintedChildren
                           else fmap ask2hide <$> paintedChildren
-      -- the visibi
-      astree = case self of
-                 Leaf x -> case marking ! x of
-                             Left  _ -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing) []
-                             Right _ -> Node (Q View                                     (Simply x) Nothing) []
-                 Any label items -> Node (Q initVis  Or (Just label)) repaintedChildren
-                 All label items -> Node (Q initVis And (Just label)) repaintedChildren
-  in astree
+  in -- convert to a QTree for output
+  case self of
+             Leaf x -> case Map.lookup x marking of
+                         Just (Right b) -> Node (Q View                                     (Simply x) Nothing (Right b)) []
+                         Just (Left  b) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left  b)) []
+                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left Nothing)) []
+             Any label items -> Node (Q initVis  Or (Just label) (Left selfValue)) repaintedChildren
+             All label items -> Node (Q initVis And (Just label) (Left selfValue)) repaintedChildren
   where
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c
     getChildren (All _ c) = c
 
     ask2hide :: Q a -> Q a
-    ask2hide (Q Ask x y) = Q Hide x y
+    ask2hide (Q Ask x y z) = Q Hide x y z
     ask2hide x = x
     
 -- which of my descendants are dispositive? i.e. contribute to the final result.
@@ -56,12 +56,12 @@ dispositive sh marking self =
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
-evaluate Soft marking (Leaf x) = case marking ! x of
-                                   Right (Just x) -> Just x
-                                   Left  (Just x) -> Just x
+evaluate Soft marking (Leaf x) = case Map.lookup x marking of
+                                   Just (Right (Just x)) -> Just x
+                                   Just (Left  (Just x)) -> Just x
                                    _              -> Nothing
-evaluate Hard marking (Leaf x) = case marking ! x of
-                                   Right (Just x) -> Just x
+evaluate Hard marking (Leaf x) = case Map.lookup x marking of
+                                   Just (Right (Just x)) -> Just x
                                    _              -> Nothing
 evaluate sh marking (Any label items)
   | Just True `elem`    (evaluate sh marking <$> items) = Just True

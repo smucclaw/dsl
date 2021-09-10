@@ -5,7 +5,15 @@ The And/Or Tree is a classic data structure in CS.
 Our implementation equips it with
 - a visualization engine (SVG)
 - a natural language target producing traditional conjunctive and disjunctive lists
-- a relevance calculus that paints elements of the tree
+- a relevance calculus that paints elements of the tree for use in a user interface
+
+#+begin_quote
+If, when, why, what?
+How much have you got?
+Have you got it, do you get it, if so, how often?
+And which do you choose, a hard or soft option?
+-- C. Lowe & N. Tennant, 1985
+#+end_quote
 
 * Relevance Calculus
 

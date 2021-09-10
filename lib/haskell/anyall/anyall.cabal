@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       AnyAll
+      AnyAll.PP
       AnyAll.Relevance
       AnyAll.SVG
       AnyAll.Types

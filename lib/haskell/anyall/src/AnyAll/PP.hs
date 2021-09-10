@@ -45,7 +45,7 @@ ppQTree i m = do
   print $ "*"  <+> "Marking:" <+> (pretty $ Prelude.drop 9 $ show m) <> ppline
   print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel softresult)) View
   print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel hardresult)) View
-  print $ nest 3 $ "   =" <+> docQ1 m hresult <> ppline
+  print $ nest 3 $ "   =" <+> docQ1 m hardresult <> ppline
 
 
 -- next steps:

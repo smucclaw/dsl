@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.PP where
+module AnyAll.PP (ppQTree) where
 
 import AnyAll.Types
 import AnyAll.Relevance

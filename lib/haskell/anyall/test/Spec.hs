@@ -24,9 +24,9 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "both") ln)
         [ Node (Q Ask (Simply "walk") Nothing lt) []
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) []
           ]
@@ -37,9 +37,9 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "both") ln)
         [ Node (Q Ask (Simply "walk") Nothing lf) []
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) []
           ]
@@ -50,9 +50,9 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "both") ln)
         [ Node (Q Ask (Simply "walk") Nothing ln) []
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
@@ -96,9 +96,9 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "both") ln)
         [ Node (Q View (Simply "walk") Nothing rt) []
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
@@ -129,7 +129,7 @@ main = hspec $ do
                                  ,("eat",   Left  $ Just True)
                                  ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "both") ln)
         [ Node (Q Ask (Simply "walk") Nothing lt) []
         , Node (Q View Or (Just $ Pre "either") lt)
           [ Node (Q Hide (Simply "eat") Nothing lt) []
@@ -142,12 +142,12 @@ main = hspec $ do
                                   ,("eat",   Left Nothing)
                                   ,("drink", Left Nothing)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing ln) []
           , Node (Q Ask (Simply "run")  Nothing ln) []
           ]
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing ln) []
           , Node (Q Ask (Simply "drink") Nothing ln) [] ] ]
 
@@ -157,12 +157,12 @@ main = hspec $ do
                                   ,("eat",   Left (Just True))
                                   ,("drink", Left (Just True))])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing lt) []
           , Node (Q Ask (Simply "run")  Nothing lt) []
           ]
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
@@ -172,12 +172,12 @@ main = hspec $ do
                                   ,("eat",   Left (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing lf) []
           , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
@@ -217,12 +217,12 @@ main = hspec $ do
                                   ,("eat",   Left (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q View (Simply "walk") Nothing rt) []
           , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q Ask (Simply "eat") Nothing lf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
@@ -232,12 +232,12 @@ main = hspec $ do
                                   ,("eat",   Right (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q View (Simply "walk") Nothing rt) []
           , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q Ask Or (Just $ Pre "either") ln)
+        , Node (Q View Or (Just $ Pre "either") ln)
           [ Node (Q View (Simply "eat") Nothing rf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
@@ -247,8 +247,8 @@ main = hspec $ do
                                   ,("eat",   Left  $ Just True)
                                   ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing lt) []
           , Node (Q View (Simply "run")  Nothing rt) []
           ]
@@ -262,8 +262,8 @@ main = hspec $ do
                                   ,("eat",   Right $ Just True)
                                   ,("drink", Left  $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing lt) []
           , Node (Q View (Simply "run")  Nothing rt) []
           ]
@@ -277,8 +277,8 @@ main = hspec $ do
                                   ,("eat",   Right $ Just True)
                                   ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q Ask And (Just $ Pre "three of:") ln)
-        [ Node (Q Ask And (Just $ Pre "both") ln)
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
           [ Node (Q Ask (Simply "walk") Nothing lt) []
           , Node (Q View (Simply "run")  Nothing rt) []
           ]

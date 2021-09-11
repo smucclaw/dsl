@@ -1,15 +1,46 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module Main where
 
 import AnyAll
 import qualified Data.Map.Strict        as Map
 import qualified Data.Text.Lazy         as TL
-import           Control.Monad (forM_)
+import qualified Data.ByteString.Lazy as B
+import           Control.Monad (forM_, when, guard)
+import System.Environment
+import Data.Maybe
 
+import Data.Aeson
+import Data.Aeson.Types (parseMaybe)
+import Options.Generic
+
+data Opts = Opts { demo :: Bool }
+  deriving (Generic, Show)
+instance ParseRecord Opts
+
+-- consume JSON containing
+-- - an AnyAll Item
+-- - a Marking showing user input to date and defaults
 
 main :: IO ()
 main = do
+  opts <- getRecord "anyall"
+  when (demo opts) $ maindemo
+  guard (not $ demo opts)
+  mycontents <- B.getContents
+  let myinput = (decode mycontents) :: Maybe Object
+      jsonin = fromJust myinput
+  guard $ isJust myinput
+  let poos = flip parseMaybe jsonin $ \obj -> do
+        poo <- obj .: "poo"
+        return (poo <> poo :: TL.Text)
+  putStrLn $ maybe "unable to parse input for poo text" show poos
+  
+maindemo :: IO ()
+maindemo = do
   forM_
     [ Map.empty
     , Map.fromList [("walk",  Left $ Just True)
@@ -32,10 +63,10 @@ main = do
                    ,("run",   Right $ Just False  )
                    ,("eat",   Right $ Just True)
                    ,("drink", Left  $ Just True)]
-    ] $ ppQTree (All (Pre "all of")
+    ] $ ppQTree (AnyAll.All (Pre "all of")
                  [ Leaf "walk"
                  , Leaf "run"
-                 , Any (Pre "either")
+                 , AnyAll.Any (Pre "either")
                    [ Leaf "eat"
                    , Leaf "drink" ] ])
   putStrLn "* LEGEND"

@@ -28,6 +28,7 @@ dependencies:
 - prettyprinter
 - aeson
 - bytestring
+- optparse-generic
 
 # - ihaskell
 

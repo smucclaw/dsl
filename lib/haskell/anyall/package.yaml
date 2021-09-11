@@ -26,6 +26,8 @@ dependencies:
 - svg-builder
 - hspec
 - prettyprinter
+- aeson
+- bytestring
 
 # - ihaskell
 

@@ -35,7 +35,9 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , containers
     , hspec
     , prettyprinter
@@ -51,8 +53,10 @@ executable anyall-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      anyall
+      aeson
+    , anyall
     , base >=4.7 && <5
+    , bytestring
     , containers
     , hspec
     , prettyprinter
@@ -69,8 +73,10 @@ test-suite anyall-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      anyall
+      aeson
+    , anyall
     , base >=4.7 && <5
+    , bytestring
     , containers
     , hspec
     , prettyprinter

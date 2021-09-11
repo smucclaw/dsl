@@ -5,12 +5,14 @@ module AnyAll.PP (ppQTree) where
 import AnyAll.Types
 import AnyAll.Relevance
 import Control.Monad (forM_)
+import Data.Maybe
 import Data.Tree
 import Data.Map.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Builder as TLB
+import qualified Data.ByteString.Lazy   as B
 
 ppline = Prettyprinter.line
 
@@ -47,10 +49,40 @@ ppQTree i m = do
   print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel hardresult)) View
   print $ nest 3 $ "   =" <+> docQ1 m hardresult <> ppline
 
+  print $ "**" <+> "JSON:"
+  B.putStr $ asJSON hardresult
+  print ppline
+
+  print $ "**" <+> "For UI:"
+  B.putStr $ getForUI hardresult
+  print ppline
+  
+{-
+    {
+      "ask": {
+        "run": {
+          "Left": false
+        }
+      },
+      "view": {
+        "drink": {
+          "Right": true
+        },
+        "eat": {
+          "Right": true
+        },
+        "walk": {
+          "Right": true
+        }
+      }
+    }
+-}
 
 -- next steps:
 -- - output an HTML version QTree
--- - output a JSON version of QTree
 -- - accept a JSON input of both the Item tree and the Marking store. use Aeson to parse
+
+
+
 
 

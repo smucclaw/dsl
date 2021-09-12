@@ -44,6 +44,7 @@ library
     , prettyprinter
     , svg-builder
     , text
+    , vector
   default-language: Haskell2010
 
 executable anyall-exe
@@ -64,6 +65,7 @@ executable anyall-exe
     , prettyprinter
     , svg-builder
     , text
+    , vector
   default-language: Haskell2010
 
 test-suite anyall-test
@@ -85,4 +87,5 @@ test-suite anyall-test
     , prettyprinter
     , svg-builder
     , text
+    , vector
   default-language: Haskell2010

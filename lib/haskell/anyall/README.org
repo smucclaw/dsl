@@ -94,7 +94,59 @@ https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pd
 
 a given node may supply more than one decision, so after the upgrade to Data.Tree we should probably continue to upgrade toward ~fgl~.
 
+We kind of have the beginnings of this because we keep Leaf-node values separate from the ~AnyAll Item~ input in a ~Marking~ map; so we don't need to go to ~fgl~ just yet.
+
 ** get input from Aeson
+
+Input schema:
+
+#+begin_src typescript :tangle ts/types.ts
+
+     interface withDefault<T> {
+       byDefault?: T,
+       fromUser?: T
+     }
+     export default interface StdinSchema {
+       marking: {
+         [nodeLabel: `${string}`]: withDefault<boolean>;
+       },
+       andOrTree: LeafNode | AnyNode | AllNode
+     }
+     export class LeafNode {
+       leaf: string
+     }
+     abstract class SubTree {
+       children: (LeafNode | AnyNode | AllNode)[];
+       pre: string;
+       prepost?: string
+     }
+     export class AnyNode extends SubTree { nodetype: "any" }
+     export class AllNode extends SubTree { nodetype: "all" }
+#+end_src
+
+Input example:
+
+#+begin_src typescript :tangle ts/example.ts
+  import StdinSchema from "./types"
+
+  let mustSing : StdinSchema = {
+    marking: {
+      happy: { byDefault: true },
+    },
+    andOrTree: {
+      nodetype: "all",
+      pre: "all of",
+      children: [
+        { leaf: "walk" },
+        { leaf: "run" },
+        { nodetype: "any"
+        , pre: "either"
+        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
+        }
+      ]
+    }
+  }
+#+end_src
 
 ** get input from a spreadsheet
 

@@ -1,7 +1,9 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DeriveGeneric      #-}   -- much of this due to optparse-generic
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
+{-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
 
 module Main where
 
@@ -17,9 +19,11 @@ import Data.Aeson
 import Data.Aeson.Types (parseMaybe)
 import Options.Generic
 
-data Opts = Opts { demo :: Bool }
-  deriving (Generic, Show)
-instance ParseRecord Opts
+-- the wrapping 'w' here is needed for <!> defaults and <?> documentation
+data Opts w = Opts { demo :: w ::: Bool <!> "False" }
+  deriving (Generic)
+instance ParseRecord (Opts Wrapped)
+deriving instance Show (Opts Unwrapped)
 
 -- consume JSON containing
 -- - an AnyAll Item
@@ -27,17 +31,12 @@ instance ParseRecord Opts
 
 main :: IO ()
 main = do
-  opts <- getRecord "anyall"
-  when (demo opts) $ maindemo
-  guard (not $ demo opts)
+  opts <- unwrapRecord "anyall"
+  print (opts :: Opts Unwrapped)
+  when (demo opts) $ maindemo; guard (not $ demo opts)
   mycontents <- B.getContents
-  let myinput = (decode mycontents) :: Maybe Object
-      jsonin = fromJust myinput
-  guard $ isJust myinput
-  let poos = flip parseMaybe jsonin $ \obj -> do
-        poo <- obj .: "poo"
-        return (poo <> poo :: TL.Text)
-  putStrLn $ maybe "unable to parse input for poo text" show poos
+  let myinput = eitherDecode mycontents :: Either String (Item String)
+  print myinput
   
 maindemo :: IO ()
 maindemo = do

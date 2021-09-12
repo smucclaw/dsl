@@ -27,12 +27,12 @@ relevant sh dp marking parentValue self =
                           else fmap ask2hide <$> paintedChildren
   in -- convert to a QTree for output
   case self of
-             Leaf x -> case Map.lookup x marking of
-                         Just (Right b) -> Node (Q View                                     (Simply x) Nothing (Right b)) []
-                         Just (Left  b) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left  b)) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Left Nothing)) []
-             Any label items -> Node (ask2view (Q initVis  Or (Just label) (Left selfValue))) repaintedChildren
-             All label items -> Node (ask2view (Q initVis And (Just label) (Left selfValue))) repaintedChildren
+             Leaf x -> case Map.lookup x (getMarking marking) of
+                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
+                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
+                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
+             Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
+             All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
   where
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c
@@ -60,13 +60,13 @@ dispositive sh marking self =
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
-evaluate Soft marking (Leaf x) = case Map.lookup x marking of
-                                   Just (Right (Just x)) -> Just x
-                                   Just (Left  (Just x)) -> Just x
-                                   _              -> Nothing
-evaluate Hard marking (Leaf x) = case Map.lookup x marking of
-                                   Just (Right (Just x)) -> Just x
-                                   _              -> Nothing
+evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
+                                             Just (Default (Right (Just x))) -> Just x
+                                             Just (Default (Left  (Just x))) -> Just x
+                                             _                               -> Nothing
+evaluate Hard (Marking marking) (Leaf x) = case Map.lookup x marking of
+                                             Just (Default (Right (Just x))) -> Just x
+                                             _                               -> Nothing
 evaluate sh marking (Any label items)
   | Just True `elem`    (evaluate sh marking <$> items) = Just True
   | all (== Just False) (evaluate sh marking <$> items) = Just False

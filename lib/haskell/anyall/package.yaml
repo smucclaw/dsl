@@ -29,6 +29,7 @@ dependencies:
 - aeson
 - bytestring
 - optparse-generic
+- vector
 
 # - ihaskell
 

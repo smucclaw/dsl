@@ -1,16 +1,23 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module AnyAll.Types where
 
 import Data.Tree
 import Data.Maybe
+import Data.String (IsString)
 import qualified Data.Map.Strict      as Map
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Lazy       as TL
+import qualified Data.Text.Internal   as DTI
+import qualified Data.Vector          as V
 
 import Data.Aeson
+import Data.Aeson.Types (parseMaybe)
 import GHC.Generics
+import GHC.Exts (toList)
 
 data Label a =
     Pre a
@@ -30,6 +37,28 @@ data Item a =
   | Any (Label a) [Item a]
   deriving (Eq, Show, Generic)
 
+data StdinSchema a = StdinSchema { marking :: Marking a
+                                 , andOrTree :: Item a }
+  deriving (Eq, Show, Generic)
+
+instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
+  parseJSON = withObject "andOrTree" $ \o -> do
+    leaf      <- o .:? "leaf"
+    nodetype  <- o .:? "nodetype"
+    pre       <- o .:? "pre"
+    prepost   <- o .:? "prepost"
+    childrenA <- o .:? "children"
+    let label = if isJust prepost
+                then PrePost (fromJust pre) (fromJust prepost)
+                else Pre     (fromJust pre)
+        children = maybe [] (mapMaybe (parseMaybe parseJSON) . V.toList) childrenA
+    return $ if isJust leaf
+             then Leaf (fromJust leaf)
+             else case (nodetype :: Maybe String) of
+                    Just "any" -> Any label children
+                    Just "all" -> All label children
+                    Nothing    -> error "error in parsing JSON input"
+
 data AndOr a = And | Or | Simply a deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
@@ -44,9 +73,35 @@ tree2native (Node (Simply a, _) children) = Leaf a
 tree2native (Node (And, lbl) children) = All (fromJust lbl) (tree2native <$> children)
 tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> children)
 
-type Default a = Either (Maybe a) (Maybe a)
+newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
+  deriving (Eq, Show, Generic)
+instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
+instance (FromJSON a) => FromJSON (Default a) where
+  parseJSON = withObject "withDefaultBool" $ \o -> do
+    byDefault <- o .:? "byDefault"
+    fromUser  <- o .:? "fromUser"
+    if isJust fromUser
+      then return $ Default (Right fromUser)
+           -- actually we need to distinguish "fromUser: null" (Right Nothing) from absence of fromUser (Left ...)
+      else if isJust byDefault
+           then return $ Default (Left byDefault)
+           else return $ Default (Left Nothing)
 
-type Marking a = Map.Map a (Default Bool)
+
+newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
+  deriving (Eq, Show, Generic)
+
+instance (ToJSON a, ToJSONKey a) => ToJSON (Marking a)
+instance FromJSON (Marking DTI.Text) where
+  -- the keys in the object correspond to leaf contents, so we have to process them "manually"
+  parseJSON = withObject "marking" $ \o -> do
+    let asList = toList o
+    return $ Marking $ Map.fromList $ mapMaybe (\(k,v) ->
+                                                  case parseMaybe parseJSON v :: Maybe (Default Bool) of
+                                                    Just ma -> Just (k, ma)
+                                                    Nothing -> Nothing) asList
+
+
 data ShouldView = View | Hide | Ask deriving (Eq, Show, Generic)
 instance ToJSON ShouldView; instance FromJSON ShouldView
 

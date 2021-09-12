@@ -7,6 +7,7 @@ import AnyAll.Relevance
 import Control.Monad (forM_)
 import Data.Maybe
 import Data.Tree
+import Data.String (IsString)
 import Data.Map.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
@@ -20,27 +21,27 @@ svwrap View = angles
 svwrap Hide = parens
 svwrap Ask  = brackets
 
-markbox (Right (Just True )) sv = svwrap sv "YES"
-markbox (Right (Just False)) sv = svwrap sv " NO"
-markbox (Right  Nothing    ) sv = svwrap sv "  ?"
-markbox (Left  (Just True )) sv = svwrap sv "yes"
-markbox (Left  (Just False)) sv = svwrap sv " no"
-markbox (Left   Nothing    ) sv = svwrap sv "   "
+markbox (Default (Right (Just True ))) sv = svwrap sv "YES"
+markbox (Default (Right (Just False))) sv = svwrap sv " NO"
+markbox (Default (Right  Nothing    )) sv = svwrap sv "  ?"
+markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
+markbox (Default (Left  (Just False))) sv = svwrap sv " no"
+markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
-hardnormal :: Marking TL.Text -> Item TL.Text -> QTree TL.Text
+hardnormal :: (IsString a, Ord a) => Marking a -> Item a -> QTree a
 hardnormal m = relevant Hard DPNormal m Nothing
 
-softnormal :: Marking TL.Text -> Item TL.Text -> QTree TL.Text
+softnormal :: (IsString a, Ord a) => Marking a -> Item a -> QTree a
 softnormal m = relevant Soft DPNormal m Nothing
 
-docQ1 :: Marking TL.Text -> Tree (Q TL.Text) -> Doc ann
+docQ1 :: (IsString a, Ord a) => Marking a -> Tree (Q a) -> Doc ann
 docQ1 m (Node (Q sv (Simply a)        pp              v) _) = markbox v sv <+> pretty a
 docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: Item TL.Text -> Marking TL.Text -> IO ()
+ppQTree :: (IsString a, Ord a) => Item a -> Marking a -> IO ()
 ppQTree i m = do
   let hardresult = hardnormal m i
       softresult = softnormal m i

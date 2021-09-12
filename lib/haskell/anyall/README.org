@@ -131,7 +131,7 @@ Input example:
 
   let mustSing : StdinSchema = {
     marking: {
-      happy: { byDefault: true },
+      "walk": { byDefault: true },
     },
     andOrTree: {
       nodetype: "all",
@@ -146,6 +146,8 @@ Input example:
       ]
     }
   }
+
+  console.log(JSON.stringify(mustSing));
 #+end_src
 
 ** get input from a spreadsheet

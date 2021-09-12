@@ -40,7 +40,16 @@ data Item a =
 data StdinSchema a = StdinSchema { marking :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)
+instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
+instance FromJSON (StdinSchema TL.Text) where
+  parseJSON = withObject "StdinSchema" $ \o -> do
+    markingO <- o .: "marking"
+    aotreeO  <- o .: "andOrTree"
+    let marking = parseMaybe parseJSON markingO
+        aotree  = parseMaybe parseJSON aotreeO
+    return $ StdinSchema (fromJust marking :: Marking TL.Text) (fromJust aotree)
 
+instance   ToJSON a =>   ToJSON (Item a)
 instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
   parseJSON = withObject "andOrTree" $ \o -> do
     leaf      <- o .:? "leaf"
@@ -92,13 +101,15 @@ newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
   deriving (Eq, Show, Generic)
 
 instance (ToJSON a, ToJSONKey a) => ToJSON (Marking a)
-instance FromJSON (Marking DTI.Text) where
+instance FromJSON (Marking TL.Text) where
   -- the keys in the object correspond to leaf contents, so we have to process them "manually"
-  parseJSON = withObject "marking" $ \o -> do
+  parseJSON = parseMarking
+
+parseMarking = withObject "marking" $ \o -> do
     let asList = toList o
     return $ Marking $ Map.fromList $ mapMaybe (\(k,v) ->
                                                   case parseMaybe parseJSON v :: Maybe (Default Bool) of
-                                                    Just ma -> Just (k, ma)
+                                                    Just ma -> Just (TL.fromStrict k, ma)
                                                     Nothing -> Nothing) asList
 
 

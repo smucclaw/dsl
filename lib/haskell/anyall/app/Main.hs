@@ -10,10 +10,12 @@ module Main where
 import AnyAll
 import qualified Data.Map.Strict        as Map
 import qualified Data.Text.Lazy         as TL
+import qualified Data.Text.Internal   as DTI
 import qualified Data.ByteString.Lazy as B
 import           Control.Monad (forM_, when, guard)
 import System.Environment
 import Data.Maybe
+import Data.Either (isRight, fromRight)
 
 import Data.Aeson
 import Data.Aeson.Types (parseMaybe)
@@ -35,33 +37,36 @@ main = do
   print (opts :: Opts Unwrapped)
   when (demo opts) $ maindemo; guard (not $ demo opts)
   mycontents <- B.getContents
-  let myinput = eitherDecode mycontents :: Either String (Item String)
+  let myinput = eitherDecode mycontents :: Either String (StdinSchema TL.Text)
   print myinput
+  guard (isRight myinput)
+  let (Right myright) = myinput
+  ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
   
 maindemo :: IO ()
 maindemo = do
   forM_
     [ Map.empty
-    , Map.fromList [("walk",  Left $ Just True)
-                   ,("run",   Left $ Just True)
-                   ,("eat",   Left $ Just True)
-                   ,("drink", Left $ Just False)]
-    , Map.fromList [("walk",  Left $ Just True)
-                   ,("run",   Left $ Just False)
-                   ,("eat",   Left $ Just True)
-                   ,("drink", Left $ Just False)]
-    , Map.fromList [("walk",  Right $ Just True)
-                   ,("run",   Right $ Just True)
-                   ,("eat",   Right $ Just True)
+    , Map.fromList [("walk" :: DTI.Text,  Left  $ Just True )
+                   ,("run",   Left  $ Just True )
+                   ,("eat",   Left  $ Just True )
                    ,("drink", Left  $ Just False)]
-    , Map.fromList [("walk",  Right $ Just True)
+    , Map.fromList [("walk",  Left  $ Just True )
                    ,("run",   Left  $ Just False)
-                   ,("eat",   Right $ Just True)
-                   ,("drink", Right $ Just True)]
-    , Map.fromList [("walk",  Right $ Just True)
-                   ,("run",   Right $ Just False  )
-                   ,("eat",   Right $ Just True)
-                   ,("drink", Left  $ Just True)]
+                   ,("eat",   Left  $ Just True )
+                   ,("drink", Left  $ Just False)]
+    , Map.fromList [("walk",  Right $ Just True )
+                   ,("run",   Right $ Just True )
+                   ,("eat",   Right $ Just True )
+                   ,("drink", Left  $ Just False)]
+    , Map.fromList [("walk",  Right $ Just True )
+                   ,("run",   Left  $ Just False)
+                   ,("eat",   Right $ Just True )
+                   ,("drink", Right $ Just True )]
+    , Map.fromList [("walk",  Right $ Just True )
+                   ,("run",   Right $ Just False)
+                   ,("eat",   Right $ Just True )
+                   ,("drink", Left  $ Just True )]
     ] $ ppQTree (AnyAll.All (Pre "all of")
                  [ Leaf "walk"
                  , Leaf "run"

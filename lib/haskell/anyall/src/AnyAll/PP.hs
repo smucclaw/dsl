@@ -14,6 +14,7 @@ import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.Text.Lazy         as TL
 import qualified Data.Text.Lazy.Builder as TLB
 import qualified Data.ByteString.Lazy   as B
+import Data.Aeson.Types
 
 ppline = Prettyprinter.line
 
@@ -28,22 +29,23 @@ markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
 markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
-hardnormal :: (IsString a, Ord a) => Marking a -> Item a -> QTree a
+hardnormal :: (IsString a, Ord a, Show a) => Marking a -> Item a -> QTree a
 hardnormal m = relevant Hard DPNormal m Nothing
 
-softnormal :: (IsString a, Ord a) => Marking a -> Item a -> QTree a
+softnormal :: (IsString a, Ord a, Show a) => Marking a -> Item a -> QTree a
 softnormal m = relevant Soft DPNormal m Nothing
 
-docQ1 :: (IsString a, Ord a) => Marking a -> Tree (Q a) -> Doc ann
+docQ1 :: (IsString a, Ord a, Show a, Pretty a) => Marking a -> Tree (Q a) -> Doc ann
 docQ1 m (Node (Q sv (Simply a)        pp              v) _) = markbox v sv <+> pretty a
 docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: (IsString a, Ord a) => Item a -> Marking a -> IO ()
-ppQTree i m = do
-  let hardresult = hardnormal m i
+ppQTree :: (ToJSON a, ToJSONKey a, IsString a, Ord a, Show a, Pretty a) => Item a -> Map.Map a (Either (Maybe Bool) (Maybe Bool)) -> IO ()
+ppQTree i mm = do
+  let m = Marking (Default <$> mm)
+      hardresult = hardnormal m i
       softresult = softnormal m i
   print $ "*"  <+> "Marking:" <+> (pretty $ Prelude.drop 9 $ show m) <> ppline
   print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel softresult)) View

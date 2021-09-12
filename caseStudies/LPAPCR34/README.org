@@ -22,6 +22,67 @@ We auto-generate Python to go into the DocAssemble YAML interview file.
 
 We output to the model checking syntaxes shown in the [[https://github.com/smucclaw/fv/blob/taboo/Experiments/ProfessionalConductRule34/][FV repo]]. At some point these will be merged.
 
+** Visualization / User Interface / Plain English
+
+The following possible output format looks like a checklist. How would we transform our L4 representation to this text?
+
+*** Assumptions and Definitions
+
+This checklist assumes:
+
+1. A Legal Practitioner (LP) has been asked to accept an Executive Appointment (EA).
+2. The EA is associated with a Business (B).
+
+This checklist helps decide if the LP may accept the EA -- or not.
+
+*** Rule 34.1
+
+Rule 34.1 holds TRUE if ANY of the below hold true.
+
+*** Rule 34.1.a
+
+- [ ] does the Business detract from the dignity of the legal profession?
+- [ ] is the Business incompatible with the dignity of the legal profession?
+- [ ] does the Business derogate from the dignity of the legal profession?
+
+*** Rule 34.1.b
+
+- [ ] does the EA materially interfere with LP's primary occupation of practising as a lawyer?
+- [ ] does the B materially interfere with LP's primary occupation of practising as a lawyer?
+- [ ] does the EA materially interfere with the LP's availability to those who may seek the LP's services as a lawyer?
+- [ ] does the B materially interfere with the LP's availability to those who may seek the LP's services as a lawyer?
+- [ ] does the EA materially interfere with the representation of the LP's clients?
+- [ ] does the B materially interfere with the representation of the LP's clients?
+
+*** Rule 34.1.c
+
+- [ ] is the business likely to unfairly attract business in the practice of law?
+
+*** Rule 34.1.d
+
+- [ ] does the business involve the sharing of the LP's fees with any unauthorised person for legal work performed by the LP?
+- [ ] does the business involve the payment of a commission to any unauthorised person for legal work performed by the LP?
+
+*** Rule 34.1.e
+
+- [ ] is the business set out in the First Schedule?
+
+*** Rule 34.1.f
+
+- [ ] is the business prohibited by the Act?
+- [ ] is the business prohibited by these Rules?
+- [ ] is the business prohibited by any other subsidiary legislation made under the Act?
+- [ ] is the business prohibited by any practice directions, guidance notes and rulings issued under section 71(6) of the Act?
+- [ ] is the business prohibited by any practice directions, guidance notes and rulings (relating to professional practice, etiquette, conduct, and discipline) issued by the Council or the Society?
+
+*** Rule 34.2
+
+- [ ] 
+
+*** Connections
+
+- if 34.1
+
 * L4 representation
 
 ** Section 1

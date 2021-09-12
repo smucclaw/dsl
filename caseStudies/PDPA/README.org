@@ -1,2 +1,50 @@
-This is the future home of the L4 rules regarding the PDPA, at first just the notification obligation and subsequent the whole thing.
+#+TITLE: SG PDPA DBNO
+
+This is the future home of the L4 rules regarding the PDPA, at first just the notification obligation and subsequently the whole thing.
+
+* Abductive Planner                                               :challenge:
+
+** "how do I get out of this?"
+
+Under what circumstances do I not have to notify an individual about a data breach?
+
+*** Answer
+
+1. the data breach is assessed as not notifiable
+2. previously taken action to mitigate
+3. currently taking action to mitigate
+4. PDPC instructed to not notify, after we specifically requested
+5. PDPC instructed to not notify, even though we didn't request
+6. law enforcement agency instructed us to not notify
+7. have already (validly) notified the individual about the data breach
+8. /are there any others?/
+
+* Web App User Interface                                          :challenge:
+
+Guide the end-user through a Q&A where they can fill in values for the "ground terms" in an L4 ruleset.
+
+Dynamically reduce the interview based on previous input so as to hide irrelevant subtrees.
+
+Give an answer as soon as an answer is justifiable.
+
+Give an explanation that justifies the answer.
+
+* Derive the Web App UI from an Upstream Representation           :challenge:
+
+A possible sequence:
+
+- L4 Spreadsheet :: edited by hand with some drafting support in google sheets
+- parser into L4 AST :: HS, PS, other
+- transpilation to a planner backend :: Clingo? Other Prolog? Z3? UPPAAL?
+- run the planner :: without needing to actually physically click on some UI
+- translate the answers back to natural language :: possibly using GF?
+- display the answers :: back to the user in the web UI
+
+* See Also
+
+- The [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=0]["Legal Spreadsheet" case study]] contains links to source materials
+- [[https://docs.google.com/document/d/1qdsyWDP0dLcs5Tk8vpqkIKlAcr3CYdM3hF2uiK6neqw/edit?usp=sharing][requirements]]
+- [[https://docs.google.com/drawings/d/1HStOcjN7UZ2vaFEkMKx1-veR2nHIJ0sKTXJ4PC5ImUs/edit?usp=sharing][architecture]]
+- [[https://app.asana.com/0/1200815832581011/timeline][project timeline]]
+- [[https://drive.google.com/file/d/10QDCQfjB5f9rcS7QeDTEuhnmgkHJCYYF/view?usp=sharing][wall of text]]
 

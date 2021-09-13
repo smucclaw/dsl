@@ -34,7 +34,33 @@ Feed the JSON into the Haskell executable:
 
 * CLI Documentation
 
-Input schema:
+** Input example:
+
+#+begin_src typescript :tangle ts/example.ts
+  import StdinSchema from "./types"
+
+  let mustSing : StdinSchema = {
+    marking: {
+      "walk": { byDefault: true },
+    },
+    andOrTree: {
+      nodetype: "all",
+      pre: "all of",
+      children: [
+        { leaf: "walk" },
+        { leaf: "run" },
+        { nodetype: "any"
+        , pre: "either"
+        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
+        }
+      ]
+    }
+  }
+
+  console.log(JSON.stringify(mustSing));
+#+end_src
+
+** Input schema:
 
 #+begin_src typescript :tangle ts/types.ts
 
@@ -60,30 +86,158 @@ Input schema:
      export class AllNode extends SubTree { nodetype: "all" }
 #+end_src
 
-Input example:
+** Output example:
 
-#+begin_src typescript :tangle ts/example.ts
-  import StdinSchema from "./types"
+The CLI produces two chunks of JSON output:
 
-  let mustSing : StdinSchema = {
-    marking: {
-      "walk": { byDefault: true },
-    },
-    andOrTree: {
-      nodetype: "all",
-      pre: "all of",
-      children: [
-        { leaf: "walk" },
-        { leaf: "run" },
-        { nodetype: "any"
-        , pre: "either"
-        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
+*** The "For UI" output JSON
+
+... contains a simplified instruction to the UI for which elements to ~ask~ for, which elements to ~view~, and what values to represent. Left means our own default; Right means user input.
+
+#+begin_src javascript
+  {
+    "ask": {
+      "drink": {
+        "getDefault": {
+          "Left": null
         }
-      ]
-    }
+      },
+      "eat": {
+        "getDefault": {
+          "Left": null
+        }
+      },
+      "run": {
+        "getDefault": {
+          "Left": null
+        }
+      },
+      "walk": {
+        "getDefault": {
+          "Left": true
+        }
+      }
+    },
+    "view": {}
   }
+#+end_src
 
-  console.log(JSON.stringify(mustSing));
+A UI might proceed as follows:
+1. flatten this to a list of pane components
+2. order "view" elements as a group above "ask" elements as a group
+3. further order within the groups according to their placement in the and/or tree
+4. place the active cursor on the head of "ask"
+5. center the screen (perhaps with a tasteful animation) on the active cursor
+
+Alternatively, the UI might closely follow the ordering from the And/Or structure, and show/hide/ask each element, without reordering.
+
+*** The more detailed JSON output is enough to construct an entire interview:
+
+This syntax follows the ~Data.Tree~ format, so the node details are in an object followed by an array of children.
+
+#+begin_src javascript
+  [
+    {
+      "shouldView": "View",
+      "andOr": {
+        "tag": "And"
+      },
+      "prePost": {
+        "tag": "Pre",
+        "contents": "all of"
+      },
+      "mark": {
+        "getDefault": {
+          "Left": null
+        }
+      }
+    },
+    [
+      [
+        {
+          "shouldView": "Ask",
+          "andOr": {
+            "tag": "Simply",
+            "contents": "walk"
+          },
+          "prePost": null,
+          "mark": {
+            "getDefault": {
+              "Left": true
+            }
+          }
+        },
+        []
+      ],
+      [
+        {
+          "shouldView": "Ask",
+          "andOr": {
+            "tag": "Simply",
+            "contents": "run"
+          },
+          "prePost": null,
+          "mark": {
+            "getDefault": {
+              "Left": null
+            }
+          }
+        },
+        []
+      ],
+      [
+        {
+          "shouldView": "View",
+          "andOr": {
+            "tag": "Or"
+          },
+          "prePost": {
+            "tag": "Pre",
+            "contents": "either"
+          },
+          "mark": {
+            "getDefault": {
+              "Left": null
+            }
+          }
+        },
+        [
+          [
+            {
+              "shouldView": "Ask",
+              "andOr": {
+                "tag": "Simply",
+                "contents": "eat"
+              },
+              "prePost": null,
+              "mark": {
+                "getDefault": {
+                  "Left": null
+                }
+              }
+            },
+            []
+          ],
+          [
+            {
+              "shouldView": "Ask",
+              "andOr": {
+                "tag": "Simply",
+                "contents": "drink"
+              },
+              "prePost": null,
+              "mark": {
+                "getDefault": {
+                  "Left": null
+                }
+              }
+            },
+            []
+          ]
+        ]
+      ]
+    ]
+  ]
 #+end_src
 
 * Relevance Calculus

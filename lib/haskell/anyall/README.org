@@ -15,6 +15,77 @@ And which do you choose, a hard or soft option?
 -- C. Lowe & N. Tennant, 1985
 #+end_quote
 
+* Usage
+
+Compile the typescript to javascript (you may need to ~npm i -g typescript~):
+#+begin_src bash
+  tsc ts/*.ts
+#+end_src
+
+Run the javascript to produce JSON:
+#+begin_src bash
+  node ts/example.js
+#+end_src
+
+Feed the JSON into the Haskell executable:
+#+begin_src bash
+  node ts/example.js | stack run
+#+end_src
+
+* CLI Documentation
+
+Input schema:
+
+#+begin_src typescript :tangle ts/types.ts
+
+     interface withDefault<T> {
+       byDefault?: T,
+       fromUser?: T
+     }
+     export default interface StdinSchema {
+       marking: {
+         [nodeLabel: `${string}`]: withDefault<boolean>;
+       },
+       andOrTree: LeafNode | AnyNode | AllNode
+     }
+     export class LeafNode {
+       leaf: string
+     }
+     abstract class SubTree {
+       children: (LeafNode | AnyNode | AllNode)[];
+       pre: string;
+       prepost?: string
+     }
+     export class AnyNode extends SubTree { nodetype: "any" }
+     export class AllNode extends SubTree { nodetype: "all" }
+#+end_src
+
+Input example:
+
+#+begin_src typescript :tangle ts/example.ts
+  import StdinSchema from "./types"
+
+  let mustSing : StdinSchema = {
+    marking: {
+      "walk": { byDefault: true },
+    },
+    andOrTree: {
+      nodetype: "all",
+      pre: "all of",
+      children: [
+        { leaf: "walk" },
+        { leaf: "run" },
+        { nodetype: "any"
+        , pre: "either"
+        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
+        }
+      ]
+    }
+  }
+
+  console.log(JSON.stringify(mustSing));
+#+end_src
+
 * Relevance Calculus
 
 Given a tree, we ~evaluate~ its tentative value.
@@ -83,7 +154,7 @@ in terms of display UI, View and Ask are both shown, and are editable, but "ask"
 See:
 - https://github.com/smucclaw/sandbox/blob/default/jacobtan/Rule34-logic-gates/rule34-haskell/src/SandboxBuilder.hs#L8
 
-* Things we were not smart enough to do
+* TODO Things we are gradually getting smart enough to do
 
 ** use Trees That Grow
 
@@ -96,59 +167,6 @@ a given node may supply more than one decision, so after the upgrade to Data.Tre
 
 We kind of have the beginnings of this because we keep Leaf-node values separate from the ~AnyAll Item~ input in a ~Marking~ map; so we don't need to go to ~fgl~ just yet.
 
-** get input from Aeson
-
-Input schema:
-
-#+begin_src typescript :tangle ts/types.ts
-
-     interface withDefault<T> {
-       byDefault?: T,
-       fromUser?: T
-     }
-     export default interface StdinSchema {
-       marking: {
-         [nodeLabel: `${string}`]: withDefault<boolean>;
-       },
-       andOrTree: LeafNode | AnyNode | AllNode
-     }
-     export class LeafNode {
-       leaf: string
-     }
-     abstract class SubTree {
-       children: (LeafNode | AnyNode | AllNode)[];
-       pre: string;
-       prepost?: string
-     }
-     export class AnyNode extends SubTree { nodetype: "any" }
-     export class AllNode extends SubTree { nodetype: "all" }
-#+end_src
-
-Input example:
-
-#+begin_src typescript :tangle ts/example.ts
-  import StdinSchema from "./types"
-
-  let mustSing : StdinSchema = {
-    marking: {
-      "walk": { byDefault: true },
-    },
-    andOrTree: {
-      nodetype: "all",
-      pre: "all of",
-      children: [
-        { leaf: "walk" },
-        { leaf: "run" },
-        { nodetype: "any"
-        , pre: "either"
-        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
-        }
-      ]
-    }
-  }
-
-  console.log(JSON.stringify(mustSing));
-#+end_src
 
 ** get input from a spreadsheet
 

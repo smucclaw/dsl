@@ -8,16 +8,17 @@ import Data.Tree
 import Data.Text.Lazy as TL
 
 ln, lt, lf, rt, rf, rn :: Default Bool
-ln = Left Nothing
-lt = Left $ Just True
-lf = Left $ Just False
-rt = Right $ Just True
-rf = Right $ Just False
-rn = Right Nothing
+ln = Default $ Left Nothing
+lt = Default $ Left $ Just True
+lf = Default $ Left $ Just False
+rt = Default $ Right $ Just True
+rf = Default $ Right $ Just False
+rn = Default $ Right Nothing
 
 main :: IO ()
 main = hspec $ do
-  let rlv item marking = relevant Hard DPNormal marking Nothing item
+  let markup m = Marking (Default <$> m)
+      rlv item marking = relevant Hard DPNormal (markup marking) Nothing item
   describe "with mustSing," $ do
     it "should ask for confirmation of assumptions, even if true" $ do
       rlv mustSing (Map.fromList [("walk",  Left $ Just True)
@@ -57,27 +58,27 @@ main = hspec $ do
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
     it "when Hard, should consider a Walk=R False to be dispositive" $ do
-      flip (dispositive Hard) mustSing (Map.fromList [("walk",  Right $ Just False)
-                                                     ,("eat",   Left $ Just True)
-                                                     ,("drink", Left $ Just True)])
+      flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just False)
+                                                              ,("eat",   Left $ Just True)
+                                                              ,("drink", Left $ Just True)])
         `shouldBe` [Leaf "walk"]
 
     it "when Soft, should consider a Walk=L False to be dispositive" $ do
-      flip (dispositive Soft) mustSing (Map.fromList [("walk",  Left $ Just False)
-                                                     ,("eat",   Left $ Just True)
-                                                     ,("drink", Left $ Just True)])
+      flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just False)
+                                                              ,("eat",   Left $ Just True)
+                                                              ,("drink", Left $ Just True)])
         `shouldBe` [Leaf "walk"]
 
     it "when Soft, should consider a Walk=L True, drink=L True to be dispositive" $ do
-      flip (dispositive Soft) mustSing (Map.fromList [("walk",  Left $ Just True)
-                                                     ,("eat",   Left $ Nothing)
-                                                     ,("drink", Left $ Just True)])
+      flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just True)
+                                                              ,("eat",   Left $ Nothing)
+                                                              ,("drink", Left $ Just True)])
         `shouldBe` [Leaf "walk", Leaf "drink"]
 
     it "should consider a Walk=R True, Eat=R True to be dispositive" $ do
-      flip (dispositive Hard) mustSing (Map.fromList [("walk",  Right $ Just True)
-                                              ,("eat",   Right $ Just True)
-                                              ,("drink", Left $ Just True)])
+      flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just True)
+                                                              ,("eat",   Right $ Just True)
+                                                              ,("drink", Left $ Just True)])
         `shouldBe` [Leaf "walk", Leaf "eat"]
 
     it "should short-circuit a confirmed False in an And list" $ do

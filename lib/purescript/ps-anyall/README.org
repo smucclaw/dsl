@@ -1,0 +1,24 @@
+* Usage
+
+#+begin_src sh
+  spago bundle-module --to ./dist/anyall.js
+  tsc dist/js-to-ps.ts && node dist/js-to-ps.js
+#+end_src
+
+should produce
+
+#+begin_example
+  ,* now we call fromNode1
+  hello node
+  ,* now we call fromNode2
+  hello node, you said moo
+  ,* now we call fromNode3
+  {
+    "shouldView": "View",
+    "andOr": {
+      "tag": "And",
+      "contents": "And"
+    },
+    "prePost": "(Just (Pre \"all of\"))",
+  ...
+#+end_example

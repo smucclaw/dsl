@@ -2,7 +2,7 @@
 
 #+begin_src sh
   spago bundle-module --to ./dist/anyall.js
-  tsc dist/js-to-ps.ts && node dist/js-to-ps.js | output.org
+  tsc dist/js-to-ps.ts && node dist/js-to-ps.js | tee output.org
 #+end_src
 
 should produce
@@ -57,84 +57,84 @@ Call the ~paint()~ function, which will compute the view/ask/hide status of each
 This produces a tree which should be suitable for the front-end to transform into a UI.
 
 #+begin_src javascript
-{
-  "shouldView": "View",
-  "prePost": {
-    "pre": "all of"
-  },
-  "mark": {
-    "source": "default",
-    "value": "false"
-  },
-  "andOr": {
-    "tag": "All",
-    "children": [
-      {
-        "shouldView": "Hide",
-        "prePost": {},
-        "mark": {
-          "source": "default",
-          "value": "true"
+  {
+    "shouldView": "View",
+    "prePost": {
+      "pre": "all of"
+    },
+    "mark": {
+      "source": "default",
+      "value": "false"
+    },
+    "andOr": {
+      "tag": "All",
+      "children": [
+        {
+          "shouldView": "Hide",
+          "prePost": {},
+          "mark": {
+            "source": "default",
+            "value": "true"
+          },
+          "andOr": {
+            "tag": "Leaf",
+            "contents": "walk"
+          }
         },
-        "andOr": {
-          "tag": "Leaf",
-          "contents": "walk"
-        }
-      },
-      {
-        "shouldView": "View",
-        "prePost": {},
-        "mark": {
-          "source": "user",
-          "value": "false"
+        {
+          "shouldView": "View",
+          "prePost": {},
+          "mark": {
+            "source": "user",
+            "value": "false"
+          },
+          "andOr": {
+            "tag": "Leaf",
+            "contents": "run"
+          }
         },
-        "andOr": {
-          "tag": "Leaf",
-          "contents": "run"
-        }
-      },
-      {
-        "shouldView": "Hide",
-        "prePost": {
-          "pre": "either"
-        },
-        "mark": {
-          "source": "default",
-          "value": "undefined"
-        },
-        "andOr": {
-          "tag": "Any",
-          "children": [
-            {
-              "shouldView": "Hide",
-              "prePost": {},
-              "mark": {
-                "source": "default",
-                "value": "true"
+        {
+          "shouldView": "Hide",
+          "prePost": {
+            "pre": "either"
+          },
+          "mark": {
+            "source": "default",
+            "value": "undefined"
+          },
+          "andOr": {
+            "tag": "Any",
+            "children": [
+              {
+                "shouldView": "Hide",
+                "prePost": {},
+                "mark": {
+                  "source": "default",
+                  "value": "true"
+                },
+                "andOr": {
+                  "tag": "Leaf",
+                  "contents": "eat"
+                }
               },
-              "andOr": {
-                "tag": "Leaf",
-                "contents": "eat"
+              {
+                "shouldView": "Hide",
+                "prePost": {},
+                "mark": {
+                  "source": "default",
+                  "value": "true"
+                },
+                "andOr": {
+                  "tag": "Leaf",
+                  "contents": "drink"
+                }
               }
-            },
-            {
-              "shouldView": "Hide",
-              "prePost": {},
-              "mark": {
-                "source": "default",
-                "value": "true"
-              },
-              "andOr": {
-                "tag": "Leaf",
-                "contents": "drink"
-              }
-            }
-          ]
+            ]
+          }
         }
-      }
-    ]
+      ]
+    }
   }
-}
 #+end_src
 
 * Questions

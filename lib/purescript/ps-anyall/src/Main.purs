@@ -13,6 +13,7 @@ module Main ( main
             , hard, soft
             , howDoWeEven
             , getItemByName
+            , decodeItemString
             ) where
 
 import Prelude
@@ -69,7 +70,7 @@ marking1_encoded = encode marking1
 
 decodeMarking :: Foreign -> Marking
 decodeMarking marking =
-  let eitherm = runExcept $ readMarking marking
+  let eitherm = runExcept $ decode marking
   in either
      (\e -> unsafeCrashWith $ "error in decodeMarking" <> show e)
      (\m -> m)
@@ -98,4 +99,7 @@ getItemByName itemname =
                    
 howDoWeEven :: String -> Int -> String
 howDoWeEven arg1 arg2 = "arg 1 = " <> arg1 <> "; arg 2 = " <> show arg2
+
+
+decodeItemString = decodeIt
 

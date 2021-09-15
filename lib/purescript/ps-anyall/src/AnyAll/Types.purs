@@ -14,7 +14,9 @@ import Data.Symbol
 import Data.Map      as Map
 import Option        as Option
 
+import Partial.Unsafe
 import Data.List
+import Control.Monad.Except
 import Foreign
 import Foreign.Index ((!), readProp)
 import Foreign.Keys   as FK
@@ -26,7 +28,7 @@ import Data.Show.Generic (genericShow)
 type Bool = Boolean
 
 --
--- the "native" data type is a simple tree of Items
+-- the "native" data type represents an And/Or structure as a simple tree of Items
 --
 
 data Item a =
@@ -38,10 +40,17 @@ data Item a =
 derive instance  eqItem :: (Eq a) => Eq (Item a)
 derive instance genericItem :: Generic (Item a) _
 instance showItem :: (Show a) => Show (Item a) where show eta = genericShow eta
-instance encodeString :: (Encode a) => Encode (Item a) where encode eta = genericEncode defaultOptions eta
+instance encodeItem :: (Encode a) => Encode (Item a) where encode eta = genericEncode defaultOptions eta
+instance decodeItem :: (Decode a) => Decode (Item a) where decode eta = genericDecode defaultOptions eta
 
+decodeIt :: Foreign -> (Item String)
+decodeIt f =
+  either
+  (\e -> unsafeCrashWith $ "error while decoding Item: " <> show e)
+  (\v -> v)
+  (runExcept (decode f))
 --
--- Item uses Label
+-- Item uses Label to prefix a tree with strings like "all of the following" or "any of the below"
 --
 data Label a = Pre a
              | PrePost a a
@@ -49,10 +58,11 @@ derive instance  eqLabel :: (Eq a) => Eq (Label a)
 derive instance genericLabel :: Generic (Label a) _
 instance showLabel :: (Show a) => Show (Label a) where show = genericShow
 instance encodeLabel :: (Encode a) => Encode (Label a) where encode eta = genericEncode defaultOptions eta
+instance decodeLabel :: (Decode a) => Decode (Label a) where decode eta = genericDecode defaultOptions eta
 
--- an Item tree represents the logic.
--- a Marking contains the current state of which elements have received user input;
--- if no user input was received, the Marking gives default values
+-- an Item tree represents the logic. The logic is immutable, at least within the short-term lifetime of a user session.
+-- By contrast, a Marking contains the current state of which elements have received user input;
+-- if no user input was received, the Marking gives default values. This gets updated every time the user clicks something.
 
 newtype Marking = Marking (Map.Map String (Default Bool))
 derive instance  eqMarking :: Eq (Marking)
@@ -60,27 +70,30 @@ derive instance genericMarking :: Generic Marking _
 derive newtype instance showMarking :: Show (Marking)
 instance encodeMarking :: Encode Marking where
   encode (Marking mymap) = unsafeToForeign $ FO.fromFoldable (Map.toUnfoldable (dumpDefault <$> mymap) :: List _)
-readMarking :: Foreign -> F Marking
-readMarking fm = do
-  mkeys <- FK.keys fm
-  astuples <- sequence $ (readDefPart fm <$> mkeys)
-  pure $ markup $ Map.fromFoldable astuples
-  where
-    -- there's a tutorial about how to deal with undefined but for now we are just going to go with string values of Maybe Bool
-    readDefPart fm mk = do
-      source <- (fm ! mk) >>= readProp "source" >>= readString
-      value  <- (fm ! mk) >>= readProp "value"  >>= readString
-      let lr = case source of
-              "default" -> Left
-              "user"    -> Right
-              _              -> Left
-          mb =
-            case value of
-              "true"      -> Just true
-              "false"     -> Just false
-              "undefined" -> Nothing
-              _                -> Nothing
-      pure $ Tuple mk (lr mb)
+
+-- should this be decodeMarking?
+instance decodeMarking :: Decode Marking where
+  decode fm = do
+    mkeys <- FK.keys fm
+    astuples <- sequence $ (readDefault fm <$> mkeys)
+    pure $ markup $ Map.fromFoldable astuples
+
+
+-- there's a tutorial about how to deal with undefined but for now we are just going to go with string values of Maybe Bool
+readDefault fm mk = do
+  source <- (fm ! mk) >>= readProp "source" >>= readString
+  value  <- (fm ! mk) >>= readProp "value"  >>= readString
+  let lr = case source of
+          "default" -> Left
+          "user"    -> Right
+          _         -> Left
+      mb =
+        case value of
+          "true"      -> Just true
+          "false"     -> Just false
+          "undefined" -> Nothing
+          _           -> Nothing
+  pure $ Tuple mk (lr mb)
 
 markup :: Map.Map String (Either (Maybe Boolean) (Maybe Boolean)) -> Marking
 markup x = Marking $ Default <$> x
@@ -93,6 +106,7 @@ derive instance genericDefault :: Generic (Default a) _
 instance showDefault :: (Show a) => Show (Default a) where show = genericShow
 instance encodeDefault :: (Show a, Encode a) => Encode (Default a) where
   encode eta = encode $ dumpDefault (eta)
+  
 
 dumpDefault :: forall a. Show a => Default a -> DefaultRecord
 dumpDefault (Default ( Left x))  = { source: "default", value: maybe2string x }
@@ -116,6 +130,7 @@ derive instance  eqQ :: Eq (Q)
 derive instance genericQ :: Generic (Q) _
 instance showQ :: Show (Q) where show eta = genericShow eta
 instance encodeQ :: Encode (Q) where encode eta = genericEncode defaultOptions eta
+
 
 -- it would be nice to use record wildcard constructors but i can't seem to figure it out.
 -- https://github.com/purescript/documentation/blob/master/language/Records.md

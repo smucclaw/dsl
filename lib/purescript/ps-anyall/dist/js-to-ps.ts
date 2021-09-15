@@ -23,24 +23,9 @@ console.log(AA.example1_encoded)
 console.log("** example1_encoded as JSON")
 console.log(JSON.stringify(AA.example1_encoded))
 
-console.log("* now we make up our own rules, using the same encoding convention")
+console.log("* we decode the encoded example1")
 // https://github.com/paf31/purescript-foreign-generic/blob/master/generated-docs/Foreign/Generic/Class.md
-
-// this is what the Purescript side of things calls an "Item"
-let fancyRules = {
-  tag: "All", contents:
-  [ { tag: "Pre", contents: "all of" },
-    [ { tag: "Leaf", contents: "perambulate" },
-      { tag: "Leaf", contents: "accelerate"  },
-      { tag: "Any",  contents: [
-        { tag: "Pre", contents: "either" },
-        [ { tag: "Leaf", contents: "ingest" },
-          { tag: "Leaf", contents: "imbibe" } ]
-      ] }
-    ] ]
-}
-console.log("we made up a fancy version of the rules:")
-console.log(fancyRules)
+console.log(AA.decodeItemString(AA.example1_encoded))
 
 // "marking1" is sourced from inside PS
 
@@ -60,25 +45,13 @@ let simpleMarking = {
 }
 console.log(simpleMarking)
 
-console.log("* now we make up a marking of our own, for the fancy rules")
-let fancyMarking = {
-  imbibe      : { source: "default", value: "true" },
-  ingest      : { source: "default", value: "true" },
-  perambulate : { source: "default", value: "true" },
-  accelerate  : { source: "default", value: "true" }
-}
-console.log(fancyMarking)
-
 console.log("* external simple marking read into Purescript")
 console.log(AA.decodeMarking(simpleMarking))
-
-console.log("* external fancy marking read into Purescript")
-console.log(AA.decodeMarking(fancyMarking))
 
 
 // the UI calls this function to paint the elements with view, etc.
 
-console.log("* now we call paint()")
+console.log("* now we call paint() for example 1")
 let paintOut = AA.paint(AA.hard)(simpleMarking)(AA.getItemByName("example1"))
 
 console.log("* paint() JSONified")
@@ -86,4 +59,49 @@ console.log(JSON.stringify(paintOut, null, 0))
 
 console.log("* paint() JSONified with a bit more breathing room")
 console.log(JSON.stringify(paintOut, null, 2))
+
+
+
+// let's try it with the example we made up
+
+// this is what the Purescript side of things calls an "Item"
+let fancyRules = {
+  tag: "All", contents:
+  [ { tag: "Pre", contents: "all of" },
+    [ { tag: "Leaf", contents: "perambulate" },
+      { tag: "Leaf", contents: "accelerate"  },
+      { tag: "Any",  contents: [
+        { tag: "Pre", contents: "either" },
+        [ { tag: "Leaf", contents: "ingest" },
+          { tag: "Leaf", contents: "imbibe" } ]
+      ] }
+    ] ]
+}
+console.log("* we made up a fancy version of the rules:")
+console.log(fancyRules)
+
+console.log("* we import the fancy rules as example2")
+let example2 = AA.decodeItemString(fancyRules)
+console.log(example2)
+
+console.log("* now we make up a marking for the fancy rules")
+let fancyMarking = {
+  imbibe      : { source: "default", value: "true" },
+  ingest      : { source: "default", value: "true" },
+  perambulate : { source: "default", value: "true" },
+  accelerate  : { source: "default", value: "undefined" }
+}
+console.log(fancyMarking)
+
+console.log("* external fancy marking read into Purescript")
+console.log(AA.decodeMarking(fancyMarking))
+
+console.log("* now we call paint() for the fancyRules, with soft")
+let paintOut2 = AA.paint(AA.soft)(fancyMarking)(example2)
+
+console.log("* 2 paint() JSONified")
+console.log(JSON.stringify(paintOut2, null, 0))
+
+console.log("* 2 paint() JSONified with a bit more breathing room")
+console.log(JSON.stringify(paintOut2, null, 2))
 

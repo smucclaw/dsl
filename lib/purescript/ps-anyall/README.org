@@ -54,6 +54,8 @@ Call the ~paint()~ function, which will compute the view/ask/hide status of each
   let paintOut = AA.paint(AA.hard)(simpleMarking)(AA.getItemByName("example1"))
 #+end_src
 
+~example1~ is a ruleset written natively in Purescript; it can be accessed from the rule library.
+
 This produces a tree which should be suitable for the front-end to transform into a UI.
 
 #+begin_src javascript
@@ -139,12 +141,44 @@ This produces a tree which should be suitable for the front-end to transform int
 
 * Questions
 
-** How do I construct a new Item of my own -- currently there seems to be only a single "example1" in the library which is on the PureScript end.
+** How do I write my own rules?
 
-Support for this is coming soon, we need to do a ~readItem~ decoder / parser from JS to PS.
+This will turn into a Purescript ~Item String~:
 
-For now we only have the dummy example.
+#+begin_src javascript
+  let fancyRules = {
+    tag: "All", contents:
+    [ { tag: "Pre", contents: "all of" },
+      [ { tag: "Leaf", contents: "perambulate" },
+        { tag: "Leaf", contents: "accelerate"  },
+        { tag: "Any",  contents: [
+          { tag: "Pre", contents: "either" },
+          [ { tag: "Leaf", contents: "ingest" },
+            { tag: "Leaf", contents: "imbibe" } ]
+        ] }
+      ] ]
+  }
+#+end_src
 
-** Can I call it with "Soft" as well?
+The corresponding marking looks like:
 
-Yes, this will take the default values into account in producing the top-level answer.
+#+begin_src javascript
+  let fancyMarking = {
+    imbibe      : { source: "default", value: "true" },
+    ingest      : { source: "default", value: "true" },
+    perambulate : { source: "default", value: "true" },
+    accelerate  : { source: "default", value: "undefined" }
+  }
+#+end_src
+
+Now you can run ~paint~:
+
+#+begin_src javascript
+  AA.paint(AA.soft)(fancyMarking)(example2)
+#+end_src
+
+** What's up with the Soft and Hard modes?
+
+Soft takes the default values into account when computing the short-circuits and the evaluation of the subtree answers.
+
+Hard only considers end-user input.

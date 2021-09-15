@@ -6,23 +6,24 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Console (log)
+import Partial.Unsafe (unsafePartial)
 
 import Data.Map as Map
 import Data.List (any, all, elem)
 
 import Data.Maybe
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: Hardness -> DisplayPref -> Marking -> Maybe Bool -> Item String -> Q
-relevant sh dp marking parentValue self =
+relevant :: Hardness -> DisplayPref -> Marking -> Maybe Bool -> NLDict -> Item String -> Q
+relevant sh dp marking parentValue nl self =
   let selfValue = evaluate sh marking self
       initVis   = if isJust parentValue then if parentValue == selfValue              then View
                                                                                       else Hide
                                         else if isJust (evaluate Hard marking self)   then View
                                                                                       else Ask
       -- we are able to compute the initial visibility of the subtree; TODO we can modify it according to our display preference
-      paintedChildren = relevant sh dp marking selfValue <$> getChildren self
+      paintedChildren = relevant sh dp marking selfValue nl <$> getChildren self
       -- if i am myself hidden, then convert all my descendants' Ask to Hide
       repaintedChildren = if initVis /= Hide then paintedChildren
                           else ask2hide <$> paintedChildren
@@ -31,14 +32,17 @@ relevant sh dp marking parentValue self =
              Leaf x -> case Map.lookup x (getMarking marking) of
                          Just (Default (Right b)) -> Q { shouldView: View
                                                        , andOr: Simply x
+                                                       , tagNL: fromMaybe Map.empty (Map.lookup x nl)
                                                        , prePost: Nothing
                                                        , mark: Default $ Right b
                                                        , children: [] }
-                         Just (Default (Left  b)) -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b) []
-                         Nothing          -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing) []
-             Any label items -> ask2view (mkQ initVis  Or (Just label) (Default $ Left selfValue) repaintedChildren)
-             All label items -> ask2view (mkQ initVis And (Just label) (Default $ Left selfValue) repaintedChildren)
+                         Just (Default (Left  b)) -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (enMap nl) Nothing (Default $ Left  b) []
+                         Nothing          -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (enMap nl) Nothing (Default $ Left Nothing) []
+             Any label items -> ask2view (mkQ initVis  Or (enMap nl) (Just label) (Default $ Left selfValue) repaintedChildren)
+             All label items -> ask2view (mkQ initVis And (enMap nl) (Just label) (Default $ Left selfValue) repaintedChildren)
   where
+    enMap nldict = fromMaybe Map.empty (Map.lookup "en" nl)
+
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c
     getChildren (All _ c) = c

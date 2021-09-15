@@ -52,7 +52,7 @@ console.log(AA.decodeMarking(simpleMarking))
 // the UI calls this function to paint the elements with view, etc.
 
 console.log("* now we call paint() for example 1")
-let paintOut = AA.paint(AA.hard)(simpleMarking)(AA.getItemByName("example1"))
+let paintOut = AA.paint(AA.hard)(simpleMarking)(AA.example1_nl)(AA.getItemByName("example1"))
 
 console.log("* paint() JSONified")
 console.log(JSON.stringify(paintOut, null, 0))
@@ -97,7 +97,9 @@ console.log("* external fancy marking read into Purescript")
 console.log(AA.decodeMarking(fancyMarking))
 
 console.log("* now we call paint() for the fancyRules, with soft")
-let paintOut2 = AA.paint(AA.soft)(fancyMarking)(example2)
+let paintOut2 = AA.paint(AA.soft)(fancyMarking)(AA.example1_nl)(example2)
+
+// todo: be able to take NLDict input -- we need a decode function
 
 console.log("* 2 paint() JSONified")
 console.log(JSON.stringify(paintOut2, null, 0))

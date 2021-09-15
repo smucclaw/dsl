@@ -60,6 +60,8 @@ instance showLabel :: (Show a) => Show (Label a) where show = genericShow
 instance encodeLabel :: (Encode a) => Encode (Label a) where encode eta = genericEncode defaultOptions eta
 instance decodeLabel :: (Decode a) => Decode (Label a) where decode eta = genericDecode defaultOptions eta
 
+type NLDict = Map.Map String (Map.Map String String)
+
 -- an Item tree represents the logic. The logic is immutable, at least within the short-term lifetime of a user session.
 -- By contrast, a Marking contains the current state of which elements have received user input;
 -- if no user input was received, the Marking gives default values. This gets updated every time the user clicks something.
@@ -122,6 +124,7 @@ type DefaultRecord = { source :: String
 
 newtype Q = Q { shouldView :: ShouldView
               , andOr      :: AndOr String
+              , tagNL      :: Map.Map String String
               , prePost    :: Maybe (Label String)
               , mark       :: Default Bool
               , children   :: Array Q
@@ -129,21 +132,28 @@ newtype Q = Q { shouldView :: ShouldView
 derive instance  eqQ :: Eq (Q)
 derive instance genericQ :: Generic (Q) _
 instance showQ :: Show (Q) where show eta = genericShow eta
-instance encodeQ :: Encode (Q) where encode eta = genericEncode defaultOptions eta
+
+-- instance encodeQ :: Encode (Q) where
+--   encode (Q { shouldView, andOr, tagNL, prePost, mark, children }) =
+--     genericEncode defaultOptions { shouldView, andOr, prePost, mark, children }
+                                 -- and then do something about the tagNL map
 
 
 -- it would be nice to use record wildcard constructors but i can't seem to figure it out.
 -- https://github.com/purescript/documentation/blob/master/language/Records.md
 -- I tried mkQ = Q <<< { shouldView: _, ... }
-mkQ sv ao pp m c = Q { shouldView: sv
-                     , andOr:      ao -- slightly different from QoutJS, which contains children in it
-                     , prePost:    pp
-                     , mark:       m
-                     , children:   c
-                     }
+mkQ sv ao nl pp m c =
+  Q { shouldView: sv
+    , andOr:      ao -- slightly different from QoutJS, which contains children in it
+    , tagNL:      nl
+    , prePost:    pp
+    , mark:       m
+    , children:   c
+    }
 
 newtype QoutJS = QoutJS (Option.Option ( shouldView :: String
                                        , andOr      :: Option.Option ( tag :: String
+                                                                     , nl :: Option.Option ( en :: String )
                                                                      , contents :: String
                                                                      , children :: Array QoutJS
                                                                      )
@@ -159,14 +169,17 @@ instance showQoutJS :: Show QoutJS where show eta = genericShow eta
 
 
 qoutjs :: Q -> QoutJS
-qoutjs (Q q@{ shouldView, andOr, prePost, mark, children }) =
-  QoutJS $ Option.fromRecord { shouldView : show shouldView
-                             , andOr      : case andOr of And -> Option.fromRecord { tag: "All", children: qoutjs <$> children }
-                                                          Or  -> Option.fromRecord { tag: "Any", children: qoutjs <$> children }
-                                                          (Simply x) -> Option.fromRecord { tag: "Leaf", contents: Just x }
-                             , prePost    : dumpPrePost prePost
-                             , mark       : dumpDefault mark
-                             }
+qoutjs (Q q@{ shouldView, andOr, tagNL, prePost, mark, children }) =
+  QoutJS $ Option.fromRecord {
+    shouldView : show shouldView
+    , andOr      : case andOr of And -> Option.fromRecord { tag: "All", children: qoutjs <$> children }
+                                 Or  -> Option.fromRecord { tag: "Any", children: qoutjs <$> children }
+                                 (Simply x) -> Option.fromRecord { tag: "Leaf"
+                                                                 , contents: Just x
+                                                                 , nl: Option.fromRecord { en: fromMaybe "" (Map.lookup x tagNL) } }
+    , prePost    : dumpPrePost prePost
+    , mark       : dumpDefault mark
+    }
 
 newtype PrePostRecord = PPR (Option.Option ( pre :: String, post :: String ))
 derive instance  eqPrePostRecord :: Eq PrePostRecord

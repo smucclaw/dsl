@@ -2,6 +2,7 @@ module Main ( main
             , fromNode1
             , fromNode2
             , fromNode3
+            , example1_nl
             , example1
             , example1_encoded
             , marking1
@@ -9,6 +10,7 @@ module Main ( main
             , marking1_decoded
             , marking1_recoded
             , decodeMarking
+            , pdpa_dbno_s1p1 , pdpa_dbno_s1p1_nl
             , paint
             , hard, soft
             , howDoWeEven
@@ -17,13 +19,14 @@ module Main ( main
             ) where
 
 import Prelude
-
 import Effect (Effect)
 import Effect.Console (log)
 
-import Partial.Unsafe
 import AnyAll.Types
 import AnyAll.Relevance(relevant)
+import RuleLib.PDPADBNO as RuleLib.PDPADBNO
+
+import Partial.Unsafe
 import Data.Map as Map
 import Data.Either(Either(..), fromRight, either)
 import Data.Maybe(Maybe(..), fromJust)
@@ -58,7 +61,20 @@ example1 = (All (Pre "all of")
                    [ Leaf "eat"
                    , Leaf "drink" ] ])
 
+example1_nl :: NLDict
+example1_nl =
+  Map.fromFoldable [ Tuple "en" $ Map.fromFoldable
+                     [ Tuple "walk"  "walk slowly"
+                     , Tuple "run"   "run fast"
+                     , Tuple "eat"   "eat food"
+                     , Tuple "drink" "drink beverages"
+                     ]
+                   ]
+
 example1_encoded = encode example1
+
+pdpa_dbno_s1p1 = RuleLib.PDPADBNO.schedule1_part1
+pdpa_dbno_s1p1_nl = RuleLib.PDPADBNO.schedule1_part1_nl
 
 marking1 :: Marking
 marking1 = markup $ Map.fromFoldable [Tuple "walk"  $ Right ( Just true )
@@ -81,15 +97,15 @@ marking1_decoded = decodeMarking marking1_encoded
 marking1_recoded x = decodeMarking $ encode x
 
 output1 :: QoutJS
-output1 = qoutjs $ relevant Hard DPNormal marking1 Nothing example1
+output1 = qoutjs $ relevant Hard DPNormal marking1 Nothing example1_nl example1
 
 type ItemName = String
 
 itemLibrary = Map.fromFoldable [Tuple "example1" example1]
 
-paint :: Hardness -> Foreign -> Item String -> QoutJS
-paint h fm item =
-  qoutjs $ relevant h DPNormal (decodeMarking fm) Nothing item
+paint :: Hardness -> Foreign -> NLDict -> Item String -> QoutJS
+paint h fm nl item =
+  qoutjs $ relevant h DPNormal (decodeMarking fm) Nothing nl item
 
 getItemByName :: String -> Item String
 getItemByName itemname =

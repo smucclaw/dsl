@@ -14,8 +14,7 @@ import Data.Maybe
 import Data.Either (Either(..))
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: forall a. Ord a =>
-            Hardness -> DisplayPref -> Marking a -> Maybe Bool -> Item a -> Q a
+relevant :: Hardness -> DisplayPref -> Marking -> Maybe Bool -> Item String -> Q
 relevant sh dp marking parentValue self =
   let selfValue = evaluate sh marking self
       initVis   = if isJust parentValue then if parentValue == selfValue              then View
@@ -44,17 +43,16 @@ relevant sh dp marking parentValue self =
     getChildren (Any _ c) = c
     getChildren (All _ c) = c
 
-    ask2hide :: Q a -> Q a
+    ask2hide :: Q -> Q
     ask2hide (Q q@{ shouldView: Ask }) = Q (q { shouldView = Hide })
     ask2hide x = x
     
-    ask2view :: Q a -> Q a
+    ask2view :: Q -> Q
     ask2view (Q q@{ shouldView: Ask }) = Q $ q { shouldView = View }
     ask2view x = x
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
-evaluate :: forall a. Ord a =>
-            Hardness -> Marking a -> Item a -> Maybe Bool
+evaluate :: Hardness -> Marking -> Item String -> Maybe Bool
 evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just y))) -> Just y
                                              Just (Default (Left  (Just y))) -> Just y

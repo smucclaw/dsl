@@ -8,8 +8,10 @@ import Effect (Effect)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 
+import Data.Set as Set
+import Data.Tuple
 import Data.Map as Map
-import Data.List (any, all, elem)
+import Data.List (any, all, elem, List(..))
 
 import Data.Maybe
 import Data.Either (Either(..), either)
@@ -32,16 +34,24 @@ relevant sh dp marking parentValue nl self =
              Leaf x -> case Map.lookup x (getMarking marking) of
                          Just (Default (Right b)) -> Q { shouldView: View
                                                        , andOr: Simply x
-                                                       , tagNL: fromMaybe Map.empty (Map.lookup x nl)
+                                                       , tagNL: nlMap x nl
                                                        , prePost: Nothing
                                                        , mark: Default $ Right b
                                                        , children: [] }
-                         Just (Default (Left  b)) -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (enMap nl) Nothing (Default $ Left  b) []
-                         Nothing          -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (enMap nl) Nothing (Default $ Left Nothing) []
-             Any label items -> ask2view (mkQ initVis  Or (enMap nl) (Just label) (Default $ Left selfValue) repaintedChildren)
-             All label items -> ask2view (mkQ initVis And (enMap nl) (Just label) (Default $ Left selfValue) repaintedChildren)
+                         Just (Default (Left  b)) -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (nlMap x nl) Nothing (Default $ Left  b) []
+                         Nothing          -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (nlMap x nl) Nothing (Default $ Left Nothing) []
+             Any label items -> ask2view (mkQ initVis  Or Map.empty (Just label) (Default $ Left selfValue) repaintedChildren)
+             All label items -> ask2view (mkQ initVis And Map.empty (Just label) (Default $ Left selfValue) repaintedChildren)
   where
-    enMap nldict = fromMaybe Map.empty (Map.lookup "en" nl)
+    -- from a dictionary of { langID: { shortword: longtext } }
+    -- to a dictionary of { langID: longtext }
+    nlMap word nldict =
+      let langs = Set.toUnfoldable $ Map.keys nldict :: Array String
+      in Map.fromFoldable $ do
+            lg <- langs
+            let lgDict = fromMaybe Map.empty (Map.lookup lg nl)
+                longtext = fromMaybe word (Map.lookup word lgDict)
+            pure $ Tuple lg longtext
 
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c

@@ -50,7 +50,7 @@ relevant sh dp marking parentValue nl self =
       in Map.fromFoldable $ do
             lg <- langs
             let lgDict = fromMaybe Map.empty (Map.lookup lg nl)
-                longtext = fromMaybe "" (Map.lookup word lgDict)
+                longtext = fromMaybe word (Map.lookup word lgDict)
             pure $ Tuple lg longtext
 
     getChildren (Leaf _) = []

@@ -60,6 +60,11 @@ instance showLabel :: (Show a) => Show (Label a) where show = genericShow
 instance encodeLabel :: (Encode a) => Encode (Label a) where encode eta = genericEncode defaultOptions eta
 instance decodeLabel :: (Decode a) => Decode (Label a) where decode eta = genericDecode defaultOptions eta
 
+label2pre (Pre x) = x
+label2pre (PrePost x y) = x
+label2post (PrePost x y) = y
+label2post (Pre x) = "" -- maybe throw an error?
+
 type NLDict = Map.Map String (Map.Map String String)
 
 -- an Item tree represents the logic. The logic is immutable, at least within the short-term lifetime of a user session.
@@ -172,14 +177,16 @@ qoutjs :: Q -> QoutJS
 qoutjs (Q q@{ shouldView, andOr, tagNL, prePost, mark, children }) =
   QoutJS $ Option.fromRecord {
     shouldView : show shouldView
-    , andOr      : case andOr of And -> Option.fromRecord { tag: "All", children: qoutjs <$> children }
-                                 Or  -> Option.fromRecord { tag: "Any", children: qoutjs <$> children }
+    , andOr      : case andOr of And -> Option.fromRecord { tag: "All", children: qoutjs <$> children, nl: miniNL }
+                                 Or  -> Option.fromRecord { tag: "Any", children: qoutjs <$> children, nl: miniNL }
                                  (Simply x) -> Option.fromRecord { tag: "Leaf"
                                                                  , contents: Just x
-                                                                 , nl: FO.fromFoldable (Map.toUnfoldable tagNL :: Array (Tuple String String)) }
+                                                                 , nl: miniNL }
     , prePost    : dumpPrePost prePost
     , mark       : dumpDefault mark
     }
+ where miniNL =
+         FO.fromFoldable (Map.toUnfoldable tagNL :: Array (Tuple String String))
 
 newtype PrePostRecord = PPR (Option.Option ( pre :: String, post :: String ))
 derive instance  eqPrePostRecord :: Eq PrePostRecord

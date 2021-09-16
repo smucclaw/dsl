@@ -14,7 +14,7 @@ module Main ( main
             , paint
             , hard, soft
             , howDoWeEven
-            , getItemByName
+            , getItemByName, getNLByName
             , decodeItemString
             ) where
 
@@ -101,7 +101,12 @@ output1 = qoutjs $ relevant Hard DPNormal marking1 Nothing example1_nl example1
 
 type ItemName = String
 
-itemLibrary = Map.fromFoldable [Tuple "example1" example1]
+-- todo -- reorganize these
+itemLibrary = Map.fromFoldable [Tuple "example1" example1
+                               ,Tuple "pdpa_dbno_s1p1" pdpa_dbno_s1p1]
+
+nlLibrary = Map.fromFoldable [Tuple "example1" example1_nl
+                             ,Tuple "pdpa_dbno_s1p1" pdpa_dbno_s1p1_nl]
 
 paint :: Hardness -> Foreign -> NLDict -> Item String -> QoutJS
 paint h fm nl item =
@@ -111,6 +116,12 @@ getItemByName :: String -> Item String
 getItemByName itemname =
   case Map.lookup itemname itemLibrary of
     Nothing     -> unsafeCrashWith $ "anyall: unable to find rule item named " <> itemname
+    (Just item) -> item
+                   
+getNLByName :: String -> NLDict
+getNLByName itemname =
+  case Map.lookup itemname nlLibrary of
+    Nothing     -> unsafeCrashWith $ "anyall: unable to find nldict named " <> itemname
     (Just item) -> item
                    
 howDoWeEven :: String -> Int -> String

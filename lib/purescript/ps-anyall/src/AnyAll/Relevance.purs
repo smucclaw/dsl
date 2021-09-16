@@ -40,8 +40,8 @@ relevant sh dp marking parentValue nl self =
                                                        , children: [] }
                          Just (Default (Left  b)) -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (nlMap x nl) Nothing (Default $ Left  b) []
                          Nothing          -> mkQ (if initVis /= Hide then Ask else Hide)  (Simply x) (nlMap x nl) Nothing (Default $ Left Nothing) []
-             Any label items -> ask2view (mkQ initVis  Or Map.empty (Just label) (Default $ Left selfValue) repaintedChildren)
-             All label items -> ask2view (mkQ initVis And Map.empty (Just label) (Default $ Left selfValue) repaintedChildren)
+             Any label items -> ask2view (mkQ initVis  Or (nlMap (label2pre label) nl) (Just label) (Default $ Left selfValue) repaintedChildren)
+             All label items -> ask2view (mkQ initVis And (nlMap (label2pre label) nl) (Just label) (Default $ Left selfValue) repaintedChildren)
   where
     -- from a dictionary of { langID: { shortword: longtext } }
     -- to a dictionary of { langID: longtext }

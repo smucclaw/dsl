@@ -6,6 +6,8 @@ import Data.Map as Map
 import Data.Maybe
 import AnyAll.Types
 
+-- in the future the front-end will break out the source content into these structures
+
 schedule1_part1 :: Item String
 schedule1_part1 = 
   Any (Pre "any of the following are prescribed personal data:")
@@ -32,8 +34,6 @@ schedule1_part1 =
                        , Leaf "7.b"
                        , Leaf "7.c"
                        ]
-
-       , Leaf "7"
        , Leaf "8"
        , Leaf "9"
        , Leaf "10"
@@ -63,7 +63,6 @@ schedule1_part1 =
                         , Leaf "20.b"
                         , Leaf "20.c"
                         ]
-       , Leaf "20"
        , Leaf "21"
        , Leaf "22"
        , Any (Pre "23") [ Leaf "23.a"

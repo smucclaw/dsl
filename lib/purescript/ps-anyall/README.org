@@ -29,6 +29,8 @@ it will be easier to open the output in emacs org-mode:
   emacs output.org
 #+end_example
 
+and once in emacs press TAB to toggle folding visibility
+
 * Usage
 
 From a JS codebase such as Vue, the AnyAll library helps you paint each input component appropriately.

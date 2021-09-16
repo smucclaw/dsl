@@ -1,68 +1,62 @@
 
 import * as AA from "./anyall"
 
-console.log("* now we call fromNode1")
-console.log(AA.fromNode1)
+let say = console.log
 
-console.log("* now we call fromNode2")
-console.log(AA.fromNode2("moo"))
+say("This output is intended to be opened in Emacs Org-Mode -- node dict js-to-ps.js | tee output.org")
+say("Once in emacs, use TAB to cycle folding/unfolding visibility.")
+say("But also have the source code open alongside for inspection.")
 
-console.log("* now we call fromNode3")
-console.log(JSON.stringify(AA.fromNode3,null,0))
+say("* First we learn how to call into a purescript-generated library.")
 
-console.log("* function calling is curried")
-console.log(AA.howDoWeEven("input string")(100))
+say("** fromNode1 is a value");                          say(AA.fromNode1)
+say("** fromNode2 is a function");                       say(AA.fromNode2("moo"))
+say("** fromNode3 is a complex data structure");         code(AA.fromNode3, true)
 
-console.log("* now we print example1 :: Item String")
-console.log("** raw")
-console.log(AA.example1)
-console.log("** json")
-console.log(JSON.stringify(AA.example1,null,0))
-console.log("** example1_encoded")
-console.log(AA.example1_encoded)
-console.log("** example1_encoded as JSON")
-console.log(JSON.stringify(AA.example1_encoded))
+function code( obj
+               , asjson : boolean = false
+               , style="src javascript"
+             ) {
+  say("#+begin_"+style)
+  if (asjson) { say(JSON.stringify(obj,null,2)) }
+  else        { say(obj) }
+  say("#+end_"+style)
+}
 
-console.log("* we decode the encoded example1")
-// https://github.com/paf31/purescript-foreign-generic/blob/master/generated-docs/Foreign/Generic/Class.md
-console.log(AA.decodeItemString(AA.example1_encoded))
+say("** function calling is curried, so each argument gets its own ()")
+say(AA.howDoWeEven("input string")(100))
 
-// "marking1" is sourced from inside PS
+say("* Let's learn the two important input datatypes we'll be using in the paint() call")
 
-console.log("* marking1_encoded")
-console.log(AA.marking1_encoded)
-console.log("* marking1_encoded then decoded")
-console.log(AA.marking1_decoded)
-console.log("* marking1_encoded then decoded then encoded again")
-console.log(AA.marking1_recoded)
+say("** example1 :: Item String")
+say("This represents the logic of the rule: how predicates conjoin with one another in an and/or tree.")
+say("The /Leaf/ nodes contain strings which show up again in the Marking, below.")
 
-console.log("* we make up a marking of our own for the simple rules. the UI produces this -- each click creates a new marking.")
+say("*** raw");                                         code(AA.example1)
+say("*** json");                                        code(JSON.stringify(AA.example1,null,0))
+say("*** encoded by purescript for consumption in JS"); code(AA.example1_encoded, true)
+
+say("** marking1 :: Marking")
+say("A /Marking/ represents a particular state of true/false settings, typically read from the UI. We also use this to preset defaults.")
+
+say("*** The Purescript ~Main.purs~ provides a ~marking1~ to go with ~example1~:")
+say("**** marking1_encoded");                                 say(AA.marking1_encoded, true)
+say("**** marking1_encoded then decoded");                    say(AA.marking1_decoded)
+say("**** marking1_encoded then decoded then encoded again"); say(AA.marking1_recoded, true) // prove our codec works by roundtripping
+
+say("*** We can make up a marking of our own for the simple rules. The JS UI produces this -- each click creates a new marking.")
+
 let simpleMarking = {
     walk : { source: "default", value: "undefined" },
-    run  : { source: "user",    value: "false" },       // "i don't like to run"
+    run  : { source: "user",    value: "true" },       // "i don't like to run"
     drink: { source: "default", value: "true" },
     eat  : { source: "default", value: "true" }
 }
-console.log(simpleMarking)
+code(simpleMarking, true)
+say('When the user clicks on something, the /default/ changes to /user/, and the /value/ changes to either "true", "false", or "undefined".')
 
-console.log("* external simple marking read into Purescript")
-console.log(AA.decodeMarking(simpleMarking))
-
-
-// the UI calls this function to paint the elements with view, etc.
-
-console.log("* now we call paint() for example 1")
-let paintOut = AA.paint(AA.hard)(simpleMarking)(AA.getNLByName("example1"))(AA.getItemByName("example1"))
-
-console.log("* paint() JSONified")
-console.log(JSON.stringify(paintOut, null, 0))
-
-console.log("* paint() JSONified with a bit more breathing room")
-console.log(JSON.stringify(paintOut, null, 2))
-
-
-
-// let's try it with the example we made up
+say("** We can make up our own rules, using the same encoding convention")
+// https://github.com/paf31/purescript-foreign-generic/blob/master/generated-docs/Foreign/Generic/Class.md
 
 // this is what the Purescript side of things calls an "Item"
 let fancyRules = {
@@ -77,33 +71,51 @@ let fancyRules = {
       ] }
     ] ]
 }
-console.log("* we made up a fancy version of the rules:")
-console.log(fancyRules)
+say("#+NAME: fancyRules");                                     code(fancyRules, true)
 
-console.log("* we import the fancy rules as example2")
-let example2 = AA.decodeItemString(fancyRules)
-console.log(example2)
-
-console.log("* now we make up a marking for the fancy rules")
+say("** We can make up a marking to go with it:")
 let fancyMarking = {
   imbibe      : { source: "default", value: "true" },
   ingest      : { source: "default", value: "true" },
   perambulate : { source: "default", value: "true" },
   accelerate  : { source: "default", value: "undefined" }
 }
-console.log(fancyMarking)
+say("#+NAME: fancyMarking");                                  code(fancyMarking, true)
 
-console.log("* external fancy marking read into Purescript")
-console.log(AA.decodeMarking(fancyMarking))
+say("* The purescript library is able to consume our rules and our markings:")
 
-console.log("* now we call paint() for the fancyRules, with soft")
-let paintOut2 = AA.paint(AA.soft)(fancyMarking)(AA.getNLByName("example1"))(example2)
+say("** external simple marking read into Purescript")
+code(AA.decodeMarking(simpleMarking))
 
-// todo: be able to take NLDict input -- we need a decode function
+let decodedFancyRule = AA.decodeItemString(fancyRules)
+say("** external fancy Rule read into Purescript");           code(decodedFancyRule, true)
 
-console.log("* 2 paint() JSONified")
-console.log(JSON.stringify(paintOut2, null, 0))
+say("** external fancy Marking read into Purescript")
+let decodedFancyMarking = AA.decodeMarking(fancyMarking);     code(fancyMarking, true)
 
-console.log("* 2 paint() JSONified with a bit more breathing room")
-console.log(JSON.stringify(paintOut2, null, 2))
+say("* now we call paint() for the fancyRules, with soft")
+let paintOut2 = AA.paint(AA.soft)(fancyMarking)(AA.getNLByName("example1"))(decodedFancyRule)
+
+say("NOTE: the input to ~paint~ takes a JS-style marking, but a PS-style (decoded) rule.")
+say("This is because we expect the rules to typically be authored on the PS side.")
+
+say("* TL;DR: now, most importantly, we use all this to call ~paint()~");
+
+say("** we call paint() on a simpleMarking, in hard mode")
+let paintsimple = AA.paint
+                  (AA.hard)
+                  (simpleMarking)
+                  (AA.getNLByName("example1"))
+                  (AA.getItemByName("example1"))
+
+code(paintsimple)
+
+say("** we call paint() on a fancyMarking, in soft mode")
+let paintfancy =  AA.paint
+                  (AA.soft)
+                  (fancyMarking)
+                  (AA.getNLByName("example1"))
+                  (decodedFancyRule)
+
+code(paintfancy, true)
 

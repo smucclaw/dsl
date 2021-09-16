@@ -139,6 +139,18 @@ This produces a tree which should be suitable for the front-end to transform int
   }
 #+end_src
 
+* Note
+
+The boolean and optional types returned by the ~paint~ function are rendered as actual strings:
+
+#+begin_example
+  "true"
+  "false"
+  "undefined"
+#+end_example
+
+So please add a little layer to convert them back to the appropriate JS values.
+
 * Questions
 
 ** How do I write my own rules?

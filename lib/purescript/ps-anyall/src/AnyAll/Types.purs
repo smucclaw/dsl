@@ -153,7 +153,7 @@ mkQ sv ao nl pp m c =
 
 newtype QoutJS = QoutJS (Option.Option ( shouldView :: String
                                        , andOr      :: Option.Option ( tag :: String
-                                                                     , nl :: Option.Option ( en :: String )
+                                                                     , nl :: FO.Object String
                                                                      , contents :: String
                                                                      , children :: Array QoutJS
                                                                      )
@@ -176,7 +176,7 @@ qoutjs (Q q@{ shouldView, andOr, tagNL, prePost, mark, children }) =
                                  Or  -> Option.fromRecord { tag: "Any", children: qoutjs <$> children }
                                  (Simply x) -> Option.fromRecord { tag: "Leaf"
                                                                  , contents: Just x
-                                                                 , nl: Option.fromRecord { en: fromMaybe "" (Map.lookup x tagNL) } }
+                                                                 , nl: FO.fromFoldable (Map.toUnfoldable tagNL :: Array (Tuple String String)) }
     , prePost    : dumpPrePost prePost
     , mark       : dumpDefault mark
     }

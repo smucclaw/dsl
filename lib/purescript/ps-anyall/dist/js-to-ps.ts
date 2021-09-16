@@ -3,7 +3,7 @@ import * as AA from "./anyall"
 
 let say = console.log
 
-say("This output is intended to be opened in Emacs Org-Mode -- node dict js-to-ps.js | tee output.org")
+say("This output is intended to be opened in Emacs Org-Mode -- node dict/js-to-ps.js | tee output.org")
 say("Once in emacs, use TAB to cycle folding/unfolding visibility.")
 say("But also have the source code open alongside for inspection.")
 

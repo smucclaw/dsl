@@ -108,7 +108,7 @@ let paintsimple = AA.paint
                   (AA.getNLByName("example1"))
                   (AA.getItemByName("example1"))
 
-code(paintsimple)
+code(paintsimple, true)
 
 say("** we call paint() on a fancyMarking, in soft mode")
 let paintfancy =  AA.paint

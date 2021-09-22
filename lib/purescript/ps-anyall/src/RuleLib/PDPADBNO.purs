@@ -48,35 +48,6 @@ ndb_nl =
     ]
   ]
 
-{- 
-it results in, or is likely to result in, significant harm to an affected individual																				
-IF	FALSE	the data breach is in relation to any prescribed personal data or class of personal data relating to the individual																		
-OR	FALSE	in other prescribed circumstances.																		
-																				
-IF	FALSE	the data breach relates to																		
-			FALSE			the individual’s	FALSE	full name												
-						,	FALSE	alias												
-						OR	FALSE	identification number												
-		AND	FALSE	any of the personal data or classes of personal data relating to the individual																
-				set out in	Part 1 of the Schedule															
-				subject to	Part 2 of the Schedule															
-																				
-OR	TRUE	all of	the following personal data relating to an individual’s account with an organisation:																	
-		TRUE	the individual’s account identifier						such as an account name or number;											
-									includes a number assigned to any account the individual has with an organisation that is a bank or finance company.											
-		TRUE	any	FALSE	password					that is	TRUE	used		to	allow	FALSE	access to		the individual’s account.	
-				FALSE	security code					or	FALSE	required			or	TRUE	use of			
-				FALSE	access code															
-				TRUE	response to a security question															
-				FALSE	biometric data															
-			or	FALSE	other data															
-																				
-it is, or is likely to be, of a significant scale																				
-IF	FALSE	if the data breach affects not fewer than							the prescribed number of affected individuals											
-OR	FALSE	in other prescribed circumstances.							IS	500	(Regs §4)
-
--}
-
 schedule1_part1 :: Item String
 schedule1_part1 = 
   Any (Pre "any of the following are prescribed personal data:")

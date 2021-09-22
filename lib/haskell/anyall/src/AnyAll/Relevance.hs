@@ -28,9 +28,8 @@ relevant sh dp marking parentValue self =
   in -- convert to a QTree for output
   case self of
              Leaf x -> case Map.lookup x (getMarking marking) of
-                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
-                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
+                         Just d           -> Node (Q (if initVis /= Hide then Ask else Hide) (Simply x) Nothing d) []
+                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide) (Simply x) Nothing (Default $ Left Nothing)) []
              Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
              All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
   where

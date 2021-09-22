@@ -2,7 +2,10 @@ import StdinSchema from "./types"
 
 let mustSing : StdinSchema = {
   marking: {
-    "walk": { byDefault: true },
+    "walk":  { fromUser: true },
+    "run":   { fromUser: true },
+//    "drink": { fromUser: false },
+    "eat":   { fromUser: true  }
   },
   andOrTree: {
     nodetype: "all",

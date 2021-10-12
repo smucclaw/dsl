@@ -2,7 +2,7 @@
 
 module AnyAll.PP (ppQTree) where
 
-import AnyAll.Types
+import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance
 import Control.Monad (forM_)
 import Data.Maybe

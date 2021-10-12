@@ -3,7 +3,7 @@
 
 module AnyAll.SVG where
 
-import AnyAll.Types
+import AnyAll.Types hiding ((<>))
 
 import Graphics.Svg
 import qualified Data.Text as T

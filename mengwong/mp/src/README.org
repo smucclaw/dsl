@@ -1,0 +1,189 @@
+* Notes on the code
+
+** Extracting a BoolStruct
+
+Suppose we are given an input range containing, /inter alia/, a column of AND and OR values:
+
+| EVERY | person |
+| WHO   | walks  |
+| AND   | runs   |
+| AND   | eats   |
+| OR    | drinks |
+| MUST  | sing   |
+
+The BoolStruct is the bit in the middle. It spans the ~(walks && runs && (eats || drinks))~. Some call it a "condition" or "case".
+
+The prior text, "EVERY person WHO", we will label the "Preamble". Because it comes before "walks".
+
+The "MUST sing" we label the "Denouement". Other structures are possible; more on that later. But most variations contain a BoolStruct somewhere or other.
+
+It's up to us to turn the columns of a BoolStruct into an and/or tree, respecting operator precedence.
+
+Desired output:
+
+#+begin_src haskell
+  All (pre "who")
+      [ Leaf "walks"
+      , Leaf "runs"
+      , Any (Pre "or")
+            [ Leaf "eats"
+            , Leaf "drinks"
+            ]
+      ]
+#+end_src
+
+We do this using a simple Parser pattern in which an AndGroup consists of one or more OrGroups; and the overall expression consists of one or more AndGroups. That gets you conjunctive normal form for free!
+
+** What about the checkboxes?
+
+Some variants of the spreadsheet will arrive bearing Bools:
+
+| EVERY |       | person |
+| WHO   | TRUE  | walks  |
+| AND   | FALSE | runs   |
+| AND   | FALSE | eats   |
+| OR    | TRUE  | drinks |
+| MUST  |       | sing   |
+
+This is because Google Sheets uses checkboxes, in CSV, they show as TRUE and FALSE.
+
+The parser ignores them:
+
+#+begin_src haskell
+  pEmpty = pToken Empty <|> pToken Checkbox
+#+end_src
+
+** What about nested sub-expressions?
+
+~(walks && (eats || drinks))~ can fit into a straight column down the screen, but what if we have
+
+~(walks || (eats && drinks))~ ?
+
+We would need to indent a level, as [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1334573632][Example 13]] shows.
+
+| EVERY | person |        |
+| WHO   | walks  |        |
+| OR    |        | eats   |
+|       | AND    | drinks |
+| MUST  | sing   |        |
+
+** Nested Constitutive Rules
+
+"Inline" constitutive rules take the form of a nested subexpression. Here we show the TRUE/FALSE checkboxes:
+
+| TRUE | Prerequisites are met |                       |   |
+| IF   | TRUE                  | preconditions are met |   |
+|      | IF                    | TRUE                  | A |
+|      | AND                   | TRUE                  | B |
+| OR   | FALSE                 | C                     |   |
+|      |                       |                       |   |
+
+Eliminating the TRUE/FALSE checkboxes shows
+
+|    | Prerequisites are met |                       |   |
+|----+-----------------------+-----------------------+---|
+| IF |                       | preconditions are met |   |
+|    | IF                    |                       | A |
+|    | AND                   |                       | B |
+| OR |                       | C                     |   |
+|    |                       |                       |   |
+
+The general pattern for constitutive rules is
+
+|       | Exp0 |        |
+| IF    |      | Exp1a  |
+| OR    |      | Exp1b  |
+| OR    |      | Exp1c  |
+|-------+------+--------|
+| leftX |      | rightX |
+
+Where each ExpN can itself expand recursively following the same pattern:
+
+|    | Exp0 |       |       |   |
+| IF |      | Exp1a |       |   |
+|    | IF   |       | Exp2a |   |
+|    | AND  |       | Exp2b |   |
+| OR |      | Exp1b |       |   |
+| OR |      | Exp1c |       |   |
+
+Constitutive rules are similar to a ~let~ expression, where each named expression gets a variable binding.
+
+#+begin_src haskell
+  let Exp1a = Exp2a && Exp2b
+      Exp0  = Exp1a || Exp1b || Exp1c
+#+end_src
+
+Equivalently, as an And/Or tree,
+#+begin_src haskell
+  Any (Label "Exp0")
+    [ All (Label "Exp1a") [ Leaf Exp2a
+                          , Leaf Exp2b ]
+    , Leaf Exp1b
+    , Leaf Exp1c ]
+#+end_src
+
+** Nested Boolean Expressions without Constitutive Labels
+
+A version without variable bindings is more compact:
+
+| something | something |        |
+| WHEN      |           | Exp2a  |
+|           | AND       | Exp2b  |
+| OR        | Exp1b     |        |
+| OR        | Exp1c     |        |
+| something | something |        |
+
+** So, how do we parse all this?
+
+Currently the parser goes linearly left to right. It would be nice if we could preserve that linearity in the indentation-sensitive parser.
+
+We know that a BoolStruct comes after an IF token. Reading left to right, a non-nested input would be a stream of ~[ Other AND/OR Other AND/OR Other ]~.
+
+The parser is given the location of the preamble ~IF~. Non-nested input is expected to have all ~AND/OR~ at the same ~x~ (column) position.
+
+What happens if there's a nested structure?
+
+The parser might encounter a new AND or OR with an ~x~ position that is greater than the preamble's ~x~ position.
+
+*** Parsing a Nested Boolean
+
+So when a BoolStruct parser encounters an AND/OR farther to the right, it calls a new BoolStruct Parser, giving it a deeper x position. The result of the inner BoolStruct just becomes a term in the current BoolStruct.
+
+*** Parsing a Nested Constitutive
+
+A BoolStruct parser might encounter a constitutive rule: instead of a simple
+
+#+begin_example
+  Exp2a AND Exp2b
+#+end_example
+
+it encounters
+
+#+begin_example
+  Exp1a IS Exp2a AND Exp2b
+#+end_example
+
+In this situation, it returns, as part of the ongoing BoolStruct, a ~Leaf Exp1a~.
+
+And it returns, as an attachment, a constitutive rule defining ~Leaf Exp1a~ in terms of ~All [ Exp2a, Exp2b ]~.
+
+*** Parsing a Nested Regulative
+
+A BoolStruct parser might encounter a regulative rule, connected to the parent by a ~HENCE~ or a ~LEST~ keyword.
+
+In this situation it returns, as an attachment, the nested regulative rules.
+
+*** The BoolStruct Parser, revisited
+
+The need to return "attachments" means that a BoolStruct parser actually has to return:
+
+#+begin_src haskell
+  data BoolStruct = BS { getBS :: AnyAll Text
+                       , getR  :: [ Rule ] -- constitutive and regulative rules
+                       }
+#+end_src
+
+Nested booleans go into the ~getBS~.
+
+Nested constitutive and regulative rules go into the ~getR~.
+

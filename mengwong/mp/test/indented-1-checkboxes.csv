@@ -1,0 +1,8 @@
+,EVERY,,person,,
+,WHO,TRUE,walks,,
+,OR,FALSE,runs,,
+,OR,FALSE,eats,,// comment
+,OR,,TRUE,drinks,
+,,AND,FALSE,swallows,
+,MUST,,,,
+,->,FALSE,sing,,

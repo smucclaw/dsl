@@ -1,0 +1,102 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           mp
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/mengwong/mp#readme>
+homepage:       https://github.com/mengwong/mp#readme
+bug-reports:    https://github.com/mengwong/mp/issues
+author:         Wong Meng Weng
+maintainer:     mwwong@smu.edu.sg
+copyright:      2020
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/mengwong/mp
+
+library
+  exposed-modules:
+      Error
+      KW
+      Lib
+      Types
+  other-modules:
+      Paths_mp
+  hs-source-dirs:
+      src
+  build-depends:
+      anyall
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mtl
+    , pretty-simple
+    , split
+    , text
+    , vector
+  default-language: Haskell2010
+
+executable mp-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_mp
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      anyall
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mp
+    , mtl
+    , pretty-simple
+    , split
+    , text
+    , vector
+  default-language: Haskell2010
+
+test-suite mp-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_mp
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      anyall
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mp
+    , mtl
+    , pretty-simple
+    , split
+    , text
+    , vector
+  default-language: Haskell2010

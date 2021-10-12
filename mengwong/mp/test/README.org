@@ -1,0 +1,218 @@
+#+TITLE: Literate Tests
+
+To export as .csv, put your cursor over the desired table and run ~M-x org-table-export~
+
+I don't know how to get emacs to export all the tables
+
+** indented boolean expression
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indented-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+walks OR runs OR eats OR (drinks AND swallows)
+
+|   | EVERY | person |          |            |
+|   | WHO   | walks  |          |            |
+|   | OR    | runs   |          |            |
+|   | OR    | eats   |          | // comment |
+|   | OR    |        | drinks   |            |
+|   |       | AND    | swallows |            |
+|   | MUST  |        |          |            |
+|   | ->    | sing   |          |            |
+
+** indented boolean expression (with checkboxes)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indented-1-checkboxes.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+Google Sheets exports checkboxes as booleans. The parser should ignore them.
+
+|   | EVERY |       | person |          |            |
+|   | WHO   | TRUE  | walks  |          |            |
+|   | OR    | FALSE | runs   |          |            |
+|   | OR    | FALSE | eats   |          | // comment |
+|   | OR    |       | TRUE   | drinks   |            |
+|   |       | AND   | FALSE  | swallows |            |
+|   | MUST  |       |        |          |            |
+|   | ->    | FALSE | sing   |          |            |
+
+** simple constitutive rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: simple-constitutive-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+defined terms are T-shaped rules
+
+|       | degustates |
+| MEANS | eats       |
+| OR    | drinks     |
+
+** simple constitutive rule (with checkboxes)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: simple-constitutive-1-checkboxes.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+...ignoring checkboxes...
+
+| TRUE  |      | degustates |
+| MEANS | TRUE | eats       |
+| OR    | TRUE | drinks     |
+
+** indented inline constitutive rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indented-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+This has the same meaning as the original Waddington example, except the "eats or drinks" is labelled as the defined term "degustates".
+
+|   | EVERY | person |            |
+|   | WHO   | walks  |            |
+|   | AND   |        | degustates |
+|   |       | MEANS  | eats       |
+|   |       | OR     | drinks     |
+|   | MUST  |        |            |
+|   | ->    | sing   |            |
+
+We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
+
+#+begin_src haskell
+  [ Regulative
+      { every = "person"
+      , who = All
+          ( Pre "Who" )
+          [ Leaf "walks"
+          , Leaf "degustates"
+          ]
+      , deontic = DMust
+      , action = "sing"
+      , temporal = Nothing
+      }
+  , Constitutive
+      { term = "degustates"
+      , cond = Any
+          ( Pre "any of:" )
+          [ Leaf "eats"
+          , Leaf "drinks"
+          ]
+      }
+  ]
+#+end_src
+
+** multiple nestings
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indented-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+And we further nest a definition for "imbibes".
+
+|   | EVERY | person |            |          |
+|   | WHO   | walks  |            |          |
+|   | AND   |        | degustates |          |
+|   |       | MEANS  | eats       |          |
+|   |       | OR     |            | imbibes  |
+|   |       |        | MEANS      | drinks   |
+|   |       |        | AND        | swallows |
+|   |       |        | OR         | spits    |
+|   | MUST  |        |            |          |
+|   | ->    | sing   |            |          |
+
+We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
+
+#+begin_src haskell
+  [ Regulative
+      { every = "person"
+      , who = All
+          ( Pre "Who" )
+          [ Leaf "walks"
+          , Leaf "degustates"
+          ]
+      , deontic = DMust
+      , action = "sing"
+      , temporal = Nothing
+      }
+  , Constitutive
+      { term = "degustates"
+      , cond = Any
+          ( Pre "any of:" )
+          [ Leaf "eats"
+          , Leaf "imbibes"
+          ]
+      }
+  , Constitutive
+      { term = "imbibes"
+      , cond = All
+          ( Pre "all of:" )
+          [ Leaf "drinks"
+          , Any
+              ( Pre "any of:" )
+              [ Leaf "swallows"
+              , Leaf "spits"
+              ]
+          ]
+      }
+  ]
+#+end_src
+
+** what happens if everything is on one line?
+:PROPERTIES:
+:TABLE_EXPORT_FILE: experiment-oneline.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | degustates | MEANS | eats | AND | drinks | OR | farts |
+
+** chained regulatives
+
+** Stanza Extraction
+
+Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. How do parse only the relevant bits?
+
+|   | You | MAY    |               |
+|   |     | ->     | eat potato    |
+|   |     | WHEN   | tasty(potato) |
+|   |     | UNLESS | green(potato) |
+
+
+
+
+** Unless has special semantics
+
+*** Unless /in/ the tail
+
+|        | Bob's your uncle             |
+| IF     | Bob is your mother's brother |
+| OR     | Bob is your father's brother |
+| UNLESS | Bob is estranged             |
+
+if ((morbror or farbror) and not estranged)
+
+*** Unless /as/ the head
+
+|        | Bob's your uncle |
+| UNLESS | Bob is estranged |
+| OR     | Bob is dead      |
+
+if (not (estranged or dead))
+
+*** Unless expands to and
+
+|        | Bob's your uncle             |
+| IF     | Bob is your parent's brother |
+| UNLESS | Bob is estranged             |
+
+if (parentBrother and not estranged)
+
+
+
+** Tracking citations and sources
+
+In the spreadsheet we allow a prefix on each line that shows the source of the legislation.
+
+To handle this we may need to augment our types so that each bit of logic can be annotated with a source Text.Text.
+

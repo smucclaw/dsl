@@ -37,6 +37,17 @@ data Item a =
   | Any (Label a) [Item a]
   deriving (Eq, Show, Generic)
 
+{- TODO:
+
+Item a <> Item a
+where
+(<>)   (Leaf x) (Leaf y) = All (Pre "both") [Leaf x, Leaf y]
+(<>)   (All x xs)   (All y ys) = All x (xs <> ys)
+(<>)   (Any x xs)   (Any y ys) = Any x (xs <> ys)
+(<>)   (All x xs) r@(Any y ys) = All x (xs <> [r]) -- in CNF, the All dominates over the Any
+(<>) l@(Any x xs)   (All y ys) = All y (ys <> [l])
+-}
+
 data StdinSchema a = StdinSchema { marking :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)

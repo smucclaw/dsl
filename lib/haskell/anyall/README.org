@@ -15,7 +15,7 @@ And which do you choose, a hard or soft option?
 -- C. Lowe & N. Tennant, 1985
 #+end_quote
 
-* Usage
+* Usage (CLI)
 
 Compile the typescript to javascript (you may need to ~npm i -g typescript~):
 #+begin_src bash
@@ -31,6 +31,22 @@ Feed the JSON into the Haskell executable:
 #+begin_src bash
   node ts/example.js | stack run
 #+end_src
+
+* Usage (Library)
+
+In ~package.yaml~ say ~dependencies: - anyall~
+
+In ~stack.yaml~ under ~extra-deps:~ say
+
+#+begin_src yaml
+  - github: smucclaw/dsl
+    commit: d561043fed8abfd8333318af5882713b6da13c6b
+    subdirs:
+    - lib/haskell/anyall
+  - svg-builder-0.1.1
+#+end_src
+
+Then in your code you can ~import AnyAll as AA~
 
 * CLI Documentation
 

@@ -331,7 +331,7 @@ OA_dots.   ObjAttr      ::= [ObjAttrElem];              -- Foo.Bar.Baz
 separator nonempty ObjAttrElem ".";
 separator nonempty ObjAttr     ",";
 OMArgs.    ObjMethod ::= [UnifyElem] Args OptLangStrings;
-OMNoAargs. ObjMethod ::= [UnifyElem] OptLangStrings;
+OMNoArgs.  ObjMethod ::= [UnifyElem] OptLangStrings;
 
 rules      Args       ::= "(" [ConstraintComma] ")";
 rules      UnifyElem ::= ObjAttrElem

@@ -14,6 +14,7 @@ RULE  1 SaleRestricted
   WHERE sale IS onLegalDate
           WHEN sale.date ~ LegalDates
           WHERE LegalDates = external(url="https://www.almanac.com/astronomy/moon/full/")
+
 RULE   4 Cabbage
   DEFINE Item IS cabbage
     WHEN Item.species ~ ["Brassica chinensis" | "Brassica oleracea"]

@@ -43,9 +43,9 @@ Item a <> Item a
 where
 (<>)   (Leaf x) (Leaf y) = All (Pre "both") [Leaf x, Leaf y]
 (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
-(<>)   (Any x xs)   (Any y ys) = Any x (xs <> ys)
+(<>) l@(Any x xs) r@(Any y ys) = All (Pre "all of:") [l, r]
 (<>)   (All x xs) r@(Any y ys) = All x (xs <> [r]) -- in CNF, the All dominates over the Any
-(<>) l@(Any x xs)   (All y ys) = All y (ys <> [l])
+(<>) l@(Any x xs)   (All y ys) = All y (l:xs)
 -}
 
 data StdinSchema a = StdinSchema { marking :: Marking a

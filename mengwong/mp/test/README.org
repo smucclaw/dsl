@@ -2,7 +2,11 @@
 
 To export as .csv, put your cursor over the desired table and run ~M-x org-table-export~
 
-I don't know how to get emacs to export all the tables
+Or you can just run, from the ~mp/~ directory,
+
+#+begin_src sh
+  make csv
+#+end_src
 
 ** indented boolean expression
 :PROPERTIES:
@@ -170,18 +174,41 @@ We parse this into a tree of rules; other rules are now welcome to refer to this
 ** chained regulatives
 
 ** Stanza Extraction
+:PROPERTIES:
+:TABLE_EXPORT_FILE: extract-potatoes.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. How do parse only the relevant bits?
 
-|   | You | MAY    |               |
-|   |     | ->     | eat potato    |
-|   |     | WHEN   | tasty(potato) |
-|   |     | UNLESS | green(potato) |
-
-
+|   | EVERY      | person |                |     |        |    |       |
+|   | WHO        | walks  |                |     |        |    |       |
+|   | AND        | eats   |                |     |        |    |       |
+|   | OR         | drinks |                |     |        |    |       |
+|   | MUST       |        |                |     |        |    |       |
+|   | ->         | sing   |                |     |        |    |       |
+|   |            |        |                |     |        |    |       |
+|   |            |        |                |     |        |    |       |
+|   | You        | MAY    |                |     |        |    |       |
+|   |            | ->     | eat potato     |     |        |    |       |
+|   |            | WHEN   | tasty(potato)  |     |        |    |       |
+|   |            | UNLESS | green(potato)  |     |        |    |       |
+|   |            |        |                |     |        |    |       |
+|   | You        | MUST   |                |     |        |    |       |
+|   |            | ->     | discard potato |     |        |    |       |
+|   |            | WHEN   | green(potato)  |     |        |    |       |
+|   |            |        |                |     |        |    |       |
+|   |            |        |                |     |        |    |       |
+|   | degustates | MEANS  | eats           | AND | drinks | OR | farts |
+|   |            |        |                |     |        |    |       |
+|   |            |        |                |     |        |    |       |
 
 
 ** Unless has special semantics
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 *** Unless /in/ the tail
 

@@ -56,16 +56,22 @@ debugPrint depth str = when debuggery $ do
     indent = replicate depth ' '
 
 runExample :: RunConfig -> ByteString -> IO ()
-runExample rc str = case runParser (pRule <* eof) "dummy" (exampleStream str) of
-  Left bundle -> putStr (errorBundlePrettyCustom bundle)
-  -- Left bundle -> putStr (errorBundlePretty bundle)
-  -- Left bundle -> pPrint bundle
-  Right xs -> pPrint xs
-
+runExample rc str = forM_ (exampleStreams str) $ \stream ->
+    case runParser (pRule <* eof) "dummy" stream of
+      Left bundle -> putStr (errorBundlePrettyCustom bundle)
+      -- Left bundle -> putStr (errorBundlePretty bundle)
+      -- Left bundle -> pPrint bundle
+      Right xs -> pPrint xs
+  
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of
                     Left errstr -> error errstr
                     Right rawsts -> stanzaAsStream s (head rawsts)
+
+exampleStreams :: ByteString -> [MyStream]
+exampleStreams s = case getStanzas (asCSV s) of
+                    Left errstr -> error errstr
+                    Right rawsts -> stanzaAsStream s <$> rawsts
 
     -- the raw input looks like this:
 dummySing :: ByteString
@@ -113,7 +119,7 @@ asCSV s =
 
 getStanzas esa = do
   rs <- esa
-  let chunks = getChunks $ Location rs (0,0) ((0,0),(V.length rs - 1,V.length (rs ! (V.length rs -1)) - 1))
+  let chunks = getChunks $ Location rs (0,0) ((0,0),(V.length (rs ! (V.length rs - 1)) - 1, V.length rs - 1))
   return $ extractRange <$> glueChunks chunks
 
 -- because sometimes a chunk followed by another chunk is really part of the same chunk
@@ -121,22 +127,40 @@ glueChunks :: [Location] -> [Location]
 glueChunks xs = xs -- LOLOL
 
 -- highlight each chunk using range attribute.
--- method: cheat and use Data.List.Split's splitWhen
+-- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines
 getChunks :: Location -> [Location]
 getChunks loc@(Location rs (cx,cy) ((lx,ly),(rx,ry))) =
   let listChunks = DLS.splitWhen (\i -> V.all Text.null $ rs ! i) [ 0 .. ry ]
-      vvChunks = fmap (rs !) <$> listChunks
-      wantedChunks = V.filter (\chunkrows -> V.any (\w -> w `V.elem` Text.words "EVERY") chunkrows) vvChunks
-  in setRange loc <$> wantedChunks
+      wantedChunks = [ rows
+                     | rows <- listChunks
+                     , any (\row -> 
+                               any (\w -> w `elem` Text.words "EVERY MUST MAY WHEN MEANS IS IF UNLESS")
+                               (V.toList (rs ! row)))
+                       rows
+                     ]
+      toreturn = setRange loc <$> wantedChunks
+  in trace ("getChunks: input = " ++ show [ 0 .. ry ])
+     trace ("getChunks: listChunks = " ++ show listChunks)
+     trace ("getChunks: wantedChunks = " ++ show wantedChunks)
+     trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
+     toreturn
 
 -- is the cursor on a line that has nothing in it?
 blankLine :: Location -> Bool
 blankLine loc = all Text.null $ currentLine loc
 
 extractRange :: Location -> RawStanza
-extractRange (Location rawStanza cursor ((lx,ly),(rx,ry))) =
-  V.slice lx (rx-lx) $ V.slice ly (ry-ly) rawStanza
-
+extractRange (Location rawStanza cursor xy@((lx,ly),(rx,ry))) =
+  let slicey = trace ("extractRange: given rawStanza " ++ show rawStanza)
+               trace ("extractRange: trying to slice " ++ show xy)
+               trace ("extractRange: trying to slice y " ++ show (ly, ry-ly+1))
+               V.slice ly (ry-ly+1) rawStanza
+      slicex = trace ("extractRange: got slice y " ++ show slicey)
+               trace ("extractRange: trying to slice x " ++ show (lx, rx-lx+1))
+               V.slice lx (rx-lx+1) <$> slicey
+  in trace ("extractRange: got slice x " ++ show slicex)
+     slicex
+      
 setRange :: Location -> [Int] -> Location
 setRange loc@(Location rawStanza c ((lx,ly),(rx,ry))) ys =
   let cursorToEndLine  = moveTo loc (1,       last ys)
@@ -149,7 +173,7 @@ data Location = Location
                 { rawStanza :: RawStanza
                 , cursor    :: (Int,Int)
                 , range     :: ((Int,Int),(Int,Int))
-                }
+                } deriving (Eq, Show)
 data Direction = N | E | S | W deriving (Eq, Show)
 type Distance = Int
 
@@ -170,7 +194,7 @@ currentLine loc = getCurrentCell <$> (toEOL $ lineStart loc)
 
 lineStart :: Location -> Location
 lineStart loc = loc { cursor = (0, curY loc) }
-  
+
 lineRemaining :: Location -> Distance
 lineRemaining loc = lineLength loc - curX loc - 1
 
@@ -183,7 +207,7 @@ curY (Location _ (_,cy) _) = cy
 
 moveTo :: Location -> (Int,Int) -> Location
 moveTo loc c = loc { cursor = c }
-                             
+
 move :: Location -> Direction -> Distance -> Location
 move loc dir dis = do
   let (cx, cy) = cursor loc
@@ -199,14 +223,14 @@ getCurrentCell loc = fromMaybe "" (vvlookup (rawStanza loc) (cursor loc))
 
 vvlookup :: RawStanza -> (Int, Int) -> Maybe Text.Text
 vvlookup rs (x,y) = rs !? y >>= (!? x)
- 
+
 
 -- gaze Down 1 (== "UNLESS") >> gaze rs Right 1
-  
 
 
 
-  
+
+
 -- a multistanza is multiple stanzas separated by pilcrow symbols
 
 -- a stanza is made up of:
@@ -288,7 +312,7 @@ pRegRule depth = do
     newPre t (AA.All (AA.PrePost p pp) x) = AA.All (AA.PrePost t pp) x
     newPre t (AA.Any (AA.Pre     p)    x) = AA.Any (AA.Pre     t   ) x
     newPre t (AA.Any (AA.PrePost p pp) x) = AA.Any (AA.PrePost t pp) x
-    
+
 preambleBoolRules :: Depth -> Parser (Preamble, BoolRules)
 preambleBoolRules depth = do
   leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -301,7 +325,7 @@ preambleBoolRules depth = do
 --   let bs = if subForest ands) == 1 -- upgrade the single OR child of the AND group to the top level
 --            then newPre (Text.pack $ show condWord) (head ands)
 --            else AA.All (AA.Pre (Text.pack $ show condWord)) ands -- return the AND group
-  
+
   let toreturn = (condWord, (ands, rs))
   myTraceM $ "preambleBoolRules: returning " ++ show toreturn
   return toreturn

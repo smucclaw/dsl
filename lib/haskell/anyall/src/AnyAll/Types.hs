@@ -38,7 +38,7 @@ data Item a =
   deriving (Eq, Show, Generic)
 
 instance (IsString a) => Semigroup (Item a) where
-  (<>)   (Leaf x) (Leaf y) = All (Pre "both") [Leaf x, Leaf y]
+  (<>)   (Leaf x) (Leaf y)       = All (Pre "both") [Leaf x, Leaf y]
   (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
   (<>) l@(Any x xs) r@(Any y ys) = All (Pre "both") [l, r]
   (<>)   (All x xs) r@(Any y ys) = All x (xs ++ [r]) -- in CNF, the All dominates over the Any
@@ -47,6 +47,9 @@ instance (IsString a) => Semigroup (Item a) where
   (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
+
+instance (IsString a) => Monoid (Item a) where
+  mempty = Leaf "always"
   
 data StdinSchema a = StdinSchema { marking :: Marking a
                                  , andOrTree :: Item a }

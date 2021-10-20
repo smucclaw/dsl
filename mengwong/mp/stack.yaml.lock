@@ -5,18 +5,18 @@
 
 packages:
 - completed:
-    size: 2949048
+    size: 2949399
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/4567f9ec5d838a6b8ae4c42d0d0f590cb342b9a6.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/7d1e15beebded32df4bbed96f67309c7ba9fbe0d.tar.gz
     name: anyall
     version: 0.1.0.0
-    sha256: 975146d90d336c393999f8e0981c88c2c763345773653c7a0c711026a99ca966
+    sha256: 0791691b9eb5ca772c70ed2732a4d4f8d7d67f66a0ac0e6663d6844f1fde8cee
     pantry-tree:
       size: 1124
-      sha256: 1d5290724e8af04491ce123541e89ac04701202ba3146ec349acbb544aa6ab35
+      sha256: 2334d1e6979d0d78001b12518abc522bfa6f3e8d3771f07463b45f47cc0fca8d
   original:
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/4567f9ec5d838a6b8ae4c42d0d0f590cb342b9a6.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/7d1e15beebded32df4bbed96f67309c7ba9fbe0d.tar.gz
 - completed:
     hackage: svg-builder-0.1.1@sha256:22de54d326a6b6912e461e1302edb9108b02aac0b6a6368fcdc3c4a224d487fd,1440
     pantry-tree:

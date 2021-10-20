@@ -16,7 +16,7 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import Types
+import BasicTypes (MyStream, myStreamInput)
 import Data.Vector (imap, foldl')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))

@@ -43,7 +43,7 @@ packages:
 #
 extra-deps:
 - github: smucclaw/dsl
-  commit: 4567f9ec5d838a6b8ae4c42d0d0f590cb342b9a6
+  commit: 7d1e15beebded32df4bbed96f67309c7ba9fbe0d
   subdirs:
   - lib/haskell/anyall
 - svg-builder-0.1.1

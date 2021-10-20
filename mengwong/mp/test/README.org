@@ -8,7 +8,7 @@ Or you can just run, from the ~mp/~ directory,
   make csv
 #+end_src
 
-** indented boolean expression
+** indented boolean expression under preamble WHO
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indented-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -62,9 +62,11 @@ defined terms are T-shaped rules
 
 ...ignoring checkboxes...
 
-| TRUE  |      | degustates |
-| MEANS | TRUE | eats       |
-| OR    | TRUE | drinks     |
+|   |   |       |      |            |   |   |
+|   |   | TRUE  |      | degustates |   |   |
+|   |   | MEANS | TRUE | eats       |   |   |
+|   |   | OR    | TRUE | drinks     |   |   |
+|   |   |       |      |            |   |   |
 
 ** indented inline constitutive rule
 :PROPERTIES:
@@ -72,59 +74,15 @@ defined terms are T-shaped rules
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-This has the same meaning as the original Waddington example, except the "eats or drinks" is labelled as the defined term "degustates".
+This has the same meaning as the original Waddington example, except the "eats or drinks" is labelled as the defined term "degustates". And we change "drinks" to "imbibes" ...
 
 |   | EVERY | person |            |
 |   | WHO   | walks  |            |
 |   | AND   |        | degustates |
 |   |       | MEANS  | eats       |
-|   |       | OR     | drinks     |
+|   |       | OR     | imbibes    |
 |   | MUST  |        |            |
 |   | ->    | sing   |            |
-
-We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
-
-#+begin_src haskell
-  [ Regulative
-      { every = "person"
-      , who = All
-          ( Pre "Who" )
-          [ Leaf "walks"
-          , Leaf "degustates"
-          ]
-      , deontic = DMust
-      , action = "sing"
-      , temporal = Nothing
-      }
-  , Constitutive
-      { term = "degustates"
-      , cond = Any
-          ( Pre "any of:" )
-          [ Leaf "eats"
-          , Leaf "drinks"
-          ]
-      }
-  ]
-#+end_src
-
-** multiple nestings
-:PROPERTIES:
-:TABLE_EXPORT_FILE: indented-3.csv
-:TABLE_EXPORT_FORMAT: orgtbl-to-csv
-:END:
-
-And we further nest a definition for "imbibes".
-
-|   | EVERY | person |            |          |
-|   | WHO   | walks  |            |          |
-|   | AND   |        | degustates |          |
-|   |       | MEANS  | eats       |          |
-|   |       | OR     |            | imbibes  |
-|   |       |        | MEANS      | drinks   |
-|   |       |        | AND        | swallows |
-|   |       |        | OR         | spits    |
-|   | MUST  |        |            |          |
-|   | ->    | sing   |            |          |
 
 We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
 
@@ -148,20 +106,32 @@ We parse this into a tree of rules; other rules are now welcome to refer to this
           , Leaf "imbibes"
           ]
       }
-  , Constitutive
-      { term = "imbibes"
-      , cond = All
-          ( Pre "all of:" )
-          [ Leaf "drinks"
-          , Any
-              ( Pre "any of:" )
-              [ Leaf "swallows"
-              , Leaf "spits"
-              ]
-          ]
-      }
   ]
 #+end_src
+
+What does "imbibes" mean, anyway?
+
+** multiple nestings
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indented-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+And we further nest a definition for "imbibes".
+
+|   | EVERY | person     |         |          |
+|   | WHO   | walks      |         |          |
+|   | AND   | degustates |         |          |
+|   |       | MEANS      | eats    |          |
+|   |       | OR         | imbibes |          |
+|   |       |            | MEANS   | drinks   |
+|   |       |            | AND     | swallows |
+|   |       |            | OR      | spits    |
+|   | MUST  | sing       |         |          |
+
+We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
+
+Note the defined terms in this example have moved one cell left to more natural positions.
 
 ** what happens if everything is on one line?
 :PROPERTIES:
@@ -171,7 +141,292 @@ We parse this into a tree of rules; other rules are now welcome to refer to this
 
 |   | degustates | MEANS | eats | AND | drinks | OR | farts |
 
+** Multiple Preambles and BoolRules
+:PROPERTIES:
+:TABLE_EXPORT_FILE: multiple-preambles.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+Preambles are:
+- WHO
+- WHEN
+- IF
+- UNLESS
+
+*** Subject Qualifier BoolStructs
+
+Immediately after the PARTY or EVERY line, a single WHO preamble may appear, followed by a BoolStruct. The BoolStruct applies to the entity who is the subject of the rule.
+
+We have seen this form above.
+
+*** General Boolstructs
+
+Anywhere else in the stanza, a WHEN, IF, or UNLESS preamble, may appear, followed by a BoolStruct. Such BoolStructs apply generally -- they do not refer to the entity.
+
+Below we use pilcrows to set off two stanzas which are identical but for permutation.
+
+| EVERY  | person              |   |       |                     |
+| WHO    | walks               |   |       |                     |
+| AND    | eats                |   |       |                     |
+| OR     | drinks              |   |       |                     |
+| MUST   |                     |   |       |                     |
+| WHEN   | Saturday            |   |       |                     |
+| ->     | sing                |   |       |                     |
+|        |                     |   |       |                     |
+| EVERY  | person              |   |       |                     |
+| WHO    | walks               |   |       |                     |
+| AND    | eats                |   |       |                     |
+| OR     | drinks              |   |       |                     |
+| MUST   |                     |   |       |                     |
+| ->     | sing                |   |       |                     |
+| UNLESS | quietHours          |   |       |                     |
+|        |                     |   |       |                     |
+| EVERY  | person              | ¶ | EVERY | person              |
+| WHO    | walks               | ¶ | WHO   | walks               |
+| AND    | eats                | ¶ | AND   | eats                |
+| OR     | drinks              | ¶ | OR    | drinks              |
+| MUST   |                     | ¶ | MUST  |                     |
+| IF     | the King so desires | ¶ | ->    | sing                |
+| ->     | sing                | ¶ | IF    | the King so desires |
+|        |                     |   |       |                     |
+| EVERY  | person              |   |       |                     |
+| WHO    | walks               |   |       |                     |
+| AND    | eats                |   |       |                     |
+| OR     | drinks              |   |       |                     |
+| MUST   |                     |   |       |                     |
+| IF     | the King wishes     |   |       |                     |
+| ->     | sing                |   |       |                     |
+| UNLESS | the Queen forbids   |   |       |                     |
+|        |                     |   |       |                     |
+
+
+** different kinds of conditions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: if-king-wishes-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |    |                                                     |
+| WHO   | walks           |    |                                                     |
+| AND   | eats            |    |                                                     |
+| MUST  |                 |    |                                                     |
+| IF    | the King wishes | // | scope quantification slightly different vs 4        |
+| ->    | sing            | // | suggests that the King is consulted for each person |
+
+** with multiple preambleBoolRules
+:PROPERTIES:
+:TABLE_EXPORT_FILE: if-king-wishes-queen.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person                   |
+| WHO   | walks                    |
+| AND   | eats                     |
+| MUST  |                          |
+| IF    | the King wishes          |
+| WHEN  | the Queen is not looking |
+| ->    | sing                     |
+
+** in a different order 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: if-king-wishes-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |   |   |
+| WHO   | walks           |   |   |
+| AND   | eats            |   |   |
+| MUST  |                 |   |   |
+| ->    | sing            |   |   |
+| IF    | the King wishes |   |   |
+
+** in a different order again 3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: if-king-wishes-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |   |   |
+| WHO   | walks           |   |   |
+| AND   | eats            |   |   |
+| IF    | the King wishes |   |   |
+| MUST  |                 |   |   |
+| ->    | sing            |   |   |
+
+** in a different order again 4
+:PROPERTIES:
+:TABLE_EXPORT_FILE: if-king-wishes-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+Let's not allow this form:
+
+| IF    | the King wishes | // | suggests that the King is consulted once, for all people |
+| EVERY | person          |    |                                                          |
+| WHO   | walks           |    |                                                          |
+| AND   | eats            |    |                                                          |
+| MUST  |                 |    |                                                          |
+| ->    | sing            |    |                                                          |
+
+Because this is really more of a meta-rule situation.
+
+| IF   | the King wishes |        | // we could call this a meta-rule relation |
+| THEN | EVERY           | person |                                            |
+|      | WHO             | walks  |                                            |
+|      | AND             | eats   |                                            |
+|      | MUST            |        |                                            |
+|      | ->              | sing   |                                            |
+
+Let's not support this case 4 until we have a more principled approach to meta-rule relationships. Then we can put in IF/THEN/ELSE for a closed-world binary logic? and IF/THEN/ELSE/SHRUG for a Maybe Ternary lol
+
 ** chained regulatives
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |       |        |        |
+| WHO   | walks           |       |        |        |
+| AND   | eats            |       |        |        |
+| MUST  |                 |       |        |        |
+| IF    | the King wishes |       |        |        |
+| ->    | sing            |       |        |        |
+| HENCE | PARTY           | King  |        |        |
+|       | MAY             | pay   |        |        |
+|       | AFTER           | 20min |        |        |
+| LEST  | Singer          | MUST  | BEFORE | supper |
+|       |                 | ->    | pay    |        |
+
+*** do the individual components work?
+
+do the individual components work?
+
+**** the king part
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| PARTY | King  |
+| MAY   | pay   |
+| AFTER | 20min |
+
+**** the singer part
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| Singer | MUST | BEFORE | supper |
+|        | ->   | pay    |        |
+
+** chained regulatives with action params
+:PROPERTIES:
+:TABLE_EXPORT_FILE: action-params-singer.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| Singer | MUST | BEFORE | supper   |
+|        | ->   | pay    |          |
+|        |      | to     | the King |
+|        |      | amount | $20      |
+
+** Alternative Arrangements of Temporals and Actions
+*** may pay after time
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| PARTY | King  |
+| MAY   | pay   |
+| AFTER | 20min |
+
+*** may after time pay
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| PARTY | King  |       |
+| MAY   | AFTER | 20min |
+| ->    | pay   |       |
+
+*** party after may time
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| PARTY | King  |
+| AFTER | 20min |
+| MAY   | pay   |
+
+*** party may, no time
+:PROPERTIES:
+:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| PARTY | King |
+| MAY   | pay  |
+
+** simple natural language aliases
+:PROPERTIES:
+:TABLE_EXPORT_FILE: nl-aliases.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          | ("singer") |   |
+| WHO   | walks           |            |   |
+| AND   | eats            |            |   |
+| MUST  |                 |            |   |
+| IF    | the King wishes |            |   |
+| ->    | sing            |            |   |
+
+** stanzas interrupted by blank lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: blank-lines.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|                                                     |                 |            |   |
+| A paragraph with irrelevant text should be ignored. |                 | Like so.   |   |
+|                                                     |                 |            |   |
+|                                                     |                 |            |   |
+| EVERY                                               | person          | ("singer") |   |
+| WHO                                                 | walks           |            |   |
+| AND                                                 | eats            |            |   |
+| MUST                                                |                 |            |   |
+|                                                     |                 |            |   |
+|                                                     |                 |            |   |
+| IF                                                  | the King wishes |            |   |
+| ->                                                  | sing            |            |   |
+
+** qualifying person
+:PROPERTIES:
+:TABLE_EXPORT_FILE: qualifying-person.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Qualifying Person | ("QP") |   |
+|       | MEANS             | walks  |   |
+|       | AND               | eats   |   |
+| MUST  |                   |        |   |
+| ->    | sing              |        |   |
+
+** legislative source citations
+:PROPERTIES:
+:TABLE_EXPORT_FILE: source-citations.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| (Act 1) | EVERY | person          |   |
+|         | WHO   | walks           |   |
+| (Act 2) | AND   | eats            |   |
+|         | MUST  |                 |   |
+| (Act 3) | IF    | the King wishes |   |
+|         | ->    | sing            |   |
 
 ** Stanza Extraction
 :PROPERTIES:
@@ -181,27 +436,27 @@ We parse this into a tree of rules; other rules are now welcome to refer to this
 
 Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. How do parse only the relevant bits?
 
-|   | EVERY      | person |                |     |        |    |       |
-|   | WHO        | walks  |                |     |        |    |       |
-|   | AND        | eats   |                |     |        |    |       |
-|   | OR         | drinks |                |     |        |    |       |
-|   | MUST       |        |                |     |        |    |       |
-|   | ->         | sing   |                |     |        |    |       |
-|   |            |        |                |     |        |    |       |
-|   |            |        |                |     |        |    |       |
-|   | You        | MAY    |                |     |        |    |       |
-|   |            | ->     | eat potato     |     |        |    |       |
-|   |            | WHEN   | tasty(potato)  |     |        |    |       |
-|   |            | UNLESS | green(potato)  |     |        |    |       |
-|   |            |        |                |     |        |    |       |
-|   | You        | MUST   |                |     |        |    |       |
-|   |            | ->     | discard potato |     |        |    |       |
-|   |            | WHEN   | green(potato)  |     |        |    |       |
-|   |            |        |                |     |        |    |       |
-|   |            |        |                |     |        |    |       |
-|   | degustates | MEANS  | eats           | AND | drinks | OR | farts |
-|   |            |        |                |     |        |    |       |
-|   |            |        |                |     |        |    |       |
+|   | EVERY      | person |                |          |        |    |       |
+|   | WHO        | walks  |                |          |        |    |       |
+|   | AND        | eats   |                |          |        |    |       |
+|   | OR         | drinks |                |          |        |    |       |
+|   | MUST       |        |                |          |        |    |       |
+|   | ->         | sing   |                |          |        |    |       |
+|   |            |        |                |          |        |    |       |
+|   |            | EVERY  | person         |          |        |    |       |
+|   |            | MAY    | after          | lunch    |        |    |       |
+|   |            | ->     | eat potato     |          |        |    |       |
+|   |            | WHEN   | tasty(potato)  |          |        |    |       |
+|   |            | UNLESS | green(potato)  |          |        |    |       |
+|   |            |        |                |          |        |    |       |
+|   | You        | MUST   | before         | midnight |        |    |       |
+|   |            | ->     | discard potato |          |        |    |       |
+|   |            | WHEN   | green(potato)  |          |        |    |       |
+|   |            |        |                |          |        |    |       |
+|   |            |        |                |          |        |    |       |
+|   | degustates | MEANS  | eats           | AND      | drinks | OR | farts |
+|   |            |        |                |          |        |    |       |
+|   |            |        |                |          |        |    |       |
 
 
 ** Unless has special semantics

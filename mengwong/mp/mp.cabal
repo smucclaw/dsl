@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      BasicTypes
       Error
       KW
       Lib
@@ -33,6 +34,7 @@ library
       Paths_mp
   hs-source-dirs:
       src
+  ghc-options: -Wall
   build-depends:
       anyall
     , base >=4.7 && <5
@@ -40,10 +42,12 @@ library
     , bytestring
     , cassava
     , containers
+    , generic-data
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mtl
+    , parsers
     , pretty-simple
     , split
     , text
@@ -56,7 +60,7 @@ executable mp-exe
       Paths_mp
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       anyall
     , base >=4.7 && <5
@@ -64,11 +68,13 @@ executable mp-exe
     , bytestring
     , cassava
     , containers
+    , generic-data
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mp
     , mtl
+    , parsers
     , pretty-simple
     , split
     , text
@@ -82,7 +88,7 @@ test-suite mp-test
       Paths_mp
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       anyall
     , base >=4.7 && <5
@@ -90,11 +96,13 @@ test-suite mp-test
     , bytestring
     , cassava
     , containers
+    , generic-data
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mp
     , mtl
+    , parsers
     , pretty-simple
     , split
     , text

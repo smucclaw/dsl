@@ -1,3 +1,5 @@
-TRUE,,degustates
-MEANS,TRUE,eats
-OR,TRUE,drinks
+,,,,,,
+,,TRUE,,degustates,,
+,,MEANS,TRUE,eats,,
+,,OR,TRUE,drinks,,
+,,,,,,

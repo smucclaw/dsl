@@ -23,7 +23,7 @@ data MyToken = Every | Party | Who | Means | Includes | When | Is | Always
              | Before | After | By | On | Eventually
              | Unless
              | Hence | Lest
-             | Number Int
+             | TNumber Int
              | Other Text.Text
              | Do
              | Checkbox

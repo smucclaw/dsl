@@ -14,6 +14,7 @@ import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
 import qualified Data.Set           as Set
 import Data.ByteString.Lazy (ByteString)
+import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Generic.Data (Generic)
@@ -28,8 +29,8 @@ import System.Environment (lookupEnv)
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
-
 import Debug.Trace
+import Data.Aeson.Encode.Pretty
 
 import Types
 import Error
@@ -41,7 +42,14 @@ import Control.Monad.Reader (ReaderT(runReaderT), asks, MonadReader (local))
 someFunc :: IO ()
 someFunc = do
   mpd <- lookupEnv "MP_DEBUG"
-  let runConfig = RC (maybe False (read :: String -> Bool) mpd) 0 [] "STDIN"
+  mpj <- lookupEnv "MP_JSON"
+  let runConfig = RC
+        { debug = (maybe False (read :: String -> Bool) mpd)
+        , callDepth = 0
+        , parseCallStack = []
+        , sourceURL = "STDIN"
+        , asJSON = (maybe False (read :: String -> Bool) mpj)
+        }        
   myinput <- BS.getContents
   runExample runConfig myinput
 
@@ -90,7 +98,9 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
-      Right xs -> pPrint xs
+      Right xs -> if (asJSON rc)
+                  then putStrLn $ toString $ encodePretty xs
+                  else pPrint xs
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of

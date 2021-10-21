@@ -36,7 +36,9 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      anyall
+      aeson
+    , aeson-pretty
+    , anyall
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -51,6 +53,7 @@ library
     , pretty-simple
     , split
     , text
+    , utf8-string
     , vector
   default-language: Haskell2010
 
@@ -62,7 +65,9 @@ executable mp-exe
       app
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      anyall
+      aeson
+    , aeson-pretty
+    , anyall
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -78,6 +83,7 @@ executable mp-exe
     , pretty-simple
     , split
     , text
+    , utf8-string
     , vector
   default-language: Haskell2010
 
@@ -90,7 +96,9 @@ test-suite mp-test
       test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      anyall
+      aeson
+    , aeson-pretty
+    , anyall
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -106,5 +114,6 @@ test-suite mp-test
     , pretty-simple
     , split
     , text
+    , utf8-string
     , vector
   default-language: Haskell2010

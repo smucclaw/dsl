@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 module Types ( module BasicTypes
              , module Types) where
@@ -13,6 +14,8 @@ import qualified Data.Set           as Set
 import Control.Monad
 import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT, asks)
+import Data.Aeson (ToJSON, FromJSON)
+import GHC.Generics
 
 import BasicTypes
 
@@ -49,19 +52,19 @@ data Rule = Regulative
             }
           | RegAlias Text.Text -- internal softlink to a regulative rule label
           | ConAlias Text.Text -- internal softlink to a constitutive rule label
-          deriving (Eq, Show)
+          deriving (Eq, Show, Generic, ToJSON, FromJSON)
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TemporalConstraint a = TBefore a
                           | TAfter  a
                           | TBy     a
                           | TOn     a
-                          deriving (Eq, Show)
+                          deriving (Eq, Show, Generic, ToJSON, FromJSON)
 type ConstitutiveTerm = Text.Text
 type EntityType = Text.Text
 type ActionType = (Text.Text,[(Text.Text,[Text.Text])])
 type BoolStruct = AA.Item Text.Text
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -69,7 +72,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Show)
+              deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 mkTC :: MyToken -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC Before     tt = Just $ TBefore tt
@@ -83,6 +86,7 @@ data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int
                     , parseCallStack :: [String]
                     , sourceURL :: Text.Text
+                    , asJSON    :: Bool
                     }
 
 nestLevel :: RunConfig -> Int
@@ -143,7 +147,7 @@ toToken "LEST"  = Lest
 toToken ";"      = EOL
 
 -- we recognize numbers
-toToken s | [(n,"")] <- reads $ Text.unpack s = Number n
+toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = Other x

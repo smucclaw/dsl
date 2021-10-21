@@ -36,6 +36,9 @@ dependencies:
 - split
 - generic-data
 - parsers
+- aeson
+- aeson-pretty
+- utf8-string
 
 ghc-options: -Wall
 

@@ -436,27 +436,28 @@ do the individual components work?
 
 Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. How do parse only the relevant bits?
 
-|   | EVERY      | person |                |          |        |    |       |
-|   | WHO        | walks  |                |          |        |    |       |
-|   | AND        | eats   |                |          |        |    |       |
-|   | OR         | drinks |                |          |        |    |       |
-|   | MUST       |        |                |          |        |    |       |
-|   | ->         | sing   |                |          |        |    |       |
-|   |            |        |                |          |        |    |       |
-|   |            | EVERY  | person         |          |        |    |       |
-|   |            | MAY    | after          | lunch    |        |    |       |
-|   |            | ->     | eat potato     |          |        |    |       |
-|   |            | WHEN   | tasty(potato)  |          |        |    |       |
-|   |            | UNLESS | green(potato)  |          |        |    |       |
-|   |            |        |                |          |        |    |       |
-|   | You        | MUST   | before         | midnight |        |    |       |
-|   |            | ->     | discard potato |          |        |    |       |
-|   |            | WHEN   | green(potato)  |          |        |    |       |
-|   |            |        |                |          |        |    |       |
-|   |            |        |                |          |        |    |       |
-|   | degustates | MEANS  | eats           | AND      | drinks | OR | farts |
-|   |            |        |                |          |        |    |       |
-|   |            |        |                |          |        |    |       |
+|   | EVERY    | person |                |          |         |   |   |
+|   | WHO      | walks  |                |          |         |   |   |
+|   | AND      | eats   |                |          |         |   |   |
+|   | OR       | drinks |                |          |         |   |   |
+|   | MUST     |        |                |          |         |   |   |
+|   | ->       | sing   |                |          |         |   |   |
+|   |          |        |                |          |         |   |   |
+|   | we add a | line   | to separate    | the      | stanzas |   |   |
+|   |          |        |                |          |         |   |   |
+|   |          | EVERY  | person         |          |         |   |   |
+|   |          | MAY    | AFTER          | lunch    |         |   |   |
+|   |          | ->     | eat potato     |          |         |   |   |
+|   |          | WHEN   | tasty(potato)  |          |         |   |   |
+|   |          | UNLESS | green(potato)  |          |         |   |   |
+|   |          |        |                |          |         |   |   |
+|   | we add a | line   | to separate    | the      | stanzas |   |   |
+|   |          |        |                |          |         |   |   |
+|   | You      | MUST   | BEFORE         | midnight |         |   |   |
+|   |          | ->     | discard potato |          |         |   |   |
+|   |          | WHEN   | green(potato)  |          |         |   |   |
+|   |          |        |                |          |         |   |   |
+|   |          |        |                |          |         |   |   |
 
 
 ** Unless has special semantics

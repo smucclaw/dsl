@@ -372,7 +372,10 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entitytype         <- pOtherVal
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
-  rulebody           <- withDepth leftX (permutations [Who])
+  rulebody           <- withDepth leftX (permutations [When,If,Unless])
+  -- TODO: refactor and converge the rest of this code block with Normal below
+  henceLimb          <- optional $ pHenceLest Hence
+  lestLimb           <- optional $ pHenceLest Lest
   let (who, (ands, brs)) = mergePBRS (if null (rbpbrs rulebody) then [(Always, (Nothing, []))] else rbpbrs rulebody)
       toreturn = Regulative
                  entitytype
@@ -381,7 +384,11 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  (rbdeon rulebody)
                  (rbaction rulebody)
                  (rbtemporal rulebody)
-                 Nothing Nothing Nothing Nothing Nothing
+                 henceLimb
+                 lestLimb
+                 Nothing -- rule label
+                 Nothing -- legal source
+                 Nothing -- internal SrcRef
   myTraceM $ "pRegRuleSugary: the specifier is " ++ show who
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
   myTraceM $ "pRegRuleSugary: with appendix brs = " ++ show brs
@@ -404,7 +411,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
   myTraceM $ "pRegRuleNormal: preambleBoolRules returned " ++ show whoBool
-  rulebody <- permutations [When, If]
+  rulebody <- permutations [When, If, Unless]
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody

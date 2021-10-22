@@ -544,6 +544,7 @@ pDA = debugName "pDA" $ do
 
 newPre :: Text.Text -> AA.Item Text.Text -> AA.Item Text.Text
 newPre _ (AA.Leaf x) = AA.Leaf x
+newPre _ (AA.Not  x) = AA.Not  x
 newPre t (AA.All (AA.Pre     _p)    x) = AA.All (AA.Pre     t   ) x
 newPre t (AA.All (AA.PrePost _p pp) x) = AA.All (AA.PrePost t pp) x
 newPre t (AA.Any (AA.Pre     _p)    x) = AA.Any (AA.Pre     t   ) x

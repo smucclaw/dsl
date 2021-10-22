@@ -475,13 +475,90 @@ Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. 
 
 if ((morbror or farbror) and not estranged)
 
-*** Unless /as/ the head
+*** Unless /as/ the head in a constitutive rule
 
 |        | Bob's your uncle |
 | UNLESS | Bob is estranged |
 | OR     | Bob is dead      |
 
 if (not (estranged or dead))
+
+*** Unless as the only term in a regulative rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person         |
+| MUST   | sing           |
+| UNLESS | day of silence |
+
+*** Unless as the first term in a regulative rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person          |
+| MUST   | sing            |
+| UNLESS | day of silence  |
+| IF     | the king wishes |
+*** Unless as the second term in a regulative rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person          |
+| MUST   | sing            |
+| IF     | the king wishes |
+| UNLESS | day of silence  |
+
+*** Unless as a separated first term in a regulative rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person          |
+| UNLESS | day of silence  |
+| MUST   | sing            |
+| IF     | the king wishes |
+
+*** Unless as a separated second term in a regulative rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person          |
+| IF     | the king wishes |
+| MUST   | sing            |
+| UNLESS | day of silence  |
+
+*** Unless preambles an OR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person          |
+| IF     | the king wishes |
+| MUST   | sing            |
+| UNLESS | day of silence  |
+| OR     | day of mourning |
+
+*** Unless preambles an AND
+:PROPERTIES:
+:TABLE_EXPORT_FILE: unless-regulative-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person                   |
+| IF     | the king wishes          |
+| MUST   | sing                     |
+| UNLESS | day of mourning          |
+| AND    | mourning forbids singing |
 
 *** Unless expands to and
 
@@ -490,6 +567,7 @@ if (not (estranged or dead))
 | UNLESS | Bob is estranged             |
 
 if (parentBrother and not estranged)
+
 
 
 

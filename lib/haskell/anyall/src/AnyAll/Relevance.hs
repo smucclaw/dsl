@@ -23,13 +23,19 @@ relevant sh dp marking parentValue self =
       -- we are able to compute the initial visibility of the subtree; TODO we can modify it according to our display preference
       paintedChildren = relevant sh dp marking selfValue <$> getChildren self
       -- if i am myself hidden, then convert all my descendants' Ask to Hide
-      repaintedChildren = if initVis /= Hide then paintedChildren
-                          else fmap ask2hide <$> paintedChildren
+      repaintedChildren = if -- trace ("repaintedChildren: initVis = " ++ show initVis)
+                             initVis /= Hide
+                          then -- trace ("repaintedChildren: initVis /= Hide so just paintedChildren")
+                               paintedChildren
+                          else -- trace ("repaintedChildren: initVis /= Hide so remapping ask2hide")
+                               fmap ask2hide <$> paintedChildren
   in -- convert to a QTree for output
   case self of
              Leaf x -> case Map.lookup x (getMarking marking) of
-                         Just d           -> Node (Q (if initVis /= Hide then Ask else Hide) (Simply x) Nothing d) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide) (Simply x) Nothing (Default $ Left Nothing)) []
+                         Just d           -> -- trace ("relevant: marking is Just; initVis /= Hide, leaving initVis at " ++ show initVis)
+                                             Node (Q initVis (Simply x) Nothing d) []
+                         Nothing          -> -- trace ("relevant: marking is Nothing; initVis /= Hide, setting to Ask")
+                                             Node (Q (if initVis /= Hide then Ask else Hide) (Simply x) Nothing (Default $ Left Nothing)) []
              Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
              All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
   where

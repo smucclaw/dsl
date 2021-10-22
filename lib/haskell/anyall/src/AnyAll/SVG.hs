@@ -54,23 +54,16 @@ renderLeaf desc =
   in (height, geom)
 
 renderNot :: ToElement a => [Item a] -> (Height, Element)
-renderNot childnodes =
+renderNot children =
   let
-      hg = map renderItem childnodes
-      (hs, gs) = unzip hg
-
-      height = sum hs + 30
+      (h, g) = renderItem $ head children
+      height = h
 
       geom :: Element
-      geom = g_ [] (
-                   -- elbow connector ... maybe this is superfluous? let's see how it looks.
-                      line (10, 20) (10, 25)
-                   <> line (10, 25) (40, 25)
-                   <> line (40, 25) (40, 30)
-                   -- negation looks like =/=
-                   <> line (40, 20) (10, 30)
-                   -- children translated by (30, 30)
-                   <> move (30, 30) (renderChain hg)  )
+      geom = g_ [] ( line (25, 5) (20, 15)   -- /
+                     <> line (10,0) (10,25)  -- |
+                     <> line (10,10) (30,10) -- -
+                     <> move (30, 0) g )
   in (height, geom)
 
 

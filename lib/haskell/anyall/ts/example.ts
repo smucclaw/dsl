@@ -13,7 +13,10 @@ let mustSing : StdinSchema = {
     pre: "all of",
     children: [
 	{ leaf: "walk" },
-	{ nodetype: "not", children: [{ leaf: "run" }] },
+	{ nodetype: "not", children: [{ nodetype: "all"
+					, pre: "either"
+					, children: [ { leaf: "sink" }, { leaf: "swim" } ]
+				      }] },
 	{ nodetype: "any"
 	  , pre: "either"
 	  , children: [ { leaf: "eat" }, { leaf: "drink" } ]

@@ -105,7 +105,15 @@ tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> chi
 newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
-instance (FromJSON a) => FromJSON (Default a)
+instance (FromJSON a) => FromJSON (Default a) where
+  parseJSON = withObject "withDefaultBool" $ \o -> do
+    byDefault <- o .:? "byDefault"
+    fromUser  <- o .:? "fromUser"
+    if isJust fromUser
+      then return $ Default (Right fromUser)
+      else if isJust byDefault
+           then return $ Default (Left byDefault)
+           else return $ Default (Left Nothing)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
 asJSONDefault = encode
 

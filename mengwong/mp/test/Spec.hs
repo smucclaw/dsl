@@ -6,7 +6,7 @@ import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
 import Lib
-import AnyAll
+import AnyAll hiding (asJSON)
 import Types
 import Error
 import qualified Data.ByteString.Lazy as BS
@@ -63,7 +63,14 @@ defaultCon = Constitutive
 main :: IO ()
 main = do
   mpd <- lookupEnv "MP_DEBUG"
-  let runConfig = RC (maybe False (read :: String -> Bool) mpd) 0 [] "test/Spec"
+  mpj <- lookupEnv "MP_JSON"
+  let runConfig = RC
+        { debug          = (maybe False (read :: String -> Bool) mpd)
+        , callDepth      = 0
+        , parseCallStack = []
+        , sourceURL      = "test/Spec"
+        , asJSON         = (maybe False (read :: String -> Bool) mpj)
+        }        
   let parseR p = parse (runReaderT p runConfig)
 
   hspec $ do

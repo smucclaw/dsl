@@ -83,7 +83,7 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
              else case (nodetype :: Maybe String) of
                     Just "any" -> Any label children
                     Just "all" -> All label children
-                    Just "not" -> error "error in parsing JSON input -- encountered NOT which we aren't able to handle"
+                    Just "not" -> Not $ head children
                     _          -> error "error in parsing JSON input"
 
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)

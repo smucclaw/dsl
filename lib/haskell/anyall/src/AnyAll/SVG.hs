@@ -60,10 +60,9 @@ renderNot children =
       height = h
 
       geom :: Element
-      geom = g_ [] ( line (25, 5) (20, 15)   -- /
+      geom = g_ [] ( line (-5, 5) (-10, 15)   -- /
                      <> line (10,0) (10,25)  -- |
-                     <> line (10,10) (30,10) -- -
-                     <> move (30, 0) g )
+                     <> move (00, 0) g )
   in (height, geom)
 
 

@@ -99,17 +99,9 @@ tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> chi
 newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
-instance (FromJSON a) => FromJSON (Default a) where
-  parseJSON = withObject "withDefaultBool" $ \o -> do
-    byDefault <- o .:? "byDefault"
-    fromUser  <- o .:? "fromUser"
-    if isJust fromUser
-      then return $ Default (Right fromUser)
-           -- actually we need to distinguish "fromUser: null" (Right Nothing) from absence of fromUser (Left ...)
-      else if isJust byDefault
-           then return $ Default (Left byDefault)
-           else return $ Default (Left Nothing)
-
+instance (FromJSON a) => FromJSON (Default a)
+asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
+asJSONDefault = encode
 
 newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
   deriving (Eq, Show, Generic)
@@ -144,6 +136,9 @@ instance FromJSON a => FromJSON (Q a)
 
 asJSON :: ToJSON a => QTree a -> B.ByteString
 asJSON = encode
+
+fromJSON :: FromJSON a => B.ByteString -> Maybe (QTree a)
+fromJSON = decode
 
 data DisplayPref = DPTerse | DPNormal | DPVerbose
   deriving (Eq, Show, Generic)

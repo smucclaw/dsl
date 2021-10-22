@@ -309,6 +309,20 @@ main = hspec $ do
     it "should round-trip mustDance" $ do
       tree2native (native2tree mustDance) `shouldBe` mustDance
 
+  describe "JSON conversion" $ do
+    it "should encode Default" $ do
+      asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"getDefault\":{\"Left\":true}}"
+    it "should encode Q" $ do
+      asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
+                                         ,("eat",   Left  $ Just True)
+                                         ,("drink", Right $ Just True)]))
+      `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+    it "should decode Q" $ do
+      fromJSON "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+      `shouldBe` (Just (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
+                                                   ,("eat",   Left  $ Just True)
+                                                   ,("drink", Right $ Just True)])))
+
 type SingLabel = TL.Text
 
 mustSing :: Item SingLabel

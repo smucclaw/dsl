@@ -34,6 +34,7 @@ library
       Paths_anyall
   hs-source-dirs:
       src
+  ghc-options: -Wincomplete-patterns
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -53,7 +54,7 @@ executable anyall-exe
       Paths_anyall
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , anyall
@@ -75,7 +76,7 @@ test-suite anyall-test
       Paths_anyall
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , anyall

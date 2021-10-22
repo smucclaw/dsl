@@ -37,10 +37,12 @@ relevant sh dp marking parentValue self =
                          Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
              Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
              All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
+             Not       item  -> Node (ask2view (Q initVis Neg Nothing      (Default $ Left selfValue))) repaintedChildren
   where
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c
     getChildren (All _ c) = c
+    getChildren (Not c) = [c]
 
     ask2hide :: Q a -> Q a
     ask2hide (Q Ask x y z) = Q Hide x y z
@@ -61,6 +63,7 @@ dispositive sh marking self =
        Leaf x          -> if isJust selfValue then return self else mempty
        Any label items -> recurse items
        All label items -> recurse items
+       Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
@@ -71,6 +74,7 @@ evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
 evaluate Hard (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              _                               -> Nothing
+evaluate sh   marking           (Not x)  = not <$> evaluate sh marking x
 evaluate sh marking (Any label items)
   | Just True `elem`    (evaluate sh marking <$> items) = Just True
   | all (== Just False) (evaluate sh marking <$> items) = Just False

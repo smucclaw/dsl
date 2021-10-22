@@ -5,6 +5,7 @@
 
 module AnyAll.Types where
 
+import Debug.Trace (traceM)
 import Data.Tree
 import Data.Maybe
 import Data.String (IsString)
@@ -35,18 +36,20 @@ data Item a =
     Leaf a
   | All (Label a) [Item a]
   | Any (Label a) [Item a]
+  | Not (Item a)
   deriving (Eq, Show, Generic)
 
 instance (IsString a) => Semigroup (Item a) where
-  (<>)   (Leaf x) (Leaf y)       = All (Pre "both") [Leaf x, Leaf y]
   (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
-  (<>) l@(Any x xs) r@(Any y ys) = All (Pre "both") [l, r]
   (<>)   (All x xs) r@(Any y ys) = All x (xs ++ [r]) -- in CNF, the All dominates over the Any
   (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
   (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
+  (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
   (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
+  (<>) l@(Not  x)   r@(Any y ys) = All (Pre "all of:") [l,r]
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
+  (<>) l            r            = All (Pre "both") [l, r]
 
 instance (IsString a) => Monoid (Item a) where
   mempty = Leaf "always"
@@ -80,19 +83,22 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
              else case (nodetype :: Maybe String) of
                     Just "any" -> Any label children
                     Just "all" -> All label children
-                    Nothing    -> error "error in parsing JSON input"
+                    Just "not" -> error "error in parsing JSON input -- encountered NOT which we aren't able to handle"
+                    _          -> error "error in parsing JSON input"
 
-data AndOr a = And | Or | Simply a deriving (Eq, Show, Generic)
+data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
 type AsTree a = Tree (AndOr a, Maybe (Label a))
 native2tree :: Item a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
+native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
 native2tree (All l items) = Node (And, Just l) (native2tree <$> items)
 native2tree (Any l items) = Node ( Or, Just l) (native2tree <$> items)
 
 tree2native :: AsTree a -> Item a
 tree2native (Node (Simply a, _) children) = Leaf a
+tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
 tree2native (Node (And, lbl) children) = All (fromJust lbl) (tree2native <$> children)
 tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> children)
 

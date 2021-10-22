@@ -36,6 +36,8 @@ dependencies:
 library:
   source-dirs: src
 
+ghc-options: -Wincomplete-patterns
+
 executables:
   anyall-exe:
     main:                Main.hs

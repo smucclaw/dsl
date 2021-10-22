@@ -5,6 +5,7 @@ import AnyAll.Types
 import AnyAll.Relevance
 import qualified Data.Map.Strict as Map
 import Data.Tree
+import Data.Maybe (fromJust)
 import Data.Text.Lazy as TL
 
 ln, lt, lf, rt, rf, rn :: Default Bool
@@ -312,16 +313,47 @@ main = hspec $ do
   describe "JSON conversion" $ do
     it "should encode Default" $ do
       asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"getDefault\":{\"Left\":true}}"
-    it "should encode Q" $ do
+    it "should encode Q mustSing" $ do
       asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                          ,("eat",   Left  $ Just True)
                                          ,("drink", Right $ Just True)]))
       `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
-    it "should decode Q" $ do
+    it "should decode Q mustSing" $ do
       fromJSON "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
       `shouldBe` (Just (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                                    ,("eat",   Left  $ Just True)
                                                    ,("drink", Right $ Just True)])))
+    it "should encode Q mustNot" $ do
+      asJSON (rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
+                                        ,("eat",   Left  $ Just True)]))
+        `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]]]]]]"
+
+  -- [{"shouldView":"View"
+  --  ,"andOr":{"tag":"And"}
+  --  ,"prePost":{"tag":"Pre"
+  --             ,"contents":"both"}
+  --  ,"mark":{"getDefault":{"Left":null}}}
+  -- ,[[{"shouldView":"Ask"
+  --    ,"andOr":{"tag":"Simply"
+  --             ,"contents":"walk"}
+  --    ,"prePost":null
+  --    ,"mark":{"getDefault":{"Left":true}}}
+  --   ,[]]
+  --  ,[{"shouldView":"View"
+  --    ,"andOr":{"tag":"Neg"}
+  --    ,"prePost":null
+  --    ,"mark":{"getDefault":{"Left":null}}}
+  --   ,[[{"shouldView":"Ask"
+  --      ,"andOr":{"tag":"Simply"
+  --               ,"contents":"eat"}
+  --      ,"prePost":null
+  --      ,"mark":{"getDefault":{"Left":true}}}
+  --     ,[]]]]]]
+
+    it "should roundtrip Q mustNot" $ do
+      let qNot = rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
+                                           ,("eat",   Left  $ Just True)])
+      fromJust (fromJSON (asJSON qNot)) `shouldBe` qNot
 
 type SingLabel = TL.Text
 
@@ -332,6 +364,12 @@ mustSing =
   , Any (Pre "either")
     [ Leaf "eat"
     , Leaf "drink" ] ]
+
+mustNot :: Item SingLabel
+mustNot =
+  All (Pre "both")
+  [ Leaf "walk"
+  , Not (Leaf "eat") ]
 
 mustDance :: Item SingLabel
 mustDance =

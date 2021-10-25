@@ -105,6 +105,7 @@ toToken "PARTY" =  Party
 
 -- start a boolstruct
 toToken "ALWAYS" = Always
+toToken "NEVER"  = Never
 toToken "WHO" =    Who
 toToken "WHEN" =   When
 toToken "IF" =     If

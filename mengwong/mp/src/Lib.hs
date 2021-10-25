@@ -372,7 +372,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entitytype         <- pOtherVal
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
-  rulebody           <- withDepth leftX (permutations [When,If,Unless])
+  rulebody           <- withDepth leftX (permutations [When,If])
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
@@ -411,12 +411,18 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
   myTraceM $ "pRegRuleNormal: preambleBoolRules returned " ++ show whoBool
-  rulebody <- permutations [When, If, Unless]
+  rulebody <- permutations [When, If] [Unless]
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
-  let (who, (cbs, brs)) = mergePBRS (if null (rbpbrs rulebody) then [(Always, (Nothing, []))] else rbpbrs rulebody)
+
+  -- qualifying conditions generally; combine all WHEN/IF/UNLESS into a single IF structure, adding NOT along the way
+  let (posPreamble, (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, (Nothing, []))] else rbpbrs rulebody)
+  let (negPreamble, (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Always, (Nothing, []))] else rbpbrneg rulebody)
+
+  -- qualifying conditions for the subject entity
   let (ewho, (ebs, ebrs)) = fromMaybe (Always, (Nothing, [])) whoBool
+
   let toreturn = Regulative
                  entitytype
                  (newPre (Text.pack $ show ewho) <$> ebs)
@@ -429,7 +435,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  Nothing -- rule label
                  Nothing -- legal source
                  Nothing -- internal SrcRef
-  myTraceM $ "pRegRuleNormal: the specifier is " ++ show who
+  myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show posPreamble
+  myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
   myTraceM $ "pRegRuleNormal: with appendix brs = " ++ show brs
   return ( toreturn : brs ++ ebrs ++ defalias )
@@ -498,28 +505,39 @@ pAction = do
 
 data RuleBody = RuleBody { rbaction   :: ActionType -- pay(to=Seller, amount=$100)
                          , rbpbrs     :: [(Preamble, BoolRules)] -- not subject to the party
+                         , rbpbrneg   :: [(Preamble, BoolRules)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
                          }
                       deriving (Eq, Show, Generic)
 
-mkRBfromDT :: ActionType -> [(Preamble, BoolRules)] -> (Deontic, Maybe (TemporalConstraint Text.Text)) -> RuleBody
-mkRBfromDT rba rbpb (rbd,rbt) = RuleBody rba rbpb rbd rbt
+mkRBfromDT :: ActionType
+           -> [(Preamble, BoolRules)] -- positive  -- IF / WHEN
+           -> [(Preamble, BoolRules)] -- negative  -- UNLESS
+           -> (Deontic, Maybe (TemporalConstraint Text.Text))
+           -> RuleBody
+mkRBfromDT rba rbpb rbpbneg (rbd,rbt) = RuleBody rba rbpb rbpbneg rbd rbt
 
-mkRBfromDA :: (Deontic, ActionType) -> [(Preamble, BoolRules)] -> Maybe (TemporalConstraint Text.Text) -> RuleBody
-mkRBfromDA (rbd,rba) rbpb rbt = RuleBody rba rbpb rbd rbt
+mkRBfromDA :: (Deontic, ActionType)
+           -> [(Preamble, BoolRules)]
+           -> [(Preamble, BoolRules)]
+           -> Maybe (TemporalConstraint Text.Text)
+           -> RuleBody
+mkRBfromDA (rbd,rba) rbpb rbpbneg rbt = RuleBody rba rbpb rbpbneg rbd rbt
 
-permutations :: [MyToken] -> Parser RuleBody
-permutations whoifwhen = debugName ("permutations " <> show whoifwhen) $ do
+permutations :: [MyToken] -> [MyToken] -> Parser RuleBody
+permutations ifwhen unless = debugName ("permutations positive=" <> show ifwhen <> ", negative=" <> show unless) $ do
   try ( debugName "permutation with deontic-temporal" $ permute ( mkRBfromDT
             <$$> pDoAction
-            <|?> ([], some $ preambleBoolRules whoifwhen) -- syntactic constraint, all the if/when need to be contiguous.
+            <|?> ([], some $ preambleBoolRules ifwhen) -- syntactic constraint, all the if/when need to be contiguous.
+            <|?> ([], some $ preambleBoolRules unless) -- syntactic constraint, all the if/when need to be contiguous.
             <||> try pDT
           ) )
   <|>
   try ( debugName "permutation with deontic-action" $ permute ( mkRBfromDA
             <$$> try pDA
-            <|?> ([], some $ preambleBoolRules whoifwhen) -- syntactic constraint, all the if/when need to be contiguous.
+            <|?> ([], some $ preambleBoolRules ifwhen) -- syntactic constraint, all the if/when need to be contiguous.
+            <|?> ([], some $ preambleBoolRules unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> (Nothing, pTemporal <* dnl)
           ) )
     

@@ -460,11 +460,25 @@ Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. 
 |   |          |        |                |          |         |   |   |
 
 
-** Unless has special semantics
+** The ~Unless~ preamble
 :PROPERTIES:
 :TABLE_EXPORT_FILE: /dev/null
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+*** UNLESS for entity qualification vs for regular conditionals
+
+The preamble ~WHO~ introduces a Boolean structure which qualifies the party.
+
+The preamble ~IF~ introduces a Boolean structure which qualifies preconditions generally.
+
+The preamble ~UNLESS~ is like ~IF~, but reversed.
+
+What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now.
+
+|          | qualifies party | qualifies preconditions generally |
+| positive | WHO             | IF / WHEN                         |
+| negative | EXCEPT          | UNLESS                            |
 
 *** Unless /in/ the tail
 
@@ -503,6 +517,9 @@ if (not (estranged or dead))
 | MUST   | sing            |
 | UNLESS | day of silence  |
 | IF     | the king wishes |
+
+The intepreter combines two conditions into one: ~if ((not (day of silence)) && (the king wishes))~
+
 *** Unless as the second term in a regulative rule
 :PROPERTIES:
 :TABLE_EXPORT_FILE: unless-regulative-3.csv
@@ -513,6 +530,8 @@ if (not (estranged or dead))
 | MUST   | sing            |
 | IF     | the king wishes |
 | UNLESS | day of silence  |
+
+same as above
 
 *** Unless as a separated first term in a regulative rule
 :PROPERTIES:
@@ -560,14 +579,68 @@ if (not (estranged or dead))
 | UNLESS | day of mourning          |
 | AND    | mourning forbids singing |
 
-*** Unless expands to and
+** NOT is a thing
 
-|        | Bob's your uncle             |
-| IF     | Bob is your parent's brother |
-| UNLESS | Bob is estranged             |
+*** Should be the same as an IF NOT (joined):
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ifnot-1-joined.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-if (parentBrother and not estranged)
+| EVERY  | person         |
+| MUST   | sing           |
+| IF NOT | day of silence |
 
+*** Should be the same as an IF NOT (separated):
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ifnot-2-separate.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |                |
+| MUST  | sing   |                |
+| IF    | NOT    | day of silence |
+
+How does this interact with our indentation syntax?
+
+*** Maybe IF NOT indentation binds looser than AND
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ifnot-3-indentation.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |                         |
+| MUST  | sing   |                         |
+| IF    | NOT    | day of silence          |
+|       | AND    | observance is mandatory |
+
+This could trigger an error, forcing the user to choose one of the explicit forms below.
+
+*** Maybe IF NOT indentation is required to appear at its own level to reduce human error
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ifnot-4-indentation-explicit.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |     |                         |
+| MUST  | sing   |     |                         |
+| IF    | NOT    |     | day of silence          |
+|       |        | AND | observance is mandatory |
+
+We already squash AND and OR to the same column, even though they have different precedence, so maybe we should force NOT to be explicit.
+
+*** Maybe IF NOT indentation is required to appear at its own level to reduce human error
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ifnot-5-indentation-explicit.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person      |                |
+| MUST  | sing        |                |
+| IF    | NOT         | day of silence |
+| AND   | day of song |                |
+
+Moving the AND to the level of the IF is an accepted and common form.
 
 
 

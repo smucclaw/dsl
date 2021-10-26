@@ -359,7 +359,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   ( (_meansis, BR posp posbr), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
 
-  let (_unless, BR negp negbr) = mergePBRS (if null unlesses then [(Never, emptyBoolRules)] else unlesses)
+  let (_unless, BR negp negbr) = mergePBRS Never unlesses
 
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -390,8 +390,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (posPreamble, BR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
-  let (negPreamble, BR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
+  let (posPreamble, BR pcbs pbrs) = mergePBRS Always (rbpbrs   rulebody)
+  let (negPreamble, BR ncbs nbrs) = mergePBRS Never  (rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -434,8 +434,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let (posPreamble, BR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
-  let (negPreamble, BR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
+  let (posPreamble, BR pcbs pbrs) = mergePBRS Always (rbpbrs   rulebody)
+  let (negPreamble, BR ncbs nbrs) = mergePBRS Never  (rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
   let (ewho, BR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
@@ -473,12 +473,12 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   withDepth (leftX + 1) pRegRule
 
 -- combine all the boolrules under the first preamble keyword
-mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
-mergePBRS xs =
-  let (w,BR a b) = head xs
-      pre_a = brCond . snd <$> tail xs
+mergePBRS :: Preamble -> [(Preamble, BoolRules)] -> (Preamble, BoolRules)
+mergePBRS defPA [] = (defPA, emptyBoolRules)
+mergePBRS _ ((w, BR a b) : xs) =
+  let pre_a = brCond . snd <$> xs
       toreturn = (w, BR { brCond = a <> mconcat pre_a
-                        , brExtraRules = concat (b : (brExtraRules . snd <$> tail xs) ) })
+                        , brExtraRules = concat (b : (brExtraRules . snd <$> xs) ) })
   in -- trace ("mergePBRS: called with " ++ show xs)
      -- trace ("mergePBRS: about to return " ++ show toreturn)
      toreturn

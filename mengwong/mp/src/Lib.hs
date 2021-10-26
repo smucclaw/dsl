@@ -33,7 +33,8 @@ import Debug.Trace
 import Data.Aeson.Encode.Pretty
 
 import Types
-import Error
+import Error ( errorBundlePrettyCustom )
+import NLG (nlg)
 import Control.Monad.Reader (ReaderT(runReaderT), asks, MonadReader (local))
 
 -- our task: to parse an input CSV into a collection of Rules.
@@ -43,13 +44,15 @@ someFunc :: IO ()
 someFunc = do
   mpd <- lookupEnv "MP_DEBUG"
   mpj <- lookupEnv "MP_JSON"
+  mpn <- lookupEnv "MP_NLG"
   let runConfig = RC
         { debug = (maybe False (read :: String -> Bool) mpd)
         , callDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
         , asJSON = (maybe False (read :: String -> Bool) mpj)
-        }        
+        , toNLG = (maybe False (read :: String -> Bool) mpn)
+        }
   myinput <- BS.getContents
   runExample runConfig myinput
 
@@ -102,9 +105,13 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
-      Right xs -> if (asJSON rc)
-                  then putStrLn $ toString $ encodePretty xs
-                  else pPrint xs
+      Right xs -> do
+        when (asJSON rc) $
+          putStrLn $ toString $ encodePretty xs
+        when (toNLG rc) $ do
+          naturalLangSents <- mapM nlg xs
+          mapM_ (putStrLn . Text.unpack) naturalLangSents
+        pPrint xs
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of
@@ -365,7 +372,7 @@ pRegRule = debugName "pRegRule" $ (try pRegRuleSugary <|> pRegRuleNormal) <* opt
 --       ->  eat a potato
 --       IF  a potato is available
 --
---  You MAY  
+--  You MAY
 --       ->  eat a potato
 --   BEFORE  midnight
 --       IF  a potato is available
@@ -500,7 +507,7 @@ pTermParens = debugName "pTermParens" $ do
   entitytype  <- pOtherVal
   entityalias <- optional pOtherVal -- TODO: add test here to see if the pOtherVal has the form    ("xxx")
   _ <- dnl
-  return (entitytype, entityalias)  
+  return (entitytype, entityalias)
 
 pDoAction ::  Parser ActionType
 pDoAction = pToken Do >> pAction
@@ -558,7 +565,7 @@ permutationsReg ifwhen unless = debugName ("permutationsReg positive=" <> show i
             <|?> ([], some $ preambleBoolRules unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> (Nothing, pTemporal <* dnl)
           ) )
-    
+
 
 -- the Deontic/temporal/action form
 -- MAY EVENTUALLY
@@ -568,15 +575,15 @@ pDT = debugName "pDT" $ do
   pd <- pDeontic
   pt <- (optional pTemporal) <* dnl
   return (pd, fromMaybe Nothing pt)
-  
+
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, ActionType)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
   pa <- pAction
   return (pd, pa)
-  
-  
+
+
 
 newPre :: Text.Text -> AA.Item Text.Text -> AA.Item Text.Text
 newPre _ (AA.Leaf x) = AA.Leaf x

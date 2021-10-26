@@ -24,6 +24,31 @@ packages:
       sha256: 677ee9598c5dedb3ef8959c26a6c65f29b3e1e3c5e83433921aef17d86a22d50
   original:
     hackage: svg-builder-0.1.1
+- completed:
+    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
+    pantry-tree:
+      size: 18807
+      sha256: e9012408d7b88cfb55f91c0c1d31aebc97cc8824b860c2e7cc5747b90a0bd190
+  original:
+    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
+- completed:
+    hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
+    pantry-tree:
+      size: 3971
+      sha256: 957e4dbb988f47164c821807297a6020c1108cd3265582ac2aa9292708cb62c9
+  original:
+    hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
+- completed:
+    size: 1349191
+    url: https://github.com/anka-213/gf-ud/archive/8e70b1f555ac0586d52b510d3589c3dba5d3b9db.tar.gz
+    name: gf-ud
+    version: 0.1.0.0
+    sha256: b4c8229b9df8cf70b1e9cae0172b790e15e6e68dbb8167a30198862165715b8f
+    pantry-tree:
+      size: 6064
+      sha256: aa252d535730ba780f2a7eb1689775bae1acee60a60237052f5bce630b5adbf2
+  original:
+    url: https://github.com/anka-213/gf-ud/archive/8e70b1f555ac0586d52b510d3589c3dba5d3b9db.tar.gz
 snapshots:
 - completed:
     size: 586268

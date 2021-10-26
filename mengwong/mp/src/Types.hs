@@ -94,6 +94,7 @@ data RunConfig = RC { debug     :: Bool
                     , parseCallStack :: [String]
                     , sourceURL :: Text.Text
                     , asJSON    :: Bool
+                    , toNLG     :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

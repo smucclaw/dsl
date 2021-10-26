@@ -47,6 +47,13 @@ extra-deps:
   subdirs:
   - lib/haskell/anyall
 - svg-builder-0.1.1
+- gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
+- network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
+- github: anka-213/gf-ud
+  commit: 8e70b1f555ac0586d52b510d3589c3dba5d3b9db
+
+
+allow-newer: true
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

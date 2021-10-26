@@ -29,6 +29,7 @@ library
       Error
       KW
       Lib
+      NLG
       Types
   other-modules:
       Paths_mp
@@ -45,6 +46,8 @@ library
     , cassava
     , containers
     , generic-data
+    , gf
+    , gf-ud
     , hspec
     , hspec-megaparsec
     , megaparsec
@@ -74,6 +77,8 @@ executable mp-exe
     , cassava
     , containers
     , generic-data
+    , gf
+    , gf-ud
     , hspec
     , hspec-megaparsec
     , megaparsec
@@ -105,6 +110,8 @@ test-suite mp-test
     , cassava
     , containers
     , generic-data
+    , gf
+    , gf-ud
     , hspec
     , hspec-megaparsec
     , megaparsec

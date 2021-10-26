@@ -39,6 +39,8 @@ dependencies:
 - aeson
 - aeson-pretty
 - utf8-string
+- gf
+- gf-ud
 
 ghc-options: -Wall
 

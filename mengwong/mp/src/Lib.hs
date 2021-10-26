@@ -390,11 +390,12 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (who, (ands, brs)) = mergePBRS (if null (rbpbrs rulebody) then [(Always, (Nothing, []))] else rbpbrs rulebody)
+  let (posPreamble, (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, (Nothing, []))] else rbpbrs   rulebody)
+  let (negPreamble, (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  (Nothing, []))] else rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
-                 ands
+                 (addneg pcbs ncbs)
                  (rbdeon rulebody)
                  (rbaction rulebody)
                  (rbtemporal rulebody)
@@ -403,10 +404,12 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  Nothing -- rule label
                  Nothing -- legal source
                  Nothing -- internal SrcRef
-  myTraceM $ "pRegRuleSugary: the specifier is " ++ show who
+  myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show posPreamble
+  myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
-  myTraceM $ "pRegRuleSugary: with appendix brs = " ++ show brs
-  return ( toreturn : brs )
+  let appendix = pbrs ++ nbrs
+  myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
+  return ( toreturn : appendix )
 
 -- EVERY   person
 -- WHO     sings
@@ -453,7 +456,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
   let appendix = pbrs ++ nbrs ++ ebrs ++ defalias
-  myTraceM $ "pRegRuleNormal: with appendix brs = " ++ show appendix
+  myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
   return ( toreturn : appendix )
 
 addneg :: Maybe BoolStruct -> Maybe BoolStruct -> Maybe BoolStruct

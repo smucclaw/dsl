@@ -359,7 +359,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   ( (_meansis, BRR posp posbr), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
 
-  let (_unless, BRR negp negbr) = mergePBRS (if null unlesses then [(Never, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else unlesses)
+  let (_unless, BRR negp negbr) = mergePBRS (if null unlesses then [(Never, emptyBoolRules)] else unlesses)
 
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -390,8 +390,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrneg rulebody)
+  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
+  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -434,11 +434,11 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrneg rulebody)
+  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
+  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BRR ebs ebrs) = fromMaybe (Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] }) whoBool
+  let (ewho, BRR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
 
   let toreturn = Regulative
                  entitytype

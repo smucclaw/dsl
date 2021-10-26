@@ -37,6 +37,8 @@ br :: (Maybe BoolStruct, [Rule]) -> BoolRules
 br (a,b) = BR { boolRulesMBStruct = a
                          , boolRulesRules = b }
 
+emptyBoolRules :: BoolRules
+emptyBoolRules = BR { boolRulesMBStruct = Nothing , boolRulesRules = [] }
 
 data Rule = Regulative
             { every    :: EntityType         -- every person

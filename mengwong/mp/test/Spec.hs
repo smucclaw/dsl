@@ -11,7 +11,6 @@ import Types
 import Error
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))
-import System.Environment (lookupEnv)
 
 
 
@@ -62,15 +61,8 @@ defaultCon = Constitutive
 
 main :: IO ()
 main = do
-  mpd <- lookupEnv "MP_DEBUG"
-  mpj <- lookupEnv "MP_JSON"
-  let runConfig = RC
-        { debug          = (maybe False (read :: String -> Bool) mpd)
-        , callDepth      = 0
-        , parseCallStack = []
-        , sourceURL      = "test/Spec"
-        , asJSON         = (maybe False (read :: String -> Bool) mpj)
-        }        
+  runConfig_ <- getConfig
+  let runConfig = runConfig_ { sourceURL = "test/Spec" }
   let parseR p = parse (runReaderT p runConfig)
 
   hspec $ do
@@ -286,8 +278,137 @@ main = do
         parseR (pRule <* eof) "" (head . tail $ exampleStreams mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
 
-    describe "megaparsing unless semantics" $ do
+    describe "megaparsing MEANS" $ do
 
+      let bobUncle = defaultCon { term = "Bob's your uncle"
+                                 , cond = Just
+                                   ( Not
+                                     ( Any
+                                       ( Pre "any of:" )
+                                       [ Leaf "Bob is estranged"
+                                       , Leaf "Bob is dead"
+                                       ]
+                                     )
+                                   )
+                                 }
+      
+      it "should start a bool struct" $ do
+        let testfile = "test/bob-head-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` [bobUncle]
+
+    describe "megaparsing UNLESS semantics" $ do
+
+      let dayOfSilence = [ defaultReg { cond = Just ( Not ( Leaf "day of silence" ) ) } ] 
+
+      let observanceMandatory = [ defaultReg { cond = Just
+                                               ( Not
+                                                 ( All
+                                                   ( Pre "all of:" ) -- why not "both"? ¯\_(ツ)_/¯
+                                                   [ Leaf "day of silence"
+                                                   , Leaf "observance is mandatory"
+                                                   ]
+                                                 )
+                                               ) } ]
+
+      let dayOfSong = [ defaultReg { cond = Just ( All ( Pre "all of:" ) [ Not ( Leaf "day of silence" )
+                                                                         , Leaf "day of song" ] ) } ]
+          
+      let silenceKing = [ defaultReg { cond = Just ( All ( Pre "both" ) [
+                                                         Leaf "the king wishes"
+                                                         , Not ( Leaf "day of silence" )
+                                                         ] ) } ]
+            
+      it "should read EVERY MUST UNLESS" $ do
+        let testfile = "test/unless-regulative-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` dayOfSilence
+                      
+      it "should read EVERY MUST UNLESS IF" $ do
+        let testfile = "test/unless-regulative-2.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` silenceKing
+                      
+      it "should read EVERY MUST IF UNLESS" $ do
+        let testfile = "test/unless-regulative-3.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` silenceKing
+                      
+      it "should read EVERY UNLESS MUST IF" $ do
+        let testfile = "test/unless-regulative-4.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` silenceKing
+                      
+      it "should read EVERY IF MUST UNLESS" $ do
+        let testfile = "test/unless-regulative-5.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` silenceKing
+                      
+      let silenceMourning = [
+            defaultReg { cond = Just ( All ( Pre "both" ) [
+                                         Leaf "the king wishes"
+                                         , Not
+                                           ( Any
+                                             ( Pre "any of:" )
+                                             [ Leaf "day of silence"
+                                             , Leaf "day of mourning"
+                                             ]
+                                           )
+                                         ] ) } ]
+
+      it "should read EVERY MUST IF UNLESS OR" $ do
+        let testfile = "test/unless-regulative-6.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` silenceMourning
+
+      let mourningForbids = [
+            defaultReg { cond = Just ( All ( Pre "both" ) [
+                                         Leaf "the king wishes"
+                                         , Not
+                                           ( All
+                                             ( Pre "all of:" )
+                                             [ Leaf "day of mourning"
+                                             , Leaf "mourning forbids singing"
+                                             ]
+                                           ) ] ) } ]
+                                         
+      it "should read EVERY MUST IF UNLESS AND" $ do
+        let testfile = "test/unless-regulative-7.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` mourningForbids
+                      
+      it "should read IF NOT when joined" $ do
+        let testfile = "test/ifnot-1-joined.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` dayOfSilence
+                      
+      it "should read IF-NOT when separate" $ do
+        let testfile = "test/ifnot-2-separate.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` dayOfSilence
+
+      it "should handle NOT ... AND indented" $ do
+        let testfile = "test/ifnot-4-indentation-explicit.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` observanceMandatory
+                      
+      it "should handle NOT AND indented the other way" $ do
+        let testfile = "test/ifnot-5-indentation-explicit.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` dayOfSong
+                      
       it "should work for constitutive rules" $ do
         let testfile = "test/bob-tail-1.csv"
         testcsv <- BS.readFile testfile

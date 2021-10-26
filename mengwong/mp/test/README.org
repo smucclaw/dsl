@@ -493,15 +493,15 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 
 if ((morbror or farbror) and not estranged)
 
-*** Unless /as/ the head in a constitutive rule
+*** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|        | Bob's your uncle |
-| UNLESS | Bob is estranged |
-| OR     | Bob is dead      |
+|       | Bob's your uncle |                  |
+| MEANS | NOT              | Bob is estranged |
+|       | OR               | Bob is dead      |
 
 if (not (estranged or dead))
 
@@ -577,7 +577,7 @@ same as above
 
 *** Unless preambles an AND
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-6.csv
+:TABLE_EXPORT_FILE: unless-regulative-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -613,16 +613,20 @@ How does this interact with our indentation syntax?
 
 *** Maybe IF NOT indentation binds looser than AND
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-3-indentation.csv
+:TABLE_EXPORT_FILE: ifnot-3-undefined.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| EVERY | person |                         |
-| MUST  | sing   |                         |
-| IF    | NOT    | day of silence          |
-|       | AND    | observance is mandatory |
+| EVERY | person |                         |         |
+| MUST  | sing   |                         |         |
+| IF    | NOT    | day of silence          |         |
+|       | AND    | observance is mandatory |         |
 
 This could trigger an error, forcing the user to choose one of the explicit forms below.
+
+(Right now it matches 4 immediately below, we are being lenient.)
+
+If we get around to https://github.com/smucclaw/sandbox/issues/33 we can revisit this and outlaw it.
 
 *** Maybe IF NOT indentation is required to appear at its own level to reduce human error
 :PROPERTIES:

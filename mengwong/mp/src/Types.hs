@@ -23,6 +23,7 @@ type Parser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
 type BoolRules = (Maybe BoolStruct, [Rule])
+type BoolStruct = AA.Item Text.Text
 
 data Rule = Regulative
             { every    :: EntityType         -- every person
@@ -69,7 +70,6 @@ data TemporalConstraint a = TBefore a
 type ConstitutiveTerm = Text.Text
 type EntityType = Text.Text
 type ActionType = (Text.Text,[(Text.Text,[Text.Text])])
-type BoolStruct = AA.Item Text.Text
 data Deontic = DMust | DMay | DShant
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
@@ -125,6 +125,8 @@ toToken "IS" =     Is
 toToken "OR" =     Or
 toToken "AND" =    And
 toToken "UNLESS" = Unless
+toToken "IF NOT" = Unless
+toToken "NOT"    = MPNot
 
 -- deontics
 toToken "MUST" =   Must

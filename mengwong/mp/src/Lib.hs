@@ -40,12 +40,12 @@ import Control.Monad.Reader (ReaderT(runReaderT), asks, MonadReader (local))
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
 
-someFunc :: IO ()
-someFunc = do
+getConfig :: IO RunConfig
+getConfig = do
   mpd <- lookupEnv "MP_DEBUG"
   mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
-  let runConfig = RC
+  return RC
         { debug = (maybe False (read :: String -> Bool) mpd)
         , callDepth = 0
         , parseCallStack = []
@@ -53,6 +53,10 @@ someFunc = do
         , asJSON = (maybe False (read :: String -> Bool) mpj)
         , toNLG = (maybe False (read :: String -> Bool) mpn)
         }
+
+someFunc :: IO ()
+someFunc = do
+  runConfig <- getConfig
   myinput <- BS.getContents
   runExample runConfig myinput
 
@@ -640,12 +644,20 @@ pElement ::  Parser BoolRules
 pElement = debugName "pElement" $ do
   -- think about importing Control.Applicative.Combinators so we get the `try` for free
   try pNestedBool
+    <|> pNotElement
     <|> try (constitutiveAsElement <$> pConstitutiveRule)
     <|> pLeafVal
 
 constitutiveAsElement :: [Rule] -> BoolRules
 constitutiveAsElement (cr:rs) = (Just (AA.Leaf (term cr)), cr:rs)
 constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
+
+pNotElement :: Parser BoolRules
+pNotElement = debugName "pNotElement" $ do
+  (innerBS, rules) <- pToken MPNot *> pElement
+  case innerBS of
+    Nothing       -> return (innerBS, rules)
+    (Just anyall) -> return (Just (AA.Not anyall), rules)
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do

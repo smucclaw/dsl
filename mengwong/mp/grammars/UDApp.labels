@@ -1,0 +1,256 @@
+#fun nsubj_ head              -- NP -> nsubj
+#fun obj_ head                -- NP -> obj
+#fun iobj_ head               -- NP -> iobj
+#fun xcomp_ head              -- Comp -> xcomp
+#fun rootV_ head              -- VP -> root
+#fun rootV2_ head             -- VPSlash -> root
+#fun rootA_ head              -- AP -> root
+#fun rootN_ head              -- NP -> root
+#fun conjA_ head              -- AP -> conj ;
+#fun conjN_ head              -- NP -> conj ;
+#fun conjAdv_ head            -- Adv -> conj ;
+#fun cc_ head                 -- Conj -> cc ;
+#fun advmod_ head             -- Adv -> advmod
+#fun obl_ head                -- Adv -> obl
+#fun nmod_ case head          -- Prep -> NP -> nmod ;
+#fun nsubjPass_ head          -- NP -> nsubjPass
+#fun auxPas_ head
+#fun punct_ head dep
+
+#fun root_nsubj head nsubj                         -- root -> nsubj -> UDS ;               -- the cat sleeps
+#fun root_nsubj_obj head nsubj obj                 -- root -> nsubj -> obj -> UDS ;   -- the cat sees us
+#fun root_nsubj_cop head nsubj cop                 -- root -> nsubj -> cop -> UDS ; -- the cat is small
+#fun root_nsubj_cop_nmod head nsubj cop nmod       -- my hovercraft is full [of eels] (eels is nmod)
+#fun root_nsubj_cop_advmod head nsubj cop advmod   -- the party is [here] (here is advmod)
+#fun root_nsubj_cop_aclRelcl head nsubj cop acl:relcl
+#fun root_nsubj_cop_aclRelcl_obl head nsubj cop acl:relcl obl
+#fun root_nsubjPass_deontic_auxPass head nsubj:pass aux aux:pass  -- everyone should be notified
+
+#fun root_nsubj_cop_cc_conj head nsubj cop cc conj  -- he is big and old
+
+#fun passRelCl_ head nsubj:pass cop                -- root -> nsubjPass -> cop -> aclRelcl ;
+
+-- Labels for the core RGL functions, copied from the original gf-rgl/Lang.labels and gf-ud/grammars/Parse.labels
+
+#fun UsePron head
+#fun DetCN _ PossPron > nmod:poss head   -- my hovercraft
+#fun DetCN det head -- Det -> CN -> NP
+
+#fun DetQuant 	head nummod          -- Quant -> Num -> Det
+#fun DetQuantOrd head nummod amod
+
+#fun PossPron head
+#fun UseN head
+#fun AdjCN amod head
+
+#fun UseV head
+
+#fun AdvIP head advmod
+#fun FunRP case nsubj head
+#fun ExistS dep dep head
+
+
+-- numerals
+#fun pot0 head -- Digit -> Sub10
+#fun pot0as1 head -- Sub10 -> Sub100
+#fun pot1 head -- Digit -> Sub100
+#fun pot1as2 head -- Sub100 -> Sub1000
+#fun pot1plus nummod head -- Digit -> Sub10 -> Sub100
+#fun pot1to19 head -- Digit -> Sub100
+#fun pot2 head -- Sub10 -> Sub1000
+#fun pot2as3 head -- Sub1000 -> Sub1000000
+#fun pot2plus nummod head -- Sub10 -> Sub100 -> Sub1000
+#fun pot3 head -- Sub1000 -> Sub1000000
+#fun pot3plus nummod head -- Sub1000 -> Sub1000 -> Sub1000000
+#fun pot4plus nummod head -- Sub1000 -> Sub1000000 -> Sub1000000000
+#fun pot0 head -- Digit -> Sub10
+#fun pot0as1 head -- Sub10 -> Sub100
+#fun pot1 head -- Digit -> Sub100
+#fun pot1as2 head -- Sub100 -> Sub1000
+#fun pot1plus nummod head -- Digit -> Sub10 -> Sub100
+#fun pot1to19 head -- Digit -> Sub100
+#fun pot2 head -- Sub10 -> Sub1000
+#fun pot2as3 head -- Sub1000 -> Sub1000000
+#fun pot2plus nummod head -- Sub10 -> Sub100 -> Sub1000
+#fun pot3 head -- Sub1000 -> Sub1000000
+#fun pot3plus nummod head -- Sub1000 -> Sub1000 -> Sub1000000
+#fun pot0 head -- Digit -> Sub10
+#fun pot0as1 head -- Sub10 -> Sub100
+#fun pot1 head -- Digit -> Sub100
+#fun pot1as2 head -- Sub100 -> Sub1000
+#fun pot1plus nummod head -- Digit -> Sub10 -> Sub100
+#fun pot1to19 head -- Digit -> Sub100
+#fun pot2 head -- Sub10 -> Sub1000
+#fun pot2as3 head -- Sub1000 -> Sub1000000
+#fun pot2plus nummod head -- Sub10 -> Sub100 -> Sub1000
+#fun pot3 head -- Sub1000 -> Sub1000000
+#fun pot3plus nummod head -- Sub1000 -> Sub1000 -> Sub1000000
+
+#fun AdAP 	advmod head
+#fun ConjAP 	cc head
+#fun ConjAdV 	cc head
+#fun ConjAdv 	cc head
+#fun PrepNP 	case head
+#fun SubjS 	mark head
+#fun AdvCN 	head nmod
+#fun ComplN2 	head nmod
+#fun ConjCN 	cc head
+#fun PossNP 	head nmod
+#fun RelCN 	head acl
+#fun SentCN 	head acl
+#fun AdNum 	advmod head
+#fun AdjDAP 	head amod
+#fun ConjDet 	cc head
+#fun IIDig 	head goeswith
+#fun AdvIAdv 	advmod head
+#fun ConjIAdv 	cc head
+#fun PrepIP 	case head
+#fun IdetQuant head nummod
+#fun IdetCN		det head
+#fun IdetCN 	det head
+#fun BaseAP 	head conj
+#fun ConsAP 	head conj
+#fun BaseAdV 	head conj
+#fun ConsAdV 	head conj
+#fun BaseAdv 	head conj
+#fun ConsAdv 	head conj
+#fun BaseCN 	head conj
+#fun ConsCN 	head conj
+#fun BaseDAP 	head conj
+#fun ConsDAP 	head conj
+#fun BaseIAdv 	head conj
+#fun ConsIAdv 	head conj
+#fun BaseNP 	head conj
+#fun ConsNP 	head conj
+#fun BaseRS 	head conj
+#fun ConsRS 	head conj
+#fun BaseS 	head conj
+#fun ConsS 	head conj
+#fun CompoundN 	compound head
+#fun ComplN3 	nmod head
+#fun AdvNP 	head nmod              -- not sure
+#fun ConjNP 	cc head
+#fun ExtAdvNP 	head nmod      -- not sure
+#fun PPartNP		head amod	-- only in core RGL
+#fun PredetNP 	det head
+#fun RelNP 	head acl
+#fun OrdNumeralSuperl 	nummod head  -- quite wrong; cannot find relevant details in the documentation; but most probably head lies outside the score of this function
+#fun QuestIAdv 	advmod head		-- "where does John sleep" cf. AdvVP
+#fun QuestIComp 	head nsubj	-- "where is John": John is clearly nsubj, but is where the head?
+#fun QuestQVP 	nsubj head
+#fun QuestSlash 	obj head
+#fun QuestVP 	nsubj head
+#fun AddAdvQVP 	head advmod
+#fun AdvQVP 	head obj
+#fun ComplSlashIP 	head obj
+#fun RelSlash 	mark head
+#fun RelVP 	mark head
+#fun ConjRS 	cc head
+#fun AdvS 	advmod head
+#fun ConjS 	cc head
+#fun ExtAdvS 	advmod head
+#fun TTAnt 	 head empty
+#fun AdVVP 	advmod head
+#fun QuestIAdv 	advmod head		-- "where does John sleep" cf. AdvVP
+#fun AdvVP 	head advmod
+#fun PassV head
+ComparAdvAdj
+-- #fun ComparAdvAdjS
+-- #fun UseRCl
+-- #fun UseCl
+#fun ComplV head obj
+-- #fun PassVAgent
+
+#cat cop AUX
+#cat aux AUX
+#cat auxPass AUX
+#cat Deontic AUX
+#cat A ADJ primary
+#cat A2 ADJ
+#cat ACard ADV
+#cat AP ADJ
+#cat AdA ADV
+#cat AdN ADV
+#cat AdV ADV
+#cat Adv ADV primary
+#cat Ant X
+#cat CAdv ADV
+#cat CN NOUN
+#cat Card NUM
+#cat Cl X
+#cat ClSlash X
+#cat Comp X
+#cat Conj CCONJ
+#cat Conj CONJ
+#cat DAP DET
+#cat Det DET primary
+#cat Dig NUM
+#cat Digit NUM
+#cat Digits NUM
+#cat Float NUM
+#cat IAdv ADV
+#cat IComp X
+#cat IDet DET
+#cat IP PRON
+#cat IQuant DET
+#cat Imp VERB
+#cat Int NUM
+#cat Interj INTJ
+#cat ListAP X
+#cat ListAdV X
+#cat ListAdv X
+#cat ListCN X
+#cat ListDAP X
+#cat ListIAdv X
+#cat ListNP X
+#cat ListRS X
+#cat ListS X
+#cat N NOUN primary
+#cat N2 NOUN
+#cat N3 NOUN
+#cat NP PRON ----
+#cat Num NUM
+#cat Numeral NUM
+#cat Ord NUM
+#cat PConj CCONJ
+#cat PConj CONJ
+#cat PN PROPN primary
+#cat Phr X
+#cat Pol X
+#cat Predet DET
+#cat Prep ADP primary
+#cat Pron PRON
+#cat QCl X
+#cat QS X
+#cat QVP X
+#cat Quant DET
+#cat RCl X
+#cat RP PRON
+#cat RS X
+#cat S X
+#cat SC X
+#cat SSlash X
+#cat Sub10 NUM
+#cat Sub100 NUM
+#cat Sub1000 NUM
+#cat Sub1000000 NUM
+#cat Sub1000000000 NUM
+#cat Subj SCONJ
+#cat Temp X
+#cat Tense X
+#cat Text X
+#cat Utt X
+#cat V VERB primary
+#cat V2 VERB
+#cat V2A VERB
+#cat V2Q VERB
+#cat V2S VERB
+#cat V2V VERB
+#cat V3 VERB
+#cat VA VERB
+#cat VP X
+#cat VPSlash X
+#cat VQ VERB
+#cat VS VERB
+#cat VV VERB
+

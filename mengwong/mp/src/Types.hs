@@ -28,10 +28,10 @@ newtype BoolRules = BR (Maybe BoolStruct, [Rule])
   deriving (Eq, Show)
 
 unBR :: BoolRules -> (Maybe BoolStruct, [Rule])
-unBR (BR (x, y)) = (x, y)
+unBR (BRR x y) = (x, y)
 
--- pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
--- pattern BRR   a   b   = BR (  a  ,   b  )
+pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
+pattern BRR a b = BR (a, b)
 
 -- pattern BR (a,b) = BRR (a,b)
 

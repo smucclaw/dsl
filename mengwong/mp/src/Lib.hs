@@ -5,6 +5,7 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 module Lib where
 
@@ -19,7 +20,7 @@ import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Generic.Data (Generic)
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, catMaybes)
+import Data.Maybe (fromMaybe, catMaybes, maybeToList)
 import Text.Pretty.Simple (pPrint)
 import Control.Monad (guard, when, forM_)
 import qualified AnyAll as AA
@@ -340,13 +341,19 @@ stanzaAsStream _s rs = do
 -- deriving (Eq, Ord, Show)
 
 -- | Used for collecting nested rules and flattening them out to a single list
-data BoolRules = BR { brCond :: Maybe BoolStruct, brExtraRules :: [Rule]}
-  deriving (Eq, Show)
+data BoolRulesF a = BR { brCond :: a, brExtraRules :: [Rule]}
+  deriving (Eq, Show, Functor)
 
-instance Semigroup BoolRules where
+type BoolRules = BoolRulesF (Maybe BoolStruct)
+
+emptyBoolRules :: BoolRules
+emptyBoolRules = mempty
+
+instance Semigroup a => Semigroup (BoolRulesF a) where
   (BR a b) <> (BR a' b') = BR {brCond = a <> a', brExtraRules = b <> b'}
-instance Monoid BoolRules where
-  mempty = BR { brCond = Nothing , brExtraRules = [] }
+
+instance Monoid a => Monoid (BoolRulesF a) where
+  mempty = BR { brCond = mempty , brExtraRules = [] }
 
 
 --
@@ -448,7 +455,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let (negPreamble, BR ncbs nbrs) = mergePBRS Never  (rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BR ebs ebrs) = fromMaybe (Always, mempty) whoBool
+  let (ewho, BR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -635,6 +642,9 @@ pAndGroup = debugName "pAndGroup" $ do
                  else BR { brCond = Just (AA.All (AA.Pre "all of:") (catMaybes $ brCond <$> (orGroup1 : orGroupN)))
                          , brExtraRules = concatMap brExtraRules (orGroup1 : orGroupN) }
   return toreturn
+  -- Alternative implementation:
+  -- let allGroups = mconcat $ fmap maybeToList <$> (orGroup1 : orGroupN)
+  -- return $ if null orGroupN then orGroup1 else fmap (Just . AA.All (AA.Pre "all of:")) allGroups
 
 pOrGroup ::  Parser BoolRules
 pOrGroup = debugName "pOrGroup" $ do
@@ -662,17 +672,15 @@ constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do
-  BR innerBS rules <- pToken MPNot *> pElement
-  return $ BR { brCond = fmap AA.Not innerBS
-              , brExtraRules = rules }
+  inner <- pToken MPNot *> pElement
+  return $ (fmap . fmap) AA.Not inner
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do
   checkDepth
   leafVal <- pOtherVal <* dnl
   myTraceM $ "pLeafVal returning " ++ Text.unpack leafVal
-  return $ BR { brCond = Just (AA.Leaf leafVal)
-              , brExtraRules = [] }
+  return $  Just (AA.Leaf leafVal) <$ emptyBoolRules
 
 -- should be possible to merge pLeafVal with pNestedBool.
 

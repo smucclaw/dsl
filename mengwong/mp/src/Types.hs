@@ -27,9 +27,6 @@ type BoolStruct = AA.Item Text.Text
 data BoolRules = BR { boolRulesMBStruct :: Maybe BoolStruct, boolRulesRules :: [Rule]}
   deriving (Eq, Show)
 
-unBR :: BoolRules -> (Maybe BoolStruct, [Rule])
-unBR (BR x y) = (x, y)
-
 pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
 pattern BRR a b = BR a b
 
@@ -37,7 +34,8 @@ pattern BRR a b = BR a b
 
 
 br :: (Maybe BoolStruct, [Rule]) -> BoolRules
-br (a,b) = BR a b
+br (a,b) = BR { boolRulesMBStruct = a
+                         , boolRulesRules = b }
 
 
 data Rule = Regulative

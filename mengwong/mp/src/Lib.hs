@@ -359,7 +359,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   ( (_meansis, BRR posp posbr), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
 
-  let (_unless, BRR negp negbr) = mergePBRS (if null unlesses then [(Never, br (Nothing, []))] else unlesses)
+  let (_unless, BRR negp negbr) = mergePBRS (if null unlesses then [(Never, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else unlesses)
 
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -390,8 +390,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, br (Nothing, []))] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  br (Nothing, []))] else rbpbrneg rulebody)
+  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrs   rulebody)
+  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -434,11 +434,11 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, br(Nothing, []))] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  br(Nothing, []))] else rbpbrneg rulebody)
+  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrs   rulebody)
+  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR { boolRulesMBStruct = Nothing , boolRulesRules = [] })] else rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BRR ebs ebrs) = fromMaybe (Always, br (Nothing, [])) whoBool
+  let (ewho, BRR ebs ebrs) = fromMaybe (Always, BR { boolRulesMBStruct = Nothing , boolRulesRules = [] }) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -477,8 +477,8 @@ mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
 mergePBRS xs =
   let (w,BRR a b) = head xs
       pre_a = boolRulesMBStruct . snd <$> tail xs
-      toreturn = (w, br ( a <> mconcat pre_a
-                    ,      concat (b : (boolRulesRules . snd <$> tail xs) )))
+      toreturn = (w, BR { boolRulesMBStruct = a <> mconcat pre_a
+                        , boolRulesRules = concat (b : (boolRulesRules . snd <$> tail xs) ) })
   in -- trace ("mergePBRS: called with " ++ show xs)
      -- trace ("mergePBRS: about to return " ++ show toreturn)
      toreturn
@@ -616,7 +616,7 @@ preambleBoolRules whoifwhen = debugName "preambleBoolRules" $ do
 --            then newPre (Text.pack $ show condWord) (head ands)
 --            else AA.All (AA.Pre (Text.pack $ show condWord)) ands -- return the AND group
 
-  return (condWord, br (ands, rs))
+  return (condWord, BR { boolRulesMBStruct = ands , boolRulesRules = rs })
 
 dBoolRules ::  Parser BoolRules
 dBoolRules = debugName "dBoolRules" $ do
@@ -628,8 +628,8 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ dToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else br ( Just (AA.All (AA.Pre "all of:") (catMaybes $ boolRulesMBStruct <$> (orGroup1 : orGroupN)))
-                      , concatMap boolRulesRules (orGroup1 : orGroupN) )
+                 else BR { boolRulesMBStruct = Just (AA.All (AA.Pre "all of:") (catMaybes $ boolRulesMBStruct <$> (orGroup1 : orGroupN)))
+                         , boolRulesRules = concatMap boolRulesRules (orGroup1 : orGroupN) }
   return toreturn
 
 pOrGroup ::  Parser BoolRules
@@ -639,8 +639,8 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ dToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
-                 else br ( Just (AA.Any (AA.Pre "any of:") (catMaybes $ boolRulesMBStruct <$> (elem1 : elems)))
-                      , concatMap boolRulesRules (elem1 : elems) )
+                 else BR { boolRulesMBStruct = Just (AA.Any (AA.Pre "any of:") (catMaybes $ boolRulesMBStruct <$> (elem1 : elems)))
+                         , boolRulesRules = concatMap boolRulesRules (elem1 : elems) }
   return toreturn
 
 pElement ::  Parser BoolRules
@@ -652,22 +652,26 @@ pElement = debugName "pElement" $ do
     <|> pLeafVal
 
 constitutiveAsElement :: [Rule] -> BoolRules
-constitutiveAsElement (cr:rs) = br (Just (AA.Leaf (term cr)), cr:rs)
+constitutiveAsElement (cr:rs) = BR { boolRulesMBStruct = Just (AA.Leaf (term cr))
+                                   , boolRulesRules = cr:rs }
 constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do
   BRR innerBS rules <- pToken MPNot *> pElement
   return $ case innerBS of
-    Nothing       -> br (innerBS, rules)
-    (Just anyall) -> br (Just (AA.Not anyall), rules)
+    Nothing       -> BR { boolRulesMBStruct = innerBS
+                        , boolRulesRules = rules }
+    (Just anyall) -> BR { boolRulesMBStruct = Just (AA.Not anyall)
+                        , boolRulesRules = rules }
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do
   checkDepth
   leafVal <- pOtherVal <* dnl
   myTraceM $ "pLeafVal returning " ++ Text.unpack leafVal
-  return $ br (Just (AA.Leaf leafVal), [])
+  return $ BR { boolRulesMBStruct = Just (AA.Leaf leafVal)
+              , boolRulesRules = [] }
 
 -- should be possible to merge pLeafVal with pNestedBool.
 

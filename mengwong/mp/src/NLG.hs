@@ -3,9 +3,9 @@ module NLG (
     ) where
 
 import Types ( Rule )
-import PGF ( Expr )
+import PGF ( Expr, linearize )
 import UD2GF ( getExprs )
-import UDAnnotations ( UDEnv, getEnv, pgfGrammar )
+import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 
 
@@ -17,16 +17,16 @@ nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
    let gr = pgfGrammar env
-   allTrees <- parseCoNLLU env testCoNLLU
-   let lins = []
-   return $ Text.pack "hello world"
+       lang = actLanguage env
+       allTrees = parseCoNLLU env testCoNLLU
+       lins = [linearize gr lang t | (t:_) <- allTrees]
+       linsAndExplanation = "*** Output of NLG (currently just a dummy sentence run through ud2gf) ***":lins
+       linsInString = Text.pack $ unlines linsAndExplanation
+   return linsInString
 
 
-parseCoNLLU :: UDEnv -> String -> IO [[Expr]]
-parseCoNLLU env string = do
-
-  return $ getExprs [] env string
-
+parseCoNLLU :: UDEnv -> String -> [[Expr]]
+parseCoNLLU = getExprs []
 
 -- Test data, already in CoNLL
 testCoNLLU :: String
@@ -43,24 +43,3 @@ testCoNLLU = unlines [
     , "10\tbe\tbe\tAUX\tVB\tVerbForm=Inf\t11\taux:pass\t_\tFUN=UseComp"
     , "11\tnotified\tnotify\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t0\troot\t_\tFUN=notifyVBN"
     ]
-
--- data Rule = Regulative
---             { every    :: EntityType         -- every person
---             , who      :: Maybe BoolStruct         -- who walks and (eats or drinks)
---             , cond     :: Maybe BoolStruct         -- if it is a saturday
---             , deontic  :: Deontic            -- must
---             , action   :: ActionType         -- sing
---             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
---             , hence    :: Maybe [Rule]
---             , lest     :: Maybe [Rule]
---             , rlabel   :: Maybe Text.Text
---             , lsource  :: Maybe Text.Text
---             , srcref   :: Maybe SrcRef
---             }
---           | Constitutive
---             { term     :: ConstitutiveTerm
---             , cond     :: Maybe BoolStruct
---             , rlabel   :: Maybe Text.Text
---             , lsource  :: Maybe Text.Text
---             , srcref   :: Maybe SrcRef
---             }

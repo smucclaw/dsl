@@ -26,8 +26,10 @@ type BoolStruct = AA.Item Text.Text
 data BoolRules = BR { brCond :: Maybe BoolStruct, brExtraRules :: [Rule]}
   deriving (Eq, Show)
 
-emptyBoolRules :: BoolRules
-emptyBoolRules = BR { brCond = Nothing , brExtraRules = [] }
+instance Semigroup BoolRules where
+  (BR a b) <> (BR a' b') = BR {brCond = a <> a', brExtraRules = b <> b'}
+instance Monoid BoolRules where
+  mempty = BR { brCond = Nothing , brExtraRules = [] }
 
 data Rule = Regulative
             { every    :: EntityType         -- every person

@@ -438,7 +438,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let (negPreamble, BR ncbs nbrs) = mergePBRS Never  (rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
+  let (ewho, BR ebs ebrs) = fromMaybe (Always, mempty) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -474,14 +474,8 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: Preamble -> [(Preamble, BoolRules)] -> (Preamble, BoolRules)
-mergePBRS defPA [] = (defPA, emptyBoolRules)
-mergePBRS _ ((w, BR a b) : xs) =
-  let pre_a = brCond . snd <$> xs
-      toreturn = (w, BR { brCond = a <> mconcat pre_a
-                        , brExtraRules = concat (b : (brExtraRules . snd <$> xs) ) })
-  in -- trace ("mergePBRS: called with " ++ show xs)
-     -- trace ("mergePBRS: about to return " ++ show toreturn)
-     toreturn
+mergePBRS defPA [] = (defPA, mempty)
+mergePBRS _ ((w, br) : xs) = (w, br <> mconcat (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = ( do

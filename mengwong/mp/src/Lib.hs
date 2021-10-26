@@ -628,7 +628,7 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ dToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else br ( Just (AA.All (AA.Pre "all of:") (catMaybes $ fst . unBR <$> (orGroup1 : orGroupN)))
+                 else br ( Just (AA.All (AA.Pre "all of:") (catMaybes $ boolRulesMBStruct <$> (orGroup1 : orGroupN)))
                       , concatMap boolRulesRules (orGroup1 : orGroupN) )
   return toreturn
 
@@ -639,7 +639,7 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ dToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
-                 else br ( Just (AA.Any (AA.Pre "any of:") (catMaybes $ fst . unBR <$> (elem1 : elems)))
+                 else br ( Just (AA.Any (AA.Pre "any of:") (catMaybes $ boolRulesMBStruct <$> (elem1 : elems)))
                       , concatMap boolRulesRules (elem1 : elems) )
   return toreturn
 

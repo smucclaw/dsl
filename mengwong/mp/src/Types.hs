@@ -24,27 +24,20 @@ type Parser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
 type BoolStruct = AA.Item Text.Text
-newtype BoolRules = BR (Maybe BoolStruct, [Rule])
+data BoolRules = BR { boolRulesMBStruct :: Maybe BoolStruct, boolRulesRules :: [Rule]}
   deriving (Eq, Show)
 
 unBR :: BoolRules -> (Maybe BoolStruct, [Rule])
-unBR (BRR x y) = (x, y)
+unBR (BR x y) = (x, y)
 
 pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
-pattern BRR a b = BR (a, b)
+pattern BRR a b = BR a b
 
 -- pattern BR (a,b) = BRR (a,b)
 
 
 br :: (Maybe BoolStruct, [Rule]) -> BoolRules
--- br (a,b) = BR (a,b)
-br = BR
-
-boolRulesMBStruct :: BoolRules -> Maybe BoolStruct
-boolRulesMBStruct = fst . unBR
-
-boolRulesRules :: BoolRules -> [Rule]
-boolRulesRules = snd . unBR
+br (a,b) = BR a b
 
 
 data Rule = Regulative

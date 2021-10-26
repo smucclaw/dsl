@@ -1,0 +1,33 @@
+EVERY,person,,,
+WHO,walks,,,
+AND,eats,,,
+OR,drinks,,,
+MUST,,,,
+WHEN,Saturday,,,
+->,sing,,,
+,,,,
+EVERY,person,,,
+WHO,walks,,,
+AND,eats,,,
+OR,drinks,,,
+MUST,,,,
+->,sing,,,
+UNLESS,quietHours,,,
+,,,,
+EVERY,person,¶,EVERY,person
+WHO,walks,¶,WHO,walks
+AND,eats,¶,AND,eats
+OR,drinks,¶,OR,drinks
+MUST,,¶,MUST,
+IF,the King so desires,¶,->,sing
+->,sing,¶,IF,the King so desires
+,,,,
+EVERY,person,,,
+WHO,walks,,,
+AND,eats,,,
+OR,drinks,,,
+MUST,,,,
+IF,the King wishes,,,
+->,sing,,,
+UNLESS,the Queen forbids,,,
+,,,,

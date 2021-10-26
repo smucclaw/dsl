@@ -339,6 +339,16 @@ stanzaAsStream _s rs = do
 
 -- deriving (Eq, Ord, Show)
 
+-- | Used for collecting nested rules and flattening them out to a single list
+data BoolRules = BR { brCond :: Maybe BoolStruct, brExtraRules :: [Rule]}
+  deriving (Eq, Show)
+
+instance Semigroup BoolRules where
+  (BR a b) <> (BR a' b') = BR {brCond = a <> a', brExtraRules = b <> b'}
+instance Monoid BoolRules where
+  mempty = BR { brCond = Nothing , brExtraRules = [] }
+
+
 --
 -- MyStream is the primary input for our Parsers below.
 --

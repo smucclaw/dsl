@@ -653,11 +653,8 @@ constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do
   BR innerBS rules <- pToken MPNot *> pElement
-  return $ case innerBS of
-    Nothing       -> BR { brCond = innerBS
-                        , brExtraRules = rules }
-    (Just anyall) -> BR { brCond = Just (AA.Not anyall)
-                        , brExtraRules = rules }
+  return $ BR { brCond = fmap AA.Not innerBS
+              , brExtraRules = rules }
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do

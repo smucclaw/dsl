@@ -476,9 +476,9 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
 mergePBRS xs =
   let (w,BR (a,b)) = head xs
-      pre_a = fst . unBR . snd <$> tail xs
+      pre_a = boolRulesMBStruct . snd <$> tail xs
       toreturn = (w, BR ( a <> mconcat pre_a
-                    ,      concat (b : (snd . unBR . snd <$> tail xs) )))
+                    ,      concat (b : (boolRulesRules . snd <$> tail xs) )))
   in -- trace ("mergePBRS: called with " ++ show xs)
      -- trace ("mergePBRS: about to return " ++ show toreturn)
      toreturn
@@ -629,7 +629,7 @@ pAndGroup = debugName "pAndGroup" $ do
   let toreturn = if null orGroupN
                  then orGroup1
                  else BR ( Just (AA.All (AA.Pre "all of:") (catMaybes $ fst . unBR <$> (orGroup1 : orGroupN)))
-                      , concatMap (snd . unBR) (orGroup1 : orGroupN) )
+                      , concatMap boolRulesRules (orGroup1 : orGroupN) )
   return toreturn
 
 pOrGroup ::  Parser BoolRules
@@ -640,7 +640,7 @@ pOrGroup = debugName "pOrGroup" $ do
   let toreturn = if null elems
                  then elem1
                  else br ( Just (AA.Any (AA.Pre "any of:") (catMaybes $ fst . unBR <$> (elem1 : elems)))
-                      , concatMap (snd . unBR) (elem1 : elems) )
+                      , concatMap boolRulesRules (elem1 : elems) )
   return toreturn
 
 pElement ::  Parser BoolRules

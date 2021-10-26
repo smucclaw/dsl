@@ -26,8 +26,17 @@ type BoolStruct = AA.Item Text.Text
 newtype BoolRules = BR (Maybe BoolStruct, [Rule])
   deriving (Eq, Show)
 
+unBR :: BoolRules -> (Maybe BoolStruct, [Rule])
 unBR (BR x) = x
-br = BR
+
+br :: (Maybe BoolStruct, [Rule]) -> BoolRules
+br (a,b) = BR (a,b)
+
+boolRulesMBStruct :: BoolRules -> Maybe BoolStruct
+boolRulesMBStruct = fst . unBR
+
+boolRulesRules :: BoolRules -> [Rule]
+boolRulesRules = snd . unBR
 
 
 data Rule = Regulative

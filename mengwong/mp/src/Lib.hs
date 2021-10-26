@@ -359,7 +359,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   ( (_meansis, BR (posp,posbr)), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
 
-  let (_unless, BR (negp, negbr)) = mergePBRS (if null unlesses then [(Never, BR (Nothing, []))] else unlesses)
+  let (_unless, BR (negp, negbr)) = mergePBRS (if null unlesses then [(Never, br (Nothing, []))] else unlesses)
 
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -390,8 +390,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (posPreamble, BR (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR (Nothing, []))] else rbpbrs   rulebody)
-  let (negPreamble, BR (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR (Nothing, []))] else rbpbrneg rulebody)
+  let (posPreamble, BR (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, br (Nothing, []))] else rbpbrs   rulebody)
+  let (negPreamble, BR (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  br (Nothing, []))] else rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -434,11 +434,11 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let (posPreamble, BR (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, BR(Nothing, []))] else rbpbrs   rulebody)
-  let (negPreamble, BR (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  BR(Nothing, []))] else rbpbrneg rulebody)
+  let (posPreamble, BR (pcbs, pbrs)) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, br(Nothing, []))] else rbpbrs   rulebody)
+  let (negPreamble, BR (ncbs, nbrs)) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  br(Nothing, []))] else rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BR (ebs, ebrs)) = fromMaybe (Always, BR (Nothing, [])) whoBool
+  let (ewho, BR (ebs, ebrs)) = fromMaybe (Always, br (Nothing, [])) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -477,7 +477,7 @@ mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
 mergePBRS xs =
   let (w,BR (a,b)) = head xs
       pre_a = boolRulesMBStruct . snd <$> tail xs
-      toreturn = (w, BR ( a <> mconcat pre_a
+      toreturn = (w, br ( a <> mconcat pre_a
                     ,      concat (b : (boolRulesRules . snd <$> tail xs) )))
   in -- trace ("mergePBRS: called with " ++ show xs)
      -- trace ("mergePBRS: about to return " ++ show toreturn)
@@ -616,7 +616,7 @@ preambleBoolRules whoifwhen = debugName "preambleBoolRules" $ do
 --            then newPre (Text.pack $ show condWord) (head ands)
 --            else AA.All (AA.Pre (Text.pack $ show condWord)) ands -- return the AND group
 
-  return (condWord, BR (ands, rs))
+  return (condWord, br (ands, rs))
 
 dBoolRules ::  Parser BoolRules
 dBoolRules = debugName "dBoolRules" $ do
@@ -628,7 +628,7 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ dToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else BR ( Just (AA.All (AA.Pre "all of:") (catMaybes $ fst . unBR <$> (orGroup1 : orGroupN)))
+                 else br ( Just (AA.All (AA.Pre "all of:") (catMaybes $ fst . unBR <$> (orGroup1 : orGroupN)))
                       , concatMap boolRulesRules (orGroup1 : orGroupN) )
   return toreturn
 

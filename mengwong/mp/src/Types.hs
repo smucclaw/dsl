@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -27,10 +28,17 @@ newtype BoolRules = BR (Maybe BoolStruct, [Rule])
   deriving (Eq, Show)
 
 unBR :: BoolRules -> (Maybe BoolStruct, [Rule])
-unBR (BR x) = x
+unBR (BR (x, y)) = (x, y)
+
+-- pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
+-- pattern BRR   a   b   = BR (  a  ,   b  )
+
+-- pattern BR (a,b) = BRR (a,b)
+
 
 br :: (Maybe BoolStruct, [Rule]) -> BoolRules
-br (a,b) = BR (a,b)
+-- br (a,b) = BR (a,b)
+br = BR
 
 boolRulesMBStruct :: BoolRules -> Maybe BoolStruct
 boolRulesMBStruct = fst . unBR
@@ -50,20 +58,20 @@ data Rule = Regulative
             , lest     :: Maybe [Rule]
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
-            , srcref   :: Maybe SrcRef 
+            , srcref   :: Maybe SrcRef
             }
           | Constitutive
             { term     :: ConstitutiveTerm
             , cond     :: Maybe BoolStruct
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
-            , srcref   :: Maybe SrcRef 
+            , srcref   :: Maybe SrcRef
             }
           | DefTermAlias -- inline alias, like     some thing ("Thing")
             { term   :: ConstitutiveTerm -- "Thing"
             , detail :: Text.Text        -- "some thing"
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
-            , srcref :: Maybe SrcRef 
+            , srcref :: Maybe SrcRef
             }
           | RegAlias Text.Text -- internal softlink to a regulative rule label
           | ConAlias Text.Text -- internal softlink to a constitutive rule label

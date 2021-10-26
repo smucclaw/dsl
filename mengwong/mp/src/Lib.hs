@@ -476,9 +476,9 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
 mergePBRS xs =
   let (w,BR a b) = head xs
-      pre_a = boolRulesMBStruct . snd <$> tail xs
-      toreturn = (w, BR { boolRulesMBStruct = a <> mconcat pre_a
-                        , boolRulesRules = concat (b : (boolRulesRules . snd <$> tail xs) ) })
+      pre_a = brCond . snd <$> tail xs
+      toreturn = (w, BR { brCond = a <> mconcat pre_a
+                        , brExtraRules = concat (b : (brExtraRules . snd <$> tail xs) ) })
   in -- trace ("mergePBRS: called with " ++ show xs)
      -- trace ("mergePBRS: about to return " ++ show toreturn)
      toreturn
@@ -616,7 +616,7 @@ preambleBoolRules whoifwhen = debugName "preambleBoolRules" $ do
 --            then newPre (Text.pack $ show condWord) (head ands)
 --            else AA.All (AA.Pre (Text.pack $ show condWord)) ands -- return the AND group
 
-  return (condWord, BR { boolRulesMBStruct = ands , boolRulesRules = rs })
+  return (condWord, BR { brCond = ands , brExtraRules = rs })
 
 dBoolRules ::  Parser BoolRules
 dBoolRules = debugName "dBoolRules" $ do
@@ -628,8 +628,8 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ dToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else BR { boolRulesMBStruct = Just (AA.All (AA.Pre "all of:") (catMaybes $ boolRulesMBStruct <$> (orGroup1 : orGroupN)))
-                         , boolRulesRules = concatMap boolRulesRules (orGroup1 : orGroupN) }
+                 else BR { brCond = Just (AA.All (AA.Pre "all of:") (catMaybes $ brCond <$> (orGroup1 : orGroupN)))
+                         , brExtraRules = concatMap brExtraRules (orGroup1 : orGroupN) }
   return toreturn
 
 pOrGroup ::  Parser BoolRules
@@ -639,8 +639,8 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ dToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
-                 else BR { boolRulesMBStruct = Just (AA.Any (AA.Pre "any of:") (catMaybes $ boolRulesMBStruct <$> (elem1 : elems)))
-                         , boolRulesRules = concatMap boolRulesRules (elem1 : elems) }
+                 else BR { brCond = Just (AA.Any (AA.Pre "any of:") (catMaybes $ brCond <$> (elem1 : elems)))
+                         , brExtraRules = concatMap brExtraRules (elem1 : elems) }
   return toreturn
 
 pElement ::  Parser BoolRules
@@ -652,26 +652,26 @@ pElement = debugName "pElement" $ do
     <|> pLeafVal
 
 constitutiveAsElement :: [Rule] -> BoolRules
-constitutiveAsElement (cr:rs) = BR { boolRulesMBStruct = Just (AA.Leaf (term cr))
-                                   , boolRulesRules = cr:rs }
+constitutiveAsElement (cr:rs) = BR { brCond = Just (AA.Leaf (term cr))
+                                   , brExtraRules = cr:rs }
 constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do
   BR innerBS rules <- pToken MPNot *> pElement
   return $ case innerBS of
-    Nothing       -> BR { boolRulesMBStruct = innerBS
-                        , boolRulesRules = rules }
-    (Just anyall) -> BR { boolRulesMBStruct = Just (AA.Not anyall)
-                        , boolRulesRules = rules }
+    Nothing       -> BR { brCond = innerBS
+                        , brExtraRules = rules }
+    (Just anyall) -> BR { brCond = Just (AA.Not anyall)
+                        , brExtraRules = rules }
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do
   checkDepth
   leafVal <- pOtherVal <* dnl
   myTraceM $ "pLeafVal returning " ++ Text.unpack leafVal
-  return $ BR { boolRulesMBStruct = Just (AA.Leaf leafVal)
-              , boolRulesRules = [] }
+  return $ BR { brCond = Just (AA.Leaf leafVal)
+              , brExtraRules = [] }
 
 -- should be possible to merge pLeafVal with pNestedBool.
 

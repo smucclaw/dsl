@@ -23,15 +23,11 @@ type Parser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
 type BoolStruct = AA.Item Text.Text
-data BoolRules = BR { boolRulesMBStruct :: Maybe BoolStruct, boolRulesRules :: [Rule]}
+data BoolRules = BR { brCond :: Maybe BoolStruct, brExtraRules :: [Rule]}
   deriving (Eq, Show)
 
-br :: (Maybe BoolStruct, [Rule]) -> BoolRules
-br (a,b) = BR { boolRulesMBStruct = a
-                         , boolRulesRules = b }
-
 emptyBoolRules :: BoolRules
-emptyBoolRules = BR { boolRulesMBStruct = Nothing , boolRulesRules = [] }
+emptyBoolRules = BR { brCond = Nothing , brExtraRules = [] }
 
 data Rule = Regulative
             { every    :: EntityType         -- every person

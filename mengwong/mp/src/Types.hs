@@ -22,8 +22,13 @@ import BasicTypes
 type Parser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
-type BoolRules = (Maybe BoolStruct, [Rule])
 type BoolStruct = AA.Item Text.Text
+newtype BoolRules = BR (Maybe BoolStruct, [Rule])
+  deriving (Eq, Show)
+
+unBR (BR x) = x
+br = BR
+
 
 data Rule = Regulative
             { every    :: EntityType         -- every person

@@ -53,6 +53,13 @@ data Rule = Regulative
           | RegAlias Text.Text -- internal softlink to a regulative rule label
           | ConAlias Text.Text -- internal softlink to a constitutive rule label
           deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+noLabel, noLSource :: Maybe Text.Text
+noLabel   = Nothing
+noLSource = Nothing
+noSrcRef :: Maybe SrcRef
+noSrcRef  = Nothing
+
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TemporalConstraint a = TBefore a
                           | TAfter  a

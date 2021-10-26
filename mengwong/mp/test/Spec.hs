@@ -286,6 +286,32 @@ main = do
         parseR (pRule <* eof) "" (head . tail $ exampleStreams mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
 
+    describe "megaparsing unless semantics" $ do
+
+      it "should work for constitutive rules" $ do
+        let testfile = "test/bob-tail-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile (exampleStream testcsv)
+          `shouldParse` [ Constitutive
+                          { term = "Bob's your uncle"
+                          , cond = Just
+                            ( All
+                              ( Pre "both" )
+                              [ Any
+                                ( Pre "any of:" )
+                                [ Leaf "Bob is your mother's brother"
+                                , Leaf "Bob is your father's brother"
+                                ]
+                              , Not
+                                ( Leaf "Bob is estranged" )
+                              ]
+                            )
+                          , rlabel = Nothing
+                          , lsource = Nothing
+                          , srcref = Nothing
+                          }
+                        ]
+
   -- upgrade single OR group to bypass the top level AND group
 
-
+  -- defTermAlias should absorb the WHO limb

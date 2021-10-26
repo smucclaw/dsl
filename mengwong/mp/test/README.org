@@ -481,15 +481,23 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 | negative | EXCEPT          | UNLESS                            |
 
 *** Unless /in/ the tail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-tail-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 |        | Bob's your uncle             |
-| IF     | Bob is your mother's brother |
+| MEANS  | Bob is your mother's brother |
 | OR     | Bob is your father's brother |
 | UNLESS | Bob is estranged             |
 
 if ((morbror or farbror) and not estranged)
 
 *** Unless /as/ the head in a constitutive rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 |        | Bob's your uncle |
 | UNLESS | Bob is estranged |

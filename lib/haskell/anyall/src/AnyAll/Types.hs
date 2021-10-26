@@ -41,14 +41,20 @@ data Item a =
 
 instance (IsString a) => Semigroup (Item a) where
   (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
-  (<>)   (All x xs) r@(Any y ys) = All x (xs ++ [r]) -- in CNF, the All dominates over the Any
-  (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
-  (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
+
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
-  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
-  (<>) l@(Not  x)   r@(Any y ys) = All (Pre "all of:") [l,r]
+  (<>) l@(All x xs) r@(Not y)    = r <> l
+
+  (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
+
+  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
+
+  (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
+  (<>) l@(All x xs) r@(Any y ys) = r <> l
+
+  -- all the other cases get ANDed together in the most straightforward way.
   (<>) l            r            = All (Pre "both") [l, r]
 
 instance (IsString a) => Monoid (Item a) where

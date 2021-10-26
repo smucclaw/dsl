@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -26,12 +25,6 @@ type Preamble = MyToken
 type BoolStruct = AA.Item Text.Text
 data BoolRules = BR { boolRulesMBStruct :: Maybe BoolStruct, boolRulesRules :: [Rule]}
   deriving (Eq, Show)
-
-pattern BRR :: Maybe BoolStruct -> [Rule] -> BoolRules
-pattern BRR a b = BR a b
-
--- pattern BR (a,b) = BRR (a,b)
-
 
 br :: (Maybe BoolStruct, [Rule]) -> BoolRules
 br (a,b) = BR { boolRulesMBStruct = a

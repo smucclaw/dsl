@@ -357,9 +357,9 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   checkDepth
   (term,termalias)   <- pTermParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  ( (_meansis, BRR posp posbr), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
+  ( (_meansis, BR posp posbr), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
 
-  let (_unless, BRR negp negbr) = mergePBRS (if null unlesses then [(Never, emptyBoolRules)] else unlesses)
+  let (_unless, BR negp negbr) = mergePBRS (if null unlesses then [(Never, emptyBoolRules)] else unlesses)
 
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -390,8 +390,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
+  let (posPreamble, BR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
+  let (negPreamble, BR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -434,11 +434,11 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let (posPreamble, BRR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
-  let (negPreamble, BRR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
+  let (posPreamble, BR pcbs pbrs) = mergePBRS (if null (rbpbrs   rulebody) then [(Always, emptyBoolRules)] else rbpbrs   rulebody)
+  let (negPreamble, BR ncbs nbrs) = mergePBRS (if null (rbpbrneg rulebody) then [(Never,  emptyBoolRules)] else rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, BRR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
+  let (ewho, BR ebs ebrs) = fromMaybe (Always, emptyBoolRules) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -475,7 +475,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolRules)] -> (Preamble, BoolRules)
 mergePBRS xs =
-  let (w,BRR a b) = head xs
+  let (w,BR a b) = head xs
       pre_a = boolRulesMBStruct . snd <$> tail xs
       toreturn = (w, BR { boolRulesMBStruct = a <> mconcat pre_a
                         , boolRulesRules = concat (b : (boolRulesRules . snd <$> tail xs) ) })
@@ -611,7 +611,7 @@ preambleBoolRules whoifwhen = debugName "preambleBoolRules" $ do
   debugPrint "preambleBoolRules"
   condWord <- choice (try . pToken <$> whoifwhen)
   myTraceM ("preambleBoolRules: found condWord: " ++ show condWord)
-  BRR ands rs <- withDepth leftX dBoolRules -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  BR ands rs <- withDepth leftX dBoolRules -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
 --   let bs = if subForest ands) == 1 -- upgrade the single OR child of the AND group to the top level
 --            then newPre (Text.pack $ show condWord) (head ands)
 --            else AA.All (AA.Pre (Text.pack $ show condWord)) ands -- return the AND group
@@ -658,7 +658,7 @@ constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do
-  BRR innerBS rules <- pToken MPNot *> pElement
+  BR innerBS rules <- pToken MPNot *> pElement
   return $ case innerBS of
     Nothing       -> BR { boolRulesMBStruct = innerBS
                         , boolRulesRules = rules }

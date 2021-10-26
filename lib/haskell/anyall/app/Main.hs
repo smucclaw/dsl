@@ -22,7 +22,9 @@ import Data.Aeson.Types (parseMaybe)
 import Options.Generic
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
-data Opts w = Opts { demo :: w ::: Bool <!> "False" }
+data Opts w = Opts { demo :: w ::: Bool <!> "False"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg"
+                   }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
@@ -34,14 +36,17 @@ deriving instance Show (Opts Unwrapped)
 main :: IO ()
 main = do
   opts <- unwrapRecord "anyall"
-  print (opts :: Opts Unwrapped)
+  -- print (opts :: Opts Unwrapped)
   when (demo opts) $ maindemo; guard (not $ demo opts)
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema TL.Text)
-  print myinput
+  when (only opts == "native") $ print myinput
   guard (isRight myinput)
   let (Right myright) = myinput
-  ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
+  when (only opts == "tree") $
+    ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
+  when (only opts == "svg") $
+    print $ makeSvg $ renderItem $ andOrTree myright
   
 maindemo :: IO ()
 maindemo = do
@@ -69,7 +74,7 @@ maindemo = do
                    ,("drink", Left  $ Just True )]
     ] $ ppQTree (AnyAll.All (Pre "all of")
                  [ Leaf "walk"
-                 , Leaf "run"
+                 , Not (Leaf "run")
                  , AnyAll.Any (Pre "either")
                    [ Leaf "eat"
                    , Leaf "drink" ] ])

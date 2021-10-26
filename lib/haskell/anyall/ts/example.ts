@@ -1,7 +1,8 @@
 import StdinSchema from "./types"
 
 let mustSing : StdinSchema = {
-  marking: {
+    marking: {
+	// I think this is now broken -- we need to change this to just be Default Right True
     "walk":  { fromUser: true },
     "run":   { fromUser: true },
 //    "drink": { fromUser: false },
@@ -11,12 +12,15 @@ let mustSing : StdinSchema = {
     nodetype: "all",
     pre: "all of",
     children: [
-      { leaf: "walk" },
-      { leaf: "run" },
-      { nodetype: "any"
-      , pre: "either"
-      , children: [ { leaf: "eat" }, { leaf: "drink" } ]
-      }
+	{ leaf: "walk" },
+	{ nodetype: "not", children: [{ nodetype: "all"
+					, pre: "either"
+					, children: [ { leaf: "sink" }, { leaf: "swim" } ]
+				      }] },
+	{ nodetype: "any"
+	  , pre: "either"
+	  , children: [ { leaf: "eat" }, { leaf: "drink" } ]
+	}
     ]
   }
 }

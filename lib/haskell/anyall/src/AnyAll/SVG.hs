@@ -53,6 +53,19 @@ renderLeaf desc =
       geom = item 0 0 desc
   in (height, geom)
 
+renderNot :: ToElement a => [Item a] -> (Height, Element)
+renderNot children =
+  let
+      (h, g) = renderItem $ head children
+      height = h
+
+      geom :: Element
+      geom = g_ [] ( line (-5, 5) (-10, 15)   -- /
+                     <> line (10,0) (10,25)  -- |
+                     <> move (00, 0) g )
+  in (height, geom)
+
+
 renderSuffix :: ToElement a => Double -> Double -> a -> (Height, Element)
 renderSuffix x y desc =
   let h = 20 -- h/w of imaginary box
@@ -134,6 +147,7 @@ renderAny (PrePost prefix suffix) childnodes =
 
 renderItem :: ToElement a => Item a -> (Height, Element)
 renderItem (Leaf label) = renderLeaf label
+renderItem (Not       args) = renderNot      [args]
 renderItem (All label args) = renderAll label args
 renderItem (Any label args) = renderAny label args
 

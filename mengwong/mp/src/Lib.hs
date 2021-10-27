@@ -368,11 +368,11 @@ instance Monoid a => Monoid (BoolRulesF a) where
 pRule :: Parser [Rule]
 pRule = withDepth 1 $ do
   _ <- optional dnl
-  try (pRegRule <?> "regulative rule")
-    <|> (pConstitutiveRule <?> "constitutive rule")
+  try ((:[]) <$> pRegRule <?> "regulative rule")
+    <|> ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
     <|> (eof >> return [])
 
-pConstitutiveRule :: Parser [Rule]
+pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
   checkDepth
@@ -387,9 +387,9 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
 
   let (_unless, negp) = mergePBRS Never unlesses
 
-  return [ Constitutive term (addneg posp negp) noLabel noLSource noSrcRef ]
+  return $ Constitutive term (addneg posp negp) noLabel noLSource noSrcRef 
 
-pRegRule :: Parser [Rule]
+pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ (try pRegRuleSugary <|> pRegRuleNormal) <* optional dnl
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:
@@ -403,7 +403,7 @@ pRegRule = debugName "pRegRule" $ (try pRegRuleSugary <|> pRegRuleNormal) <* opt
 --   BEFORE  midnight
 --       IF  a potato is available
 
-pRegRuleSugary :: Parser [Rule]
+pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entitytype         <- pOtherVal
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -429,7 +429,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show posPreamble
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
-  return [toreturn]
+  return toreturn
 
 -- EVERY   person
 -- WHO     sings
@@ -439,11 +439,11 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 -- IF      a potato is available
 --    AND  the potato is not green
 
-pRegRuleNormal :: Parser [Rule]
+pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   checkDepth
-  (_party_every, entitytype, _entityalias, _defalias)   <- try (pActor Party) <|> pActor Every
+  (_party_every, entitytype, _entityalias)   <- try (pActor Party) <|> pActor Every
   -- (Who, (BoolStruct,[Rule]))
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
@@ -478,7 +478,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   -- let appendix = pbrs ++ nbrs ++ ebrs ++ defalias
   -- myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
   -- return ( toreturn : appendix )
-  return [toreturn]
+  return toreturn
 
 addneg :: Maybe BoolStruct -> Maybe BoolStruct -> Maybe BoolStruct
 addneg Nothing  Nothing   = Nothing
@@ -486,7 +486,7 @@ addneg p        Nothing   = p
 addneg Nothing  (Just n)  = pure $ AA.Not n
 addneg (Just p) (Just n)  = pure (p <> AA.Not n)
 
-pHenceLest :: MyToken -> Parser [Rule]
+pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   checkDepth
@@ -509,20 +509,20 @@ pTemporal = ( do
 
 -- "PARTY Bob       (the "Seller")
 -- "EVERY Seller"
-pActor :: MyToken -> Parser (MyToken, Text.Text, Maybe Text.Text, [Rule])
+pActor :: MyToken -> Parser (MyToken, Text.Text, Maybe Text.Text)
 pActor party = debugName ("pActor " ++ show party) $ do
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   -- add pConstitutiveRule here -- we could have "MEANS"
   _           <- pToken party
   (entitytype, entityalias)   <- lookAhead pTermParens
-  omgARule <- try pConstitutiveRule <|> ([] <$ pTermParens)
+  omgARule <- (:[]) <$> try pConstitutiveRule <|> ([] <$ pTermParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   let defalias = maybe [] (\t -> pure (DefTermAlias t entitytype Nothing (Just srcref))) entityalias
   tell $ defalias ++ omgARule
-  return (party, entitytype, entityalias, defalias ++ omgARule)
+  return (party, entitytype, entityalias)
 
 -- two tokens of the form | some thing | ("A Thing") | ; |
 pTermParens :: Parser (Text.Text, Maybe Text.Text)
@@ -669,13 +669,13 @@ pElement = debugName "pElement" $ do
     <|> pLeafVal
 
 -- | Like `\m -> do a <- m; tell a; return a` but add the value before the child elements instead of after
-tellIdFirst :: (Functor m, Semigroup w) => WriterT w m w -> WriterT w m w
-tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, a <> m)
+tellIdFirst :: (Functor m) => WriterT [w] m w -> WriterT [w] m w
+tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, [a] <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
-constitutiveAsElement ::  [Rule] -> BoolRules
-constitutiveAsElement [cr] = Just (AA.Leaf (term cr))
-constitutiveAsElement _ = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
+constitutiveAsElement ::  Rule -> BoolRules
+constitutiveAsElement cr = Just (AA.Leaf (term cr))
+-- constitutiveAsElement _ = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do

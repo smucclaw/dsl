@@ -37,8 +37,8 @@ data Rule = Regulative
             , deontic  :: Deontic            -- must
             , action   :: ActionType         -- sing
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
-            , hence    :: Maybe [Rule]
-            , lest     :: Maybe [Rule]
+            , hence    :: Maybe Rule
+            , lest     :: Maybe Rule
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

@@ -183,24 +183,23 @@ main = do
                           }
                         ]
 
-      let king_pays_singer = [ defaultReg
+      let king_pays_singer = defaultReg
                           { every = "King"
                           , deontic = DMay
                           , action = ("pay", [])
                           , temporal = Just (TAfter "20min")
                           }
-                        ]
+                        
 
-      let king_pays_singer_eventually = do
-            r <- king_pays_singer
-            return $ r { temporal = Nothing }
+      let king_pays_singer_eventually =
+            king_pays_singer { temporal = Nothing }
 
-      let singer_must_pay = [ defaultReg
+      let singer_must_pay = defaultReg
                               { every = "Singer"
                               , action = ("pay", [])
                               , temporal = Just (TBefore "supper")
                               }
-                        ]
+                        
 
       let singer_chain = [ defaultReg
                          { every = "person"
@@ -228,11 +227,11 @@ main = do
 
       it "should parse chained-regulatives part 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` king_pays_singer
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse chained-regulatives part 2" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` singer_must_pay
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
 
       it "should parse chained-regulatives.csv" $ do
         mycsv <- BS.readFile "test/chained-regulatives.csv"
@@ -240,19 +239,19 @@ main = do
 
       it "should parse alternative deadline/action arrangement 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` king_pays_singer
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative deadline/action arrangement 2" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` king_pays_singer
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative deadline/action arrangement 3" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-3.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` king_pays_singer
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative arrangement 4, no deadline at all" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-4.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` king_pays_singer_eventually
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefTermAlias "(\"singer\")" "person" Nothing
@@ -266,14 +265,13 @@ main = do
         mycsv <- BS.readFile "test/nl-aliases.csv"
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
 
-      let singer_must_pay_params = do
-            smp <- singer_must_pay
-            return $ smp { action = ("pay", [("to",["the King"])
+      let singer_must_pay_params =
+            singer_must_pay { action = ("pay", [("to",["the King"])
                                             ,("amount",["$20"])]) }
 
       it "should parse action params" $ do
         mycsv <- BS.readFile "test/action-params-singer.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` singer_must_pay_params
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
 
       it "should parse despite interrupting newlines" $ do
         mycsv <- BS.readFile "test/blank-lines.csv"

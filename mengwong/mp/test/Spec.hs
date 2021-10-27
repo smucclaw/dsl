@@ -11,6 +11,7 @@ import Types
 import Error
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))
+import Control.Monad.Writer (WriterT(runWriterT))
 
 
 
@@ -63,7 +64,8 @@ main :: IO ()
 main = do
   runConfig_ <- getConfig
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
-  let parseR p = parse (runReaderT p runConfig)
+  let combine (a,b) = a ++ b
+  let parseR p = parse (fmap combine $ runReaderT (runWriterT p) runConfig)
 
   hspec $ do
     describe "Nothing Test" $ do

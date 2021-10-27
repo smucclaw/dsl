@@ -18,11 +18,17 @@ import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics
 
 import BasicTypes
+import Control.Monad.Writer.Lazy (WriterT)
+import Data.Monoid (Endo)
 
-type Parser = ReaderT RunConfig (Parsec Void MyStream)
+type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
+type Parser = WriterT [Rule] PlainParser
 type Depth = Int
 type Preamble = MyToken
 type BoolStruct = AA.Item Text.Text
+
+type DList a = Endo [a]
+
 
 data Rule = Regulative
             { every    :: EntityType         -- every person

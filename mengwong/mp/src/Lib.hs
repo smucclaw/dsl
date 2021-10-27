@@ -37,6 +37,7 @@ import Types
 import Error ( errorBundlePrettyCustom )
 import NLG (nlg)
 import Control.Monad.Reader (ReaderT(runReaderT), asks, MonadReader (local))
+import Control.Monad.Writer.Lazy
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -106,17 +107,18 @@ checkDepth = do
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
-    case runParser (runReaderT (pRule <* eof) rc) "dummy" stream of
+    case runParser (runReaderT (runWriterT (pRule <* eof)) rc) "dummy" stream of
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
-      Right xs -> do
+      Right (xs, xs') -> do
         when (asJSON rc) $
           putStrLn $ toString $ encodePretty xs
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         pPrint xs
+        pPrint xs'
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of
@@ -664,6 +666,12 @@ pElement = debugName "pElement" $ do
     <|> pNotElement
     <|> try (constitutiveAsElement <$> pConstitutiveRule)
     <|> pLeafVal
+
+-- toWParser :: Parser (BoolRulesF a) -> Parser a
+-- toWParser = _ . fmap brToPair
+
+-- brToPair :: BoolRulesF a -> (a, [Rule])
+-- brToPair (BR a rus) = (a, rus)
 
 constitutiveAsElement :: [Rule] -> BoolRules
 constitutiveAsElement (cr:rs) = BR { brCond = Just (AA.Leaf (term cr))

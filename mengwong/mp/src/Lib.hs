@@ -342,24 +342,6 @@ stanzaAsStream _s rs = do
 
 -- deriving (Eq, Ord, Show)
 
--- | Used for collecting nested rules and flattening them out to a single list
-data BoolRulesF a = BR { brCond :: a, brExtraRules :: [Rule]}
-  deriving (Eq, Show, Functor)
-
--- type BoolRules = BoolRulesF (Maybe BoolStruct)
-
-type BoolRules = (Maybe BoolStruct)
-
-emptyBoolRules :: BoolRules
-emptyBoolRules = mempty
-
-instance Semigroup a => Semigroup (BoolRulesF a) where
-  (BR a b) <> (BR a' b') = BR {brCond = a <> a', brExtraRules = b <> b'}
-
-instance Monoid a => Monoid (BoolRulesF a) where
-  mempty = BR { brCond = mempty , brExtraRules = [] }
-
-
 --
 -- MyStream is the primary input for our Parsers below.
 --
@@ -458,7 +440,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let (negPreamble, ncbs) = mergePBRS Never  (rbpbrneg rulebody)
 
   -- qualifying conditions for the subject entity
-  let (ewho, ebs) = fromMaybe (Always, emptyBoolRules) whoBool
+  let (ewho, ebs) = fromMaybe (Always, Nothing) whoBool
 
   let toreturn = Regulative
                  entitytype
@@ -668,7 +650,7 @@ pElement = debugName "pElement" $ do
     <|> try (constitutiveAsElement <$> tellIdFirst pConstitutiveRule)
     <|> pLeafVal
 
--- | Like `\m -> do a <- m; tell a; return a` but add the value before the child elements instead of after
+-- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
 tellIdFirst :: (Functor m) => WriterT [w] m w -> WriterT [w] m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, [a] <> m)
 

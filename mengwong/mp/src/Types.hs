@@ -22,9 +22,11 @@ import Control.Monad.Writer.Lazy (WriterT)
 import Data.Monoid (Endo)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
+-- A parser generates a list of rules and optionally some other value
 type Parser = WriterT [Rule] PlainParser
 type Depth = Int
 type Preamble = MyToken
+type BoolRules = Maybe BoolStruct
 type BoolStruct = AA.Item Text.Text
 
 type DList a = Endo [a]

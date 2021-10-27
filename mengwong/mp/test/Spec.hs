@@ -65,7 +65,7 @@ main = do
   runConfig_ <- getConfig
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
   let combine (a,b) = a ++ b
-  let parseR p = parse (fmap combine $ runReaderT (runWriterT p) runConfig)
+  let parseR = runMyParser combine runConfig
 
   hspec $ do
     describe "Nothing Test" $ do

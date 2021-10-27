@@ -107,7 +107,7 @@ checkDepth = do
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
-    case runParser (runReaderT (runWriterT (pRule <* eof)) rc) "dummy" stream of
+    case runMyParser id rc pRule "dummy" stream of
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
@@ -362,7 +362,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe [] (\t -> pure (DefTermAlias t term Nothing (Just srcref))) termalias
+  let defalias = maybe mempty (\t -> singeltonDL (DefTermAlias t term Nothing (Just srcref))) termalias
   tell defalias
 
   ( (_meansis, posp), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
@@ -498,12 +498,12 @@ pActor party = debugName ("pActor " ++ show party) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   _           <- pToken party
   (entitytype, entityalias)   <- lookAhead pTermParens
-  omgARule <- (:[]) <$> try pConstitutiveRule <|> ([] <$ pTermParens)
+  omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pTermParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe [] (\t -> pure (DefTermAlias t entitytype Nothing (Just srcref))) entityalias
-  tell $ defalias ++ omgARule
+  let defalias = maybe mempty (\t -> singeltonDL (DefTermAlias t entitytype Nothing (Just srcref))) entityalias
+  tell $ defalias <> listToDL omgARule
   return (party, entitytype, entityalias)
 
 -- two tokens of the form | some thing | ("A Thing") | ; |
@@ -651,8 +651,8 @@ pElement = debugName "pElement" $ do
     <|> pLeafVal
 
 -- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
-tellIdFirst :: (Functor m) => WriterT [w] m w -> WriterT [w] m w
-tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, [a] <> m)
+tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
+tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolRules

@@ -665,20 +665,16 @@ pElement = debugName "pElement" $ do
   -- think about importing Control.Applicative.Combinators so we get the `try` for free
   try pNestedBool
     <|> pNotElement
-    <|> try (constitutiveAsElement =<< pConstitutiveRule)
+    <|> try ((mapWriterT . fmap) constitutiveAsElement pConstitutiveRule)
     <|> pLeafVal
 
 -- toWParser :: Parser (BoolRulesF a) -> Parser a
 -- toWParser = _ . fmap brToPair
 
--- brToPair :: BoolRulesF a -> (a, [Rule])
--- brToPair (BR a rus) = (a, rus)
-
-constitutiveAsElement :: [Rule] -> Parser BoolRules
-constitutiveAsElement (cr:_) = do
-  tell [cr]
-  return $ Just (AA.Leaf (term cr))
-constitutiveAsElement [] = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
+-- Adds the constitutive rule before the other rules
+constitutiveAsElement ::  ([Rule],[Rule]) -> (BoolRules, [Rule])
+constitutiveAsElement ([cr], rs) = (Just (AA.Leaf (term cr)), cr : rs)
+constitutiveAsElement (_,_) = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRules
 pNotElement = debugName "pNotElement" $ do

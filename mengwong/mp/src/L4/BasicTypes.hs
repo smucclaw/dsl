@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module BasicTypes where
+module L4.BasicTypes where
 import Data.Proxy
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec

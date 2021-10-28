@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Lib
+import qualified L4.Lib
 import Control.Monad.State
 import Control.Applicative
 import Data.List
@@ -24,6 +24,6 @@ parse = runStateT
 -- Just (T [T [],T [],T [T []]],"blerg")
 main :: IO ()
 -- main = print $ parse parens "(()()(()))blerg"
-main = Lib.someFunc
+main = L4.Lib.someFunc
 
 

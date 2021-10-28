@@ -1,8 +1,8 @@
-module NLG (
+module L4.NLG (
     nlg
     ) where
 
-import Types
+import L4.Types
     ( Deontic(..),
       ActionType,
       EntityType,

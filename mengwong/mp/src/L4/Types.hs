@@ -3,8 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
-module Types ( module BasicTypes
-             , module Types) where
+module L4.Types ( module L4.BasicTypes
+                , module L4.Types) where
 
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
@@ -17,7 +17,7 @@ import Control.Monad.Reader (ReaderT, asks)
 import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics
 
-import BasicTypes
+import L4.BasicTypes
 
 type Parser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int

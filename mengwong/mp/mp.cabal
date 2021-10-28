@@ -25,12 +25,13 @@ source-repository head
 
 library
   exposed-modules:
-      BasicTypes
-      Error
-      KW
-      Lib
-      NLG
-      Types
+      L4
+      L4.BasicTypes
+      L4.Error
+      L4.Lib
+      L4.NLG
+      L4.Types
+      L4.XPile.Uppaal
   other-modules:
       Paths_mp
   hs-source-dirs:

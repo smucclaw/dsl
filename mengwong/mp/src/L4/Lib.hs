@@ -7,7 +7,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 
-module Lib where
+module L4.Lib where
 
 -- import qualified Data.Tree      as Tree
 import qualified Data.Text.Lazy as Text
@@ -33,9 +33,9 @@ import Text.Parser.Permutation
 import Debug.Trace
 import Data.Aeson.Encode.Pretty
 
-import Types
-import Error ( errorBundlePrettyCustom )
-import NLG (nlg)
+import L4.Types
+import L4.Error ( errorBundlePrettyCustom )
+import L4.NLG (nlg)
 import Control.Monad.Reader (ReaderT(runReaderT), asks, MonadReader (local))
 
 -- our task: to parse an input CSV into a collection of Rules.

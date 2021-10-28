@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module L4.Types ( module L4.BasicTypes
                 , module L4.Types) where
@@ -13,16 +15,38 @@ import Data.Void (Void)
 import qualified Data.Set           as Set
 import Control.Monad
 import qualified AnyAll as AA
-import Control.Monad.Reader (ReaderT, asks)
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics
 
 import L4.BasicTypes
+import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+import Data.Monoid (Endo (Endo))
+import Data.Bifunctor (second)
 
-type Parser = ReaderT RunConfig (Parsec Void MyStream)
+type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
+-- A parser generates a list of rules and optionally some other value
+type Parser = WriterT (DList Rule) PlainParser
 type Depth = Int
 type Preamble = MyToken
+type BoolRules = Maybe BoolStruct
 type BoolStruct = AA.Item Text.Text
+
+-- | Like [a] but with faster concatenation.
+newtype DList a = DList (Endo [a])
+  deriving newtype (Semigroup, Monoid)
+
+singeltonDL :: a -> DList a
+singeltonDL a = DList $ Endo (a:)
+
+listToDL :: [a] -> DList a
+listToDL as = DList $ Endo (as ++)
+
+dlToList :: DList a -> [a]
+dlToList (DList (Endo f)) = f []
+
+runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream -> Either (ParseErrorBundle MyStream Void) b
+runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 
 data Rule = Regulative
             { every    :: EntityType         -- every person
@@ -31,8 +55,8 @@ data Rule = Regulative
             , deontic  :: Deontic            -- must
             , action   :: ActionType         -- sing
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
-            , hence    :: Maybe [Rule]
-            , lest     :: Maybe [Rule]
+            , hence    :: Maybe Rule
+            , lest     :: Maybe Rule
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

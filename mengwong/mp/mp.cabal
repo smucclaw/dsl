@@ -31,7 +31,11 @@ library
       L4.Lib
       L4.NLG
       L4.Types
+      L4.XPile.BabyL4
+      L4.XPile.CSV
+      L4.XPile.SVG
       L4.XPile.Uppaal
+      L4.XPile.Vue
   other-modules:
       Paths_mp
   hs-source-dirs:

@@ -46,6 +46,8 @@ extra-deps:
   commit: 32ed64a6b0faa0234ac6cb882115ed7020207d85
   subdirs:
   - lib/haskell/anyall
+- github: smucclaw/baby-l4
+  commit: cd12688ea2c2a8163174358d15470e1cd9a72c93
 - svg-builder-0.1.1
 - gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
 - network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888

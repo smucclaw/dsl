@@ -50,6 +50,8 @@ defaultReg = Regulative
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = Nothing
+  , upon = Nothing
+  , given = Nothing
   }
 
 defaultCon = Constitutive

@@ -1,6 +1,8 @@
-module L4 (module L4.Lib) where
+module L4 (module L4.Lib
+          ,module L4.Types
+          ,module L4.Error) where
 
 import L4.Lib
-
-version = "v0.5.0"
+import L4.Types
+import L4.Error
 

@@ -18,6 +18,17 @@ packages:
     subdir: lib/haskell/anyall
     url: https://github.com/smucclaw/dsl/archive/32ed64a6b0faa0234ac6cb882115ed7020207d85.tar.gz
 - completed:
+    size: 3146789
+    url: https://github.com/smucclaw/baby-l4/archive/cd12688ea2c2a8163174358d15470e1cd9a72c93.tar.gz
+    name: baby-l4
+    version: 0.1.0.0
+    sha256: 7482ddd0a48caf81766f3cc866bffc2bc60b76456bc70adfa006e5c9e154c159
+    pantry-tree:
+      size: 9050
+      sha256: eacc5657f355a92d54c69a0225ebd5c5c701fc8f919afd7ef08997c9349f77d1
+  original:
+    url: https://github.com/smucclaw/baby-l4/archive/cd12688ea2c2a8163174358d15470e1cd9a72c93.tar.gz
+- completed:
     hackage: svg-builder-0.1.1@sha256:22de54d326a6b6912e461e1302edb9108b02aac0b6a6368fcdc3c4a224d487fd,1440
     pantry-tree:
       size: 535

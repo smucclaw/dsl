@@ -60,6 +60,8 @@ data Rule = Regulative
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , upon     :: Maybe BoolStruct   -- UPON entering the club (event prereq trigger)
+            , given    :: Maybe BoolStruct   -- GIVEN an Entertainment flag was previously set in the history trace
             }
           | Constitutive
             { term     :: ConstitutiveTerm
@@ -76,6 +78,8 @@ data Rule = Regulative
             }
           | RegAlias Text.Text -- internal softlink to a regulative rule label
           | ConAlias Text.Text -- internal softlink to a constitutive rule label
+          | RegFulfilled  -- trivial top
+          | RegBreach     -- trivial bottom
           deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 noLabel, noLSource :: Maybe Text.Text
@@ -140,6 +144,9 @@ toToken "NEVER"  = Never
 toToken "WHO" =    Who
 toToken "WHEN" =   When
 toToken "IF" =     If
+toToken "UPON" =   Upon
+toToken "GIVEN" =  Given
+
 toToken "MEANS" =  Means -- "infix"-starts a constitutive rule "Term MEANS x OR y OR z"
 toToken "INCLUDES" =  Includes
 toToken "IS" =     Is
@@ -156,8 +163,9 @@ toToken "MUST" =   Must
 toToken "MAY" =    May
 toToken "SHANT" =  Shant
 
--- deontics
+-- temporals
 toToken "BEFORE" = Before
+toToken "WITHIN" = Before
 toToken "AFTER" =  After
 toToken "BY" =  By
 toToken "ON" =  On
@@ -176,7 +184,16 @@ toToken "FALSE" =  Checkbox
 
 -- regulative chains
 toToken "HENCE" = Hence
-toToken "LEST"  = Lest
+toToken  "THEN" = Hence
+-- trivial contracts
+toToken  "FULFILLED" = Fulfilled
+toToken  "BREACH" = Breach
+
+toToken     "LEST" = Lest
+toToken     "ELSE" = Lest
+toToken  "OR ELSE" = Lest
+toToken "XOR ELSE" = Lest
+toToken    "XELSE" = Lest
 
 toToken ";"      = EOL
 

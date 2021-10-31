@@ -116,7 +116,8 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
-        unless (null (xs ++ xs')) $ pPrint $ xs ++ xs'
+        unless (asJSON rc || toNLG rc) $
+          unless (null (xs ++ xs')) $ pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of

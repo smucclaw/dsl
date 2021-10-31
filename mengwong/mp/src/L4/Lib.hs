@@ -110,14 +110,15 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
+      Right ([], []) -> return ()
       Right (xs, xs') -> do
         when (asJSON rc) $
-          putStrLn $ toString $ encodePretty xs
+          putStrLn $ toString $ encodePretty (xs ++ xs')
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         unless (asJSON rc || toNLG rc) $
-          unless (null (xs ++ xs')) $ pPrint $ xs ++ xs'
+          pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of

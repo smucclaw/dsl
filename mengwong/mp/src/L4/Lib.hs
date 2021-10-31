@@ -364,7 +364,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   let defalias = maybe mempty (\t -> singeltonDL (DefTermAlias t term Nothing (Just srcref))) termalias
   tell defalias
 
-  ( (_meansis, posp), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes] [Unless]
+  ( (_meansis, posp), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless]
 
   let (_unless, negp) = mergePBRS Never unlesses
 

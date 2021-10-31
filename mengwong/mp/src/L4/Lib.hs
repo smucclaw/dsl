@@ -116,8 +116,7 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
-        pPrint xs
-        pPrint xs'
+        unless (null (xs ++ xs')) $ pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas (asCSV s) of
@@ -368,7 +367,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
 
   let (_unless, negp) = mergePBRS Never unlesses
 
-  return $ Constitutive term (addneg posp negp) noLabel noLSource noSrcRef 
+  return $ Constitutive term (addneg posp negp) noLabel noLSource noSrcRef
 
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $

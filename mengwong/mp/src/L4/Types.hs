@@ -53,7 +53,7 @@ data Rule = Regulative
             , who      :: Maybe BoolStruct         -- who walks and (eats or drinks)
             , cond     :: Maybe BoolStruct         -- if it is a saturday
             , deontic  :: Deontic            -- must
-            , action   :: ActionType         -- sing
+            , action   :: ParamText          -- sing
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
             , hence    :: Maybe Rule
             , lest     :: Maybe Rule
@@ -61,7 +61,8 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: Maybe BoolStruct   -- UPON entering the club (event prereq trigger)
-            , given    :: Maybe BoolStruct   -- GIVEN an Entertainment flag was previously set in the history trace
+            , given    :: Maybe BoolStruct -- GIVEN an Entertainment flag was previously set in the history trace
+            , having   :: Maybe ParamText  -- HAVING sung...
             }
           | Constitutive
             { term     :: ConstitutiveTerm
@@ -99,12 +100,12 @@ type EntityType = Text.Text
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)
--- type ActionType' = Tree Text.Text -- function(arg0, arg1=[val2,val3], arg4=[val5,val6])
+-- type ParamText' = Tree Text.Text -- function(arg0, arg1=[val2,val3], arg4=[val5,val6])
 --                                   -- Node "action" [ Node "eat"   [ Node "ice cream" [] ]
 --                                   --               , Node "arg1"  [ Node "val2" [], Node "val3" [] ]
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
-type ActionType = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
+type ParamText = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
 data Deontic = DMust | DMay | DShant
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
@@ -154,6 +155,7 @@ toToken "WHEN" =   When
 toToken "IF" =     If
 toToken "UPON" =   Upon
 toToken "GIVEN" =  Given
+toToken "HAVING" = Having
 
 toToken "MEANS" =  Means -- "infix"-starts a constitutive rule "Term MEANS x OR y OR z"
 toToken "INCLUDES" =  Includes

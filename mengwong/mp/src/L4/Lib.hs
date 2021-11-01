@@ -387,7 +387,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entitytype         <- pOtherVal
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
-  rulebody           <- withDepth leftX (permutationsReg [When,If] [Unless] [Upon] [Given])
+  rulebody           <- withDepth leftX (permutationsReg [When,If] [Unless] [Upon] [Given] [Having])
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
@@ -409,6 +409,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  Nothing -- internal SrcRef
                  ucbs    -- upon
                  gcbs    -- given
+                 (rbhaving rulebody)
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show posPreamble
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
@@ -430,7 +431,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
   myTraceM $ "pRegRuleNormal: preambleBoolRules returned " ++ show whoBool
-  rulebody <- permutationsReg [When, If] [Unless] [Upon] [Given]
+  rulebody <- permutationsReg [When, If] [Unless] [Upon] [Given] [Having]
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
@@ -458,6 +459,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  Nothing -- internal SrcRef
                  ucbs    -- upon
                  gcbs    -- given
+                 (rbhaving rulebody)
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show posPreamble
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negPreamble
   myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
@@ -513,7 +515,7 @@ pTermParens = debugName "pTermParens" $ do
   _ <- dnl
   return (entitytype, entityalias)
 
-pDoAction ::  Parser ActionType
+pDoAction ::  Parser ParamText
 pDoAction = pToken Do >> pAction
 
 -- everything in p2 must be at least the same depth as p1
@@ -530,9 +532,11 @@ indented0 = indented 0
 indented1 :: Parser a -> Parser b -> Parser (a, b)
 indented1 = indented 1
 
--- why not a nonempty list of (key,[value]) pairs
-pAction :: Parser ActionType
-pAction = do
+pAction :: Parser ParamText
+pAction = pParamText
+
+pParamText :: Parser ParamText
+pParamText = do
   uncurry (:|) <$> (pKeyValues <* dnl) `indented0` pParams
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
@@ -549,33 +553,36 @@ pKeyValues = uncurry (:|) <$> pOtherVal `indented1` many pOtherVal
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
 
-data RuleBody = RuleBody { rbaction   :: ActionType -- pay(to=Seller, amount=$100)
+data RuleBody = RuleBody { rbaction   :: ParamText -- pay(to=Seller, amount=$100)
                          , rbpbrs     :: [(Preamble, BoolRules)] -- not subject to the party
                          , rbpbrneg   :: [(Preamble, BoolRules)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
                          , rbupon     :: [(Preamble, BoolRules)] -- Upon  event conditions
                          , rbgiven    :: [(Preamble, BoolRules)] -- Given history conditions
+                         , rbhaving   :: Maybe ParamText
                          }
                       deriving (Eq, Show, Generic)
 
-mkRBfromDT :: ActionType
+mkRBfromDT :: ParamText
            -> [(Preamble, BoolRules)] -- positive  -- IF / WHEN
            -> [(Preamble, BoolRules)] -- negative  -- UNLESS
            -> [(Preamble, BoolRules)] -- upon  conditions
            -> [(Preamble, BoolRules)] -- given conditions
+           -> Maybe ParamText               -- having
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> RuleBody
-mkRBfromDT rba rbpb rbpbneg rbu rbg (rbd,rbt) = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg
+mkRBfromDT rba rbpb rbpbneg rbu rbg rbh (rbd,rbt) = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
 
-mkRBfromDA :: (Deontic, ActionType)
+mkRBfromDA :: (Deontic, ParamText)
            -> [(Preamble, BoolRules)]
            -> [(Preamble, BoolRules)]
            -> [(Preamble, BoolRules)] -- upon  conditions
            -> [(Preamble, BoolRules)] -- given conditions
+           -> Maybe ParamText         -- having
            -> Maybe (TemporalConstraint Text.Text)
            -> RuleBody
-mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg
+mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
 
 permutationsCon :: [MyToken] -> [MyToken] -> Parser ((Preamble, BoolRules), [(Preamble, BoolRules)])
 permutationsCon ifwhen l4unless = debugName ("permutationsCon positive=" <> show ifwhen <> ", negative=" <> show l4unless) $ do
@@ -584,14 +591,21 @@ permutationsCon ifwhen l4unless = debugName ("permutationsCon positive=" <> show
             <|?> ([], some $ preambleBoolRules l4unless)
           ) )
 
-permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody
-permutationsReg ifwhen l4unless l4upon l4given = debugName ("permutationsReg positive=" <> show ifwhen <> ", negative=" <> show l4unless <> ", upon=" <> show l4upon <> ", given=" <> show l4given) $ do
+permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody
+permutationsReg ifwhen l4unless l4upon l4given l4having =
+  debugName ("permutationsReg positive=" <> show ifwhen
+             <> ", negative=" <> show l4unless
+             <> ", upon=" <> show l4upon
+             <> ", given=" <> show l4given
+             <> ", having=" <> show l4having
+            ) $ do
   try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
             <$$> pDoAction
             <|?> ([], some $ preambleBoolRules ifwhen)   -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4unless) -- unless
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
             <|?> ([], some $ preambleBoolRules l4given)  -- given
+            <|?> (Nothing, choice (try . pToken <$> l4having) >> Just <$> pParamText)  -- having
             <||> try pDT
           ) )
   <|>
@@ -601,6 +615,7 @@ permutationsReg ifwhen l4unless l4upon l4given = debugName ("permutationsReg pos
             <|?> ([], some $ preambleBoolRules l4unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
             <|?> ([], some $ preambleBoolRules l4given)  -- given
+            <|?> (Nothing, choice (try . pToken <$> l4having) >> Just <$> pParamText)  -- having
             <|?> (Nothing, pTemporal <* dnl)
           ) )
 
@@ -615,7 +630,7 @@ pDT = debugName "pDT" $ do
   return (pd, fromMaybe Nothing pt)
 
 -- the Deontic/Action/Temporal form
-pDA :: Parser (Deontic, ActionType)
+pDA :: Parser (Deontic, ParamText)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
   pa <- pAction

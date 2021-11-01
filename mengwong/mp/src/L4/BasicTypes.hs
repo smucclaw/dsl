@@ -21,7 +21,7 @@ data MyStream = MyStream
 data MyToken = Every | Party | Who | Means | Includes | When | Is | Always | Never
              | Must | May | Shant | If | Or | And | MPNot
              | Before | After | By | On | Eventually
-             | Given | Upon
+             | Given | Having | Upon
              | Unless
              | Hence | Lest | Fulfilled | Breach
              | TNumber Int

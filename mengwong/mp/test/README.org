@@ -656,6 +656,33 @@ Moving the AND to the level of the IF is an accepted and common form.
 
 
 
+** The semantics of GIVEN and HAVING
+
+Currently GIVEN is a boolstruct / boolrules thingy that has happened previously
+
+maybe we want it to be a ParamText instead
+
+How about we then make HAVING be the ParamText that refers to something in the trace also?
+
+
+| GIVEN  | tax rate   | :: | Number |
+| GIVEN  | income     | :: | Number |
+|        |            |    |        |
+| DEFINE | payableTax | :: | Float  |
+| IS     | tax rate   | *  | income |
+
+*** Simple Having
+:PROPERTIES:
+:TABLE_EXPORT_FILE: having-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | Party      |                  |      |
+| HAVING | sung       |                  |      |
+|        | songLength | >=               | 2min |
+| MAY    | claim      | songFee          |      |
+|        | amount     | $10 * songLength |      |
+
 ** Tracking citations and sources
 
 In the spreadsheet we allow a prefix on each line that shows the source of the legislation.

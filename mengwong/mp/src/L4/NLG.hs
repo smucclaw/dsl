@@ -4,7 +4,7 @@ module L4.NLG (
 
 import L4.Types
     ( Deontic(..),
-      ActionType,
+      ParamText,
       EntityType,
       Rule(..) )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType )
@@ -59,7 +59,7 @@ nlg rl = do
     -- parseCond :: BoolStruct -> Expr
     -- parseCond = undefined
 
-    parseAction :: UDEnv -> ActionType -> Expr
+    parseAction :: UDEnv -> ParamText -> Expr
     parseAction env at = parse' "VP" env (at2str at)
 
     parseDeontic :: Deontic -> CId
@@ -72,7 +72,7 @@ nlg rl = do
     -- parseTemporal = undefined
 
 
-at2str :: ActionType -> Text.Text
+at2str :: ParamText -> Text.Text
 at2str = Text.unwords . concatMap toList . toList
 
 ------------------------------------------------------------

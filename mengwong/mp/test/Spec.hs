@@ -51,6 +51,7 @@ defaultReg = Regulative
   , srcref = Nothing
   , upon = Nothing
   , given = Nothing
+  , having = Nothing
   }
 
 defaultCon = Constitutive

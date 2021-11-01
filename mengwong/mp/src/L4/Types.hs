@@ -96,7 +96,15 @@ data TemporalConstraint a = TBefore a
                           deriving (Eq, Show, Generic, ToJSON, FromJSON)
 type ConstitutiveTerm = Text.Text
 type EntityType = Text.Text
-type ActionType = (Text.Text,[(Text.Text,[Text.Text])])
+
+-- is this a NonEmpty (NonEmpty Text.Text)
+-- or a Tree (Text.Text)
+-- type ActionType' = Tree Text.Text -- function(arg0, arg1=[val2,val3], arg4=[val5,val6])
+--                                   -- Node "action" [ Node "eat"   [ Node "ice cream" [] ]
+--                                   --               , Node "arg1"  [ Node "val2" [], Node "val3" [] ]
+--                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
+
+type ActionType = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
 data Deontic = DMust | DMay | DShant
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 

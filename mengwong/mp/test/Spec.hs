@@ -12,8 +12,7 @@ import L4.Error
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))
 import Control.Monad.Writer (WriterT(runWriterT))
-
-
+import Data.List.NonEmpty (NonEmpty ((:|)))
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -43,7 +42,7 @@ defaultReg = Regulative
   , who = Nothing
   , cond = Nothing
   , deontic = DMust
-  , action = ("sing",[])
+  , action = pure . pure $ "sing"
   , temporal = Nothing
   , hence = Nothing
   , lest = Nothing
@@ -79,7 +78,6 @@ main = do
         parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { every = "person"
                                      , deontic = DMust
-                                     , action = ("sing",[])
                                      } ]
 
       it "should parse a single OtherVal" $ do
@@ -149,7 +147,6 @@ main = do
                                   [ Leaf "walks"
                                   , Leaf "degustates"
                                   ]
-                          , action = ("sing", [])
                           }
                         , defaultCon
                           { term = "degustates"
@@ -188,7 +185,7 @@ main = do
       let king_pays_singer = defaultReg
                           { every = "King"
                           , deontic = DMay
-                          , action = ("pay", [])
+                          , action = pure $ pure "pay"
                           , temporal = Just (TAfter "20min")
                           }
                         
@@ -198,7 +195,7 @@ main = do
 
       let singer_must_pay = defaultReg
                               { every = "Singer"
-                              , action = ("pay", [])
+                              , action = pure $ pure "pay"
                               , temporal = Just (TBefore "supper")
                               }
                         
@@ -268,8 +265,9 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
 
       let singer_must_pay_params =
-            singer_must_pay { action = ("pay", [("to",["the King"])
-                                            ,("amount",["$20"])]) }
+            singer_must_pay { action = (("pay" :| [])
+                                         :| [("to"     :| ["the King"])
+                                            ,("amount" :| ["$20"])]) }
 
       it "should parse action params" $ do
         mycsv <- BS.readFile "test/action-params-singer.csv"

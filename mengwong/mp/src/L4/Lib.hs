@@ -31,6 +31,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Debug.Trace
 import Data.Aeson.Encode.Pretty
+import Data.List.NonEmpty (NonEmpty ((:|)))
 
 import L4.Types
 import L4.Error ( errorBundlePrettyCustom )
@@ -47,12 +48,12 @@ getConfig = do
   mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
-        { debug = (maybe False (read :: String -> Bool) mpd)
+        { debug = maybe False (read :: String -> Bool) mpd
         , callDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
-        , asJSON = (maybe False (read :: String -> Bool) mpj)
-        , toNLG = (maybe False (read :: String -> Bool) mpn)
+        , asJSON = maybe False (read :: String -> Bool) mpj
+        , toNLG = maybe False (read :: String -> Bool) mpn
         }
 
 someFunc :: IO ()
@@ -201,7 +202,7 @@ getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
                        all (\row -> V.all Text.null (rs ! row))
                        rows
                      ]
-      toreturn = setRange loc <$> (filter (not . null) wantedChunks)
+      toreturn = setRange loc <$> filter (not . null) wantedChunks
   in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
      -- trace ("getChunks: listChunks = " ++ show listChunks)
      -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
@@ -529,12 +530,21 @@ indented0 = indented 0
 indented1 :: Parser a -> Parser b -> Parser (a, b)
 indented1 = indented 1
 
-pAction ::  Parser ActionType
-pAction = (pOtherVal <* dnl) `indented0` pParams
+-- why not a nonempty list of (key,[value]) pairs
+pAction :: Parser ActionType
+pAction = do
+  uncurry (:|) <$> (pKeyValues <* dnl) `indented0` pParams
+  -- === flex for
+  --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
+  --     return $ myhead :| therest
 
-pParams :: Parser [(Text.Text, [Text.Text])]
-pParams = do
-  many (((,) <$> pOtherVal <*> many pOtherVal) <* dnl)    -- head (term+,)*
+type KVsPair = NonEmpty Text.Text -- so really there are multiple Values
+
+pParams :: Parser [KVsPair]
+pParams = many $ pKeyValues <* dnl    -- head (term+,)*
+
+pKeyValues :: Parser KVsPair
+pKeyValues = uncurry (:|) <$> pOtherVal `indented1` many pOtherVal
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
@@ -601,7 +611,7 @@ permutationsReg ifwhen l4unless l4upon l4given = debugName ("permutationsReg pos
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
 pDT = debugName "pDT" $ do
   pd <- pDeontic
-  pt <- (optional pTemporal) <* dnl
+  pt <- optional pTemporal <* dnl
   return (pd, fromMaybe Nothing pt)
 
 -- the Deontic/Action/Temporal form

@@ -12,7 +12,7 @@ import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Maybe (fromMaybe)
 import Data.Char (toLower)
-
+import Data.List.NonEmpty (toList)
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (path "RealSimple") "Eng" "UDS"
@@ -73,8 +73,7 @@ nlg rl = do
 
 
 at2str :: ActionType -> Text.Text
-at2str (verb, []) = verb
-at2str (verb, (_op, args):_) = Text.unwords [verb, Text.unwords args] -- TODO: rest of args
+at2str = Text.unwords . concatMap toList . toList
 
 ------------------------------------------------------------
 -- Ignore everything below for now

@@ -205,14 +205,14 @@ toToken x = Other x
 
 
 pToken :: MyToken -> Parser MyToken
-pToken c = pTokenMatch (== c) c
+pToken c = checkDepth >> pTokenMatch (== c) c
 
-dToken :: MyToken -> Parser MyToken
-dToken c = do
-  d <- asks callDepth
-  currentX <- lookAhead pXLocation
-  guard $ currentX >= d
-  pTokenMatch (== c) c
+-- | check that the next token is at at least the current level of indentation
+checkDepth :: Parser ()
+checkDepth = do
+  depth <- asks callDepth
+  leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  guard $ leftX >= depth
 
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <?> "x location"

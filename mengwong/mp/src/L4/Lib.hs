@@ -71,9 +71,9 @@ whenDebug act = do
 myTraceM :: String -> Parser ()
 myTraceM x = whenDebug $ do
   callDepth <- asks nestLevel
-  traceM $ indent callDepth <> x
+  traceM $ indentShow callDepth <> x
   where
-    indent depth = concat $ replicate depth "| "
+    indentShow depth = concat $ replicate depth "| "
 
 debugPrint :: String -> Parser ()
 debugPrint str = whenDebug $ do
@@ -95,14 +95,6 @@ debugName name p = do
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a
 withDepth n = local (\st -> st {callDepth= n})
-
--- | check that the next token is at at least the current level of indentation
-checkDepth :: Parser ()
-checkDepth = do
-  depth <- asks callDepth
-  leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  guard $ leftX >= depth
-
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
@@ -357,7 +349,6 @@ pRule = withDepth 1 $ do
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
-  checkDepth
   (term,termalias)   <- pTermParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
@@ -433,7 +424,6 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  checkDepth
   (_party_every, entitytype, _entityalias)   <- try (pActor Party) <|> pActor Every
   -- (Who, (BoolStruct,[Rule]))
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
@@ -483,10 +473,7 @@ addneg (Just p) (Just n)  = pure (p <> AA.Not n)
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  checkDepth
-  _ <- pToken henceLest
-  withDepth (leftX + 1) pRegRule
+  snd <$> pToken henceLest `indented1` pRegRule
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: Preamble -> [(Preamble, BoolRules)] -> (Preamble, BoolRules)
@@ -494,13 +481,11 @@ mergePBRS defPA [] = (defPA, mempty)
 mergePBRS _ ((w, br) : xs) = (w, br <> mconcat (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
-pTemporal = ( do
-                t0 <- pToken Eventually
-                return (mkTC t0 "")
-            ) <|> do
-  t1 <- pToken Before <|> pToken After <|> pToken By <|> pToken On
-  t2 <- pOtherVal
-  return $ mkTC t1 t2
+pTemporal = eventually <|> specifically
+  where
+    eventually   = mkTC <$> pToken Eventually <*> pure ""
+    specifically = mkTC <$> sometime          <*> pOtherVal
+    sometime     = choice $ map pToken [ Before, After, By, On ]
 
 -- "PARTY Bob       (the "Seller")
 -- "EVERY Seller"
@@ -530,17 +515,25 @@ pTermParens = debugName "pTermParens" $ do
 pDoAction ::  Parser ActionType
 pDoAction = pToken Do >> pAction
 
+-- everything in p2 must be at least the same depth as p1
+indented :: Int -> Parser a -> Parser b -> Parser (a,b)
+indented d p1 p2 = do
+  leftX <- lookAhead pXLocation
+  x <- p1
+  y <- withDepth (leftX + d) p2
+  return (x, y)
+
+indented0 :: Parser a -> Parser b -> Parser (a, b)
+indented0 = indented 0
+
+indented1 :: Parser a -> Parser b -> Parser (a, b)
+indented1 = indented 1
+
 pAction ::  Parser ActionType
-pAction = do
-  leftX <- lookAhead pXLocation -- the action is indented a bit. we expect all params to be at least the same indentation.
-  action <- pOtherVal       <* dnl
-  params <- withDepth leftX pParams
-  return (action, params)
+pAction = (pOtherVal <* dnl) `indented0` pParams
 
 pParams :: Parser [(Text.Text, [Text.Text])]
 pParams = do
-  checkDepth
-  -- it would be cool if we could time travel back to lookBehind and grab the previous X location
   many (((,) <$> pOtherVal <*> many pOtherVal) <* dnl)    -- head (term+,)*
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
@@ -631,7 +624,6 @@ newPre t (AA.Any (AA.PrePost _p pp) x) = AA.Any (AA.PrePost t pp) x
 preambleBoolRules :: [MyToken] -> Parser (Preamble, BoolRules)
 preambleBoolRules wanted = debugName ("preambleBoolRules " <> show wanted)  $ do
   leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  checkDepth
   condWord <- choice (try . pToken <$> wanted)
   myTraceM ("preambleBoolRules: found: " ++ show condWord)
   ands <- withDepth leftX dBoolRules -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
@@ -648,7 +640,7 @@ dBoolRules = debugName "dBoolRules" $ do
 pAndGroup ::  Parser BoolRules
 pAndGroup = debugName "pAndGroup" $ do
   orGroup1 <- pOrGroup
-  orGroupN <- many $ dToken And *> pOrGroup
+  orGroupN <- many $ pToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
                  else Just (AA.All (AA.Pre "all of:") (catMaybes (orGroup1 : orGroupN)))
@@ -661,7 +653,7 @@ pOrGroup ::  Parser BoolRules
 pOrGroup = debugName "pOrGroup" $ do
   depth <- asks callDepth
   elem1    <- withDepth (depth + 1) pElement
-  elems    <- many $ dToken Or *> withDepth (depth+1) pElement
+  elems    <- many $ pToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
                  else Just (AA.Any (AA.Pre "any of:") (catMaybes (elem1 : elems)))
@@ -691,7 +683,6 @@ pNotElement = debugName "pNotElement" $ do
 
 pLeafVal ::  Parser BoolRules
 pLeafVal = debugName "pLeafVal" $ do
-  checkDepth
   leafVal <- pOtherVal <* dnl
   myTraceM $ "pLeafVal returning " ++ Text.unpack leafVal
   return $ Just (AA.Leaf leafVal)
@@ -707,7 +698,6 @@ pNestedBool = debugName "pNestedBool" $ do
 
 pBoolConnector :: Parser MyToken
 pBoolConnector = debugName "pBoolConnector" $ do
-  checkDepth
   pToken And <|> pToken Or <|> pToken Unless
 
 -- helper functions for parsing

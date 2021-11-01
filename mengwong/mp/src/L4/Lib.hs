@@ -532,9 +532,16 @@ pDoAction = pToken Do >> pAction
 
 pAction ::  Parser ActionType
 pAction = do
+  leftX <- lookAhead pXLocation -- the action is indented a bit. we expect all params to be at least the same indentation.
   action <- pOtherVal       <* dnl
-  params <- many (((,) <$> pOtherVal <*> many pOtherVal) <* dnl)    -- head (term+,)*
+  params <- withDepth leftX pParams
   return (action, params)
+
+pParams :: Parser [(Text.Text, [Text.Text])]
+pParams = do
+  checkDepth
+  -- it would be cool if we could time travel back to lookBehind and grab the previous X location
+  many (((,) <$> pOtherVal <*> many pOtherVal) <* dnl)    -- head (term+,)*
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.

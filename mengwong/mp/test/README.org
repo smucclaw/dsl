@@ -660,10 +660,30 @@ Moving the AND to the level of the IF is an accepted and common form.
 
 Currently GIVEN is a boolstruct / boolrules thingy that has happened previously
 
-maybe we want it to be a ParamText instead
+maybe we want it to be a ParamText instead?
+
+*** Given in a simple constitutive rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: given-consti-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+We look back in the history:
+
+|       | songFee    |    |      |
+| GIVEN | songLength |    |      |
+| WHEN  | songLength | >= | 2min |
+| IS    | $200       |    |      |
+|       |            |    |      |
+| but   |            |    |      |
+|       |            |    |      |
+|       | songFee    |    |      |
+| GIVEN | songLength | <  | 2min |
+| IS    | $100       |    |      |
+
+*** HAVING
 
 How about we then make HAVING be the ParamText that refers to something in the trace also?
-
 
 | GIVEN  | tax rate   | :: | Number |
 |        | income     | :: | Number |
@@ -671,7 +691,7 @@ How about we then make HAVING be the ParamText that refers to something in the t
 | DEFINE | payableTax | :: | Float  |
 | IS     | tax rate   | *  | income |
 
-*** Simple Having
+**** Simple Having
 :PROPERTIES:
 :TABLE_EXPORT_FILE: having-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -688,4 +708,24 @@ How about we then make HAVING be the ParamText that refers to something in the t
 In the spreadsheet we allow a prefix on each line that shows the source of the legislation.
 
 To handle this we may need to augment our types so that each bit of logic can be annotated with a source Text.Text.
+
+
+
+* Ontology
+:PROPERTIES:
+:TABLE_EXPORT_FILE: define-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | DEFINE | Hand         |     |      |
+|   | ONE OF | Left         |     |      |
+|   |        | Right        |     |      |
+|   |        |              |     |      |
+|   | so     | now we       | can |      |
+|   |        |              |     |      |
+|   | DEFINE | Sign         |     |      |
+|   | HAS    | throwingHand | ::  | Hand |
+|   | ONE OF | Rock         |     |      |
+|   |        | Scissors     |     |      |
+|   |        | Paper        |     |      |
 

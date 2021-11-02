@@ -74,9 +74,9 @@ data Rule = Regulative
             }
           | TypeDecl
             { name     :: ConstitutiveName     --      DEFINE Sign
-            , super    :: ConstitutiveName     --                  :: Thing
+            , super    :: Maybe ConstitutiveName     --                  :: Thing
             , has      :: [(ConstitutiveName, TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
-            , enums    :: Maybe (NonEmpty ConstitutiveName)  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -108,7 +108,7 @@ noLSource = Nothing
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
 
-data ParamType a = TOne a | TOptional a | TList0 a | TList1 a
+data ParamType = TOne | TOptional | TList0 | TList1
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
@@ -120,7 +120,7 @@ data TemporalConstraint a = TBefore a
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
 
-type TypeSig = ParamType ConstitutiveName
+type TypeSig = (ParamType, ConstitutiveName)
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)
@@ -165,6 +165,9 @@ nestLevel = length . parseCallStack
 
 increaseNestLevel :: String -> RunConfig -> RunConfig
 increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
+
+magicKeywords :: [Text.Text]
+magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS DEFINE"
 
 -- the Rule types employ these tokens, which are meaningful to L4.
 --
@@ -254,7 +257,6 @@ toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = Other x
-
 
 pToken :: MyToken -> Parser MyToken
 pToken c = checkDepth >> pTokenMatch (== c) c

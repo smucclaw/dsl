@@ -1,0 +1,11 @@
+,DEFINE,Hand,,
+,ONE OF,Left,,
+,,Right,,
+,,,,
+,so,now we,can,
+,,,,
+,DEFINE,Sign,,
+,HAS,throwingHand,::,Hand
+,ONE OF,Rock,,
+,,Scissors,,
+,,Paper,,

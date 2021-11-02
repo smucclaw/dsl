@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module L4.Lib where
 
@@ -195,7 +196,7 @@ getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
       wantedChunks = [ rows
                      | rows <- listChunks
                      , any (\row ->
-                               V.any (\w -> w `elem` Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS")
+                               V.any (`elem` magicKeywords)
                                (rs ! row)
                            ) rows
                        ||
@@ -344,8 +345,42 @@ pRule :: Parser [Rule]
 pRule = withDepth 1 $ do
   _ <- optional dnl
   try ((:[]) <$> pRegRule <?> "regulative rule")
-    <|> ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
+    <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
+    <|> ((:[]) <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
     <|> (eof >> return [])
+
+pTypeSig :: Parser TypeSig
+pTypeSig = debugName "pTypeSig" $ do
+  _           <- pToken TypeSeparator
+  cardinality <- choice [ TOne      <$ pToken One
+                        , TOptional <$ pToken Optional
+                        , TList0    <$ pToken List0
+                        , TList1    <$ pToken List1 ]
+  base        <- pOtherVal <* dnl
+  return (cardinality, base)
+
+pTypeDefinition :: Parser Rule
+pTypeDefinition = debugName "pTypeDefinition" $ do
+  name  <- pOtherVal
+  myTraceM $ "got name = " <> Text.unpack name
+  super <- optional (pToken TypeSeparator *> pOtherVal)
+  myTraceM $ "got super = " <> show super
+  _     <- dnl
+  myTraceM $ "got newline"
+  has   <- optional (pToken Has) >> many $ (,) <$> pOtherVal <*> pTypeSig
+  myTraceM $ "got has = " <> show has
+  enums <- optional $ pToken OneOf *> pParamText <* dnl
+  myTraceM $ "got enums = " <> show enums
+
+  return $ TypeDecl
+    { name
+    , super
+    , has
+    , enums
+    , rlabel  = noLabel
+    , lsource = noLSource
+    , srcref  = noSrcRef
+    }
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
@@ -358,7 +393,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   tell defalias
 
   ( (_meansis, posp), unlesses, givenback ) <-
-    withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless] [Given]
+    withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless] [Given] -- maybe this given needs to be Having, think about replacing it later.
 
   let (_unless, negp) = mergePBRS Never unlesses
       givenbrs = maybe Nothing snd givenback
@@ -478,7 +513,7 @@ addneg (Just p) (Just n)  = pure (p <> AA.Not n)
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  snd <$> pToken henceLest `indented1` pRegRule
+  id <$ pToken henceLest `indented1` pRegRule
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: Preamble -> [(Preamble, BoolRules)] -> (Preamble, BoolRules)
@@ -521,25 +556,28 @@ pDoAction ::  Parser ParamText
 pDoAction = pToken Do >> pAction
 
 -- everything in p2 must be at least the same depth as p1
-indented :: Int -> Parser a -> Parser b -> Parser (a,b)
+indented :: Int -> Parser (a -> b) -> Parser a -> Parser b
 indented d p1 p2 = do
   leftX <- lookAhead pXLocation
-  x <- p1
-  y <- withDepth (leftX + d) p2
-  return (x, y)
+  f     <- p1
+  y     <- withDepth (leftX + d) p2
+  return $ f y
 
-indented0 :: Parser a -> Parser b -> Parser (a, b)
+indented0 :: Parser (a -> b) -> Parser a -> Parser b
 indented0 = indented 0
+infixl 4 `indented0`
 
-indented1 :: Parser a -> Parser b -> Parser (a, b)
+indented1 :: Parser (a -> b) -> Parser a -> Parser b
 indented1 = indented 1
+infixl 4 `indented1`
 
 pAction :: Parser ParamText
 pAction = pParamText
 
 pParamText :: Parser ParamText
 pParamText = do
-  uncurry (:|) <$> (pKeyValues <* dnl) `indented0` pParams
+  (:|) <$> (pKeyValues <* dnl) `indented0` pParams
+  
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
   --     return $ myhead :| therest
@@ -550,7 +588,7 @@ pParams :: Parser [KVsPair]
 pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
-pKeyValues = uncurry (:|) <$> pOtherVal `indented1` many pOtherVal
+pKeyValues = (:|) <$> pOtherVal `indented1` many pOtherVal
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.

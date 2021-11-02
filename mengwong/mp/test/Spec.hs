@@ -55,7 +55,7 @@ defaultReg = Regulative
   }
 
 defaultCon = Constitutive
-  { term = ""
+  { name = ""
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
@@ -130,7 +130,7 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule
 
       let degustates = defaultCon
-                       { term = "degustates"
+                       { name = "degustates"
                        , cond = Just $ Any ( Pre "any of:" ) [ Leaf "eats", Leaf "drinks" ]
                        }
 
@@ -150,14 +150,14 @@ main = do
                                   ]
                           }
                         , defaultCon
-                          { term = "degustates"
+                          { name = "degustates"
                           , cond = Just $ Any ( Pre "any of:" ) [ Leaf "eats", Leaf "imbibes" ]
                           }
                         ]
 
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
-              { term = "imbibes"
+              { name = "imbibes"
               , cond = Just $ All ( Pre "all of:" )
                 [ Leaf "drinks"
                 , Any ( Pre "any of:") [ Leaf "swallows"
@@ -169,7 +169,7 @@ main = do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule2
 
-      it "should parse indented-3.csv (defined terms in natural positions)" $ do
+      it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
@@ -254,14 +254,14 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefTermAlias "(\"singer\")" "person" Nothing
+            [ DefNameAlias "(\"singer\")" "person" Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefTermAlias "(\"singer\")" "person" Nothing
+            [ DefNameAlias "(\"singer\")" "person" Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing})) ]
 
-      it "should parse natural language aliases (\"NL Aliases\") aka inline defined terms" $ do
+      it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
         mycsv <- BS.readFile "test/nl-aliases.csv"
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
 
@@ -281,7 +281,7 @@ main = do
 
     describe "megaparsing MEANS" $ do
 
-      let bobUncle = defaultCon { term = "Bob's your uncle"
+      let bobUncle = defaultCon { name = "Bob's your uncle"
                                  , cond = Just
                                    ( Not
                                      ( Any
@@ -415,7 +415,7 @@ main = do
         testcsv <- BS.readFile testfile
         parseR (pRule <* eof) testfile (exampleStream testcsv)
           `shouldParse` [ Constitutive
-                          { term = "Bob's your uncle"
+                          { name = "Bob's your uncle"
                           , cond = Just
                             ( All
                               ( Pre "both" )
@@ -436,4 +436,4 @@ main = do
 
   -- upgrade single OR group to bypass the top level AND group
 
-  -- defTermAlias should absorb the WHO limb
+  -- defNameAlias should absorb the WHO limb

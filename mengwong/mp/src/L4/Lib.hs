@@ -350,18 +350,18 @@ pRule = withDepth 1 $ do
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
-  (term,termalias)   <- pTermParens
+  (name,namealias)   <- pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefTermAlias t term Nothing (Just srcref))) termalias
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) namealias
   tell defalias
 
   ( (_meansis, posp), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless]
 
   let (_unless, negp) = mergePBRS Never unlesses
 
-  return $ Constitutive term (addneg posp negp) noLabel noLSource noSrcRef
+  return $ Constitutive name (addneg posp negp) noLabel noLSource noSrcRef
 
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $
@@ -498,18 +498,18 @@ pActor party = debugName ("pActor " ++ show party) $ do
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   -- add pConstitutiveRule here -- we could have "MEANS"
   _           <- pToken party
-  (entitytype, entityalias)   <- lookAhead pTermParens
-  omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pTermParens)
+  (entitytype, entityalias)   <- lookAhead pNameParens
+  omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefTermAlias t entitytype Nothing (Just srcref))) entityalias
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t entitytype Nothing (Just srcref))) entityalias
   tell $ defalias <> listToDL omgARule
   return (party, entitytype, entityalias)
 
 -- two tokens of the form | some thing | ("A Thing") | ; |
-pTermParens :: Parser (Text.Text, Maybe Text.Text)
-pTermParens = debugName "pTermParens" $ do
+pNameParens :: Parser (Text.Text, Maybe Text.Text)
+pNameParens = debugName "pNameParens" $ do
   entitytype  <- pOtherVal
   entityalias <- optional pOtherVal -- TODO: add test here to see if the pOtherVal has the form    ("xxx")
   _ <- dnl
@@ -545,7 +545,7 @@ pParamText = do
 type KVsPair = NonEmpty Text.Text -- so really there are multiple Values
 
 pParams :: Parser [KVsPair]
-pParams = many $ pKeyValues <* dnl    -- head (term+,)*
+pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
 pKeyValues = uncurry (:|) <$> pOtherVal `indented1` many pOtherVal
@@ -698,7 +698,7 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolRules
-constitutiveAsElement cr = Just (AA.Leaf (term cr))
+constitutiveAsElement cr = Just (AA.Leaf (name cr))
 -- constitutiveAsElement _ = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRules

@@ -22,6 +22,11 @@ data MyToken = Every | Party | Who | Means | Includes | When | Is | Always | Nev
              | Must | May | Shant | If | Or | And | MPNot
              | Before | After | By | On | Eventually
              | Given | Having | Upon
+             | Define | OneOf
+             | Deem | As | Has
+             | TypeSeparator -- ::, TYPE, AS, shrug
+             | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
+             | Distinct -- entity modifier in GIVEN
              | Unless
              | Hence | Lest | Fulfilled | Breach
              | TNumber Int

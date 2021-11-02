@@ -65,14 +65,30 @@ data Rule = Regulative
             , having   :: Maybe ParamText  -- HAVING sung...
             }
           | Constitutive
-            { term     :: ConstitutiveTerm
+            { name     :: ConstitutiveName -- user-defined namespace
             , cond     :: Maybe BoolStruct
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             }
-          | DefTermAlias -- inline alias, like     some thing ("Thing")
-            { term   :: ConstitutiveTerm -- "Thing"
+          | TypeDecl
+            { name     :: ConstitutiveName     --      DEFINE Sign
+            , super    :: ConstitutiveName     --                  :: Thing
+            , has      :: [(ConstitutiveName, TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , enums    :: Maybe (NonEmpty ConstitutiveName)  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , rlabel   :: Maybe Text.Text
+            , lsource  :: Maybe Text.Text
+            , srcref   :: Maybe SrcRef
+            }
+          | RelDec
+            { name     :: ConstitutiveName            --      DEEM      beats
+            , means    :: Maybe ParamText    --      MEANS foo beats baz -- -TODO- we want to add support for interpolated boolstructs
+            , rlabel   :: Maybe Text.Text
+            , lsource  :: Maybe Text.Text
+            , srcref   :: Maybe SrcRef
+            }
+          | DefNameAlias -- inline alias, like     some thing ("Thing")
+            { name   :: ConstitutiveName -- "Thing"
             , detail :: Text.Text        -- "some thing"
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
@@ -83,11 +99,16 @@ data Rule = Regulative
           | RegBreach     -- trivial bottom
           deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
+newtype RelName = RN { getName :: ConstitutiveName }
+
 noLabel, noLSource :: Maybe Text.Text
 noLabel   = Nothing
 noLSource = Nothing
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
+
+data ParamType a = TOne a | TOptional a | TList0 a | TList1 a
+  deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TemporalConstraint a = TBefore a
@@ -95,8 +116,10 @@ data TemporalConstraint a = TBefore a
                           | TBy     a
                           | TOn     a
                           deriving (Eq, Show, Generic, ToJSON, FromJSON)
-type ConstitutiveTerm = Text.Text
+type ConstitutiveName = Text.Text
 type EntityType = Text.Text
+
+type TypeSig = ParamType ConstitutiveName
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)
@@ -106,6 +129,9 @@ type EntityType = Text.Text
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
 type ParamText = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
+
+-- and possibily we want to have interspersed BoolStructs along the way
+
 data Deontic = DMust | DMay | DShant
   deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
@@ -157,7 +183,7 @@ toToken "UPON" =   Upon
 toToken "GIVEN" =  Given
 toToken "HAVING" = Having
 
-toToken "MEANS" =  Means -- "infix"-starts a constitutive rule "Term MEANS x OR y OR z"
+toToken "MEANS" =  Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
 toToken "INCLUDES" =  Includes
 toToken "IS" =     Is
 
@@ -206,6 +232,21 @@ toToken "XOR ELSE" = Lest
 toToken    "XELSE" = Lest
 
 toToken ";"      = EOL
+
+toToken ":"      = TypeSeparator
+toToken "::"     = TypeSeparator
+toToken "TYPE"   = TypeSeparator
+
+toToken "DEFINE"    = Define
+toToken "ONE OF"    = OneOf
+toToken "AS ONE OF" = OneOf
+toToken "DEEM"      = Deem
+toToken "HAS"       = Has
+
+toToken "ONE"       = One
+toToken "OPTIONAL"  = Optional
+toToken "LIST0"     = List0
+toToken "LIST1"     = List1
 
 -- we recognize numbers
 toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n

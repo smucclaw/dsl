@@ -67,6 +67,7 @@ data Rule = Regulative
           | Constitutive
             { name     :: ConstitutiveName -- user-defined namespace
             , cond     :: Maybe BoolStruct
+            , given    :: Maybe BoolStruct -- GIVEN an Entertainment flag was previously set in the history trace
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

@@ -666,7 +666,7 @@ How about we then make HAVING be the ParamText that refers to something in the t
 
 
 | GIVEN  | tax rate   | :: | Number |
-| GIVEN  | income     | :: | Number |
+|        | income     | :: | Number |
 |        |            |    |        |
 | DEFINE | payableTax | :: | Float  |
 | IS     | tax rate   | *  | income |

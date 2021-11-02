@@ -357,11 +357,13 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) namealias
   tell defalias
 
-  ( (_meansis, posp), unlesses) <- withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless]
+  ( (_meansis, posp), unlesses, givenback ) <-
+    withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless] [Given]
 
   let (_unless, negp) = mergePBRS Never unlesses
+      givenbrs = maybe Nothing snd givenback
 
-  return $ Constitutive name (addneg posp negp) noLabel noLSource noSrcRef
+  return $ Constitutive name (addneg posp negp) givenbrs noLabel noLSource noSrcRef
 
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $
@@ -584,11 +586,20 @@ mkRBfromDA :: (Deontic, ParamText)
            -> RuleBody
 mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
 
-permutationsCon :: [MyToken] -> [MyToken] -> Parser ((Preamble, BoolRules), [(Preamble, BoolRules)])
-permutationsCon ifwhen l4unless = debugName ("permutationsCon positive=" <> show ifwhen <> ", negative=" <> show l4unless) $ do
-  try ( debugName "constitutive permutation" $ permute ( (,)
+permutationsCon :: [MyToken] -> [MyToken] -> [MyToken]
+                -> Parser ( (Preamble, BoolRules)   -- positive
+                          , [(Preamble, BoolRules)] -- unless
+                          , Maybe (Preamble, BoolRules)  -- given
+                          )
+permutationsCon ifwhen l4unless l4given =
+  debugName ("permutationsCon positive=" <> show ifwhen
+             <> ", negative=" <> show l4unless
+             <> ", given=" <> show l4given
+            ) $ do
+  try ( debugName "constitutive permutation" $ permute ( (,,)
             <$$> preambleBoolRules ifwhen
             <|?> ([], some $ preambleBoolRules l4unless)
+            <|?> (Nothing, optional $ preambleBoolRules l4given)  -- given
           ) )
 
 permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody

@@ -269,7 +269,7 @@ checkDepth = do
   guard $ leftX >= depth
 
 pXLocation :: Parser Depth
-pXLocation = token test Set.empty <?> "x location"
+pXLocation = token test Set.empty <|> pure 0 <?> "x location"
   where
     test (WithPos (SourcePos _ _y x) _ _ _) = Just (unPos x)
 

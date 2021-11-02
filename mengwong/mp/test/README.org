@@ -717,15 +717,15 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|   | DEFINE | Hand         |     |      |
-|   | ONE OF | Left         |     |      |
-|   |        | Right        |     |      |
-|   |        |              |     |      |
-|   | so     | now we       | can |      |
-|   |        |              |     |      |
-|   | DEFINE | Sign         |     |      |
-|   | HAS    | throwingHand | ::  | Hand |
-|   | ONE OF | Rock         |     |      |
-|   |        | Scissors     |     |      |
-|   |        | Paper        |     |      |
+|   | DEFINE | Hand         |     |     |      |
+|   | ONE OF | Left         |     |     |      |
+|   |        | Right        |     |     |      |
+|   |        |              |     |     |      |
+|   | so     | now we       | can |     |      |
+|   |        |              |     |     |      |
+|   | DEFINE | Sign         |     |     |      |
+|   | HAS    | throwingHand | ::  | ONE | Hand |
+|   | ONE OF | Rock         |     |     |      |
+|   |        | Scissors     |     |     |      |
+|   |        | Paper        |     |     |      |
 

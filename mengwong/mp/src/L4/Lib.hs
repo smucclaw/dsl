@@ -369,7 +369,7 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   myTraceM $ "got newline"
   has   <- optional (id <$ pToken Has `indented1` many ( (,) <$> pOtherVal <*> pTypeSig))
   myTraceM $ "got has = " <> show has
-  enums <- optional $ pToken OneOf *> pParamText <* dnl
+  enums <- optional $ pToken OneOf *> pParamText
   myTraceM $ "got enums = " <> show enums
 
   return $ TypeDecl
@@ -575,8 +575,8 @@ pAction :: Parser ParamText
 pAction = pParamText
 
 pParamText :: Parser ParamText
-pParamText = do
-  (:|) <$> (pKeyValues <* dnl) `indented0` pParams
+pParamText = debugName "pParamText" $ do
+  (:|) <$> (pKeyValues <* dnl <?> "paramText head") `indented0` pParams
   
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
@@ -588,7 +588,7 @@ pParams :: Parser [KVsPair]
 pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
-pKeyValues = (:|) <$> pOtherVal `indented1` many pOtherVal
+pKeyValues = debugName "pKeyValues" $ (:|) <$> pOtherVal `indented1` many pOtherVal
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.

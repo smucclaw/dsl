@@ -34,7 +34,10 @@ nlg rl = do
        -- piecing together in a simple GF grammar
        -- TODO: check which parts are Nothing and which have a value, then use the ones that have a value
        -- For now we just use the fields that are not Maybe
-       subject = everyA annotatedRule
+       subjectRaw = everyA annotatedRule
+       subject = case whoA annotatedRule of
+                   Nothing -> subjectRaw
+                   Just vp -> mkRelClNP subjectRaw vp
        predicate = mkApp (deonticA annotatedRule) [actionA annotatedRule]
        newFancyTree = mkApp subjPred [subject, predicate]
 
@@ -46,16 +49,20 @@ nlg rl = do
     subjPred :: CId
     subjPred = mkCId "subjPred"
 
+    mkRelClNP :: Expr -> Expr -> Expr
+    mkRelClNP np vp = mkApp (mkCId "addWho") [np,vp]
+
+
 
 parseFields :: UDEnv -> Rule -> AnnotatedRule
 parseFields env rl@(Regulative {}) =
-  RegulativeA { everyA  = parseEvery env (every rl)    ::  PGF.Expr
-              , whoA    = Nothing
-              , condA   = Nothing
-              , deonticA = parseDeontic (deontic rl)   :: PGF.CId
-              , actionA  = parseAction env (action rl) :: PGF.Expr
-              , temporalA = Nothing
-              , uponA = Nothing
+  RegulativeA { everyA  = parseEvery env (every rl)     ::  PGF.Expr
+              , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
+              , condA   = Nothing  :: Maybe PGF.Expr
+              , deonticA = parseDeontic (deontic rl)    :: PGF.CId
+              , actionA  = parseAction env (action rl)  :: PGF.Expr
+              , temporalA = Nothing   :: Maybe PGF.Expr
+              , uponA = Nothing       :: Maybe PGF.Expr
               , givenA = fmap (parseGiven env) (given rl) :: Maybe PGF.Expr
                 -- corresponds to     case given rl of
                         --               Just bs -> Just $ parseGiven env bs
@@ -80,8 +87,8 @@ parseFields env rl@(Regulative {}) =
     parseEvery :: UDEnv -> EntityType -> Expr
     parseEvery = parse' "NP"
 
-    -- parseWho :: UDEnv -> BoolStruct -> Expr
-    -- parseWho = undefined
+    parseWho :: UDEnv -> BoolStruct -> Expr
+    parseWho env bs = parse' "VP" env (bs2text bs)
 
     -- parseCond :: UDEnv -> BoolStruct -> Expr
     -- parseCond = undefined

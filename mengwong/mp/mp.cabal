@@ -65,7 +65,9 @@ library
     , pretty-simple
     , prolog
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010
@@ -100,7 +102,9 @@ executable mp-exe
     , pretty-simple
     , prolog
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010
@@ -136,7 +140,9 @@ test-suite mp-test
     , pretty-simple
     , prolog
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010

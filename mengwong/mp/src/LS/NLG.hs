@@ -24,16 +24,33 @@ import Data.Maybe
 import qualified AnyAll as AA
 -- import Llvm.AbsSyn (LlvmStatement(Expr))
 
+-- typeprocess to run a python
+import System.IO
+import System.Process.Typed
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as L8
+import Control.Concurrent.STM (atomically)
+import Control.Exception (throwIO)
+
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (path "RealSimple") "Eng" "S"
   where path x = "grammars/" ++ x
+
+test = "everyone who is affected by the data breach should be notified"
+
+getPy :: IO ()
+getPy = do
+
+    runProcess (proc "python3" ["src/L4/sentence.py", test]) >>= print
 
 -- So far not going via UD, just raw GF parsing
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
+   getPy
    let annotatedRule = parseFields env rl
        gr = pgfGrammar env
+   let gr = pgfGrammar env
        lang = actLanguage env
 
        -- piecing together in a simple GF grammar

@@ -1,11 +1,23 @@
-,DEFINE,Hand,,,
+,DEFINE,Chirality,,,
 ,ONE OF,Left,,,
 ,,Right,,,
 ,,,,,
 ,so,now we,can,,
 ,,,,,
+,DEFINE,Hand,::,Chirality,
+,,,,,
+,separatorline,,,,
+,,,,,
+,DEFINE,Arm,::,Chirality,
+,,,,,
+,separatorline,,,,
+,,,,,
 ,DEFINE,Sign,,,
 ,HAS,throwingHand,::,ONE,Hand
+,,tHand2,::,,Hand
+,,tHand3,IS,A,Hand
+,,tHand4,IS,,Hand
+,,tHand5,IS,AN,Arm
 ,ONE OF,Rock,,,
 ,,Scissors,,,
 ,,Paper,,,

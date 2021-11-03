@@ -120,7 +120,9 @@ data TemporalConstraint a = TBefore a
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
 
-type TypeSig = (ParamType, ConstitutiveName)
+data TypeSig = SimpleType ParamType ConstitutiveName
+             | InlineEnum ParamType ParamText
+             deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)

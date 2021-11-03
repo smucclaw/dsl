@@ -352,14 +352,21 @@ pRule = withDepth 1 $ do
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
   _           <- pToken TypeSeparator <|> pToken Is
-  cardinality <- optional $ choice [ TOne      <$ pToken One
-                                   , TOne      <$ pToken A_An
-                                   , TOptional <$ pToken Optional
-                                   , TList0    <$ pToken List0
-                                   , TList1    <$ pToken List1 ]
-  base        <- pOtherVal <* dnl
-  return (fromMaybe TOne cardinality, base)
-      
+  simpletype <|> inlineenum
+  where
+    simpletype = do
+      cardinality <- optional $ choice [ TOne      <$ pToken One
+                                       , TOne      <$ pToken A_An
+                                       , TOptional <$ pToken Optional
+                                       , TList0    <$ pToken List0
+                                       , TList1    <$ pToken List1 ]
+      base        <- pOtherVal <* dnl
+      return $ SimpleType (fromMaybe TOne cardinality) base
+    inlineenum = do
+      InlineEnum TOne <$> pOneOf
+
+pOneOf :: Parser ParamText
+pOneOf = id <$ pToken OneOf `indented0` pParamText
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
@@ -367,11 +374,10 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   myTraceM $ "got name = " <> Text.unpack name
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
-  _     <- dnl
-  myTraceM   "got newline"
+  _     <- optional dnl
   has   <- optional (id <$ pToken Has `indented1` many ( (,) <$> pOtherVal <*> pTypeSig))
   myTraceM $ "got has = " <> show has
-  enums <- optional $ pToken OneOf *> pParamText
+  enums <- optional pOneOf
   myTraceM $ "got enums = " <> show enums
 
   return $ TypeDecl

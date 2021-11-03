@@ -6,6 +6,7 @@ import L4.Types
     ( Deontic(..),
       ParamText,
       EntityType,
+      TemporalConstraint (..),
       ParamText,
       BoolStruct(..),
       Rule(..) )
@@ -39,7 +40,10 @@ nlg rl = do
                    Nothing -> subjectRaw
                    Just vp -> mkRelClNP subjectRaw vp
        predicate = mkApp (deonticA annotatedRule) [actionA annotatedRule]
-       newFancyTree = mkApp subjPred [subject, predicate]
+       predicateTemporal = case temporalA annotatedRule of
+                          Nothing -> predicate
+                          Just adv -> mkApp ( mkCId "AdvVP") [predicate, adv]
+       newFancyTree = mkApp subjPred [subject, predicateTemporal]
 
        -- TODO: piecing together the parts in a more complex, UD-based grammar ???
        linText = linearize gr lang newFancyTree
@@ -61,7 +65,7 @@ parseFields env rl@(Regulative {}) =
               , condA   = Nothing  :: Maybe PGF.Expr
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId
               , actionA  = parseAction env (action rl)  :: PGF.Expr
-              , temporalA = Nothing   :: Maybe PGF.Expr
+              , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
               , uponA = Nothing       :: Maybe PGF.Expr
               , givenA = fmap (parseGiven env) (given rl) :: Maybe PGF.Expr
                 -- corresponds to     case given rl of
@@ -105,7 +109,8 @@ parseFields env rl@(Regulative {}) =
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    -- parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
+    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
+    parseTemporal env (TAfter event)  = parse' "Adv"  env (Text.unwords [Text.pack "after", event])
     -- parseTemporal = undefined
 
 

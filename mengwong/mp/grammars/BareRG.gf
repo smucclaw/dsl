@@ -34,6 +34,7 @@ abstract BareRG =
    Noun - [
       CountNP,
       PartNP,
+      DetNP, 
       ApposCN
       ,UseN2, Use2N3
     ---  IndefArt, DefArt

@@ -7,5 +7,6 @@ abstract RealSimple = BareRG, JustWordsWordNet ** {
     fun
       subjPred : NP -> VP -> UDS ;
       addWho : NP -> VP -> NP ;
+      tempAft: Prep -> NP -> NP;
 
 }

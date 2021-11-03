@@ -74,7 +74,7 @@ data Rule = Regulative
             }
           | TypeDecl
             { name     :: ConstitutiveName     --      DEFINE Sign
-            , super    :: Maybe ConstitutiveName     --                  :: Thing
+            , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [(ConstitutiveName, TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , rlabel   :: Maybe Text.Text
@@ -221,6 +221,7 @@ toToken "PERFORM" =     Do
 toToken "" =       Empty
 toToken "TRUE" =   Checkbox
 toToken "FALSE" =  Checkbox
+toToken "HOLDS" =  Holds
 
 -- regulative chains
 toToken "HENCE" = Hence
@@ -240,6 +241,8 @@ toToken ";"      = EOL
 toToken ":"      = TypeSeparator
 toToken "::"     = TypeSeparator
 toToken "TYPE"   = TypeSeparator
+toToken "A"      = A_An
+toToken "AN"     = A_An
 
 toToken "DEFINE"    = Define
 toToken "ONE OF"    = OneOf

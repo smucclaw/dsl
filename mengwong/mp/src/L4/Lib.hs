@@ -351,22 +351,24 @@ pRule = withDepth 1 $ do
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
-  _           <- pToken TypeSeparator
-  cardinality <- choice [ TOne      <$ pToken One
-                        , TOptional <$ pToken Optional
-                        , TList0    <$ pToken List0
-                        , TList1    <$ pToken List1 ]
+  _           <- pToken TypeSeparator <|> pToken Is
+  cardinality <- optional $ choice [ TOne      <$ pToken One
+                                   , TOne      <$ pToken A_An
+                                   , TOptional <$ pToken Optional
+                                   , TList0    <$ pToken List0
+                                   , TList1    <$ pToken List1 ]
   base        <- pOtherVal <* dnl
-  return (cardinality, base)
+  return (fromMaybe TOne cardinality, base)
+      
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
   name  <- pOtherVal
   myTraceM $ "got name = " <> Text.unpack name
-  super <- optional (pToken TypeSeparator *> pOtherVal)
+  super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
   _     <- dnl
-  myTraceM $ "got newline"
+  myTraceM   "got newline"
   has   <- optional (id <$ pToken Has `indented1` many ( (,) <$> pOtherVal <*> pTypeSig))
   myTraceM $ "got has = " <> show has
   enums <- optional $ pToken OneOf *> pParamText

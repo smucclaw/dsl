@@ -22,7 +22,8 @@ data MyToken = Every | Party | Who | Means | Includes | When | Is | Always | Nev
              | Must | May | Shant | If | Or | And | MPNot
              | Before | After | By | On | Eventually
              | Given | Having | Upon
-             | Define | OneOf
+             | Define | OneOf | Holds
+             | A_An
              | Deem | As | Has
              | TypeSeparator -- ::, TYPE, AS, shrug
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty

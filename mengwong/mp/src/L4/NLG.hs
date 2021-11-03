@@ -6,6 +6,7 @@ import L4.Types
     ( Deontic(..),
       ParamText,
       EntityType,
+      ParamText,
       BoolStruct(..),
       Rule(..) )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
@@ -88,7 +89,7 @@ parseFields env rl@(Regulative {}) =
     parseGiven :: UDEnv -> BoolStruct -> Expr
     parseGiven env bs = parse' "S" env (bs2text bs)
 
-    parseAction :: UDEnv -> ActionType -> Expr
+    parseAction :: UDEnv -> ParamText -> Expr
     parseAction env at = parse' "VP" env (at2text at)
 
     parseDeontic :: Deontic -> CId
@@ -101,12 +102,8 @@ parseFields env rl@(Regulative {}) =
     -- parseTemporal = undefined
 
 
-at2str :: ParamText -> Text.Text
-at2str = Text.unwords . concatMap toList . toList
-
-at2text :: ActionType -> Text.Text
-at2text (verb, []) = verb
-at2text (verb, (_op, args):_) = Text.unwords [verb, Text.unwords args] -- TODO: rest of args
+at2text :: ParamText -> Text.Text
+at2text = Text.unwords . concatMap toList . toList
 
 -- BoolStruct is from Types, and Item is from AnyAll
 bs2text :: BoolStruct -> Text.Text
@@ -148,7 +145,7 @@ testCoNLLU = unlines [
     , "4\taffected\taffect\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t1\tacl:relcl\t_\tFUN=affectVBN"
     , "5\tby\tby\tADP\tIN\t_\t8\tcase\t_\t_"
     , "6\tthe\tthe\tDET\tQuant\tFORM=0\t8\tdet\t_\tFUN=DefArt"
-    , "7\tdata\tdata\tNOUN\tNN\tNumber=Sing\t8\tcompound\t_\tFUN=data_N"
+    , "7\tdata\tdata\tNOUN\tNN\tNumber=Sing\t8\tcompound\t_\tFUN=data_N"g
     , "8\tbreach\tbreach\tNOUN\tNN\tNumber=Sing\t4\tobl\t_\tFUN=breach_N"
     , "9\tshould\tshould\tAUX\tMD\tVerbForm=Fin\t11\taux\t_\t_"
     , "10\tbe\tbe\tAUX\tVB\tVerbForm=Inf\t11\taux:pass\t_\tFUN=UseComp"

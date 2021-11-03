@@ -9,4 +9,6 @@ abstract RealSimple = BareRG, JustWordsWordNet ** {
       addWho : NP -> VP -> NP ;
       tempAft: Prep -> NP -> NP;
 
+      addHaving : VP -> UDS -> UDS ;
+
 }

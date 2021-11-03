@@ -26,7 +26,7 @@ concrete BareRGEng of BareRG =
     AdVVP
   ],
 
-   Noun - [
+   NounEng - [
     CountNP,
     PartNP,
     DetNP,

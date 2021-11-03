@@ -111,7 +111,7 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
-        unless (asJSON rc || toNLG rc) $
+        unless (asJSON rc) $
           pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
@@ -585,7 +585,7 @@ pAction = pParamText
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $ do
   (:|) <$> (pKeyValues <* dnl <?> "paramText head") `indented0` pParams
-  
+
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
   --     return $ myhead :| therest

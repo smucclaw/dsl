@@ -40,8 +40,7 @@ test = "everyone who is affected by the data breach should be notified"
 
 getPy :: IO ()
 getPy = do
-
-    runProcess (proc "python3" ["src/L4/sentence.py", test]) >>= print
+  runProcess (proc "python3" ["src/L4/sentence.py", test]) >>= print
 
 -- So far not going via UD, just raw GF parsing
 nlg :: Rule -> IO Text.Text

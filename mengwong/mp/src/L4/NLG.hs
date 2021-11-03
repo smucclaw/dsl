@@ -105,7 +105,7 @@ parseFields env rl@(Regulative {}) =
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    -- parseTemporal :: TemporalConstraint Text.Text -> Expr
+    -- parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
     -- parseTemporal = undefined
 
 
@@ -113,11 +113,13 @@ at2text :: ParamText -> Text.Text
 at2text = Text.unwords . concatMap toList . toList
 
 -- BoolStruct is from Types, and Item is from AnyAll
+-- TODO: for now only return the first thing
+-- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
 bs2text :: BoolStruct -> Text.Text
 bs2text (Leaf txt) = txt
-bs2text (All _ _) = Text.pack "my hovercraft is full of eels"
-bs2text (Any _ _) = Text.pack "my hovercraft is full of eels"
-bs2text (Not _) = Text.pack "my hovercraft is full of eels"
+bs2text (All _ _) = Text.pack "walk"
+bs2text (Any _ _) = Text.pack "walk"
+bs2text (Not _) = Text.pack "walk"
 ------------------------------------------------------------
 -- Ignore everything below for now
 

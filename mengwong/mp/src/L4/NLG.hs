@@ -19,6 +19,7 @@ import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import AnyAll (Item(..), Label(..))
 import Data.Maybe
+-- import Llvm.AbsSyn (LlvmStatement(Expr))
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (path "RealSimple") "Eng" "UDS"
@@ -66,7 +67,7 @@ parseFields env rl@(Regulative {}) =
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId
               , actionA  = parseAction env (action rl)  :: PGF.Expr
               , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
-              , uponA = Nothing       :: Maybe PGF.Expr
+              , uponA = fmap (parseUpon env) (upon rl)    :: Maybe PGF.Expr
               , givenA = fmap (parseGiven env) (given rl) :: Maybe PGF.Expr
                 -- corresponds to     case given rl of
                         --               Just bs -> Just $ parseGiven env bs
@@ -110,9 +111,13 @@ parseFields env rl@(Regulative {}) =
         DShant -> mkCId "shant_Deontic"
 
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
+    parseTemporal env (TBefore event)  = parse' "Adv"  env (Text.unwords [Text.pack "before", event])
     parseTemporal env (TAfter event)  = parse' "Adv"  env (Text.unwords [Text.pack "after", event])
-    -- parseTemporal = undefined
+    parseTemporal env (TBy event)  = parse' "Adv"  env (Text.unwords [Text.pack "by", event])
+    parseTemporal env (TOn event)  = parse' "Adv"  env (Text.unwords [Text.pack "on", event])
 
+    parseUpon :: UDEnv -> BoolStruct -> Expr
+    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bs2text bs])
 
 at2text :: ParamText -> Text.Text
 at2text = Text.unwords . concatMap toList . toList

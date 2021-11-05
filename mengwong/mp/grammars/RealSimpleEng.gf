@@ -1,5 +1,5 @@
 
-concrete RealSimpleEng of RealSimple = BareRGEng, JustWordsWordNetEng ** open SyntaxEng, (P=ParadigmsEng), Prelude in {
+concrete RealSimpleEng of RealSimple = BareRGEng, JustWordsWordNetEng ** open SyntaxEng, (P=ParadigmsEng), ExtendEng, Prelude in {
     lincat
 
       UDS = {s : Str} ;
@@ -13,7 +13,7 @@ concrete RealSimpleEng of RealSimple = BareRGEng, JustWordsWordNetEng ** open Sy
 
       -- : Prep -> NP -> NP
       -- [ AdvNP (DetNP aPl_Det) (PrepNP after_Prep (MassNP (UseN lunch_N)))]
-      --tempAft after lunch = mkNP (mkNP aPl_Det) (mkPrep after_Prep (mkNP (UseN lunch_N)))
+      -- tempAft after lunch = mkNP (mkNP aPl_Det) (mkPrep after_Prep (mkNP (UseN lunch_N)))
 
       --  : VP -> UDS -> UDS ;
       addHaving sing king_may_pay =
@@ -23,5 +23,8 @@ concrete RealSimpleEng of RealSimple = BareRGEng, JustWordsWordNetEng ** open Sy
             having_sung : SS = cc2 having_Adv sung_Utt ;
         in cc3 having_sung (ss ",") king_may_pay ;
 
-
+    -- : VP -> Adv
+    addUpon enter_the_club =
+        let entering_the_club_NP : NP = GerundNP enter_the_club; -- make VP "enter the club" into NP first
+        in mkAdv upon_Prep entering_the_club_NP;
 }

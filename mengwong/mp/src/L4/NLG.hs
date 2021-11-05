@@ -45,10 +45,13 @@ nlg rl = do
                           Nothing -> predicate
                           Just adv -> mkApp ( mkCId "AdvVP") [predicate, adv]
        newFancyTree = mkApp subjPred [subject, predicateTemporal]
-
+       newFancyTreeCond = case condA annotatedRule of
+                          Nothing -> newFancyTree
+                          Just utt -> mkApp ( mkCId "addCond" ) [utt, newFancyTree]
        -- TODO: piecing together the parts in a more complex, UD-based grammar ???
-       linText = linearize gr lang newFancyTree
-       linTree = showExpr [] newFancyTree
+       linText = linearize gr lang newFancyTreeCond
+       linTree = showExpr [] newFancyTreeCond
+
    return (Text.pack (linText ++ "\n" ++ linTree))
   where
     subjPred :: CId
@@ -63,7 +66,7 @@ parseFields :: UDEnv -> Rule -> AnnotatedRule
 parseFields env rl@(Regulative {}) =
   RegulativeA { everyA  = parseEvery env (every rl)     ::  PGF.Expr
               , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
-              , condA   = Nothing  :: Maybe PGF.Expr
+              , condA   = fmap (parseCond env) (cond rl)  :: Maybe PGF.Expr
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId
               , actionA  = parseAction env (action rl)  :: PGF.Expr
               , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
@@ -95,8 +98,8 @@ parseFields env rl@(Regulative {}) =
     parseWho :: UDEnv -> BoolStruct -> Expr
     parseWho env bs = parse' "VP" env (bs2text bs)
 
-    -- parseCond :: UDEnv -> BoolStruct -> Expr
-    -- parseCond = undefined
+    parseCond :: UDEnv -> BoolStruct -> Expr
+    parseCond env bs = parse' "UDS" env (bs2text bs) -- was "Utt"
 
     parseGiven :: UDEnv -> BoolStruct -> Expr
     parseGiven env bs = parse' "S" env (bs2text bs)

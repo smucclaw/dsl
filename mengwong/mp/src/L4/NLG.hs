@@ -4,12 +4,13 @@ module L4.NLG (
 
 import L4.Types
     ( Deontic(..),
-      ParamText,
       EntityType,
       TemporalConstraint (..),
-      ParamText,
-      BoolStruct(..),
-      Rule(..) )
+      BoolStruct,
+      BoolStructP,
+      Rule(..),
+      bsp2text
+      )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -17,7 +18,7 @@ import Data.Maybe (fromMaybe)
 import Data.Char (toLower)
 import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
-import AnyAll (Item(..), Label(..))
+import AnyAll (Item(..))
 import Data.Maybe
 -- import Llvm.AbsSyn (LlvmStatement(Expr))
 
@@ -66,12 +67,12 @@ parseFields :: UDEnv -> Rule -> AnnotatedRule
 parseFields env rl@(Regulative {}) =
   RegulativeA { everyA  = parseEvery env (every rl)     ::  PGF.Expr
               , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
-              , condA   = fmap (parseCond env) (cond rl)  :: Maybe PGF.Expr
+              , condA   = parseCond env <$> cond rl     :: Maybe PGF.Expr
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId
               , actionA  = parseAction env (action rl)  :: PGF.Expr
               , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
-              , uponA = fmap (parseUpon env) (upon rl)    :: Maybe PGF.Expr
-              , givenA = fmap (parseGiven env) (given rl) :: Maybe PGF.Expr
+              , uponA  = (parseUpon  env) <$> listToMaybe (upon rl)    :: Maybe PGF.Expr
+              , givenA = (parseGiven env) <$> (listToMaybe (given rl)) :: Maybe PGF.Expr -- as a hack, we ignore all but the first element of a Given. TODO
                 -- corresponds to     case given rl of
                         --               Just bs -> Just $ parseGiven env bs
                         --               _ -> Nothing
@@ -95,17 +96,17 @@ parseFields env rl@(Regulative {}) =
     parseEvery :: UDEnv -> EntityType -> Expr
     parseEvery = parse' "NP"
 
-    parseWho :: UDEnv -> BoolStruct -> Expr
-    parseWho env bs = parse' "VP" env (bs2text bs)
+    parseWho :: UDEnv -> BoolStructP -> Expr
+    parseWho env bs = parse' "VP" env (bsp2text bs)
 
-    parseCond :: UDEnv -> BoolStruct -> Expr
-    parseCond env bs = parse' "UDS" env (bs2text bs) -- was "Utt"
+    parseCond :: UDEnv -> BoolStructP -> Expr
+    parseCond env bs = parse' "UDS" env (bsp2text bs) -- was "Utt"
 
-    parseGiven :: UDEnv -> BoolStruct -> Expr
-    parseGiven env bs = parse' "S" env (bs2text bs)
+    parseGiven :: UDEnv -> BoolStructP -> Expr
+    parseGiven env bs = parse' "S" env (bsp2text bs)
 
-    parseAction :: UDEnv -> ParamText -> Expr
-    parseAction env at = parse' "VP" env (at2text at)
+    parseAction :: UDEnv -> BoolStructP -> Expr
+    parseAction env bsp = parse' "VP" env (bsp2text bsp)
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -119,19 +120,16 @@ parseFields env rl@(Regulative {}) =
     parseTemporal env (TBy event)  = parse' "Adv"  env (Text.unwords [Text.pack "by", event])
     parseTemporal env (TOn event)  = parse' "Adv"  env (Text.unwords [Text.pack "on", event])
 
-    parseUpon :: UDEnv -> BoolStruct -> Expr
-    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bs2text bs])
-
-at2text :: ParamText -> Text.Text
-at2text = Text.unwords . concatMap toList . toList
+    parseUpon :: UDEnv -> BoolStructP -> Expr
+    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
 
 -- BoolStruct is from Types, and Item is from AnyAll
 -- TODO: for now only return the first thing
 -- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
 bs2text :: BoolStruct -> Text.Text
 bs2text (Leaf txt) = txt
-bs2text (All _ _) = Text.pack "walk"
-bs2text (Any _ _) = Text.pack "walk"
+bs2text (All _) = Text.pack "walk"
+bs2text (Any _) = Text.pack "walk"
 bs2text (Not _) = Text.pack "walk"
 ------------------------------------------------------------
 -- Ignore everything below for now

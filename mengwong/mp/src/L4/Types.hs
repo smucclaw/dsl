@@ -10,13 +10,13 @@ module L4.Types ( module L4.BasicTypes
 
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)), toList)
 import Data.Void (Void)
 import qualified Data.Set           as Set
 import Control.Monad
 import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
-import Data.Aeson (ToJSON, FromJSON)
+import Data.Aeson (ToJSON)
 import GHC.Generics
 
 import L4.BasicTypes
@@ -25,12 +25,14 @@ import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
--- A parser generates a list of rules and optionally some other value
+-- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
 type Parser = WriterT (DList Rule) PlainParser
 type Depth = Int
 type Preamble = MyToken
-type BoolRules = Maybe BoolStruct
+type BoolRules = BoolStruct
+type BoolRulesP = BoolStructP
 type BoolStruct = AA.Item Text.Text
+type BoolStructP = AA.Item ParamText
 
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
@@ -48,26 +50,37 @@ dlToList (DList (Endo f)) = f []
 runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream -> Either (ParseErrorBundle MyStream Void) b
 runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 
+data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$100)
+                         , rbpbrs     :: [(Preamble, BoolRulesP)] -- not subject to the party
+                         , rbpbrneg   :: [(Preamble, BoolRulesP)] -- negative global conditions
+                         , rbdeon     :: Deontic
+                         , rbtemporal :: Maybe (TemporalConstraint Text.Text)
+                         , rbupon     :: [(Preamble, BoolRulesP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbgiven    :: [(Preamble, BoolRulesP)] -- Given history conditions
+                         , rbhaving   :: Maybe ParamText
+                         }
+                      deriving (Eq, Show, Generic)
+
 data Rule = Regulative
             { every    :: EntityType         -- every person
-            , who      :: Maybe BoolStruct         -- who walks and (eats or drinks)
-            , cond     :: Maybe BoolStruct         -- if it is a saturday
+            , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
+            , cond     :: Maybe BoolStructP         -- if it is a saturday
             , deontic  :: Deontic            -- must
-            , action   :: ParamText          -- sing
+            , action   :: BoolStructP          -- fart loudly AND run away
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
             , hence    :: Maybe Rule
             , lest     :: Maybe Rule
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
-            , upon     :: Maybe BoolStruct   -- UPON entering the club (event prereq trigger)
-            , given    :: Maybe BoolStruct -- GIVEN an Entertainment flag was previously set in the history trace
+            , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
+            , given    :: [BoolStructP] -- GIVEN an Entertainment flag was previously set in the history trace
             , having   :: Maybe ParamText  -- HAVING sung...
             }
           | Constitutive
             { name     :: ConstitutiveName -- user-defined namespace
-            , cond     :: Maybe BoolStruct
-            , given    :: Maybe BoolStruct -- GIVEN an Entertainment flag was previously set in the history trace
+            , cond     :: Maybe BoolStructP
+            , given    :: [BoolStructP] -- GIVEN an Entertainment flag was previously set in the history trace
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -98,7 +111,7 @@ data Rule = Regulative
           | ConAlias Text.Text -- internal softlink to a constitutive rule label
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom
-          deriving (Eq, Show, Generic, ToJSON, FromJSON)
+          deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: ConstitutiveName }
 
@@ -109,20 +122,20 @@ noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1
-  deriving (Eq, Show, Generic, ToJSON, FromJSON)
+  deriving (Eq, Show, Generic, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TemporalConstraint a = TBefore a
                           | TAfter  a
                           | TBy     a
                           | TOn     a
-                          deriving (Eq, Show, Generic, ToJSON, FromJSON)
+                          deriving (Eq, Show, Generic, ToJSON)
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
 
 data TypeSig = SimpleType ParamType ConstitutiveName
              | InlineEnum ParamType ParamText
-             deriving (Eq, Show, Generic, ToJSON, FromJSON)
+             deriving (Eq, Show, Generic, ToJSON)
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)
@@ -133,10 +146,21 @@ data TypeSig = SimpleType ParamType ConstitutiveName
 
 type ParamText = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
 
+text2pt :: a -> NonEmpty (NonEmpty a)
+text2pt = pure . pure
+
+pt2text :: NonEmpty (NonEmpty Text.Text) -> Text.Text
+pt2text x = Text.unwords $ concatMap toList $ toList x
+
+bsp2text :: BoolStructP -> Text.Text
+bsp2text (AA.Leaf pt)  = pt2text pt
+bsp2text (AA.Not  x)   = "not " <> bsp2text x
+bsp2text (AA.Any xs) = "any (" <> Text.unwords (bsp2text <$> xs) <> ")"
+bsp2text (AA.All xs) = "all (" <> Text.unwords (bsp2text <$> xs) <> ")"
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Show, Generic, ToJSON, FromJSON)
+  deriving (Eq, Show, Generic, ToJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -144,7 +168,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Show, Generic, ToJSON, FromJSON)
+              deriving (Eq, Show, Generic, ToJSON)
 
 mkTC :: MyToken -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC Before     tt = Just $ TBefore tt

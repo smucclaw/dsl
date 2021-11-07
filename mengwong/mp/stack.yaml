@@ -43,7 +43,7 @@ packages:
 #
 extra-deps:
 - github: smucclaw/dsl
-  commit: 32ed64a6b0faa0234ac6cb882115ed7020207d85
+  commit: 40a0c4e5e8441519601c9d245e3f90ff6d43c715
   subdirs:
   - lib/haskell/anyall
 - github: smucclaw/baby-l4

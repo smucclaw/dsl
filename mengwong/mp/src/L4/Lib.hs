@@ -526,7 +526,8 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolRulesP)] -> Maybe (Preamble, BoolRulesP)
 mergePBRS [] = Nothing
-mergePBRS ((w, br) : xs) = Just (w, AA.All $ br : (snd <$> xs))
+mergePBRS (  (w, br) : [])  = Just (w, br)
+mergePBRS xs                = Just (fst . head $ xs, foldl1 (<>) (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically

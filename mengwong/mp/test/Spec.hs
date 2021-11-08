@@ -49,7 +49,7 @@ defaultReg = Regulative
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = Nothing
-  , upon = Nothing
+  , upon = []
   , given = []
   , having = Nothing
   }

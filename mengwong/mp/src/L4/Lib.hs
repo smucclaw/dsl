@@ -400,13 +400,19 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) namealias
   tell defalias
 
-  ( (_meansis, posp), unlesses, givens ) <-
+  ( whenifs, unlesses, givens ) <-
     withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless] [Given] -- maybe this given needs to be Having, think about replacing it later.
 
-  let (_unless, negp) = mergePBRS posp -- WIP, complete the refactoring!
-      givenpts = snd <$> givens
-
-  return $ Constitutive name (addneg posp negp) givenpts noLabel noLSource noSrcRef
+  return (Constitutive
+          name
+          (addneg
+           (snd <$> mergePBRS whenifs)
+           (snd <$> mergePBRS unlesses))
+          (snd <$> givens)
+          noLabel
+          noLSource
+          noSrcRef
+         )
 
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $
@@ -436,8 +442,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
-  let poscond = mergePBRS (rbpbrs   rulebody)
-  let negcond = mergePBRS (rbpbrneg rulebody)
+  let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
+  let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
                  Nothing
@@ -480,8 +486,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
 
   -- qualifying conditions generally; we merge all positive groups (When, If) and negative groups (Unless)
-  let poscond = mergePBRS (rbpbrs   rulebody)
-  let negcond = mergePBRS (rbpbrneg rulebody)
+  let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
+  let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
 
   let toreturn = Regulative
                  entitytype
@@ -616,7 +622,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
 mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
 
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken]
-                -> Parser ( (Preamble, BoolRulesP)   -- positive
+                -> Parser ( [(Preamble, BoolRulesP)]   -- positive
                           , [(Preamble, BoolRulesP)] -- unless
                           , [(Preamble, BoolRulesP)]  -- given
                           )
@@ -626,7 +632,7 @@ permutationsCon ifwhen l4unless l4given =
              <> ", given=" <> show l4given
             ) $ do
   try ( debugName "constitutive permutation" $ permute ( (,,)
-            <$$> preambleBoolRules ifwhen
+            <$$> pure <$> preambleBoolRules ifwhen
             <|?> ([], some $ preambleBoolRules l4unless)
             <|?> ([], some $ preambleBoolRules l4given)  -- given
           ) )

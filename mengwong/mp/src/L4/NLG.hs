@@ -9,7 +9,8 @@ import L4.Types
       BoolStruct,
       BoolStructP,
       Rule(..),
-      bsp2text
+      pt2text
+      -- bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -20,10 +21,11 @@ import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import AnyAll (Item(..))
 import Data.Maybe
+import qualified AnyAll as AA
 -- import Llvm.AbsSyn (LlvmStatement(Expr))
 
 myUDEnv :: IO UDEnv
-myUDEnv = getEnv (path "RealSimple") "Eng" "UDS"
+myUDEnv = getEnv (path "RealSimple") "Eng" "S"
   where path x = "grammars/" ++ x
 
 -- So far not going via UD, just raw GF parsing
@@ -100,7 +102,7 @@ parseFields env rl@(Regulative {}) =
     parseWho env bs = parse' "VP" env (bsp2text bs)
 
     parseCond :: UDEnv -> BoolStructP -> Expr
-    parseCond env bs = parse' "UDS" env (bsp2text bs) -- was "Utt"
+    parseCond env bs = parse' "S" env (bsp2text bs) -- was "Utt"
 
     parseGiven :: UDEnv -> BoolStructP -> Expr
     parseGiven env bs = parse' "S" env (bsp2text bs)
@@ -131,6 +133,15 @@ bs2text (Leaf txt) = txt
 bs2text (All _) = Text.pack "walk"
 bs2text (Any _) = Text.pack "walk"
 bs2text (Not _) = Text.pack "walk"
+
+
+bsp2text :: BoolStructP -> Text.Text
+bsp2text (AA.Leaf pt)  = pt2text pt
+-- bsp2text (AA.Not  x)   = "not " <> bsp2text x
+bsp2text (AA.Any xs) =  Text.unwords (bsp2text <$> xs)
+bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)
+-- and possibily we want to have interspersed BoolStructs along the way
+
 ------------------------------------------------------------
 -- Ignore everything below for now
 

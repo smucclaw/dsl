@@ -34,7 +34,7 @@ data Item a =
   deriving (Eq, Show, Generic)
 
 -- in which we use <> to mean &&
-instance (IsString a) => Semigroup (Item a) where
+instance (Semigroup a) => Semigroup (Item a) where
   (<>)   (All xs)   (All ys) = All (xs ++ ys)
 
   (<>) l@(Not  x)   r@(All ys) = All (l:ys)
@@ -52,8 +52,8 @@ instance (IsString a) => Semigroup (Item a) where
   -- all the other cases get ANDed together in the most straightforward way.
   (<>) l            r            = All [l, r]
 
-instance (IsString a) => Monoid (Item a) where
-  mempty = Leaf "always"
+instance (Monoid a) => Monoid (Item a) where
+  mempty = Leaf mempty
   
 data StdinSchema a = StdinSchema { marking :: Marking a
                                  , andOrTree :: Item a }

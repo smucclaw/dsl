@@ -58,6 +58,8 @@ mkLeaf = Leaf . text2pt
 
 defaultCon = Constitutive
   { name = ""
+  , keyword = Means
+  , letbind = Leaf $ text2pt "Undefined"
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
@@ -131,7 +133,7 @@ main = do
 
       let degustates = defaultCon
                        { name = "degustates"
-                       , cond = Just $ Any [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , letbind = Any [ mkLeaf "eats", mkLeaf "drinks" ]
                        }
 
       it "should parse a simple constitutive rule" $ do
@@ -149,19 +151,21 @@ main = do
                                   ]
                           }
                         , defaultCon
-                          { name = "degustates"
-                          , cond = Just $ Any [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          { name= "degustates"
+                          , letbind = Any [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          , cond = Nothing
                           }
                         ]
 
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , cond = Just $ All
-                [ mkLeaf "drinks"
-                , Any [ mkLeaf "swallows"
-                                       , mkLeaf "spits" ]
-                ]
+              , letbind = All
+                          [ mkLeaf "drinks"
+                          , Any [ mkLeaf "swallows"
+                                , mkLeaf "spits" ]
+                          ]
+              , cond = Nothing
               } ]
       
       it "should parse indented-2.csv (inline constitutive rule)" $ do
@@ -251,11 +255,11 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefNameAlias "(\"singer\")" "person" Nothing
+            [ DefNameAlias ("singer") ("person") Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefNameAlias "(\"singer\")" "person" Nothing
+            [ DefNameAlias ("singer") ("person") Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing})) ]
 
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
@@ -264,8 +268,8 @@ main = do
 
       let singer_must_pay_params =
             singer_must_pay { action = Leaf (("pay" :| [])
-                                             :| [("to"     :| ["the King"])
-                                                ,("amount" :| ["$20"])]) }
+                                             :| ["to"     :| ["the King"]
+                                                ,"amount" :| ["$20"]]) }
 
       it "should parse action params" $ do
         mycsv <- BS.readFile "test/action-params-singer.csv"
@@ -279,15 +283,13 @@ main = do
     describe "megaparsing MEANS" $ do
 
       let bobUncle = defaultCon { name = "Bob's your uncle"
-                                 , cond = Just
-                                   ( Not
-                                     ( Any
-                                       [ mkLeaf "Bob is estranged"
-                                       , mkLeaf "Bob is dead"
-                                       ]
-                                     )
-                                   )
-                                 }
+                                , letbind = Not
+                                            ( Any
+                                              [ mkLeaf "Bob is estranged"
+                                              , mkLeaf "Bob is dead"
+                                              ]
+                                            )
+                                }
       
       it "should start a bool struct" $ do
         let testfile = "test/bob-head-1.csv"
@@ -408,16 +410,12 @@ main = do
         parseR (pRule <* eof) testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
-                          , cond = Just
-                            ( All
-                              [ Any
-                                [ mkLeaf "Bob is your mother's brother"
-                                , mkLeaf "Bob is your father's brother"
-                                ]
-                              , Not
+                          , letbind = Any
+                                      [ mkLeaf "Bob is your mother's brother"
+                                      , mkLeaf "Bob is your father's brother"
+                                      ]
+                          , cond = Just $ Not
                                 ( mkLeaf "Bob is estranged" )
-                              ]
-                            )
                           }
                         ]
 

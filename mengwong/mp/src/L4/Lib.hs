@@ -345,8 +345,8 @@ pRule :: Parser [Rule]
 pRule = withDepth 1 $ do
   _ <- optional dnl
   try ((:[]) <$> pRegRule <?> "regulative rule")
-    <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
     <|> ((:[]) <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
+    <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
     <|> (eof >> return [])
 
 pTypeSig :: Parser TypeSig
@@ -371,7 +371,7 @@ pOneOf = id <$ pToken OneOf `indented0` pParamText
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
   name  <- pOtherVal
-  myTraceM $ "got name = " <> Text.unpack name
+  myTraceM $ "got name = " <> show name
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
   _     <- optional dnl
@@ -390,6 +390,17 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
     , srcref  = noSrcRef
     }
 
+-- something AKA Thing
+-- MEANS eat OR drink
+
+-- something AKA Thing
+-- INCLUDES eating drinking
+
+-- something AKA Thing
+-- IS 400
+
+-- so the content to the right of the Means / Includes / Is keyword could be either a boolstruct or a paramtext
+
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
@@ -398,22 +409,24 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) namealias
-  tell defalias
+  tell defalias -- use Writer to append a mini rule that associates the alias with the name
 
-  ( whenifs, unlesses, givens ) <-
-    withDepth leftX $ permutationsCon [Means,Is,Includes,When] [Unless] [Given] -- maybe this given needs to be Having, think about replacing it later.
+  ( (copula, mletbind), whenifs, unlesses, givens ) <-
+    withDepth leftX $ permutationsCon [Means,Is,Includes,Deem] [When,If] [Unless] [Given]
 
-  return (Constitutive
-          name
-          (addneg
-           (snd <$> mergePBRS whenifs)
-           (snd <$> mergePBRS unlesses))
-          (snd <$> givens)
-          noLabel
-          noLSource
-          noSrcRef
-         )
-
+  return $ Constitutive
+    { name = name
+    , keyword = copula
+    , letbind = mletbind
+    , cond = addneg
+             (snd <$> mergePBRS whenifs)
+             (snd <$> mergePBRS unlesses)
+    , given = snd <$> givens
+    , rlabel = noLabel
+    , lsource = noLSource
+    , srcref = noSrcRef
+    }
+    
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $
   (try pRegRuleSugary
@@ -536,9 +549,9 @@ pTemporal = eventually <|> specifically
     specifically = mkTC <$> sometime          <*> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
--- "PARTY Bob       (the "Seller")
+-- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
-pActor :: MyToken -> Parser (MyToken, Text.Text, Maybe Text.Text)
+pActor :: MyToken -> Parser (MyToken, ConstitutiveName, Maybe ConstitutiveName)
 pActor party = debugName ("pActor " ++ show party) $ do
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -553,11 +566,12 @@ pActor party = debugName ("pActor " ++ show party) $ do
   tell $ defalias <> listToDL omgARule
   return (party, entitytype, entityalias)
 
--- two tokens of the form | some thing | ("A Thing") | ; |
-pNameParens :: Parser (Text.Text, Maybe Text.Text)
+-- three tokens of the form | some thing | Aka | A Thing |
+-- Aka means "also known as"
+pNameParens :: Parser (ConstitutiveName, Maybe ConstitutiveName)
 pNameParens = debugName "pNameParens" $ do
   entitytype  <- pOtherVal
-  entityalias <- optional pOtherVal -- TODO: add test here to see if the pOtherVal has the form    ("xxx")
+  entityalias <- optional (pToken Aka *> pOtherVal)
   _ <- dnl
   return (entitytype, entityalias)
 
@@ -622,29 +636,44 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> RuleBody
 mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
 
-permutationsCon :: [MyToken] -> [MyToken] -> [MyToken]
-                -> Parser ( [(Preamble, BoolRulesP)]   -- positive
-                          , [(Preamble, BoolRulesP)] -- unless
-                          , [(Preamble, BoolRulesP)]  -- given
+permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
+                -> Parser ( ( Preamble               -- preamble = copula   (means,deem)
+                            , BoolRulesP)            -- the rhs of the let binding is always a BoolStructP -- because the leaf of a BoolStructP can be a ParamText!
+                          , [(Preamble, BoolRulesP)] -- positive conditions (when,if)
+                          , [(Preamble, BoolRulesP)] -- negative conditions (unless)
+                          , [(Preamble, BoolRulesP)] -- given    (given params)
                           )
-permutationsCon ifwhen l4unless l4given =
-  debugName ("permutationsCon positive=" <> show ifwhen
+permutationsCon copula ifwhen l4unless l4given =
+  debugName ("permutationsCon"
+             <> ": copula="   <> show copula
+             <> ", positive=" <> show ifwhen
              <> ", negative=" <> show l4unless
-             <> ", given=" <> show l4given
+             <> ", given="    <> show l4given
             ) $ do
-  try ( debugName "constitutive permutation" $ permute ( (,,)
-            <$$> pure <$> preambleBoolRules ifwhen
-            <|?> ([], some $ preambleBoolRules l4unless)
-            <|?> ([], some $ preambleBoolRules l4given)  -- given
-          ) )
+  permute $ (,,,)
+    <$$> preambleBoolRules copula
+    <|?> ([], some $ preambleBoolRules ifwhen)
+    <|?> ([], some $ preambleBoolRules l4unless)
+    <|?> ([], some $ preambleBoolRules l4given)
+
+-- degustates
+--     MEANS eats
+--        OR drinks
+--      WHEN weekend
+
+preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
+preambleParamText preambles = do
+  preamble <- choice (try . pToken <$> preambles)
+  paramtext <- pParamText
+  return (preamble, paramtext)
 
 permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody
 permutationsReg ifwhen l4unless l4upon l4given l4having =
   debugName ("permutationsReg positive=" <> show ifwhen
              <> ", negative=" <> show l4unless
-             <> ", upon=" <> show l4upon
-             <> ", given=" <> show l4given
-             <> ", having=" <> show l4having
+             <> ", upon="     <> show l4upon
+             <> ", given="    <> show l4given
+             <> ", having="   <> show l4having
             ) $ do
   try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
             <$$> pDoAction
@@ -652,7 +681,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
             <|?> ([], some $ preambleBoolRules l4unless) -- unless
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
             <|?> ([], some $ preambleBoolRules l4given)  -- given
-            <|?> (Nothing, choice (try . pToken <$> l4having) >> Just <$> pParamText)  -- having
+            <|?> (Nothing, Just . snd <$> preambleParamText l4having)  -- having
             <||> try pDT
           ) )
   <|>
@@ -662,7 +691,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
             <|?> ([], some $ preambleBoolRules l4unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
             <|?> ([], some $ preambleBoolRules l4given)  -- given
-            <|?> (Nothing, choice (try . pToken <$> l4having) >> Just <$> pParamText)  -- having
+            <|?> (Nothing, pure . snd <$> preambleParamText l4having)  -- having
             <|?> (Nothing, pTemporal <* dnl)
           ) )
 

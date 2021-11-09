@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 module L4.BasicTypes where
 import Data.Proxy
@@ -9,6 +10,8 @@ import Text.Megaparsec
 import qualified Data.List.NonEmpty as NE
 import qualified Data.List as DL
 import qualified Data.Vector as V
+import Data.Aeson (ToJSON)
+import GHC.Generics
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -34,8 +37,9 @@ data MyToken = Every | Party | Who | Means | Includes | When | Is | Always | Nev
              | Other Text.Text
              | Do
              | Checkbox
+             | Aka -- also known as, for AKA Receiving Party
              | Empty | EOL
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Generic, ToJSON)
 
 
 -- INTERNAL PLUMBING

@@ -377,12 +377,12 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| EVERY | person          | ("singer") |   |
-| WHO   | walks           |            |   |
-| AND   | eats            |            |   |
-| MUST  |                 |            |   |
-| IF    | the King wishes |            |   |
-| ->    | sing            |            |   |
+| EVERY | person          | AKA | singer |
+| WHO   | walks           |     |        |
+| AND   | eats            |     |        |
+| MUST  |                 |     |        |
+| IF    | the King wishes |     |        |
+| ->    | sing            |     |        |
 
 ** stanzas interrupted by blank lines
 :PROPERTIES:
@@ -390,18 +390,18 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|                                                     |                 |            |   |
-| A paragraph with irrelevant text should be ignored. |                 | Like so.   |   |
-|                                                     |                 |            |   |
-|                                                     |                 |            |   |
-| EVERY                                               | person          | ("singer") |   |
-| WHO                                                 | walks           |            |   |
-| AND                                                 | eats            |            |   |
-| MUST                                                |                 |            |   |
-|                                                     |                 |            |   |
-|                                                     |                 |            |   |
-| IF                                                  | the King wishes |            |   |
-| ->                                                  | sing            |            |   |
+|                                                     |                 |          |        |
+| A paragraph with irrelevant text should be ignored. |                 | Like so. |        |
+|                                                     |                 |          |        |
+|                                                     |                 |          |        |
+| EVERY                                               | person          | AKA      | singer |
+| WHO                                                 | walks           |          |        |
+| AND                                                 | eats            |          |        |
+| MUST                                                |                 |          |        |
+|                                                     |                 |          |        |
+|                                                     |                 |          |        |
+| IF                                                  | the King wishes |          |        |
+| ->                                                  | sing            |          |        |
 
 ** qualifying person
 :PROPERTIES:
@@ -409,11 +409,11 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| EVERY | Qualifying Person | ("QP") |   |
-|       | MEANS             | walks  |   |
-|       | AND               | eats   |   |
-| MUST  |                   |        |   |
-| ->    | sing              |        |   |
+| EVERY | Qualifying Person | AKA   | QP |
+|       | MEANS             | walks |    |
+|       | AND               | eats  |    |
+| MUST  |                   |       |    |
+| ->    | sing              |       |    |
 
 ** legislative source citations
 :PROPERTIES:
@@ -757,10 +757,45 @@ To handle this we may need to augment our types so that each bit of logic can be
 |   |        | Paper     | beats | Rock          |           |
 |   |        | Scissors  | beats | Paper         |           |
 |   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
+
+
+** GIVEN ... DEEM
+:PROPERTIES:
+:TABLE_EXPORT_FILE: define-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+optional Given ParamText
+permute
+  required Deem ParamText
+  optional BoolStruct [If,When]
+
 |   |        |           |       |               |           |
 |   | GIVEN  | x         | y     | ::            | Sign      |
 |   | DEEM   | x         | beats | y             |           |
 |   | WHEN   | x == Rock | AND   | y == Scissors |           |
 |   |        |           |       |               |           |
+
+creates a Constitutive Rule; the "assig" (assignment) is "deem".
+
+** Constitutive Rule syntax
+
+Normally we have X MEANS Y
+
+Y could be a boolstruct
+
+#+begin_example
+  degustates
+       MEANS eats
+          OR drinks
+#+end_example
+
+but it could be something else:
+
+#+begin_example
+    Maximum Number Of People AKA MaxPeople
+                       MEANS 500
+#+end_example
+
+so let's try parsing as a boolrule and if that doesn't work we just shoehorn it into a paramtext.
 

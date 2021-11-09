@@ -9,7 +9,7 @@ import L4.Types
       BoolStruct,
       BoolStructP,
       Rule(..),
-      pt2text
+      pt2text, text2pt
       -- bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )

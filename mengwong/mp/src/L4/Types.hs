@@ -62,7 +62,8 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                       deriving (Eq, Show, Generic)
 
 data Rule = Regulative
-            { every    :: EntityType         -- every person
+  -- TODO: preserve Every vs Party as keyword, just like in Constitutive
+            { every    :: ConstitutiveName         -- every person
             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
             , cond     :: Maybe BoolStructP         -- if it is a saturday
             , deontic  :: Deontic            -- must
@@ -78,15 +79,17 @@ data Rule = Regulative
             , having   :: Maybe ParamText  -- HAVING sung...
             }
           | Constitutive
-            { name     :: ConstitutiveName -- user-defined namespace
-            , cond     :: Maybe BoolStructP
-            , given    :: [BoolStructP] -- GIVEN an Entertainment flag was previously set in the history trace
+            { name     :: ConstitutiveName     -- the thing we are defining
+            , keyword  :: MyToken       -- Means, Includes, Is, Deem
+            , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+            , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
+            , given    :: [BoolStructP]     -- GIVEN some input parameters
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             }
           | TypeDecl
-            { name     :: ConstitutiveName     --      DEFINE Sign
+            { name     :: ConstitutiveName         --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [(ConstitutiveName, TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
@@ -94,16 +97,9 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             }
-          | RelDec
-            { name     :: ConstitutiveName            --      DEEM      beats
-            , means    :: Maybe ParamText    --      MEANS foo beats baz -- -TODO- we want to add support for interpolated boolstructs
-            , rlabel   :: Maybe Text.Text
-            , lsource  :: Maybe Text.Text
-            , srcref   :: Maybe SrcRef
-            }
-          | DefNameAlias -- inline alias, like     some thing ("Thing")
+          | DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   :: ConstitutiveName -- "Thing"
-            , detail :: Text.Text        -- "some thing"
+            , detail :: ConstitutiveName        -- "some thing"
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
@@ -120,6 +116,8 @@ noLabel   = Nothing
 noLSource = Nothing
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
+noDeem   :: Maybe ParamText
+noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1
   deriving (Eq, Show, Generic, ToJSON)
@@ -133,7 +131,7 @@ data TemporalConstraint a = TBefore a
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
 
-data TypeSig = SimpleType ParamType ConstitutiveName
+data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
              deriving (Eq, Show, Generic, ToJSON)
 
@@ -280,6 +278,8 @@ toToken "ONE"       = One
 toToken "OPTIONAL"  = Optional
 toToken "LIST0"     = List0
 toToken "LIST1"     = List1
+
+toToken "AKA"       = Aka
 
 -- we recognize numbers
 toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n

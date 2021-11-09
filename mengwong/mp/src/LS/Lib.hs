@@ -25,9 +25,8 @@ import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
-import Generic.Data (Generic)
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, catMaybes)
+import Data.Maybe (fromMaybe)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -38,7 +37,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Debug.Trace
 import Data.Aeson.Encode.Pretty
-import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
+import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
 import Options.Generic
 
 import LS.Types
@@ -46,7 +45,6 @@ import LS.Error ( errorBundlePrettyCustom )
 import LS.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
-import Data.List.NonEmpty (toList)
 -- import Data.Foldable (fold)
 
 import LS.XPile.BabyL4
@@ -136,7 +134,7 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         when (toBabyL4 rc) $ do
-          print $ sfl4ToBabyl4 $ xs ++ xs'
+          pPrint $ sfl4ToBabyl4 $ xs ++ xs'
         unless (asJSON rc || toBabyL4 rc || toNLG rc) $
           pPrint $ xs ++ xs'
 
@@ -479,7 +477,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , srcref = Just srcref
     , orig = []
     }
-    
+
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $
   (try pRegRuleSugary

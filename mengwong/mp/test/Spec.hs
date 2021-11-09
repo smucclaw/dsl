@@ -64,7 +64,7 @@ defaultCon = Constitutive
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
-  , srcref = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   , given = []
   , orig = []
   }
@@ -136,6 +136,7 @@ main = do
       let degustates = defaultCon
                        { name = "degustates"
                        , letbind = Any [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
 
       it "should parse a simple constitutive rule" $ do
@@ -144,18 +145,20 @@ main = do
 
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [degustates]
+        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All
                                   [ mkLeaf "walks"
                                   , mkLeaf "degustates"
                                   ]
+                          , srcref = Nothing
                           }
                         , defaultCon
                           { name= "degustates"
                           , letbind = Any [ mkLeaf "eats", mkLeaf "imbibes" ]
                           , cond = Nothing
+                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
                           }
                         ]
 
@@ -168,6 +171,7 @@ main = do
                                 , mkLeaf "spits" ]
                           ]
               , cond = Nothing
+              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})
               } ]
       
       it "should parse indented-2.csv (inline constitutive rule)" $ do

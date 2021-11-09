@@ -717,27 +717,50 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|   | DEFINE        | Chirality    |     |           |      |
-|   | ONE OF        | Left         |     |           |      |
-|   |               | Right        |     |           |      |
-|   |               |              |     |           |      |
-|   | so            | now we       | can |           |      |
-|   |               |              |     |           |      |
-|   | DEFINE        | Hand         | ::  | Chirality |      |
-|   |               |              |     |           |      |
-|   | separatorline |              |     |           |      |
-|   |               |              |     |           |      |
-|   | DEFINE        | Arm          | ::  | Chirality |      |
-|   |               |              |     |           |      |
-|   | separatorline |              |     |           |      |
-|   |               |              |     |           |      |
-|   | DEFINE        | Sign         |     |           |      |
-|   | HAS           | throwingHand | ::  | ONE       | Hand |
-|   |               | tHand2       | ::  |           | Hand |
-|   |               | tHand3       | IS  | A         | Hand |
-|   |               | tHand4       | IS  |           | Hand |
-|   |               | tHand5       | IS  | AN        | Arm  |
-|   | ONE OF        | Rock         |     |           |      |
-|   |               | Scissors     |     |           |      |
-|   |               | Paper        |     |           |      |
+|   | DEFINE | Chirality |       |               |           |
+|   | ONE OF | Left      |       |               |           |
+|   |        | Right     |       |               |           |
+|   |        |           |       |               |           |
+|   | so     | now we    | can   |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | Hand      | ::    | Chirality     |           |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | Arm       | ::    | Chirality     |           |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | Sign      |       |               |           |
+|   | ONE OF | Rock      |       |               |           |
+|   |        | Scissors  |       |               |           |
+|   |        | Paper     |       |               |           |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | Name      | IS    | A             | String    |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | BirthYear | IS    | A             | Number    |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | DEFINE | Player    | IS    | AN            | Entity    |
+|   | HAS    | yearBorn  | IS    | A             | BirthYear |
+|   |        | fullName  | IS    | A             | Name      |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   |        |           | beats |               |           |
+|   | MEANS  | Rock      | beats | Scissors      |           |
+|   |        | Paper     | beats | Rock          |           |
+|   |        | Scissors  | beats | Paper         |           |
+|   |        |           |       |               |           |
+|   | ;      |           |       |               |           |
+|   |        |           |       |               |           |
+|   | GIVEN  | x         | y     | ::            | Sign      |
+|   | DEEM   | x         | beats | y             |           |
+|   | WHEN   | x == Rock | AND   | y == Scissors |           |
+|   |        |           |       |               |           |
 

@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
-module L4.Error where
+module LS.Error where
 
 import qualified Data.List.NonEmpty as NE
 import Data.Proxy
@@ -16,7 +16,7 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import L4.BasicTypes (MyStream, myStreamInput)
+import LS.BasicTypes (MyStream, myStreamInput)
 import Data.Vector (imap, foldl')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))

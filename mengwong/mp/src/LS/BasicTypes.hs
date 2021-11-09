@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
-module L4.BasicTypes where
+module LS.BasicTypes where
 import Data.Proxy
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec

@@ -5,8 +5,8 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module L4.Types ( module L4.BasicTypes
-                , module L4.Types) where
+module LS.Types ( module LS.BasicTypes
+                , module LS.Types) where
 
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
@@ -19,7 +19,7 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import GHC.Generics
 
-import L4.BasicTypes
+import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)

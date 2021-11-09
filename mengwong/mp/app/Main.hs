@@ -1,6 +1,6 @@
 module Main where
 
-import qualified L4 as SFL4
+import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
 import Data.List

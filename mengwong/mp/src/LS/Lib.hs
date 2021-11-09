@@ -8,7 +8,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module L4.Lib where
+module LS.Lib where
 
 -- import qualified Data.Tree      as Tree
 import qualified Data.Text.Lazy as Text
@@ -34,9 +34,9 @@ import Debug.Trace
 import Data.Aeson.Encode.Pretty
 import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 
-import L4.Types
-import L4.Error ( errorBundlePrettyCustom )
-import L4.NLG (nlg)
+import LS.Types
+import LS.Error ( errorBundlePrettyCustom )
+import LS.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
 import Data.List.NonEmpty (toList)

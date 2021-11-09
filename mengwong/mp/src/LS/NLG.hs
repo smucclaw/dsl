@@ -1,8 +1,8 @@
-module L4.NLG (
+module LS.NLG (
     nlg
     ) where
 
-import L4.Types
+import LS.Types
     ( Deontic(..),
       EntityType,
       TemporalConstraint (..),

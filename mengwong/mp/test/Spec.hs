@@ -5,10 +5,10 @@ module Main where
 import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
-import L4.Lib
+import LS.Lib
 import AnyAll hiding (asJSON)
-import L4.Types
-import L4.Error
+import LS.Types
+import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))
 import Control.Monad.Writer (WriterT(runWriterT))

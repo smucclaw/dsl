@@ -833,6 +833,7 @@ pDeontic = (pToken Must  >> return DMust)
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
+    test (WithPos _ _ _ (TypeSeparator)) = Just "::" -- TODO FIXME
     test (WithPos _ _ _ (Other t)) = Just t
     test _ = Nothing
 

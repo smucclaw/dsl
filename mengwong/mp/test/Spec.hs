@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))
 import Control.Monad.Writer (WriterT(runWriterT))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Options.Generic (getRecordPure, unwrapRecord)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -71,7 +72,8 @@ defaultCon = Constitutive
 
 main :: IO ()
 main = do
-  runConfig_ <- getConfig
+  cmdlineOpts <- unwrapRecord $ (maybe (error "failed to parse empty args") id $ getRecordPure  [])
+  runConfig_ <- getConfig $ cmdlineOpts
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
   let combine (a,b) = a ++ b
   let parseR = runMyParser combine runConfig

@@ -34,6 +34,7 @@ library
       LS.XPile.BabyL4
       LS.XPile.CSV
       LS.XPile.Odoyle
+      LS.XPile.Prolog
       LS.XPile.SVG
       LS.XPile.Uppaal
       LS.XPile.VueJSON
@@ -46,6 +47,7 @@ library
       aeson
     , aeson-pretty
     , anyall
+    , baby-l4-core
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -58,8 +60,10 @@ library
     , hspec-megaparsec
     , megaparsec
     , mtl
+    , optparse-generic
     , parsers
     , pretty-simple
+    , prolog
     , split
     , text
     , utf8-string
@@ -77,6 +81,7 @@ executable mp-exe
       aeson
     , aeson-pretty
     , anyall
+    , baby-l4-core
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -90,8 +95,10 @@ executable mp-exe
     , megaparsec
     , mp
     , mtl
+    , optparse-generic
     , parsers
     , pretty-simple
+    , prolog
     , split
     , text
     , utf8-string
@@ -110,6 +117,7 @@ test-suite mp-test
       aeson
     , aeson-pretty
     , anyall
+    , baby-l4-core
     , base >=4.7 && <5
     , boxes
     , bytestring
@@ -123,8 +131,10 @@ test-suite mp-test
     , megaparsec
     , mp
     , mtl
+    , optparse-generic
     , parsers
     , pretty-simple
+    , prolog
     , split
     , text
     , utf8-string

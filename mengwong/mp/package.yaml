@@ -41,6 +41,9 @@ dependencies:
 - utf8-string
 - gf
 - gf-ud
+- baby-l4-core
+- optparse-generic
+- prolog
 
 ghc-options: -Wall
 

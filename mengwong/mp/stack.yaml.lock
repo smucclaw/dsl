@@ -18,16 +18,31 @@ packages:
     subdir: lib/haskell/anyall
     url: https://github.com/smucclaw/dsl/archive/3e56b3008f1164725575a9bb2f87504dc8fa30eb.tar.gz
 - completed:
-    size: 3146789
-    url: https://github.com/smucclaw/baby-l4/archive/cd12688ea2c2a8163174358d15470e1cd9a72c93.tar.gz
+    size: 3149280
+    subdir: .
+    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
     name: baby-l4
     version: 0.1.0.0
-    sha256: 7482ddd0a48caf81766f3cc866bffc2bc60b76456bc70adfa006e5c9e154c159
+    sha256: de3baae63a31f9b561b7856628214cd7559746a4b89f81c7c4fd5b3a455d25ce
     pantry-tree:
-      size: 9050
-      sha256: eacc5657f355a92d54c69a0225ebd5c5c701fc8f919afd7ef08997c9349f77d1
+      size: 9379
+      sha256: d5defa3fd84b3febfaa60672c5ddf914cb24d660dba0f878c64b4962d0ef5c7b
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/cd12688ea2c2a8163174358d15470e1cd9a72c93.tar.gz
+    subdir: .
+    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+- completed:
+    size: 3149280
+    subdir: baby-l4-core
+    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+    name: baby-l4-core
+    version: 0.1.0.0
+    sha256: de3baae63a31f9b561b7856628214cd7559746a4b89f81c7c4fd5b3a455d25ce
+    pantry-tree:
+      size: 650
+      sha256: 87ffba6fe9bb41556dbc161e2ee3e6e9317ac122b36ea816d222b1b1f1aa8c17
+  original:
+    subdir: baby-l4-core
+    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
 - completed:
     hackage: svg-builder-0.1.1@sha256:22de54d326a6b6912e461e1302edb9108b02aac0b6a6368fcdc3c4a224d487fd,1440
     pantry-tree:
@@ -60,6 +75,27 @@ packages:
       sha256: aa252d535730ba780f2a7eb1689775bae1acee60a60237052f5bce630b5adbf2
   original:
     url: https://github.com/anka-213/gf-ud/archive/8e70b1f555ac0586d52b510d3589c3dba5d3b9db.tar.gz
+- completed:
+    hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
+    pantry-tree:
+      size: 5271
+      sha256: 6cd6a7213615d72a7db3234c7fcd4346ceb4889bc8fb14b302b5878768018fcd
+  original:
+    hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
+- completed:
+    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
+    pantry-tree:
+      size: 253
+      sha256: ddbb8343712ef5d96480180f4df7113db80ecb41336ec3e02876ccdb6ff6b547
+  original:
+    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
+- completed:
+    hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
+    pantry-tree:
+      size: 741
+      sha256: f23b5ae4da14ec67060a97d7360ead327c0e0f59e962a5b000e24c4624bd35d9
+  original:
+    hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 snapshots:
 - completed:
     size: 586268

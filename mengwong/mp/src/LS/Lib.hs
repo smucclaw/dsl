@@ -7,6 +7,12 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
+{-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
+
 
 module LS.Lib where
 
@@ -33,6 +39,7 @@ import Text.Parser.Permutation
 import Debug.Trace
 import Data.Aeson.Encode.Pretty
 import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
+import Options.Generic
 
 import LS.Types
 import LS.Error ( errorBundlePrettyCustom )
@@ -40,28 +47,43 @@ import LS.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
 import Data.List.NonEmpty (toList)
-import Data.Foldable (fold)
+-- import Data.Foldable (fold)
+
+import LS.XPile.BabyL4
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
 
-getConfig :: IO RunConfig
-getConfig = do
+-- the wrapping 'w' here is needed for <!> defaults and <?> documentation
+data Opts w = Opts { demo :: w ::: Bool <!> "False"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg"
+                   , dbug :: w ::: Bool <!> "False"
+                   }
+  deriving (Generic)
+instance ParseRecord (Opts Wrapped)
+deriving instance Show (Opts Unwrapped)
+
+
+getConfig :: Opts Unwrapped -> IO RunConfig
+getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
   mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
-        { debug = maybe False (read :: String -> Bool) mpd
+        { debug = maybe (dbug o) (read :: String -> Bool) mpd
         , callDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
         , asJSON = maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
+        , toBabyL4 = only o == "babyl4"
         }
 
-someFunc :: IO ()
-someFunc = do
-  runConfig <- getConfig
+
+
+someFunc :: Opts Unwrapped -> IO ()
+someFunc opts = do
+  runConfig <- getConfig opts
   myinput <- BS.getContents
   runExample runConfig myinput
 
@@ -113,7 +135,9 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
-        unless (asJSON rc) $
+        when (toBabyL4 rc) $ do
+          print $ sfl4ToBabyl4 $ xs ++ xs'
+        unless (asJSON rc || toBabyL4 rc || toNLG rc) $
           pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream

@@ -1,9 +1,19 @@
-module Main where
+{-# LANGUAGE OverloadedStrings #-}
 
+module Main where
 import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
 import Data.List
+import Options.Generic
+
+
+
+main :: IO ()
+main = do
+  opts <- unwrapRecord "mp"
+  SFL4.someFunc opts
+
 
 type Parser a = StateT String Maybe a
 
@@ -19,11 +29,5 @@ parens = T <$ ch '(' <*> many parens <* ch ')'
 
 parse :: StateT s m a -> s -> m (a, s)
 parse = runStateT
-
--- >>> parse parens "(()()(()))blerg"
--- Just (T [T [],T [],T [T []]],"blerg")
-main :: IO ()
--- main = print $ parse parens "(()()(()))blerg"
-main = SFL4.someFunc
 
 

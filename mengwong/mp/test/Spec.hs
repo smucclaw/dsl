@@ -50,7 +50,7 @@ defaultReg = Regulative
   , lsource = Nothing
   , srcref = Nothing
   , upon = []
-  , given = []
+  , given = Nothing
   , having = Nothing
   , orig = []
   }
@@ -65,7 +65,7 @@ defaultCon = Constitutive
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-  , given = []
+  , given = Nothing
   , orig = []
   }
 

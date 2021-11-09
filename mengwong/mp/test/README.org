@@ -800,6 +800,10 @@ but it could be something else:
 so let's try parsing as a boolrule and if that doesn't work we just shoehorn it into a paramtext.
 
 ** More Deem Syntax
+:PROPERTIES:
+:TABLE_EXPORT_FILE: define-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 what if we say
 |       |         |   |    |        |
@@ -810,3 +814,14 @@ what if we say
 
 
 
+** defeating
+:PROPERTIES:
+:TABLE_EXPORT_FILE: define-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+| GIVEN | Player1        |         |   | Player2        | :: | Player |
+| DEEM  | Player1        | defeats |   | Player2        |    |        |
+| WHEN  | Player1.choice | beats   |   | Player2.choice |    |        |
+        

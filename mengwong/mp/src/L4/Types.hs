@@ -56,7 +56,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
                          , rbupon     :: [(Preamble, BoolRulesP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
-                         , rbgiven    :: [(Preamble, BoolRulesP)] -- Given history conditions
+                         , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          }
                       deriving (Eq, Show, Generic)
@@ -75,7 +75,7 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
-            , given    :: [BoolStructP] -- GIVEN an Entertainment flag was previously set in the history trace
+            , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , orig     :: [(Preamble, BoolStructP)]
             }
@@ -84,7 +84,7 @@ data Rule = Regulative
             , keyword  :: MyToken       -- Means, Includes, Is, Deem
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
-            , given    :: [BoolStructP]     -- GIVEN some input parameters
+            , given    :: Maybe ParamText
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

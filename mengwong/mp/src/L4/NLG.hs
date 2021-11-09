@@ -9,7 +9,7 @@ import L4.Types
       BoolStruct,
       BoolStructP,
       Rule(..),
-      pt2text, text2pt
+      pt2text, text2pt, ParamText
       -- bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
@@ -74,7 +74,7 @@ parseFields env rl@(Regulative {}) =
               , actionA  = parseAction env (action rl)  :: PGF.Expr
               , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
               , uponA  = (parseUpon  env) <$> listToMaybe (upon rl)    :: Maybe PGF.Expr
-              , givenA = (parseGiven env) <$> (listToMaybe (given rl)) :: Maybe PGF.Expr -- as a hack, we ignore all but the first element of a Given. TODO
+              , givenA = (parseGiven env) <$> given rl :: Maybe PGF.Expr -- as a hack, we ignore all but the first element of a Given. TODO
                 -- corresponds to     case given rl of
                         --               Just bs -> Just $ parseGiven env bs
                         --               _ -> Nothing
@@ -104,8 +104,8 @@ parseFields env rl@(Regulative {}) =
     parseCond :: UDEnv -> BoolStructP -> Expr
     parseCond env bs = parse' "S" env (bsp2text bs) -- was "Utt"
 
-    parseGiven :: UDEnv -> BoolStructP -> Expr
-    parseGiven env bs = parse' "S" env (bsp2text bs)
+    parseGiven :: UDEnv -> ParamText -> Expr
+    parseGiven env pt = parse' "S" env (pt2text pt)
 
     parseAction :: UDEnv -> BoolStructP -> Expr
     parseAction env bsp = parse' "VP" env (bsp2text bsp)

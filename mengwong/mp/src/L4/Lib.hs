@@ -32,7 +32,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Debug.Trace
 import Data.Aeson.Encode.Pretty
-import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
 
 import L4.Types
 import L4.Error ( errorBundlePrettyCustom )
@@ -40,6 +40,7 @@ import L4.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
 import Data.List.NonEmpty (toList)
+import Data.Foldable (fold)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -401,7 +402,7 @@ pDeemRule = debugName "pDeemRule" $ do
 
   ((_d,d),gs,w,i,u,means,is,includes) <- permute $ (,,,,,,,)
     <$$> preambleParamText [Deem]
-    <|?> ([], pToken Given *> some pOtherVal <* optional (pToken TypeSeparator <* some pOtherVal) <* dnl)
+    <|?> ([], some $ preambleParamText [Given])
     <|?> ([], some $ preambleBoolRules [When])
     <|?> ([], some $ preambleBoolRules [If])
     <|?> ([], some $ preambleBoolRules [Unless])
@@ -410,7 +411,8 @@ pDeemRule = debugName "pDeemRule" $ do
     <|?> ([], some $ preambleBoolRules [Includes])
 
   -- let's extract the new term from the deem line
-  let dnew = [ word | word <- concatMap toList $ toList d, word `notElem` gs ]
+  let givens = concatMap (concatMap toList . toList . snd) gs :: [Text.Text]
+      dnew   = [ word | word <- concatMap toList $ toList d, word `notElem` givens ]
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
@@ -421,7 +423,7 @@ pDeemRule = debugName "pDeemRule" $ do
          , cond = addneg
                   (snd <$> mergePBRS (w++i))
                   (snd <$> mergePBRS u)
-         , given = AA.Leaf . text2pt <$> gs
+         , given = nonEmpty $ foldMap toList (snd <$> gs)
          , rlabel = noLabel
          , lsource = noLSource
          , srcref = Just srcref
@@ -447,7 +449,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , cond = addneg
              (snd <$> mergePBRS whenifs)
              (snd <$> mergePBRS unlesses)
-    , given = snd <$> givens
+    , given = nonEmpty $ foldMap toList (snd <$> givens)
     , rlabel = noLabel
     , lsource = noLSource
     , srcref = Just srcref
@@ -496,8 +498,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  Nothing -- rule label
                  Nothing -- legal source
                  Nothing -- internal SrcRef
-                 (snd <$> rbupon  rulebody)    -- given
-                 (snd <$> rbgiven rulebody)    -- given
+                 (snd <$> rbupon  rulebody)
+                 (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
                  (rbhaving rulebody)
                  []
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
@@ -543,7 +545,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  Nothing -- legal source
                  Nothing -- internal SrcRef
                  (snd <$> rbupon  rulebody)    -- given
-                 (snd <$> rbgiven rulebody)    -- given
+                 (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
                  (rbhaving rulebody)
                  []
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
@@ -649,7 +651,7 @@ mkRBfromDT :: BoolStructP
            -> [(Preamble, BoolRulesP)] -- positive  -- IF / WHEN
            -> [(Preamble, BoolRulesP)] -- negative  -- UNLESS
            -> [(Preamble, BoolRulesP)] -- upon  conditions
-           -> [(Preamble, BoolRulesP)] -- given conditions
+           -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText               -- having
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> RuleBody
@@ -659,7 +661,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> [(Preamble, BoolRulesP)]
            -> [(Preamble, BoolRulesP)]
            -> [(Preamble, BoolRulesP)] -- upon  conditions
-           -> [(Preamble, BoolRulesP)] -- given conditions
+           -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText         -- having
            -> Maybe (TemporalConstraint Text.Text)
            -> RuleBody
@@ -670,7 +672,7 @@ permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
                             , BoolRulesP)            -- the rhs of the let binding is always a BoolStructP -- because the leaf of a BoolStructP can be a ParamText!
                           , [(Preamble, BoolRulesP)] -- positive conditions (when,if)
                           , [(Preamble, BoolRulesP)] -- negative conditions (unless)
-                          , [(Preamble, BoolRulesP)] -- given    (given params)
+                          , [(Preamble, ParamText)] -- given    (given params)
                           )
 permutationsCon copula ifwhen l4unless l4given =
   debugName ("permutationsCon"
@@ -683,7 +685,7 @@ permutationsCon copula ifwhen l4unless l4given =
     <$$> preambleBoolRules copula
     <|?> ([], some $ preambleBoolRules ifwhen)
     <|?> ([], some $ preambleBoolRules l4unless)
-    <|?> ([], some $ preambleBoolRules l4given)
+    <|?> ([], some $ preambleParamText l4given)
 
 -- degustates
 --     MEANS eats
@@ -709,7 +711,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
             <|?> ([], some $ preambleBoolRules ifwhen)   -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4unless) -- unless
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
-            <|?> ([], some $ preambleBoolRules l4given)  -- given
+            <|?> ([], some $ preambleParamText l4given)  -- given
             <|?> (Nothing, Just . snd <$> preambleParamText l4having)  -- having
             <||> try pDT
           ) )
@@ -719,7 +721,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
             <|?> ([], some $ preambleBoolRules ifwhen) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
-            <|?> ([], some $ preambleBoolRules l4given)  -- given
+            <|?> ([], some $ preambleParamText l4given)  -- given
             <|?> (Nothing, pure . snd <$> preambleParamText l4having)  -- having
             <|?> (Nothing, pTemporal <* dnl)
           ) )

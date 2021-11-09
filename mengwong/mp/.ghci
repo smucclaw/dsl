@@ -1,0 +1,4 @@
+:set -isrc
+-- Don't spam a ton of warnings
+-- :set -Wno-incomplete-patterns -Wno-unused-imports -Wno-name-shadowing -Wno-unused-top-binds -Wno-missing-signatures
+:l test/Spec.hs

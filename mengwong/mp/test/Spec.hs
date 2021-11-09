@@ -52,6 +52,7 @@ defaultReg = Regulative
   , upon = []
   , given = []
   , having = Nothing
+  , orig = []
   }
 
 mkLeaf = Leaf . text2pt
@@ -65,6 +66,7 @@ defaultCon = Constitutive
   , lsource = Nothing
   , srcref = Nothing
   , given = []
+  , orig = []
   }
 
 main :: IO ()

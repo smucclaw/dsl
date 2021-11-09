@@ -717,46 +717,46 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|   | DEFINE | Chirality |       |               |           |
-|   | ONE OF | Left      |       |               |           |
-|   |        | Right     |       |               |           |
-|   |        |           |       |               |           |
-|   | so     | now we    | can   |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | Hand      | ::    | Chirality     |           |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | Arm       | ::    | Chirality     |           |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | Sign      |       |               |           |
-|   | ONE OF | Rock      |       |               |           |
-|   |        | Scissors  |       |               |           |
-|   |        | Paper     |       |               |           |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | Name      | IS    | A             | String    |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | BirthYear | IS    | A             | Number    |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   | DEFINE | Player    | IS    | AN            | Entity    |
-|   | HAS    | yearBorn  | IS    | A             | BirthYear |
-|   |        | fullName  | IS    | A             | Name      |
-|   |        |           |       |               |           |
-|   | ;      |           |       |               |           |
-|   |        |           |       |               |           |
-|   |        |           | beats |               |           |
-|   | MEANS  | Rock      | beats | Scissors      |           |
-|   |        | Paper     | beats | Rock          |           |
-|   |        | Scissors  | beats | Paper         |           |
-|   |        |           |       |               |           |
+|   | DEFINE | Chirality |       |           |           |
+|   | ONE OF | Left      |       |           |           |
+|   |        | Right     |       |           |           |
+|   |        |           |       |           |           |
+|   | so     | now we    | can   |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | Hand      | ::    | Chirality |           |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | Arm       | ::    | Chirality |           |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | Sign      |       |           |           |
+|   | ONE OF | Rock      |       |           |           |
+|   |        | Scissors  |       |           |           |
+|   |        | Paper     |       |           |           |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | Name      | IS    | A         | String    |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | BirthYear | IS    | A         | Number    |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   | DEFINE | Player    | IS    | AN        | Entity    |
+|   | HAS    | yearBorn  | IS    | A         | BirthYear |
+|   |        | fullName  | IS    | A         | Name      |
+|   |        |           |       |           |           |
+|   | ;      |           |       |           |           |
+|   |        |           |       |           |           |
+|   |        |           | beats |           |           |
+|   | MEANS  | Rock      | beats | Scissors  |           |
+|   |        | Paper     | beats | Rock      |           |
+|   |        | Scissors  | beats | Paper     |           |
+|   |        |           |       |           |           |
 
 
 ** GIVEN ... DEEM
@@ -770,11 +770,11 @@ permute
   required Deem ParamText
   optional BoolStruct [If,When]
 
-|   |        |           |       |               |           |
-|   | GIVEN  | x         | y     | ::            | Sign      |
-|   | DEEM   | x         | beats | y             |           |
-|   | WHEN   | x == Rock | AND   | y == Scissors |           |
-|   |        |           |       |               |           |
+|   |       |               |       |    |      |
+|   | GIVEN | x             | y     | :: | Sign |
+|   | DEEM  | x             | beats | y  |      |
+|   | WHEN  | x == Rock     |       |    |      |
+|   | AND   | y == Scissors |       |    |      |
 
 creates a Constitutive Rule; the "assig" (assignment) is "deem".
 
@@ -798,4 +798,15 @@ but it could be something else:
 #+end_example
 
 so let's try parsing as a boolrule and if that doesn't work we just shoehorn it into a paramtext.
+
+** More Deem Syntax
+
+what if we say
+|       |         |   |    |        |
+| GIVEN | x       | y | :: | Number |
+| DEEM  | product |   |    |        |
+| MEANS | x       | * | y  |        |
+|       |         |   |    |        |
+
+
 

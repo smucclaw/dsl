@@ -77,6 +77,7 @@ data Rule = Regulative
             , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
             , given    :: [BoolStructP] -- GIVEN an Entertainment flag was previously set in the history trace
             , having   :: Maybe ParamText  -- HAVING sung...
+            , orig     :: [(Preamble, BoolStructP)]
             }
           | Constitutive
             { name     :: ConstitutiveName     -- the thing we are defining
@@ -87,6 +88,7 @@ data Rule = Regulative
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , orig     :: [(Preamble, BoolStructP)]
             }
           | TypeDecl
             { name     :: ConstitutiveName         --      DEFINE Sign

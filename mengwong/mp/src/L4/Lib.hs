@@ -39,6 +39,7 @@ import L4.Error ( errorBundlePrettyCustom )
 import L4.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
+import Data.List.NonEmpty (toList)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -346,6 +347,7 @@ pRule = withDepth 1 $ do
   _ <- optional dnl
   try ((:[]) <$> pRegRule <?> "regulative rule")
     <|> ((:[]) <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
+    <|> try ((:[]) <$> pDeemRule <?> "deem rule")
     <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
     <|> (eof >> return [])
 
@@ -390,16 +392,40 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
     , srcref  = noSrcRef
     }
 
--- something AKA Thing
--- MEANS eat OR drink
+pDeemRule :: Parser Rule
+pDeemRule = debugName "pDeemRule" $ do
+  leftY  <- lookAhead pYLocation
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  srcurl <- asks sourceURL
+  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
--- something AKA Thing
--- INCLUDES eating drinking
+  ((_d,d),gs,w,i,u,means,is,includes) <- permute $ (,,,,,,,)
+    <$$> preambleParamText [Deem]
+    <|?> ([], pToken Given *> some pOtherVal <* optional (pToken TypeSeparator <* some pOtherVal) <* dnl)
+    <|?> ([], some $ preambleBoolRules [When])
+    <|?> ([], some $ preambleBoolRules [If])
+    <|?> ([], some $ preambleBoolRules [Unless])
+    <|?> ([], some $ preambleBoolRules [Means])
+    <|?> ([], some $ preambleBoolRules [Is])
+    <|?> ([], some $ preambleBoolRules [Includes])
 
--- something AKA Thing
--- IS 400
-
--- so the content to the right of the Means / Includes / Is keyword could be either a boolstruct or a paramtext
+  -- let's extract the new term from the deem line
+  let dnew = [ word | word <- concatMap toList $ toList d, word `notElem` gs ]
+  if length dnew /= 1
+    then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
+    else return $ Constitutive
+         { name = head dnew -- we lose the ordering
+         , keyword = Given
+         , letbind = AA.Leaf d
+         , orig = [(Deem, AA.Leaf d)] ++ means ++ is ++ includes
+         , cond = addneg
+                  (snd <$> mergePBRS (w++i))
+                  (snd <$> mergePBRS u)
+         , given = AA.Leaf . text2pt <$> gs
+         , rlabel = noLabel
+         , lsource = noLSource
+         , srcref = Just srcref
+         }
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
@@ -412,7 +438,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   tell defalias -- use Writer to append a mini rule that associates the alias with the name
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    withDepth leftX $ permutationsCon [Means,Is,Includes,Deem] [When,If] [Unless] [Given]
+    withDepth leftX $ permutationsCon [Means,Is,Includes] [When,If] [Unless] [Given]
 
   return $ Constitutive
     { name = name
@@ -424,7 +450,8 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , given = snd <$> givens
     , rlabel = noLabel
     , lsource = noLSource
-    , srcref = noSrcRef
+    , srcref = Just srcref
+    , orig = []
     }
     
 pRegRule :: Parser Rule
@@ -472,6 +499,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  (snd <$> rbupon  rulebody)    -- given
                  (snd <$> rbgiven rulebody)    -- given
                  (rbhaving rulebody)
+                 []
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
@@ -517,6 +545,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  (snd <$> rbupon  rulebody)    -- given
                  (snd <$> rbgiven rulebody)    -- given
                  (rbhaving rulebody)
+                 []
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond
   myTraceM $ "pRegRuleNormal: returning " ++ show toreturn

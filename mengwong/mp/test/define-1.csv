@@ -38,9 +38,3 @@
 ,,Paper,beats,Rock,
 ,,Scissors,beats,Paper,
 ,,,,,
-,;,,,,
-,,,,,
-,GIVEN,x,y,::,Sign
-,DEEM,x,beats,y,
-,WHEN,x == Rock,AND,y == Scissors,
-,,,,,

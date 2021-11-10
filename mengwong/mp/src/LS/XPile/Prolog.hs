@@ -112,7 +112,7 @@ fundef st fname cond pt0
 
 
 analyze :: [SFL4.Rule] -> Analysis
-analyze rs = mempty
+analyze rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame
 
 
 

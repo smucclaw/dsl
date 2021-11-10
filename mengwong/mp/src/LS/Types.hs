@@ -184,7 +184,8 @@ data RunConfig = RC { debug     :: Bool
                     , sourceURL :: Text.Text
                     , asJSON    :: Bool
                     , toNLG     :: Bool
-                    , toBabyL4 :: Bool
+                    , toBabyL4  :: Bool
+                    , toProlog  :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

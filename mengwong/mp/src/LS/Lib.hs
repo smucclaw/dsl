@@ -48,13 +48,14 @@ import Control.Monad.Writer.Lazy
 -- import Data.Foldable (fold)
 
 import LS.XPile.BabyL4
+import LS.XPile.Prolog
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | prolog"
                    , dbug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
@@ -75,6 +76,7 @@ getConfig o = do
         , asJSON = maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4 = only o == "babyl4"
+        , toProlog = only o == "prolog"
         }
 
 
@@ -135,7 +137,9 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         when (toBabyL4 rc) $ do
           pPrint $ sfl4ToBabyl4 $ xs ++ xs'
-        unless (asJSON rc || toBabyL4 rc || toNLG rc) $
+        when (toProlog rc) $ do
+          pPrint $ sfl4ToProlog $ xs ++ xs'
+        unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $
           pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
@@ -855,7 +859,7 @@ pDeontic = (pToken Must  >> return DMust)
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
-    test (WithPos _ _ _ (TypeSeparator)) = Just "::" -- TODO FIXME
+    test (WithPos _ _ _ (TypeSeparator)) = Just "::" -- TODO FIXME -- this was here to allow GIVEN ParamText to contain a type signature
     test (WithPos _ _ _ (Other t)) = Just t
     test _ = Nothing
 

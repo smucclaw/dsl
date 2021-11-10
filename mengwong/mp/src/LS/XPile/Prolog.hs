@@ -104,10 +104,11 @@ letbind2clause st fname cond _         = [ mkComment "cant Handle Nonleaf Items 
 fundef :: Analysis -> Text.Text -> Maybe BoolStructP -> NonEmpty Text.Text -> Clause
 fundef st fname cond pt0
   | NE.length pt0 == 3 = let args = Prelude.filter (/= fname) $ NE.toList pt0
-                         in Clause (Struct (Text.unpack fname) (var . Text.unpack <$> args))
+                         in Clause (Struct (Text.unpack fname) (vart <$> args))
                             (case cond of
                               Nothing -> []
-                              _       -> [])
+                              _       -> [] -- TODO, obviously
+                            )
   | otherwise = mkComment $ "fundef Unimplemented For Input Lists Of Length " ++ show (NE.length pt0)
 
 

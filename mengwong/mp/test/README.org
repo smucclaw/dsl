@@ -753,9 +753,9 @@ To handle this we may need to augment our types so that each bit of logic can be
 |   | ;      |           |       |           |           |
 |   |        |           |       |           |           |
 |   |        |           | beats |           |           |
-|   | MEANS  | Rock      | beats | Scissors  |           |
-|   |        | Paper     | beats | Rock      |           |
-|   |        | Scissors  | beats | Paper     |           |
+|   | MEANS  | rock      | beats | scissors  |           |
+|   |        | paper     | beats | rock      |           |
+|   |        | scissors  | beats | paper     |           |
 |   |        |           |       |           |           |
 
 

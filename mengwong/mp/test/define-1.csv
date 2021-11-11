@@ -30,6 +30,7 @@
 ,DEFINE,Player,IS,AN,Entity
 ,HAS,yearBorn,IS,A,BirthYear
 ,,fullName,IS,A,Name
+,,dynamic,--,untyped!,
 ,,,,,
 ,;,,,,
 ,,,,,

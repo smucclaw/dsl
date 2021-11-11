@@ -404,7 +404,10 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
   _     <- optional dnl
-  has   <- optional (id <$ pToken Has `indented1` many ( (,) <$> pOtherVal <*> pTypeSig))
+  has   <- optional (id <$ pToken Has `indented1` many ( (,)
+                                                         <$> (pure <$> pKeyValues) -- basically a single-line ParamText
+                                                         <*> optional pTypeSig
+                                                         <* optional dnl))
   myTraceM $ "got has = " <> show has
   enums <- optional pOneOf
   myTraceM $ "got enums = " <> show enums

@@ -93,8 +93,7 @@ data Rule = Regulative
           | TypeDecl
             { name     :: ConstitutiveName         --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [(ConstitutiveName, TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
-            -- we should probably make the TypeSig a Maybe so we support gradual typing
+            , has      :: Maybe [(ParamText, Maybe TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text

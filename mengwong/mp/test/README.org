@@ -749,6 +749,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 |   | DEFINE | Player    | IS    | AN        | Entity    |
 |   | HAS    | yearBorn  | IS    | A         | BirthYear |
 |   |        | fullName  | IS    | A         | Name      |
+|   |        | dynamic   | --    | untyped!  |           |
 |   |        |           |       |           |           |
 |   | ;      |           |       |           |           |
 |   |        |           |       |           |           |

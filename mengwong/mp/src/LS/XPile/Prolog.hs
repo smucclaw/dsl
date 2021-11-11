@@ -56,13 +56,13 @@ rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ descr
 
 rule2clause st _ = [ mkComment "clause Not Handled" ]
 
-describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [(ConstitutiveName, TypeSig)] -> [Clause]
+describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [(ParamText, Maybe TypeSig)] -> [Clause]
 describeDict st tname mparent hases =
   maybe [] (\parent -> [describeParent st tname parent]) mparent
   ++
-  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart k, vart typeDesc]) []
+  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (pt2text k), vart typeDesc]) []
   | (k, t) <- hases
-  , let typeDesc = showtype t
+  , let typeDesc = maybe "untyped" showtype t
   ]
 
 showtype (SimpleType TOne      tt) = tt

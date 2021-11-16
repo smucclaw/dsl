@@ -26,7 +26,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -49,6 +49,7 @@ import Control.Monad.Writer.Lazy
 
 import LS.XPile.BabyL4
 import LS.XPile.Prolog
+import qualified Data.List.NonEmpty as NE
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -225,7 +226,7 @@ getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
                      ,    any containsMagicKeyword rows
                        || all emptyRow rows
                      ]
-      toreturn = setRange loc <$> filter (not . null) wantedChunks
+      toreturn = setRange loc <$> mapMaybe NE.nonEmpty wantedChunks
   in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
      -- trace ("getChunks: listChunks = " ++ show listChunks)
      -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
@@ -248,15 +249,15 @@ extractRange (Location rawStanza _cursor ((lx,ly),(rx,ry))) =
   in -- trace ("extractRange: got slice x " ++ show slicex)
      slicex
 
-setRange :: Location -> [Int] -> Location
+setRange :: Location -> NonEmpty Int -> Location
 setRange loc@(Location _rawStanza _c ((_lx,_ly),(_rx,_ry))) ys =
-  let cursorToEndLine  = moveTo loc (0,       last ys)
+  let cursorToEndLine  = moveTo loc (0,       NE.last ys)
       lineLen = lineLength cursorToEndLine - 1
-      cursorToEndRange = moveTo loc (lineLen, last ys)
+      cursorToEndRange = moveTo loc (lineLen, NE.last ys)
   in -- trace ("setRange: loc = " ++ show loc)
      -- trace ("setRange: ys = " ++ show ys)
-     loc { cursor =  (0,head ys)
-         , range  = ((0,head ys),cursor cursorToEndRange) }
+     loc { cursor =  (0,NE.head ys)
+         , range  = ((0,NE.head ys),cursor cursorToEndRange) }
 
 data Location = Location
                 { rawStanza :: RawStanza

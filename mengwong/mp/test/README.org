@@ -682,6 +682,10 @@ We look back in the history:
 | IS    | $100       |    |      |
 
 *** HAVING
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 How about we then make HAVING be the ParamText that refers to something in the trace also?
 
@@ -826,3 +830,13 @@ what if we say
 | DEEM  | Player1        | defeats |   | Player2        |    |        |
 | WHEN  | Player1.choice | beats   |   | Player2.choice |    |        |
         
+** Pilcrows
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pilcrows-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY  | person         |  | ¶ | | EVERY | person      |                |
+| MUST   | sing           |  | ¶ | | MUST  | sing        |                |
+| IF NOT | day of silence |  | ¶ | | IF    | NOT         | day of silence |
+|        |                |  | ¶ | | AND   | day of song |                |

@@ -198,27 +198,20 @@ asCSV s =
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
 getStanzas :: RawStanza -> [RawStanza]
-getStanzas rs = extractRange <$> glueChunks chunks
+getStanzas rs = chunks
   -- traceM ("getStanzas: extracted range " ++ (Text.unpack $ pShow toreturn))
-  where chunks = getChunks $ Location rs (0,0) ((0,0),(V.length (rs ! (V.length rs - 1)) - 1, V.length rs - 1))
+  where chunks = getChunks rs
 
--- because sometimes a chunk followed by another chunk is really part of the same chunk.
--- so we glue contiguous chunks together.
-glueChunks :: [Location] -> [Location]
-glueChunks (a:b:z) =
-  let (( lxa,lya),(_rxa,rya)) = range a
-      ((_lxb,lyb),( rxb,ryb)) = range b
-  in
-    if rya + 1 == lyb
-    then glueChunks $ a { range = ((lxa, lya),(rxb,ryb)) } : z
-    else a : glueChunks (b : z)
-glueChunks x = x
+        -- traceStanzas xs = trace ("stanzas: " ++ show xs) xs
+
+-- splitPilcrows :: Location -> [Location]
+-- splitPilcrows = _
 
 -- highlight each chunk using range attribute.
 -- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines
-getChunks :: Location -> [Location]
-getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
-  let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) (\i -> V.all Text.null $ rs ! i) [ 0 .. ry ]
+getChunks :: RawStanza -> [RawStanza]
+getChunks rs =
+  let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) (\i -> V.all Text.null $ rs ! i) [ 0 .. V.length rs - 1 ]
       containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
       emptyRow rowNr = V.all Text.null (rs ! rowNr)
       wantedChunks = [ rows
@@ -226,12 +219,27 @@ getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
                      ,    any containsMagicKeyword rows
                        || all emptyRow rows
                      ]
-      toreturn = setRange loc <$> mapMaybe NE.nonEmpty wantedChunks
+      toreturn = extractLines rs <$> glueLineNumbers (firstAndLast <$> mapMaybe NE.nonEmpty wantedChunks)
   in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
      -- trace ("getChunks: listChunks = " ++ show listChunks)
      -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
      -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
      toreturn
+
+firstAndLast :: NonEmpty Int -> (Int, Int)
+firstAndLast xs = (NE.head xs, NE.last xs)
+
+-- because sometimes a chunk followed by another chunk is really part of the same chunk.
+-- so we glue contiguous chunks together.
+glueLineNumbers :: [(Int,Int)] -> [(Int,Int)]
+glueLineNumbers ((a0, a1) : (b0, b1) : xs) 
+  | a1 == b0 = glueLineNumbers $ (a0, b1) : xs
+  | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
+glueLineNumbers [x] = [x]
+glueLineNumbers [] = []
+
+extractLines :: RawStanza -> (Int,Int) -> RawStanza
+extractLines rs (y0, yLast) = V.slice y0 yLast rs
 
 -- is the cursor on a line that has nothing in it?
 blankLine :: Location -> Bool

@@ -26,7 +26,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -211,15 +211,16 @@ getStanzas rs = chunks
 -- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines
 getChunks :: RawStanza -> [RawStanza]
 getChunks rs =
-  let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) (\i -> V.all Text.null $ rs ! i) [ 0 .. V.length rs - 1 ]
+  let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) emptyRow [ 0 .. V.length rs - 1 ]
       containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
       emptyRow rowNr = V.all Text.null (rs ! rowNr)
-      wantedChunks = [ rows
+      wantedChunks = [ firstAndLast neRows
                      | rows <- listChunks
                      ,    any containsMagicKeyword rows
                        || all emptyRow rows
+                     , Just neRows <- pure $ NE.nonEmpty rows
                      ]
-      toreturn = extractLines rs <$> glueLineNumbers (firstAndLast <$> mapMaybe NE.nonEmpty wantedChunks)
+      toreturn = extractLines rs <$> glueLineNumbers wantedChunks
   in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
      -- trace ("getChunks: listChunks = " ++ show listChunks)
      -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)

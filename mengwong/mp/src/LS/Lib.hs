@@ -50,6 +50,7 @@ import Control.Monad.Writer.Lazy
 import LS.XPile.BabyL4
 import LS.XPile.Prolog
 import qualified Data.List.NonEmpty as NE
+import Data.List (transpose)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -198,14 +199,19 @@ asCSV s =
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
 getStanzas :: RawStanza -> [RawStanza]
-getStanzas rs = chunks
+getStanzas rs = splitPilcrows `concatMap` chunks
   -- traceM ("getStanzas: extracted range " ++ (Text.unpack $ pShow toreturn))
   where chunks = getChunks rs
 
         -- traceStanzas xs = trace ("stanzas: " ++ show xs) xs
 
--- splitPilcrows :: Location -> [Location]
--- splitPilcrows = _
+splitPilcrows :: RawStanza -> [RawStanza]
+splitPilcrows rs = map (listsToStanza . transpose) splitted
+  where 
+    listsToStanza = V.fromList . map V.fromList
+    stanzaToLists = map V.toList . V.toList
+    rst = transpose $ stanzaToLists rs
+    splitted = (DLS.split . DLS.dropDelims . DLS.whenElt) (all (== "¶")) rst
 
 -- highlight each chunk using range attribute.
 -- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines

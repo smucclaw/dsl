@@ -426,6 +426,17 @@ main = do
                                 ( mkLeaf "Bob is estranged" )
                           }
                         ]
+      it "should handle pilcrows" $ do
+        let testfile = "test/pilcrows-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR (pRule <* eof) testfile `traverse` (exampleStreams testcsv)
+          `shouldParse` [ dayOfSilence 
+                        , dayOfSong
+                        ]
+        -- forM_ (exampleStreams testcsv) $ \stream ->
+        --   parseR (pRule <* eof) testfile stream
+        --     `shouldParse` [ defaultCon 
+        --                   ]
 
   -- upgrade single OR group to bypass the top level AND group
 

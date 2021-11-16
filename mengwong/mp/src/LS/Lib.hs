@@ -234,7 +234,7 @@ firstAndLast xs = (NE.head xs, NE.last xs)
 -- so we glue contiguous chunks together.
 glueLineNumbers :: [(Int,Int)] -> [(Int,Int)]
 glueLineNumbers ((a0, a1) : (b0, b1) : xs) 
-  | a1 == b0 = glueLineNumbers $ (a0, b1) : xs
+  | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
   | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
 glueLineNumbers [x] = [x]
 glueLineNumbers [] = []

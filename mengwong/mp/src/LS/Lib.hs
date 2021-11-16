@@ -221,7 +221,7 @@ getChunks rs =
                      , Just neRows <- pure $ NE.nonEmpty rows
                      ]
       toreturn = extractLines rs <$> glueLineNumbers wantedChunks
-  in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
+  in -- trace ("getChunks: input = " ++ show [ 0 .. V.length rs - 1 ])
      -- trace ("getChunks: listChunks = " ++ show listChunks)
      -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
      -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
@@ -233,14 +233,14 @@ firstAndLast xs = (NE.head xs, NE.last xs)
 -- because sometimes a chunk followed by another chunk is really part of the same chunk.
 -- so we glue contiguous chunks together.
 glueLineNumbers :: [(Int,Int)] -> [(Int,Int)]
-glueLineNumbers ((a0, a1) : (b0, b1) : xs) 
+glueLineNumbers ((a0, a1) : (b0, b1) : xs)
   | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
   | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
 glueLineNumbers [x] = [x]
 glueLineNumbers [] = []
 
 extractLines :: RawStanza -> (Int,Int) -> RawStanza
-extractLines rs (y0, yLast) = V.slice y0 yLast rs
+extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs
 
 vvlookup :: RawStanza -> (Int, Int) -> Maybe Text.Text
 vvlookup rs (x,y) = rs !? y >>= (!? x)

@@ -4,6 +4,8 @@
 
 This codebase reads CSV, interprets the L4 in it, and outputs various transformations intended for ingestion by related tools.
 
+The Legal Spreadsheets can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1334573632
+
 ## Demo: parsing a Legal Spreadsheet as CSV
 
 The "must sing" tab is available as a CSV, thanks to Google Sheets. (Publish to the web, tab as CSV.)

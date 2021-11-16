@@ -143,14 +143,14 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
           pPrint $ xs ++ xs'
 
 exampleStream :: ByteString -> MyStream
-exampleStream s = case getStanzas (asCSV s) of
+exampleStream s = case getStanzas <$> asCSV s of
                     Left errstr -> error errstr
-                    Right rawsts -> stanzaAsStream s (head rawsts)
+                    Right rawsts -> stanzaAsStream (head rawsts)
 
 exampleStreams :: ByteString -> [MyStream]
-exampleStreams s = case getStanzas (asCSV s) of
+exampleStreams s = case getStanzas <$> asCSV s of
                     Left errstr -> error errstr
-                    Right rawsts -> stanzaAsStream s <$> rawsts
+                    Right rawsts -> stanzaAsStream <$> rawsts
 
     -- the raw input looks like this:
 dummySing :: ByteString
@@ -196,13 +196,10 @@ asCSV s =
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
-getStanzas :: Monad m => m RawStanza -> m [RawStanza]
-getStanzas esa = do
-  rs <- esa
-  let chunks = getChunks $ Location rs (0,0) ((0,0),(V.length (rs ! (V.length rs - 1)) - 1, V.length rs - 1))
-      toreturn = extractRange <$> glueChunks chunks
+getStanzas :: RawStanza -> [RawStanza]
+getStanzas rs = extractRange <$> glueChunks chunks
   -- traceM ("getStanzas: extracted range " ++ (Text.unpack $ pShow toreturn))
-  return toreturn
+  where chunks = getChunks $ Location rs (0,0) ((0,0),(V.length (rs ! (V.length rs - 1)) - 1, V.length rs - 1))
 
 -- because sometimes a chunk followed by another chunk is really part of the same chunk.
 -- so we glue contiguous chunks together.
@@ -221,15 +218,12 @@ glueChunks x = x
 getChunks :: Location -> [Location]
 getChunks loc@(Location rs (_cx,_cy) ((_lx,_ly),(_rx,ry))) =
   let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) (\i -> V.all Text.null $ rs ! i) [ 0 .. ry ]
+      containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
+      emptyRow rowNr = V.all Text.null (rs ! rowNr)
       wantedChunks = [ rows
                      | rows <- listChunks
-                     , any (\row ->
-                               V.any (`elem` magicKeywords)
-                               (rs ! row)
-                           ) rows
-                       ||
-                       all (\row -> V.all Text.null (rs ! row))
-                       rows
+                     ,    any containsMagicKeyword rows
+                       || all emptyRow rows
                      ]
       toreturn = setRange loc <$> filter (not . null) wantedChunks
   in -- trace ("getChunks: input = " ++ show [ 0 .. ry ])
@@ -344,8 +338,8 @@ vvlookup rs (x,y) = rs !? y >>= (!? x)
 -- putting the above together, we arrive at a MyStream object ready for proper parsing.
 --
 
-stanzaAsStream :: ByteString -> RawStanza -> MyStream
-stanzaAsStream _s rs = do
+stanzaAsStream :: RawStanza -> MyStream
+stanzaAsStream rs = do
   let vvt = rs
   -- MyStream (Text.unpack $ decodeUtf8 s) [ WithPos {..}
   MyStream rs [ WithPos {..}

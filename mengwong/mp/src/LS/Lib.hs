@@ -535,11 +535,12 @@ mergePBRS (  (w, br) : [])  = Just (w, br)
 mergePBRS xs                = Just (fst . head $ xs, foldl1 (<>) (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
-pTemporal = eventually <|> specifically
+pTemporal = eventually <|> specifically <|> vaguely
   where
     eventually   = mkTC <$> pToken Eventually <*> pure ""
     specifically = mkTC <$> sometime          <*> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
+    vaguely      = Just . TVague <$> pOtherVal
 
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"

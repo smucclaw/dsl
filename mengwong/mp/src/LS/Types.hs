@@ -129,6 +129,7 @@ data TemporalConstraint a = TBefore a
                           | TAfter  a
                           | TBy     a
                           | TOn     a
+                          | TVague  a
                           deriving (Eq, Show, Generic, ToJSON)
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
@@ -176,7 +177,7 @@ mkTC After      tt = Just $ TAfter  tt
 mkTC By         tt = Just $ TBy     tt
 mkTC On         tt = Just $ TOn     tt
 mkTC Eventually _  = Nothing
-mkTC x      y  = error $ "mkTC: can't create temporal constraint from " ++ show x ++ ", " ++ show y
+mkTC x      y  = error $ "mkTC: can't create temporal constraint from " ++ show x ++ ", " ++ show y ++ " -- this should be handled by a Vaguely"
 
 data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int

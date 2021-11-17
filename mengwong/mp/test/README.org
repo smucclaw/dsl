@@ -384,6 +384,19 @@ do the individual components work?
 | IF    | the King wishes |     |        |
 | ->    | sing            |     |        |
 
+** vague temporal spec
+:PROPERTIES:
+:TABLE_EXPORT_FILE: t-vaguely.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          | AKA | singer |
+| WHO   | walks           |     |        |
+| AND   | eats            |     |        |
+| MUST  | sooner or later |     |        |
+| IF    | the King wishes |     |        |
+| ->    | sing            |     |        |
+
 ** stanzas interrupted by blank lines
 :PROPERTIES:
 :TABLE_EXPORT_FILE: blank-lines.csv

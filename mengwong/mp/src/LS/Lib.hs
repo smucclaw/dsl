@@ -190,7 +190,14 @@ asCSV s =
       vvt <- x
       -- process // comments by setting all righter elements to empty.
       -- if we ever need to maximize efficiency we can consider rewriting this to not require a Vector -> List -> Vector trip.
-      return $ trimComment False . V.toList <$> vvt
+      return $ fmap trimLegalSource <$> trimComment False . V.toList <$> vvt
+    -- ignore the () at the beginning of the line. Here it actually trims any (...) from any position but this is good enough for now
+    trimLegalSource x = let asChars = Text.unpack x
+                        in if length asChars > 0
+                              && head asChars == '('
+                              && last asChars == ')'
+                           then ""
+                           else x
     trimComment _       []                           = V.empty
     trimComment True  (_x:xs)                        = V.cons "" $ trimComment True xs
     trimComment False (x:xs) | Text.take 2 (Text.dropWhile (== ' ') x)

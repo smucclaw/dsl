@@ -286,7 +286,8 @@ toToken "LIST1"     = List1
 toToken "AKA"       = Aka
 
 -- we recognize numbers
-toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
+-- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
+-- toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = Other x

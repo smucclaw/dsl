@@ -34,6 +34,9 @@ type BoolRulesP = BoolStructP
 type BoolStruct = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
 
+mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a))
+mkLeaf = AA.Leaf . text2pt
+
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
   deriving newtype (Semigroup, Monoid)
@@ -59,6 +62,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
+                         , rbwho      :: Maybe (Preamble, BoolStructP)   -- WHO seeks eternal life in me
                          }
                       deriving (Eq, Show, Generic)
 

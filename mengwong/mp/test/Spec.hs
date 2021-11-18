@@ -10,8 +10,6 @@ import AnyAll hiding (asJSON)
 import LS.Types hiding (All)
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
-import Control.Monad.Reader (ReaderT(runReaderT))
-import Control.Monad.Writer (WriterT(runWriterT))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
 
@@ -56,6 +54,7 @@ defaultReg = Regulative
   , orig = []
   }
 
+mkLeaf :: a -> Item (NonEmpty (NonEmpty a))
 mkLeaf = Leaf . text2pt
 
 defaultCon = Constitutive

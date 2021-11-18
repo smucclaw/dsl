@@ -430,7 +430,6 @@ pRegRule = debugName "pRegRule" $
     <|> try pRegRuleNormal
     <|> (pToken Fulfilled >> return RegFulfilled)
     <|> (pToken Breach    >> return RegBreach)
-    <|> RegAlias <$> pOtherVal
   ) <* optional dnl
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:
@@ -534,7 +533,8 @@ addneg (Just p) Nothing   = Just p
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  id <$ pToken henceLest `indented1` pRegRule
+  id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> pOtherVal)
+
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolRulesP)] -> Maybe (Preamble, BoolRulesP)

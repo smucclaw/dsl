@@ -61,7 +61,6 @@ sfl4ToBabyl4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
             , nlhint -- "lang=en number=singular"
             , srcref
             } = undefined
-sfl4ToBabyl4Rule (RegAlias t) = undefined -- internal softlink to a regulative rule label = _
-sfl4ToBabyl4Rule (ConAlias t) = undefined -- internal softlink to a constitutive rule label = _
+sfl4ToBabyl4Rule (RuleAlias t) = undefined -- internal softlink to a constitutive rule label = _
 sfl4ToBabyl4Rule RegFulfilled = undefined -- trivial top = _
 sfl4ToBabyl4Rule RegBreach    = undefined -- trivial bottom

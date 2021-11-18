@@ -7,7 +7,7 @@ import Test.Hspec
 import Text.Megaparsec
 import LS.Lib
 import AnyAll hiding (asJSON)
-import LS.Types
+import LS.Types hiding (All)
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad.Reader (ReaderT(runReaderT))

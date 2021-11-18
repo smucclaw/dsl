@@ -338,7 +338,7 @@ pOneOf = id <$ pToken OneOf `indented0` pParamText
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
-  name  <- AA.Leaf . text2pt <$> pOtherVal
+  name  <- pOtherVal
   myTraceM $ "got name = " <> show name
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
@@ -384,7 +384,7 @@ pDeemRule = debugName "pDeemRule" $ do
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
-         { name = AA.Leaf . text2pt $ head dnew -- we lose the ordering
+         { name = head dnew -- we lose the ordering
          , keyword = Given
          , letbind = AA.Leaf d
          , orig = [(Deem, AA.Leaf d)] ++ means ++ is ++ includes
@@ -404,7 +404,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) (AA.Leaf . text2pt <$> namealias)
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t (AA.Leaf . text2pt $ name) Nothing (Just srcref))) namealias
   tell defalias -- use Writer to append a mini rule that associates the alias with the name
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
@@ -564,20 +564,21 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble    <- pPreamble keywords
   (entitytype, entityalias)   <- lookAhead pNameParens
+  let boolEntity = AA.Leaf . text2pt $ entitytype
   omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t entitytype Nothing (Just srcref))) (AA.Leaf . text2pt <$> entityalias)
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t boolEntity Nothing (Just srcref))) entityalias
   tell $ defalias <> listToDL omgARule
-  return (preamble, entitytype)
+  return (preamble, boolEntity)
 
 -- three tokens of the form | some thing | Aka | A Thing |
 -- Aka means "also known as"
-pNameParens :: Parser (BoolStructP, Maybe ConstitutiveName)
+pNameParens :: Parser (ConstitutiveName, Maybe ConstitutiveName)
 pNameParens = debugName "pNameParens" $ do
-  entitytype  <- dBoolRules
-  entityalias <- optional (pToken Aka *> pOtherVal)
+  entitytype  <- pOtherVal  -- Evil World Destroying Corporation
+  entityalias <- optional (pToken Aka *> pOtherVal) -- ("MegaCorp")
   _ <- dnl
   return (entitytype, entityalias)
 
@@ -755,13 +756,16 @@ pOrGroup = debugName "pOrGroup" $ do
                  else AA.Any  (elem1 : elems)
   return toreturn
 
-pElement ::  Parser BoolRulesP
-pElement = debugName "pElement" $ do
-  -- think about importing Control.Applicative.Combinators so we get the `try` for free
+pAtomicElement ::  Parser BoolRulesP
+pAtomicElement = debugName "pAtomicElement" $ do
   try pNestedBool
     <|> pNotElement
-    <|> try (constitutiveAsElement <$> tellIdFirst pConstitutiveRule)
     <|> pLeafVal
+
+pElement :: Parser BoolRulesP
+pElement = debugName "pElement" $ do
+        try (constitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+    <|> pAtomicElement
 
 -- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
 tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
@@ -769,7 +773,7 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolRulesP
-constitutiveAsElement cr = name cr
+constitutiveAsElement cr = AA.Leaf . text2pt $ name cr
 -- constitutiveAsElement _ = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRulesP

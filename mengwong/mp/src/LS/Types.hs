@@ -62,8 +62,11 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          }
                       deriving (Eq, Show, Generic)
 
+ruleName (Regulative { subj  = x }) = bsp2text x
+ruleName x = name x
+
 data Rule = Regulative
-            { name     :: BoolStructP               -- man AND woman AND child
+            { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
             , cond     :: Maybe BoolStructP         -- if it is a saturday
@@ -81,7 +84,7 @@ data Rule = Regulative
             , orig     :: [(Preamble, BoolStructP)]
             }
           | Constitutive
-            { name     :: BoolStructP   -- the thing we are defining
+            { name     :: ConstitutiveName   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
@@ -92,7 +95,7 @@ data Rule = Regulative
             , orig     :: [(Preamble, BoolStructP)]
             }
           | TypeDecl
-            { name     :: BoolStructP       --      DEFINE Sign
+            { name     :: ConstitutiveName  --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [(ParamText, Maybe TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
@@ -101,7 +104,7 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   :: BoolStructP             -- "Thing"
+            { name   :: ConstitutiveName   -- "Thing" -- the thing usually said as ("Thing")
             , detail :: BoolStructP        -- "some thing"
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef

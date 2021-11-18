@@ -9,7 +9,7 @@ import LS.Types
       BoolStruct,
       BoolStructP,
       Rule(..),
-      pt2text, text2pt, ParamText
+      pt2text, text2pt, ParamText, ruleName
       -- bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
@@ -67,7 +67,7 @@ nlg rl = do
 
 parseFields :: UDEnv -> Rule -> AnnotatedRule
 parseFields env rl@(Regulative {}) =
-  RegulativeA { everyA  = parseEvery env (bsp2text $ name rl)     ::  PGF.Expr
+  RegulativeA { everyA  = parseEvery env (ruleName rl)     ::  PGF.Expr
               , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
               , condA   = parseCond env <$> cond rl     :: Maybe PGF.Expr
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId

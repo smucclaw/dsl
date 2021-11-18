@@ -19,7 +19,7 @@ sfl4ToBabyl4 rus
 
 sfl4ToBabyl4Rule :: SFL4.Rule -> TopLevelElement SRng
 sfl4ToBabyl4Rule Regulative
-            { name    -- every person
+            { subj     -- every person
             , keyword  -- every / party / all
             , who      -- who walks and (eats or drinks)
             , cond     -- if it is a saturday
@@ -55,7 +55,7 @@ sfl4ToBabyl4Rule TypeDecl
             , rlabel
             , lsource
             , srcref
-            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack (bsp2text name), defOfClassDecl = ClassDef [] []})
+            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack name, defOfClassDecl = ClassDef [] []})
 sfl4ToBabyl4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   -- "Thing"
             , detail -- "some thing"

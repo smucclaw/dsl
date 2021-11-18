@@ -31,22 +31,39 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
 import Control.Concurrent.STM (atomically)
 import Control.Exception (throwIO)
+import Data.Text.Encoding (decodeUtf8)
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (path "RealSimple") "Eng" "S"
   where path x = "grammars/" ++ x
 
-test = "everyone who is affected by the data breach should be notified"
+test = "qualifying person must sing"
 
-getPy :: IO ()
-getPy = do
-  runProcess (proc "python3" ["src/L4/sentence.py", test]) >>= print
+-- parseCoNLLU :: UDEnv -> String -> [[Expr]]
+-- parseCoNLLU = getExprs []
+
+genUDEnv :: IO UDEnv
+genUDEnv = do
+  let input=test
+  let output="GeneratedUD"
+  runProcess_ (proc "python" ["src/L4/make_GF_files.py", input, path output])
+  getEnv (path output) "Eng" "UDS"
+    where path x = "grammars/" ++ x
+
+
+--getPy =  readProcessStdout_ (proc "python3" ["src/L4/treefrom.py", test])
 
 -- So far not going via UD, just raw GF parsing
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
-   getPy
+   print "rule"
+   print rl
+   print "rule end"
+   print "try"
+  --  let parsed = parseCoNLLU env getPy
+   print "end try"
+   -- runProcess (proc "python3" ["src/L4/sentence.py", parsed]) >>= print
    let annotatedRule = parseFields env rl
        gr = pgfGrammar env
    let gr = pgfGrammar env

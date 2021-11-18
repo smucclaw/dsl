@@ -58,12 +58,13 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbupon     :: [(Preamble, BoolRulesP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
+                         , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
                          }
                       deriving (Eq, Show, Generic)
 
 data Rule = Regulative
-            { name     :: ConstitutiveName         -- every person
-            , keyword  :: MyToken
+            { name     :: BoolStructP               -- man AND woman AND child
+            , keyword  :: MyToken                   -- Every | Party | TokAll
             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
             , cond     :: Maybe BoolStructP         -- if it is a saturday
             , deontic  :: Deontic            -- must
@@ -80,7 +81,7 @@ data Rule = Regulative
             , orig     :: [(Preamble, BoolStructP)]
             }
           | Constitutive
-            { name     :: ConstitutiveName     -- the thing we are defining
+            { name     :: BoolStructP   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
@@ -91,7 +92,7 @@ data Rule = Regulative
             , orig     :: [(Preamble, BoolStructP)]
             }
           | TypeDecl
-            { name     :: ConstitutiveName         --      DEFINE Sign
+            { name     :: BoolStructP       --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [(ParamText, Maybe TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
@@ -100,8 +101,8 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   :: ConstitutiveName -- "Thing"
-            , detail :: ConstitutiveName        -- "some thing"
+            { name   :: BoolStructP             -- "Thing"
+            , detail :: BoolStructP        -- "some thing"
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }

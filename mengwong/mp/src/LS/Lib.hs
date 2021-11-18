@@ -338,7 +338,7 @@ pOneOf = id <$ pToken OneOf `indented0` pParamText
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
-  name  <- pOtherVal
+  name  <- AA.Leaf . text2pt <$> pOtherVal
   myTraceM $ "got name = " <> show name
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
@@ -384,7 +384,7 @@ pDeemRule = debugName "pDeemRule" $ do
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
-         { name = head dnew -- we lose the ordering
+         { name = AA.Leaf . text2pt $ head dnew -- we lose the ordering
          , keyword = Given
          , letbind = AA.Leaf d
          , orig = [(Deem, AA.Leaf d)] ++ means ++ is ++ includes
@@ -404,7 +404,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) namealias
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t name Nothing (Just srcref))) (AA.Leaf . text2pt <$> namealias)
   tell defalias -- use Writer to append a mini rule that associates the alias with the name
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
@@ -448,14 +448,14 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entitytype         <- pOtherVal
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
-  rulebody           <- withDepth leftX (permutationsReg [When,If] [Unless] [Upon] [Given] [Having])
+  rulebody           <- withDepth leftX (permutationsReg [Every,Party,TokAll] [When,If] [Unless] [Upon] [Given] [Having])
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
-                 entitytype
+                 (AA.Leaf $ text2pt entitytype)
                  Party
                  Nothing
                  (addneg poscond negcond)
@@ -487,12 +487,12 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  (keyword, name)   <- try (pActor Party) <|> pActor Every <|> pActor TokAll
+  (keyword, name)   <- try (pActor [Party, Every, TokAll])
   -- (Who, (BoolStruct,[Rule]))
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
   myTraceM $ "pRegRuleNormal: preambleBoolRules returned " ++ show whoBool
-  rulebody <- permutationsReg [When, If] [Unless] [Upon] [Given] [Having]
+  rulebody <- permutationsReg [Every,Party,TokAll] [When, If] [Unless] [Upon] [Given] [Having]
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
@@ -552,28 +552,31 @@ pTemporal = eventually <|> specifically <|> vaguely
     sometime     = choice $ map pToken [ Before, After, By, On ]
     vaguely      = Just . TVague <$> pOtherVal
 
+pPreamble :: [MyToken] -> Parser Preamble
+pPreamble toks = choice (try . pToken <$> toks)
+
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
-pActor :: MyToken -> Parser (MyToken, ConstitutiveName)
-pActor party = debugName ("pActor " ++ show party) $ do
+pActor :: [MyToken] -> Parser (Preamble, BoolStructP)
+pActor keywords = debugName ("pActor " ++ show keywords) $ do
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   -- add pConstitutiveRule here -- we could have "MEANS"
-  _           <- pToken party
+  preamble    <- pPreamble keywords
   (entitytype, entityalias)   <- lookAhead pNameParens
   omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t entitytype Nothing (Just srcref))) entityalias
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t entitytype Nothing (Just srcref))) (AA.Leaf . text2pt <$> entityalias)
   tell $ defalias <> listToDL omgARule
-  return (party, entitytype)
+  return (preamble, entitytype)
 
 -- three tokens of the form | some thing | Aka | A Thing |
 -- Aka means "also known as"
-pNameParens :: Parser (ConstitutiveName, Maybe ConstitutiveName)
+pNameParens :: Parser (BoolStructP, Maybe ConstitutiveName)
 pNameParens = debugName "pNameParens" $ do
-  entitytype  <- pOtherVal
+  entitytype  <- dBoolRules
   entityalias <- optional (pToken Aka *> pOtherVal)
   _ <- dnl
   return (entitytype, entityalias)
@@ -620,6 +623,7 @@ pKeyValues = debugName "pKeyValues" $ (:|) <$> pOtherVal `indented1` many pOther
 -- though later we may object if there is more than one.
 
 mkRBfromDT :: BoolStructP
+           -> (Preamble, BoolStructP ) -- every person
            -> [(Preamble, BoolRulesP)] -- positive  -- IF / WHEN
            -> [(Preamble, BoolRulesP)] -- negative  -- UNLESS
            -> [(Preamble, BoolRulesP)] -- upon  conditions
@@ -627,9 +631,10 @@ mkRBfromDT :: BoolStructP
            -> Maybe ParamText               -- having
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> RuleBody
-mkRBfromDT rba rbpb rbpbneg rbu rbg rbh (rbd,rbt) = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
+mkRBfromDT rba rbkn rbpb rbpbneg rbu rbg rbh (rbd,rbt) = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn
 
 mkRBfromDA :: (Deontic, BoolStructP)
+           -> (Preamble, BoolStructP ) -- every person or thing
            -> [(Preamble, BoolRulesP)]
            -> [(Preamble, BoolRulesP)]
            -> [(Preamble, BoolRulesP)] -- upon  conditions
@@ -637,7 +642,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> Maybe ParamText         -- having
            -> Maybe (TemporalConstraint Text.Text)
            -> RuleBody
-mkRBfromDA (rbd,rba) rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh
+mkRBfromDA (rbd,rba) rbkn rbpb rbpbneg rbu rbg rbh rbt = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn
 
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
                 -> Parser ( ( Preamble               -- preamble = copula   (means,deem)
@@ -670,9 +675,11 @@ preambleParamText preambles = do
   paramtext <- pParamText
   return (preamble, paramtext)
 
-permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody
-permutationsReg ifwhen l4unless l4upon l4given l4having =
-  debugName ("permutationsReg positive=" <> show ifwhen
+permutationsReg :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> [MyToken] -> Parser RuleBody
+permutationsReg l4every ifwhen l4unless l4upon l4given l4having =
+  debugName ("permutationsReg"
+             <> ": keyword="  <> show l4every
+             <> ": positive=" <> show ifwhen
              <> ", negative=" <> show l4unless
              <> ", upon="     <> show l4upon
              <> ", given="    <> show l4given
@@ -680,6 +687,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
             ) $ do
   try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
             <$$> pDoAction
+            <||> pActor l4every
             <|?> ([], some $ preambleBoolRules ifwhen)   -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4unless) -- unless
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
@@ -690,6 +698,7 @@ permutationsReg ifwhen l4unless l4upon l4given l4having =
   <|>
   try ( debugName "regulative permutation with deontic-action" $ permute ( mkRBfromDA
             <$$> try pDA
+            <||> pActor l4every
             <|?> ([], some $ preambleBoolRules ifwhen) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4unless) -- syntactic constraint, all the if/when need to be contiguous.
             <|?> ([], some $ preambleBoolRules l4upon)   -- upon
@@ -760,7 +769,7 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolRulesP
-constitutiveAsElement cr = AA.Leaf (text2pt $ name cr)
+constitutiveAsElement cr = name cr
 -- constitutiveAsElement _ = error "constitutiveAsElement: cannot convert an empty list of rules to a BoolRules structure!"
 
 pNotElement :: Parser BoolRulesP

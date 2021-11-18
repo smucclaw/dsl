@@ -37,7 +37,7 @@ r `shouldParse` v = case r of
 
 defaultReg, defaultCon :: Rule
 defaultReg = Regulative
-  { name = "person"
+  { name = mkLeaf "person"
   , keyword = Every
   , who = Nothing
   , cond = Nothing
@@ -59,7 +59,7 @@ mkLeaf :: a -> Item (NonEmpty (NonEmpty a))
 mkLeaf = Leaf . text2pt
 
 defaultCon = Constitutive
-  { name = ""
+  { name = mkLeaf ""
   , keyword = Means
   , letbind = Leaf $ text2pt "Undefined"
   , cond = Nothing
@@ -86,7 +86,7 @@ main = do
 
       it "should parse an unconditional" $ do
         parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { name = "person"
+          `shouldParse` [ defaultReg { name = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
 
@@ -136,7 +136,7 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule
 
       let degustates = defaultCon
-                       { name = "degustates"
+                       { name = mkLeaf "degustates"
                        , letbind = Any [ mkLeaf "eats", mkLeaf "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
@@ -157,7 +157,7 @@ main = do
                           , srcref = Nothing
                           }
                         , defaultCon
-                          { name= "degustates"
+                          { name= mkLeaf "degustates"
                           , letbind = Any [ mkLeaf "eats", mkLeaf "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
@@ -166,7 +166,7 @@ main = do
 
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
-              { name = "imbibes"
+              { name = mkLeaf "imbibes"
               , letbind = All
                           [ mkLeaf "drinks"
                           , Any [ mkLeaf "swallows"
@@ -194,7 +194,7 @@ main = do
                         ]
 
       let king_pays_singer = defaultReg
-                          { name = "King"
+                          { name = mkLeaf "King"
                           , keyword = Party
                           , deontic = DMay
                           , action = mkLeaf "pay"
@@ -207,14 +207,14 @@ main = do
 
       let singer_must_pay = defaultReg
                               { keyword = Party
-                              , name = "Singer"
+                              , name = mkLeaf "Singer"
                               , action = mkLeaf "pay"
                               , temporal = Just (TBefore "supper")
                               }
                         
 
       let singer_chain = [ defaultReg
-                         { name = "person"
+                         { name = mkLeaf "person"
                          , who = Just $ All
                                  [ mkLeaf "walks"
                                  , mkLeaf "eats"
@@ -265,11 +265,11 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefNameAlias ("singer") ("person") Nothing
+            [ DefNameAlias (mkLeaf "singer") (mkLeaf "person") Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefNameAlias ("singer") ("person") Nothing
+            [ DefNameAlias (mkLeaf "singer") (mkLeaf "person") Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing})) ]
 
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
@@ -292,7 +292,7 @@ main = do
 
     describe "megaparsing MEANS" $ do
 
-      let bobUncle = defaultCon { name = "Bob's your uncle"
+      let bobUncle = defaultCon { name = mkLeaf "Bob's your uncle"
                                 , letbind = Not
                                             ( Any
                                               [ mkLeaf "Bob is estranged"
@@ -419,7 +419,7 @@ main = do
         testcsv <- BS.readFile testfile
         parseR (pRule <* eof) testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
-                          { name = "Bob's your uncle"
+                          { name = mkLeaf "Bob's your uncle"
                           , letbind = Any
                                       [ mkLeaf "Bob is your mother's brother"
                                       , mkLeaf "Bob is your father's brother"

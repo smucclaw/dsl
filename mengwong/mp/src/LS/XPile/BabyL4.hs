@@ -55,7 +55,7 @@ sfl4ToBabyl4Rule TypeDecl
             , rlabel
             , lsource
             , srcref
-            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack name, defOfClassDecl = ClassDef [] []})
+            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack (bsp2text name), defOfClassDecl = ClassDef [] []})
 sfl4ToBabyl4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   -- "Thing"
             , detail -- "some thing"

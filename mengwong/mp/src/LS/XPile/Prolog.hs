@@ -23,15 +23,15 @@ sfl4ToProlog rs =
     concatMap (rule2clause analysis) rs
 
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
-rule2clause st cr@Constitutive { keyword = Means } = letbind2clause st (name cr) (cond cr) (letbind cr)
-rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (name td) ens
+rule2clause st cr@Constitutive { keyword = Means } = letbind2clause st (bsp2text $ name cr) (cond cr) (letbind cr)
+rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (bsp2text $ name td) ens
 -- [ TypeDecl
 --     { name = "Chirality"
 --     , enums = Just (
 --             ( "Left" :| [] ) :|
 --             [ "Right" :| [] ]
 
-rule2clause st td@TypeDecl { has   = Just has }    = describeDict st (name td) (super td) has
+rule2clause st td@TypeDecl { has   = Just has }    = describeDict st (bsp2text $ name td) (super td) has
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -48,7 +48,7 @@ rule2clause st td@TypeDecl { has   = Just has }    = describeDict st (name td) (
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ describeParent st (name td) sup
+rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ describeParent st (bsp2text $ name td) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just

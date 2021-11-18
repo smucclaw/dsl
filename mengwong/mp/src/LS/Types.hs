@@ -205,6 +205,7 @@ toToken :: Text.Text -> MyToken
 -- start a regulative rule
 toToken "EVERY" =  Every
 toToken "PARTY" =  Party
+toToken "ALL"   =  All -- when parties are treated as a collective, e.g. ALL diners
 
 -- start a boolstruct
 toToken "ALWAYS" = Always

@@ -486,7 +486,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  (_party_every, entitytype, _entityalias)   <- try (pActor Party) <|> pActor Every
+  (_party_every, entitytype, _entityalias)   <- try (pActor Party) <|> pActor Every <|> pActor All
   -- (Who, (BoolStruct,[Rule]))
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables

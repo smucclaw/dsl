@@ -21,9 +21,13 @@ data MyStream = MyStream
   }
   deriving Show
 
-data MyToken = Every | Party | Who | Means | Includes | When | Is | Always | Never
-             | Must | May | Shant | If | Or | And | MPNot
-             | Before | After | By | On | Eventually
+data MyToken = Every | Party | All
+             | Who
+             | Must | May | Shant
+             | If | When | Always | Never
+             | Or | And | MPNot
+             | Before | After | By | On | Eventually -- TVague is a temporal constraint but not a token
+             | Means | Includes  | Is
              | Given | Having | Upon
              | Define | OneOf | Holds
              | A_An

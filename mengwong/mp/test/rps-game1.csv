@@ -27,7 +27,7 @@
 ,,,,,,,,,,,,,,,,,
 //§,Result,,,,,,,,,,,,,,,,
 ,UPON,,Throw,,,,,,,,,,,,,,
-,DEFINE,,RoundWinner,,,IS,playerAlice,,IF,playerAlice,,defeats,,playerBob,,,
+,DEEM,,RoundWinner,,,IS,playerAlice,,IF,playerAlice,,defeats,,playerBob,,,
 ,,,,,,IS,playerBob,,IF,playerBob,,defeats,,playerAlice,,,
 ,,,,,,IS,None,,BY DEFAULT,,,,,,,,
 ,,,,,,,,,,,,,,,,,

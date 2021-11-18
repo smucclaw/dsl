@@ -34,8 +34,12 @@ type BoolRulesP = BoolStructP
 type BoolStruct = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
 
-mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a))
+mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
 mkLeaf = AA.Leaf . text2pt
+
+-- remove the TypeSig from a ParamText
+untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
+untypePT = fmap fst
 
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
@@ -66,6 +70,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          }
                       deriving (Eq, Show, Generic)
 
+ruleName :: Rule -> Text.Text
 ruleName (Regulative { subj  = x }) = bsp2text x
 ruleName x = name x
 
@@ -101,8 +106,8 @@ data Rule = Regulative
           | TypeDecl
             { name     :: ConstitutiveName  --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [(ParamText, Maybe TypeSig)] -- HAS foo :: List Hand \n bar :: Optional Restaurant
-            , enums    :: Maybe ParamText  -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , has      :: Maybe [ParamText] -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , rlabel   :: Maybe Text.Text
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -113,9 +118,16 @@ data Rule = Regulative
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
-          | RuleAlias Text.Text -- internal softlink to a rule label, e.g. HENCE NextStep
+          | RuleAlias Text.Text -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom
+          -- | CaseStm       -- work in progress
+          -- { name   :: ConstitutiveName
+          -- , limbs  :: [(Maybe BoolStructP -- cond
+          --              ,ParamText         -- result
+          --              )]
+          -- , eqtest :: Maybe ParamText
+          -- }
           deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: ConstitutiveName }
@@ -152,13 +164,13 @@ data TypeSig = SimpleType ParamType EntityType
 --                                   --               , Node "arg1"  [ Node "val2" [], Node "val3" [] ]
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
-type ParamText = NonEmpty (NonEmpty Text.Text) -- but consider the Tree alternative above
+type ParamText = NonEmpty (NonEmpty Text.Text, Maybe TypeSig) -- but consider the Tree alternative above
 
-text2pt :: a -> NonEmpty (NonEmpty a)
-text2pt = pure . pure
+text2pt :: a -> NonEmpty (NonEmpty a, Maybe TypeSig)
+text2pt x = pure (pure x, Nothing)
 
-pt2text :: NonEmpty (NonEmpty Text.Text) -> Text.Text
-pt2text x = Text.unwords $ concatMap toList $ toList x
+pt2text :: ParamText -> Text.Text
+pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Leaf pt)  = pt2text pt
@@ -278,6 +290,8 @@ toToken ";"      = EOL
 toToken ":"      = TypeSeparator
 toToken "::"     = TypeSeparator
 toToken "TYPE"   = TypeSeparator
+toToken "IS A"   = TypeSeparator
+toToken "IS AN"  = TypeSeparator
 toToken "A"      = A_An
 toToken "AN"     = A_An
 

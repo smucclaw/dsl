@@ -274,9 +274,9 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
 
       let singer_must_pay_params =
-            singer_must_pay { action = Leaf (("pay" :| [])
-                                             :| ["to"     :| ["the King"]
-                                                ,"amount" :| ["$20"]]) }
+            singer_must_pay { action = Leaf (("pay" :| []                 , Nothing)
+                                             :| [("to"     :| ["the King"], Nothing)
+                                                ,("amount" :| ["$20"]     , Nothing)]) }
 
       it "should parse action params" $ do
         mycsv <- BS.readFile "test/action-params-singer.csv"

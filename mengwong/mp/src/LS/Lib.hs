@@ -327,7 +327,7 @@ pTypeSig = debugName "pTypeSig" $ do
                                        , TOptional <$ pToken Optional
                                        , TList0    <$ pToken List0
                                        , TList1    <$ pToken List1 ]
-      base        <- pOtherVal <* dnl
+      base        <- pOtherVal
       return $ SimpleType (fromMaybe TOne cardinality) base
     inlineenum = do
       InlineEnum TOne <$> pOneOf
@@ -342,9 +342,7 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
   _     <- optional dnl
-  has   <- optional (id <$ pToken Has `indented1` many ( (,)
-                                                         <$> (pure <$> pKeyValues) -- basically a single-line ParamText
-                                                         <*> optional pTypeSig
+  has   <- optional (id <$ pToken Has `indented1` many ( (pure <$> pKeyValues) -- basically a single-line ParamText
                                                          <* optional dnl))
   myTraceM $ "got has = " <> show has
   enums <- optional pOneOf
@@ -369,7 +367,7 @@ pDeemRule = debugName "pDeemRule" $ do
 
   ((_d,d),gs,w,i,u,means,is,includes) <- permute $ (,,,,,,,)
     <$$> preambleParamText [Deem]
-    <|?> ([], some $ preambleParamText [Given])
+    <|?> ([], some $ preambleParamText [Given, Upon])
     <|?> ([], some $ preambleBoolRules [When])
     <|?> ([], some $ preambleBoolRules [If])
     <|?> ([], some $ preambleBoolRules [Unless])
@@ -378,8 +376,8 @@ pDeemRule = debugName "pDeemRule" $ do
     <|?> ([], some $ preambleBoolRules [Includes])
 
   -- let's extract the new term from the deem line
-  let givens = concatMap (concatMap toList . toList . snd) gs :: [Text.Text]
-      dnew   = [ word | word <- concatMap toList $ toList d, word `notElem` givens ]
+  let givens = concatMap (concatMap toList . toList . untypePT . snd) gs :: [Text.Text]
+      dnew   = [ word | word <- concatMap toList $ toList (untypePT d), word `notElem` givens ]
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
@@ -613,13 +611,15 @@ pParamText = debugName "pParamText" $ do
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
   --     return $ myhead :| therest
 
-type KVsPair = NonEmpty Text.Text -- so really there are multiple Values
+type KVsPair = (NonEmpty Text.Text, Maybe TypeSig) -- so really there are multiple Values
 
 pParams :: Parser [KVsPair]
 pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $ (:|) <$> pOtherVal `indented1` many pOtherVal
+pKeyValues = debugName "pKeyValues" $
+  (,) <$> ((:|) <$> pOtherVal `indented1` many pOtherVal)
+      <*> optional pTypeSig
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.

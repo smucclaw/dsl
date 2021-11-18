@@ -56,20 +56,20 @@ rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ descr
 
 rule2clause st _ = [ mkComment "clause Not Handled" ]
 
-describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [(ParamText, Maybe TypeSig)] -> [Clause]
+describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [ParamText] -> [Clause]
 describeDict st tname mparent hases =
   maybe [] (\parent -> [describeParent st tname parent]) mparent
   ++
-  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (pt2text k), vart typeDesc]) []
-  | (k, t) <- hases
-  , let typeDesc = maybe "untyped" showtype t
+  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (pt2text pt), vart typeDesc]) []
+  | pt@((_,ts):|_) <- hases
+  , let typeDesc = maybe "untyped" showtype ts
   ]
 
 showtype (SimpleType TOne      tt) = tt
 showtype (SimpleType TOptional tt) = "optional("     <> tt <> ")"
 showtype (SimpleType TList0    tt) = "listOf("       <> tt <> ")"
 showtype (SimpleType TList1    tt) = "nonEmptyList(" <> tt <> ")"
-showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums tt))
+showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (untypePT tt)))
 inEnums pt = "enums(" <> Text.unwords [ h | (h :| _) <- NE.toList pt ] <> ")"          
              -- we gonna need the same writer magic to append top-level output.
              -- in future, run clpEnums
@@ -90,7 +90,7 @@ vari = var . show
 clpEnums :: Analysis -> Text.Text -> ParamText -> [Clause]
 clpEnums st tname ens =
   [ Clause (Struct "l4enum" [vartl tname, vari i, vartl v]) []
-  | (v :| _, i) <- Prelude.zip (NE.toList ens) [n..] ]
+  | (v :| _, i) <- Prelude.zip (NE.toList $ untypePT ens) [n..] ]
   where n = 1 :: Int
   -- TODO: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
 
@@ -98,7 +98,7 @@ mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
 
 letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructP -> Item ParamText -> [Clause]
-letbind2clause st fname cond (Leaf pt) = fmap (fundef st fname cond) (NE.toList pt)
+letbind2clause st fname cond (Leaf pt) = fmap (fundef st fname cond) (NE.toList $ untypePT pt)
 letbind2clause st fname cond _         = [ mkComment "cant Handle Nonleaf Items Yet" ]
 
 fundef :: Analysis -> Text.Text -> Maybe BoolStructP -> NonEmpty Text.Text -> Clause

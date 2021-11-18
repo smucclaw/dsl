@@ -456,6 +456,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
                  entitytype
+                 Party
                  Nothing
                  (addneg poscond negcond)
                  (rbdeon rulebody)
@@ -486,7 +487,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  (_party_every, entitytype, _entityalias)   <- try (pActor Party) <|> pActor Every <|> pActor LS.Types.All
+  (keyword, name)   <- try (pActor Party) <|> pActor Every <|> pActor TokAll
   -- (Who, (BoolStruct,[Rule]))
   whoBool                     <- optional (withDepth leftX (preambleBoolRules [Who]))
   -- the below are going to be permutables
@@ -501,7 +502,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
 
   let toreturn = Regulative
-                 entitytype
+                 name
+                 keyword
                  (snd <$> whoBool)
                  (addneg poscond negcond)
                  (rbdeon rulebody)
@@ -552,7 +554,7 @@ pTemporal = eventually <|> specifically <|> vaguely
 
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
-pActor :: MyToken -> Parser (MyToken, ConstitutiveName, Maybe ConstitutiveName)
+pActor :: MyToken -> Parser (MyToken, ConstitutiveName)
 pActor party = debugName ("pActor " ++ show party) $ do
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -565,7 +567,7 @@ pActor party = debugName ("pActor " ++ show party) $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t entitytype Nothing (Just srcref))) entityalias
   tell $ defalias <> listToDL omgARule
-  return (party, entitytype, entityalias)
+  return (party, entitytype)
 
 -- three tokens of the form | some thing | Aka | A Thing |
 -- Aka means "also known as"

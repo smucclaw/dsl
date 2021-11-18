@@ -67,7 +67,7 @@ nlg rl = do
 
 parseFields :: UDEnv -> Rule -> AnnotatedRule
 parseFields env rl@(Regulative {}) =
-  RegulativeA { everyA  = parseEvery env (every rl)     ::  PGF.Expr
+  RegulativeA { everyA  = parseEvery env (name rl)     ::  PGF.Expr
               , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
               , condA   = parseCond env <$> cond rl     :: Maybe PGF.Expr
               , deonticA = parseDeontic (deontic rl)    :: PGF.CId

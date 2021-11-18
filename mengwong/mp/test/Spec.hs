@@ -7,7 +7,7 @@ import Test.Hspec
 import Text.Megaparsec
 import LS.Lib
 import AnyAll hiding (asJSON)
-import LS.Types hiding (All)
+import LS.Types
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -37,7 +37,8 @@ r `shouldParse` v = case r of
 
 defaultReg, defaultCon :: Rule
 defaultReg = Regulative
-  { every = "person"
+  { name = "person"
+  , keyword = Every
   , who = Nothing
   , cond = Nothing
   , deontic = DMust
@@ -85,7 +86,7 @@ main = do
 
       it "should parse an unconditional" $ do
         parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { every = "person"
+          `shouldParse` [ defaultReg { name = "person"
                                      , deontic = DMust
                                      } ]
 
@@ -193,7 +194,8 @@ main = do
                         ]
 
       let king_pays_singer = defaultReg
-                          { every = "King"
+                          { name = "King"
+                          , keyword = Party
                           , deontic = DMay
                           , action = mkLeaf "pay"
                           , temporal = Just (TAfter "20min")
@@ -204,14 +206,15 @@ main = do
             king_pays_singer { temporal = Nothing }
 
       let singer_must_pay = defaultReg
-                              { every = "Singer"
+                              { keyword = Party
+                              , name = "Singer"
                               , action = mkLeaf "pay"
                               , temporal = Just (TBefore "supper")
                               }
                         
 
       let singer_chain = [ defaultReg
-                         { every = "person"
+                         { name = "person"
                          , who = Just $ All
                                  [ mkLeaf "walks"
                                  , mkLeaf "eats"

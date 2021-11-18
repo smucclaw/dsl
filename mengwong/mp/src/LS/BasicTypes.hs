@@ -21,7 +21,7 @@ data MyStream = MyStream
   }
   deriving Show
 
-data MyToken = Every | Party | All
+data MyToken = Every | Party | TokAll
              | Who
              | Must | May | Shant
              | If | When | Always | Never

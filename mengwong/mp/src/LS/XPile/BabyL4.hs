@@ -19,7 +19,8 @@ sfl4ToBabyl4 rus
 
 sfl4ToBabyl4Rule :: SFL4.Rule -> TopLevelElement SRng
 sfl4ToBabyl4Rule Regulative
-            { every    -- every person
+            { name    -- every person
+            , keyword  -- every / party / all
             , who      -- who walks and (eats or drinks)
             , cond     -- if it is a saturday
             , deontic  -- must

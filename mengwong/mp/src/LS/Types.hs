@@ -62,8 +62,8 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                       deriving (Eq, Show, Generic)
 
 data Rule = Regulative
-  -- TODO: preserve Every vs Party as keyword, just like in Constitutive
-            { every    :: ConstitutiveName         -- every person
+            { name     :: ConstitutiveName         -- every person
+            , keyword  :: MyToken
             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
             , cond     :: Maybe BoolStructP         -- if it is a saturday
             , deontic  :: Deontic            -- must
@@ -204,7 +204,7 @@ toToken :: Text.Text -> MyToken
 -- start a regulative rule
 toToken "EVERY" =  Every
 toToken "PARTY" =  Party
-toToken "ALL"   =  All -- when parties are treated as a collective, e.g. ALL diners
+toToken "ALL"   =  TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
 
 -- start a boolstruct
 toToken "ALWAYS" = Always

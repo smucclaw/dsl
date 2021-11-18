@@ -430,6 +430,7 @@ pRegRule = debugName "pRegRule" $
     <|> try pRegRuleNormal
     <|> (pToken Fulfilled >> return RegFulfilled)
     <|> (pToken Breach    >> return RegBreach)
+    <|> RegAlias <$> pOtherVal
   ) <* optional dnl
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:

@@ -105,7 +105,7 @@ data Rule = Regulative
             , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
-          | RegAlias Text.Text -- internal softlink to a regulative rule label
+          | RegAlias Text.Text -- internal softlink to a regulative rule label, e.g. HENCE NextStep
           | ConAlias Text.Text -- internal softlink to a constitutive rule label
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom

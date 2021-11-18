@@ -63,7 +63,7 @@ nlg rl = do
    print "try"
   --  let parsed = parseCoNLLU env getPy
    print "end try"
-   -- runProcess (proc "python3" ["src/L4/sentence.py", parsed]) >>= print
+   runProcess (proc "python3" ["src/L4/sentence.py", test]) >>= print
    let annotatedRule = parseFields env rl
        gr = pgfGrammar env
    let gr = pgfGrammar env

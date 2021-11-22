@@ -46,6 +46,8 @@ dependencies:
 - prolog
 - typed-process
 - stm
+- replace-megaparsec
+- extra
 
 ghc-options: -Wall
 

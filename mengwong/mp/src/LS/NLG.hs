@@ -6,143 +6,121 @@ import LS.Types
     ( Deontic(..),
       EntityType,
       TemporalConstraint (..),
-      BoolStruct,
-      BoolStructP,
-      Rule(..),
-      pt2text, text2pt, ParamText, ruleName
-      -- bsp2text
-      )
-import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
+      ParamText,
+      BoolStruct(..),
+      Rule(..) )
+import PGF ( CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Maybe (fromMaybe)
 import Data.Char (toLower)
+import Data.Void (Void)
 import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import AnyAll (Item(..))
-import Data.Maybe
-import qualified AnyAll as AA
--- import Llvm.AbsSyn (LlvmStatement(Expr))
+import Data.Maybe ( fromJust, fromMaybe )
+import Data.List ( elemIndex, intercalate )
+import Replace.Megaparsec ( sepCap )
+import Text.Megaparsec
+    ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
+import Text.Megaparsec.Char (char)
+import Data.Either (rights)
 
 -- typeprocess to run a python
-import System.IO
-import System.Process.Typed
-import qualified Data.ByteString.Lazy as L
+import System.IO ()
+import System.Process.Typed ( proc, readProcessStdout_ )
 import qualified Data.ByteString.Lazy.Char8 as L8
-import Control.Concurrent.STM (atomically)
-import Control.Exception (throwIO)
-import Data.Text.Encoding (decodeUtf8)
+import qualified Control.Monad.IO.Class
+import Control.Monad (join)
 
 myUDEnv :: IO UDEnv
-myUDEnv = getEnv (path "RealSimple") "Eng" "S"
+myUDEnv = getEnv (path "UDApp") "Eng" "UDS"
   where path x = "grammars/" ++ x
 
-test = "qualifying person must sing"
+unpacked :: L8.ByteString -> String
+unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
+    where conll = filter (not . (`elem` "\n")) $ L8.unpack x
 
--- parseCoNLLU :: UDEnv -> String -> [[Expr]]
--- parseCoNLLU = getExprs []
+patterns :: (Char, Char) -> Parsec Void String String
+patterns (a,b) = do
+  char a
+  join <$> manyTill
+          ((fst <$> match (patterns (a,b))) <|> (pure <$> anySingle))
+          (char b)
 
-genUDEnv :: IO UDEnv
-genUDEnv = do
-  let input=test
-  let output="GeneratedUD"
-  runProcess_ (proc "python" ["src/L4/make_GF_files.py", input, path output])
-  getEnv (path output) "Eng" "UDS"
-    where path x = "grammars/" ++ x
+grabStrings :: (Char, Char) -> String -> [String]
+grabStrings (a,b) txt =
+  rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
 
+getString :: String -> String
+getString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'') l | l <- grabStrings ('[',']') txt ]
 
---getPy =  readProcessStdout_ (proc "python3" ["src/L4/treefrom.py", test])
+getPy :: Control.Monad.IO.Class.MonadIO m => String -> m L8.ByteString
+getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])
 
--- So far not going via UD, just raw GF parsing
+parseCoNLLU :: UDEnv -> String -> [[Expr]]
+parseCoNLLU = getExprs []
+
+parseOut :: UDEnv -> String -> IO Expr
+parseOut env str = do
+  getConll <- getPy str
+  let conll = getString $ unpacked getConll
+  let exprs = parseCoNLLU env conll -- env -> str -> [[expr]]
+  mapM_ print exprs
+  putStr conll
+  return $ head $ head exprs
+
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
-   print "rule"
-   print rl
-   print "rule end"
-   print "try"
-  --  let parsed = parseCoNLLU env getPy
-   print "end try"
-   getConll <- runProcess (proc "python3" ["src/L4/sentence.py", test])
-   print getConll
-   let annotatedRule = parseFields env rl
-       gr = pgfGrammar env
+   annotatedRule <- parseFields env rl
    let gr = pgfGrammar env
        lang = actLanguage env
-
-       -- piecing together in a simple GF grammar
-       -- TODO: check which parts are Nothing and which have a value, then use the ones that have a value
-       -- For now we just use the fields that are not Maybe
        subjectRaw = everyA annotatedRule
-       subject = case whoA annotatedRule of
-                   Nothing -> subjectRaw
-                   Just vp -> mkRelClNP subjectRaw vp
-       predicate = mkApp (deonticA annotatedRule) [actionA annotatedRule]
-       predicateTemporal = case temporalA annotatedRule of
-                          Nothing -> predicate
-                          Just adv -> mkApp ( mkCId "AdvVP") [predicate, adv]
-       newFancyTree = mkApp subjPred [subject, predicateTemporal]
-       newFancyTreeCond = case condA annotatedRule of
-                          Nothing -> newFancyTree
-                          Just utt -> mkApp ( mkCId "addCond" ) [utt, newFancyTree]
-       -- TODO: piecing together the parts in a more complex, UD-based grammar ???
-       linText = linearize gr lang newFancyTreeCond
-       linTree = showExpr [] newFancyTreeCond
-
+       linText = linearize gr lang subjectRaw
+       linTree = showExpr [] subjectRaw
    return (Text.pack (linText ++ "\n" ++ linTree))
+  -- where
+    -- subjPred :: CId
+    -- subjPred = mkCId "subjPred"
+
+    -- mkRelClNP :: Expr -> Expr -> Expr
+    -- mkRelClNP np vp = mkApp (mkCId "addWho") [np,vp]
+
+parseFields :: UDEnv -> Rule -> IO AnnotatedRule
+parseFields env rl@(Regulative {}) = do
+    everyA'  <- parseEvery env (every rl)
+    -- whoA'   <- fmap (parseWho env) (who rl)  :: Maybe Expr
+    whoA' <- return Nothing
+    condA'   <- return Nothing
+    let deonticA' = parseDeontic (deontic rl)    :: CId
+    actionA' <- parseAction env (action rl)
+    -- temporalA' <- fmap (parseTemporal env) (temporal rl)  :: Maybe Expr
+    temporalA' <- return Nothing
+    uponA' <- return Nothing
+    -- givenA' <- fmap (parseGiven env) (given rl) :: Expr
+    givenA' <- return Nothing
+    return RegulativeA {
+      everyA = everyA',
+      whoA = whoA',
+      condA = condA',
+      deonticA = deonticA',
+      actionA = actionA',
+      temporalA = temporalA',
+      uponA = uponA',
+      givenA = givenA'
+    }
   where
-    subjPred :: CId
-    subjPred = mkCId "subjPred"
+    parseEvery :: UDEnv -> EntityType -> IO Expr
+    parseEvery env text = parseOut env (map toLower $ Text.unpack text)
 
-    mkRelClNP :: Expr -> Expr -> Expr
-    mkRelClNP np vp = mkApp (mkCId "addWho") [np,vp]
+    parseWho :: UDEnv -> BoolStruct -> IO Expr
+    parseWho env bs = return $ mkApp (mkCId "foo") []
 
+    parseGiven :: UDEnv -> BoolStruct -> IO Expr
+    parseGiven env bs = return $ mkApp (mkCId "foo") []
 
-
-parseFields :: UDEnv -> Rule -> AnnotatedRule
-parseFields env rl@(Regulative {}) =
-  RegulativeA { everyA  = parseEvery env (ruleName rl)     ::  PGF.Expr
-              , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
-              , condA   = parseCond env <$> cond rl     :: Maybe PGF.Expr
-              , deonticA = parseDeontic (deontic rl)    :: PGF.CId
-              , actionA  = parseAction env (action rl)  :: PGF.Expr
-              , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
-              , uponA  = (parseUpon  env) <$> listToMaybe (upon rl)    :: Maybe PGF.Expr
-              , givenA = (parseGiven env) <$> given rl :: Maybe PGF.Expr -- as a hack, we ignore all but the first element of a Given. TODO
-                -- corresponds to     case given rl of
-                        --               Just bs -> Just $ parseGiven env bs
-                        --               _ -> Nothing
-            }
-  where
-    parse' :: String -> UDEnv -> Text.Text -> Expr
-    parse' cat env text =
-      case trees of
-        [] -> error $ "nlg: couldn't parse " ++ str
-        x:_ -> x
-      where
-        gr = pgfGrammar env
-        lang = actLanguage env
-        str = map toLower $ Text.unpack text
-        startcat = fromMaybe (startCat gr) $ readType cat
-        trees = parse gr lang startcat str
-
-
-    -- These funs all just parse directly with PGF library
-    -- In the future, there will be a UDpipe—ud2gf pipeline
-    parseEvery :: UDEnv -> EntityType -> Expr
-    parseEvery = parse' "NP"
-
-    parseWho :: UDEnv -> BoolStructP -> Expr
-    parseWho env bs = parse' "VP" env (bsp2text bs)
-
-    parseCond :: UDEnv -> BoolStructP -> Expr
-    parseCond env bs = parse' "S" env (bsp2text bs) -- was "Utt"
-
-    parseGiven :: UDEnv -> ParamText -> Expr
-    parseGiven env pt = parse' "S" env (pt2text pt)
-
-    parseAction :: UDEnv -> BoolStructP -> Expr
-    parseAction env bsp = parse' "VP" env (bsp2text bsp)
+    parseAction :: UDEnv -> ParamText -> IO Expr
+    parseAction env at = return $ mkApp (mkCId "foo") []
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -150,18 +128,13 @@ parseFields env rl@(Regulative {}) =
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
-    parseTemporal env (TBefore event)  = parse' "Adv"  env (Text.unwords [Text.pack "before", event])
-    parseTemporal env (TAfter event)  = parse' "Adv"  env (Text.unwords [Text.pack "after", event])
-    parseTemporal env (TBy event)  = parse' "Adv"  env (Text.unwords [Text.pack "by", event])
-    parseTemporal env (TOn event)  = parse' "Adv"  env (Text.unwords [Text.pack "on", event])
+    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
+    parseTemporal env (TAfter event)  = return $ mkApp (mkCId "foo") []
+
 
     parseUpon :: UDEnv -> BoolStructP -> Expr
     parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
 
--- BoolStruct is from Types, and Item is from AnyAll
--- TODO: for now only return the first thing
--- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
 bs2text :: BoolStruct -> Text.Text
 bs2text (Leaf txt) = txt
 bs2text (All _) = Text.pack "walk"
@@ -179,8 +152,6 @@ bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)
 ------------------------------------------------------------
 -- Ignore everything below for now
 
-parseCoNLLU :: UDEnv -> String -> [[Expr]]
-parseCoNLLU = getExprs []
 
 data AnnotatedRule = RegulativeA
             { everyA    :: Expr                      -- every person (NP)
@@ -199,20 +170,3 @@ data AnnotatedRule = RegulativeA
             -- , srcrefA   :: Maybe SrcRef
             }
           deriving (Eq, Show)
-
-
--- Test data, already in CoNLL
-testCoNLLU :: String
-testCoNLLU = unlines [
-      "1\teveryone\teveryone\tPRON\tNN\tNumber=Sing\t11\tnsubj:pass\t_\tFUN=PRONNN"
-    , "2\twho\twho\tPRON\tWP\tPronType=Rel\t4\tnsubj:pass\t_\tFUN=PRONWP"
-    , "3\tis\tbe\tAUX\tVBZ\tMood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin\t4\taux:pass\t_\tFUN=UseComp"
-    , "4\taffected\taffect\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t1\tacl:relcl\t_\tFUN=affectVBN"
-    , "5\tby\tby\tADP\tIN\t_\t8\tcase\t_\t_"
-    , "6\tthe\tthe\tDET\tQuant\tFORM=0\t8\tdet\t_\tFUN=DefArt"
-    , "7\tdata\tdata\tNOUN\tNN\tNumber=Sing\t8\tcompound\t_\tFUN=data_N"
-    , "8\tbreach\tbreach\tNOUN\tNN\tNumber=Sing\t4\tobl\t_\tFUN=breach_N"
-    , "9\tshould\tshould\tAUX\tMD\tVerbForm=Fin\t11\taux\t_\t_"
-    , "10\tbe\tbe\tAUX\tVB\tVerbForm=Inf\t11\taux:pass\t_\tFUN=UseComp"
-    , "11\tnotified\tnotify\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t0\troot\t_\tFUN=notifyVBN"
-    ]

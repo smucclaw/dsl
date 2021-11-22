@@ -25,17 +25,69 @@
 #lemma DEFAULT_ be cop cop head
 
 
-------------------------------------------------------------------
--- The following copied from gf-ud/grammars/ShallowParseEng.labels
+-------------------------------------------------------------------
+-- Exceptions and special cases, when UD structure doesn't match GF
 
 -- To handle "my hovercraft": i_Pron is not by default parsed as Det
 #auxfun PossSgNP_ pron cn : Pron -> CN -> NP = DetCN (DetQuant (PossPron pron) NumSg) cn ; nmod:poss[PronType=Prs] head[Number=Sing]
 #auxfun PossPlNP_ pron cn : Pron -> CN -> NP = DetCN (DetQuant (PossPron pron) NumPl) cn ; nmod:poss[PronType=Prs] head[Number=Plur]
+#disable PossPron
+
+-- my 5 hovercrafts
+#auxfun PossNumSgNP_ pron num cn : Pron -> Num -> CN -> NP = DetCN (DetQuant (PossPron pron) num) cn ; nmod:poss[PronType=Prs] nummod head[Number=Sing]
+#auxfun PossNumPlNP_ pron num cn : Pron -> Num -> CN -> NP = DetCN (DetQuant (PossPron pron) num) cn ; nmod:poss[PronType=Prs] nummod head[Number=Plur]
+
+-- [my mother's]:Quant
+#auxcat Gen PART
+#auxfun GenNP_ np gen : NP -> Gen -> Quant = GenNP np ; head case
+#disable GenNP
+
+-- [my mother's]:Quant [hovercraft]:CN
+#auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss head[Number=Sing]
+#auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss head[Number=Plur]
+
+-- [my mother's]:Quant [5]:Num [hovercrafts]:CN
+#auxfun DetCNNumNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss nummod head
+
+-- fluffy and cute
+#auxcat Comma PUNCT
+#auxfun CommaAP_ ap comma : AP -> Comma -> APComma =  ap ; head punct
+
+-- Pattern match, and the corresponding continuation-based syntax
+-- #auxfun AndCutePatternMatch_ and cute : Conj -> AP -> AP2AP = MkAP2AP and cute ; cc head
+#auxfun AndCuteCont_ and cute : Conj -> AP -> Pair_Conj_AP = MkPair_ and cute ; cc head
+
+-- #auxfun AP2_ small (MkAP2AP and cute) : AP -> AP2AP -> AP = ConjAP and (BaseAP small cute)) ; head conj
+#auxfun AP2_ small andCute : AP -> Pair_Conj_AP -> AP = UsePair_ (AP2_helper_ small) andCute ; head conj
+#auxfun AP2_helper_ small and cute :  AP -> Conj -> AP -> AP = ConjAP and (BaseAP small cute) ; head dummy nonexistent
+
+-- #auxfun APBaseComma_ small fluffy (MkAP2AP and cute)  : AP -> APComma -> AP2AP -> ConjListAP = ConjConsAP and small (BaseAP fluffy cute) ; head conj conj
+#auxfun APBaseComma_ small fluffy andCute : AP -> APComma -> Pair_Conj_AP -> ConjListAP = UsePair_ (APBaseComma_helper_ small fluffy) andCute ; head conj conj
+#auxfun APBaseComma_helper_ small fluffy and cute : AP -> APComma -> Conj -> AP -> ConjListAP = MkTriple_ and small (BaseAP fluffy cute) ; head dummy dummy
+
+-- #auxfun ConjListToAP2_ (ConjConsAP and small furryFluffyCute) : ConjListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; head
+#auxfun ConjListToAP2_ and_small_furryFluffyCute : ConjListAP -> AP = UseTriple_ ConjListToAP2_helper_ and_small_furryFluffyCute ; head
+#auxfun ConjListToAP2_helper_ and small furryFluffyCute : Conj -> AP -> ListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; notreal head dummy
+
+-- #auxfun APAddComma_ furry (ConjConsAP and small fluffyAndCute)  : APComma -> ConjListAP -> ConjListAP = ConjConsAP and small (ConsAP furry fluffyAndCute) ; conj head
+#auxfun APAddComma_ furry and_small_fluffyCute  : APComma -> ConjListAP -> ConjListAP = UseTriple_ (APAddComma_helper_ furry) and_small_fluffyCute ; conj head
+#auxfun APAddComma_helper_ furry and small fluffyCute : APComma -> Conj -> AP -> ListAP -> ConjListAP = MkTriple_ and small (ConsAP furry fluffyCute) ; dummy head
+
+-- Only used inside other macros
+-- Pair_a_b = (a -> b -> r) -> r
+#auxfun MkPair_ a b handler : a -> b -> ab2r -> r = handler a b ; head dummy nonexistent
+#auxfun UsePair_ handler pair : ab2r -> Pair_a_b -> r = pair handler ; head dummy
+-- Triple_a_b_c = (a -> b -> r) -> r
+#auxfun MkTriple_ a b c handler : a -> b -> c -> abc2r -> r = handler a b c ; head dummy nonexistent nope
+#auxfun UseTriple_ handler triple : abc2r -> Triple_a_b_c -> r = triple handler ; head dummy
+
+-- #auxfun PossGenmodSgNP_ np cn : NP -> CN -> NP = GenModNP NumSg np cn ; nmod:poss head[Number=Sing]
+-- #auxfun PossGenmodSgPl_ np cn : NP -> CN -> NP = GenModNP NumPl np cn ; nmod:poss head[Number=Plur]
 
 -- disable plurals as mass terms
 #auxfun MassNP_sg cn : CN -> NP = MassNP cn ; head[Number=Sing]
 #auxfun DetCN_aPl cn : CN -> NP = DetCN aPl_Det cn ; head[Number=Plur]
-#disable MassNP
+#disable MassNP aPl_Det NumPl
 
 #auxcat The DET
 #auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN the_Det cn ; det head[Number=Sing]
@@ -57,33 +109,31 @@
 -- Inari's additions --
 -----------------------
 
--- ** more than **
--- This whole set of auxfuns is to parse the structure "more than 500 people",
--- which is nested differently from RGL funs
+#disable pot1 pot2 pot3 pot4 pot1to19
 
+-- Some multiwords
+-- ** more than **
 #auxcat More ADJ
 #auxcat Than ADP
 #auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[Degree=Cmp] fixed
 #disable than_Prep
 
+-- ** at least **
+#auxcat At ADV
+#auxfun AtLeast_ at least : At -> AdA -> AdN = at_least_AdN ; case head[Degree=Sup] -- will likely match other things — need to match with words!
+
+-- ** 5 people **
+#auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
+
+-- Label variants of various
+-- This relation is nmod head, and default AdNum is advmod head
+#auxfun AdNumNmod_ atLeast five : AdN -> Card -> Card = AdNum atLeast five ; nmod head
+
 -- This relation is head advmod, and default DetQuant is head nummod
 #auxfun DetQuantAdvmod_ moreThan five : Quant -> Num -> Det = DetQuant moreThan five ; advmod head
 
--- This is not like normal DetCN, which is det head
+-- This relation is nummod head, and default DetCN is det head
 #auxfun DetCNNummod_ moreThan5 people : Det -> CN -> NP = DetCN moreThan5 people ; nummod head
-
---#auxfun PredetNP_ more_than x_people : Quant -> Num -> NP = PredetNP more_than x_people ; advmod head
-
--- #auxcat Num_ NUM -- can be Card or Num or any GF cat
--- #auxfun MoreThanXCN_ more than x cn : More -> Than -> Num_ -> CN -> NP = PredetNP more_Predet (DetCN (DetQuant IndefArt x) cn) ; ((head fixed):advmod  head):nummod  head
-
--- ((more than) 500  )    people
---   head  fix
---   advmod     head
---      nummod            head
-
--- ** 5 people **
---#auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
 
 
 -- ** acl **

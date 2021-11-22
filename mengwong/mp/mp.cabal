@@ -53,6 +53,7 @@ library
     , bytestring
     , cassava
     , containers
+    , extra
     , generic-data
     , gf
     , gf-ud
@@ -64,6 +65,7 @@ library
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
     , stm
     , text
@@ -89,6 +91,7 @@ executable mp-exe
     , bytestring
     , cassava
     , containers
+    , extra
     , generic-data
     , gf
     , gf-ud
@@ -101,6 +104,7 @@ executable mp-exe
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
     , stm
     , text
@@ -127,6 +131,7 @@ test-suite mp-test
     , bytestring
     , cassava
     , containers
+    , extra
     , generic-data
     , gf
     , gf-ud
@@ -139,6 +144,7 @@ test-suite mp-test
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
     , stm
     , text

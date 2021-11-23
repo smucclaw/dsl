@@ -32,24 +32,24 @@ relevant sh dp marking parentValue self =
   in -- convert to a QTree for output
   case self of
              Leaf x -> case Map.lookup x (getMarking marking) of
-                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) (Default $ Right b)) []
-                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) (Default $ Left  b)) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) (Default $ Left Nothing)) []
-             Any items -> Node (ask2view (Q initVis  Or (Default $ Left selfValue))) repaintedChildren
-             All items -> Node (ask2view (Q initVis And (Default $ Left selfValue))) repaintedChildren
-             Not       item  -> Node (ask2view (Q initVis Neg      (Default $ Left selfValue))) repaintedChildren
+                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
+                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
+                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
+             Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
+             All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
+             Not       item  -> Node (ask2view (Q initVis Neg Nothing      (Default $ Left selfValue))) repaintedChildren
   where
     getChildren (Leaf _) = []
-    getChildren (Any c) = c
-    getChildren (All c) = c
+    getChildren (Any _ c) = c
+    getChildren (All _ c) = c
     getChildren (Not c) = [c]
 
     ask2hide :: Q a -> Q a
-    ask2hide (Q Ask x y) = Q Hide x y
+    ask2hide (Q Ask x y z) = Q Hide x y z
     ask2hide x = x
     
     ask2view :: Q a -> Q a
-    ask2view (Q Ask x y) = Q View x y
+    ask2view (Q Ask x y z) = Q View x y z
     ask2view x = x
     
 -- which of my descendants are dispositive? i.e. contribute to the final result.
@@ -61,9 +61,9 @@ dispositive sh marking self =
       recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
   in case self of
        Leaf x          -> if isJust selfValue then return self else mempty
-       Any items -> recurse items
-       All items -> recurse items
-       Not item  -> recurse [item]
+       Any label items -> recurse items
+       All label items -> recurse items
+       Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
@@ -75,11 +75,11 @@ evaluate Hard (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              _                               -> Nothing
 evaluate sh   marking           (Not x)  = not <$> evaluate sh marking x
-evaluate sh marking (Any items)
+evaluate sh marking (Any label items)
   | Just True `elem`    (evaluate sh marking <$> items) = Just True
   | all (== Just False) (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing
-evaluate sh marking (All items)
+evaluate sh marking (All label items)
   | all (== Just True) (evaluate sh marking <$> items) = Just True
   | Just False `elem`  (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing

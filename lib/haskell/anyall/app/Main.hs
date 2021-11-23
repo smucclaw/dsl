@@ -72,10 +72,10 @@ maindemo = do
                    ,("run",   Right $ Just False)
                    ,("eat",   Right $ Just True )
                    ,("drink", Left  $ Just True )]
-    ] $ ppQTree (AnyAll.All
+    ] $ ppQTree (AnyAll.All (Pre "all of")
                  [ Leaf "walk"
                  , Not (Leaf "run")
-                 , AnyAll.Any
+                 , AnyAll.Any (Pre "either")
                    [ Leaf "eat"
                    , Leaf "drink" ] ])
   putStrLn "* LEGEND"

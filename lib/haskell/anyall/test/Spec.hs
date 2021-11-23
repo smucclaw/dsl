@@ -26,11 +26,11 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q Ask (Simply "walk") lt) []
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") lt) []
-          , Node (Q Ask (Simply "drink") lt) []
+        Node (Q View And (Just $ Pre "both") ln)
+        [ Node (Q Ask (Simply "walk") Nothing lt) []
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lt) []
+          , Node (Q Ask (Simply "drink") Nothing lt) []
           ]
         ]
 
@@ -39,11 +39,11 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q Ask (Simply "walk") lf) []
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") lt) []
-          , Node (Q Ask (Simply "drink") lt) []
+        Node (Q View And (Just $ Pre "both") ln)
+        [ Node (Q Ask (Simply "walk") Nothing lf) []
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lt) []
+          , Node (Q Ask (Simply "drink") Nothing lt) []
           ]
         ]
 
@@ -52,11 +52,11 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q Ask (Simply "walk") ln) []
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") lt) []
-          , Node (Q Ask (Simply "drink") lt) [] ] ]
+        Node (Q View And (Just $ Pre "both") ln)
+        [ Node (Q Ask (Simply "walk") Nothing ln) []
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lt) []
+          , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
     it "when Hard, should consider a Walk=R False to be dispositive" $ do
       flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just False)
@@ -87,55 +87,55 @@ main = hspec $ do
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And lf)
-        [ Node (Q View (Simply "walk") rf) []
-        , Node (Q Hide Or ln)
-          [ Node (Q Hide (Simply "eat") lt) []
-          , Node (Q Hide (Simply "drink") lt) [] ] ]
+        Node (Q View And (Just $ Pre "both") lf)
+        [ Node (Q View (Simply "walk") Nothing rf) []
+        , Node (Q Hide Or (Just $ Pre "either") ln)
+          [ Node (Q Hide (Simply "eat") Nothing lt) []
+          , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
     it "given a confirmed True in an And list, should recurse into the eat/drink limb" $ do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View (Simply "walk") rt) []
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") lt) []
-          , Node (Q Ask (Simply "drink") lt) [] ] ]
+        Node (Q View And (Just $ Pre "both") ln)
+        [ Node (Q View (Simply "walk") Nothing rt) []
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lt) []
+          , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
     it "should stop given a confirmed Eat  =True in an Or list" $ do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Right $ Just True)
                                  ,("drink", Left $ Just True)])
         `shouldBe`
-        Node (Q View And lt)
-        [ Node (Q View (Simply "walk") rt) []
-        , Node (Q View Or lt)
-          [ Node (Q View (Simply "eat") rt) []
-          , Node (Q Hide (Simply "drink") lt) [] ] ]
+        Node (Q View And (Just $ Pre "both") lt)
+        [ Node (Q View (Simply "walk") Nothing rt) []
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q View (Simply "eat") Nothing rt) []
+          , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
     it "should stop given a confirmed Drink=True in an Or list" $ do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Left  $ Just True)
                                  ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q View And lt)
-        [ Node (Q View (Simply "walk") rt) []
-        , Node (Q View Or lt)
-          [ Node (Q Hide (Simply "eat") lt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        Node (Q View And (Just $ Pre "both") lt)
+        [ Node (Q View (Simply "walk") Nothing rt) []
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q Hide (Simply "eat") Nothing lt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
     it "should demand walk even when Drink=True" $ do
       rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                  ,("eat",   Left  $ Just True)
                                  ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q Ask (Simply "walk") lt) []
-        , Node (Q View Or lt)
-          [ Node (Q Hide (Simply "eat") lt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        Node (Q View And (Just $ Pre "both") ln)
+        [ Node (Q Ask (Simply "walk") Nothing lt) []
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q Hide (Simply "eat") Nothing lt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
   describe "with mustDance," $ do
     it "should ask for everything when nothing is known" $ do
@@ -144,14 +144,14 @@ main = hspec $ do
                                   ,("eat",   Left Nothing)
                                   ,("drink", Left Nothing)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk") ln) []
-          , Node (Q Ask (Simply "run")  ln) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing ln) []
+          , Node (Q Ask (Simply "run")  Nothing ln) []
           ]
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") ln) []
-          , Node (Q Ask (Simply "drink") ln) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing ln) []
+          , Node (Q Ask (Simply "drink") Nothing ln) [] ] ]
 
     it "should ask for everything when everything is assumed true" $ do
       rlv mustDance (Map.fromList [("walk",  Left (Just True))
@@ -159,14 +159,14 @@ main = hspec $ do
                                   ,("eat",   Left (Just True))
                                   ,("drink", Left (Just True))])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk") lt) []
-          , Node (Q Ask (Simply "run")  lt) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing lt) []
+          , Node (Q Ask (Simply "run")  Nothing lt) []
           ]
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat") lt) []
-          , Node (Q Ask (Simply "drink") lt) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lt) []
+          , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
     it "should ask for everything when everything is assumed false" $ do
       rlv mustDance (Map.fromList [("walk",  Left (Just False))
@@ -174,14 +174,14 @@ main = hspec $ do
                                   ,("eat",   Left (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk")  lf) []
-          , Node (Q Ask (Simply "run")   lf) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing lf) []
+          , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat")  lf) []
-          , Node (Q Ask (Simply "drink") lf) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lf) []
+          , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
     it "should handle a Walk=False by stopping" $ do
       rlv mustDance (Map.fromList [("walk",  Right (Just False))
@@ -189,14 +189,14 @@ main = hspec $ do
                                   ,("eat",   Left (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q View And lf)
-        [ Node (Q View And lf)
-          [ Node (Q View (Simply "walk")  rf) []
-          , Node (Q Hide (Simply "run")   lf) []
+        Node (Q View And (Just $ Pre "three of:") lf)
+        [ Node (Q View And (Just $ Pre "both") lf)
+          [ Node (Q View (Simply "walk") Nothing rf) []
+          , Node (Q Hide (Simply "run")  Nothing lf) []
           ]
-        , Node (Q Hide Or ln)
-          [ Node (Q Hide (Simply "eat")  lf) []
-          , Node (Q Hide (Simply "drink")  lf) [] ] ]
+        , Node (Q Hide Or (Just $ Pre "either") ln)
+          [ Node (Q Hide (Simply "eat") Nothing lf) []
+          , Node (Q Hide (Simply "drink") Nothing lf) [] ] ]
 
     it "should handle a Run=False by stopping (in future this will depend on displaypref" $ do
       rlv mustDance (Map.fromList [("walk",  Left (Just False))
@@ -204,14 +204,14 @@ main = hspec $ do
                                   ,("eat",   Right (Just True))
                                   ,("drink", Right (Just True))])
         `shouldBe`
-        Node (Q View And lf)
-        [ Node (Q View And lf)
-          [ Node (Q Hide (Simply "walk") lf) []
-          , Node (Q View (Simply "run")  rf) []
+        Node (Q View And (Just $ Pre "three of:") lf)
+        [ Node (Q View And (Just $ Pre "both") lf)
+          [ Node (Q Hide (Simply "walk") Nothing lf) []
+          , Node (Q View (Simply "run")  Nothing rf) []
           ]
-        , Node (Q Hide Or lt)
-          [ Node (Q View (Simply "eat") rt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        , Node (Q Hide Or (Just $ Pre "either") lt)
+          [ Node (Q View (Simply "eat") Nothing rt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
     it "should handle a Walk=True by remaining curious about the run and the food" $ do
       rlv mustDance (Map.fromList [("walk",  Right (Just True))
@@ -219,14 +219,14 @@ main = hspec $ do
                                   ,("eat",   Left (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q View (Simply "walk") rt) []
-          , Node (Q Ask (Simply "run") lf) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q View (Simply "walk") Nothing rt) []
+          , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q View Or ln)
-          [ Node (Q Ask (Simply "eat")  lf) []
-          , Node (Q Ask (Simply "drink")  lf) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q Ask (Simply "eat") Nothing lf) []
+          , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
     it "should handle a Walk=True,Eat=False by remaining curious about the run and the drink" $ do
       rlv mustDance (Map.fromList [("walk",  Right (Just True))
@@ -234,14 +234,14 @@ main = hspec $ do
                                   ,("eat",   Right (Just False))
                                   ,("drink", Left (Just False))])
         `shouldBe`
-        Node (Q View And  ln)
-        [ Node (Q View And ln)
-          [ Node (Q View (Simply "walk") rt) []
-          , Node (Q Ask (Simply "run")   lf) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q View (Simply "walk") Nothing rt) []
+          , Node (Q Ask (Simply "run")  Nothing lf) []
           ]
-        , Node (Q View Or ln)
-          [ Node (Q View (Simply "eat")  rf) []
-          , Node (Q Ask (Simply "drink")  lf) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") ln)
+          [ Node (Q View (Simply "eat") Nothing rf) []
+          , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
     it "should demand walk even when Run=True, Drink=True" $ do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
@@ -249,14 +249,14 @@ main = hspec $ do
                                   ,("eat",   Left  $ Just True)
                                   ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk") lt) []
-          , Node (Q View (Simply "run")  rt) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing lt) []
+          , Node (Q View (Simply "run")  Nothing rt) []
           ]
-        , Node (Q View Or lt)
-          [ Node (Q Hide (Simply "eat") lt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q Hide (Simply "eat") Nothing lt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
     it "should demand walk even when Run=True, Eat=True" $ do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
@@ -264,14 +264,14 @@ main = hspec $ do
                                   ,("eat",   Right $ Just True)
                                   ,("drink", Left  $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk") lt) []
-          , Node (Q View (Simply "run")  rt) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing lt) []
+          , Node (Q View (Simply "run")  Nothing rt) []
           ]
-        , Node (Q View Or lt)
-          [ Node (Q View (Simply "eat") rt) []
-          , Node (Q Hide (Simply "drink") lt) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q View (Simply "eat") Nothing rt) []
+          , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
     it "should demand walk even when Run=True, Eat=True, Drink=True" $ do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
@@ -279,14 +279,14 @@ main = hspec $ do
                                   ,("eat",   Right $ Just True)
                                   ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q View And ln)
-        [ Node (Q View And ln)
-          [ Node (Q Ask (Simply "walk") lt) []
-          , Node (Q View (Simply "run")  rt) []
+        Node (Q View And (Just $ Pre "three of:") ln)
+        [ Node (Q View And (Just $ Pre "both") ln)
+          [ Node (Q Ask (Simply "walk") Nothing lt) []
+          , Node (Q View (Simply "run")  Nothing rt) []
           ]
-        , Node (Q View Or lt)
-          [ Node (Q View (Simply "eat") rt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q View (Simply "eat") Nothing rt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
     it "should show all when all true" $ do
       rlv mustDance (Map.fromList [("walk",  Right $ Just True)
@@ -294,14 +294,14 @@ main = hspec $ do
                                   ,("eat",   Right $ Just True)
                                   ,("drink", Right $ Just True)])
         `shouldBe`
-        Node (Q View And lt)
-        [ Node (Q View And lt)
-          [ Node (Q View (Simply "walk") rt) []
-          , Node (Q View (Simply "run")  rt) []
+        Node (Q View And (Just $ Pre "three of:") lt)
+        [ Node (Q View And (Just $ Pre "both") lt)
+          [ Node (Q View (Simply "walk") Nothing rt) []
+          , Node (Q View (Simply "run")  Nothing rt) []
           ]
-        , Node (Q View Or lt)
-          [ Node (Q View (Simply "eat") rt) []
-          , Node (Q View (Simply "drink") rt) [] ] ]
+        , Node (Q View Or (Just $ Pre "either") lt)
+          [ Node (Q View (Simply "eat") Nothing rt) []
+          , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
 
   describe "native2tree / tree2native" $ do
@@ -311,37 +311,46 @@ main = hspec $ do
       tree2native (native2tree mustDance) `shouldBe` mustDance
 
   describe "JSON conversion" $ do
-    it "should encode Default" $ do
+    it "should encode Default left just true" $ do
       asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"getDefault\":{\"Left\":true}}"
+    it "should encode Default left just false" $ do
+      asJSONDefault (Default (Left (Just False))) `shouldBe` "{\"getDefault\":{\"Left\":false}}"
+    it "should encode Default left nothing" $ do
+      asJSONDefault (Default (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"getDefault\":{\"Left\":null}}"
     it "should encode Q mustSing" $ do
       asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                          ,("eat",   Left  $ Just True)
                                          ,("drink", Right $ Just True)]))
-      `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+      `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
     it "should decode Q mustSing" $ do
-      fromJSON "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+      fromJSON   "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
       `shouldBe` (Just (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                                    ,("eat",   Left  $ Just True)
                                                    ,("drink", Right $ Just True)])))
     it "should encode Q mustNot" $ do
       asJSON (rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
                                         ,("eat",   Left  $ Just True)]))
-        `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[]]]]]]"
+        `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]]]]]]"
 
   -- [{"shouldView":"View"
   --  ,"andOr":{"tag":"And"}
+  --  ,"prePost":{"tag":"Pre"
+  --             ,"contents":"both"}
   --  ,"mark":{"getDefault":{"Left":null}}}
   -- ,[[{"shouldView":"Ask"
   --    ,"andOr":{"tag":"Simply"
   --             ,"contents":"walk"}
+  --    ,"prePost":null
   --    ,"mark":{"getDefault":{"Left":true}}}
   --   ,[]]
   --  ,[{"shouldView":"View"
   --    ,"andOr":{"tag":"Neg"}
+  --    ,"prePost":null
   --    ,"mark":{"getDefault":{"Left":null}}}
   --   ,[[{"shouldView":"Ask"
   --      ,"andOr":{"tag":"Simply"
   --               ,"contents":"eat"}
+  --      ,"prePost":null
   --      ,"mark":{"getDefault":{"Left":true}}}
   --     ,[]]]]]]
 
@@ -354,25 +363,25 @@ type SingLabel = TL.Text
 
 mustSing :: Item SingLabel
 mustSing =
-  All
+  All (Pre "both")
   [ Leaf "walk"
-  , Any
+  , Any (Pre "either")
     [ Leaf "eat"
     , Leaf "drink" ] ]
 
 mustNot :: Item SingLabel
 mustNot =
-  All
+  All (Pre "both")
   [ Leaf "walk"
   , Not (Leaf "eat") ]
 
 mustDance :: Item SingLabel
 mustDance =
-  All
-  [ All
+  All (Pre "three of:")
+  [ All (Pre "both")
     [ Leaf "walk"
     , Leaf "run" ]
-  , Any
+  , Any (Pre "either")
     [ Leaf "eat"
     , Leaf "drink" ] ]
 

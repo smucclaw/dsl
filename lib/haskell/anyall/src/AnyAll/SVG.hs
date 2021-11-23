@@ -73,8 +73,8 @@ renderSuffix x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in (h, geom)
 
-renderAll :: ToElement a => [Item a] -> (Height, Element)
-renderAll childnodes =
+renderAll :: ToElement a => Label a -> [Item a] -> (Height, Element)
+renderAll (Pre prefix) childnodes =
   let
       hg = map renderItem childnodes
       (hs, gs) = unzip hg
@@ -82,7 +82,7 @@ renderAll childnodes =
       height = sum hs + 30
 
       geom :: Element
-      geom = g_ [] (  item 0 0 ("all of the following:" :: T.Text)
+      geom = g_ [] (  item 0 0 prefix
                    -- elbow connector
                    <> line (10, 20) (10, 25)
                    <> line (10, 25) (40, 25)
@@ -90,18 +90,53 @@ renderAll childnodes =
                    -- children translated by (30, 30)
                    <> move (30, 30) (renderChain hg)  )
   in (height, geom)
+renderAll (PrePost prefix suffix) childnodes =
+  let hg = map renderItem childnodes
+      (hs, gs) = unzip hg
 
-renderAny :: ToElement a => [Item a] -> (Height, Element)
-renderAny childnodes =
+      (fh, fg) = renderSuffix 0 0 suffix
+
+      height = sum hs + fh + 30
+
+      geom :: Element
+      geom = g_ [] (  item 0 0 prefix
+                   <> line (10, 20) (10, 25)
+                   <> line (10, 25) (40, 25)
+                   <> line (40, 25) (40, 30)
+                   <> move (30, 30) (renderChain hg)
+                   <> move (40, 30 + sum hs) fg  )
+  in (height, geom)
+
+renderAny :: ToElement a => Label a -> [Item a] -> (Height, Element)
+renderAny (Pre prefix) childnodes =
   let hg = map renderItem childnodes
       (hs, gs) = unzip hg
 
       height = sum hs + 25
 
       geom :: Element
-      geom = g_ [] (  item 0 0 ("any of the following:" :: T.Text)
+      geom = g_ [] (  item 0 0 prefix
                    <> line (10, 20) (10, sum (init hs) + 25 + 10)
                    <> move (30, 25) (go 0 hg)  )
+                 where go y [] = mempty
+                       go y ((h,g):hgs) =
+                         g_ [] (  g
+                               <> line (-20, 10) (0, 10)
+                               <> move (0, h) (go (y+h) hgs)  )
+  in (height, geom)
+renderAny (PrePost prefix suffix) childnodes =
+  let hg = map renderItem childnodes
+      (hs, gs) = unzip hg
+
+      (fh, fg) = renderSuffix 0 0 suffix
+
+      height = sum hs + fh + 25
+
+      geom :: Element
+      geom = g_ [] (  item 0 0 prefix
+                   <> line (10, 20) (10, sum (init hs) + 25 + 10)
+                   <> move (30, 25) (go 0 hg)
+                   <> move (40, 25 + sum hs) fg)
                  where go y [] = mempty
                        go y ((h,g):hgs) =
                          g_ [] (  g
@@ -113,17 +148,20 @@ renderAny childnodes =
 renderItem :: ToElement a => Item a -> (Height, Element)
 renderItem (Leaf label) = renderLeaf label
 renderItem (Not       args) = renderNot      [args]
-renderItem (All args) = renderAll args
-renderItem (Any args) = renderAny args
+renderItem (All label args) = renderAll label args
+renderItem (Any label args) = renderAny label args
 
 toy :: (Height, Element)
 toy = renderItem $
-  All [ Leaf ("Item 1;" :: T.Text)
+  All ( PrePost "You need all of" ("to survive." :: String) )
+      [ Leaf "Item 1;"
       , Leaf "Item 2;"
-      , Any [ Leaf "3.a;"
+      , Any ( Pre "Item 3 which may be satisfied by any of:" )
+            [ Leaf "3.a;"
             , Leaf "3.b; or"
             , Leaf "3.c;" ]
       , Leaf "Item 4; and"
-      , All [ Leaf "5.a;"
+      , All ( Pre "Item 5 which requires all of:" )
+            [ Leaf "5.a;"
             , Leaf "5.b; and"
             , Leaf "5.c." ] ]

@@ -20,6 +20,12 @@ import Data.Aeson.Types (parseMaybe)
 import GHC.Generics
 import GHC.Exts (toList)
 
+data Label a =
+    Pre a
+  | PrePost a a
+  deriving (Eq, Show, Generic)
+instance ToJSON a => ToJSON (Label a); instance FromJSON a => FromJSON (Label a)
+
 data Hardness = Soft -- use Left defaults
               | Hard -- require Right input
   deriving (Eq, Show, Generic)
@@ -28,32 +34,31 @@ type AnswerToExplain = Bool
 
 data Item a =
     Leaf a
-  | All [Item a]
-  | Any [Item a]
+  | All (Label a) [Item a]
+  | Any (Label a) [Item a]
   | Not (Item a)
   deriving (Eq, Show, Generic)
 
--- in which we use <> to mean &&
-instance (Semigroup a) => Semigroup (Item a) where
-  (<>)   (All xs)   (All ys) = All (xs ++ ys)
+instance (IsString a) => Semigroup (Item a) where
+  (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
 
-  (<>) l@(Not  x)   r@(All ys) = All (l:ys)
-  (<>) l@(All xs) r@(Not y)    = r <> l
+  (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
+  (<>) l@(All x xs) r@(Not y)    = r <> l
 
-  (<>) l@(Leaf x)   r@(All ys) = All (l:ys)
-  (<>) l@(All xs) r@(Leaf y)   = r <> l
+  (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
+  (<>) l@(All x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Leaf x)   r@(Any ys) = All [l,r]
-  (<>) l@(Any xs) r@(Leaf y)   = r <> l
+  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
+  (<>) l@(Any x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Any xs)   (All ys) = All (l:ys) -- this is slightly wrong if the Pre text is "both"
-  (<>) l@(All xs) r@(Any ys) = r <> l
+  (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
+  (<>) l@(All x xs) r@(Any y ys) = r <> l
 
   -- all the other cases get ANDed together in the most straightforward way.
-  (<>) l            r            = All [l, r]
+  (<>) l            r            = All (Pre "both") [l, r]
 
-instance (Monoid a) => Monoid (Item a) where
-  mempty = Leaf mempty
+instance (IsString a, Monoid a) => Monoid (Item a) where
+  mempty = Leaf "always"
   
 data StdinSchema a = StdinSchema { marking :: Marking a
                                  , andOrTree :: Item a }
@@ -72,45 +77,41 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
   parseJSON = withObject "andOrTree" $ \o -> do
     leaf      <- o .:? "leaf"
     nodetype  <- o .:? "nodetype"
+    pre       <- o .:? "pre"
+    prepost   <- o .:? "prepost"
     childrenA <- o .:? "children"
-    let children = maybe [] (mapMaybe (parseMaybe parseJSON) . V.toList) childrenA
+    let label = if isJust prepost
+                then PrePost (fromJust pre) (fromJust prepost)
+                else Pre     (fromJust pre)
+        children = maybe [] (mapMaybe (parseMaybe parseJSON) . V.toList) childrenA
     return $ if isJust leaf
              then Leaf (fromJust leaf)
              else case (nodetype :: Maybe String) of
-                    Just "any" -> Any children
-                    Just "all" -> All children
+                    Just "any" -> Any label children
+                    Just "all" -> All label children
                     Just "not" -> Not $ head children
                     _          -> error "error in parsing JSON input"
 
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
-type AsTree a = Tree (AndOr a)
+type AsTree a = Tree (AndOr a, Maybe (Label a))
 native2tree :: Item a -> AsTree a
-native2tree (Leaf a) = Node (Simply a) []
-native2tree (Not a)  = Node Neg (native2tree <$> [a])
-native2tree (All items) = Node And (native2tree <$> items)
-native2tree (Any items) = Node  Or (native2tree <$> items)
+native2tree (Leaf a) = Node (Simply a, Nothing) []
+native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
+native2tree (All l items) = Node (And, Just l) (native2tree <$> items)
+native2tree (Any l items) = Node ( Or, Just l) (native2tree <$> items)
 
 tree2native :: AsTree a -> Item a
-tree2native (Node (Simply a) children) = Leaf a
-tree2native (Node Neg children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
-tree2native (Node And children) = All (tree2native <$> children)
-tree2native (Node  Or children) = Any (tree2native <$> children)
+tree2native (Node (Simply a, _) children) = Leaf a
+tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
+tree2native (Node (And, lbl) children) = All (fromJust lbl) (tree2native <$> children)
+tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> children)
 
 newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
 instance (FromJSON a) => FromJSON (Default a)
--- instance (FromJSON a) => FromJSON (Default a) where
---   parseJSON = withObject "withDefaultBool" $ \o -> do
---     byDefault <- o .:? "byDefault"
---     fromUser  <- o .:? "fromUser"
---     if isJust fromUser
---       then return $ Default (Right fromUser)
---       else if isJust byDefault
---            then return $ Default (Left byDefault)
---            else return $ Default (Left Nothing)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
 asJSONDefault = encode
 
@@ -135,6 +136,7 @@ instance ToJSON ShouldView; instance FromJSON ShouldView
 
 data Q a = Q { shouldView :: ShouldView
              , andOr      :: AndOr a
+             , prePost    :: Maybe (Label a)
              , mark       :: Default Bool
              } deriving (Eq, Show, Generic)
 
@@ -154,7 +156,7 @@ data DisplayPref = DPTerse | DPNormal | DPVerbose
   deriving (Eq, Show, Generic)
 
 getSV :: ShouldView -> Q a -> Maybe (a, Default Bool)
-getSV sv1 (Q sv2 (Simply x) m)
+getSV sv1 (Q sv2 (Simply x) pp m)
   | sv1 == sv2 = Just (x, m)
   | otherwise  = Nothing
 getSV _ _ = Nothing

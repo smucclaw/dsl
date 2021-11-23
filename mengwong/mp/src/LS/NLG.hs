@@ -8,7 +8,7 @@ import LS.Types
       TemporalConstraint (..),
       ParamText,
       BoolStruct(..),
-      Rule(..) )
+      Rule(..), BoolStructP )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -17,6 +17,7 @@ import Data.Void (Void)
 import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import AnyAll (Item(..))
+import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe )
 import Data.List ( elemIndex, intercalate )
 import Replace.Megaparsec ( sepCap )
@@ -135,9 +136,11 @@ bs2text (All _) = Text.pack "walk"
 bs2text (Any _) = Text.pack "walk"
 bs2text (Not _) = Text.pack "walk"
 
+at2text :: a -> Text.Text
+at2text _ = Text.pack "dummy"
 
 bsp2text :: BoolStructP -> Text.Text
-bsp2text (AA.Leaf pt)  = pt2text pt
+bsp2text (AA.Leaf pt)  = Text.pack "walk" --pt2text pt
 -- bsp2text (AA.Not  x)   = "not " <> bsp2text x
 bsp2text (AA.Any xs) =  Text.unwords (bsp2text <$> xs)
 bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)

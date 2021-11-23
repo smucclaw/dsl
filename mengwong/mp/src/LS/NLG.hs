@@ -68,9 +68,12 @@ parseOut env txt = do
   getConll <- getPy str
   let conll = getString $ unpacked getConll
   let exprs = parseCoNLLU env conll -- env -> str -> [[expr]]
+      expr = case exprs of
+        (x : _xs) : _xss -> x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
+        _ -> mkApp (mkCId "dummy_N") [] -- dummy expr
   mapM_ print exprs
   putStrLn conll
-  return $ head $ head exprs
+  return expr
 
 nlg :: Rule -> IO Text.Text
 nlg rl = do

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module LS.NLG (
     nlg
     ) where
@@ -8,7 +9,7 @@ import LS.Types
       TemporalConstraint (..),
       ParamText,
       BoolStruct(..),
-      Rule(..), BoolStructP )
+      Rule(..), BoolStructP, pt2text )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -61,41 +62,41 @@ getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])
 parseCoNLLU :: UDEnv -> String -> [[Expr]]
 parseCoNLLU = getExprs []
 
-parseOut :: UDEnv -> String -> IO Expr
-parseOut env str = do
+parseOut :: UDEnv -> Text.Text -> IO Expr
+parseOut env txt = do
+  let str = Text.unpack txt
   getConll <- getPy str
   let conll = getString $ unpacked getConll
   let exprs = parseCoNLLU env conll -- env -> str -> [[expr]]
   mapM_ print exprs
-  putStr conll
+  putStrLn conll
   return $ head $ head exprs
 
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
+   -- TODO: here let's do some actual NLG
    let gr = pgfGrammar env
        lang = actLanguage env
-       subjectRaw = everyA annotatedRule
+       subjectRaw = subjA annotatedRule
        linText = linearize gr lang subjectRaw
        linTree = showExpr [] subjectRaw
    return (Text.pack (linText ++ "\n" ++ linTree))
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
-parseFields env rl@(Regulative {}) = do
-    everyA'  <- parseEvery env (every rl)
-    -- whoA'   <- fmap (parseWho env) (who rl)  :: Maybe Expr
-    whoA' <- return Nothing
+parseFields env rl = case rl of
+  Regulative {} -> do
+    subjA'  <- parseEvery env (subj rl)
+    whoA'   <- mapM (parseWho env) (who rl)
     condA'   <- return Nothing
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseAction env (action rl)
-    -- temporalA' <- fmap (parseTemporal env) (temporal rl)  :: Maybe Expr
-    temporalA' <- return Nothing
-    uponA' <- return Nothing
-    -- givenA' <- fmap (parseGiven env) (given rl) :: Expr
-    givenA' <- return Nothing
+    temporalA' <- mapM (parseTemporal env) (temporal rl)
+    uponA' <- parseUpon env (upon rl)
+    givenA' <- mapM (parseGiven env) (given rl)
     return RegulativeA {
-      everyA = everyA',
+      subjA = subjA',
       whoA = whoA',
       condA = condA',
       deonticA = deonticA',
@@ -104,18 +105,19 @@ parseFields env rl@(Regulative {}) = do
       uponA = uponA',
       givenA = givenA'
     }
+  _ -> error "parseFields: rule type not supported yet"
   where
-    parseEvery :: UDEnv -> EntityType -> IO Expr
-    parseEvery env text = parseOut env (map toLower $ Text.unpack text)
+    parseEvery :: UDEnv -> BoolStructP -> IO Expr
+    parseEvery env bsp = parseOut env (bsp2text bsp)
 
-    parseWho :: UDEnv -> BoolStruct -> IO Expr
-    parseWho env bs = parseOut env $ Text.unpack $ bs2text bs
+    parseWho :: UDEnv -> BoolStructP -> IO Expr
+    parseWho env bs = parseOut env $ bsp2text bs
 
-    parseGiven :: UDEnv -> BoolStruct -> IO Expr
-    parseGiven env bs = parseOut env $ Text.unpack $ bs2text bs
+    parseGiven :: UDEnv -> ParamText -> IO Expr
+    parseGiven env pt = parseOut env $ pt2text pt
 
-    parseAction :: UDEnv -> ParamText -> IO Expr
-    parseAction env at = parseOut env $ Text.unpack $ at2text at
+    parseAction :: UDEnv -> BoolStructP -> IO Expr
+    parseAction env at = parseOut env $ bsp2text at
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -123,25 +125,41 @@ parseFields env rl@(Regulative {}) = do
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
+    -- TODO: add GF funs for  ParseTemporal
+    -- It will look like this:
+    {- parseUpon env bs = do
+        rawExpr <- parseOut env event
+        let gfFun = getGFFun (TAfter/TWhatever/…) -- should we move on to the Haskell version of the abstract syntax?
+        return $ <gfFun applied to rawExpr>  -- either use PGF.mkApp, or with Haskell version of abstract syntax
+      -}
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env (TAfter event)  = return $ mkApp (mkCId "foo") []
+    parseTemporal env tc = case tc of
+      TAfter event -> parseOut env event
+      TBefore event -> parseOut env event
+      TBy     event -> parseOut env event
+      TOn     event -> parseOut env event
+      TVague  event -> parseOut env event
+
+    {- TODO: do we want to give this more structure in the GF grammar as well?
+      so that the GF tree looks like
+         Upon (GerundVP some_VP)
+      instead of
+         PrepNP upon_Prep (GerundVP some_VP)
+      in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
+      in the former, we know from the first constructor that this is an "upon" sentence
+    -}
+    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
+    parseUpon env (bs:_) = do
+      parse <- parseOut env (Text.unwords [Text.pack "upon", bsp2text bs])
+      return $ Just parse
+    parseUpon _ [] = return Nothing
 
 
-    parseUpon :: UDEnv -> BoolStructP -> Expr
-    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
-
-bs2text :: BoolStruct -> Text.Text
-bs2text (Leaf txt) = txt
-bs2text (All _) = Text.pack "walk"
-bs2text (Any _) = Text.pack "walk"
-bs2text (Not _) = Text.pack "walk"
-
-at2text :: a -> Text.Text
-at2text _ = Text.pack "dummy"
-
+-- TODO: this really needs more thought
+-- Make GF structure for BoolStructP and not try to parse the text sprinkled with "and"/"or"/"not"?
 bsp2text :: BoolStructP -> Text.Text
-bsp2text (AA.Leaf pt)  = Text.pack "walk" --pt2text pt
--- bsp2text (AA.Not  x)   = "not " <> bsp2text x
+bsp2text (AA.Leaf pt) = pt2text pt
+bsp2text (AA.Not  x)  = Text.pack "not " <> bsp2text x
 bsp2text (AA.Any xs) =  Text.unwords (bsp2text <$> xs)
 bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)
 -- and possibily we want to have interspersed BoolStructs along the way
@@ -151,7 +169,7 @@ bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)
 
 
 data AnnotatedRule = RegulativeA
-            { everyA    :: Expr                      -- every person (NP)
+            { subjA     :: Expr                      -- man AND woman AND child
             , whoA      :: Maybe Expr                -- who walks and (eats or drinks) (RS)
             , condA     :: Maybe Expr                -- if it is a saturday (Adv)
             , deonticA  :: CId                       -- must (CId -- a hack, will change later)

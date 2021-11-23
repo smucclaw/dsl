@@ -46,6 +46,11 @@ data MyToken = Every | Party | TokAll
              | RuleMarker Int Text.Text
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
+-- note: we choose not to treat NOTIFY as keyword.
+-- we parse it downstream when dealing with actions.
+-- note: we choose not to tokenize LESS and PLUS here as keywords;
+-- they represent set subtraction and union but we deal with them later.
+
 -- INTERNAL PLUMBING
 -- we use a custom input stream where the positions of the tokens are the x,y cell coordinates of a spreadsheet.
 -- thanks to CSV the initial lexing is already done so we don't need to do a first-pass character-by-character lexing.

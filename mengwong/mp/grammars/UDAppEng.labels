@@ -49,37 +49,8 @@
 -- [my mother's]:Quant [5]:Num [hovercrafts]:CN
 #auxfun DetCNNumNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss nummod head
 
--- fluffy and cute
-#auxcat Comma PUNCT
-#auxfun CommaAP_ ap comma : AP -> Comma -> APComma =  ap ; head punct
-
--- Pattern match, and the corresponding continuation-based syntax
--- #auxfun AndCutePatternMatch_ and cute : Conj -> AP -> AP2AP = MkAP2AP and cute ; cc head
-#auxfun AndCuteCont_ and cute : Conj -> AP -> Pair_Conj_AP = MkPair_ and cute ; cc head
-
--- #auxfun AP2_ small (MkAP2AP and cute) : AP -> AP2AP -> AP = ConjAP and (BaseAP small cute)) ; head conj
-#auxfun AP2_ small andCute : AP -> Pair_Conj_AP -> AP = UsePair_ (AP2_helper_ small) andCute ; head conj
-#auxfun AP2_helper_ small and cute :  AP -> Conj -> AP -> AP = ConjAP and (BaseAP small cute) ; head dummy nonexistent
-
--- #auxfun APBaseComma_ small fluffy (MkAP2AP and cute)  : AP -> APComma -> AP2AP -> ConjListAP = ConjConsAP and small (BaseAP fluffy cute) ; head conj conj
-#auxfun APBaseComma_ small fluffy andCute : AP -> APComma -> Pair_Conj_AP -> ConjListAP = UsePair_ (APBaseComma_helper_ small fluffy) andCute ; head conj conj
-#auxfun APBaseComma_helper_ small fluffy and cute : AP -> APComma -> Conj -> AP -> ConjListAP = MkTriple_ and small (BaseAP fluffy cute) ; head dummy dummy
-
--- #auxfun ConjListToAP2_ (ConjConsAP and small furryFluffyCute) : ConjListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; head
-#auxfun ConjListToAP2_ and_small_furryFluffyCute : ConjListAP -> AP = UseTriple_ ConjListToAP2_helper_ and_small_furryFluffyCute ; head
-#auxfun ConjListToAP2_helper_ and small furryFluffyCute : Conj -> AP -> ListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; notreal head dummy
-
--- #auxfun APAddComma_ furry (ConjConsAP and small fluffyAndCute)  : APComma -> ConjListAP -> ConjListAP = ConjConsAP and small (ConsAP furry fluffyAndCute) ; conj head
-#auxfun APAddComma_ furry and_small_fluffyCute  : APComma -> ConjListAP -> ConjListAP = UseTriple_ (APAddComma_helper_ furry) and_small_fluffyCute ; conj head
-#auxfun APAddComma_helper_ furry and small fluffyCute : APComma -> Conj -> AP -> ListAP -> ConjListAP = MkTriple_ and small (ConsAP furry fluffyCute) ; dummy head
-
--- Only used inside other macros
--- Pair_a_b = (a -> b -> r) -> r
-#auxfun MkPair_ a b handler : a -> b -> ab2r -> r = handler a b ; head dummy nonexistent
-#auxfun UsePair_ handler pair : ab2r -> Pair_a_b -> r = pair handler ; head dummy
--- Triple_a_b_c = (a -> b -> r) -> r
-#auxfun MkTriple_ a b c handler : a -> b -> c -> abc2r -> r = handler a b c ; head dummy nonexistent nope
-#auxfun UseTriple_ handler triple : abc2r -> Triple_a_b_c -> r = triple handler ; head dummy
+-- [one]:NP that processes data
+#auxfun CardNP_ card : Card -> root = rootN_ (DetNP (DetQuant IndefArt (NumCard card))) ; head
 
 -- #auxfun PossGenmodSgNP_ np cn : NP -> CN -> NP = GenModNP NumSg np cn ; nmod:poss head[Number=Sing]
 -- #auxfun PossGenmodSgPl_ np cn : NP -> CN -> NP = GenModNP NumPl np cn ; nmod:poss head[Number=Plur]
@@ -94,8 +65,10 @@
 #auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det head[Number=Plur]
 #disable the_Det thePl_Det
 
-#auxfun UttImpSg_Pos vp : VP -> Utt = UttImpSg PPos (ImpVP vp) ; head[VerbForm=Inf]
+-- ** don't use ImpVP if there's no [Mood=Imp] **
+#auxfun UttImpSg_Pos vp : VP -> Utt = UttImpSg PPos (ImpVP vp) ; head[Mood=Imp]
 #auxfun UttImpSg_Neg do neg vp : Do -> Neg -> VP -> Utt = UttImpSg PNeg (ImpVP vp) ; aux[VerbForm=Inf] advmod head[VerbForm=Inf]
+#disable ImpVP
 
 #auxfun PositA_ a : A -> AP = PositA a ; head[Degree=Pos]
 #auxfun UseComparA_ a : A -> AP = UseComparA a ; head[Degree=Cmp]
@@ -108,6 +81,8 @@
 -----------------------
 -- Inari's additions --
 -----------------------
+
+#disable StrN StrPN
 
 #disable pot1 pot2 pot3 pot4 pot1to19
 
@@ -136,12 +111,18 @@
 #auxfun DetCNNummod_ moreThan5 people : Det -> CN -> NP = DetCN moreThan5 people ; nummod head
 
 
--- ** acl **
+-- ** acl & amod for participles **
 -- [personal data]:CN [stored in electronic formats]:acl
-#auxfun PPartCN_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head acl[Tense=Past|VerbForm=Part]
+#auxfun PPartCN_acl_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head acl[Tense=Past|VerbForm=Part]
 
 -- [data breach]:CN [affecting 500 people]:acl
-#auxfun PPresCN_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head acl[VerbForm=Ger]
+#auxfun PPresCN_acl_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head acl[VerbForm=Ger]
+
+-- [qualifying]:amod [person]:CN
+#auxfun PPresCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head amod[VerbForm=Ger]
+
+-- [qualified]:amod [person]:CN
+#auxfun PPartCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head amod[Tense=Past|VerbForm=Part]
 
 #disable PresPartAP PastPartAP
 
@@ -186,4 +167,64 @@
 -- stored [in electronic formats]:obl
 -- default for AdvVP is head advmod, this is for head obl (i.e. Adv made by PrepNP)
 #auxfun OblVP_ vp adv : VP -> Adv -> VP = AdvVP vp adv ; head obl
+
+#auxfun RelVPGerundObl_ processing that is data for_organisation : VP -> RP -> aux -> NP -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (AdvVP (ProgrVP processing) for_organisation)) ; head[Tense=Pres|VerbForm=Part] nsubj[PronType=Rel] aux obj obl
+#disable ProgrVP
+
+
+
+-----------------
+-- Handling lists
+-- This has to be repeated for every category
+
+-- ** Generic, only used inside other macros **
+-- Pair_a_b = (a -> b -> r) -> r
+#auxfun MkPair_ a b handler : a -> b -> ab2r -> r = handler a b ; head dummy nonexistent
+#auxfun UsePair_ handler pair : ab2r -> Pair_a_b -> r = pair handler ; head dummy
+-- Triple_a_b_c = (a -> b -> r) -> r
+#auxfun MkTriple_ a b c handler : a -> b -> c -> abc2r -> r = handler a b c ; head dummy nonexistent nope
+#auxfun UseTriple_ handler triple : abc2r -> Triple_a_b_c -> r = triple handler ; head dummy
+
+-- ** AP **
+-- fluffy and cute
+#auxcat Comma PUNCT
+#auxfun CommaAP_ ap comma : AP -> Comma -> APComma =  ap ; head punct
+
+-- Pattern match, and the corresponding continuation-based syntax
+-- #auxfun AndCutePatternMatch_ and cute : Conj -> AP -> AP2AP = MkAP2AP and cute ; cc head
+#auxfun AndCuteCont_ and cute : Conj -> AP -> Pair_Conj_AP = MkPair_ and cute ; cc head
+
+-- #auxfun AP2_ small (MkAP2AP and cute) : AP -> AP2AP -> AP = ConjAP and (BaseAP small cute)) ; head conj
+#auxfun AP2_ small andCute : AP -> Pair_Conj_AP -> AP = UsePair_ (AP2_helper_ small) andCute ; head conj
+#auxfun AP2_helper_ small and cute :  AP -> Conj -> AP -> AP = ConjAP and (BaseAP small cute) ; head dummy nonexistent
+
+-- #auxfun APBaseComma_ small fluffy (MkAP2AP and cute)  : AP -> APComma -> AP2AP -> ConjListAP = ConjConsAP and small (BaseAP fluffy cute) ; head conj conj
+#auxfun APBaseComma_ small fluffy andCute : AP -> APComma -> Pair_Conj_AP -> ConjListAP = UsePair_ (APBaseComma_helper_ small fluffy) andCute ; head conj conj
+#auxfun APBaseComma_helper_ small fluffy and cute : AP -> APComma -> Conj -> AP -> ConjListAP = MkTriple_ and small (BaseAP fluffy cute) ; head dummy dummy
+
+-- #auxfun ConjListToAP2_ (ConjConsAP and small furryFluffyCute) : ConjListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; head
+#auxfun ConjListToAP2_ and_small_furryFluffyCute : ConjListAP -> AP = UseTriple_ ConjListToAP2_helper_ and_small_furryFluffyCute ; head
+#auxfun ConjListToAP2_helper_ and small furryFluffyCute : Conj -> AP -> ListAP -> AP = ConjAP and (ConsAP small furryFluffyCute) ; notreal head dummy
+
+-- #auxfun APAddComma_ furry (ConjConsAP and small fluffyAndCute)  : APComma -> ConjListAP -> ConjListAP = ConjConsAP and small (ConsAP furry fluffyAndCute) ; conj head
+#auxfun APAddComma_ furry and_small_fluffyCute  : APComma -> ConjListAP -> ConjListAP = UseTriple_ (APAddComma_helper_ furry) and_small_fluffyCute ; conj head
+#auxfun APAddComma_helper_ furry and small fluffyCute : APComma -> Conj -> AP -> ListAP -> ConjListAP = MkTriple_ and small (ConsAP furry fluffyCute) ; dummy head
+
+-- ** NP **
+-- cat and dog (+ horse + capybara)
+#auxfun CommaNP_ np comma : NP -> Comma -> NPComma = np ; head punct
+
+#auxfun AndDogCont_ and dog : Conj -> NP -> Pair_Conj_NP = MkPair_ and dog ; cc head
+
+#auxfun NP2_ cat andDog : NP -> Pair_Conj_NP -> NP = UsePair_ (NP2_helper_ cat) andDog ; head conj
+#auxfun NP2_helper_ cat and dog :  NP -> Conj -> NP -> NP = ConjNP and (BaseNP cat dog) ; head dummy nonexistent
+
+#auxfun NPBaseComma_ cat dog andHorse : NP -> NPComma -> Pair_Conj_NP -> ConjListNP = UsePair_ (NPBaseComma_helper_ cat dog) andHorse ; head conj conj
+#auxfun NPBaseComma_helper_ cat dog and horse : NP -> NPComma -> Conj -> NP -> ConjListNP = MkTriple_ and cat (BaseNP dog horse) ; head dummy dummy
+
+#auxfun ConjListToNP2_ and_cat_dogHorseCapybara : ConjListNP -> NP = UseTriple_ ConjListToNP2_helper_ and_cat_dogHorseCapybara ; head
+#auxfun ConjListToNP2_helper_ and cat dogHorseCapybara : Conj -> NP -> ListNP -> NP = ConjNP and (ConsNP cat dogHorseCapybara) ; notreal head dummy
+
+#auxfun NPAddComma_ cat and_dog_horseCapybara  : NPComma -> ConjListNP -> ConjListNP = UseTriple_ (NPAddComma_helper_ cat) and_dog_horseCapybara ; conj head
+#auxfun NPAddComma_helper_ cat and dog horseCapybara : NPComma -> Conj -> NP -> ListNP -> ConjListNP = MkTriple_ and cat (ConsNP dog horseCapybara) ; dummy head
 

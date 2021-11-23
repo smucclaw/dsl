@@ -79,12 +79,6 @@ nlg rl = do
        linText = linearize gr lang subjectRaw
        linTree = showExpr [] subjectRaw
    return (Text.pack (linText ++ "\n" ++ linTree))
-  -- where
-    -- subjPred :: CId
-    -- subjPred = mkCId "subjPred"
-
-    -- mkRelClNP :: Expr -> Expr -> Expr
-    -- mkRelClNP np vp = mkApp (mkCId "addWho") [np,vp]
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl@(Regulative {}) = do
@@ -114,13 +108,13 @@ parseFields env rl@(Regulative {}) = do
     parseEvery env text = parseOut env (map toLower $ Text.unpack text)
 
     parseWho :: UDEnv -> BoolStruct -> IO Expr
-    parseWho env bs = return $ mkApp (mkCId "foo") []
+    parseWho env bs = parseOut env $ Text.unpack $ bs2text bs
 
     parseGiven :: UDEnv -> BoolStruct -> IO Expr
-    parseGiven env bs = return $ mkApp (mkCId "foo") []
+    parseGiven env bs = parseOut env $ Text.unpack $ bs2text bs
 
     parseAction :: UDEnv -> ParamText -> IO Expr
-    parseAction env at = return $ mkApp (mkCId "foo") []
+    parseAction env at = parseOut env $ Text.unpack $ at2text at
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of

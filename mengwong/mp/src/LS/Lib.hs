@@ -526,7 +526,7 @@ addneg (Just p) Nothing   = Just p
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> pOtherVal)
+  id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
 
 -- combine all the boolrules under the first preamble keyword

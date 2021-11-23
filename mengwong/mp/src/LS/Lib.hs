@@ -528,6 +528,16 @@ pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
+pRuleLabel :: Parser (Text.Text, Int, Text.Text)
+pRuleLabel = debugName "pRuleLabel" $ do
+  (RuleMarker i sym) <- pToken (RuleMarker _ _)
+  actualLabel  <- pOtherVal
+  dnl
+  return (sym, i, actualLabel)
+  where
+    isRuleMarker (RuleMarker _ _) = True
+    isRuleMarker _                = False
+  
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolRulesP)] -> Maybe (Preamble, BoolRulesP)

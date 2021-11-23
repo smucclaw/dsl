@@ -420,12 +420,14 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     }
 
 pRegRule :: Parser Rule
-pRegRule = debugName "pRegRule" $
-  (try pRegRuleSugary
-    <|> try pRegRuleNormal
-    <|> (pToken Fulfilled >> return RegFulfilled)
-    <|> (pToken Breach    >> return RegBreach)
-  ) <* optional dnl
+pRegRule = debugName "pRegRule" $ do
+  maybeLabel <- optional pRuleLabel
+  tentative  <- (try pRegRuleSugary
+                  <|> try pRegRuleNormal
+                  <|> (pToken Fulfilled >> return RegFulfilled)
+                  <|> (pToken Breach    >> return RegBreach)
+                ) <* optional dnl
+  return $ tentative { rlabel = maybeLabel }
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:
 --
@@ -530,14 +532,12 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 
 pRuleLabel :: Parser (Text.Text, Int, Text.Text)
 pRuleLabel = debugName "pRuleLabel" $ do
-  (RuleMarker i sym) <- pToken (RuleMarker _ _)
-  actualLabel  <- pOtherVal
-  dnl
+  (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
+  actualLabel  <- pOtherVal <* dnl
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
-  
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolRulesP)] -> Maybe (Preamble, BoolRulesP)

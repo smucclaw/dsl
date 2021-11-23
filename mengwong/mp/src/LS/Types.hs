@@ -132,8 +132,9 @@ data Rule = Regulative
 
 newtype RelName = RN { getName :: ConstitutiveName }
 
-noLabel, noLSource :: Maybe Text.Text
+noLabel :: Maybe (Text.Text, Int, Text.Text)
 noLabel   = Nothing
+noLSource :: Maybe Text.Text
 noLSource = Nothing
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing

@@ -32,7 +32,7 @@ library
       LS.NLG
       LS.Types
       LS.UDExt
-      LS.XPile.BabyL4
+      LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle
       LS.XPile.Prolog

@@ -314,6 +314,7 @@ pRule = withDepth 1 $ do
     <|> ((:[]) <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
     <|> try ((:[]) <$> pDeemRule <?> "deem rule")
     <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
+    <|> try ((:[]) <$> RuleGroup . Just <$> pRuleLabel <?> "rule section heading")
     <|> (eof >> return [])
 
 pTypeSig :: Parser TypeSig
@@ -530,7 +531,7 @@ pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
-pRuleLabel :: Parser (Text.Text, Int, Text.Text)
+pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
   (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
   actualLabel  <- pOtherVal <* dnl

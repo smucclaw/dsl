@@ -74,6 +74,11 @@ ruleName :: Rule -> Text.Text
 ruleName (Regulative { subj  = x }) = bsp2text x
 ruleName x = name x
 
+type RuleLabel = (Text.Text   --  "§"
+                 ,Int         --   1
+                 ,Text.Text   --  "My First Rule"
+                 )
+
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
@@ -84,7 +89,7 @@ data Rule = Regulative
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
             , hence    :: Maybe Rule
             , lest     :: Maybe Rule
-            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
+            , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
@@ -98,7 +103,7 @@ data Rule = Regulative
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
-            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
+            , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , orig     :: [(Preamble, BoolStructP)]
@@ -108,7 +113,7 @@ data Rule = Regulative
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [ParamText] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
-            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
+            , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             }
@@ -119,6 +124,7 @@ data Rule = Regulative
             , srcref :: Maybe SrcRef
             }
           | RuleAlias Text.Text -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
+          | RuleGroup { rlabel :: Maybe RuleLabel }  -- § NextStep
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom
           -- | CaseStm       -- work in progress
@@ -231,6 +237,7 @@ toToken "ALL"   =  TokAll -- when parties are treated as a collective, e.g. ALL 
 toToken "ALWAYS" = Always
 toToken "NEVER"  = Never
 toToken "WHO" =    Who
+toToken "WHICH" =  Who
 toToken "WHEN" =   When
 toToken "IF" =     If
 toToken "UPON" =   Upon

@@ -46,7 +46,7 @@ import LS.NLG (nlg)
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
 
-import LS.XPile.BabyL4
+import LS.XPile.CoreL4
 import LS.XPile.Prolog
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
@@ -56,7 +56,7 @@ import Data.List (transpose)
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | prolog"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog"
                    , dbug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
@@ -76,7 +76,7 @@ getConfig o = do
         , sourceURL = "STDIN"
         , asJSON = maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
-        , toBabyL4 = only o == "babyl4"
+        , toBabyL4 = only o == "babyl4" || only o == "corel4"
         , toProlog = only o == "prolog"
         }
 
@@ -137,7 +137,7 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         when (toBabyL4 rc) $ do
-          pPrint $ sfl4ToBabyl4 $ xs ++ xs'
+          pPrint $ sfl4ToCorel4 $ xs ++ xs'
         when (toProlog rc) $ do
           pPrint $ sfl4ToProlog $ xs ++ xs'
         unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $

@@ -13,7 +13,7 @@ import Data.Text.Lazy (unpack)
 sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
-sfl4ToCorel4 :: [SFL4.Rule] -> BabyL4.Program SRng
+sfl4ToCorel4 :: [SFL4.Rule] -> CoreL4.Program SRng
 sfl4ToCorel4 rus
   = Program {annotOfProgram = sfl4Dummy, elementsOfProgram = map sfl4ToCorel4Rule rus}
 

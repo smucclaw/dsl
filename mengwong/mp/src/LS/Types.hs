@@ -84,7 +84,7 @@ data Rule = Regulative
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
             , hence    :: Maybe Rule
             , lest     :: Maybe Rule
-            , rlabel   :: Maybe Text.Text
+            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
@@ -98,7 +98,7 @@ data Rule = Regulative
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
-            , rlabel   :: Maybe Text.Text
+            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , orig     :: [(Preamble, BoolStructP)]
@@ -108,7 +108,7 @@ data Rule = Regulative
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [ParamText] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
-            , rlabel   :: Maybe Text.Text
+            , rlabel   :: Maybe (Text.Text, Int, Text.Text)
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             }
@@ -307,6 +307,14 @@ toToken "LIST0"     = List0
 toToken "LIST1"     = List1
 
 toToken "AKA"       = Aka
+
+toToken "-§"        = RuleMarker (-1) "§"
+toToken "§"         = RuleMarker   1  "§"
+toToken "§§"        = RuleMarker   2  "§"
+toToken "§§§"       = RuleMarker   3  "§"
+toToken "§§§§"      = RuleMarker   4  "§"
+toToken "§§§§§"     = RuleMarker   5  "§"
+toToken "§§§§§§"    = RuleMarker   6  "§"
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.

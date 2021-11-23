@@ -43,8 +43,8 @@ data MyToken = Every | Party | TokAll
              | Checkbox
              | Aka -- also known as, for AKA Receiving Party
              | Empty | EOL
+             | RuleMarker Int Text.Text
   deriving (Ord, Eq, Show, Generic, ToJSON)
-
 
 -- INTERNAL PLUMBING
 -- we use a custom input stream where the positions of the tokens are the x,y cell coordinates of a spreadsheet.

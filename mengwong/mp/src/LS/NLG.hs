@@ -3,6 +3,7 @@ module LS.NLG (
     nlg
     ) where
 
+import LS.UDExt
 import LS.Types
     ( Deontic(..),
       EntityType,
@@ -10,7 +11,7 @@ import LS.Types
       ParamText,
       BoolStruct(..),
       Rule(..), BoolStructP, pt2text )
-import PGF ( CId, Expr, linearize, mkApp, mkCId, showExpr )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Char (toLower)
@@ -75,16 +76,28 @@ parseOut env txt = do
   putStrLn conll
   return expr
 
+peel :: Expr -> Expr
+peel subj = gf $ fromJust $ fromGUDS (fg subj)
+
+fromGUDS :: GUDS -> Maybe GNP
+fromGUDS x = case x of
+  Groot_only (GrootN_ someNP) -> Just someNP
+  _ -> Nothing
+--  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
+
+
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
-   let gr = pgfGrammar env
-       lang = actLanguage env
+   gr <- readPGF "grammars/UDExt.pgf" 
+   let lang = head $ languages gr
        subjectRaw = subjA annotatedRule
-       linText = linearize gr lang subjectRaw
-       linTree = showExpr [] subjectRaw
+       actionRaw = actionA annotatedRule
+       finalTree = mkApp (mkCId "subjAction") [peel subjectRaw, actionRaw]
+       linText = linearize gr lang finalTree
+       linTree = showExpr [] finalTree
    return (Text.pack (linText ++ "\n" ++ linTree))
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
@@ -153,7 +166,7 @@ parseFields env rl = case rl of
     -}
     parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
     parseUpon env (bs:_) = do
-      parse <- parseOut env (Text.unwords [Text.pack "upon", bsp2text bs])
+      parse <- parseOut env (bsp2text bs)
       return $ Just parse
     parseUpon _ [] = return Nothing
 

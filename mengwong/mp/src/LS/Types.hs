@@ -213,6 +213,7 @@ data RunConfig = RC { debug     :: Bool
                     , toNLG     :: Bool
                     , toBabyL4  :: Bool
                     , toProlog  :: Bool
+                    , toUppaal  :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

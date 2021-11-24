@@ -50,13 +50,14 @@ import LS.XPile.CoreL4
 import LS.XPile.Prolog
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
+import qualified LS.XPile.Uppaal as Uppaal
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal"
                    , dbug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
@@ -78,6 +79,7 @@ getConfig o = do
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4 = only o == "babyl4" || only o == "corel4"
         , toProlog = only o == "prolog"
+        , toUppaal = only o == "uppaal"
         }
 
 
@@ -131,17 +133,21 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
       -- Left bundle -> pPrint bundle
       Right ([], []) -> return ()
       Right (xs, xs') -> do
+        let rules = xs ++ xs'
         when (asJSON rc) $
-          putStrLn $ toString $ encodePretty (xs ++ xs')
+          putStrLn $ toString $ encodePretty rules
         when (toNLG rc) $ do
           naturalLangSents <- mapM nlg xs
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         when (toBabyL4 rc) $ do
-          pPrint $ sfl4ToCorel4 $ xs ++ xs'
+          pPrint $ sfl4ToCorel4 rules
         when (toProlog rc) $ do
-          pPrint $ sfl4ToProlog $ xs ++ xs'
+          pPrint $ sfl4ToProlog rules
+        when (toUppaal rc) $ do
+          pPrint $ Uppaal.toL4TA rules
+          putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
         unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $
-          pPrint $ xs ++ xs'
+          pPrint rules
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of

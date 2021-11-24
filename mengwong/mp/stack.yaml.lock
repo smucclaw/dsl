@@ -18,31 +18,31 @@ packages:
     subdir: lib/haskell/anyall
     url: https://github.com/smucclaw/dsl/archive/3e56b3008f1164725575a9bb2f87504dc8fa30eb.tar.gz
 - completed:
-    size: 3149280
+    size: 3154388
     subdir: .
-    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c99a1e2b221c83589fa57cd79ece6e38346d97c5.tar.gz
     name: baby-l4
     version: 0.1.0.0
-    sha256: de3baae63a31f9b561b7856628214cd7559746a4b89f81c7c4fd5b3a455d25ce
+    sha256: 533383740f9b2e7954560a92ee388900626b9224987a96ab09f1d4ae3a88d4c5
     pantry-tree:
-      size: 9379
-      sha256: d5defa3fd84b3febfaa60672c5ddf914cb24d660dba0f878c64b4962d0ef5c7b
+      size: 9510
+      sha256: 30cd89e25d74b2b609e6c0ad5c80296f320b25d96a1d8dae0067ce50d8e5cb5f
   original:
     subdir: .
-    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c99a1e2b221c83589fa57cd79ece6e38346d97c5.tar.gz
 - completed:
-    size: 3149280
+    size: 3154388
     subdir: baby-l4-core
-    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c99a1e2b221c83589fa57cd79ece6e38346d97c5.tar.gz
     name: baby-l4-core
     version: 0.1.0.0
-    sha256: de3baae63a31f9b561b7856628214cd7559746a4b89f81c7c4fd5b3a455d25ce
+    sha256: 533383740f9b2e7954560a92ee388900626b9224987a96ab09f1d4ae3a88d4c5
     pantry-tree:
       size: 650
-      sha256: 87ffba6fe9bb41556dbc161e2ee3e6e9317ac122b36ea816d222b1b1f1aa8c17
+      sha256: fd2a82788d7d2da23d785f6af9839d30b8f72ba60328d07633c14626e29c0011
   original:
     subdir: baby-l4-core
-    url: https://github.com/smucclaw/baby-l4/archive/51e312007b5c662a1bd17f1afae639c43a8a64f2.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c99a1e2b221c83589fa57cd79ece6e38346d97c5.tar.gz
 - completed:
     hackage: svg-builder-0.1.1@sha256:22de54d326a6b6912e461e1302edb9108b02aac0b6a6368fcdc3c4a224d487fd,1440
     pantry-tree:

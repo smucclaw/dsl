@@ -830,7 +830,7 @@ pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
            <|> (pToken Shant >> return DShant)
 
-pNumber :: Parser Double
+pNumber :: Parser Integer
 pNumber = token test Set.empty <?> "number"
   where
     test (WithPos _ _ _ (TNumber n)) = Just n

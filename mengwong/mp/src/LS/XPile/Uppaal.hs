@@ -36,26 +36,27 @@ emptyTASys
        channelsOfSys = [], automataOfSys = []}
 
 addRule :: Set.Set ChannelName -> SFL4.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
-addRule hc r@Regulative{rlabel = Just (_,_,lb)} ts | unpack lb `Set.member` hc = ts {automataOfSys = ruleToTA r (Just lb) : automataOfSys ts}
-                                                   | otherwise = ts {automataOfSys = ruleToTA r Nothing : automataOfSys ts}
+addRule hc r@Regulative{rlabel = Just (_,_,lb)} ts | unpack lb `Set.member` hc = ts {automataOfSys = fst (ruleToTA r (Just lb)) : automataOfSys ts}
+                                                   | otherwise = ts {automataOfSys = fst (ruleToTA r Nothing) : automataOfSys ts} -- TODO: Use the decls in snd
 addRule hc r ts = ts
 
 -- TODO Nested
 -- TODO Handle party
 
 -- TODO: Make it recursive to handle missing fields gracefully
-ruleToTA :: SFL4.Rule -> Maybe TL.Text -> TA ()
+ruleToTA :: SFL4.Rule -> Maybe TL.Text -> (TA (), [VarDecl ()])
 -- ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} Nothing = TA 
-ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _unit), upon= [ AA.Leaf upn ] , cond = Just cnd} _ = TA
+ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= [ AA.Leaf upn ] , cond = Just cnd} _ = (TA
     { nameOfTA = rName
     , annotOfTA = ()
-    , locsOfTA = [initialLoc, uponLoc, ifBranchOkLoc, successLoc]
+    , locsOfTA = [initialLoc, uponLoc, ifBranchOkLoc, successLoc, breachLoc, timeConstraintSatisfiedLoc]
     , clocksOfTA = [ruleTimer]
-    , transitionsOfTA = [uponTransition, ifBranchTransition, successTransition]
+    , transitionsOfTA = [uponTransition, ifBranchTransition, successTransition, timeConstraintSatisfiedTransition, timeConstraintFailedTransition]
     , initialLocOfTA = initialLoc
     , invarsOfTA = []
     , labellingOfTA = []
-    }
+    , urgentLocsOfTA = [] -- TODO: Use
+    }, ifCondDecls)
   where
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
     ruleTimer = Clock $ "time" ++ rName
@@ -66,13 +67,47 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _un
                                  }
     ifBranchOkLoc = Loc "RuleTriggers"
     successLoc = Loc "Sucess"
+    ifCond = boolRulesToExpr cnd
+    ifCondDecls = extractDecls (fv ifCond)
     ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
-                                 guardOfTransition = TransitionGuard [] (Just (() <$ boolRulesToExpr cnd))
+                                 guardOfTransition = TransitionGuard [] (Just (() <$ ifCond))
                                  }
-    successTransition = (simpleTransition uponLoc ifBranchOkLoc) {
-                                 guardOfTransition = TransitionGuard [] (Just (() <$ notExpr (boolRulesToExpr cnd)))
+    successTransition = (simpleTransition uponLoc successLoc) {
+                                 guardOfTransition = TransitionGuard [] (Just (() <$ notExpr ifCond))
+                                 }
+    -- TODO: Handle Lest
+    breachLoc = Loc "Breach"
+    timeConstraintSatisfiedLoc = Loc "TimeConstraintSatisfied"
+    timeConstraintSatisfiedTransition = (simpleTransition ifBranchOkLoc timeConstraintSatisfiedLoc) {
+                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (mkCompar tcmp) time] Nothing
+                                 }
+    timeConstraintFailedTransition = (simpleTransition ifBranchOkLoc breachLoc) {
+                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (negateCompar $ mkCompar tcmp) time] Nothing
                                  }
 ruleToTA r _ = error $ "Unexpected rule type: " ++ show r
+
+extractDecls :: Set.Set (Var (Tp ())) -> [VarDecl ()]
+extractDecls = map varToVarDecl . Set.toList
+
+varToVarDecl :: Var (Tp ()) -> VarDecl ()
+varToVarDecl (GlobalVar (QVarName t varName)) = VarDecl () varName t
+varToVarDecl _ = error "varToVarDecl: Impossible"
+
+mkCompar :: TComparison -> BComparOp
+mkCompar TBefore = BClte
+mkCompar TAfter = BCgte
+mkCompar TBy = BClte
+mkCompar TOn = BCeq
+-- mkCompar TVague = _
+mkCompar other = error $ "Unsupported time constraint: " ++ show other
+
+negateCompar :: BComparOp -> BComparOp
+negateCompar BCeq = BCne
+negateCompar BClt = BCgte
+negateCompar BClte = BCgt
+negateCompar BCgt = BClte
+negateCompar BCgte = BClt
+negateCompar BCne = BCeq
 
 pt2varname :: ParamText -> String
 pt2varname = toValidName  . unpack . pt2text
@@ -98,6 +133,9 @@ toValidName :: [Char] -> [Char]
 toValidName = map underscorize
   where
     underscorize ' ' = '_'
+    underscorize '(' = '_'
+    underscorize ')' = '_'
+    underscorize '§' = '_'
     underscorize c = c
 
 

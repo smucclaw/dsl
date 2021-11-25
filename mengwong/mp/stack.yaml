@@ -47,7 +47,7 @@ extra-deps:
   subdirs:
   - lib/haskell/anyall
 - github: smucclaw/baby-l4
-  commit: c99a1e2b221c83589fa57cd79ece6e38346d97c5
+  commit: c757e61613b419940d1acc2c632d066bef2406b7
   subdirs:
   - .
   - baby-l4-core

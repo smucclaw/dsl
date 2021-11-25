@@ -154,7 +154,7 @@ data ParamType = TOne | TOptional | TList0 | TList1
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
                           deriving (Eq, Show, Generic, ToJSON)
 
-data TemporalConstraint a = TemporalConstraint TComparison Double a
+data TemporalConstraint a = TemporalConstraint TComparison Integer a
                           deriving (Eq, Show, Generic, ToJSON)
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
@@ -205,9 +205,9 @@ mkTComp On         = Just TOn
 mkTComp Eventually = Nothing
 mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ show x ++ " -- this should be handled by a Vaguely"
 
-mkTC :: MyToken -> Double -> Text.Text -> Maybe (TemporalConstraint Text.Text)
+mkTC :: MyToken -> Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> pure tt <*> pure unit
--- TODO: Don't crash on non-integer input
+-- TODO: Consider supporting non-integer time constraints
 
 data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int

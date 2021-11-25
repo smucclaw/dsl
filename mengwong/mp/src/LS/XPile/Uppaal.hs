@@ -11,6 +11,8 @@ import Data.Text.Lazy (unpack)
 import qualified Data.Text.Lazy as TL
 import qualified AnyAll as AA
 import L4.PrintProg
+import qualified Data.ByteString.Lazy.Char8 as T
+import L4.SyntaxManipulation
 
 type Ann = ()
 
@@ -19,14 +21,14 @@ taSysToString = show . showL4 [PrintSystem UppaalStyle]
 
 toL4TA :: [SFL4.Rule] -> CoreL4.TASys ()
 toL4TA rules = foldr (addRule henceChannels) emptyTASys { channelsOfSys =  Set.toList henceChannels } rules
-  where 
-    henceChannels = Set.fromList $ concatMap getHence rules 
+  where
+    henceChannels = Set.fromList $ concatMap getHence rules
 
 getHence :: SFL4.Rule -> [String]
 getHence Regulative{ hence = Just (RuleAlias rname)} = [unpack rname]
 getHence _ = []
 -- TODO: Handle recursive Hence
-  
+
 emptyTASys :: TASys ()
 emptyTASys
   = TASys
@@ -44,12 +46,12 @@ addRule hc r ts = ts
 -- TODO: Make it recursive to handle missing fields gracefully
 ruleToTA :: SFL4.Rule -> Maybe TL.Text -> TA ()
 -- ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} Nothing = TA 
-ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _unit), upon= [ AA.Leaf upn ]} _ = TA 
+ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _unit), upon= [ AA.Leaf upn ] , cond = Just cnd} _ = TA
     { nameOfTA = rName
     , annotOfTA = ()
-    , locsOfTA = [initialLoc, uponLoc]
+    , locsOfTA = [initialLoc, uponLoc, ifBranchOkLoc, successLoc]
     , clocksOfTA = [ruleTimer]
-    , transitionsOfTA = [uponTransition ]
+    , transitionsOfTA = [uponTransition, ifBranchTransition, successTransition]
     , initialLocOfTA = initialLoc
     , invarsOfTA = []
     , labellingOfTA = []
@@ -58,11 +60,28 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _un
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
     ruleTimer = Clock $ "time" ++ rName
     initialLoc = Loc "Initial"
-    uponLoc = Loc $ "Upon_" ++ toValidName (unpack (pt2text upn))
+    uponLoc = Loc $ "Upon_" ++ pt2varname upn -- TODO: Make this urgent when supported
     uponTransition = (simpleTransition initialLoc uponLoc) {
                                  actionOfTransition = TransitionAction [ruleTimer] (Skip ())
                                  }
+    ifBranchOkLoc = Loc "RuleTriggers"
+    successLoc = Loc "Sucess"
+    ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
+                                 guardOfTransition = TransitionGuard [] (Just (() <$ boolRulesToExpr cnd))
+                                 }
+    successTransition = (simpleTransition uponLoc ifBranchOkLoc) {
+                                 guardOfTransition = TransitionGuard [] (Just (() <$ notExpr (boolRulesToExpr cnd)))
+                                 }
 ruleToTA r _ = error $ "Unexpected rule type: " ++ show r
+
+pt2varname :: ParamText -> String
+pt2varname = toValidName  . unpack . pt2text
+
+boolRulesToExpr :: BoolRulesP -> CoreL4.Expr (Tp ())
+boolRulesToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
+boolRulesToExpr (AA.Not  x)  = notExpr (boolRulesToExpr x)
+boolRulesToExpr (AA.Any xs)  = disjsExpr (boolRulesToExpr <$> xs)
+boolRulesToExpr (AA.All xs)  = conjsExpr (boolRulesToExpr <$> xs)
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src

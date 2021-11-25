@@ -39,7 +39,7 @@ data Item a =
   | Not (Item a)
   deriving (Eq, Show, Generic)
 
-instance (IsString a) => Semigroup (Item a) where
+instance (Monoid a) => Monoid (Item a) where
   (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
@@ -48,7 +48,7 @@ instance (IsString a) => Semigroup (Item a) where
   (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre "all of:") [l,r]
+  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre mempty) [l,r]
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
 
   (<>) l@(Any x xs)   (All y ys) = All y (l:ys)

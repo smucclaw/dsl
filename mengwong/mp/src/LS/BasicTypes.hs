@@ -37,7 +37,7 @@ data MyToken = Every | Party | TokAll
              | Distinct -- entity modifier in GIVEN
              | Unless
              | Hence | Lest | Fulfilled | Breach
-             | TNumber Int
+             | TNumber Double
              | Other Text.Text
              | Do
              | Checkbox

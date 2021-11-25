@@ -1,4 +1,4 @@
-Singer,MUST,BEFORE,supper
-,->,pay,
-,,to,the King
-,,amount,$20
+Singer,MUST,BEFORE,1,supper
+,->,pay,,
+,,to,the King,
+,,amount,$20,

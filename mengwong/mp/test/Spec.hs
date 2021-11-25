@@ -195,7 +195,7 @@ main = do
                           , keyword = Party
                           , deontic = DMay
                           , action = mkLeaf "pay"
-                          , temporal = Just (TAfter "20min")
+                          , temporal = Just (TemporalConstraint TAfter 20 "min")
                           }
                         
 
@@ -206,7 +206,7 @@ main = do
                               { keyword = Party
                               , subj = mkLeaf "Singer"
                               , action = mkLeaf "pay"
-                              , temporal = Just (TBefore "supper")
+                              , temporal = Just (TemporalConstraint TBefore 1 "supper")
                               }
                         
 

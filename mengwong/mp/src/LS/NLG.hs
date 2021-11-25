@@ -7,11 +7,13 @@ import LS.UDExt
 import LS.Types ( Deontic(..),
       EntityType,
       TemporalConstraint (..),
-      ParamText,
-      BoolStruct(..),
-      ConstitutiveName,
-      Rule(..), BoolStructP, pt2text )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
+      BoolStruct,
+      BoolStructP,
+      Rule(..),
+      pt2text, text2pt, ParamText, ruleName, TComparison (..)
+      -- bsp2text
+      )
+import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Char (toLower)
@@ -165,34 +167,35 @@ parseFields env rl = case rl of
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    -- TODO: add GF funs for  ParseTemporal
-    -- It will look like this:
-    {- parseUpon env bs = do
-        rawExpr <- parseOut env event
-        let gfFun = getGFFun (TAfter/TWhatever/…) -- should we move on to the Haskell version of the abstract syntax?
-        return $ <gfFun applied to rawExpr>  -- either use PGF.mkApp, or with Haskell version of abstract syntax
-      -}
-    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env tc = case tc of
-      TAfter event -> parseOut env event
-      TBefore event -> parseOut env event
-      TBy     event -> parseOut env event
-      TOn     event -> parseOut env event
-      TVague  event -> parseOut env event
+    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
+    parseTemporal env (TemporalConstraint cmp time unit) = parse' "Adv"  env (Text.unwords [Text.pack (tcompToStr cmp), Text.pack $ show time, unit])
 
-    {- TODO: do we want to give this more structure in the GF grammar as well?
-      so that the GF tree looks like
-         Upon (GerundVP some_VP)
-      instead of
-         PrepNP upon_Prep (GerundVP some_VP)
-      in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
-      in the former, we know from the first constructor that this is an "upon" sentence
-    -}
+    tcompToStr :: TComparison -> String
+    tcompToStr TBefore = "before"
+    tcompToStr TAfter = "after"
+    tcompToStr TBy = "by"
+    tcompToStr TOn = "on"
+    tcompToStr TVague = ""
+    -- parseTemporal env (TBefore event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "before", Text.pack $ show event, unit])
+    -- parseTemporal env (TAfter event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "after", Text.pack $ show event, unit])
+    -- parseTemporal env (TBy event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "by", Text.pack $ show event, unit])
+    -- parseTemporal env (TOn event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "on", Text.pack $ show event, unit])
+
+    parseUpon :: UDEnv -> BoolStructP -> Expr
+    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
+
+parseFields _env rl = error $ "Unsupported rule type " ++ show rl
+
+-- BoolStruct is from Types, and Item is from AnyAll
+-- TODO: for now only return the first thing
+-- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
+bs2text :: BoolStruct -> Text.Text
+bs2text (Leaf txt) = txt
+bs2text (All _) = Text.pack "walk"
+bs2text (Any _) = Text.pack "walk"
+bs2text (Not _) = Text.pack "walk"
 
 
-
--- TODO: this really needs more thought
--- Make GF structure for BoolStructP and not try to parse the text sprinkled with "and"/"or"/"not"?
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Leaf pt) = pt2text pt
 bsp2text (AA.Not  x)  = Text.pack "not " <> bsp2text x

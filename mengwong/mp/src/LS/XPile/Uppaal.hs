@@ -44,7 +44,7 @@ addRule hc r ts = ts
 -- TODO: Make it recursive to handle missing fields gracefully
 ruleToTA :: SFL4.Rule -> Maybe TL.Text -> TA ()
 -- ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} Nothing = TA 
-ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} _ = TA 
+ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint TBefore time _unit), upon= [ AA.Leaf upn ]} _ = TA 
     { nameOfTA = rName
     , annotOfTA = ()
     , locsOfTA = [initialLoc, uponLoc]

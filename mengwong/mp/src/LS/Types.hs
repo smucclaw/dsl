@@ -151,11 +151,10 @@ data ParamType = TOne | TOptional | TList0 | TList1
   deriving (Eq, Show, Generic, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
-data TemporalConstraint a = TBefore a
-                          | TAfter  a
-                          | TBy     a
-                          | TOn     a
-                          | TVague  a
+data TComparison = TBefore | TAfter | TBy | TOn | TVague
+                          deriving (Eq, Show, Generic, ToJSON)
+
+data TemporalConstraint a = TemporalConstraint TComparison Double a
                           deriving (Eq, Show, Generic, ToJSON)
 type ConstitutiveName = Text.Text
 type EntityType = Text.Text
@@ -197,13 +196,18 @@ data SrcRef = SrcRef { url      :: Text.Text
                      }
               deriving (Eq, Show, Generic, ToJSON)
 
-mkTC :: MyToken -> Text.Text -> Maybe (TemporalConstraint Text.Text)
-mkTC Before     tt = Just $ TBefore tt
-mkTC After      tt = Just $ TAfter  tt
-mkTC By         tt = Just $ TBy     tt
-mkTC On         tt = Just $ TOn     tt
-mkTC Eventually _  = Nothing
-mkTC x      y  = error $ "mkTC: can't create temporal constraint from " ++ show x ++ ", " ++ show y ++ " -- this should be handled by a Vaguely"
+
+mkTComp :: MyToken -> Maybe TComparison
+mkTComp Before     = Just TBefore 
+mkTComp After      = Just TAfter  
+mkTComp By         = Just TBy     
+mkTComp On         = Just TOn     
+mkTComp Eventually = Nothing
+mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ show x ++ " -- this should be handled by a Vaguely"
+
+mkTC :: MyToken -> Double -> Text.Text -> Maybe (TemporalConstraint Text.Text)
+mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> pure tt <*> pure unit
+-- TODO: Don't crash on non-integer input
 
 data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int
@@ -327,7 +331,7 @@ toToken "§§§§§§"    = RuleMarker   6  "§"
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
--- toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
+toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = Other x

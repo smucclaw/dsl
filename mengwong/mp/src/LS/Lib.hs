@@ -555,10 +555,10 @@ mergePBRS xs         = Just (fst . head $ xs, foldl1 (<>) (snd <$> xs))
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
-    eventually   = mkTC <$> pToken Eventually <*> pure ""
-    specifically = mkTC <$> sometime          <*> pOtherVal
+    eventually   = mkTC <$> pToken Eventually <*> pure 0 <*> pure ""
+    specifically = mkTC <$> sometime          <*> pNumber <*> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
-    vaguely      = Just . TVague <$> pOtherVal
+    vaguely      = Just . TemporalConstraint TVague 0 <$> pOtherVal
 
 pPreamble :: [MyToken] -> Parser Preamble
 pPreamble toks = choice (try . pToken <$> toks)
@@ -829,6 +829,12 @@ pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
            <|> (pToken Shant >> return DShant)
+
+pNumber :: Parser Double
+pNumber = token test Set.empty <?> "number"
+  where
+    test (WithPos _ _ _ (TNumber n)) = Just n
+    test _ = Nothing
 
 -- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text

@@ -9,7 +9,7 @@ import LS.Types
       BoolStruct,
       BoolStructP,
       Rule(..),
-      pt2text, text2pt, ParamText, ruleName
+      pt2text, text2pt, ParamText, ruleName, TComparison (..)
       -- bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
@@ -117,13 +117,23 @@ parseFields env rl@(Regulative {}) =
         DShant -> mkCId "shant_Deontic"
 
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
-    parseTemporal env (TBefore event)  = parse' "Adv"  env (Text.unwords [Text.pack "before", event])
-    parseTemporal env (TAfter event)  = parse' "Adv"  env (Text.unwords [Text.pack "after", event])
-    parseTemporal env (TBy event)  = parse' "Adv"  env (Text.unwords [Text.pack "by", event])
-    parseTemporal env (TOn event)  = parse' "Adv"  env (Text.unwords [Text.pack "on", event])
+    parseTemporal env (TemporalConstraint cmp time unit) = parse' "Adv"  env (Text.unwords [Text.pack (tcompToStr cmp), Text.pack $ show time, unit])
+
+    tcompToStr :: TComparison -> String
+    tcompToStr TBefore = "before"
+    tcompToStr TAfter = "after"
+    tcompToStr TBy = "by"
+    tcompToStr TOn = "on"
+    tcompToStr TVague = ""
+    -- parseTemporal env (TBefore event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "before", Text.pack $ show event, unit])
+    -- parseTemporal env (TAfter event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "after", Text.pack $ show event, unit])
+    -- parseTemporal env (TBy event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "by", Text.pack $ show event, unit])
+    -- parseTemporal env (TOn event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "on", Text.pack $ show event, unit])
 
     parseUpon :: UDEnv -> BoolStructP -> Expr
     parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
+
+parseFields _env rl = error $ "Unsupported rule type " ++ show rl
 
 -- BoolStruct is from Types, and Item is from AnyAll
 -- TODO: for now only return the first thing

@@ -293,8 +293,8 @@ Let's not support this case 4 until we have a more principled approach to meta-r
 | ->    | sing            |       |        |        |
 | HENCE | PARTY           | King  |        |        |
 |       | MAY             | pay   |        |        |
-|       | AFTER           | 20min |        |        |
-| LEST  | Singer          | MUST  | BEFORE | supper |
+|       | AFTER           | 20    | min    |        |
+| LEST  | Singer          | MUST  | BEFORE | 1 | supper |
 |       |                 | ->    | pay    |        |
 
 *** do the individual components work?
@@ -307,9 +307,9 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| PARTY | King  |
-| MAY   | pay   |
-| AFTER | 20min |
+| PARTY | King  |     |
+| MAY   | pay   |     |
+| AFTER | 20    | min |
 
 **** the singer part
 :PROPERTIES:
@@ -317,8 +317,8 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| Singer | MUST | BEFORE | supper |
-|        | ->   | pay    |        |
+| Singer | MUST | BEFORE | 1 | supper |
+|        | ->   | pay    |   |        |
 
 ** chained regulatives with action params
 :PROPERTIES:
@@ -326,7 +326,7 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| Singer | MUST | BEFORE | supper   |
+| Singer | MUST | BEFORE | 1 | supper   |
 |        | ->   | pay    |          |
 |        |      | to     | the King |
 |        |      | amount | $20      |
@@ -338,9 +338,9 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| PARTY | King  |
-| MAY   | pay   |
-| AFTER | 20min |
+| PARTY | King  |  |
+| MAY   | pay   |  |
+| AFTER | 20    | min |
 
 *** may after time pay
 :PROPERTIES:
@@ -348,9 +348,9 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| PARTY | King  |       |
-| MAY   | AFTER | 20min |
-| ->    | pay   |       |
+| PARTY | King  |    |     |
+| MAY   | AFTER | 20 | min |
+| ->    | pay   |    |     |
 
 *** party after may time
 :PROPERTIES:
@@ -358,9 +358,9 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| PARTY | King  |
-| AFTER | 20min |
-| MAY   | pay   |
+| PARTY | King  |     |
+| AFTER | 20    | min |
+| MAY   | pay   |     |
 
 *** party may, no time
 :PROPERTIES:

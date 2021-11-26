@@ -4,12 +4,12 @@ module LS.NLG (
     ) where
 
 import LS.UDExt
-import LS.Types
-    ( Deontic(..),
+import LS.Types ( Deontic(..),
       EntityType,
       TemporalConstraint (..),
       ParamText,
       BoolStruct(..),
+      ConstitutiveName,
       Rule(..), BoolStructP, pt2text )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -91,7 +91,7 @@ nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
-   gr <- readPGF "grammars/UDExt.pgf" 
+   gr <- readPGF "grammars/UDExt.pgf"
    let lang = head $ languages gr
        subjectRaw = subjA annotatedRule
        actionRaw = actionA annotatedRule
@@ -100,14 +100,15 @@ nlg rl = do
        linTree = showExpr [] finalTree
    return (Text.pack (linText ++ "\n" ++ linTree))
 
+
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {} -> do
-    subjA'  <- parseEvery env (subj rl)
-    whoA'   <- mapM (parseWho env) (who rl)
-    condA'   <- return Nothing
+    subjA'  <- parseBool env (subj rl)
+    whoA'   <- mapM (parseBool env) (who rl)
+    condA'   <- return Nothing --if
     let deonticA' = parseDeontic (deontic rl)    :: CId
-    actionA' <- parseAction env (action rl)
+    actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
     uponA' <- parseUpon env (upon rl)
     givenA' <- mapM (parseGiven env) (given rl)
@@ -121,19 +122,42 @@ parseFields env rl = case rl of
       uponA = uponA',
       givenA = givenA'
     }
+  Constitutive {} -> do
+    givenA' <- mapM (parseGiven env) (given rl)
+    nameA' <- parseName env (name rl)
+    condA'   <- return Nothing -- when/if/unless
+    return ConstitutiveA {
+      givenA = givenA',
+      nameA = nameA',
+      condA = condA'
+    }
+  -- meansA <- parseMeans --    keyword  :: MyToken       -- Means
+  -- includesA <-  -- keyword :: MyToken  Includes, Is, Deem
+  -- deemsA <-  -- keyword :: MyToken  Deem
+  -- letbindA <-
+    --name     :: ConstitutiveName   -- the thing we are defining
+    -- letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+    -- rlabel   :: Maybe Text.Text
+    -- lsource  :: Maybe Text.Text
+    -- srcref   :: Maybe SrcRef
+    -- orig     :: [(Preamble, BoolStructP)]
   _ -> error "parseFields: rule type not supported yet"
   where
-    parseEvery :: UDEnv -> BoolStructP -> IO Expr
-    parseEvery env bsp = parseOut env (bsp2text bsp)
-
-    parseWho :: UDEnv -> BoolStructP -> IO Expr
-    parseWho env bs = parseOut env $ bsp2text bs
-
     parseGiven :: UDEnv -> ParamText -> IO Expr
     parseGiven env pt = parseOut env $ pt2text pt
 
-    parseAction :: UDEnv -> BoolStructP -> IO Expr
-    parseAction env at = parseOut env $ bsp2text at
+    -- ConstitutiveName is Text.Text
+    parseName :: UDEnv -> Text.Text -> IO Expr
+    parseName env txt = parseOut env txt
+
+    parseBool :: UDEnv -> BoolStructP -> IO Expr
+    parseBool env bsp = parseOut env (bsp2text bsp)
+
+    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
+    parseUpon env (bs:_) = do
+      parse <- parseOut env (bsp2text bs)
+      return $ Just parse
+    parseUpon _ [] = return Nothing
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -164,11 +188,7 @@ parseFields env rl = case rl of
       in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
       in the former, we know from the first constructor that this is an "upon" sentence
     -}
-    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
-    parseUpon env (bs:_) = do
-      parse <- parseOut env (bsp2text bs)
-      return $ Just parse
-    parseUpon _ [] = return Nothing
+
 
 
 -- TODO: this really needs more thought
@@ -200,4 +220,15 @@ data AnnotatedRule = RegulativeA
             -- , lsourceA  :: Maybe Text.Text
             -- , srcrefA   :: Maybe SrcRef
             }
+            | ConstitutiveA
+                { nameA       :: Expr   -- the thing we are defining
+                -- , keyword  :: MyToken       -- Means, Includes, Is, Deem
+                , letbindA    :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+                , condA       :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
+                , givenA      :: Maybe Expr
+                -- , rlabel    :: Maybe Text.Text
+                -- , lsource   :: Maybe Text.Text
+                -- , srcref    :: Maybe SrcRef
+                -- , orig      :: [(Preamble, BoolStructP)]
+                }
           deriving (Eq, Show)

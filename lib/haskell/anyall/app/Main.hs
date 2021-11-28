@@ -52,7 +52,7 @@ maindemo :: IO ()
 maindemo = do
   forM_
     [ Map.empty
-    , Map.fromList [("walk" :: DTI.Text,  Left  $ Just True )
+    , Map.fromList [("walk" :: TL.Text,  Left  $ Just True )
                    ,("run",   Left  $ Just True )
                    ,("eat",   Left  $ Just True )
                    ,("drink", Left  $ Just False)]

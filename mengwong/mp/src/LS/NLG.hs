@@ -15,7 +15,7 @@ import LS.Types ( Deontic(..),
       pt2text, text2pt, ParamText, ruleName, TComparison (..)
     , bsp2text
       )
-import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
+import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr, readPGF, languages )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Char (toLower)
@@ -164,6 +164,9 @@ parseFields env rl = case rl of
       return $ Just parse
     parseUpon _ [] = return Nothing
 
+--    parseUpon :: UDEnv -> BoolStructP -> Expr
+--    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
+
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
         DMust  -> mkCId "must_Deontic"
@@ -183,9 +186,6 @@ parseFields env rl = case rl of
     -- parseTemporal env (TAfter event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "after", Text.pack $ show event, unit])
     -- parseTemporal env (TBy event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "by", Text.pack $ show event, unit])
     -- parseTemporal env (TOn event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "on", Text.pack $ show event, unit])
-
-    parseUpon :: UDEnv -> BoolStructP -> Expr
-    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
 
 parseFields _env rl = error $ "Unsupported rule type " ++ show rl
 

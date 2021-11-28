@@ -530,7 +530,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 addneg :: Maybe BoolStructP -> Maybe BoolStructP -> Maybe BoolStructP
 addneg Nothing  Nothing   = Nothing
 addneg Nothing  (Just n)  = Just $ AA.Not n
-addneg (Just p) (Just n)  = Just $ AA.All [p, AA.Not n]
+addneg (Just p) (Just n)  = Just $ AA.All AA.allof [p, AA.Not n]
 addneg (Just p) Nothing   = Just p
 
 pHenceLest :: MyToken -> Parser Rule
@@ -759,7 +759,7 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ pToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else AA.All (orGroup1 : orGroupN)
+                 else AA.All AA.allof (orGroup1 : orGroupN)
   return toreturn
 
 pOrGroup ::  Parser BoolRulesP
@@ -769,7 +769,7 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ pToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
-                 else AA.Any  (elem1 : elems)
+                 else AA.Any AA.anyof (elem1 : elems)
   return toreturn
 
 pAtomicElement ::  Parser BoolRulesP

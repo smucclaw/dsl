@@ -895,3 +895,17 @@ what if we say
 | (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | to      | the PDPC      |
 | (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | about   | your inaction |
 
+** Nested Or Group with pre/post labels
+
+*** with pre
+:PROPERTIES:
+:TABLE_EXPORT_FILE: nested-or-pre.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | degustates                          |       |
+| MEANS | eats                                |       |
+| OR    | drinking, meaning any of the below: |       |
+|       |                                     | sips  |
+|       | OR                                  | chugs |
+

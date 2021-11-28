@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module LS.NLG (
     nlg
     ) where
@@ -29,6 +31,7 @@ import Text.Megaparsec
     ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
 import Text.Megaparsec.Char (char)
 import Data.Either (rights)
+import Data.String (IsString)
 
 -- typeprocess to run a python
 import System.IO ()
@@ -190,18 +193,17 @@ parseFields _env rl = error $ "Unsupported rule type " ++ show rl
 -- TODO: for now only return the first thing
 -- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
 bs2text :: BoolStruct -> Text.Text
-bs2text (Leaf txt) = txt
-bs2text (All _) = Text.pack "walk"
-bs2text (Any _) = Text.pack "walk"
-bs2text (Not _) = Text.pack "walk"
+bs2text (AA.Leaf txt ) = txt
+bs2text (AA.All (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
+bs2text (AA.All Nothing   xs) = Text.unwords $ "all of:" : (bs2text <$> xs)
+bs2text (AA.Any (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
+bs2text (AA.Any Nothing   xs) = Text.unwords $ "any of:" : (bs2text <$> xs)
+bs2text (AA.Not x    ) =                   "not " <> bs2text x
 
+prepost :: (IsString a, Monoid a) => AA.Label a -> a -> a
+prepost (AA.Pre     p1   ) t = p1 <> " " <> t
+prepost (AA.PrePost p1 p2) t = p1 <> " " <> t <> " " <> p2
 
-bsp2text :: BoolStructP -> Text.Text
-bsp2text (AA.Leaf pt) = pt2text pt
-bsp2text (AA.Not  x)  = Text.pack "not " <> bsp2text x
-bsp2text (AA.Any xs) =  Text.unwords (bsp2text <$> xs)
-bsp2text (AA.All xs) =  Text.unwords (bsp2text <$> xs)
--- and possibily we want to have interspersed BoolStructs along the way
 
 ------------------------------------------------------------
 -- Ignore everything below for now

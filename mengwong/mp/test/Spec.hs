@@ -12,6 +12,8 @@ import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
+import qualified Data.Text.Lazy as Text
+
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -67,6 +69,7 @@ defaultCon = Constitutive
   , orig = []
   }
 
+
 main :: IO ()
 main = do
   cmdlineOpts <- unwrapRecord $ (maybe (error "failed to parse empty args") id $ getRecordPure  [])
@@ -98,10 +101,10 @@ main = do
       it "should parse dummySing" $ do
         parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg {
-                            who = Just (All
+                            who = Just (All allof
                                          [ mkLeaf "walks"
                                          , mkLeaf "runs"
-                                         , Any
+                                         , Any anyof
                                            [ mkLeaf "eats"
                                            , mkLeaf "drinks"
                                            ]
@@ -109,11 +112,11 @@ main = do
                             } ]
 
       let imbibeRule = [ defaultReg {
-                           who = Just (Any
+                           who = Just (Any anyof
                                        [ mkLeaf "walks"
                                        , mkLeaf "runs"
                                        , mkLeaf "eats"
-                                       , All
+                                       , All allof
                                          [ mkLeaf "drinks"
                                          , mkLeaf "swallows" ]
                                        ])
@@ -134,7 +137,7 @@ main = do
 
       let degustates = defaultCon
                        { name = "degustates"
-                       , letbind = Any [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , letbind = Any anyof [ mkLeaf "eats", mkLeaf "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
 
@@ -147,7 +150,7 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
-                          { who = Just $ All
+                          { who = Just $ All allof
                                   [ mkLeaf "walks"
                                   , mkLeaf "degustates"
                                   ]
@@ -155,7 +158,7 @@ main = do
                           }
                         , defaultCon
                           { name = "degustates"
-                          , letbind = Any [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          , letbind = Any anyof [ mkLeaf "eats", mkLeaf "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
                           }
@@ -164,9 +167,9 @@ main = do
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , letbind = All
+              , letbind = All allof
                           [ mkLeaf "drinks"
-                          , Any [ mkLeaf "swallows"
+                          , Any anyof [ mkLeaf "swallows"
                                 , mkLeaf "spits" ]
                           ]
               , cond = Nothing
@@ -182,7 +185,7 @@ main = do
         parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
       let if_king_wishes = [ defaultReg
-                          { who = Just $ All
+                          { who = Just $ All allof
                                   [ mkLeaf "walks"
                                   , mkLeaf "eats"
                                   ]
@@ -212,7 +215,7 @@ main = do
 
       let singer_chain = [ defaultReg
                          { subj = mkLeaf "person"
-                         , who = Just $ All
+                         , who = Just $ All allof
                                  [ mkLeaf "walks"
                                  , mkLeaf "eats"
                                  ]
@@ -291,7 +294,7 @@ main = do
 
       let bobUncle = defaultCon { name = "Bob's your uncle"
                                 , letbind = Not
-                                            ( Any
+                                            ( Any anyof
                                               [ mkLeaf "Bob is estranged"
                                               , mkLeaf "Bob is dead"
                                               ]
@@ -310,19 +313,19 @@ main = do
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
-                                                 ( All
+                                                 ( All allof
                                                    [ mkLeaf "day of silence"
                                                    , mkLeaf "observance is mandatory"
                                                    ]
                                                  )
                                                ) } ]
 
-      let dayOfSong = [ defaultReg { cond = Just ( All [ Not ( mkLeaf "day of silence" )
-                                                       , mkLeaf "day of song" ] ) } ]
+      let dayOfSong = [ defaultReg { cond = Just ( All allof [ Not ( mkLeaf "day of silence" )
+                                                               , mkLeaf "day of song" ] ) } ]
 
-      let silenceKing = [ defaultReg { cond = Just ( All [ mkLeaf "the king wishes"
-                                                         , Not ( mkLeaf "day of silence" )
-                                                         ] ) } ]
+      let silenceKing = [ defaultReg { cond = Just ( All allof [ mkLeaf "the king wishes"
+                                                                 , Not ( mkLeaf "day of silence" )
+                                                                 ] ) } ]
             
       it "should read EVERY MUST UNLESS" $ do
         let testfile = "test/unless-regulative-1.csv"
@@ -355,10 +358,10 @@ main = do
           `shouldParse` silenceKing
                       
       let silenceMourning = [
-            defaultReg { cond = Just ( All [
+            defaultReg { cond = Just ( All allof [
                                          mkLeaf "the king wishes"
                                          , Not
-                                           ( Any
+                                           ( Any anyof
                                              [ mkLeaf "day of silence"
                                              , mkLeaf "day of mourning"
                                              ]
@@ -372,10 +375,10 @@ main = do
           `shouldParse` silenceMourning
 
       let mourningForbids = [
-            defaultReg { cond = Just ( All [
+            defaultReg { cond = Just ( All allof [
                                          mkLeaf "the king wishes"
                                          , Not
-                                           ( All
+                                           ( All allof
                                              [ mkLeaf "day of mourning"
                                              , mkLeaf "mourning forbids singing"
                                              ]
@@ -417,7 +420,7 @@ main = do
         parseR (pRule <* eof) testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
-                          , letbind = Any
+                          , letbind = Any anyof
                                       [ mkLeaf "Bob is your mother's brother"
                                       , mkLeaf "Bob is your father's brother"
                                       ]

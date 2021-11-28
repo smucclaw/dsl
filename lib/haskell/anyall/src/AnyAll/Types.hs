@@ -32,15 +32,17 @@ data Hardness = Soft -- use Left defaults
 
 type AnswerToExplain = Bool
 
-data Item a =
-    Leaf a
-  | All (Label a) [Item a]
-  | Any (Label a) [Item a]
-  | Not (Item a)
+type Item a = Item' (Label a) a
+
+data Item' lbl a =
+    Leaf                       a
+  | All (Maybe lbl) [Item' lbl a]
+  | Any (Maybe lbl) [Item' lbl a]
+  | Not             (Item' lbl a)
   deriving (Eq, Show, Generic)
 
-instance (Monoid a) => Monoid (Item a) where
-  (<>)   (All x xs)   (All y ys) = All x (xs ++ ys)
+instance (Semigroup a, Semigroup b) => Semigroup (Item' a b) where
+  (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Not y)    = r <> l
@@ -48,19 +50,16 @@ instance (Monoid a) => Monoid (Item a) where
   (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Leaf x)   r@(Any y ys) = All (Pre mempty) [l,r]
+  (<>) l@(Leaf x)   r@(Any y ys) = All mempty [l,r]
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
 
   (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Any y ys) = r <> l
 
   -- all the other cases get ANDed together in the most straightforward way.
-  (<>) l            r            = All (Pre "both") [l, r]
+  (<>) l            r            = All Nothing [l, r]
 
-instance (IsString a, Monoid a) => Monoid (Item a) where
-  mempty = Leaf "always"
-  
-data StdinSchema a = StdinSchema { marking :: Marking a
+data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
@@ -87,8 +86,8 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
     return $ if isJust leaf
              then Leaf (fromJust leaf)
              else case (nodetype :: Maybe String) of
-                    Just "any" -> Any label children
-                    Just "all" -> All label children
+                    Just "any" -> Any (Just label) children
+                    Just "all" -> All (Just label) children
                     Just "not" -> Not $ head children
                     _          -> error "error in parsing JSON input"
 
@@ -99,14 +98,14 @@ type AsTree a = Tree (AndOr a, Maybe (Label a))
 native2tree :: Item a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
-native2tree (All l items) = Node (And, Just l) (native2tree <$> items)
-native2tree (Any l items) = Node ( Or, Just l) (native2tree <$> items)
+native2tree (All l items) = Node (And, l) (native2tree <$> items)
+native2tree (Any l items) = Node ( Or, l) (native2tree <$> items)
 
 tree2native :: AsTree a -> Item a
 tree2native (Node (Simply a, _) children) = Leaf a
 tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
-tree2native (Node (And, lbl) children) = All (fromJust lbl) (tree2native <$> children)
-tree2native (Node ( Or, lbl) children) = Any (fromJust lbl) (tree2native <$> children)
+tree2native (Node (And, lbl) children) = All lbl (tree2native <$> children)
+tree2native (Node ( Or, lbl) children) = Any lbl (tree2native <$> children)
 
 newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
   deriving (Eq, Show, Generic)

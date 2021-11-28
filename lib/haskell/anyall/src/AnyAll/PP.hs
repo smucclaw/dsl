@@ -40,6 +40,8 @@ docQ1 m (Node (Q sv  Neg              pp              v) c) = markbox v sv <+>  
 docQ1 m (Node (Q sv (Simply a)        pp              v) _) = markbox v sv <+> pretty a
 docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
+docQ1 m (Node (Q sv  And       Nothing                v) c) = markbox v sv <+> "all of:"        <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
+docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "any of:"        <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 

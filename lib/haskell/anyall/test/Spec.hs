@@ -363,25 +363,25 @@ type SingLabel = TL.Text
 
 mustSing :: Item SingLabel
 mustSing =
-  All (Pre "both")
+  All (Just $ Pre "both")
   [ Leaf "walk"
-  , Any (Pre "either")
+  , Any (Just $ Pre "either")
     [ Leaf "eat"
     , Leaf "drink" ] ]
 
 mustNot :: Item SingLabel
 mustNot =
-  All (Pre "both")
+  All (Just $ Pre "both")
   [ Leaf "walk"
   , Not (Leaf "eat") ]
 
 mustDance :: Item SingLabel
 mustDance =
-  All (Pre "three of:")
-  [ All (Pre "both")
+  All (Just $ Pre "three of:")
+  [ All (Just $ Pre "both")
     [ Leaf "walk"
     , Leaf "run" ]
-  , Any (Pre "either")
+  , Any (Just $ Pre "either")
     [ Leaf "eat"
     , Leaf "drink" ] ]
 

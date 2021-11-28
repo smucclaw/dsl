@@ -35,9 +35,9 @@ relevant sh dp marking parentValue self =
                          Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
                          Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
                          Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
-             Any label items -> Node (ask2view (Q initVis  Or (Just label) (Default $ Left selfValue))) repaintedChildren
-             All label items -> Node (ask2view (Q initVis And (Just label) (Default $ Left selfValue))) repaintedChildren
-             Not       item  -> Node (ask2view (Q initVis Neg Nothing      (Default $ Left selfValue))) repaintedChildren
+             Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
+             All label items -> Node (ask2view (Q initVis And label   (Default $ Left selfValue))) repaintedChildren
+             Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
   where
     getChildren (Leaf _) = []
     getChildren (Any _ c) = c

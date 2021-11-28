@@ -5,6 +5,7 @@ module AnyAll.SVG where
 
 import AnyAll.Types hiding ((<>))
 
+import Data.String
 import Graphics.Svg
 import qualified Data.Text as T
 
@@ -53,7 +54,7 @@ renderLeaf desc =
       geom = item 0 0 desc
   in (height, geom)
 
-renderNot :: ToElement a => [Item a] -> (Height, Element)
+renderNot :: (IsString a, ToElement a) => [Item a] -> (Height, Element)
 renderNot children =
   let
       (h, g) = renderItem $ head children
@@ -73,8 +74,9 @@ renderSuffix x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in (h, geom)
 
-renderAll :: ToElement a => Label a -> [Item a] -> (Height, Element)
-renderAll (Pre prefix) childnodes =
+renderAll :: (IsString a, ToElement a) => Maybe (Label a) -> [Item a] -> (Height, Element)
+renderAll Nothing childnodes = renderAll (Just (Pre "all of")) childnodes
+renderAll (Just (Pre prefix)) childnodes =
   let
       hg = map renderItem childnodes
       (hs, gs) = unzip hg
@@ -90,7 +92,7 @@ renderAll (Pre prefix) childnodes =
                    -- children translated by (30, 30)
                    <> move (30, 30) (renderChain hg)  )
   in (height, geom)
-renderAll (PrePost prefix suffix) childnodes =
+renderAll (Just (PrePost prefix suffix)) childnodes =
   let hg = map renderItem childnodes
       (hs, gs) = unzip hg
 
@@ -107,8 +109,9 @@ renderAll (PrePost prefix suffix) childnodes =
                    <> move (40, 30 + sum hs) fg  )
   in (height, geom)
 
-renderAny :: ToElement a => Label a -> [Item a] -> (Height, Element)
-renderAny (Pre prefix) childnodes =
+renderAny :: (IsString a, ToElement a) => Maybe (Label a) -> [Item a] -> (Height, Element)
+renderAny Nothing childnodes = renderAny (Just (Pre "any of:")) childnodes
+renderAny (Just (Pre prefix)) childnodes =
   let hg = map renderItem childnodes
       (hs, gs) = unzip hg
 
@@ -124,7 +127,7 @@ renderAny (Pre prefix) childnodes =
                                <> line (-20, 10) (0, 10)
                                <> move (0, h) (go (y+h) hgs)  )
   in (height, geom)
-renderAny (PrePost prefix suffix) childnodes =
+renderAny (Just (PrePost prefix suffix)) childnodes =
   let hg = map renderItem childnodes
       (hs, gs) = unzip hg
 
@@ -145,7 +148,7 @@ renderAny (PrePost prefix suffix) childnodes =
   in (height, geom)
 
 
-renderItem :: ToElement a => Item a -> (Height, Element)
+renderItem :: (IsString a, ToElement a) => Item a -> (Height, Element)
 renderItem (Leaf label) = renderLeaf label
 renderItem (Not       args) = renderNot      [args]
 renderItem (All label args) = renderAll label args
@@ -153,15 +156,16 @@ renderItem (Any label args) = renderAny label args
 
 toy :: (Height, Element)
 toy = renderItem $
-  All ( PrePost "You need all of" ("to survive." :: String) )
+  All (Just $ PrePost "You need all of" ("to survive." :: String))
       [ Leaf "Item 1;"
       , Leaf "Item 2;"
-      , Any ( Pre "Item 3 which may be satisfied by any of:" )
+      , Any (Just $ Pre "Item 3 which may be satisfied by any of:" )
             [ Leaf "3.a;"
             , Leaf "3.b; or"
             , Leaf "3.c;" ]
       , Leaf "Item 4; and"
-      , All ( Pre "Item 5 which requires all of:" )
+      , All ( Just $ Pre "Item 5 which requires all of:" )
             [ Leaf "5.a;"
             , Leaf "5.b; and"
-            , Leaf "5.c." ] ]
+            , Leaf "5.c." ]
+      ]

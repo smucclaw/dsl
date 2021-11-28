@@ -41,7 +41,7 @@ data Item' lbl a =
   | Not             (Item' lbl a)
   deriving (Eq, Show, Generic)
 
-instance (Monoid a, Semigroup b) => Semigroup (Item' a b) where
+instance (Semigroup b) => Semigroup (Item' a b) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
@@ -50,7 +50,7 @@ instance (Monoid a, Semigroup b) => Semigroup (Item' a b) where
   (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Leaf x)   r@(Any y ys) = All mempty [l,r]
+  (<>) l@(Leaf x)   r@(Any y ys) = All Nothing [l,r]
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
 
   (<>) l@(Any x xs)   (All y ys) = All y (l:ys)

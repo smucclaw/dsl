@@ -26,13 +26,17 @@ data Label a =
   deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (Label a); instance FromJSON a => FromJSON (Label a)
 
+allof, anyof :: Maybe (Label TL.Text)
+allof = Just $ Pre "all of:"
+anyof = Just $ Pre "any of:"
+
 data Hardness = Soft -- use Left defaults
               | Hard -- require Right input
   deriving (Eq, Show, Generic)
 
 type AnswerToExplain = Bool
 
-type Item a = Item' (Label a) a
+type Item a = Item' (Label TL.Text) a
 
 data Item' lbl a =
     Leaf                       a
@@ -94,7 +98,7 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
-type AsTree a = Tree (AndOr a, Maybe (Label a))
+type AsTree a = Tree (AndOr a, Maybe (Label TL.Text))
 native2tree :: Item a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])

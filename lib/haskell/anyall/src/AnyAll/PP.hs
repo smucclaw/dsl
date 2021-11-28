@@ -29,10 +29,9 @@ markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
 markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
-hardnormal :: (IsString a, Ord a, Show a) => Marking a -> Item a -> QTree a
+hardnormal, softnormal :: Marking TL.Text -> Item TL.Text -> QTree TL.Text
 hardnormal m = relevant Hard DPNormal m Nothing
 
-softnormal :: (IsString a, Ord a, Show a) => Marking a -> Item a -> QTree a
 softnormal m = relevant Soft DPNormal m Nothing
 
 docQ1 :: (IsString a, Ord a, Show a, Pretty a) => Marking a -> Tree (Q a) -> Doc ann
@@ -45,7 +44,7 @@ docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: (ToJSON a, ToJSONKey a, IsString a, Ord a, Show a, Pretty a) => Item a -> Map.Map a (Either (Maybe Bool) (Maybe Bool)) -> IO ()
+ppQTree :: Item TL.Text -> Map.Map TL.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
 ppQTree i mm = do
   let m = Marking (Default <$> mm)
       hardresult = hardnormal m i

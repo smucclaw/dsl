@@ -79,6 +79,10 @@ type RuleLabel = (Text.Text   --  "§"
                  ,Text.Text   --  "My First Rule"
                  )
 
+-- maybe we should have a proper dict orientation here
+data KW a = KW { dictK :: MyToken
+               , dictV :: a }
+
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
@@ -179,10 +183,15 @@ pt2text :: ParamText -> Text.Text
 pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
 
 bsp2text :: BoolStructP -> Text.Text
-bsp2text (AA.Leaf pt)  = pt2text pt
-bsp2text (AA.Not  x)   = "not " <> bsp2text x
-bsp2text (AA.Any xs) = "any (" <> Text.unwords (bsp2text <$> xs) <> ")"
-bsp2text (AA.All xs) = "all (" <> Text.unwords (bsp2text <$> xs) <> ")"
+bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
+bsp2text (AA.Leaf                   x ) = Text.unwords $ concatMap toList $ fst <$> x
+bsp2text (AA.Any (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
+bsp2text (AA.Any (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
+bsp2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsp2text <$> xs)
+bsp2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
+bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
+bsp2text (AA.All Nothing                   xs) = "all of:-" <> Text.unwords (bsp2text <$> xs)
+
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
@@ -266,11 +275,11 @@ toToken "MAY" =    May
 toToken "SHANT" =  Shant
 
 -- temporals
-toToken "BEFORE" = Before
-toToken "WITHIN" = Before
-toToken "AFTER" =  After
-toToken "BY" =  By
-toToken "ON" =  On
+toToken "BEFORE" = Before  -- <
+toToken "WITHIN" = Before  -- <=
+toToken "AFTER"  = After   -- >
+toToken "BY"     = By
+toToken "ON"     = On      -- ==
 toToken "EVENTUALLY" = Eventually
 
 -- the rest of the regulative rule

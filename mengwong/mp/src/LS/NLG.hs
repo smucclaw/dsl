@@ -13,7 +13,7 @@ import LS.Types ( Deontic(..),
       BoolStructP,
       Rule(..),
       pt2text, text2pt, ParamText, ruleName, TComparison (..)
-      -- bsp2text
+    , bsp2text
       )
 import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )

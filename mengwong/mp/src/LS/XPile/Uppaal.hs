@@ -115,8 +115,8 @@ pt2varname = toValidName  . unpack . pt2text
 boolRulesToExpr :: BoolRulesP -> CoreL4.Expr (Tp ())
 boolRulesToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
 boolRulesToExpr (AA.Not  x)  = notExpr (boolRulesToExpr x)
-boolRulesToExpr (AA.Any xs)  = disjsExpr (boolRulesToExpr <$> xs)
-boolRulesToExpr (AA.All xs)  = conjsExpr (boolRulesToExpr <$> xs)
+boolRulesToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolRulesToExpr <$> xs)
+boolRulesToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolRulesToExpr <$> xs)
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src

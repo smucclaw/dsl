@@ -48,7 +48,7 @@ renderChain ((h,g):hgs) =
         <> line (10, 20) (10, h)
         <> move (0, h) (renderChain hgs)  )
 
-renderLeaf :: ToElement a => a -> (Height, Element)
+renderLeaf :: (IsString a, ToElement a) => a -> (Height, Element)
 renderLeaf desc =
   let height = 25
       geom = item 0 0 desc
@@ -67,7 +67,7 @@ renderNot children =
   in (height, geom)
 
 
-renderSuffix :: ToElement a => Double -> Double -> a -> (Height, Element)
+renderSuffix :: (IsString a, ToElement a) => Double -> Double -> a -> (Height, Element)
 renderSuffix x y desc =
   let h = 20 -- h/w of imaginary box
       geom :: Element

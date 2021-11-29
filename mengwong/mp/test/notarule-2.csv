@@ -1,0 +1,16 @@
+,some random text,counts as not a rule
+moo,bar,baz
+,,
+blank line,,
+,and more!,
+,,
+DEEM,tomato,
+IS,vegetable,
+,,
+some,more,blank
+,,
+DEEM,potato,
+IS,vegetable,
+DEEM,leek,
+IS,vegetable,
+,,

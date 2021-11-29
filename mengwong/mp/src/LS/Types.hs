@@ -138,6 +138,7 @@ data Rule = Regulative
           --              )]
           -- , eqtest :: Maybe ParamText
           -- }
+          | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: ConstitutiveName }

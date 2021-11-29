@@ -8,6 +8,41 @@ Or you can just run, from the ~mp/~ directory,
   make csv
 #+end_src
 
+** Not a Rule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: notarule-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|            | some random text | counts as not a rule |
+| moo        | bar              | baz                  |
+|            |                  |                      |
+| blank line |                  |                      |
+|            | and more!        |                      |
+
+** Mixed Nots
+:PROPERTIES:
+:TABLE_EXPORT_FILE: notarule-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|            | some random text | counts as not a rule |
+| moo        | bar              | baz                  |
+|            |                  |                      |
+| blank line |                  |                      |
+|            | and more!        |                      |
+|            |                  |                      |
+| DEEM       | tomato           |                      |
+| IS         | vegetable        |                      |
+|            |                  |                      |
+| some       | more             | blank                |
+|            |                  |                      |
+| DEEM       | potato           |                      |
+| IS         | vegetable        |                      |
+| DEEM       | leek             |                      |
+| IS         | vegetable        |                      |
+|            |                  |                      |
+
 ** indented boolean expression under preamble WHO
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indented-1.csv

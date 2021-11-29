@@ -8,14 +8,12 @@ module LS.NLG (
 import LS.UDExt
 import LS.Types ( Deontic(..),
       EntityType,
-      TemporalConstraint (..),
-      BoolStruct,
-      BoolStructP,
-      Rule(..),
-      pt2text, text2pt, ParamText, ruleName, TComparison (..)
-    , bsp2text
-      )
-import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr, readPGF, languages )
+      TemporalConstraint (..), TComparison(..),
+      ParamText,
+      BoolStruct(..),
+      ConstitutiveName,
+      Rule(..), BoolStructP, pt2text, bsp2text )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Char (toLower)
@@ -31,7 +29,6 @@ import Text.Megaparsec
     ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
 import Text.Megaparsec.Char (char)
 import Data.Either (rights)
-import Data.String (IsString)
 
 -- typeprocess to run a python
 import System.IO ()
@@ -46,7 +43,7 @@ myUDEnv = getEnv (path "UDApp") "Eng" "UDS"
 
 unpacked :: L8.ByteString -> String
 unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
-    where conll = filter (not . (`elem` "\n")) $ L8.unpack x
+    where conll = filter (not . (`elem` ("\n" :: String))) $ L8.unpack x
 
 patterns :: (Char, Char) -> Parsec Void String String
 patterns (a,b) = do
@@ -164,45 +161,36 @@ parseFields env rl = case rl of
       return $ Just parse
     parseUpon _ [] = return Nothing
 
---    parseUpon :: UDEnv -> BoolStructP -> Expr
---    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
-
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
         DMust  -> mkCId "must_Deontic"
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
-    parseTemporal env (TemporalConstraint cmp time unit) = parse' "Adv"  env (Text.unwords [Text.pack (tcompToStr cmp), Text.pack $ show time, unit])
+    -- TODO: add GF funs for  ParseTemporal
+    -- It will look like this:
+    {- parseUpon env bs = do
+        rawExpr <- parseOut env event
+        let gfFun = getGFFun (TAfter/TWhatever/…) -- should we move on to the Haskell version of the abstract syntax?
+        return $ <gfFun applied to rawExpr>  -- either use PGF.mkApp, or with Haskell version of abstract syntax
+      -}
+    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
+    parseTemporal env tc = case tc of
+      TemporalConstraint TAfter  n tunit -> parseOut env $ "after "   <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TBefore n tunit -> parseOut env $ "before "  <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TBy     n tunit -> parseOut env $ "by "      <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TOn     n tunit -> parseOut env $ "on "      <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TVague  n tunit -> parseOut env $ "vaguely " <> Text.pack (show n) <> " " <> tunit
 
-    tcompToStr :: TComparison -> String
-    tcompToStr TBefore = "before"
-    tcompToStr TAfter = "after"
-    tcompToStr TBy = "by"
-    tcompToStr TOn = "on"
-    tcompToStr TVague = ""
-    -- parseTemporal env (TBefore event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "before", Text.pack $ show event, unit])
-    -- parseTemporal env (TAfter event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "after", Text.pack $ show event, unit])
-    -- parseTemporal env (TBy event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "by", Text.pack $ show event, unit])
-    -- parseTemporal env (TOn event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "on", Text.pack $ show event, unit])
+    {- TODO: do we want to give this more structure in the GF grammar as well?
+      so that the GF tree looks like
+         Upon (GerundVP some_VP)
+      instead of
+         PrepNP upon_Prep (GerundVP some_VP)
+      in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
+      in the former, we know from the first constructor that this is an "upon" sentence
+    -}
 
-parseFields _env rl = error $ "Unsupported rule type " ++ show rl
-
--- BoolStruct is from Types, and Item is from AnyAll
--- TODO: for now only return the first thing
--- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
-bs2text :: BoolStruct -> Text.Text
-bs2text (AA.Leaf txt ) = txt
-bs2text (AA.All (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
-bs2text (AA.All Nothing   xs) = Text.unwords $ "all of:" : (bs2text <$> xs)
-bs2text (AA.Any (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
-bs2text (AA.Any Nothing   xs) = Text.unwords $ "any of:" : (bs2text <$> xs)
-bs2text (AA.Not x    ) =                   "not " <> bs2text x
-
-prepost :: (IsString a, Monoid a) => AA.Label a -> a -> a
-prepost (AA.Pre     p1   ) t = p1 <> " " <> t
-prepost (AA.PrePost p1 p2) t = p1 <> " " <> t <> " " <> p2
 
 
 ------------------------------------------------------------

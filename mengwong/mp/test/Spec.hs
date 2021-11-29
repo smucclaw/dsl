@@ -12,8 +12,6 @@ import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
-import qualified Data.Text.Lazy as Text
-
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -85,21 +83,21 @@ main = do
     describe "megaparsing" $ do
 
       it "should parse an unconditional" $ do
-        parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { subj = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
 
       it "should parse a single OtherVal" $ do
-        parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeaf "walks") } ]
 
       it "should parse the null temporal EVENTUALLY" $ do
-        parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeaf "walks") } ]
 
       it "should parse dummySing" $ do
-        parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg {
                             who = Just (All allof
                                          [ mkLeaf "walks"
@@ -123,17 +121,17 @@ main = do
                            } ]
 
       it "should parse indentedDummySing" $ do
-        parseR (pRule <* eof) "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` imbibeRule
 
       it "should parse indented-1.csv (inline boolean expression)" $ do
         mycsv <- BS.readFile "test/indented-1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
 
       it "should parse indented-1-checkboxes.csv (with checkboxes)" $ do
         mycsv <- BS.readFile "test/indented-1-checkboxes.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
       let degustates = defaultCon
                        { name = "degustates"
@@ -143,11 +141,11 @@ main = do
 
       it "should parse a simple constitutive rule" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [degustates]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates]
 
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All allof
@@ -178,11 +176,11 @@ main = do
       
       it "should parse indented-2.csv (inline constitutive rule)" $ do
         mycsv <- BS.readFile "test/indented-2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule2
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
 
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` imbibeRule3
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
       let if_king_wishes = [ defaultReg
                           { who = Just $ All allof
@@ -226,43 +224,43 @@ main = do
 
       it "should parse kingly permutations 1" $ do
         mycsv <- BS.readFile "test/if-king-wishes-1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
 
       it "should parse kingly permutations 2" $ do
         mycsv <- BS.readFile "test/if-king-wishes-2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
 
       it "should parse kingly permutations 3" $ do
         mycsv <- BS.readFile "test/if-king-wishes-3.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
 
       it "should parse chained-regulatives part 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse chained-regulatives part 2" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
 
       it "should parse chained-regulatives.csv" $ do
         mycsv <- BS.readFile "test/chained-regulatives.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` singer_chain
+        parseR pRules "" (exampleStream mycsv) `shouldParse` singer_chain
 
       it "should parse alternative deadline/action arrangement 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-1.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative deadline/action arrangement 2" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-2.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative deadline/action arrangement 3" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-3.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
 
       it "should parse alternative arrangement 4, no deadline at all" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-4.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias ("singer") (mkLeaf "person") Nothing
@@ -270,11 +268,11 @@ main = do
 
       let if_king_wishes_singer_2 = if_king_wishes ++
             [ DefNameAlias ("singer") (mkLeaf "person") Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
         mycsv <- BS.readFile "test/nl-aliases.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
 
       let singer_must_pay_params =
             singer_must_pay { action = Leaf (("pay" :| []                 , Nothing)
@@ -283,11 +281,11 @@ main = do
 
       it "should parse action params" $ do
         mycsv <- BS.readFile "test/action-params-singer.csv"
-        parseR (pRule <* eof) "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
 
       it "should parse despite interrupting newlines" $ do
         mycsv <- BS.readFile "test/blank-lines.csv"
-        parseR (pRule <* eof) "" (head . tail $ exampleStreams mycsv) `shouldParse` if_king_wishes_singer_2
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
 
     describe "megaparsing MEANS" $ do
@@ -304,7 +302,7 @@ main = do
       it "should start a bool struct" $ do
         let testfile = "test/bob-head-1.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [bobUncle]
 
     describe "megaparsing UNLESS semantics" $ do
@@ -330,31 +328,31 @@ main = do
       it "should read EVERY MUST UNLESS" $ do
         let testfile = "test/unless-regulative-1.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSilence
                       
       it "should read EVERY MUST UNLESS IF" $ do
         let testfile = "test/unless-regulative-2.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
                       
       it "should read EVERY MUST IF UNLESS" $ do
         let testfile = "test/unless-regulative-3.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
                       
       it "should read EVERY UNLESS MUST IF" $ do
         let testfile = "test/unless-regulative-4.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
                       
       it "should read EVERY IF MUST UNLESS" $ do
         let testfile = "test/unless-regulative-5.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
                       
       let silenceMourning = [
@@ -371,7 +369,7 @@ main = do
       it "should read EVERY MUST IF UNLESS OR" $ do
         let testfile = "test/unless-regulative-6.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceMourning
 
       let mourningForbids = [
@@ -387,37 +385,37 @@ main = do
       it "should read EVERY MUST IF UNLESS AND" $ do
         let testfile = "test/unless-regulative-7.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` mourningForbids
                       
       it "should read IF NOT when joined" $ do
         let testfile = "test/ifnot-1-joined.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSilence
                       
       it "should read IF-NOT when separate" $ do
         let testfile = "test/ifnot-2-separate.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSilence
 
       it "should handle NOT ... AND indented" $ do
         let testfile = "test/ifnot-4-indentation-explicit.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` observanceMandatory
                       
       it "should handle NOT AND indented the other way" $ do
         let testfile = "test/ifnot-5-indentation-explicit.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSong
                       
       it "should work for constitutive rules" $ do
         let testfile = "test/bob-tail-1.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile (exampleStream testcsv)
+        parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
                           , letbind = Any anyof
@@ -431,12 +429,12 @@ main = do
       it "should handle pilcrows" $ do
         let testfile = "test/pilcrows-1.csv"
         testcsv <- BS.readFile testfile
-        parseR (pRule <* eof) testfile `traverse` (exampleStreams testcsv)
+        parseR pRules testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ dayOfSilence 
                         , dayOfSong
                         ]
         -- forM_ (exampleStreams testcsv) $ \stream ->
-        --   parseR (pRule <* eof) testfile stream
+        --   parseR pRules testfile stream
         --     `shouldParse` [ defaultCon 
         --                   ]
 

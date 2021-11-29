@@ -127,7 +127,7 @@ withDepth n = local (\st -> st {callDepth= n})
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
-    case runMyParser id rc pRule "dummy" stream of
+    case runMyParser id rc pRules "dummy" stream of
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
@@ -195,7 +195,7 @@ asCSV s =
       vvt <- x
       -- process // comments by setting all righter elements to empty.
       -- if we ever need to maximize efficiency we can consider rewriting this to not require a Vector -> List -> Vector trip.
-      return $ fmap trimLegalSource <$> trimComment False . V.toList <$> vvt
+      return $ fmap trimLegalSource . trimComment False . V.toList <$> vvt
     -- ignore the () at the beginning of the line. Here it actually trims any (...) from any position but this is good enough for now
     trimLegalSource x = let asChars = Text.unpack x
                         in if not (null asChars)
@@ -228,22 +228,22 @@ splitPilcrows rs = map (listsToStanza . transpose) splitted
 -- highlight each chunk using range attribute.
 -- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines
 getChunks :: RawStanza -> [RawStanza]
-getChunks rs =
-  let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) emptyRow [ 0 .. V.length rs - 1 ]
-      containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
-      emptyRow rowNr = V.all Text.null (rs ! rowNr)
-      wantedChunks = [ firstAndLast neRows
-                     | rows <- listChunks
-                     ,    any containsMagicKeyword rows
-                       || all emptyRow rows
-                     , Just neRows <- pure $ NE.nonEmpty rows
-                     ]
-      toreturn = extractLines rs <$> glueLineNumbers wantedChunks
-  in -- trace ("getChunks: input = " ++ show [ 0 .. V.length rs - 1 ])
-     -- trace ("getChunks: listChunks = " ++ show listChunks)
-     -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
-     -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
-     toreturn
+getChunks rs = [rs]
+  -- let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) emptyRow [ 0 .. V.length rs - 1 ]
+  --     containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
+  --     emptyRow rowNr = V.all Text.null (rs ! rowNr)
+  --     wantedChunks = [ firstAndLast neRows
+  --                    | rows <- listChunks
+  --                    ,    any containsMagicKeyword rows
+  --                      || all emptyRow rows
+  --                    , Just neRows <- pure $ NE.nonEmpty rows
+  --                    ]
+  --     toreturn = extractLines rs <$> glueLineNumbers wantedChunks
+  -- in -- trace ("getChunks: input = " ++ show [ 0 .. V.length rs - 1 ])
+  --    -- trace ("getChunks: listChunks = " ++ show listChunks)
+  --    -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
+  --    -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
+  -- toreturn
 
 firstAndLast :: NonEmpty Int -> (Int, Int)
 firstAndLast xs = (NE.head xs, NE.last xs)
@@ -312,16 +312,33 @@ stanzaAsStream rs = do
 -- MyStream is the primary input for our Parsers below.
 --
 
+pToplevel :: Parser [Rule]
+pToplevel = withDepth 1 $ do
+  pRules <* eof
+
+pRules :: Parser [Rule]
+pRules = do
+  wanted <- many (try pRule)
+  _ <- optional pNotARule
+  next <- ([] <$ eof) <|> pRules
+  return $ wanted ++ next
+
+pNotARule :: Parser Rule
+pNotARule = debugName "pNotARule" $ do
+  myTraceM "pNotARule: starting"
+  toreturn <- NotARule <$> many getTokenNonEOL <* optional dnl <* optional eof
+  myTraceM "pNotARule: returning"
+  return toreturn
+
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
-pRule :: Parser [Rule]
-pRule = withDepth 1 $ do
-  _ <- optional dnl
-  try ((:[]) <$> pRegRule <?> "regulative rule")
-    <|> ((:[]) <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
-    <|> try ((:[]) <$> pDeemRule <?> "deem rule")
-    <|> try ((:[]) <$> pConstitutiveRule <?> "constitutive rule")
-    <|> try ((:[]) <$> RuleGroup . Just <$> pRuleLabel <?> "rule section heading")
-    <|> (eof >> return [])
+pRule :: Parser Rule
+pRule = do
+  _ <- many dnl
+  try (pRegRule <?> "regulative rule")
+    <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
+    <|> try (pDeemRule <?> "deem rule")
+    <|> try (pConstitutiveRule <?> "constitutive rule")
+    <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
@@ -490,7 +507,6 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
-  leftX              <- lookAhead pXLocation
   let keynamewho = (,) <$> pActor [Every,Party,TokAll]
                    <*> optional (preambleBoolRules [Who])
   rulebody <- permutationsReg keynamewho
@@ -847,6 +863,12 @@ pOtherVal = token test Set.empty <?> "Other text"
 getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
   where
+    test (WithPos _ _ _ tok) = Just tok
+
+getTokenNonEOL :: Parser MyToken
+getTokenNonEOL = token test Set.empty <?> "any token except EOL"
+  where
+    test (WithPos _ _ _ EOL) = Nothing
     test (WithPos _ _ _ tok) = Just tok
 
 

@@ -195,7 +195,7 @@ asCSV s =
       vvt <- x
       -- process // comments by setting all righter elements to empty.
       -- if we ever need to maximize efficiency we can consider rewriting this to not require a Vector -> List -> Vector trip.
-      return $ fmap trimLegalSource . trimComment False . V.toList <$> vvt
+      return $ rewriteDitto $ fmap trimLegalSource . trimComment False . V.toList <$> vvt
     -- ignore the () at the beginning of the line. Here it actually trims any (...) from any position but this is good enough for now
     trimLegalSource x = let asChars = Text.unpack x
                         in if not (null asChars)
@@ -209,6 +209,18 @@ asCSV s =
                                `elem` Text.words "// -- ##"
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
+
+rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
+rewriteDitto vvt = V.imap (V.imap . rD) vvt
+  where
+    rD :: Int -> Int -> Text.Text -> Text.Text
+    rD row col "\"" = -- first non-lank above
+      let aboves = V.filter (`notElem` ["", "\""]) $ (! col) <$> V.slice 0 row vvt
+      in if V.null aboves
+         then error $ "line " ++ show (row+1) ++ " column " ++ show (col+1) ++ ": ditto lacks referent (upward nonblank cell)"
+         else V.last aboves
+    rD _   _   orig = orig
+
 
 getStanzas :: RawStanza -> [RawStanza]
 getStanzas rs = splitPilcrows `concatMap` chunks

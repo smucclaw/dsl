@@ -43,6 +43,26 @@ Or you can just run, from the ~mp/~ directory,
 | IS         | vegetable        |                      |
 |            |                  |                      |
 
+** one-liners
+
+*** deem ... is ...
+:PROPERTIES:
+:TABLE_EXPORT_FILE: oneliner-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DEEM | potato | IS | vegetable |
+| DEEM | leek   | IS | vegetable |
+
+*** deem with ditto
+:PROPERTIES:
+:TABLE_EXPORT_FILE: oneliner-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DEEM | potato | IS | vegetable |
+| "    | leek   | "  | vegetable |
+
 ** indented boolean expression under preamble WHO
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indented-1.csv

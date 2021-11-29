@@ -31,6 +31,7 @@ library
       LS.Lib
       LS.NLG
       LS.Types
+      LS.UDExt
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle
@@ -64,8 +65,11 @@ library
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010
@@ -99,8 +103,11 @@ executable mp-exe
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010
@@ -135,8 +142,11 @@ test-suite mp-test
     , parsers
     , pretty-simple
     , prolog
+    , replace-megaparsec
     , split
+    , stm
     , text
+    , typed-process
     , utf8-string
     , vector
   default-language: Haskell2010

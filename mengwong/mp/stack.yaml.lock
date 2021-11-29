@@ -65,16 +65,16 @@ packages:
   original:
     hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
 - completed:
-    size: 1349191
-    url: https://github.com/anka-213/gf-ud/archive/8e70b1f555ac0586d52b510d3589c3dba5d3b9db.tar.gz
+    size: 1348343
+    url: https://github.com/anka-213/gf-ud/archive/bca99baaa32a156cb9126e1f2a878d4e0a14872d.tar.gz
     name: gf-ud
     version: 0.1.0.0
-    sha256: b4c8229b9df8cf70b1e9cae0172b790e15e6e68dbb8167a30198862165715b8f
+    sha256: 8b86ea4f1f2ff62bbb43291df7d16055d728199a861df28dd3585201488472a8
     pantry-tree:
-      size: 6064
-      sha256: aa252d535730ba780f2a7eb1689775bae1acee60a60237052f5bce630b5adbf2
+      size: 6063
+      sha256: a3cba380f4d183f58a26946e7eac685c60b76bdd31bb1c1387c24cbb34adaf57
   original:
-    url: https://github.com/anka-213/gf-ud/archive/8e70b1f555ac0586d52b510d3589c3dba5d3b9db.tar.gz
+    url: https://github.com/anka-213/gf-ud/archive/bca99baaa32a156cb9126e1f2a878d4e0a14872d.tar.gz
 - completed:
     hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
     pantry-tree:

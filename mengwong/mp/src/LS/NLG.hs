@@ -1,117 +1,165 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.NLG (
     nlg
     ) where
 
-import LS.Types
-    ( Deontic(..),
+import LS.UDExt
+import LS.Types ( Deontic(..),
       EntityType,
-      TemporalConstraint (..),
-      BoolStruct,
-      BoolStructP,
-      Rule(..),
-      pt2text, text2pt, ParamText, ruleName, TComparison (..)
-    , bsp2text
-      )
-import PGF ( CId, Expr, linearize, mkApp, mkCId, startCat, parse, readType, showExpr )
+      TemporalConstraint (..), TComparison(..),
+      ParamText,
+      BoolStruct(..),
+      ConstitutiveName,
+      Rule(..), BoolStructP, pt2text, bsp2text )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Maybe (fromMaybe)
 import Data.Char (toLower)
+import Data.Void (Void)
 import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import AnyAll (Item(..))
-import Data.Maybe
 import qualified AnyAll as AA
-import Data.String (IsString)
--- import Llvm.AbsSyn (LlvmStatement(Expr))
+import Data.Maybe ( fromJust, fromMaybe )
+import Data.List ( elemIndex, intercalate )
+import Replace.Megaparsec ( sepCap )
+import Text.Megaparsec
+    ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
+import Text.Megaparsec.Char (char)
+import Data.Either (rights)
+
+-- typeprocess to run a python
+import System.IO ()
+import System.Process.Typed ( proc, readProcessStdout_ )
+import qualified Data.ByteString.Lazy.Char8 as L8
+import qualified Control.Monad.IO.Class
+import Control.Monad (join)
 
 myUDEnv :: IO UDEnv
-myUDEnv = getEnv (path "RealSimple") "Eng" "S"
+myUDEnv = getEnv (path "UDApp") "Eng" "UDS"
   where path x = "grammars/" ++ x
 
--- So far not going via UD, just raw GF parsing
+unpacked :: L8.ByteString -> String
+unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
+    where conll = filter (not . (`elem` ("\n" :: String))) $ L8.unpack x
+
+patterns :: (Char, Char) -> Parsec Void String String
+patterns (a,b) = do
+  char a
+  join <$> manyTill
+          ((fst <$> match (patterns (a,b))) <|> (pure <$> anySingle))
+          (char b)
+
+grabStrings :: (Char, Char) -> String -> [String]
+grabStrings (a,b) txt =
+  rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
+
+getString :: String -> String
+getString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'') l | l <- grabStrings ('[',']') txt ]
+
+getPy :: Control.Monad.IO.Class.MonadIO m => String -> m L8.ByteString
+getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])
+
+parseCoNLLU :: UDEnv -> String -> [[Expr]]
+parseCoNLLU = getExprs []
+
+parseOut :: UDEnv -> Text.Text -> IO Expr
+parseOut env txt = do
+  let str = Text.unpack txt
+  getConll <- getPy str
+  let conll = getString $ unpacked getConll
+  let exprs = parseCoNLLU env conll -- env -> str -> [[expr]]
+      expr = case exprs of
+        (x : _xs) : _xss -> x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
+        _ -> mkApp (mkCId "dummy_N") [] -- dummy expr
+  mapM_ print exprs
+  putStrLn conll
+  return expr
+
+peel :: Expr -> Expr
+peel subj = gf $ fromJust $ fromGUDS (fg subj)
+
+fromGUDS :: GUDS -> Maybe GNP
+fromGUDS x = case x of
+  Groot_only (GrootN_ someNP) -> Just someNP
+  _ -> Nothing
+--  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
+
+
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myUDEnv
-   let annotatedRule = parseFields env rl
-       gr = pgfGrammar env
-       lang = actLanguage env
-
-       -- piecing together in a simple GF grammar
-       -- TODO: check which parts are Nothing and which have a value, then use the ones that have a value
-       -- For now we just use the fields that are not Maybe
-       subjectRaw = everyA annotatedRule
-       subject = case whoA annotatedRule of
-                   Nothing -> subjectRaw
-                   Just vp -> mkRelClNP subjectRaw vp
-       predicate = mkApp (deonticA annotatedRule) [actionA annotatedRule]
-       predicateTemporal = case temporalA annotatedRule of
-                          Nothing -> predicate
-                          Just adv -> mkApp ( mkCId "AdvVP") [predicate, adv]
-       newFancyTree = mkApp subjPred [subject, predicateTemporal]
-       newFancyTreeCond = case condA annotatedRule of
-                          Nothing -> newFancyTree
-                          Just utt -> mkApp ( mkCId "addCond" ) [utt, newFancyTree]
-       -- TODO: piecing together the parts in a more complex, UD-based grammar ???
-       linText = linearize gr lang newFancyTreeCond
-       linTree = showExpr [] newFancyTreeCond
-
+   annotatedRule <- parseFields env rl
+   -- TODO: here let's do some actual NLG
+   gr <- readPGF "grammars/UDExt.pgf"
+   let lang = head $ languages gr
+       subjectRaw = subjA annotatedRule
+       actionRaw = actionA annotatedRule
+       finalTree = mkApp (mkCId "subjAction") [peel subjectRaw, actionRaw]
+       linText = linearize gr lang finalTree
+       linTree = showExpr [] finalTree
    return (Text.pack (linText ++ "\n" ++ linTree))
+
+
+parseFields :: UDEnv -> Rule -> IO AnnotatedRule
+parseFields env rl = case rl of
+  Regulative {} -> do
+    subjA'  <- parseBool env (subj rl)
+    whoA'   <- mapM (parseBool env) (who rl)
+    condA'   <- return Nothing --if
+    let deonticA' = parseDeontic (deontic rl)    :: CId
+    actionA' <- parseBool env (action rl)
+    temporalA' <- mapM (parseTemporal env) (temporal rl)
+    uponA' <- parseUpon env (upon rl)
+    givenA' <- mapM (parseGiven env) (given rl)
+    return RegulativeA {
+      subjA = subjA',
+      whoA = whoA',
+      condA = condA',
+      deonticA = deonticA',
+      actionA = actionA',
+      temporalA = temporalA',
+      uponA = uponA',
+      givenA = givenA'
+    }
+  Constitutive {} -> do
+    givenA' <- mapM (parseGiven env) (given rl)
+    nameA' <- parseName env (name rl)
+    condA'   <- return Nothing -- when/if/unless
+    return ConstitutiveA {
+      givenA = givenA',
+      nameA = nameA',
+      condA = condA'
+    }
+  -- meansA <- parseMeans --    keyword  :: MyToken       -- Means
+  -- includesA <-  -- keyword :: MyToken  Includes, Is, Deem
+  -- deemsA <-  -- keyword :: MyToken  Deem
+  -- letbindA <-
+    --name     :: ConstitutiveName   -- the thing we are defining
+    -- letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+    -- rlabel   :: Maybe Text.Text
+    -- lsource  :: Maybe Text.Text
+    -- srcref   :: Maybe SrcRef
+    -- orig     :: [(Preamble, BoolStructP)]
+  _ -> error "parseFields: rule type not supported yet"
   where
-    subjPred :: CId
-    subjPred = mkCId "subjPred"
+    parseGiven :: UDEnv -> ParamText -> IO Expr
+    parseGiven env pt = parseOut env $ pt2text pt
 
-    mkRelClNP :: Expr -> Expr -> Expr
-    mkRelClNP np vp = mkApp (mkCId "addWho") [np,vp]
+    -- ConstitutiveName is Text.Text
+    parseName :: UDEnv -> Text.Text -> IO Expr
+    parseName env txt = parseOut env txt
 
+    parseBool :: UDEnv -> BoolStructP -> IO Expr
+    parseBool env bsp = parseOut env (bsp2text bsp)
 
-
-parseFields :: UDEnv -> Rule -> AnnotatedRule
-parseFields env rl@(Regulative {}) =
-  RegulativeA { everyA  = parseEvery env (ruleName rl)     ::  PGF.Expr
-              , whoA    = fmap (parseWho env) (who rl)  :: Maybe PGF.Expr
-              , condA   = parseCond env <$> cond rl     :: Maybe PGF.Expr
-              , deonticA = parseDeontic (deontic rl)    :: PGF.CId
-              , actionA  = parseAction env (action rl)  :: PGF.Expr
-              , temporalA = fmap (parseTemporal env) (temporal rl)  :: Maybe PGF.Expr
-              , uponA  = (parseUpon  env) <$> listToMaybe (upon rl)    :: Maybe PGF.Expr
-              , givenA = (parseGiven env) <$> given rl :: Maybe PGF.Expr -- as a hack, we ignore all but the first element of a Given. TODO
-                -- corresponds to     case given rl of
-                        --               Just bs -> Just $ parseGiven env bs
-                        --               _ -> Nothing
-            }
-  where
-    parse' :: String -> UDEnv -> Text.Text -> Expr
-    parse' cat env text =
-      case trees of
-        [] -> error $ "nlg: couldn't parse " ++ str
-        x:_ -> x
-      where
-        gr = pgfGrammar env
-        lang = actLanguage env
-        str = map toLower $ Text.unpack text
-        startcat = fromMaybe (startCat gr) $ readType cat
-        trees = parse gr lang startcat str
-
-
-    -- These funs all just parse directly with PGF library
-    -- In the future, there will be a UDpipe—ud2gf pipeline
-    parseEvery :: UDEnv -> EntityType -> Expr
-    parseEvery = parse' "NP"
-
-    parseWho :: UDEnv -> BoolStructP -> Expr
-    parseWho env bs = parse' "VP" env (bsp2text bs)
-
-    parseCond :: UDEnv -> BoolStructP -> Expr
-    parseCond env bs = parse' "S" env (bsp2text bs) -- was "Utt"
-
-    parseGiven :: UDEnv -> ParamText -> Expr
-    parseGiven env pt = parse' "S" env (pt2text pt)
-
-    parseAction :: UDEnv -> BoolStructP -> Expr
-    parseAction env bsp = parse' "VP" env (bsp2text bsp)
+    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
+    parseUpon env (bs:_) = do
+      parse <- parseOut env (bsp2text bs)
+      return $ Just parse
+    parseUpon _ [] = return Nothing
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -119,49 +167,38 @@ parseFields env rl@(Regulative {}) =
         DMay   -> mkCId "may_Deontic"
         DShant -> mkCId "shant_Deontic"
 
-    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> Expr
-    parseTemporal env (TemporalConstraint cmp time unit) = parse' "Adv"  env (Text.unwords [Text.pack (tcompToStr cmp), Text.pack $ show time, unit])
+    -- TODO: add GF funs for  ParseTemporal
+    -- It will look like this:
+    {- parseUpon env bs = do
+        rawExpr <- parseOut env event
+        let gfFun = getGFFun (TAfter/TWhatever/…) -- should we move on to the Haskell version of the abstract syntax?
+        return $ <gfFun applied to rawExpr>  -- either use PGF.mkApp, or with Haskell version of abstract syntax
+      -}
+    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
+    parseTemporal env tc = case tc of
+      TemporalConstraint TAfter  n tunit -> parseOut env $ "after "   <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TBefore n tunit -> parseOut env $ "before "  <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TBy     n tunit -> parseOut env $ "by "      <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TOn     n tunit -> parseOut env $ "on "      <> Text.pack (show n) <> " " <> tunit
+      TemporalConstraint TVague  n tunit -> parseOut env $ "vaguely " <> Text.pack (show n) <> " " <> tunit
 
-    tcompToStr :: TComparison -> String
-    tcompToStr TBefore = "before"
-    tcompToStr TAfter = "after"
-    tcompToStr TBy = "by"
-    tcompToStr TOn = "on"
-    tcompToStr TVague = ""
-    -- parseTemporal env (TBefore event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "before", Text.pack $ show event, unit])
-    -- parseTemporal env (TAfter event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "after", Text.pack $ show event, unit])
-    -- parseTemporal env (TBy event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "by", Text.pack $ show event, unit])
-    -- parseTemporal env (TOn event unit)  = parse' "Adv"  env (Text.unwords [Text.pack "on", Text.pack $ show event, unit])
+    {- TODO: do we want to give this more structure in the GF grammar as well?
+      so that the GF tree looks like
+         Upon (GerundVP some_VP)
+      instead of
+         PrepNP upon_Prep (GerundVP some_VP)
+      in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
+      in the former, we know from the first constructor that this is an "upon" sentence
+    -}
 
-    parseUpon :: UDEnv -> BoolStructP -> Expr
-    parseUpon env bs = parse' "Adv" env (Text.unwords [Text.pack "upon", bsp2text bs])
-
-parseFields _env rl = error $ "Unsupported rule type " ++ show rl
-
--- BoolStruct is from Types, and Item is from AnyAll
--- TODO: for now only return the first thing
--- later: BoolStruct -> PGF.Expr -- mimic the structure in GF grammar
-bs2text :: BoolStruct -> Text.Text
-bs2text (AA.Leaf txt ) = txt
-bs2text (AA.All (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
-bs2text (AA.All Nothing   xs) = Text.unwords $ "all of:" : (bs2text <$> xs)
-bs2text (AA.Any (Just pp) xs) = prepost pp $ Text.unwords $ bs2text <$> xs
-bs2text (AA.Any Nothing   xs) = Text.unwords $ "any of:" : (bs2text <$> xs)
-bs2text (AA.Not x    ) =                   "not " <> bs2text x
-
-prepost :: (IsString a, Monoid a) => AA.Label a -> a -> a
-prepost (AA.Pre     p1   ) t = p1 <> " " <> t
-prepost (AA.PrePost p1 p2) t = p1 <> " " <> t <> " " <> p2
 
 
 ------------------------------------------------------------
 -- Ignore everything below for now
 
-parseCoNLLU :: UDEnv -> String -> [[Expr]]
-parseCoNLLU = getExprs []
 
 data AnnotatedRule = RegulativeA
-            { everyA    :: Expr                      -- every person (NP)
+            { subjA     :: Expr                      -- man AND woman AND child
             , whoA      :: Maybe Expr                -- who walks and (eats or drinks) (RS)
             , condA     :: Maybe Expr                -- if it is a saturday (Adv)
             , deonticA  :: CId                       -- must (CId -- a hack, will change later)
@@ -176,21 +213,15 @@ data AnnotatedRule = RegulativeA
             -- , lsourceA  :: Maybe Text.Text
             -- , srcrefA   :: Maybe SrcRef
             }
+            | ConstitutiveA
+                { nameA       :: Expr   -- the thing we are defining
+                -- , keyword  :: MyToken       -- Means, Includes, Is, Deem
+                , letbindA    :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+                , condA       :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
+                , givenA      :: Maybe Expr
+                -- , rlabel    :: Maybe Text.Text
+                -- , lsource   :: Maybe Text.Text
+                -- , srcref    :: Maybe SrcRef
+                -- , orig      :: [(Preamble, BoolStructP)]
+                }
           deriving (Eq, Show)
-
-
--- Test data, already in CoNLL
-testCoNLLU :: String
-testCoNLLU = unlines [
-      "1\teveryone\teveryone\tPRON\tNN\tNumber=Sing\t11\tnsubj:pass\t_\tFUN=PRONNN"
-    , "2\twho\twho\tPRON\tWP\tPronType=Rel\t4\tnsubj:pass\t_\tFUN=PRONWP"
-    , "3\tis\tbe\tAUX\tVBZ\tMood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin\t4\taux:pass\t_\tFUN=UseComp"
-    , "4\taffected\taffect\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t1\tacl:relcl\t_\tFUN=affectVBN"
-    , "5\tby\tby\tADP\tIN\t_\t8\tcase\t_\t_"
-    , "6\tthe\tthe\tDET\tQuant\tFORM=0\t8\tdet\t_\tFUN=DefArt"
-    , "7\tdata\tdata\tNOUN\tNN\tNumber=Sing\t8\tcompound\t_\tFUN=data_N"
-    , "8\tbreach\tbreach\tNOUN\tNN\tNumber=Sing\t4\tobl\t_\tFUN=breach_N"
-    , "9\tshould\tshould\tAUX\tMD\tVerbForm=Fin\t11\taux\t_\t_"
-    , "10\tbe\tbe\tAUX\tVB\tVerbForm=Inf\t11\taux:pass\t_\tFUN=UseComp"
-    , "11\tnotified\tnotify\tVERB\tVBN\tTense=Past|VerbForm=Part|Voice=Pass\t0\troot\t_\tFUN=notifyVBN"
-    ]

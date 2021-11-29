@@ -44,6 +44,9 @@ dependencies:
 - baby-l4-core
 - optparse-generic
 - prolog
+- typed-process
+- stm
+- replace-megaparsec
 
 ghc-options: -Wall
 

@@ -970,9 +970,48 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+| §      | Scenario 1   |            |    |             |      |            |    |   |
 | GIVEN  | amount saved |            | IS | 22000       |      |            |    |   |
 |        | earnings     | amount     | IS | 25000       |      |            |    |   |
 |        | earnings     | steadiness | IS | steady      |      |            |    |   |
 | EXPECT |              | investment | IS | savings     | WHEN | dependents | IS | 5 |
 | "      |              | "          | "  | combination | "    | "          | "  | 3 |
 | "      |              | "          | "  | stocks      | "    | "          | "  | 0 |
+
+** Decide has a WHEN and AND on separate lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income   |            | IS | adequate |           |   |   |   |   |   |
+| WHEN   | earnings | steadiness | IS | steady   |           |   |   |   |   |   |
+| AND    | earnings | amount     |    | >        | minincome |   |   |   |   |   |
+|        |          |            |    |          |           |   |   |   |   |   |
+
+** Decide has a WHEN separate and AND on same line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income   |            | IS | adequate |     |          |        |   |   |           |
+| WHEN   | earnings | steadiness | IS | steady   | AND | earnings | amount |   | > | minincome |
+
+** Decide has a WHEN and AND on the same line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income |   | IS | adequate | WHEN | earnings | steadiness | IS | steady | AND | earnings | amount |   | > | minincome |   |
+
+
+** Decide has an OTHERWISE default
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income |   | IS | adequate   | WHEN | earnings  | steadiness | IS | steady | AND | earnings | amount |   | > | minincome |   |
+| "      | "      |   | "  | inadequate |      | OTHERWISE |            |    |        |     |          |        |   |   |           |   |

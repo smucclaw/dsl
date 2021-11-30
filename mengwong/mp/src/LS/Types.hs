@@ -382,6 +382,8 @@ toToken "=="        = TokEQ
 toToken "IN"        = TokIn
 toToken "NOT IN"    = TokNotIn
 
+toToken "OTHERWISE" = Otherwise
+
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
 toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n

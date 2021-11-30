@@ -441,3 +441,76 @@ main = do
   -- upgrade single OR group to bypass the top level AND group
 
   -- defNameAlias should absorb the WHO limb
+
+    describe "megaparsing scenarios" $ do
+      it "should handle labeled given/expect" $ do
+        let testfile = "test/scenario-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR pRules testfile `traverse` (exampleStreams testcsv)
+          `shouldParse`
+          [ [ Scenario
+            { scgiven =
+                [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
+                , RPConstraint
+                  [ "earnings"
+                  , "amount"
+                  ] RPis [ "25000" ]
+                , RPConstraint
+                  [ "earnings"
+                  , "steadiness"
+                  ] RPis [ "steady" ]
+                ]
+            , expect =
+              [ HC
+                { relPred = RPConstraint [ "investment" ] RPis [ "savings" ]
+                , relWhen = Just
+                            ( HBRP
+                              ( Leaf
+                                ( RPConstraint [ "dependents" ] RPis [ "5" ] )
+                              )
+                            )
+                }
+              , HC
+                { relPred = RPConstraint [ "investment" ] RPis [ "combination" ]
+                , relWhen = Just
+                            ( HBRP
+                              ( Leaf
+                                ( RPConstraint [ "dependents" ] RPis [ "3" ] )
+                              )
+                            )
+                }
+              , HC
+                { relPred = RPConstraint [ "investment" ] RPis [ "stocks" ]
+                , relWhen = Just
+                            ( HBRP
+                              ( Leaf
+                                ( RPConstraint [ "dependents" ] RPis [ "0" ] )
+                              )
+                            )
+                }
+              ]
+            , rlabel = Just
+                       ( "§"
+                       , 1
+                       , "Scenario 1"
+                       )
+            , lsource = Nothing
+            , srcref = Just
+                       ( SrcRef
+                         { url = "test/Spec"
+                         , short = "test/Spec"
+                         , srcrow = 1
+                         , srccol = 2
+                         , version = Nothing
+                         }
+                       )
+            }
+          ] ]
+          
+    describe "megaparsing DECIDE layouts" $ do
+      it "should handle multiline" $ do
+        let testfile = "test/financialadvisor-decide-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR pRules testfile `traverse` (exampleStreams testcsv)
+          `shouldParse`
+          [ [ Scenario

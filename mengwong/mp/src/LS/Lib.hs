@@ -433,6 +433,7 @@ pDeemRule = debugName "pDeemRule" $ do
 
 pScenarioRule :: Parser Rule
 pScenarioRule = debugName "pScenarioRule" $ do
+  rlabel <- optional pRuleLabel
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
@@ -443,7 +444,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
   return $ Scenario
     { scgiven = givens
     , expect  = expects
-    , rlabel = Nothing, lsource = Nothing, srcref = Just srcref
+    , rlabel = rlabel, lsource = Nothing, srcref = Just srcref
     }
 
 pExpect :: Parser HornClause
@@ -482,8 +483,22 @@ pNumAsText = debugName "pNumAsText" $ do
     isNumber (TNumber _) = True
     isNumber _           = False
 
+-- ["mortal(Man)"] becomes
+-- mortal(Man)
 pFunction :: Parser RelationalPredicate
 pFunction = debugName "pFunction" $ RPFunction <$> pMultiTerm
+
+-- ["investment"] Is ["savings"] becomes
+-- investment(savings)
+
+-- ["Minsavings"] Is ["500"] becomes
+-- Minsavings is 500
+
+-- it all depends if the first letter is uppercase
+-- ["dependents"] Is ["5"] becomes
+-- dependents(5)
+-- ["Dependents"] Is ["5"] becomes
+-- dependents is 5
 
 pConstraint :: Parser RelationalPredicate
 pConstraint = debugName "pConstraint" $ do
@@ -494,8 +509,7 @@ pConstraint = debugName "pConstraint" $ do
 
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
-tok2rel = do
-  choice
+tok2rel = choice
     [ RPis      <$ pToken Is      
     , RPis      <$ pToken TokEQ   
     , RPlt      <$ pToken TokLT   
@@ -504,6 +518,18 @@ tok2rel = do
     , RPgte     <$ pToken TokGTE  
     , RPelem    <$ pToken TokIn   
     , RPnotElem <$ pToken TokNotIn
+    ]
+
+tok2text :: Parser Text.Text
+tok2text = choice
+    [ "IS"     <$ pToken Is      
+    , "=="     <$ pToken TokEQ   
+    , "<"      <$ pToken TokLT   
+    , "<="     <$ pToken TokLTE  
+    , ">"      <$ pToken TokGT   
+    , ">="     <$ pToken TokGTE  
+    , "IN"     <$ pToken TokIn   
+    , "NOT IN" <$ pToken TokNotIn
     ]
 
 pConstitutiveRule :: Parser Rule
@@ -739,8 +765,11 @@ pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $
-  (,) <$> ((:|) <$> pOtherVal `indented1` many pOtherVal)
+  (,) <$> ((:|) <$> pAnyText `indented1` many pAnyText)
       <*> optional pTypeSig
+
+pAnyText :: Parser Text.Text
+pAnyText = tok2text <|> pOtherVal
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.

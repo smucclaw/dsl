@@ -30,6 +30,7 @@ data MyToken = Every | Party | TokAll
              | Means | Includes  | Is
              | Given | Having | Upon
              | Define | OneOf | Holds
+             | Decide
              | A_An
              | Deem | As | Has
              | TypeSeparator -- ::, TYPE, AS, shrug
@@ -44,6 +45,7 @@ data MyToken = Every | Party | TokAll
              | Aka -- also known as, for AKA Receiving Party
              | Empty | EOL
              | RuleMarker Int Text.Text
+             | Expect
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

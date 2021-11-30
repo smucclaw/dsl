@@ -214,7 +214,7 @@ rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt
   where
     rD :: Int -> Int -> Text.Text -> Text.Text
-    rD row col "\"" = -- first non-lank above
+    rD row col "\"" = -- first non-blank above
       let aboves = V.filter (`notElem` ["", "\""]) $ (! col) <$> V.slice 0 row vvt
       in if V.null aboves
          then error $ "line " ++ show (row+1) ++ " column " ++ show (col+1) ++ ": ditto lacks referent (upward nonblank cell)"
@@ -348,8 +348,8 @@ pRule = do
   _ <- many dnl
   try (pRegRule <?> "regulative rule")
     <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
-    <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pDecideIsRule <?> "DECIDE IS rule")
+    <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
@@ -406,9 +406,9 @@ pMeansRule = debugName "pMeansRule" $ do
   ((_d,d),gs,w,i,u,means,includes) <- permute $ (,,,,,,)
     <$$> preambleParamText [Deem, Decide]
     <|?> ([], some $ preambleParamText [Given, Upon])
-    <|?> ([], some $ preambleBoolStructP [When])
-    <|?> ([], some $ preambleBoolStructP [If])
-    <|?> ([], some $ preambleBoolStructP [Unless])
+    <|?> ([], some $ preambleBoolStructR [When])
+    <|?> ([], some $ preambleBoolStructR [If])
+    <|?> ([], some $ preambleBoolStructR [Unless])
     <|?> ([], some $ preambleBoolStructP [Means])
     <|?> ([], some $ preambleBoolStructP [Includes])
 
@@ -421,9 +421,8 @@ pMeansRule = debugName "pMeansRule" $ do
          { name = head dnew -- we lose the ordering
          , keyword = Given
          , letbind = RPBoolStructP $ AA.Leaf d
-         , orig = [(Deem, AA.Leaf d)] ++ means ++ includes
          , cond = addneg
-                  (snd <$> mergePBRS (w++i))
+                  (snd <$> mergePBRS (w<>i))
                   (snd <$> mergePBRS u)
          , given = nonEmpty $ foldMap toList (snd <$> gs)
          , rlabel = noLabel
@@ -439,20 +438,17 @@ pDecideIsRule = debugName "pDecideIsRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  ((_rp,rp),gs,w,i,u,means,includes) <- permute $ (,,,,,,)
+  ((_rp,rp),gs,w,i,u) <- permute $ (,,,,)
     <$$> preambleRelPred [Decide]
     <|?> ([], some $ preambleParamText [Given, Upon])
-    <|?> ([], some $ preambleBoolStructP [When])
-    <|?> ([], some $ preambleBoolStructP [If])
-    <|?> ([], some $ preambleBoolStructP [Unless])
-    <|?> ([], some $ preambleBoolStructP [Means])
-    <|?> ([], some $ preambleBoolStructP [Includes])
+    <|?> ([], some $ preambleBoolStructR [When])
+    <|?> ([], some $ preambleBoolStructR [If])
+    <|?> ([], some $ preambleBoolStructR [Unless])
 
   return $ Constitutive
          { name = rpFirstWord rp
          , keyword = Given
          , letbind = rp
-         , orig = []
          , cond = addneg
                   (snd <$> mergePBRS (w++i))
                   (snd <$> mergePBRS u)
@@ -545,7 +541,7 @@ pConstraint = debugName "pConstraint" $ do
 tok2rel :: Parser RPRel
 tok2rel = choice
     [ RPis      <$ pToken Is      
-    , RPis      <$ pToken TokEQ   
+    , RPeq      <$ pToken TokEQ   
     , RPlt      <$ pToken TokLT   
     , RPlte     <$ pToken TokLTE  
     , RPgt      <$ pToken TokGT   
@@ -588,7 +584,6 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , rlabel = noLabel
     , lsource = noLSource
     , srcref = Just srcref
-    , orig = []
     }
 
 pRegRule :: Parser Rule
@@ -624,22 +619,22 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
-                 (mkLeaf entitytype)
-                 Party
-                 Nothing
-                 (addneg poscond negcond)
-                 (rbdeon rulebody)
-                 (rbaction rulebody)
-                 (rbtemporal rulebody)
-                 henceLimb
-                 lestLimb
-                 Nothing -- rule label
-                 Nothing -- legal source
-                 Nothing -- internal SrcRef
-                 (snd <$> rbupon  rulebody)
-                 (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
-                 (rbhaving rulebody)
-                 []
+                 { subj     = (mkLeaf entitytype)
+                 , keyword  = Party
+                 , who      = Nothing
+                 , cond     = (addneg poscond negcond)
+                 , deontic  = (rbdeon rulebody)
+                 , action   = (rbaction rulebody)
+                 , temporal = (rbtemporal rulebody)
+                 , hence    = henceLimb
+                 , lest     = lestLimb
+                 , rlabel   = Nothing -- rule label
+                 , lsource  = Nothing -- legal source
+                 , srcref   = Nothing -- internal SrcRef
+                 , upon     = (snd <$> rbupon  rulebody)
+                 , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
+                 , having   = (rbhaving rulebody)
+                 }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
   myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
@@ -656,7 +651,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [Every,Party,TokAll]
-                   <*> optional (preambleBoolStructP [Who])
+                   <*> optional (preambleBoolStructR [Who])
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
@@ -666,22 +661,22 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
 
   let toreturn = Regulative
-                 (snd $ rbkeyname rulebody)
-                 (fst $ rbkeyname rulebody)
-                 (snd <$> rbwho rulebody)
-                 (addneg poscond negcond)
-                 (rbdeon rulebody)
-                 (rbaction rulebody)
-                 (rbtemporal rulebody)
-                 henceLimb
-                 lestLimb
-                 Nothing -- rule label
-                 Nothing -- legal source
-                 Nothing -- internal SrcRef
-                 (snd <$> rbupon  rulebody)    -- given
-                 (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
-                 (rbhaving rulebody)
-                 []
+                 { subj     = (snd $ rbkeyname rulebody)
+                 , keyword  = (fst $ rbkeyname rulebody)
+                 , who      = (snd <$> rbwho rulebody)
+                 , cond     = (addneg poscond negcond)
+                 , deontic  = (rbdeon rulebody)
+                 , action   = (rbaction rulebody)
+                 , temporal = (rbtemporal rulebody)
+                 , hence    = henceLimb
+                 , lest     = lestLimb
+                 , rlabel   = Nothing -- rule label
+                 , lsource  = Nothing -- legal source
+                 , srcref   = Nothing -- internal SrcRef
+                 , upon     = (snd <$> rbupon  rulebody)    -- given
+                 , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
+                 , having   = (rbhaving rulebody)
+                 }
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond
   myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
@@ -691,7 +686,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   return toreturn
 
 -- this is probably going to need cleanup
-addneg :: Maybe BoolStructP -> Maybe BoolStructP -> Maybe BoolStructP
+addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
 addneg Nothing  (Just n)  = Just $ AA.Not n
 addneg (Just p) (Just n)  = Just $ AA.All AA.allof [p, AA.Not n]
@@ -711,7 +706,7 @@ pRuleLabel = debugName "pRuleLabel" $ do
     isRuleMarker _                = False
 
 -- combine all the boolrules under the first preamble keyword
-mergePBRS :: [(Preamble, BoolStructP)] -> Maybe (Preamble, BoolStructP)
+mergePBRS :: Semigroup a => [(Preamble, a)] -> Maybe (Preamble, a)
 mergePBRS [] = Nothing
 mergePBRS [x] = Just x
 mergePBRS xs         = Just (fst . head $ xs, foldl1 (<>) (snd <$> xs))
@@ -810,11 +805,11 @@ pAnyText = tok2text <|> pOtherVal
 
 mkRBfromDT :: BoolStructP
            -> ((Preamble, BoolStructP )  -- every person
-              ,Maybe (Preamble, BoolStructP)) -- who is red and blue
+              ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
-           -> [(Preamble, BoolStructP)] -- positive  -- IF / WHEN
-           -> [(Preamble, BoolStructP)] -- negative  -- UNLESS
-           -> [(Preamble, BoolStructP)] -- upon  conditions
+           -> [(Preamble, BoolStructR)] -- positive  -- IF / WHEN
+           -> [(Preamble, BoolStructR)] -- negative  -- UNLESS
+           -> [(Preamble, BoolStructR)] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
            -> RuleBody
@@ -822,11 +817,11 @@ mkRBfromDT rba (rbkn,rbw) (rbd,rbt) rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb
 
 mkRBfromDA :: (Deontic, BoolStructP)
            -> ((Preamble, BoolStructP ) -- every person or thing
-              ,Maybe (Preamble, BoolStructP)) -- who is red and blue
+              ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> Maybe (TemporalConstraint Text.Text)
-           -> [(Preamble, BoolStructP)] -- whenif
-           -> [(Preamble, BoolStructP)] -- unless
-           -> [(Preamble, BoolStructP)] -- upon  conditions
+           -> [(Preamble, BoolStructR)] -- whenif
+           -> [(Preamble, BoolStructR)] -- unless
+           -> [(Preamble, BoolStructR)] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText         -- having
            -> RuleBody
@@ -835,8 +830,8 @@ mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
                 -> Parser ( ( Preamble                -- preamble = copula   (means,deem,decide)
                             , RelationalPredicate)    -- the head of a horn clause
-                          , [(Preamble, BoolStructP)] -- positive conditions (when,if)
-                          , [(Preamble, BoolStructP)] -- negative conditions (unless)
+                          , [(Preamble, BoolStructR)] -- positive conditions (when,if)
+                          , [(Preamble, BoolStructR)] -- negative conditions (unless)
                           , [(Preamble, ParamText)] -- given    (given params)
                           )
 permutationsCon copula ifwhen l4unless l4given =
@@ -848,8 +843,8 @@ permutationsCon copula ifwhen l4unless l4given =
             ) $ do
   permute $ (,,,)
     <$$> preambleRelPred copula
-    <|?> ([], some $ preambleBoolStructP ifwhen)
-    <|?> ([], some $ preambleBoolStructP l4unless)
+    <|?> ([], some $ preambleBoolStructR ifwhen)
+    <|?> ([], some $ preambleBoolStructR l4unless)
     <|?> ([], some $ preambleParamText l4given)
 
 -- degustates
@@ -869,7 +864,7 @@ preambleRelPred preambles = do
   relpred  <- pRelationalPredicate
   return (preamble, relpred)
 
-permutationsReg :: Parser ((Preamble, BoolStructP), Maybe (Preamble, BoolStructP))
+permutationsReg :: Parser ((Preamble, BoolStructP), Maybe (Preamble, BoolStructR))
                 -> Parser RuleBody
 permutationsReg keynamewho =
   debugName "permutationsReg" $ do
@@ -888,9 +883,9 @@ permutationsReg keynamewho =
           ) )
   where
     whatnot x = x
-                <|?> ([], some $ preambleBoolStructP [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
-                <|?> ([], some $ preambleBoolStructP [Unless]) -- unless
-                <|?> ([], some $ preambleBoolStructP [Upon])   -- upon
+                <|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
+                <|?> ([], some $ preambleBoolStructR [Unless]) -- unless
+                <|?> ([], some $ preambleBoolStructR [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
 
@@ -920,6 +915,41 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
   myTraceM ("preambleBoolStructP: found: " ++ show condWord)
   ands <- withDepth leftX dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
+
+preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
+preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
+  leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  condWord <- choice (try . pToken <$> wanted)
+  myTraceM ("preambleBoolStructR: found: " ++ show condWord)
+  ands <- withDepth leftX pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  return (condWord, ands)
+
+-- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
+pBoolStructR :: Parser BoolStructR
+pBoolStructR = debugName "pBoolStructR" rpAndGroup
+
+rpAndGroup :: Parser BoolStructR
+rpAndGroup = debugName "rpAndGroup" $ do
+    rpOrGroup1 <- rpOrGroup
+    rpOrGroupN <- many $ pToken And *> rpOrGroup
+    let toreturn = if null rpOrGroupN
+                   then rpOrGroup1
+                   else AA.All AA.allof (rpOrGroup1 : rpOrGroupN)
+    return toreturn
+
+rpOrGroup :: Parser BoolStructR
+rpOrGroup = debugName "rpOrGroup" $ do
+  depth <- asks callDepth
+  elem1    <- withDepth (depth + 1) rpElement
+  elems    <- many $ pToken Or *> withDepth (depth+1) rpElement
+  let toreturn = if null elems
+                 then elem1
+                 else AA.Any AA.anyof (elem1 : elems)
+  return toreturn
+
+rpElement :: Parser BoolStructR
+rpElement = debugName "rpElement" $ do
+  AA.Leaf <$> pRelationalPredicate
 
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" $ do

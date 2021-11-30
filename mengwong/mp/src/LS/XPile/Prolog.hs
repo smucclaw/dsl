@@ -98,13 +98,13 @@ mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
 
 -- TODO: convert the upstream of all this stuff to a HornClause
-letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructP -> RelationalPredicate -> [Clause]
+letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructR -> RelationalPredicate -> [Clause]
 letbind2clause st fname cond (RPFunction multiterm) =
   let args = Prelude.filter (/= fname) multiterm
   in pure $ Clause (Struct (Text.unpack fname) (vart <$> args))
      (case cond of
          Nothing  -> []
-         Just bsp -> bsp2struct bsp
+         Just bsr -> bsr2struct bsr
      )
 
 bsp2struct :: BoolStructP -> [Goal]
@@ -113,6 +113,20 @@ bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt -- how do you say \+ in La
 bsp2struct (All _lbl xs) =    concatMap bsp2struct xs
 bsp2struct (Any _lbl xs) = vart "or" : concatMap bsp2struct xs
 
+bsr2struct :: BoolStructR -> [Goal]
+bsr2struct (Leaf rt)     = rp2goal rt
+bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt -- how do you say \+ in Language.Prolog?
+bsr2struct (All _lbl xs) =    concatMap bsr2struct xs
+bsr2struct (Any _lbl xs) = vart "or" : concatMap bsr2struct xs
+
+rp2goal :: RelationalPredicate -> [Goal]
+rp2goal (RPFunction [])            = error "empty multiterm in RelationalPredicate RPFunction"
+rp2goal (RPFunction [x])           = pure $ vart x
+rp2goal (RPFunction (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
+rp2goal (RPBoolStructP bsp)        = bsp2struct bsp
+rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (vart <$> mt1) ++ (vart <$> mt2)
+
+rel2f = Text.unpack . rel2txt
 
 analyze :: [SFL4.Rule] -> Analysis
 analyze rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame

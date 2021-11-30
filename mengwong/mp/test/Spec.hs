@@ -52,7 +52,6 @@ defaultReg = Regulative
   , upon = []
   , given = Nothing
   , having = Nothing
-  , orig = []
   }
 
 defaultCon = Constitutive
@@ -64,7 +63,6 @@ defaultCon = Constitutive
   , lsource = Nothing
   , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   , given = Nothing
-  , orig = []
   }
 
 
@@ -90,33 +88,33 @@ main = do
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeaf "walks") } ]
+          `shouldParse` [ defaultReg { who = Just (mkLeafP "walks") } ]
 
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeaf "walks") } ]
+          `shouldParse` [ defaultReg { who = Just (mkLeafP "walks") } ]
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg {
                             who = Just (All allof
-                                         [ mkLeaf "walks"
-                                         , mkLeaf "runs"
+                                         [ mkLeafP "walks"
+                                         , mkLeafP "runs"
                                          , Any anyof
-                                           [ mkLeaf "eats"
-                                           , mkLeaf "drinks"
+                                           [ mkLeafP "eats"
+                                           , mkLeafP "drinks"
                                            ]
                                          ])
                             } ]
 
       let imbibeRule = [ defaultReg {
                            who = Just (Any anyof
-                                       [ mkLeaf "walks"
-                                       , mkLeaf "runs"
-                                       , mkLeaf "eats"
+                                       [ mkLeafP "walks"
+                                       , mkLeafP "runs"
+                                       , mkLeafP "eats"
                                        , All allof
-                                         [ mkLeaf "drinks"
-                                         , mkLeaf "swallows" ]
+                                         [ mkLeafP "drinks"
+                                         , mkLeafP "swallows" ]
                                        ])
                            } ]
 
@@ -149,8 +147,8 @@ main = do
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All allof
-                                  [ mkLeaf "walks"
-                                  , mkLeaf "degustates"
+                                  [ mkLeafP "walks"
+                                  , mkLeafP "degustates"
                                   ]
                           , srcref = Nothing
                           }
@@ -165,10 +163,10 @@ main = do
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , letbind = RPBoolStructP $ All allof
-                          [ mkLeaf "drinks"
-                          , Any anyof [ mkLeaf "swallows"
-                                , mkLeaf "spits" ]
+              , letbind = RPBoolStructR $ All allof
+                          [ mkLeafP "drinks"
+                          , Any anyof [ mkLeafR "swallows"
+                                      , mkLeafR "spits" ]
                           ]
               , cond = Nothing
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})
@@ -184,10 +182,10 @@ main = do
 
       let if_king_wishes = [ defaultReg
                           { who = Just $ All allof
-                                  [ mkLeaf "walks"
-                                  , mkLeaf "eats"
+                                  [ mkLeafP "walks"
+                                  , mkLeafP "eats"
                                   ]
-                          , cond = Just $ mkLeaf "the King wishes"
+                          , cond = Just $ mkLeafP "the King wishes"
                           }
                         ]
 
@@ -214,10 +212,10 @@ main = do
       let singer_chain = [ defaultReg
                          { subj = mkLeaf "person"
                          , who = Just $ All allof
-                                 [ mkLeaf "walks"
-                                 , mkLeaf "eats"
+                                 [ mkLeafP "walks"
+                                 , mkLeafP "eats"
                                  ]
-                         , cond = Just $ mkLeaf "the King wishes"
+                         , cond = Just $ mkLeafP "the King wishes"
                          , hence = Just king_pays_singer
                          , lest  = Just singer_must_pay
                          } ]
@@ -307,22 +305,22 @@ main = do
 
     describe "megaparsing UNLESS semantics" $ do
 
-      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeaf "day of silence" ) ) } ] 
+      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafP "day of silence" ) ) } ] 
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
                                                  ( All allof
-                                                   [ mkLeaf "day of silence"
-                                                   , mkLeaf "observance is mandatory"
+                                                   [ mkLeafP "day of silence"
+                                                   , mkLeafP "observance is mandatory"
                                                    ]
                                                  )
                                                ) } ]
 
-      let dayOfSong = [ defaultReg { cond = Just ( All allof [ Not ( mkLeaf "day of silence" )
-                                                               , mkLeaf "day of song" ] ) } ]
+      let dayOfSong = [ defaultReg { cond = Just ( All allof [ Not ( mkLeafP "day of silence" )
+                                                               , mkLeafP "day of song" ] ) } ]
 
-      let silenceKing = [ defaultReg { cond = Just ( All allof [ mkLeaf "the king wishes"
-                                                                 , Not ( mkLeaf "day of silence" )
+      let silenceKing = [ defaultReg { cond = Just ( All allof [ mkLeafP "the king wishes"
+                                                                 , Not ( mkLeafP "day of silence" )
                                                                  ] ) } ]
             
       it "should read EVERY MUST UNLESS" $ do
@@ -357,11 +355,11 @@ main = do
                       
       let silenceMourning = [
             defaultReg { cond = Just ( All allof [
-                                         mkLeaf "the king wishes"
+                                         mkLeafP "the king wishes"
                                          , Not
                                            ( Any anyof
-                                             [ mkLeaf "day of silence"
-                                             , mkLeaf "day of mourning"
+                                             [ mkLeafP "day of silence"
+                                             , mkLeafP "day of mourning"
                                              ]
                                            )
                                          ] ) } ]
@@ -374,11 +372,11 @@ main = do
 
       let mourningForbids = [
             defaultReg { cond = Just ( All allof [
-                                         mkLeaf "the king wishes"
+                                         mkLeafP "the king wishes"
                                          , Not
                                            ( All allof
-                                             [ mkLeaf "day of mourning"
-                                             , mkLeaf "mourning forbids singing"
+                                             [ mkLeafP "day of mourning"
+                                             , mkLeafP "mourning forbids singing"
                                              ]
                                            ) ] ) } ]
                                          
@@ -423,7 +421,7 @@ main = do
                                       , mkLeaf "Bob is your father's brother"
                                       ]
                           , cond = Just $ Not
-                                ( mkLeaf "Bob is estranged" )
+                                ( mkLeafP "Bob is estranged" )
                           }
                         ]
       it "should handle pilcrows" $ do

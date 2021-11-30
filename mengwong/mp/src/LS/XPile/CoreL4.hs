@@ -34,7 +34,6 @@ sfl4ToCorel4Rule Regulative
             , upon     -- UPON entering the club (event prereq trigger)
             , given
             , having   -- HAVING sung...
-            , orig
             } = undefined
 sfl4ToCorel4Rule Constitutive
             { name     -- the thing we are defining
@@ -45,7 +44,6 @@ sfl4ToCorel4Rule Constitutive
             , rlabel
             , lsource
             , srcref
-            , orig
             } = undefined
 sfl4ToCorel4Rule TypeDecl
             { name     --      DEFINE Sign

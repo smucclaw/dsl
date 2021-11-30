@@ -12,7 +12,7 @@ import LS.Types ( Deontic(..),
       ParamText,
       BoolStruct(..),
       ConstitutiveName,
-      Rule(..), BoolStructP, pt2text, bsp2text )
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -107,7 +107,7 @@ parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {} -> do
     subjA'  <- parseBool env (subj rl)
-    whoA'   <- mapM (parseBool env) (who rl)
+    whoA'   <- mapM (parseBSR env) (who rl)
     condA'   <- return Nothing --if
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
@@ -155,9 +155,12 @@ parseFields env rl = case rl of
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)
 
-    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
+    parseBSR :: UDEnv -> BoolStructR -> IO Expr
+    parseBSR env bsr = parseOut env (bsr2text bsr)
+
+    parseUpon :: UDEnv -> [BoolStructR] -> IO (Maybe Expr)
     parseUpon env (bs:_) = do
-      parse <- parseOut env (bsp2text bs)
+      parse <- parseOut env (bsr2text bs)
       return $ Just parse
     parseUpon _ [] = return Nothing
 

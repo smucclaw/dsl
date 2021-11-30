@@ -61,13 +61,13 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
     ruleTimer = Clock $ "time" ++ rName
     initialLoc = Loc "Initial"
-    uponLoc = Loc $ "Upon_" ++ pt2varname upn -- TODO: Make this urgent when supported
+    uponLoc = Loc $ "Upon_" ++ rp2varname upn -- TODO: Make this urgent when supported
     uponTransition = (simpleTransition initialLoc uponLoc) {
                                  actionOfTransition = TransitionAction [ruleTimer] (Skip ())
                                  }
     ifBranchOkLoc = Loc "RuleTriggers"
     successLoc = Loc "Sucess"
-    ifCond = boolStructPToExpr cnd
+    ifCond = boolStructRToExpr cnd
     ifCondDecls = extractDecls (fv ifCond)
     ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
                                  guardOfTransition = TransitionGuard [] (Just (() <$ ifCond))
@@ -112,11 +112,20 @@ negateCompar BCne = BCeq
 pt2varname :: ParamText -> String
 pt2varname = toValidName  . unpack . pt2text
 
+rp2varname :: RelationalPredicate -> String
+rp2varname = toValidName  . unpack . rp2text
+
 boolStructPToExpr :: BoolStructP -> CoreL4.Expr (Tp ())
 boolStructPToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
 boolStructPToExpr (AA.Not  x)  = notExpr (boolStructPToExpr x)
 boolStructPToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructPToExpr <$> xs)
 boolStructPToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructPToExpr <$> xs)
+
+boolStructRToExpr :: BoolStructR -> CoreL4.Expr (Tp ())
+boolStructRToExpr (AA.Leaf rp) = mkVarE . GlobalVar . QVarName BooleanT $ rp2varname rp
+boolStructRToExpr (AA.Not  bs)  = notExpr (boolStructRToExpr bs)
+boolStructRToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructRToExpr <$> xs)
+boolStructRToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructRToExpr <$> xs)
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src

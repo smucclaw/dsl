@@ -36,6 +36,12 @@ type BoolStructR = AA.Item RelationalPredicate
 mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
 mkLeaf = AA.Leaf . text2pt
 
+mkLeafP :: Text.Text -> BoolStructR
+mkLeafP = AA.Leaf . RPBoolStructP . mkLeaf
+
+mkLeafR :: Text.Text -> BoolStructR
+mkLeafR = AA.Leaf . RPFunction . pure
+
 -- remove the TypeSig from a ParamText
 untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
 untypePT = fmap fst
@@ -57,15 +63,15 @@ runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream
 runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 
 data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$100)
-                         , rbpbrs     :: [(Preamble, BoolStructP)] -- not subject to the party
-                         , rbpbrneg   :: [(Preamble, BoolStructP)] -- negative global conditions
+                         , rbpbrs     :: [(Preamble, BoolStructR)] -- not subject to the party
+                         , rbpbrneg   :: [(Preamble, BoolStructR)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
-                         , rbupon     :: [(Preamble, BoolStructP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbupon     :: [(Preamble, BoolStructR)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
-                         , rbwho      :: Maybe (Preamble, BoolStructP)   -- WHO seeks eternal life in me
+                         , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
                          }
                       deriving (Eq, Show, Generic)
 
@@ -85,8 +91,8 @@ data KW a = KW { dictK :: MyToken
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
-            , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
-            , cond     :: Maybe BoolStructP         -- if it is a saturday
+            , who      :: Maybe BoolStructR         -- who walks and (eats or drinks)
+            , cond     :: Maybe BoolStructR         -- if it is a saturday
             , deontic  :: Deontic            -- must
             , action   :: BoolStructP          -- fart loudly AND run away
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
@@ -95,21 +101,19 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
-            , upon     :: [BoolStructP] -- UPON entering the club (event prereq trigger)
+            , upon     :: [BoolStructR] -- UPON entering the club (event prereq trigger)
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
-            , orig     :: [(Preamble, BoolStructP)]
             }
           | Constitutive
             { name     :: ConstitutiveName   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
             , letbind  :: RelationalPredicate
-            , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
+            , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
-            , orig     :: [(Preamble, BoolStructP)]
             }
           | TypeDecl
             { name     :: ConstitutiveName  --      DEFINE Sign
@@ -164,18 +168,43 @@ data HornBody = HBRP HornRP
 
 data RelationalPredicate = RPFunction MultiTerm
                          | RPBoolStructP BoolStructP
+                         | RPBoolStructR BoolStructR
                          | RPConstraint MultiTerm RPRel MultiTerm
   deriving (Eq, Show, Generic, ToJSON)
 
+instance Semigroup RelationalPredicate where
+  (<>) (RPFunction mt1)     (RPFunction mt2) = RPFunction $ mt1 <> mt2
+  (<>) (RPBoolStructP bsp1) (RPBoolStructP bsp2) = RPBoolStructP $ bsp1 <> bsp2
+  (<>) (RPBoolStructR bsr1) (RPBoolStructR bsr2) = RPBoolStructR $ bsr1 <> bsr2
+  (<>) l                    r = RPBoolStructR $ AA.All AA.allof [AA.Leaf l, AA.Leaf r]
+  
+
+rel2txt :: RPRel -> Text.Text
+rel2txt RPis      = "relIs"
+rel2txt RPeq      = "relEq"
+rel2txt RPlt      = "relLT"
+rel2txt RPlte     = "relLTE"
+rel2txt RPgt      = "relGT"
+rel2txt RPgte     = "relGTE"
+rel2txt RPelem    = "relIn"
+rel2txt RPnotElem = "relNotIn"
+
+rp2texts :: RelationalPredicate -> [Text.Text]
+rp2texts (RPFunction    tt)            = tt
+rp2texts (RPConstraint  mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
+rp2texts (RPBoolStructP bsp)           = Text.words $ bsp2text bsp
+rp2texts (RPBoolStructR bsr)           = Text.words $ bsr2text bsr
+
+rp2text :: RelationalPredicate -> Text.Text
+rp2text = Text.unwords . rp2texts
+
+-- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text
-rpFirstWord (RPFunction    tt)            = head tt
-rpFirstWord (RPConstraint  mt1 _rel _mt2) = head mt1
-rpFirstWord (RPBoolStructP bsp)           = head $ Text.words $ bsp2text bsp
--- all the heads here are super fragile, will runtime crash
+rpFirstWord = head . rp2texts
 
 type MultiTerm = [Text.Text]
 
-data RPRel = RPis | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
+data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: ConstitutiveName }
@@ -229,6 +258,16 @@ bsp2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsp
 bsp2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
 bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
 bsp2text (AA.All Nothing                   xs) = "all of:-" <> Text.unwords (bsp2text <$> xs)
+
+bsr2text :: BoolStructR -> Text.Text
+bsr2text (AA.Not                    x ) = Text.unwords ["not", bsr2text x]
+bsr2text (AA.Leaf                   x ) = rp2text x
+bsr2text (AA.Any (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsr2text <$> xs)
+bsr2text (AA.Any (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsr2text <$> xs) <> [p2]
+bsr2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsr2text <$> xs)
+bsr2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsr2text <$> xs)
+bsr2text (AA.All (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsr2text <$> xs) <> [p2]
+bsr2text (AA.All Nothing                   xs) = "all of:-" <> Text.unwords (bsr2text <$> xs)
 
 -- and possibily we want to have interspersed BoolStructs along the way
 

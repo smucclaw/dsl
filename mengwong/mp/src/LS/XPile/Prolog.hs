@@ -97,19 +97,21 @@ clpEnums st tname ens =
 mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
 
-letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructP -> Item ParamText -> [Clause]
-letbind2clause st fname cond (Leaf pt) = fmap (fundef st fname cond) (NE.toList $ untypePT pt)
-letbind2clause st fname cond _         = [ mkComment "cant Handle Nonleaf Items Yet" ]
+-- TODO: convert the upstream of all this stuff to a HornClause
+letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructP -> RelationalPredicate -> [Clause]
+letbind2clause st fname cond (RPFunction multiterm) =
+  let args = Prelude.filter (/= fname) multiterm
+  in pure $ Clause (Struct (Text.unpack fname) (vart <$> args))
+     (case cond of
+         Nothing  -> []
+         Just bsp -> bsp2struct bsp
+     )
 
-fundef :: Analysis -> Text.Text -> Maybe BoolStructP -> NonEmpty Text.Text -> Clause
-fundef st fname cond pt0
-  | NE.length pt0 == 3 = let args = Prelude.filter (/= fname) $ NE.toList pt0
-                         in Clause (Struct (Text.unpack fname) (vart <$> args))
-                            (case cond of
-                              Nothing -> []
-                              _       -> [] -- TODO, obviously
-                            )
-  | otherwise = mkComment $ "fundef Unimplemented For Input Lists Of Length " ++ show (NE.length pt0)
+bsp2struct :: BoolStructP -> [Goal]
+bsp2struct (Leaf pt)     = pure (vart . pt2text $ pt)
+bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt -- how do you say \+ in Language.Prolog?
+bsp2struct (All _lbl xs) =    concatMap bsp2struct xs
+bsp2struct (Any _lbl xs) = vart "or" : concatMap bsp2struct xs
 
 
 analyze :: [SFL4.Rule] -> Analysis

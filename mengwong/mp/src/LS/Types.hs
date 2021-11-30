@@ -103,7 +103,7 @@ data Rule = Regulative
           | Constitutive
             { name     :: ConstitutiveName   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
-            , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
+            , letbind  :: RelationalPredicate
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
@@ -163,9 +163,15 @@ data HornBody = HBRP HornRP
   deriving (Eq, Show, Generic, ToJSON)
 
 data RelationalPredicate = RPFunction MultiTerm
-                         | RPParamText ParamText
+                         | RPBoolStructP BoolStructP
                          | RPConstraint MultiTerm RPRel MultiTerm
   deriving (Eq, Show, Generic, ToJSON)
+
+rpFirstWord :: RelationalPredicate -> Text.Text
+rpFirstWord (RPFunction    tt)            = head tt
+rpFirstWord (RPConstraint  mt1 _rel _mt2) = head mt1
+rpFirstWord (RPBoolStructP bsp)           = head $ Text.words $ bsp2text bsp
+-- all the heads here are super fragile, will runtime crash
 
 type MultiTerm = [Text.Text]
 

@@ -420,7 +420,7 @@ pMeansRule = debugName "pMeansRule" $ do
     else return $ Constitutive
          { name = head dnew -- we lose the ordering
          , keyword = Given
-         , letbind = AA.Leaf d
+         , letbind = RPBoolStructP $ AA.Leaf d
          , orig = [(Deem, AA.Leaf d)] ++ means ++ includes
          , cond = addneg
                   (snd <$> mergePBRS (w++i))
@@ -439,8 +439,8 @@ pDecideIsRule = debugName "pDecideIsRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  ((_d,d),gs,w,i,u,means,includes) <- permute $ (,,,,,,)
-    <$$> preambleParamText [Decide]
+  ((_rp,rp),gs,w,i,u,means,includes) <- permute $ (,,,,,,)
+    <$$> preambleRelPred [Decide]
     <|?> ([], some $ preambleParamText [Given, Upon])
     <|?> ([], some $ preambleBoolStructP [When])
     <|?> ([], some $ preambleBoolStructP [If])
@@ -448,16 +448,11 @@ pDecideIsRule = debugName "pDecideIsRule" $ do
     <|?> ([], some $ preambleBoolStructP [Means])
     <|?> ([], some $ preambleBoolStructP [Includes])
 
-  -- let's extract the new term from the deem line
-  let givens = concatMap (concatMap toList . toList . untypePT . snd) gs :: [Text.Text]
-      dnew   = [ word | word <- concatMap toList $ toList (untypePT d), word `notElem` givens ]
-  if length dnew /= 1
-    then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
-    else return $ Constitutive
-         { name = head dnew -- we lose the ordering
+  return $ Constitutive
+         { name = rpFirstWord rp
          , keyword = Given
-         , letbind = AA.Leaf d
-         , orig = [(Deem, AA.Leaf d)] ++ means ++ includes
+         , letbind = rp
+         , orig = []
          , cond = addneg
                   (snd <$> mergePBRS (w++i))
                   (snd <$> mergePBRS u)
@@ -505,7 +500,7 @@ pGivens = debugName "pGiven" $ do
   some (pRelationalPredicate <* dnl)
 
 pRelationalPredicate :: Parser RelationalPredicate
-pRelationalPredicate = try pConstraint <|> pFunction
+pRelationalPredicate = try pConstraint <|> try pRPBoolStructP <|> try pFunction
 
 pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm" $ some $ choice [ pOtherVal
@@ -518,6 +513,9 @@ pNumAsText = debugName "pNumAsText" $ do
   where
     isNumber (TNumber _) = True
     isNumber _           = False
+
+pRPBoolStructP :: Parser RelationalPredicate
+pRPBoolStructP = debugName "pRPBoolStructP" $ RPBoolStructP <$> dBoolStructP
 
 -- ["mortal(Man)"] becomes
 -- mortal(Man)
@@ -575,7 +573,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    withDepth leftX $ permutationsCon [Means,Is,Includes] [When,If] [Unless] [Given]
+    withDepth leftX $ permutationsCon [Means,Includes] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
@@ -835,8 +833,8 @@ mkRBfromDA :: (Deontic, BoolStructP)
 mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbw
 
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
-                -> Parser ( ( Preamble               -- preamble = copula   (means,deem)
-                            , BoolStructP)            -- the rhs of the let binding is always a BoolStructP -- because the leaf of a BoolStructP can be a ParamText!
+                -> Parser ( ( Preamble                -- preamble = copula   (means,deem,decide)
+                            , RelationalPredicate)    -- the head of a horn clause
                           , [(Preamble, BoolStructP)] -- positive conditions (when,if)
                           , [(Preamble, BoolStructP)] -- negative conditions (unless)
                           , [(Preamble, ParamText)] -- given    (given params)
@@ -849,7 +847,7 @@ permutationsCon copula ifwhen l4unless l4given =
              <> ", given="    <> show l4given
             ) $ do
   permute $ (,,,)
-    <$$> preambleBoolStructP copula
+    <$$> preambleRelPred copula
     <|?> ([], some $ preambleBoolStructP ifwhen)
     <|?> ([], some $ preambleBoolStructP l4unless)
     <|?> ([], some $ preambleParamText l4given)
@@ -865,6 +863,11 @@ preambleParamText preambles = do
   paramtext <- pParamText
   return (preamble, paramtext)
 
+preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)
+preambleRelPred preambles = do
+  preamble <- choice (try . pToken <$> preambles)
+  relpred  <- pRelationalPredicate
+  return (preamble, relpred)
 
 permutationsReg :: Parser ((Preamble, BoolStructP), Maybe (Preamble, BoolStructP))
                 -> Parser RuleBody

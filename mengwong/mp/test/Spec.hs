@@ -58,7 +58,7 @@ defaultReg = Regulative
 defaultCon = Constitutive
   { name = ""
   , keyword = Means
-  , letbind = Leaf $ text2pt "Undefined"
+  , letbind = RPBoolStructP $ Leaf $ text2pt "Undefined"
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
@@ -135,7 +135,7 @@ main = do
 
       let degustates = defaultCon
                        { name = "degustates"
-                       , letbind = Any anyof [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , letbind = RPBoolStructP $ Any anyof [ mkLeaf "eats", mkLeaf "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
 
@@ -156,7 +156,7 @@ main = do
                           }
                         , defaultCon
                           { name = "degustates"
-                          , letbind = Any anyof [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          , letbind = RPBoolStructP $ Any anyof [ mkLeaf "eats", mkLeaf "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
                           }
@@ -165,7 +165,7 @@ main = do
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , letbind = All allof
+              , letbind = RPBoolStructP $ All allof
                           [ mkLeaf "drinks"
                           , Any anyof [ mkLeaf "swallows"
                                 , mkLeaf "spits" ]
@@ -291,7 +291,7 @@ main = do
     describe "megaparsing MEANS" $ do
 
       let bobUncle = defaultCon { name = "Bob's your uncle"
-                                , letbind = Not
+                                , letbind = RPBoolStructP $ Not
                                             ( Any anyof
                                               [ mkLeaf "Bob is estranged"
                                               , mkLeaf "Bob is dead"
@@ -418,7 +418,7 @@ main = do
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
-                          , letbind = Any anyof
+                          , letbind = RPBoolStructP $ Any anyof
                                       [ mkLeaf "Bob is your mother's brother"
                                       , mkLeaf "Bob is your father's brother"
                                       ]

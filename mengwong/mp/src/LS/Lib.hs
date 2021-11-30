@@ -439,7 +439,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   (expects,givens) <- permute $ (,)
     <$$> some pExpect
-    <|?> ([], some pGiven)
+    <|?> ([], pToken Given >> pGivens)
   return $ Scenario
     { scgiven = givens
     , expect  = expects
@@ -451,6 +451,7 @@ pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
   expect   <- pRelationalPredicate
   whenpart <- optional pWhenPart
+  _        <- dnl
   return $ HC
     { relPred = expect
     , relWhen = whenpart
@@ -462,10 +463,9 @@ pExpect = debugName "pExpect" $ do
       HBRP . AA.Leaf <$> pRelationalPredicate
       -- TODO: add support for more complex boolstructs of relational predicates
           
-pGiven :: Parser RelationalPredicate
-pGiven = debugName "pGiven" $ do
-  _ <- pToken Given
-  pRelationalPredicate
+pGivens :: Parser [RelationalPredicate]
+pGivens = debugName "pGiven" $ do
+  some (pRelationalPredicate <* dnl)
 
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = try pConstraint <|> pFunction
@@ -487,26 +487,24 @@ pFunction = debugName "pFunction" $ RPFunction <$> pMultiTerm
 
 pConstraint :: Parser RelationalPredicate
 pConstraint = debugName "pConstraint" $ do
-  ( RPConstraint
+  RPConstraint
     <$> pMultiTerm
-    <*> choice [ tok2rel <$> pToken Is
-               , txt2rel <$> pOtherVal ]
-    <*> pMultiTerm )
+    <*> tok2rel
+    <*> pMultiTerm
 
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
-tok2rel :: MyToken -> RPRel
-tok2rel Is = RPis
-tok2rel _  = error "unexpected token, not a RelationalPredicate constraint"
-
-txt2rel :: Text.Text -> RPRel
-txt2rel "is" = RPis
-txt2rel "="  = RPis
-txt2rel "==" = RPis
-txt2rel "<"  = RPlt
-txt2rel "<=" = RPlte
-txt2rel ">"  = RPgt
-txt2rel ">=" = RPgte
-txt2rel _    = error "unexpected word, not a RelationalPredicate constraint"
+tok2rel :: Parser RPRel
+tok2rel = do
+  choice
+    [ RPis      <$ pToken Is      
+    , RPis      <$ pToken TokEQ   
+    , RPlt      <$ pToken TokLT   
+    , RPlte     <$ pToken TokLTE  
+    , RPgt      <$ pToken TokGT   
+    , RPgte     <$ pToken TokGTE  
+    , RPelem    <$ pToken TokIn   
+    , RPnotElem <$ pToken TokNotIn
+    ]
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do

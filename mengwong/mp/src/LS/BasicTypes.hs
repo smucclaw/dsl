@@ -46,6 +46,7 @@ data MyToken = Every | Party | TokAll
              | Empty | EOL
              | RuleMarker Int Text.Text
              | Expect
+             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

@@ -196,7 +196,7 @@ Note the defined terms in this example have moved one cell left to more natural 
 
 |   | degustates | MEANS | eats | AND | drinks | OR | farts |
 
-** Multiple Preambles and BoolRules
+** Multiple Preambles and BoolStructs
 :PROPERTIES:
 :TABLE_EXPORT_FILE: multiple-preambles.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -268,7 +268,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 | IF    | the King wishes | // | scope quantification slightly different vs 4        |
 | ->    | sing            | // | suggests that the King is consulted for each person |
 
-** with multiple preambleBoolRules
+** with multiple preambleBoolStructPs
 :PROPERTIES:
 :TABLE_EXPORT_FILE: if-king-wishes-queen.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv

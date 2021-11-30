@@ -67,7 +67,7 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
                                  }
     ifBranchOkLoc = Loc "RuleTriggers"
     successLoc = Loc "Sucess"
-    ifCond = boolRulesToExpr cnd
+    ifCond = boolStructPToExpr cnd
     ifCondDecls = extractDecls (fv ifCond)
     ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
                                  guardOfTransition = TransitionGuard [] (Just (() <$ ifCond))
@@ -112,11 +112,11 @@ negateCompar BCne = BCeq
 pt2varname :: ParamText -> String
 pt2varname = toValidName  . unpack . pt2text
 
-boolRulesToExpr :: BoolRulesP -> CoreL4.Expr (Tp ())
-boolRulesToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
-boolRulesToExpr (AA.Not  x)  = notExpr (boolRulesToExpr x)
-boolRulesToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolRulesToExpr <$> xs)
-boolRulesToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolRulesToExpr <$> xs)
+boolStructPToExpr :: BoolStructP -> CoreL4.Expr (Tp ())
+boolStructPToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
+boolStructPToExpr (AA.Not  x)  = notExpr (boolStructPToExpr x)
+boolStructPToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructPToExpr <$> xs)
+boolStructPToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructPToExpr <$> xs)
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src
@@ -154,7 +154,7 @@ Q: Global clock?
 -}
 
 -- data Rule = Regulative
---             { subj     :: BoolStructP               -- man AND woman AND child
+--             { subj     :: BoolStrucPt               -- man AND woman AND child
 --             , keyword  :: MyToken                   -- Every | Party | TokAll
 --             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
 --             , cond     :: Maybe BoolStructP         -- if it is a saturday

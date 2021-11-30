@@ -29,10 +29,9 @@ type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 type Parser = WriterT (DList Rule) PlainParser
 type Depth = Int
 type Preamble = MyToken
-type BoolRules = BoolStruct
-type BoolRulesP = BoolStructP
 type BoolStruct = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
+type BoolStructR = AA.Item RelationalPredicate
 
 mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
 mkLeaf = AA.Leaf . text2pt
@@ -58,11 +57,11 @@ runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream
 runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 
 data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$100)
-                         , rbpbrs     :: [(Preamble, BoolRulesP)] -- not subject to the party
-                         , rbpbrneg   :: [(Preamble, BoolRulesP)] -- negative global conditions
+                         , rbpbrs     :: [(Preamble, BoolStructP)] -- not subject to the party
+                         , rbpbrneg   :: [(Preamble, BoolStructP)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
-                         , rbupon     :: [(Preamble, BoolRulesP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbupon     :: [(Preamble, BoolStructP)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
@@ -164,6 +163,7 @@ data HornBody = HBRP HornRP
   deriving (Eq, Show, Generic, ToJSON)
 
 data RelationalPredicate = RPFunction MultiTerm
+                         | RPParamText ParamText
                          | RPConstraint MultiTerm RPRel MultiTerm
   deriving (Eq, Show, Generic, ToJSON)
 

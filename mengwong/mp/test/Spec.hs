@@ -507,10 +507,10 @@ main = do
             }
           ] ]
           
-    describe "megaparsing DECIDE layouts" $ do
-      it "should handle multiline" $ do
-        let testfile = "test/financialadvisor-decide-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile `traverse` (exampleStreams testcsv)
-          `shouldParse`
-          [ [ Scenario
+    -- describe "megaparsing DECIDE layouts" $ do
+    --   it "should handle multiline" $ do
+    --     let testfile = "test/financialadvisor-decide-1.csv"
+    --     testcsv <- BS.readFile testfile
+    --     parseR pRules testfile `traverse` (exampleStreams testcsv)
+    --       `shouldParse`
+    --       [ [ Scenario

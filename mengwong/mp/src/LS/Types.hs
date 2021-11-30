@@ -372,6 +372,15 @@ toToken "§§§§§"     = RuleMarker   5  "§"
 toToken "§§§§§§"    = RuleMarker   6  "§"
 
 toToken "EXPECT"    = Expect
+toToken "<"         = TokLT
+toToken "=<"        = TokLTE
+toToken "<="        = TokLTE
+toToken ">"         = TokGT
+toToken ">="        = TokGTE
+toToken "="         = TokEQ
+toToken "=="        = TokEQ
+toToken "IN"        = TokIn
+toToken "NOT IN"    = TokNotIn
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.

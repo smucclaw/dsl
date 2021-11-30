@@ -964,3 +964,15 @@ what if we say
 |       |                                     | sips  |
 |       | OR                                  | chugs |
 
+** Scenarios
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| GIVEN  | amount saved |            | IS | 22000       |      |            |    |   |
+|        | earnings     | amount     | IS | 25000       |      |            |    |   |
+|        | earnings     | steadiness | IS | steady      |      |            |    |   |
+| EXPECT |              | investment | IS | savings     | WHEN | dependents | IS | 5 |
+| "      |              | "          | "  | combination | "    | "          | "  | 3 |
+| "      |              | "          | "  | stocks      | "    | "          | "  | 0 |

@@ -103,7 +103,7 @@ data Rule = Regulative
             }
           | Constitutive
             { name     :: ConstitutiveName   -- the thing we are defining
-            , keyword  :: MyToken       -- Means, Includes, Is, Deem
+            , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
             , letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
             , cond     :: Maybe BoolStructP -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
@@ -117,6 +117,13 @@ data Rule = Regulative
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [ParamText] -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , rlabel   :: Maybe RuleLabel
+            , lsource  :: Maybe Text.Text
+            , srcref   :: Maybe SrcRef
+            }
+          | Scenario
+            { scgiven  :: [RelationalPredicate]
+            , expect   :: [HornClause]      -- investment is savings when dependents is 5
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -140,6 +147,30 @@ data Rule = Regulative
           -- }
           | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
+
+-- Prologgy stuff
+data HornClause = HC
+  { relPred :: RelationalPredicate
+  , relWhen :: Maybe HornBody
+  }
+  deriving (Eq, Show, Generic, ToJSON)
+
+type HornRP = AA.Item RelationalPredicate
+
+data HornBody = HBRP HornRP
+              | HBITE { hbif   :: HornRP
+                      , hbthen :: HornRP
+                      , hbelse :: HornRP } 
+  deriving (Eq, Show, Generic, ToJSON)
+
+data RelationalPredicate = RPFunction MultiTerm
+                         | RPConstraint MultiTerm RPRel MultiTerm
+  deriving (Eq, Show, Generic, ToJSON)
+
+type MultiTerm = [Text.Text]
+
+data RPRel = RPis | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
+  deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: ConstitutiveName }
 
@@ -319,6 +350,7 @@ toToken "A"      = A_An
 toToken "AN"     = A_An
 
 toToken "DEFINE"    = Define
+toToken "DECIDE"    = Decide
 toToken "ONE OF"    = OneOf
 toToken "AS ONE OF" = OneOf
 toToken "DEEM"      = Deem
@@ -338,6 +370,8 @@ toToken "§§§"       = RuleMarker   3  "§"
 toToken "§§§§"      = RuleMarker   4  "§"
 toToken "§§§§§"     = RuleMarker   5  "§"
 toToken "§§§§§§"    = RuleMarker   6  "§"
+
+toToken "EXPECT"    = Expect
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.

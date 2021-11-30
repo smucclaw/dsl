@@ -350,6 +350,7 @@ pRule = do
     <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
     <|> try (pDeemRule <?> "deem rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
+    <|> try (pScenarioRule <?> "scenario rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
 pTypeSig :: Parser TypeSig
@@ -402,7 +403,7 @@ pDeemRule = debugName "pDeemRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
   ((_d,d),gs,w,i,u,means,is,includes) <- permute $ (,,,,,,,)
-    <$$> preambleParamText [Deem]
+    <$$> preambleParamText [Deem, Decide]
     <|?> ([], some $ preambleParamText [Given, Upon])
     <|?> ([], some $ preambleBoolRules [When])
     <|?> ([], some $ preambleBoolRules [If])
@@ -429,6 +430,83 @@ pDeemRule = debugName "pDeemRule" $ do
          , lsource = noLSource
          , srcref = Just srcref
          }
+
+pScenarioRule :: Parser Rule
+pScenarioRule = debugName "pScenarioRule" $ do
+  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  srcurl <- asks sourceURL
+  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
+  (expects,givens) <- permute $ (,)
+    <$$> some pExpect
+    <|?> ([], some pGiven)
+  return $ Scenario
+    { scgiven = givens
+    , expect  = expects
+    , rlabel = Nothing, lsource = Nothing, srcref = Just srcref
+    }
+
+pExpect :: Parser HornClause
+pExpect = debugName "pExpect" $ do
+  _expect  <- pToken Expect
+  expect   <- pRelationalPredicate
+  whenpart <- optional pWhenPart
+  return $ HC
+    { relPred = expect
+    , relWhen = whenpart
+    }
+  where
+    pWhenPart :: Parser HornBody
+    pWhenPart = do
+      _when   <- pToken When
+      HBRP . AA.Leaf <$> pRelationalPredicate
+      -- TODO: add support for more complex boolstructs of relational predicates
+          
+pGiven :: Parser RelationalPredicate
+pGiven = debugName "pGiven" $ do
+  _ <- pToken Given
+  pRelationalPredicate
+
+pRelationalPredicate :: Parser RelationalPredicate
+pRelationalPredicate = try pConstraint <|> pFunction
+
+pMultiTerm :: Parser MultiTerm
+pMultiTerm = debugName "pMultiTerm" $ some $ choice [ pOtherVal
+                                                    , pNumAsText ]
+
+pNumAsText :: Parser Text.Text
+pNumAsText = debugName "pNumAsText" $ do
+  (TNumber n) <- pTokenMatch isNumber (TNumber 1234)
+  return (Text.pack $ show n)
+  where
+    isNumber (TNumber _) = True
+    isNumber _           = False
+
+pFunction :: Parser RelationalPredicate
+pFunction = debugName "pFunction" $ RPFunction <$> pMultiTerm
+
+pConstraint :: Parser RelationalPredicate
+pConstraint = debugName "pConstraint" $ do
+  ( RPConstraint
+    <$> pMultiTerm
+    <*> choice [ tok2rel <$> pToken Is
+               , txt2rel <$> pOtherVal ]
+    <*> pMultiTerm )
+
+-- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
+tok2rel :: MyToken -> RPRel
+tok2rel Is = RPis
+tok2rel _  = error "unexpected token, not a RelationalPredicate constraint"
+
+txt2rel :: Text.Text -> RPRel
+txt2rel "is" = RPis
+txt2rel "="  = RPis
+txt2rel "==" = RPis
+txt2rel "<"  = RPlt
+txt2rel "<=" = RPlte
+txt2rel ">"  = RPgt
+txt2rel ">=" = RPgte
+txt2rel _    = error "unexpected word, not a RelationalPredicate constraint"
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do

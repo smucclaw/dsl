@@ -158,11 +158,8 @@ parseFields env rl = case rl of
     parseBSR :: UDEnv -> BoolStructR -> IO Expr
     parseBSR env bsr = parseOut env (bsr2text bsr)
 
-    parseUpon :: UDEnv -> [BoolStructR] -> IO (Maybe Expr)
-    parseUpon env (bs:_) = do
-      parse <- parseOut env (bsr2text bs)
-      return $ Just parse
-    parseUpon _ [] = return Nothing
+    parseUpon :: UDEnv -> Maybe ParamText -> IO (Maybe Expr)
+    parseUpon env mpt = sequence $ parseOut env . pt2text <$> mpt
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of

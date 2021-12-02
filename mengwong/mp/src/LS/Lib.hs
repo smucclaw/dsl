@@ -26,7 +26,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, isJust)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -99,16 +99,19 @@ whenDebug act = do
 
 myTraceM :: String -> Parser ()
 myTraceM x = whenDebug $ do
-  callDepth <- asks nestLevel
-  traceM $ indentShow callDepth <> x
+  nestDepth <- asks nestLevel
+  traceM $ indentShow nestDepth <> x
   where
     indentShow depth = concat $ replicate depth "| "
 
 debugPrint :: String -> Parser ()
 debugPrint str = whenDebug $ do
-  lookingAt <- lookAhead (getToken :: Parser MyToken)
-  depth <- asks callDepth
-  myTraceM $ "/ " <> str <> " running. depth=" <> show depth <> "; looking at: " <> show lookingAt
+  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
+  depth     <- asks callDepth
+  leftX     <- lookAhead pXLocation
+  myTraceM ("/ " <> str <> " running. callDepth min=" <> show depth
+            <> "; currently at " ++ show leftX
+            <> "; looking at: " <> show lookingAt)
 
 -- force debug=true for this subpath
 alwaysdebugName :: Show a => String -> Parser a -> Parser a
@@ -123,11 +126,13 @@ debugName name p = do
 
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a
-withDepth n = local (\st -> st {callDepth= n})
+withDepth n p = do
+  myTraceM ("withDepth(" ++ show n ++ ")")
+  local (\st -> st {callDepth= n}) p
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
-    case runMyParser id rc pRules "dummy" stream of
+    case runMyParser id rc pToplevel "dummy" stream of
       Left bundle -> putStr (errorBundlePrettyCustom bundle)
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
@@ -325,7 +330,9 @@ stanzaAsStream rs = do
 --
 
 pToplevel :: Parser [Rule]
-pToplevel = withDepth 1 $ do
+pToplevel = withDepth 0 $ do
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  myTraceM $ "topLevel: starting leftX is " ++ show leftX
   pRules <* eof
 
 pRules :: Parser [Rule]
@@ -347,8 +354,8 @@ pRule :: Parser Rule
 pRule = do
   _ <- many dnl
   try (pRegRule <?> "regulative rule")
+    <|> try (pDecideHorn <?> "DECIDE ... IS ... Horn rule")
     <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
-    <|> try (pDecideIsRule <?> "DECIDE IS rule")
     <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
@@ -360,13 +367,13 @@ pTypeSig = debugName "pTypeSig" $ do
   simpletype <|> inlineenum
   where
     simpletype = do
-      cardinality <- optional $ choice [ TOne      <$ pToken One
-                                       , TOne      <$ pToken A_An
-                                       , TOptional <$ pToken Optional
-                                       , TList0    <$ pToken List0
-                                       , TList1    <$ pToken List1 ]
+      cardinality <- choice [ TOne      <$ pToken One
+                            , TOne      <$ pToken A_An
+                            , TOptional <$ pToken Optional
+                            , TList0    <$ pToken List0
+                            , TList1    <$ pToken List1 ]
       base        <- pOtherVal
-      return $ SimpleType (fromMaybe TOne cardinality) base
+      return $ SimpleType cardinality base
     inlineenum = do
       InlineEnum TOne <$> pOneOf
 
@@ -423,34 +430,6 @@ pMeansRule = debugName "pMeansRule" $ do
          , letbind = RPBoolStructP $ AA.Leaf d
          , cond = addneg
                   (snd <$> mergePBRS (w<>i))
-                  (snd <$> mergePBRS u)
-         , given = nonEmpty $ foldMap toList (snd <$> gs)
-         , rlabel = noLabel
-         , lsource = noLSource
-         , srcref = Just srcref
-         }
-
--- maybe later rename this to pHornRule
-pDecideIsRule :: Parser Rule
-pDecideIsRule = debugName "pDecideIsRule" $ do
-  leftY  <- lookAhead pYLocation
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-
-  ((_rp,rp),gs,w,i,u) <- permute $ (,,,,)
-    <$$> preambleRelPred [Decide]
-    <|?> ([], some $ preambleParamText [Given, Upon])
-    <|?> ([], some $ preambleBoolStructR [When])
-    <|?> ([], some $ preambleBoolStructR [If])
-    <|?> ([], some $ preambleBoolStructR [Unless])
-
-  return $ Constitutive
-         { name = rpFirstWord rp
-         , keyword = Given
-         , letbind = rp
-         , cond = addneg
-                  (snd <$> mergePBRS (w++i))
                   (snd <$> mergePBRS u)
          , given = nonEmpty $ foldMap toList (snd <$> gs)
          , rlabel = noLabel
@@ -631,7 +610,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , rlabel   = Nothing -- rule label
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
-                 , upon     = (snd <$> rbupon  rulebody)
+                 , upon     = listToMaybe (snd <$> rbupon  rulebody)
                  , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
                  , having   = (rbhaving rulebody)
                  }
@@ -673,7 +652,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  , rlabel   = Nothing -- rule label
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
-                 , upon     = (snd <$> rbupon  rulebody)    -- given
+                 , upon     = listToMaybe (snd <$> rbupon  rulebody)    -- given
                  , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
                  , having   = (rbhaving rulebody)
                  }
@@ -689,7 +668,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
 addneg Nothing  (Just n)  = Just $ AA.Not n
-addneg (Just p) (Just n)  = Just $ AA.All AA.allof [p, AA.Not n]
+addneg (Just p) (Just n)  = Just $ AA.All Nothing [p, AA.Not n]
 addneg (Just p) Nothing   = Just p
 
 pHenceLest :: MyToken -> Parser Rule
@@ -768,6 +747,33 @@ indented d p1 p2 = do
   y     <- withDepth (leftX + d) p2
   return $ f y
 
+indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
+indentedTuple d p1 p2 = do
+  x     <- tracedepth "left  = " id     p1
+  _     <- tracedepth "nl    = " isJust (optional dnl)
+  y     <- tracedepth "right = " id     p2
+  myTraceM $ "success; returning"
+  return $ (x,y)
+  where
+    tracedepth :: Show y => String -> (x -> y) -> Parser x -> Parser x
+    tracedepth s f p = do
+      depth <- asks callDepth
+      leftX <- lookAhead pXLocation
+      leftY <- lookAhead pYLocation
+      next  <- lookAhead getToken <|> (EOF <$ eof)
+      let prefix = "indentedTuple(" ++ show d ++ "): checkDepth " ++ show depth ++ "; "
+      myTraceM $ prefix ++ "at line " ++ show leftY ++ ", col " ++ show leftX ++ "; looking at " ++ show next
+      s     <- p
+      myTraceM $ prefix ++ "matched " ++ show (f s)
+      return s
+
+indentedTuple0, indentedTuple1 :: (Show a, Show b) => Parser a -> Parser b -> Parser (a,b)
+indentedTuple0 = indentedTuple 0
+infixl 4 `indentedTuple0`
+
+indentedTuple1 = indentedTuple 1
+infixl 4 `indentedTuple1`
+
 indented0 :: Parser (a -> b) -> Parser a -> Parser b
 indented0 = indented 0
 infixl 4 `indented0`
@@ -809,7 +815,7 @@ mkRBfromDT :: BoolStructP
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> [(Preamble, BoolStructR)] -- positive  -- IF / WHEN
            -> [(Preamble, BoolStructR)] -- negative  -- UNLESS
-           -> [(Preamble, BoolStructR)] -- upon  conditions
+           -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
            -> RuleBody
@@ -821,7 +827,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> Maybe (TemporalConstraint Text.Text)
            -> [(Preamble, BoolStructR)] -- whenif
            -> [(Preamble, BoolStructR)] -- unless
-           -> [(Preamble, BoolStructR)] -- upon  conditions
+           -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText         -- having
            -> RuleBody
@@ -885,7 +891,7 @@ permutationsReg keynamewho =
     whatnot x = x
                 <|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
                 <|?> ([], some $ preambleBoolStructR [Unless]) -- unless
-                <|?> ([], some $ preambleBoolStructR [Upon])   -- upon
+                <|?> ([], some $ preambleParamText [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
 
@@ -920,7 +926,7 @@ preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
 preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
   leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
-  myTraceM ("preambleBoolStructR: found: " ++ show condWord)
+  myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- withDepth leftX pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
@@ -930,21 +936,21 @@ pBoolStructR = debugName "pBoolStructR" rpAndGroup
 
 rpAndGroup :: Parser BoolStructR
 rpAndGroup = debugName "rpAndGroup" $ do
-    rpOrGroup1 <- rpOrGroup
+    rpOrGroup1 <- rpOrGroup <* optional dnl
     rpOrGroupN <- many $ pToken And *> rpOrGroup
     let toreturn = if null rpOrGroupN
                    then rpOrGroup1
-                   else AA.All AA.allof (rpOrGroup1 : rpOrGroupN)
+                   else AA.All Nothing (rpOrGroup1 : rpOrGroupN)
     return toreturn
 
 rpOrGroup :: Parser BoolStructR
 rpOrGroup = debugName "rpOrGroup" $ do
   depth <- asks callDepth
-  elem1    <- withDepth (depth + 1) rpElement
-  elems    <- many $ pToken Or *> withDepth (depth+1) rpElement
+  elem1    <- withDepth (depth + 0) rpElement <* optional dnl
+  elems    <- many $ pToken Or *> withDepth (depth+0) rpElement
   let toreturn = if null elems
                  then elem1
-                 else AA.Any AA.anyof (elem1 : elems)
+                 else AA.Any Nothing (elem1 : elems)
   return toreturn
 
 rpElement :: Parser BoolStructR
@@ -961,7 +967,7 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ pToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else AA.All AA.allof (orGroup1 : orGroupN)
+                 else AA.All Nothing (orGroup1 : orGroupN)
   return toreturn
 
 pOrGroup ::  Parser BoolStructP
@@ -971,7 +977,7 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ pToken Or *> withDepth (depth+1) pElement
   let toreturn = if null elems
                  then elem1
-                 else AA.Any AA.anyof (elem1 : elems)
+                 else AA.Any Nothing (elem1 : elems)
   return toreturn
 
 pAtomicElement ::  Parser BoolStructP
@@ -1009,9 +1015,9 @@ pLeafVal = debugName "pLeafVal" $ do
 pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" $ do
   -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
-  foundBool <- lookAhead (pLeafVal >> pBoolConnector)
-  myTraceM $ "pNestedBool matched " ++ show foundBool
-  dBoolStructP
+  (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
+  myTraceM $ "pNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX
+  withDepth leftX dBoolStructP
 
 pBoolConnector :: Parser MyToken
 pBoolConnector = debugName "pBoolConnector" $ do
@@ -1072,4 +1078,56 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 -- egStream :: String -> MyStream
 -- egStream x = MyStream x (parseMyStream x)
+
+
+
+
+
+
+
+pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
+pSrcRef = do
+  rlabel <- optional pRuleLabel
+  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  srcurl <- asks sourceURL
+  return (rlabel, Just $ SrcRef srcurl srcurl leftX leftY Nothing)
+
+pIsRelation :: Parser RelationalPredicate
+pIsRelation = pToken Is *> pConstraint
+
+pDecideHorn :: Parser Rule
+pDecideHorn = debugName "pDefineHorn" $ do
+  (rlabel, srcref) <- pSrcRef
+  ((keyword, names, clauses), given, upon) <- permute $ (,,)
+    <$$> defineLimb
+    <|?> (Nothing, fmap snd <$> optional givenLimb)
+    <|?> (Nothing, fmap snd <$> optional uponLimb)
+  return $ Hornlike { names, keyword, given, clauses, upon, rlabel, srcref
+                    , lsource = noLSource }
+  where
+    defineLimb = do
+      keyword <- choice [ pToken Define, pToken Decide ]
+      (((firstWord,isRelation),rhs),body) <- some pOtherVal
+                                             `indentedTuple0` choice [ RPis <$ pToken Is ]
+                                             `indentedTuple0` some pOtherVal
+                                             `indentedTuple0` optional (pToken When *> pBoolStructR)
+      return (keyword, firstWord, [HC2 (RPConstraint firstWord isRelation rhs) body])
+    givenLimb = preambleParamText [Given]
+    uponLimb  = preambleParamText [Upon]
+      
+  
+
+pHornClause2 :: Parser HornClause2
+pHornClause2 = do
+  hhead <- pHornHead2
+  _when <- pToken When
+  hbody <- pHornBody2
+  return $ HC2 hhead (Just hbody)
+
+pHornHead2 :: Parser RelationalPredicate
+pHornHead2 = pRelationalPredicate
+
+pHornBody2 :: Parser BoolStructR
+pHornBody2 = pBoolStructR
 

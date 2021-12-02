@@ -8,6 +8,198 @@ Or you can just run, from the ~mp/~ directory,
   make csv
 #+end_src
 
+* Types, [2021-12-02 Thu]
+
+** ParamText
+
+one or more normal words with optional typesig
+
+*** contexts
+
+- Rule Action
+- GIVEN parameter input to a DECIDE function
+- HAS relation definition
+- DECLARE type declaration
+
+*** example: rule action
+
+| NOTIFY | the PDPC            |
+| with   | a list of names     |
+| using  | a prescribed format |
+
+*** example: GIVEN parameter input to a DECIDE function
+
+| GIVEN | Sign1 |   | Sign2 | IS | A | Sign |   |   |   |
+
+*** example: HAS relation definition
+
+HAS ParamText
+
+*** example: DECLARE
+
+DECLARE ParamText
+
+** HornClause
+
+*** simple define, single line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+(head :: RelationalPredicate) WHEN (body :: AnyAll RelationalPredicate)
+
+but also
+
+X IS HornClauseRHS
+
+| DECIDE | X | IS | Y | WHEN | Z | IS | Q | AND | P | > | NP |
+
+
+*** simple define, multi line 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X | IS | Y |     |   |   |    |
+| WHEN   | Z | IS | Q | AND | P | > | NP |
+
+*** simple define, multi line 3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X |    |   |     |   |   |    |
+| IS     | Y |    |   |     |   |   |    |
+| WHEN   | Z | IS | Q | AND | P | > | NP |
+
+*** simple define, multi line 4
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X |    |    |
+| IS     | Y |    |    |
+| WHEN   | Z | IS | Q  |
+| AND    | P | >  | NP |
+
+*** simple define, multi line 5
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X |    |    |
+| IS     | Y |    |    |
+| WHEN   | Z | IS | Q  |
+| OR     | P | >  | NP |
+
+** HornClauseRHS
+
+something ... IS HornClauseRHS
+
+ParamText <*> optional (pToken WHEN *> RelationalPredicate)
+
+fragment of a HornClause with a constraint RelationalPredicate sans the X part
+
+*** examples: HAS IS method definition in a type declaration
+
+| DECLARE |   | Round  | IS | A | Type   |        |   |      |                  |       |                  |
+| HAS     | 2 | Player | IS | A | Player |        |   |      |                  |       |                  |
+| HAS     | 1 | winner | IS | A | Player |        |   |      |                  |       |                  |
+|         |   |        | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
+
+HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
+
+*** contexts
+
+constitutive rule
+
+| DECIDE | X | IS | Y | ... |
+
+type DECLARE rule
+
+| DECLARE | ... | HAS | something | IS | A | Something |
+|         |     |     |           | IS |   | HornClauseRHS |
+
+** RelationalPredicate: IsRelation
+
+MultiText (pToken IS) MultiText
+
+| X | IS | HornClauseRHS |
+
+used for equality and unification
+
+** RelationalPredicate: Constraint
+MultiText RelToken MultiText
+
+*** examples:
+
+| P | > | NP |
+
+| NOT | isMortal  |
+
+*** contexts
+
+- part of a HornClause
+  
+** RelationalPredicate: N-ary Predicate
+
+ParamText list of words, untyped.
+
+- Words obey the form   ~RecordName+ Predicate~
+- where the ~Predicate~ is an n-ary predicate
+- where n is the number of RecordNames preceding the Predicate
+
+*** examples: unary predicate, type Bool
+
+| DECIDE | Person | isMortal | WHEN | Person | isHuman |
+
+*** examples: unary function, type Player
+
+| DECLARE | Round | winner
+
+*** contexts
+
+- part of a HornClause
+
+** ConstitutiveRule, Binary Predicate definition, explicit, infix
+
+| GIVEN  | Sign1 |       | Sign2 | IS | A        | Sign |       |    |          |
+| DECIDE | Sign1 | beats | Sign2 |    |          |      |       |    |          |
+| IS     | TRUE  | WHEN  | Sign1 | IS | Rock     | AND  | Sign2 | IS | Scissors |
+|        | "     | "     | "     | "  | Scissors | "    | "     | "  | Paper    |
+|        | "     | "     | "     | "  | Paper    | "    | "     | "  | Rock     |
+
+** Binary Predicate definition, compact
+
+|       |          | beats |          |
+| MEANS | Rock     | beats | Scissors |
+|       | Scissors | beats | Rock     |
+|       | Paper    | beats | Rock     |
+
+** Type Declaration
+
+DECLARE ParamText
+
+** HasRelation
+
+
+
+* Keywords
+
+** DECIDE
+
+followed by
+
+HornClause
+
+
+
+* Tests
 ** Not a Rule
 :PROPERTIES:
 :TABLE_EXPORT_FILE: notarule-1.csv

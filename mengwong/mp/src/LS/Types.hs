@@ -67,7 +67,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbpbrneg   :: [(Preamble, BoolStructR)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
-                         , rbupon     :: [(Preamble, BoolStructR)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
@@ -101,7 +101,7 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
-            , upon     :: [BoolStructR] -- UPON entering the club (event prereq trigger)
+            , upon     :: Maybe ParamText
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             }
@@ -111,6 +111,16 @@ data Rule = Regulative
             , letbind  :: RelationalPredicate
             , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
+            , rlabel   :: Maybe RuleLabel
+            , lsource  :: Maybe Text.Text
+            , srcref   :: Maybe SrcRef
+            }
+          | Hornlike
+            { names    :: [ConstitutiveName]
+            , keyword  :: MyToken
+            , given    :: Maybe ParamText
+            , upon     :: Maybe ParamText
+            , clauses  :: [HornClause2]
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -151,6 +161,15 @@ data Rule = Regulative
           | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
 
+data HornClause2 = HC2
+  { hHead :: RelationalPredicate
+  , hBody :: Maybe BoolStructR
+  }
+  deriving (Eq, Show, Generic, ToJSON)
+  
+data IsPredicate = IP ParamText ParamText
+  deriving (Eq, Show, Generic, ToJSON)
+
 -- Prologgy stuff
 data HornClause = HC
   { relPred :: RelationalPredicate
@@ -176,7 +195,7 @@ instance Semigroup RelationalPredicate where
   (<>) (RPFunction mt1)     (RPFunction mt2) = RPFunction $ mt1 <> mt2
   (<>) (RPBoolStructP bsp1) (RPBoolStructP bsp2) = RPBoolStructP $ bsp1 <> bsp2
   (<>) (RPBoolStructR bsr1) (RPBoolStructR bsr2) = RPBoolStructR $ bsr1 <> bsr2
-  (<>) l                    r = RPBoolStructR $ AA.All AA.allof [AA.Leaf l, AA.Leaf r]
+  (<>) l                    r = RPBoolStructR $ AA.All Nothing [AA.Leaf l, AA.Leaf r]
   
 
 rel2txt :: RPRel -> Text.Text

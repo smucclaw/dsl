@@ -48,6 +48,7 @@ data MyToken = Every | Party | TokAll
              | Expect
              | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
              | Otherwise
+             | EOF
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

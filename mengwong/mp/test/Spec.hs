@@ -49,7 +49,7 @@ defaultReg = Regulative
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = Nothing
-  , upon = []
+  , upon = Nothing
   , given = Nothing
   , having = Nothing
   }
@@ -97,10 +97,10 @@ main = do
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg {
-                            who = Just (All allof
+                            who = Just (All Nothing
                                          [ mkLeafP "walks"
                                          , mkLeafP "runs"
-                                         , Any anyof
+                                         , Any Nothing
                                            [ mkLeafP "eats"
                                            , mkLeafP "drinks"
                                            ]
@@ -108,11 +108,11 @@ main = do
                             } ]
 
       let imbibeRule = [ defaultReg {
-                           who = Just (Any anyof
+                           who = Just (Any Nothing
                                        [ mkLeafP "walks"
                                        , mkLeafP "runs"
                                        , mkLeafP "eats"
-                                       , All allof
+                                       , All Nothing
                                          [ mkLeafP "drinks"
                                          , mkLeafP "swallows" ]
                                        ])
@@ -133,7 +133,7 @@ main = do
 
       let degustates = defaultCon
                        { name = "degustates"
-                       , letbind = RPBoolStructP $ Any anyof [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , letbind = RPBoolStructP $ Any Nothing [ mkLeaf "eats", mkLeaf "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
 
@@ -146,7 +146,7 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
-                          { who = Just $ All allof
+                          { who = Just $ All Nothing
                                   [ mkLeafP "walks"
                                   , mkLeafP "degustates"
                                   ]
@@ -154,7 +154,7 @@ main = do
                           }
                         , defaultCon
                           { name = "degustates"
-                          , letbind = RPBoolStructP $ Any anyof [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          , letbind = RPBoolStructP $ Any Nothing [ mkLeaf "eats", mkLeaf "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
                           }
@@ -163,9 +163,9 @@ main = do
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , letbind = RPBoolStructR $ All allof
+              , letbind = RPBoolStructR $ All Nothing
                           [ mkLeafP "drinks"
-                          , Any anyof [ mkLeafR "swallows"
+                          , Any Nothing [ mkLeafR "swallows"
                                       , mkLeafR "spits" ]
                           ]
               , cond = Nothing
@@ -181,7 +181,7 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
       let if_king_wishes = [ defaultReg
-                          { who = Just $ All allof
+                          { who = Just $ All Nothing
                                   [ mkLeafP "walks"
                                   , mkLeafP "eats"
                                   ]
@@ -211,7 +211,7 @@ main = do
 
       let singer_chain = [ defaultReg
                          { subj = mkLeaf "person"
-                         , who = Just $ All allof
+                         , who = Just $ All Nothing
                                  [ mkLeafP "walks"
                                  , mkLeafP "eats"
                                  ]
@@ -290,7 +290,7 @@ main = do
 
       let bobUncle = defaultCon { name = "Bob's your uncle"
                                 , letbind = RPBoolStructP $ Not
-                                            ( Any anyof
+                                            ( Any Nothing
                                               [ mkLeaf "Bob is estranged"
                                               , mkLeaf "Bob is dead"
                                               ]
@@ -309,17 +309,17 @@ main = do
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
-                                                 ( All allof
+                                                 ( All Nothing
                                                    [ mkLeafP "day of silence"
                                                    , mkLeafP "observance is mandatory"
                                                    ]
                                                  )
                                                ) } ]
 
-      let dayOfSong = [ defaultReg { cond = Just ( All allof [ Not ( mkLeafP "day of silence" )
+      let dayOfSong = [ defaultReg { cond = Just ( All Nothing [ Not ( mkLeafP "day of silence" )
                                                                , mkLeafP "day of song" ] ) } ]
 
-      let silenceKing = [ defaultReg { cond = Just ( All allof [ mkLeafP "the king wishes"
+      let silenceKing = [ defaultReg { cond = Just ( All Nothing [ mkLeafP "the king wishes"
                                                                  , Not ( mkLeafP "day of silence" )
                                                                  ] ) } ]
             
@@ -354,10 +354,10 @@ main = do
           `shouldParse` silenceKing
                       
       let silenceMourning = [
-            defaultReg { cond = Just ( All allof [
+            defaultReg { cond = Just ( All Nothing [
                                          mkLeafP "the king wishes"
                                          , Not
-                                           ( Any anyof
+                                           ( Any Nothing
                                              [ mkLeafP "day of silence"
                                              , mkLeafP "day of mourning"
                                              ]
@@ -371,10 +371,10 @@ main = do
           `shouldParse` silenceMourning
 
       let mourningForbids = [
-            defaultReg { cond = Just ( All allof [
+            defaultReg { cond = Just ( All Nothing [
                                          mkLeafP "the king wishes"
                                          , Not
-                                           ( All allof
+                                           ( All Nothing
                                              [ mkLeafP "day of mourning"
                                              , mkLeafP "mourning forbids singing"
                                              ]
@@ -416,7 +416,7 @@ main = do
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
-                          , letbind = RPBoolStructP $ Any anyof
+                          , letbind = RPBoolStructP $ Any Nothing
                                       [ mkLeaf "Bob is your mother's brother"
                                       , mkLeaf "Bob is your father's brother"
                                       ]
@@ -512,3 +512,40 @@ main = do
     --     parseR pRules testfile `traverse` (exampleStreams testcsv)
     --       `shouldParse`
     --       [ [ Scenario
+
+    describe "revised parser" $ do
+      let simpleHorn = [ Hornlike
+              { names = ["X"]
+              , keyword = Decide
+              , given = Nothing
+              , upon = Nothing
+              , rlabel = Nothing
+              , lsource = Nothing
+              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              , clauses =
+                [ HC2
+                  { hHead = RPConstraint ["X"] RPis ["Y"]
+                  , hBody = Just $ All Nothing [ Leaf (RPConstraint ["Z"] RPis ["Q"])
+                                               , Leaf (RPConstraint ["P"] RPgt ["NP"]) ]
+                  } ]
+              }
+            ]
+      it "should parse horn clauses 1" $ do
+        let testfile = "test/horn-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
+          `shouldParse` [ simpleHorn ]
+              
+      it "should parse horn clauses 2" $ do
+        let testfile = "test/horn-2.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
+          `shouldParse` [ simpleHorn ]
+             
+      it "should parse horn clauses 3" $ do
+        let testfile = "test/horn-3.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
+          `shouldParse` [ simpleHorn ]
+              
+ 

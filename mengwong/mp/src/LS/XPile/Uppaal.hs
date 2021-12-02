@@ -13,6 +13,7 @@ import qualified AnyAll as AA
 import L4.PrintProg
 import qualified Data.ByteString.Lazy.Char8 as T
 import L4.SyntaxManipulation
+import Data.Maybe (fromMaybe)
 
 type Ann = ()
 
@@ -46,7 +47,7 @@ addRule hc r ts = ts
 -- TODO: Make it recursive to handle missing fields gracefully
 ruleToTA :: SFL4.Rule -> Maybe TL.Text -> (TA (), [VarDecl ()])
 -- ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} Nothing = TA 
-ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= [ AA.Leaf upn ] , cond = Just cnd} _ = (TA
+ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= upn , cond = Just cnd} _ = (TA
     { nameOfTA = rName
     , annotOfTA = ()
     , locsOfTA = [initialLoc, uponLoc, ifBranchOkLoc, successLoc, breachLoc, timeConstraintSatisfiedLoc]
@@ -61,7 +62,7 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
     ruleTimer = Clock $ "time" ++ rName
     initialLoc = Loc "Initial"
-    uponLoc = Loc $ "Upon_" ++ rp2varname upn -- TODO: Make this urgent when supported
+    uponLoc = Loc $ "Upon_" ++ fromMaybe "START" (pt2varname <$> upn) -- TODO: Make this urgent when supported
     uponTransition = (simpleTransition initialLoc uponLoc) {
                                  actionOfTransition = TransitionAction [ruleTimer] (Skip ())
                                  }

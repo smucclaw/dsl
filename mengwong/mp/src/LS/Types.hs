@@ -40,7 +40,7 @@ mkLeafP :: Text.Text -> BoolStructR
 mkLeafP = AA.Leaf . RPBoolStructP . mkLeaf
 
 mkLeafR :: Text.Text -> BoolStructR
-mkLeafR = AA.Leaf . RPFunction . pure
+mkLeafR = AA.Leaf . RPParamText . pure
 
 -- remove the TypeSig from a ParamText
 untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
@@ -185,14 +185,12 @@ data HornBody = HBRP HornRP
                       , hbelse :: HornRP } 
   deriving (Eq, Show, Generic, ToJSON)
 
-data RelationalPredicate = RPFunction MultiTerm
-                         | RPBoolStructP BoolStructP
-                         | RPBoolStructR BoolStructR
+data RelationalPredicate = RPParamText ParamText
                          | RPConstraint MultiTerm RPRel MultiTerm
   deriving (Eq, Show, Generic, ToJSON)
 
 instance Semigroup RelationalPredicate where
-  (<>) (RPFunction mt1)     (RPFunction mt2) = RPFunction $ mt1 <> mt2
+  (<>) (RPParamText mt1)     (RPParamText mt2) = RPParamText $ mt1 <> mt2
   (<>) (RPBoolStructP bsp1) (RPBoolStructP bsp2) = RPBoolStructP $ bsp1 <> bsp2
   (<>) (RPBoolStructR bsr1) (RPBoolStructR bsr2) = RPBoolStructR $ bsr1 <> bsr2
   (<>) l                    r = RPBoolStructR $ AA.All Nothing [AA.Leaf l, AA.Leaf r]
@@ -209,7 +207,7 @@ rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
 
 rp2texts :: RelationalPredicate -> [Text.Text]
-rp2texts (RPFunction    tt)            = tt
+rp2texts (RPParamText    tt)            = tt
 rp2texts (RPConstraint  mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructP bsp)           = Text.words $ bsp2text bsp
 rp2texts (RPBoolStructR bsr)           = Text.words $ bsr2text bsr

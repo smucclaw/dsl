@@ -47,7 +47,7 @@ import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
 
 import LS.XPile.CoreL4
-import LS.XPile.Prolog
+-- import LS.XPile.Prolog
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
@@ -146,8 +146,8 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
           mapM_ (putStrLn . Text.unpack) naturalLangSents
         when (toBabyL4 rc) $ do
           pPrint $ sfl4ToCorel4 rules
-        when (toProlog rc) $ do
-          pPrint $ sfl4ToProlog rules
+--        when (toProlog rc) $ do
+--          pPrint $ sfl4ToProlog rules
         when (toUppaal rc) $ do
           pPrint $ Uppaal.toL4TA rules
           putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
@@ -427,7 +427,7 @@ pMeansRule = debugName "pMeansRule" $ do
     else return $ Constitutive
          { name = head dnew -- we lose the ordering
          , keyword = Given
-         , letbind = RPBoolStructP $ AA.Leaf d
+         , letbind = RPParamText d
          , cond = addneg
                   (snd <$> mergePBRS (w<>i))
                   (snd <$> mergePBRS u)
@@ -475,7 +475,8 @@ pGivens = debugName "pGiven" $ do
   some (pRelationalPredicate <* dnl)
 
 pRelationalPredicate :: Parser RelationalPredicate
-pRelationalPredicate = try pConstraint <|> try pRPBoolStructP <|> try pFunction
+pRelationalPredicate = debugName "pRelationalPredicate" $ do
+  try pConstraint <|> try (RPParamText <$> pParamText)
 
 pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm" $ some $ choice [ pOtherVal
@@ -488,14 +489,6 @@ pNumAsText = debugName "pNumAsText" $ do
   where
     isNumber (TNumber _) = True
     isNumber _           = False
-
-pRPBoolStructP :: Parser RelationalPredicate
-pRPBoolStructP = debugName "pRPBoolStructP" $ RPBoolStructP <$> dBoolStructP
-
--- ["mortal(Man)"] becomes
--- mortal(Man)
-pFunction :: Parser RelationalPredicate
-pFunction = debugName "pFunction" $ RPFunction <$> pMultiTerm
 
 -- ["investment"] Is ["savings"] becomes
 -- investment(savings)
@@ -921,6 +914,12 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
   myTraceM ("preambleBoolStructP: found: " ++ show condWord)
   ands <- withDepth leftX dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
+
+
+
+-- a BoolStructR is the new ombibus type for the WHO and COND keywords,
+-- being an AnyAll tree of RelationalPredicates.
+
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
 preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do

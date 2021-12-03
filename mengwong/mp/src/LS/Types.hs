@@ -36,11 +36,8 @@ type BoolStructR = AA.Item RelationalPredicate
 mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
 mkLeaf = AA.Leaf . text2pt
 
-mkLeafP :: Text.Text -> BoolStructR
-mkLeafP = AA.Leaf . RPBoolStructP . mkLeaf
-
 mkLeafR :: Text.Text -> BoolStructR
-mkLeafR = AA.Leaf . RPParamText . pure
+mkLeafR = AA.Leaf . RPParamText . text2pt
 
 -- remove the TypeSig from a ParamText
 untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
@@ -189,13 +186,6 @@ data RelationalPredicate = RPParamText ParamText
                          | RPConstraint MultiTerm RPRel MultiTerm
   deriving (Eq, Show, Generic, ToJSON)
 
-instance Semigroup RelationalPredicate where
-  (<>) (RPParamText mt1)     (RPParamText mt2) = RPParamText $ mt1 <> mt2
-  (<>) (RPBoolStructP bsp1) (RPBoolStructP bsp2) = RPBoolStructP $ bsp1 <> bsp2
-  (<>) (RPBoolStructR bsr1) (RPBoolStructR bsr2) = RPBoolStructR $ bsr1 <> bsr2
-  (<>) l                    r = RPBoolStructR $ AA.All Nothing [AA.Leaf l, AA.Leaf r]
-  
-
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "relIs"
 rel2txt RPeq      = "relEq"
@@ -207,10 +197,8 @@ rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
 
 rp2texts :: RelationalPredicate -> [Text.Text]
-rp2texts (RPParamText    tt)            = tt
+rp2texts (RPParamText   pt)            = toList $ Text.unwords . toList <$> untypePT pt
 rp2texts (RPConstraint  mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
-rp2texts (RPBoolStructP bsp)           = Text.words $ bsp2text bsp
-rp2texts (RPBoolStructR bsr)           = Text.words $ bsr2text bsr
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts

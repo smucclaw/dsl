@@ -133,7 +133,19 @@ MultiText (pToken IS) MultiText
 
 used for equality and unification
 
+*** simple relationalpredicate in a WHO
+:PROPERTIES:
+:TABLE_EXPORT_FILE: relpred-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Person     |
+| WHO   | degustates |
+| MUST  | sing       |
+
+
 ** RelationalPredicate: Constraint
+
 MultiText RelToken MultiText
 
 *** examples:
@@ -141,6 +153,10 @@ MultiText RelToken MultiText
 | P | > | NP |
 
 | NOT | isMortal  |
+
+| isMortal |
+
+| degustates|
 
 *** contexts
 

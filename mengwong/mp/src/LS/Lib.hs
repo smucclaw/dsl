@@ -678,10 +678,10 @@ pRuleLabel = debugName "pRuleLabel" $ do
     isRuleMarker _                = False
 
 -- combine all the boolrules under the first preamble keyword
-mergePBRS :: Semigroup a => [(Preamble, a)] -> Maybe (Preamble, a)
+mergePBRS :: [(Preamble, BoolStructR)] -> Maybe (Preamble, BoolStructR)
 mergePBRS [] = Nothing
 mergePBRS [x] = Just x
-mergePBRS xs         = Just (fst . head $ xs, foldl1 (<>) (snd <$> xs))
+mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely

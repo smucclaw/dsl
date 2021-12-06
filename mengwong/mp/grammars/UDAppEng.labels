@@ -82,7 +82,7 @@
 -- Inari's additions --
 -----------------------
 
-#disable StrN StrPN
+#disable StrN StrPN StrA StrAP StrCard StrNum
 
 #disable pot1 pot2 pot3 pot4 pot1to19
 
@@ -167,11 +167,18 @@
 -- stored [in electronic formats]:obl
 -- default for AdvVP is head advmod, this is for head obl (i.e. Adv made by PrepNP)
 #auxfun OblVP_ vp adv : VP -> Adv -> VP = AdvVP vp adv ; head obl
+#disable AdvVP
 
-#auxfun RelVPGerundObl_ processing that is data for_organisation : VP -> RP -> aux -> NP -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (AdvVP (ProgrVP processing) for_organisation)) ; head[Tense=Pres|VerbForm=Part] nsubj[PronType=Rel] aux obj obl
+
+-- ** progressive **
+-- ProgrVP needs to be allowed in different places. This is probably going to be a long list.
+#auxfun RelVPGerund_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj[PronType=Rel] aux
 #disable ProgrVP
 
 
+-- ** ExtAdvNP **
+-- #auxfun … TODO: only allow ExtAdvNP with commas
+#disable ExtAdvNP
 
 -----------------
 -- Handling lists
@@ -227,4 +234,3 @@
 
 #auxfun NPAddComma_ cat and_dog_horseCapybara  : NPComma -> ConjListNP -> ConjListNP = UseTriple_ (NPAddComma_helper_ cat) and_dog_horseCapybara ; conj head
 #auxfun NPAddComma_helper_ cat and dog horseCapybara : NPComma -> Conj -> NP -> ListNP -> ConjListNP = MkTriple_ and cat (ConsNP dog horseCapybara) ; dummy head
-

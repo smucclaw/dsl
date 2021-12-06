@@ -2,7 +2,7 @@
 #fun nsubj_ head              -- NP -> nsubj
 #fun obj_ head                -- NP -> obj
 #fun iobj_ head               -- NP -> iobj
-#fun xcomp_ head              -- Comp -> xcomp
+#fun xcompA_ head             -- AP -> xcomp
 #fun rootV_ head              -- VP -> root
 #fun rootA_ head              -- AP -> root
 #fun rootN_ head              -- NP -> root
@@ -22,10 +22,17 @@
 #fun root_nsubj_cop_nmod head nsubj cop nmod       -- my hovercraft is full [of eels] (eels is nmod)
 #fun root_nsubj_cop_advmod head nsubj cop advmod   -- the party is [here] (here is advmod)
 #fun root_nsubj_cop_aclRelcl head nsubj cop acl:relcl
-#fun root_nsubj_cop_aclRelcl_obl head nsubj cop acl:relcl obl
-#fun root_nsubjPass_deontic_auxPass head nsubj:pass aux aux:pass  -- everyone should be notified
+#fun root_nsubj_aux_aclRelcl_obl head nsubj aux acl:relcl obl
+#fun root_nsubjPass_aux_auxPass head nsubj:pass aux aux:pass  -- everyone should be notified
 #fun root_nsubj_aux_obl head nsubj aux obl
 #fun root_nsubj_cop_cc_conj head nsubj cop cc conj  -- he is big and old
+
+#fun root_mark_nsubj_aux_aux head mark nsubj aux aux
+#fun root_nsubj_aux head nsubj aux
+#fun root_nsubj_aux_aclRelcl head nsubj aux acl:relcl
+#fun root_nsubj_aux_aux head nsubj aux aux
+#fun root_nsubj_cop_aclRelcl_obl head nsubj cop acl:relcl obl
+#fun root_nsubj_cop_obl head nsubj cop obl
 
 #fun passRelcl_ head nsubj:pass cop                -- root -> nsubj:pass -> cop -> acl:relcl ;
 
@@ -166,7 +173,7 @@
 #cat auxPass AUX
 #cat expl PRON
 #cat auxPass AUX
-#cat Deontic AUX
+#cat advmod PART -- for negation particle "not"
 #cat A ADJ primary
 #cat A2 ADJ
 #cat ACard ADV
@@ -312,6 +319,7 @@
 #fun root_cop_conj_conj head cop conj conj
 #fun root_cop_det_compound_amod head cop det compound amod
 #fun root_cop_det_nmod head cop det nmod
+#fun root_cop_advmod head cop advmod
 #fun root_csubj head csubj
 #fun root_csubj_aux_aux head csubj aux aux
 #fun root_det head det
@@ -431,7 +439,7 @@
 #fun root_obl_case head obl case
 #fun root_obl_obj head obl obj
 #fun root_obl_obl head obl obl
-#fun root_obl_obl_obl_cc head obl obl obl cc
+#fun root_obl_obl_obl_cc head obl obl obl
 #fun root_obl_xcomp head obl xcomp
 #fun root_parataxis head parataxis
 #fun root_xcomp_ccomp head xcomp ccomp

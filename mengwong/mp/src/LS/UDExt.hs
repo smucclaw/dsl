@@ -1,6 +1,7 @@
 module LS.UDExt where
 
 import PGF hiding (Tree)
+
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -41,7 +42,8 @@ instance Gf GFloat where
 ----------------------------------------------------
 
 data GA =
-   LexA String
+   GStrA GString
+ | LexA String
   deriving Show
 
 data GACard =
@@ -49,13 +51,14 @@ data GACard =
   deriving Show
 
 data GAP =
-   GAdAP GAdA GAP 
- | GAdjOrd GOrd 
- | GConjAP GConj GListAP 
- | GPastPartAP GVP 
- | GPositA GA 
- | GPresPartAP GVP 
- | GUseComparA GA 
+   GAdAP GAdA GAP
+ | GAdjOrd GOrd
+ | GConjAP GConj GListAP
+ | GPastPartAP GVP
+ | GPositA GA
+ | GPresPartAP GVP
+ | GStrAP GString
+ | GUseComparA GA
   deriving Show
 
 data GAdA =
@@ -63,28 +66,28 @@ data GAdA =
   deriving Show
 
 data GAdN =
-   GAdnCAdv GCAdv 
+   GAdnCAdv GCAdv
  | LexAdN String
   deriving Show
 
 data GAdV =
-   GConjAdV GConj GListAdV 
+   GConjAdV GConj GListAdV
  | LexAdV String
   deriving Show
 
 data GAdv =
-   GComparAdvAdj GCAdv GA GNP 
- | GComparAdvAdjS GCAdv GA GS 
- | GConjAdv GConj GListAdv 
- | GPositAdvAdj GA 
- | GPrepNP GPrep GNP 
- | GSubjS GSubj GS 
+   GComparAdvAdj GCAdv GA GNP
+ | GComparAdvAdjS GCAdv GA GS
+ | GConjAdv GConj GListAdv
+ | GPositAdvAdj GA
+ | GPrepNP GPrep GNP
+ | GSubjS GSubj GS
  | LexAdv String
   deriving Show
 
 data GAnt =
-   GAAnter 
- | GASimul 
+   GAAnter
+ | GASimul
   deriving Show
 
 data GCAdv =
@@ -92,24 +95,25 @@ data GCAdv =
   deriving Show
 
 data GCN =
-   GAdjCN GAP GCN 
- | GAdvCN GCN GAdv 
- | GComplN2 GN2 GNP 
- | GConjCN GConj GListCN 
- | GPossNP GCN GNP 
- | GRelCN GCN GRS 
- | GSentCN GCN GSC 
- | GUseN GN 
- | Gday_CN 
- | Ghigher_CN 
- | Gleave_CN 
- | Gtricyclic_CN 
+   GAdjCN GAP GCN
+ | GAdvCN GCN GAdv
+ | GComplN2 GN2 GNP
+ | GConjCN GConj GListCN
+ | GPossNP GCN GNP
+ | GRelCN GCN GRS
+ | GSentCN GCN GSC
+ | GUseN GN
+ | Gday_CN
+ | Ghigher_CN
+ | Gleave_CN
+ | Gtricyclic_CN
   deriving Show
 
 data GCard =
-   GAdNum GAdN GCard 
- | GNumDigits GDigits 
- | GNumNumeral GNumeral 
+   GAdNum GAdN GCard
+ | GNumDigits GDigits
+ | GNumNumeral GNumeral
+ | GStrCard GString
  | LexCard String
   deriving Show
 
@@ -118,86 +122,78 @@ data GConj =
   deriving Show
 
 data GDAP =
-   GAdjDAP GDAP GAP 
- | GDetDAP GDet 
-  deriving Show
-
-data GDeontic =
-   Gmay_Deontic 
- | Gmust_Deontic 
- | Gshall_Deontic 
- | Gshant_Deontic 
- | Gshould_Deontic 
+   GAdjDAP GDAP GAP
+ | GDetDAP GDet
   deriving Show
 
 data GDet =
-   GConjDet GConj GListDAP 
- | GDetQuant GQuant GNum 
- | GDetQuantOrd GQuant GNum GOrd 
+   GConjDet GConj GListDAP
+ | GDetQuant GQuant GNum
+ | GDetQuantOrd GQuant GNum GOrd
  | LexDet String
   deriving Show
 
 data GDig =
-   GD_0 
- | GD_1 
- | GD_2 
- | GD_3 
- | GD_4 
- | GD_5 
- | GD_6 
- | GD_7 
- | GD_8 
- | GD_9 
+   GD_0
+ | GD_1
+ | GD_2
+ | GD_3
+ | GD_4
+ | GD_5
+ | GD_6
+ | GD_7
+ | GD_8
+ | GD_9
   deriving Show
 
 data GDigit =
-   G500_Digit 
- | Gn2 
- | Gn3 
- | Gn4 
- | Gn5 
- | Gn6 
- | Gn7 
- | Gn8 
- | Gn9 
+   G500_Digit
+ | Gn2
+ | Gn3
+ | Gn4
+ | Gn5
+ | Gn6
+ | Gn7
+ | Gn8
+ | Gn9
   deriving Show
 
 data GDigits =
-   GIDig GDig 
- | GIIDig GDig GDigits 
+   GIDig GDig
+ | GIIDig GDig GDigits
   deriving Show
 
 data GIAdv =
-   GAdvIAdv GIAdv GAdv 
- | GConjIAdv GConj GListIAdv 
- | GPrepIP GPrep GIP 
- | Ghow_IAdv 
- | Gwhen_IAdv 
- | Gwhere_IAdv 
- | Gwherein_IAdv 
- | Gwhy_IAdv 
+   GAdvIAdv GIAdv GAdv
+ | GConjIAdv GConj GListIAdv
+ | GPrepIP GPrep GIP
+ | Ghow_IAdv
+ | Gwhen_IAdv
+ | Gwhere_IAdv
+ | Gwherein_IAdv
+ | Gwhy_IAdv
   deriving Show
 
 data GIComp =
-   GCompIAdv GIAdv 
- | GCompIP GIP 
+   GCompIAdv GIAdv
+ | GCompIP GIP
   deriving Show
 
-data GIDet = GIdetQuant GIQuant GNum 
+data GIDet = GIdetQuant GIQuant GNum
   deriving Show
 
 data GIP =
-   GAdvIP GIP GAdv 
- | GIdetCN GIDet GCN 
- | GIdetIP GIDet 
- | Gwhat_IP 
- | Gwho_IP 
+   GAdvIP GIP GAdv
+ | GIdetCN GIDet GCN
+ | GIdetIP GIDet
+ | Gwhat_IP
+ | Gwho_IP
   deriving Show
 
-data GIQuant = Gwhich_IQuant 
+data GIQuant = Gwhich_IQuant
   deriving Show
 
-data GImp = GImpVP GVP 
+data GImp = GImpVP GVP
   deriving Show
 
 data GInterj =
@@ -223,64 +219,65 @@ newtype GListRS = GListRS [GRS] deriving Show
 newtype GListS = GListS [GS] deriving Show
 
 data GN =
-   GCompoundN GN GN 
- | GStrN GString 
+   GCompoundN GN GN
+ | GStrN GString
  | LexN String
   deriving Show
 
 data GN2 =
-   GComplN3 GN3 GNP 
- | GUse3N3 GN3 
+   GComplN3 GN3 GNP
+ | GUse3N3 GN3
  | LexN2 String
   deriving Show
 
 data GNP =
-   GAdvNP GNP GAdv 
- | GConjNP GConj GListNP 
- | GDetCN GDet GCN 
- | GDetNP GDet 
- | GExtAdvNP GNP GAdv 
- | GGenModNP GNum GNP GCN 
- | GMassNP GCN 
- | GPredetNP GPredet GNP 
- | GRelNP GNP GRS 
- | GUsePN GPN 
- | GUsePron GPron 
- | Geuropean_NP 
- | Gnone_NP 
- | Gwhoever_NP 
+   GAdvNP GNP GAdv
+ | GConjNP GConj GListNP
+ | GDetCN GDet GCN
+ | GDetNP GDet
+ | GExtAdvNP GNP GAdv
+ | GGenModNP GNum GNP GCN
+ | GMassNP GCN
+ | GPredetNP GPredet GNP
+ | GRelNP GNP GRS
+ | GUsePN GPN
+ | GUsePron GPron
+ | Geuropean_NP
+ | Gnone_NP
+ | Gwhoever_NP
   deriving Show
 
 data GNum =
-   GNumCard GCard 
- | GNumPl 
- | GNumSg 
+   GNumCard GCard
+ | GNumPl
+ | GNumSg
+ | GStrNum GString
   deriving Show
 
-data GNumeral = Gnum GSub1000000 
+data GNumeral = Gnum GSub1000000
   deriving Show
 
 data GOrd =
-   GOrdDigits GDigits 
- | GOrdNumeral GNumeral 
- | GOrdNumeralSuperl GNumeral GA 
- | GOrdSuperl GA 
+   GOrdDigits GDigits
+ | GOrdNumeral GNumeral
+ | GOrdNumeralSuperl GNumeral GA
+ | GOrdSuperl GA
   deriving Show
 
 data GPConj =
-   Gbut_PConj 
- | Gfor_PConj 
- | Gso_PConj 
+   Gbut_PConj
+ | Gfor_PConj
+ | Gso_PConj
   deriving Show
 
 data GPN =
-   GStrPN GString 
+   GStrPN GString
  | LexPN String
   deriving Show
 
 data GPol =
-   GPNeg 
- | GPPos 
+   GPNeg
+ | GPPos
   deriving Show
 
 data GPredet =
@@ -296,281 +293,291 @@ data GPron =
   deriving Show
 
 data GQCl =
-   GQuestCl GCl 
- | GQuestIAdv GIAdv GCl 
- | GQuestIComp GIComp GNP 
- | GQuestQVP GIP GQVP 
- | GQuestSlash GIP GClSlash 
- | GQuestVP GIP GVP 
+   GQuestCl GCl
+ | GQuestIAdv GIAdv GCl
+ | GQuestIComp GIComp GNP
+ | GQuestQVP GIP GQVP
+ | GQuestSlash GIP GClSlash
+ | GQuestVP GIP GVP
   deriving Show
 
 data GQVP =
-   GAddAdvQVP GQVP GIAdv 
- | GAdvQVP GVP GIAdv 
- | GComplSlashIP GVPSlash GIP 
+   GAddAdvQVP GQVP GIAdv
+ | GAdvQVP GVP GIAdv
+ | GComplSlashIP GVPSlash GIP
   deriving Show
 
 data GQuant =
-   GGenNP GNP 
- | GPossPron GPron 
+   GGenNP GNP
+ | GPossPron GPron
  | LexQuant String
   deriving Show
 
 data GRCl =
-   GRelCl GCl 
- | GRelSlash GRP GClSlash 
- | GRelVP GRP GVP 
+   GRelCl GCl
+ | GRelSlash GRP GClSlash
+ | GRelVP GRP GVP
   deriving Show
 
 data GRP =
-   GFunRP GPrep GNP GRP 
- | GIdRP 
- | Gthat_RP 
- | Gwho_RP 
+   GFunRP GPrep GNP GRP
+ | GIdRP
+ | Gthat_RP
+ | Gwho_RP
   deriving Show
 
 data GRS =
-   GConjRS GConj GListRS 
- | GUseRCl GTemp GPol GRCl 
+   GConjRS GConj GListRS
+ | GUseRCl GTemp GPol GRCl
   deriving Show
 
 data GS =
-   GAdvS GAdv GS 
- | GConjS GConj GListS 
- | GExistS GTemp GPol GNP 
- | GExtAdvS GAdv GS 
- | GUseCl GTemp GPol GCl 
+   GAdvS GAdv GS
+ | GConjS GConj GListS
+ | GExistS GTemp GPol GNP
+ | GExtAdvS GAdv GS
+ | GUseCl GTemp GPol GCl
   deriving Show
 
 data GSub10 =
-   Gpot0 GDigit 
- | Gpot01 
+   Gpot0 GDigit
+ | Gpot01
   deriving Show
 
 data GSub100 =
-   Gpot0as1 GSub10 
- | Gpot1 GDigit 
- | Gpot110 
- | Gpot111 
- | Gpot1plus GDigit GSub10 
- | Gpot1to19 GDigit 
+   Gpot0as1 GSub10
+ | Gpot1 GDigit
+ | Gpot110
+ | Gpot111
+ | Gpot1plus GDigit GSub10
+ | Gpot1to19 GDigit
   deriving Show
 
 data GSub1000 =
-   Gpot1as2 GSub100 
- | Gpot2 GSub10 
- | Gpot2plus GSub10 GSub100 
+   Gpot1as2 GSub100
+ | Gpot2 GSub10
+ | Gpot2plus GSub10 GSub100
   deriving Show
 
 data GSub1000000 =
-   Gpot2as3 GSub1000 
- | Gpot3 GSub1000 
- | Gpot3plus GSub1000 GSub1000 
+   Gpot2as3 GSub1000
+ | Gpot3 GSub1000
+ | Gpot3plus GSub1000 GSub1000
   deriving Show
 
 data GSubj =
    LexSubj String
   deriving Show
 
-data GTemp = GTTAnt GTense GAnt 
+data GTemp = GTTAnt GTense GAnt
   deriving Show
 
 data GTense =
-   GTCond 
- | GTFut 
- | GTPast 
- | GTPres 
+   GTCond
+ | GTFut
+ | GTPast
+ | GTPres
   deriving Show
 
 data GUDFragment =
-   GUpon GUDS 
- | GsubjAction GNP GUDS 
+   GAfter GUDS
+ | GBefore GUDS
+ | GBy GUDS
+ | GOn GUDS
+ | GUpon GUDS
+ | GVaguely GUDS
+ | GsubjAction GNP GUDS
   deriving Show
 
 data GUDS =
-   Groot_acl Groot Gacl 
- | Groot_acl_nmod Groot Gacl Gnmod 
- | Groot_advcl Groot Gadvcl 
- | Groot_advmod Groot Gadvmod 
- | Groot_advmod_advmod_obl Groot Gadvmod Gadvmod Gobl 
- | Groot_advmod_amod Groot Gadvmod Gamod 
- | Groot_advmod_nsubj_cop_obl Groot Gadvmod Gnsubj Gcop Gobl 
- | Groot_amod Groot Gamod 
- | Groot_amod_nmod Groot Gamod Gnmod 
- | Groot_appos Groot Gappos 
- | Groot_appos_advmod Groot Gappos Gadvmod 
- | Groot_auxPass Groot GauxPass 
- | Groot_case Groot Gcase_ 
- | Groot_case_amod Groot Gcase_ Gamod 
- | Groot_case_amod_amod Groot Gcase_ Gamod Gamod 
- | Groot_case_amod_conj_conj Groot Gcase_ Gamod Gconj Gconj 
- | Groot_case_compound Groot Gcase_ Gcompound 
- | Groot_case_det Groot Gcase_ Gdet 
- | Groot_case_det_amod Groot Gcase_ Gdet Gamod 
- | Groot_case_det_compound_conj Groot Gcase_ Gdet Gcompound Gconj 
- | Groot_case_det_nmod Groot Gcase_ Gdet Gnmod 
- | Groot_case_nummod Groot Gcase_ Gnummod 
- | Groot_case_nummod_acl Groot Gcase_ Gnummod Gacl 
- | Groot_case_nummod_nummod Groot Gcase_ Gnummod Gnummod 
- | Groot_cc Groot Gcc 
- | Groot_cc_aux_cop_det_nmod Groot Gcc Gaux Gcop Gdet Gnmod 
- | Groot_cc_conj Groot Gcc Gconj 
- | Groot_cc_cop_xcomp Groot Gcc Gcop Gxcomp 
- | Groot_cc_det_nmod Groot Gcc Gdet Gnmod 
- | Groot_cc_nmod Groot Gcc Gnmod 
- | Groot_cc_obj Groot Gcc Gobj 
- | Groot_ccomp Groot Gccomp 
- | Groot_compound Groot Gcompound 
- | Groot_compoundPrt_compoundPrt Groot GcompoundPrt GcompoundPrt 
- | Groot_compound_acl Groot Gcompound Gacl 
- | Groot_compound_amod Groot Gcompound Gamod 
- | Groot_compound_appos Groot Gcompound Gappos 
- | Groot_compound_compound Groot Gcompound Gcompound 
- | Groot_compound_compound_appos Groot Gcompound Gcompound Gappos 
- | Groot_compound_compound_conj Groot Gcompound Gcompound Gconj 
- | Groot_compound_conj_acl Groot Gcompound Gconj Gacl 
- | Groot_compound_flat Groot Gcompound Gflat 
- | Groot_conj Groot Gconj 
- | Groot_conj_acl Groot Gconj Gacl 
- | Groot_conj_appos Groot Gconj Gappos 
- | Groot_conj_case Groot Gconj Gcase_ 
- | Groot_conj_nmod Groot Gconj Gnmod 
- | Groot_conj_parataxis Groot Gconj Gparataxis 
- | Groot_cop Groot Gcop 
- | Groot_cop_conj_conj Groot Gcop Gconj Gconj 
- | Groot_cop_det_compound_amod Groot Gcop Gdet Gcompound Gamod 
- | Groot_cop_det_nmod Groot Gcop Gdet Gnmod 
- | Groot_csubj Groot Gcsubj 
- | Groot_csubj_aux_aux Groot Gcsubj Gaux Gaux 
- | Groot_det Groot Gdet 
- | Groot_det_acl Groot Gdet Gacl 
- | Groot_det_aclRelcl Groot Gdet GaclRelcl 
- | Groot_det_aclRelcl_nmod Groot Gdet GaclRelcl Gnmod 
- | Groot_det_advmod Groot Gdet Gadvmod 
- | Groot_det_amod Groot Gdet Gamod 
- | Groot_det_amod_aclRelcl Groot Gdet Gamod GaclRelcl 
- | Groot_det_amod_aclRelcl_nmod Groot Gdet Gamod GaclRelcl Gnmod 
- | Groot_det_amod_amod_acl_nmod Groot Gdet Gamod Gamod Gacl Gnmod 
- | Groot_det_amod_nmod Groot Gdet Gamod Gnmod 
- | Groot_det_amod_obl Groot Gdet Gamod Gobl 
- | Groot_det_case Groot Gdet Gcase_ 
- | Groot_det_compound Groot Gdet Gcompound 
- | Groot_det_compound_compound Groot Gdet Gcompound Gcompound 
- | Groot_det_compound_compound_nmod_appos Groot Gdet Gcompound Gcompound Gnmod Gappos 
- | Groot_det_conj_acl Groot Gdet Gconj Gacl 
- | Groot_det_conj_nmod Groot Gdet Gconj Gnmod 
- | Groot_det_conj_obj Groot Gdet Gconj Gobj 
- | Groot_det_nmod Groot Gdet Gnmod 
- | Groot_det_nmodPoss Groot Gdet GnmodPoss 
- | Groot_det_nmodPoss_compound Groot Gdet GnmodPoss Gcompound 
- | Groot_discourse Groot Gdiscourse 
- | Groot_fixed Groot Gfixed 
- | Groot_goeswith Groot Ggoeswith 
- | Groot_goeswith_det_amod_nmod Groot Ggoeswith Gdet Gamod Gnmod 
- | Groot_goeswith_goeswith Groot Ggoeswith Ggoeswith 
- | Groot_mark Groot Gmark 
- | Groot_mark_case_det_nmod Groot Gmark Gcase_ Gdet Gnmod 
- | Groot_mark_cc_mark_obj Groot Gmark Gcc Gmark Gobj 
- | Groot_mark_det_obj Groot Gmark Gdet Gobj 
- | Groot_mark_expl_cop_xcomp Groot Gmark Gexpl Gcop Gxcomp 
- | Groot_mark_expl_nsubj Groot Gmark Gexpl Gnsubj 
- | Groot_mark_nsubj Groot Gmark Gnsubj 
- | Groot_mark_nsubjPass_auxPass_obl Groot Gmark GnsubjPass GauxPass Gobl 
- | Groot_mark_nsubj_aux_advmod_obj Groot Gmark Gnsubj Gaux Gadvmod Gobj 
- | Groot_mark_nsubj_cop Groot Gmark Gnsubj Gcop 
- | Groot_mark_nsubj_cop_case_det Groot Gmark Gnsubj Gcop Gcase_ Gdet 
- | Groot_mark_nsubj_cop_det_amod_compound_conj Groot Gmark Gnsubj Gcop Gdet Gamod Gcompound Gconj 
- | Groot_mark_nsubj_cop_det_case Groot Gmark Gnsubj Gcop Gdet Gcase_ 
- | Groot_mark_nsubj_cop_det_compound_compound Groot Gmark Gnsubj Gcop Gdet Gcompound Gcompound 
- | Groot_mark_nsubj_cop_obl Groot Gmark Gnsubj Gcop Gobl 
- | Groot_mark_nsubj_obj Groot Gmark Gnsubj Gobj 
- | Groot_mark_nsubj_obl Groot Gmark Gnsubj Gobl 
- | Groot_mark_nummod Groot Gmark Gnummod 
- | Groot_nmod Groot Gnmod 
- | Groot_nmodPoss_advmod Groot GnmodPoss Gadvmod 
- | Groot_nmodPoss_nmodPoss Groot GnmodPoss GnmodPoss 
- | Groot_nmod_acl Groot Gnmod Gacl 
- | Groot_nsubj Groot Gnsubj 
- | Groot_nsubjPass_auxPass Groot GnsubjPass GauxPass 
- | Groot_nsubjPass_auxPass_advmod_advcl Groot GnsubjPass GauxPass Gadvmod Gadvcl 
- | Groot_nsubjPass_auxPass_advmod_xcomp Groot GnsubjPass GauxPass Gadvmod Gxcomp 
- | Groot_nsubjPass_auxPass_xcomp Groot GnsubjPass GauxPass Gxcomp 
- | Groot_nsubjPass_aux_auxPass Groot GnsubjPass Gaux GauxPass 
- | Groot_nsubjPass_aux_auxPass_obl_advmod Groot GnsubjPass Gaux GauxPass Gobl Gadvmod 
- | Groot_nsubjPass_aux_auxPass_obl_conj Groot GnsubjPass Gaux GauxPass Gobl Gconj 
- | Groot_nsubjPass_aux_auxPass_obl_obl_advcl Groot GnsubjPass Gaux GauxPass Gobl Gobl Gadvcl 
- | Groot_nsubjPass_aux_auxPass_obl_obl_advmod Groot GnsubjPass Gaux GauxPass Gobl Gobl Gadvmod 
- | Groot_nsubjPass_deontic_auxPass Groot GnsubjPass GDeontic GauxPass 
- | Groot_nsubj_advmod Groot Gnsubj Gadvmod 
- | Groot_nsubj_advmod_case_det Groot Gnsubj Gadvmod Gcase_ Gdet 
- | Groot_nsubj_advmod_obj Groot Gnsubj Gadvmod Gobj 
- | Groot_nsubj_aux_advmod Groot Gnsubj Gaux Gadvmod 
- | Groot_nsubj_aux_advmod_obj_advcl Groot Gnsubj Gaux Gadvmod Gobj Gadvcl 
- | Groot_nsubj_aux_conj Groot Gnsubj Gaux Gconj 
- | Groot_nsubj_aux_conj_obl Groot Gnsubj Gaux Gconj Gobl 
- | Groot_nsubj_aux_obj Groot Gnsubj Gaux Gobj 
- | Groot_nsubj_aux_obj_conj_conj Groot Gnsubj Gaux Gobj Gconj Gconj 
- | Groot_nsubj_aux_obj_obl Groot Gnsubj Gaux Gobj Gobl 
- | Groot_nsubj_aux_obj_obl_advmod_advcl Groot Gnsubj Gaux Gobj Gobl Gadvmod Gadvcl 
- | Groot_nsubj_aux_obj_obl_obl Groot Gnsubj Gaux Gobj Gobl Gobl 
- | Groot_nsubj_aux_obl Groot Gnsubj Gaux Gobl 
- | Groot_nsubj_ccomp Groot Gnsubj Gccomp 
- | Groot_nsubj_conj Groot Gnsubj Gconj 
- | Groot_nsubj_conj_obl Groot Gnsubj Gconj Gobl 
- | Groot_nsubj_cop Groot Gnsubj Gcop 
- | Groot_nsubj_cop_aclRelcl Groot Gnsubj Gcop GaclRelcl 
- | Groot_nsubj_cop_aclRelcl_obl Groot Gnsubj Gcop GaclRelcl Gobl 
- | Groot_nsubj_cop_advcl Groot Gnsubj Gcop Gadvcl 
- | Groot_nsubj_cop_advmod Groot Gnsubj Gcop Gadvmod 
- | Groot_nsubj_cop_case_nmod_acl Groot Gnsubj Gcop Gcase_ Gnmod Gacl 
- | Groot_nsubj_cop_cc_conj Groot Gnsubj Gcop Gcc Gconj 
- | Groot_nsubj_cop_det_amod_advcl Groot Gnsubj Gcop Gdet Gamod Gadvcl 
- | Groot_nsubj_cop_det_amod_compound Groot Gnsubj Gcop Gdet Gamod Gcompound 
- | Groot_nsubj_cop_det_compound Groot Gnsubj Gcop Gdet Gcompound 
- | Groot_nsubj_cop_det_compound_conj Groot Gnsubj Gcop Gdet Gcompound Gconj 
- | Groot_nsubj_cop_det_conj Groot Gnsubj Gcop Gdet Gconj 
- | Groot_nsubj_cop_det_nmod Groot Gnsubj Gcop Gdet Gnmod 
- | Groot_nsubj_cop_nmod Groot Gnsubj Gcop Gnmod 
- | Groot_nsubj_cop_nmodPoss Groot Gnsubj Gcop GnmodPoss 
- | Groot_nsubj_cop_obl Groot Gnsubj Gcop Gobl 
- | Groot_nsubj_det Groot Gnsubj Gdet 
- | Groot_nsubj_det_nmod_nmod Groot Gnsubj Gdet Gnmod Gnmod 
- | Groot_nsubj_obj Groot Gnsubj Gobj 
- | Groot_nsubj_obj_xcomp Groot Gnsubj Gobj Gxcomp 
- | Groot_nsubj_obl Groot Gnsubj Gobl 
- | Groot_nsubj_xcomp Groot Gnsubj Gxcomp 
- | Groot_nummod Groot Gnummod 
- | Groot_nummod_appos Groot Gnummod Gappos 
- | Groot_nummod_auxPass_cc_aux_auxPass_obl_obl Groot Gnummod GauxPass Gcc Gaux GauxPass Gobl Gobl 
- | Groot_nummod_conj Groot Gnummod Gconj 
- | Groot_nummod_cop_cc_aux_cop_det_nmod Groot Gnummod Gcop Gcc Gaux Gcop Gdet Gnmod 
- | Groot_nummod_det_acl Groot Gnummod Gdet Gacl 
- | Groot_nummod_det_aclRelcl Groot Gnummod Gdet GaclRelcl 
- | Groot_nummod_det_amod Groot Gnummod Gdet Gamod 
- | Groot_nummod_det_amod_conj_conj Groot Gnummod Gdet Gamod Gconj Gconj 
- | Groot_nummod_det_conj_nmod Groot Gnummod Gdet Gconj Gnmod 
- | Groot_nummod_det_conj_nmod_cc Groot Gnummod Gdet Gconj Gnmod Gcc 
- | Groot_nummod_det_nmod Groot Gnummod Gdet Gnmod 
- | Groot_nummod_mark_obj Groot Gnummod Gmark Gobj 
- | Groot_nummod_mark_obj_cc Groot Gnummod Gmark Gobj Gcc 
- | Groot_nummod_nmod Groot Gnummod Gnmod 
- | Groot_nummod_nsubjPass_nsubjPass_auxPass_cc Groot Gnummod GnsubjPass GnsubjPass GauxPass Gcc 
- | Groot_nummod_obl Groot Gnummod Gobl 
- | Groot_nummod_obl_cc Groot Gnummod Gobl Gcc 
- | Groot_obj Groot Gobj 
- | Groot_obj_ccomp Groot Gobj Gccomp 
- | Groot_obj_nmod Groot Gobj Gnmod 
- | Groot_obl Groot Gobl 
- | Groot_obl_appos Groot Gobl Gappos 
- | Groot_obl_aux Groot Gobl Gaux 
- | Groot_obl_case Groot Gobl Gcase_ 
- | Groot_obl_obj Groot Gobl Gobj 
- | Groot_obl_obl Groot Gobl Gobl 
- | Groot_obl_obl_obl_cc Groot Gobl Gobl Gobl 
- | Groot_obl_xcomp Groot Gobl Gxcomp 
- | Groot_only Groot 
- | Groot_parataxis Groot Gparataxis 
- | Groot_xcomp_ccomp Groot Gxcomp Gccomp 
+   Groot_acl Groot Gacl
+ | Groot_acl_nmod Groot Gacl Gnmod
+ | Groot_advcl Groot Gadvcl
+ | Groot_advmod Groot Gadvmod
+ | Groot_advmod_advmod_obl Groot Gadvmod Gadvmod Gobl
+ | Groot_advmod_amod Groot Gadvmod Gamod
+ | Groot_advmod_nsubj_cop_obl Groot Gadvmod Gnsubj Gcop Gobl
+ | Groot_amod Groot Gamod
+ | Groot_amod_nmod Groot Gamod Gnmod
+ | Groot_appos Groot Gappos
+ | Groot_appos_advmod Groot Gappos Gadvmod
+ | Groot_auxPass Groot GauxPass
+ | Groot_case Groot Gcase_
+ | Groot_case_amod Groot Gcase_ Gamod
+ | Groot_case_amod_amod Groot Gcase_ Gamod Gamod
+ | Groot_case_amod_conj_conj Groot Gcase_ Gamod Gconj Gconj
+ | Groot_case_compound Groot Gcase_ Gcompound
+ | Groot_case_det Groot Gcase_ Gdet
+ | Groot_case_det_amod Groot Gcase_ Gdet Gamod
+ | Groot_case_det_compound_conj Groot Gcase_ Gdet Gcompound Gconj
+ | Groot_case_det_nmod Groot Gcase_ Gdet Gnmod
+ | Groot_case_nummod Groot Gcase_ Gnummod
+ | Groot_case_nummod_acl Groot Gcase_ Gnummod Gacl
+ | Groot_case_nummod_nummod Groot Gcase_ Gnummod Gnummod
+ | Groot_cc Groot Gcc
+ | Groot_cc_aux_cop_det_nmod Groot Gcc Gaux Gcop Gdet Gnmod
+ | Groot_cc_conj Groot Gcc Gconj
+ | Groot_cc_cop_xcomp Groot Gcc Gcop Gxcomp
+ | Groot_cc_det_nmod Groot Gcc Gdet Gnmod
+ | Groot_cc_nmod Groot Gcc Gnmod
+ | Groot_cc_obj Groot Gcc Gobj
+ | Groot_ccomp Groot Gccomp
+ | Groot_compound Groot Gcompound
+ | Groot_compoundPrt_compoundPrt Groot GcompoundPrt GcompoundPrt
+ | Groot_compound_acl Groot Gcompound Gacl
+ | Groot_compound_amod Groot Gcompound Gamod
+ | Groot_compound_appos Groot Gcompound Gappos
+ | Groot_compound_compound Groot Gcompound Gcompound
+ | Groot_compound_compound_appos Groot Gcompound Gcompound Gappos
+ | Groot_compound_compound_conj Groot Gcompound Gcompound Gconj
+ | Groot_compound_conj_acl Groot Gcompound Gconj Gacl
+ | Groot_compound_flat Groot Gcompound Gflat
+ | Groot_conj Groot Gconj
+ | Groot_conj_acl Groot Gconj Gacl
+ | Groot_conj_appos Groot Gconj Gappos
+ | Groot_conj_case Groot Gconj Gcase_
+ | Groot_conj_nmod Groot Gconj Gnmod
+ | Groot_conj_parataxis Groot Gconj Gparataxis
+ | Groot_cop Groot Gcop
+ | Groot_cop_advmod Groot Gcop Gadvmod
+ | Groot_cop_conj_conj Groot Gcop Gconj Gconj
+ | Groot_cop_det_compound_amod Groot Gcop Gdet Gcompound Gamod
+ | Groot_cop_det_nmod Groot Gcop Gdet Gnmod
+ | Groot_csubj Groot Gcsubj
+ | Groot_csubj_aux_aux Groot Gcsubj Gaux Gaux
+ | Groot_det Groot Gdet
+ | Groot_det_acl Groot Gdet Gacl
+ | Groot_det_aclRelcl Groot Gdet GaclRelcl
+ | Groot_det_aclRelcl_nmod Groot Gdet GaclRelcl Gnmod
+ | Groot_det_advmod Groot Gdet Gadvmod
+ | Groot_det_amod Groot Gdet Gamod
+ | Groot_det_amod_aclRelcl Groot Gdet Gamod GaclRelcl
+ | Groot_det_amod_aclRelcl_nmod Groot Gdet Gamod GaclRelcl Gnmod
+ | Groot_det_amod_amod_acl_nmod Groot Gdet Gamod Gamod Gacl Gnmod
+ | Groot_det_amod_nmod Groot Gdet Gamod Gnmod
+ | Groot_det_amod_obl Groot Gdet Gamod Gobl
+ | Groot_det_case Groot Gdet Gcase_
+ | Groot_det_compound Groot Gdet Gcompound
+ | Groot_det_compound_compound Groot Gdet Gcompound Gcompound
+ | Groot_det_compound_compound_nmod_appos Groot Gdet Gcompound Gcompound Gnmod Gappos
+ | Groot_det_conj_acl Groot Gdet Gconj Gacl
+ | Groot_det_conj_nmod Groot Gdet Gconj Gnmod
+ | Groot_det_conj_obj Groot Gdet Gconj Gobj
+ | Groot_det_nmod Groot Gdet Gnmod
+ | Groot_det_nmodPoss Groot Gdet GnmodPoss
+ | Groot_det_nmodPoss_compound Groot Gdet GnmodPoss Gcompound
+ | Groot_discourse Groot Gdiscourse
+ | Groot_fixed Groot Gfixed
+ | Groot_goeswith Groot Ggoeswith
+ | Groot_goeswith_det_amod_nmod Groot Ggoeswith Gdet Gamod Gnmod
+ | Groot_goeswith_goeswith Groot Ggoeswith Ggoeswith
+ | Groot_mark Groot Gmark
+ | Groot_mark_case_det_nmod Groot Gmark Gcase_ Gdet Gnmod
+ | Groot_mark_cc_mark_obj Groot Gmark Gcc Gmark Gobj
+ | Groot_mark_det_obj Groot Gmark Gdet Gobj
+ | Groot_mark_expl_cop_xcomp Groot Gmark Gexpl Gcop Gxcomp
+ | Groot_mark_expl_nsubj Groot Gmark Gexpl Gnsubj
+ | Groot_mark_nsubj Groot Gmark Gnsubj
+ | Groot_mark_nsubjPass_auxPass_obl Groot Gmark GnsubjPass GauxPass Gobl
+ | Groot_mark_nsubj_aux_advmod_obj Groot Gmark Gnsubj Gaux Gadvmod Gobj
+ | Groot_mark_nsubj_aux_aux Groot Gmark Gnsubj Gaux Gaux
+ | Groot_mark_nsubj_cop Groot Gmark Gnsubj Gcop
+ | Groot_mark_nsubj_cop_case_det Groot Gmark Gnsubj Gcop Gcase_ Gdet
+ | Groot_mark_nsubj_cop_det_amod_compound_conj Groot Gmark Gnsubj Gcop Gdet Gamod Gcompound Gconj
+ | Groot_mark_nsubj_cop_det_case Groot Gmark Gnsubj Gcop Gdet Gcase_
+ | Groot_mark_nsubj_cop_det_compound_compound Groot Gmark Gnsubj Gcop Gdet Gcompound Gcompound
+ | Groot_mark_nsubj_cop_obl Groot Gmark Gnsubj Gcop Gobl
+ | Groot_mark_nsubj_obj Groot Gmark Gnsubj Gobj
+ | Groot_mark_nsubj_obl Groot Gmark Gnsubj Gobl
+ | Groot_mark_nummod Groot Gmark Gnummod
+ | Groot_nmod Groot Gnmod
+ | Groot_nmodPoss_advmod Groot GnmodPoss Gadvmod
+ | Groot_nmodPoss_nmodPoss Groot GnmodPoss GnmodPoss
+ | Groot_nmod_acl Groot Gnmod Gacl
+ | Groot_nsubj Groot Gnsubj
+ | Groot_nsubjPass_auxPass Groot GnsubjPass GauxPass
+ | Groot_nsubjPass_auxPass_advmod_advcl Groot GnsubjPass GauxPass Gadvmod Gadvcl
+ | Groot_nsubjPass_auxPass_advmod_xcomp Groot GnsubjPass GauxPass Gadvmod Gxcomp
+ | Groot_nsubjPass_auxPass_xcomp Groot GnsubjPass GauxPass Gxcomp
+ | Groot_nsubjPass_aux_auxPass Groot GnsubjPass Gaux GauxPass
+ | Groot_nsubjPass_aux_auxPass_obl_advmod Groot GnsubjPass Gaux GauxPass Gobl Gadvmod
+ | Groot_nsubjPass_aux_auxPass_obl_conj Groot GnsubjPass Gaux GauxPass Gobl Gconj
+ | Groot_nsubjPass_aux_auxPass_obl_obl_advcl Groot GnsubjPass Gaux GauxPass Gobl Gobl Gadvcl
+ | Groot_nsubjPass_aux_auxPass_obl_obl_advmod Groot GnsubjPass Gaux GauxPass Gobl Gobl Gadvmod
+ | Groot_nsubj_advmod Groot Gnsubj Gadvmod
+ | Groot_nsubj_advmod_case_det Groot Gnsubj Gadvmod Gcase_ Gdet
+ | Groot_nsubj_advmod_obj Groot Gnsubj Gadvmod Gobj
+ | Groot_nsubj_aux Groot Gnsubj Gaux
+ | Groot_nsubj_aux_aclRelcl Groot Gnsubj Gaux GaclRelcl
+ | Groot_nsubj_aux_aclRelcl_obl Groot Gnsubj Gaux GaclRelcl Gobl
+ | Groot_nsubj_aux_advmod Groot Gnsubj Gaux Gadvmod
+ | Groot_nsubj_aux_advmod_obj_advcl Groot Gnsubj Gaux Gadvmod Gobj Gadvcl
+ | Groot_nsubj_aux_aux Groot Gnsubj Gaux Gaux
+ | Groot_nsubj_aux_conj Groot Gnsubj Gaux Gconj
+ | Groot_nsubj_aux_conj_obl Groot Gnsubj Gaux Gconj Gobl
+ | Groot_nsubj_aux_obj Groot Gnsubj Gaux Gobj
+ | Groot_nsubj_aux_obj_conj_conj Groot Gnsubj Gaux Gobj Gconj Gconj
+ | Groot_nsubj_aux_obj_obl Groot Gnsubj Gaux Gobj Gobl
+ | Groot_nsubj_aux_obj_obl_advmod_advcl Groot Gnsubj Gaux Gobj Gobl Gadvmod Gadvcl
+ | Groot_nsubj_aux_obj_obl_obl Groot Gnsubj Gaux Gobj Gobl Gobl
+ | Groot_nsubj_aux_obl Groot Gnsubj Gaux Gobl
+ | Groot_nsubj_ccomp Groot Gnsubj Gccomp
+ | Groot_nsubj_conj Groot Gnsubj Gconj
+ | Groot_nsubj_conj_obl Groot Gnsubj Gconj Gobl
+ | Groot_nsubj_cop Groot Gnsubj Gcop
+ | Groot_nsubj_cop_aclRelcl Groot Gnsubj Gcop GaclRelcl
+ | Groot_nsubj_cop_aclRelcl_obl Groot Gnsubj Gcop GaclRelcl Gobl
+ | Groot_nsubj_cop_advcl Groot Gnsubj Gcop Gadvcl
+ | Groot_nsubj_cop_advmod Groot Gnsubj Gcop Gadvmod
+ | Groot_nsubj_cop_case_nmod_acl Groot Gnsubj Gcop Gcase_ Gnmod Gacl
+ | Groot_nsubj_cop_cc_conj Groot Gnsubj Gcop Gcc Gconj
+ | Groot_nsubj_cop_det_amod_advcl Groot Gnsubj Gcop Gdet Gamod Gadvcl
+ | Groot_nsubj_cop_det_amod_compound Groot Gnsubj Gcop Gdet Gamod Gcompound
+ | Groot_nsubj_cop_det_compound Groot Gnsubj Gcop Gdet Gcompound
+ | Groot_nsubj_cop_det_compound_conj Groot Gnsubj Gcop Gdet Gcompound Gconj
+ | Groot_nsubj_cop_det_conj Groot Gnsubj Gcop Gdet Gconj
+ | Groot_nsubj_cop_det_nmod Groot Gnsubj Gcop Gdet Gnmod
+ | Groot_nsubj_cop_nmod Groot Gnsubj Gcop Gnmod
+ | Groot_nsubj_cop_nmodPoss Groot Gnsubj Gcop GnmodPoss
+ | Groot_nsubj_cop_obl Groot Gnsubj Gcop Gobl
+ | Groot_nsubj_det Groot Gnsubj Gdet
+ | Groot_nsubj_det_nmod_nmod Groot Gnsubj Gdet Gnmod Gnmod
+ | Groot_nsubj_obj Groot Gnsubj Gobj
+ | Groot_nsubj_obj_xcomp Groot Gnsubj Gobj Gxcomp
+ | Groot_nsubj_obl Groot Gnsubj Gobl
+ | Groot_nsubj_xcomp Groot Gnsubj Gxcomp
+ | Groot_nummod Groot Gnummod
+ | Groot_nummod_appos Groot Gnummod Gappos
+ | Groot_nummod_auxPass_cc_aux_auxPass_obl_obl Groot Gnummod GauxPass Gcc Gaux GauxPass Gobl Gobl
+ | Groot_nummod_conj Groot Gnummod Gconj
+ | Groot_nummod_cop_cc_aux_cop_det_nmod Groot Gnummod Gcop Gcc Gaux Gcop Gdet Gnmod
+ | Groot_nummod_det_acl Groot Gnummod Gdet Gacl
+ | Groot_nummod_det_aclRelcl Groot Gnummod Gdet GaclRelcl
+ | Groot_nummod_det_amod Groot Gnummod Gdet Gamod
+ | Groot_nummod_det_amod_conj_conj Groot Gnummod Gdet Gamod Gconj Gconj
+ | Groot_nummod_det_conj_nmod Groot Gnummod Gdet Gconj Gnmod
+ | Groot_nummod_det_conj_nmod_cc Groot Gnummod Gdet Gconj Gnmod Gcc
+ | Groot_nummod_det_nmod Groot Gnummod Gdet Gnmod
+ | Groot_nummod_mark_obj Groot Gnummod Gmark Gobj
+ | Groot_nummod_mark_obj_cc Groot Gnummod Gmark Gobj Gcc
+ | Groot_nummod_nmod Groot Gnummod Gnmod
+ | Groot_nummod_nsubjPass_nsubjPass_auxPass_cc Groot Gnummod GnsubjPass GnsubjPass GauxPass Gcc
+ | Groot_nummod_obl Groot Gnummod Gobl
+ | Groot_nummod_obl_cc Groot Gnummod Gobl Gcc
+ | Groot_obj Groot Gobj
+ | Groot_obj_ccomp Groot Gobj Gccomp
+ | Groot_obj_nmod Groot Gobj Gnmod
+ | Groot_obl Groot Gobl
+ | Groot_obl_appos Groot Gobl Gappos
+ | Groot_obl_aux Groot Gobl Gaux
+ | Groot_obl_case Groot Gobl Gcase_
+ | Groot_obl_obj Groot Gobl Gobj
+ | Groot_obl_obl Groot Gobl Gobl
+ | Groot_obl_obl_obl_cc Groot Gobl Gobl Gobl
+ | Groot_obl_xcomp Groot Gobl Gxcomp
+ | Groot_only Groot
+ | Groot_parataxis Groot Gparataxis
+ | Groot_xcomp_ccomp Groot Gxcomp Gccomp
   deriving Show
 
 data GV =
@@ -578,225 +585,233 @@ data GV =
   deriving Show
 
 data GVP =
-   GAdVVP GAdV GVP 
- | GAdvVP GVP GAdv 
- | GComplV GV GNP 
- | GPassV GV 
- | GPassVAgent GV GNP 
- | GProgrVP GVP 
- | GUseV GV 
+   GAdVVP GAdV GVP
+ | GAdvVP GVP GAdv
+ | GComplV GV GNP
+ | GPassV GV
+ | GPassVAgent GV GNP
+ | GProgrVP GVP
+ | GUseV GV
   deriving Show
 
-data Gacl = Gacl_ GX 
+data Gacl =
+   GaclUDS_ GUDS
+ | Gacl_ GX
   deriving Show
 
 data GaclRelcl =
-   GaclRelcl_ GRS 
- | GpassRelcl_ Groot GRP GauxPass 
+   GaclRelclRS_ GRS
+ | GaclRelclUDS_ GUDS
+ | GpassRelcl_ Groot GRP GauxPass
   deriving Show
 
-data Gadvcl = Gadvcl_ GX 
+data Gadvcl =
+   GadvclUDS_ GUDS
+ | Gadvcl_ GX
   deriving Show
 
-data Gadvmod = Gadvmod_ GAdv 
+data Gadvmod =
+   Gadvmod_ GAdv
+ | Gnot_advmod
   deriving Show
 
-data GadvmodEmph = GadvmodEmph_ GX 
+data GadvmodEmph = GadvmodEmph_ GX
   deriving Show
 
-data GadvmodLmod = GadvmodLmod_ GX 
+data GadvmodLmod = GadvmodLmod_ GX
   deriving Show
 
-data Gamod = Gamod_ GX 
+data Gamod = Gamod_ GAP
   deriving Show
 
-data Gappos = Gappos_ GX 
+data Gappos = Gappos_ GX
   deriving Show
 
 data Gaux =
-   Gaux_ GX 
- | Gcan_aux 
- | Ghave_aux 
- | Gmay_aux 
- | Gmust_aux 
- | Gshould_aux 
- | Gwill_aux 
+   Gaux_ GX
+ | Gbe_aux
+ | Gcan_aux
+ | Ghave_aux
+ | Gmay_aux
+ | Gmust_aux
+ | Gshould_aux
+ | Gwill_aux
   deriving Show
 
-data GauxPass = GauxPass_ 
+data GauxPass = Gbe_auxPass
   deriving Show
 
-data Gcase_ = Gcase__ GX 
+data Gcase_ = Gcase__ GX
   deriving Show
 
-data Gcc = Gcc_ GConj 
+data Gcc = Gcc_ GConj
   deriving Show
 
-data GccPreconj = GccPreconj_ GX 
+data GccPreconj = GccPreconj_ GX
   deriving Show
 
-data Gccomp = Gccomp_ GUDS 
+data Gccomp = Gccomp_ GUDS
   deriving Show
 
-data Gclf = Gclf_ GX 
+data Gclf = Gclf_ GX
   deriving Show
 
-data Gcompound = Gcompound_ GX 
+data Gcompound = Gcompound_ GX
   deriving Show
 
-data GcompoundLvc = GcompoundLvc_ GX 
+data GcompoundLvc = GcompoundLvc_ GX
   deriving Show
 
-data GcompoundPrt = GcompoundPrt_ GX 
+data GcompoundPrt = GcompoundPrt_ GX
   deriving Show
 
-data GcompoundRedup = GcompoundRedup_ GX 
+data GcompoundRedup = GcompoundRedup_ GX
   deriving Show
 
-data GcompoundSvc = GcompoundSvc_ GX 
+data GcompoundSvc = GcompoundSvc_ GX
   deriving Show
 
 data Gconj =
-   GconjA_ GAP 
- | GconjAdv_ GAdv 
- | GconjN_ GNP 
- | Gconj_ GX 
+   GconjA_ GAP
+ | GconjAdv_ GAdv
+ | GconjN_ GNP
+ | Gconj_ GX
   deriving Show
 
-data Gcop = Gbe_cop 
+data Gcop = Gbe_cop
   deriving Show
 
-data Gcsubj = Gcsubj_ GX 
+data Gcsubj = Gcsubj_ GX
   deriving Show
 
-data GcsubjPass = GcsubjPass_ GX 
+data GcsubjPass = GcsubjPass_ GX
   deriving Show
 
-data Gdep = Gdep_ GX 
+data Gdep = Gdep_ GX
   deriving Show
 
-data Gdet = Gdet_ GX 
+data Gdet = Gdet_ GDet
   deriving Show
 
-data GdetNumgov = GdetNumgov_ GX 
+data GdetNumgov = GdetNumgov_ GX
   deriving Show
 
-data GdetNummod = GdetNummod_ GX 
+data GdetNummod = GdetNummod_ GX
   deriving Show
 
-data GdetPoss = GdetPoss_ GX 
+data GdetPoss = GdetPoss_ GX
   deriving Show
 
-data Gdiscourse = Gdiscourse_ GX 
+data Gdiscourse = Gdiscourse_ GX
   deriving Show
 
-data Gdislocated = Gdislocated_ GX 
+data Gdislocated = Gdislocated_ GX
   deriving Show
 
 data Gexpl =
-   Gexpl_ GX 
- | Git_expl 
+   Gexpl_ GPron
+ | Git_expl
   deriving Show
 
-data GexplImpers = GexplImpers_ GX 
+data GexplImpers = GexplImpers_ GX
   deriving Show
 
-data GexplPass = GexplPass_ GX 
+data GexplPass = GexplPass_ GX
   deriving Show
 
-data GexplPv = GexplPv_ GX 
+data GexplPv = GexplPv_ GX
   deriving Show
 
-data Gfixed = Gfixed_ GX 
+data Gfixed = Gfixed_ GX
   deriving Show
 
-data Gflat = Gflat_ GX 
+data Gflat = Gflat_ GX
   deriving Show
 
-data GflatForeign = GflatForeign_ GX 
+data GflatForeign = GflatForeign_ GX
   deriving Show
 
-data GflatName = GflatName_ GX 
+data GflatName = GflatName_ GX
   deriving Show
 
-data Ggoeswith = Ggoeswith_ GX 
+data Ggoeswith = Ggoeswith_ GX
   deriving Show
 
-data Giobj = Giobj_ GNP 
+data Giobj = Giobj_ GNP
   deriving Show
 
-data Glist = Glist_ GX 
+data Glist = Glist_ GX
   deriving Show
 
-data Gmark = Gmark_ GX 
+data Gmark = Gmark_ GSubj
   deriving Show
 
-data Gnmod = Gnmod_ GPrep GNP 
+data Gnmod = Gnmod_ GPrep GNP
   deriving Show
 
-data GnmodPoss = GnmodPoss_ GX 
+data GnmodPoss = GnmodPoss_ GX
   deriving Show
 
-data GnmodTmod = GnmodTmod_ GX 
+data GnmodTmod = GnmodTmod_ GX
   deriving Show
 
-data Gnsubj = Gnsubj_ GNP 
+data Gnsubj = Gnsubj_ GNP
   deriving Show
 
-data GnsubjPass = GnsubjPass_ GNP 
+data GnsubjPass = GnsubjPass_ GNP
   deriving Show
 
-data Gnummod = Gnummod_ GX 
+data Gnummod = Gnummod_ GX
   deriving Show
 
-data GnummodGov = GnummodGov_ GX 
+data GnummodGov = GnummodGov_ GX
   deriving Show
 
-data Gobj = Gobj_ GNP 
+data Gobj = Gobj_ GNP
   deriving Show
 
 data Gobl =
-   GoblPrep_ GPrep 
- | Gobl_ GAdv 
+   GoblPrep_ GPrep
+ | Gobl_ GAdv
   deriving Show
 
-data GoblAgent = GoblAgent_ GX 
+data GoblAgent = GoblAgent_ GX
   deriving Show
 
-data GoblArg = GoblArg_ GX 
+data GoblArg = GoblArg_ GX
   deriving Show
 
-data GoblLmod = GoblLmod_ GX 
+data GoblLmod = GoblLmod_ GX
   deriving Show
 
-data GoblTmod = GoblTmod_ GX 
+data GoblTmod = GoblTmod_ GX
   deriving Show
 
-data Gorphan = Gorphan_ GX 
+data Gorphan = Gorphan_ GX
   deriving Show
 
-data Gparataxis = Gparataxis_ GX 
+data Gparataxis = Gparataxis_ GX
   deriving Show
 
-data Gpunct = Gpunct_ GX 
+data Gpunct = Gpunct_ GX
   deriving Show
 
-data Greparandum = Greparandum_ GX 
+data Greparandum = Greparandum_ GX
   deriving Show
 
 data Groot =
-   GrootA_ GAP 
- | GrootN_ GNP 
- | GrootV_ GVP 
- | Groot_ GX 
+   GrootA_ GAP
+ | GrootAdv_ GAdv
+ | GrootN_ GNP
+ | GrootV_ GVP
   deriving Show
 
-data Gvocative = Gvocative_ GX 
+data Gvocative = Gvocative_ GNP
   deriving Show
 
 data Gxcomp =
-   GxcompA_ GAP 
- | Gxcomp_ GAdv 
+   GxcompA_ GAP
+ | GxcompAdv_ GAdv
   deriving Show
 
 data GA2
@@ -849,10 +864,12 @@ data GX
 
 
 instance Gf GA where
+  gf (GStrA x1) = mkApp (mkCId "StrA") [gf x1]
   gf (LexA x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "StrA" -> GStrA (fg x1)
 
       Just (i,[]) -> LexA (showCId i)
       _ -> error ("no A " ++ show t)
@@ -873,6 +890,7 @@ instance Gf GAP where
   gf (GPastPartAP x1) = mkApp (mkCId "PastPartAP") [gf x1]
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
   gf (GPresPartAP x1) = mkApp (mkCId "PresPartAP") [gf x1]
+  gf (GStrAP x1) = mkApp (mkCId "StrAP") [gf x1]
   gf (GUseComparA x1) = mkApp (mkCId "UseComparA") [gf x1]
 
   fg t =
@@ -883,6 +901,7 @@ instance Gf GAP where
       Just (i,[x1]) | i == mkCId "PastPartAP" -> GPastPartAP (fg x1)
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
       Just (i,[x1]) | i == mkCId "PresPartAP" -> GPresPartAP (fg x1)
+      Just (i,[x1]) | i == mkCId "StrAP" -> GStrAP (fg x1)
       Just (i,[x1]) | i == mkCId "UseComparA" -> GUseComparA (fg x1)
 
 
@@ -946,8 +965,8 @@ instance Gf GAnt where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AAnter" -> GAAnter 
-      Just (i,[]) | i == mkCId "ASimul" -> GASimul 
+      Just (i,[]) | i == mkCId "AAnter" -> GAAnter
+      Just (i,[]) | i == mkCId "ASimul" -> GASimul
 
 
       _ -> error ("no Ant " ++ show t)
@@ -985,10 +1004,10 @@ instance Gf GCN where
       Just (i,[x1,x2]) | i == mkCId "RelCN" -> GRelCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentCN" -> GSentCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseN" -> GUseN (fg x1)
-      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN 
-      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN 
-      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN 
-      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN 
+      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN
+      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN
+      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN
+      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN
 
 
       _ -> error ("no CN " ++ show t)
@@ -997,6 +1016,7 @@ instance Gf GCard where
   gf (GAdNum x1 x2) = mkApp (mkCId "AdNum") [gf x1, gf x2]
   gf (GNumDigits x1) = mkApp (mkCId "NumDigits") [gf x1]
   gf (GNumNumeral x1) = mkApp (mkCId "NumNumeral") [gf x1]
+  gf (GStrCard x1) = mkApp (mkCId "StrCard") [gf x1]
   gf (LexCard x) = mkApp (mkCId x) []
 
   fg t =
@@ -1004,6 +1024,7 @@ instance Gf GCard where
       Just (i,[x1,x2]) | i == mkCId "AdNum" -> GAdNum (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "NumDigits" -> GNumDigits (fg x1)
       Just (i,[x1]) | i == mkCId "NumNumeral" -> GNumNumeral (fg x1)
+      Just (i,[x1]) | i == mkCId "StrCard" -> GStrCard (fg x1)
 
       Just (i,[]) -> LexCard (showCId i)
       _ -> error ("no Card " ++ show t)
@@ -1028,24 +1049,6 @@ instance Gf GDAP where
 
 
       _ -> error ("no DAP " ++ show t)
-
-instance Gf GDeontic where
-  gf Gmay_Deontic = mkApp (mkCId "may_Deontic") []
-  gf Gmust_Deontic = mkApp (mkCId "must_Deontic") []
-  gf Gshall_Deontic = mkApp (mkCId "shall_Deontic") []
-  gf Gshant_Deontic = mkApp (mkCId "shant_Deontic") []
-  gf Gshould_Deontic = mkApp (mkCId "should_Deontic") []
-
-  fg t =
-    case unApp t of
-      Just (i,[]) | i == mkCId "may_Deontic" -> Gmay_Deontic 
-      Just (i,[]) | i == mkCId "must_Deontic" -> Gmust_Deontic 
-      Just (i,[]) | i == mkCId "shall_Deontic" -> Gshall_Deontic 
-      Just (i,[]) | i == mkCId "shant_Deontic" -> Gshant_Deontic 
-      Just (i,[]) | i == mkCId "should_Deontic" -> Gshould_Deontic 
-
-
-      _ -> error ("no Deontic " ++ show t)
 
 instance Gf GDet where
   gf (GConjDet x1 x2) = mkApp (mkCId "ConjDet") [gf x1, gf x2]
@@ -1076,16 +1079,16 @@ instance Gf GDig where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "D_0" -> GD_0 
-      Just (i,[]) | i == mkCId "D_1" -> GD_1 
-      Just (i,[]) | i == mkCId "D_2" -> GD_2 
-      Just (i,[]) | i == mkCId "D_3" -> GD_3 
-      Just (i,[]) | i == mkCId "D_4" -> GD_4 
-      Just (i,[]) | i == mkCId "D_5" -> GD_5 
-      Just (i,[]) | i == mkCId "D_6" -> GD_6 
-      Just (i,[]) | i == mkCId "D_7" -> GD_7 
-      Just (i,[]) | i == mkCId "D_8" -> GD_8 
-      Just (i,[]) | i == mkCId "D_9" -> GD_9 
+      Just (i,[]) | i == mkCId "D_0" -> GD_0
+      Just (i,[]) | i == mkCId "D_1" -> GD_1
+      Just (i,[]) | i == mkCId "D_2" -> GD_2
+      Just (i,[]) | i == mkCId "D_3" -> GD_3
+      Just (i,[]) | i == mkCId "D_4" -> GD_4
+      Just (i,[]) | i == mkCId "D_5" -> GD_5
+      Just (i,[]) | i == mkCId "D_6" -> GD_6
+      Just (i,[]) | i == mkCId "D_7" -> GD_7
+      Just (i,[]) | i == mkCId "D_8" -> GD_8
+      Just (i,[]) | i == mkCId "D_9" -> GD_9
 
 
       _ -> error ("no Dig " ++ show t)
@@ -1103,15 +1106,15 @@ instance Gf GDigit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "'500_Digit'" -> G500_Digit 
-      Just (i,[]) | i == mkCId "n2" -> Gn2 
-      Just (i,[]) | i == mkCId "n3" -> Gn3 
-      Just (i,[]) | i == mkCId "n4" -> Gn4 
-      Just (i,[]) | i == mkCId "n5" -> Gn5 
-      Just (i,[]) | i == mkCId "n6" -> Gn6 
-      Just (i,[]) | i == mkCId "n7" -> Gn7 
-      Just (i,[]) | i == mkCId "n8" -> Gn8 
-      Just (i,[]) | i == mkCId "n9" -> Gn9 
+      Just (i,[]) | i == mkCId "'500_Digit'" -> G500_Digit
+      Just (i,[]) | i == mkCId "n2" -> Gn2
+      Just (i,[]) | i == mkCId "n3" -> Gn3
+      Just (i,[]) | i == mkCId "n4" -> Gn4
+      Just (i,[]) | i == mkCId "n5" -> Gn5
+      Just (i,[]) | i == mkCId "n6" -> Gn6
+      Just (i,[]) | i == mkCId "n7" -> Gn7
+      Just (i,[]) | i == mkCId "n8" -> Gn8
+      Just (i,[]) | i == mkCId "n9" -> Gn9
 
 
       _ -> error ("no Digit " ++ show t)
@@ -1143,11 +1146,11 @@ instance Gf GIAdv where
       Just (i,[x1,x2]) | i == mkCId "AdvIAdv" -> GAdvIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjIAdv" -> GConjIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepIP" -> GPrepIP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv 
-      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv 
-      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv 
-      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv 
-      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv 
+      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv
+      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv
+      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv
+      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv
+      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv
 
 
       _ -> error ("no IAdv " ++ show t)
@@ -1186,8 +1189,8 @@ instance Gf GIP where
       Just (i,[x1,x2]) | i == mkCId "AdvIP" -> GAdvIP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "IdetCN" -> GIdetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "IdetIP" -> GIdetIP (fg x1)
-      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP 
-      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP 
+      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP
+      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP
 
 
       _ -> error ("no IP " ++ show t)
@@ -1197,7 +1200,7 @@ instance Gf GIQuant where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant 
+      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant
 
 
       _ -> error ("no IQuant " ++ show t)
@@ -1384,9 +1387,9 @@ instance Gf GNP where
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
-      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP 
-      Just (i,[]) | i == mkCId "none_NP" -> Gnone_NP 
-      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP 
+      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP
+      Just (i,[]) | i == mkCId "none_NP" -> Gnone_NP
+      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP
 
 
       _ -> error ("no NP " ++ show t)
@@ -1395,12 +1398,14 @@ instance Gf GNum where
   gf (GNumCard x1) = mkApp (mkCId "NumCard") [gf x1]
   gf GNumPl = mkApp (mkCId "NumPl") []
   gf GNumSg = mkApp (mkCId "NumSg") []
+  gf (GStrNum x1) = mkApp (mkCId "StrNum") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "NumCard" -> GNumCard (fg x1)
-      Just (i,[]) | i == mkCId "NumPl" -> GNumPl 
-      Just (i,[]) | i == mkCId "NumSg" -> GNumSg 
+      Just (i,[]) | i == mkCId "NumPl" -> GNumPl
+      Just (i,[]) | i == mkCId "NumSg" -> GNumSg
+      Just (i,[x1]) | i == mkCId "StrNum" -> GStrNum (fg x1)
 
 
       _ -> error ("no Num " ++ show t)
@@ -1438,9 +1443,9 @@ instance Gf GPConj where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj 
-      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj 
-      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj 
+      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj
+      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj
+      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj
 
 
       _ -> error ("no PConj " ++ show t)
@@ -1462,8 +1467,8 @@ instance Gf GPol where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "PNeg" -> GPNeg 
-      Just (i,[]) | i == mkCId "PPos" -> GPPos 
+      Just (i,[]) | i == mkCId "PNeg" -> GPNeg
+      Just (i,[]) | i == mkCId "PPos" -> GPPos
 
 
       _ -> error ("no Pol " ++ show t)
@@ -1565,9 +1570,9 @@ instance Gf GRP where
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "FunRP" -> GFunRP (fg x1) (fg x2) (fg x3)
-      Just (i,[]) | i == mkCId "IdRP" -> GIdRP 
-      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP 
-      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP 
+      Just (i,[]) | i == mkCId "IdRP" -> GIdRP
+      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP
+      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP
 
 
       _ -> error ("no RP " ++ show t)
@@ -1609,7 +1614,7 @@ instance Gf GSub10 where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0" -> Gpot0 (fg x1)
-      Just (i,[]) | i == mkCId "pot01" -> Gpot01 
+      Just (i,[]) | i == mkCId "pot01" -> Gpot01
 
 
       _ -> error ("no Sub10 " ++ show t)
@@ -1626,8 +1631,8 @@ instance Gf GSub100 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0as1" -> Gpot0as1 (fg x1)
       Just (i,[x1]) | i == mkCId "pot1" -> Gpot1 (fg x1)
-      Just (i,[]) | i == mkCId "pot110" -> Gpot110 
-      Just (i,[]) | i == mkCId "pot111" -> Gpot111 
+      Just (i,[]) | i == mkCId "pot110" -> Gpot110
+      Just (i,[]) | i == mkCId "pot111" -> Gpot111
       Just (i,[x1,x2]) | i == mkCId "pot1plus" -> Gpot1plus (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "pot1to19" -> Gpot1to19 (fg x1)
 
@@ -1689,21 +1694,31 @@ instance Gf GTense where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "TCond" -> GTCond 
-      Just (i,[]) | i == mkCId "TFut" -> GTFut 
-      Just (i,[]) | i == mkCId "TPast" -> GTPast 
-      Just (i,[]) | i == mkCId "TPres" -> GTPres 
+      Just (i,[]) | i == mkCId "TCond" -> GTCond
+      Just (i,[]) | i == mkCId "TFut" -> GTFut
+      Just (i,[]) | i == mkCId "TPast" -> GTPast
+      Just (i,[]) | i == mkCId "TPres" -> GTPres
 
 
       _ -> error ("no Tense " ++ show t)
 
 instance Gf GUDFragment where
+  gf (GAfter x1) = mkApp (mkCId "After") [gf x1]
+  gf (GBefore x1) = mkApp (mkCId "Before") [gf x1]
+  gf (GBy x1) = mkApp (mkCId "By") [gf x1]
+  gf (GOn x1) = mkApp (mkCId "On") [gf x1]
   gf (GUpon x1) = mkApp (mkCId "Upon") [gf x1]
+  gf (GVaguely x1) = mkApp (mkCId "Vaguely") [gf x1]
   gf (GsubjAction x1 x2) = mkApp (mkCId "subjAction") [gf x1, gf x2]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "After" -> GAfter (fg x1)
+      Just (i,[x1]) | i == mkCId "Before" -> GBefore (fg x1)
+      Just (i,[x1]) | i == mkCId "By" -> GBy (fg x1)
+      Just (i,[x1]) | i == mkCId "On" -> GOn (fg x1)
       Just (i,[x1]) | i == mkCId "Upon" -> GUpon (fg x1)
+      Just (i,[x1]) | i == mkCId "Vaguely" -> GVaguely (fg x1)
       Just (i,[x1,x2]) | i == mkCId "subjAction" -> GsubjAction (fg x1) (fg x2)
 
 
@@ -1759,6 +1774,7 @@ instance Gf GUDS where
   gf (Groot_conj_nmod x1 x2 x3) = mkApp (mkCId "root_conj_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_conj_parataxis x1 x2 x3) = mkApp (mkCId "root_conj_parataxis") [gf x1, gf x2, gf x3]
   gf (Groot_cop x1 x2) = mkApp (mkCId "root_cop") [gf x1, gf x2]
+  gf (Groot_cop_advmod x1 x2 x3) = mkApp (mkCId "root_cop_advmod") [gf x1, gf x2, gf x3]
   gf (Groot_cop_conj_conj x1 x2 x3 x4) = mkApp (mkCId "root_cop_conj_conj") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_cop_det_compound_amod x1 x2 x3 x4 x5) = mkApp (mkCId "root_cop_det_compound_amod") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_cop_det_nmod x1 x2 x3 x4) = mkApp (mkCId "root_cop_det_nmod") [gf x1, gf x2, gf x3, gf x4]
@@ -1799,6 +1815,7 @@ instance Gf GUDS where
   gf (Groot_mark_nsubj x1 x2 x3) = mkApp (mkCId "root_mark_nsubj") [gf x1, gf x2, gf x3]
   gf (Groot_mark_nsubjPass_auxPass_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubjPass_auxPass_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_mark_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_mark_nsubj_aux_advmod_obj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
+  gf (Groot_mark_nsubj_aux_aux x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubj_aux_aux") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_mark_nsubj_cop x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_cop") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_mark_nsubj_cop_case_det x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_mark_nsubj_cop_case_det") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_mark_nsubj_cop_det_amod_compound_conj x1 x2 x3 x4 x5 x6 x7 x8) = mkApp (mkCId "root_mark_nsubj_cop_det_amod_compound_conj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7, gf x8]
@@ -1822,12 +1839,15 @@ instance Gf GUDS where
   gf (Groot_nsubjPass_aux_auxPass_obl_conj x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_conj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_nsubjPass_aux_auxPass_obl_obl_advcl x1 x2 x3 x4 x5 x6 x7) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_obl_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7]
   gf (Groot_nsubjPass_aux_auxPass_obl_obl_advmod x1 x2 x3 x4 x5 x6 x7) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_obl_advmod") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7]
-  gf (Groot_nsubjPass_deontic_auxPass x1 x2 x3 x4) = mkApp (mkCId "root_nsubjPass_deontic_auxPass") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_advmod x1 x2 x3) = mkApp (mkCId "root_nsubj_advmod") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_advmod_case_det x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubj_advmod_case_det") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nsubj_advmod_obj x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_advmod_obj") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_nsubj_aux x1 x2 x3) = mkApp (mkCId "root_nsubj_aux") [gf x1, gf x2, gf x3]
+  gf (Groot_nsubj_aux_aclRelcl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_aclRelcl") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_nsubj_aux_aclRelcl_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubj_aux_aclRelcl_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nsubj_aux_advmod x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_advmod") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_aux_advmod_obj_advcl x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubj_aux_advmod_obj_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
+  gf (Groot_nsubj_aux_aux x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_aux") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_aux_conj x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_conj") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_aux_conj_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubj_aux_conj_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nsubj_aux_obj x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_obj") [gf x1, gf x2, gf x3, gf x4]
@@ -1945,6 +1965,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_conj_nmod" -> Groot_conj_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_conj_parataxis" -> Groot_conj_parataxis (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_cop" -> Groot_cop (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_cop_advmod" -> Groot_cop_advmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_cop_conj_conj" -> Groot_cop_conj_conj (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_cop_det_compound_amod" -> Groot_cop_det_compound_amod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_cop_det_nmod" -> Groot_cop_det_nmod (fg x1) (fg x2) (fg x3) (fg x4)
@@ -1985,6 +2006,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_mark_nsubj" -> Groot_mark_nsubj (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubjPass_auxPass_obl" -> Groot_mark_nsubjPass_auxPass_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_mark_nsubj_aux_advmod_obj" -> Groot_mark_nsubj_aux_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
+      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubj_aux_aux" -> Groot_mark_nsubj_aux_aux (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_cop" -> Groot_mark_nsubj_cop (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_mark_nsubj_cop_case_det" -> Groot_mark_nsubj_cop_case_det (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4,x5,x6,x7,x8]) | i == mkCId "root_mark_nsubj_cop_det_amod_compound_conj" -> Groot_mark_nsubj_cop_det_amod_compound_conj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7) (fg x8)
@@ -2008,12 +2030,15 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_conj" -> Groot_nsubjPass_aux_auxPass_obl_conj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4,x5,x6,x7]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_obl_advcl" -> Groot_nsubjPass_aux_auxPass_obl_obl_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7)
       Just (i,[x1,x2,x3,x4,x5,x6,x7]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_obl_advmod" -> Groot_nsubjPass_aux_auxPass_obl_obl_advmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubjPass_deontic_auxPass" -> Groot_nsubjPass_deontic_auxPass (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_advmod" -> Groot_nsubj_advmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubj_advmod_case_det" -> Groot_nsubj_advmod_case_det (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_advmod_obj" -> Groot_nsubj_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_aux" -> Groot_nsubj_aux (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_aclRelcl" -> Groot_nsubj_aux_aclRelcl (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubj_aux_aclRelcl_obl" -> Groot_nsubj_aux_aclRelcl_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_advmod" -> Groot_nsubj_aux_advmod (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubj_aux_advmod_obj_advcl" -> Groot_nsubj_aux_advmod_obj_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_aux" -> Groot_nsubj_aux_aux (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_conj" -> Groot_nsubj_aux_conj (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubj_aux_conj_obl" -> Groot_nsubj_aux_conj_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_obj" -> Groot_nsubj_aux_obj (fg x1) (fg x2) (fg x3) (fg x4)
@@ -2115,32 +2140,38 @@ instance Gf GVP where
       _ -> error ("no VP " ++ show t)
 
 instance Gf Gacl where
+  gf (GaclUDS_ x1) = mkApp (mkCId "aclUDS_") [gf x1]
   gf (Gacl_ x1) = mkApp (mkCId "acl_") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "aclUDS_" -> GaclUDS_ (fg x1)
       Just (i,[x1]) | i == mkCId "acl_" -> Gacl_ (fg x1)
 
 
       _ -> error ("no acl " ++ show t)
 
 instance Gf GaclRelcl where
-  gf (GaclRelcl_ x1) = mkApp (mkCId "aclRelcl_") [gf x1]
+  gf (GaclRelclRS_ x1) = mkApp (mkCId "aclRelclRS_") [gf x1]
+  gf (GaclRelclUDS_ x1) = mkApp (mkCId "aclRelclUDS_") [gf x1]
   gf (GpassRelcl_ x1 x2 x3) = mkApp (mkCId "passRelcl_") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "aclRelcl_" -> GaclRelcl_ (fg x1)
+      Just (i,[x1]) | i == mkCId "aclRelclRS_" -> GaclRelclRS_ (fg x1)
+      Just (i,[x1]) | i == mkCId "aclRelclUDS_" -> GaclRelclUDS_ (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "passRelcl_" -> GpassRelcl_ (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no aclRelcl " ++ show t)
 
 instance Gf Gadvcl where
+  gf (GadvclUDS_ x1) = mkApp (mkCId "advclUDS_") [gf x1]
   gf (Gadvcl_ x1) = mkApp (mkCId "advcl_") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "advclUDS_" -> GadvclUDS_ (fg x1)
       Just (i,[x1]) | i == mkCId "advcl_" -> Gadvcl_ (fg x1)
 
 
@@ -2148,10 +2179,12 @@ instance Gf Gadvcl where
 
 instance Gf Gadvmod where
   gf (Gadvmod_ x1) = mkApp (mkCId "advmod_") [gf x1]
+  gf Gnot_advmod = mkApp (mkCId "not_advmod") []
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "advmod_" -> Gadvmod_ (fg x1)
+      Just (i,[]) | i == mkCId "not_advmod" -> Gnot_advmod
 
 
       _ -> error ("no advmod " ++ show t)
@@ -2198,6 +2231,7 @@ instance Gf Gappos where
 
 instance Gf Gaux where
   gf (Gaux_ x1) = mkApp (mkCId "aux_") [gf x1]
+  gf Gbe_aux = mkApp (mkCId "be_aux") []
   gf Gcan_aux = mkApp (mkCId "can_aux") []
   gf Ghave_aux = mkApp (mkCId "have_aux") []
   gf Gmay_aux = mkApp (mkCId "may_aux") []
@@ -2208,22 +2242,23 @@ instance Gf Gaux where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "aux_" -> Gaux_ (fg x1)
-      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux 
-      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux 
-      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux 
-      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux 
-      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux 
-      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux 
+      Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux
+      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux
+      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux
+      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux
+      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux
+      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux
+      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux
 
 
       _ -> error ("no aux " ++ show t)
 
 instance Gf GauxPass where
-  gf GauxPass_ = mkApp (mkCId "auxPass_") []
+  gf Gbe_auxPass = mkApp (mkCId "be_auxPass") []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "auxPass_" -> GauxPass_ 
+      Just (i,[]) | i == mkCId "be_auxPass" -> Gbe_auxPass
 
 
       _ -> error ("no auxPass " ++ show t)
@@ -2349,7 +2384,7 @@ instance Gf Gcop where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop 
+      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop
 
 
       _ -> error ("no cop " ++ show t)
@@ -2451,7 +2486,7 @@ instance Gf Gexpl where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "expl_" -> Gexpl_ (fg x1)
-      Just (i,[]) | i == mkCId "it_expl" -> Git_expl 
+      Just (i,[]) | i == mkCId "it_expl" -> Git_expl
 
 
       _ -> error ("no expl " ++ show t)
@@ -2740,16 +2775,16 @@ instance Gf Greparandum where
 
 instance Gf Groot where
   gf (GrootA_ x1) = mkApp (mkCId "rootA_") [gf x1]
+  gf (GrootAdv_ x1) = mkApp (mkCId "rootAdv_") [gf x1]
   gf (GrootN_ x1) = mkApp (mkCId "rootN_") [gf x1]
   gf (GrootV_ x1) = mkApp (mkCId "rootV_") [gf x1]
-  gf (Groot_ x1) = mkApp (mkCId "root_") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "rootA_" -> GrootA_ (fg x1)
+      Just (i,[x1]) | i == mkCId "rootAdv_" -> GrootAdv_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootN_" -> GrootN_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootV_" -> GrootV_ (fg x1)
-      Just (i,[x1]) | i == mkCId "root_" -> Groot_ (fg x1)
 
 
       _ -> error ("no root " ++ show t)
@@ -2766,12 +2801,12 @@ instance Gf Gvocative where
 
 instance Gf Gxcomp where
   gf (GxcompA_ x1) = mkApp (mkCId "xcompA_") [gf x1]
-  gf (Gxcomp_ x1) = mkApp (mkCId "xcomp_") [gf x1]
+  gf (GxcompAdv_ x1) = mkApp (mkCId "xcompAdv_") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "xcompA_" -> GxcompA_ (fg x1)
-      Just (i,[x1]) | i == mkCId "xcomp_" -> Gxcomp_ (fg x1)
+      Just (i,[x1]) | i == mkCId "xcompAdv_" -> GxcompAdv_ (fg x1)
 
 
       _ -> error ("no xcomp " ++ show t)

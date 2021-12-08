@@ -35,7 +35,7 @@ r `shouldParse` v = case r of
         ++ errorBundlePrettyCustom e
   Right x -> x `shouldBe` v
 
-defaultReg, defaultCon :: Rule
+defaultReg, defaultCon, defaultHorn :: Rule
 defaultReg = Regulative
   { subj = mkLeaf "person"
   , keyword = Every
@@ -63,6 +63,17 @@ defaultCon = Constitutive
   , lsource = Nothing
   , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   , given = Nothing
+  }
+
+defaultHorn = Hornlike
+  { names = []
+  , keyword = Means
+  , given = Nothing
+  , upon  = Nothing
+  , clauses = []
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   }
 
 
@@ -288,20 +299,38 @@ main = do
 
     describe "megaparsing MEANS" $ do
 
-      let bobUncle = defaultCon { name = "Bob's your uncle"
-                                , letbind = Not
-                                            ( Any Nothing
-                                              [ mkLeafR "Bob is estranged"
-                                              , mkLeafR "Bob is dead"
-                                              ]
-                                            )
-                                }
+      let bobUncle1 = defaultHorn
+            { names = ["Bob's your uncle"]
+            , keyword = Means
+            , clauses =
+              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+                    , hBody = Just $ Not ( Any Nothing [mkLeafR "Bob is estranged"
+                                                       ,mkLeafR "Bob is dead"])}]
+            , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }
+
+          bobUncle2 = bobUncle1
+            { clauses = 
+              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+                    , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
+                                                 ,      mkLeafR "Bob is dead" ] } ] }
       
-      it "should start a bool struct" $ do
+      it "should start a bool struct with an indented NOT" $ do
         let testfile = "test/bob-head-1.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [bobUncle]
+          `shouldParse` [bobUncle1]
+
+      it "should handle less indentation" $ do
+        let testfile = "test/bob-head-2.csv"
+        testcsv <- BS.readFile testfile
+        parseR pRules testfile (exampleStream testcsv)
+          `shouldParse` [bobUncle1]
+
+      it "should handle outdentation" $ do
+        let testfile = "test/bob-head-3.csv"
+        testcsv <- BS.readFile testfile
+        parseR pRules testfile (exampleStream testcsv)
+          `shouldParse` [bobUncle2]
 
     describe "megaparsing UNLESS semantics" $ do
 

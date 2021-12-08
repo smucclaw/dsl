@@ -819,11 +819,35 @@ if ((morbror or farbror) and not estranged)
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+|       | Bob's your uncle |    |                  |
+| MEANS | NOT              |    | Bob is estranged |
+|       |                  | OR | Bob is dead      |
+
+if (not (estranged or dead))
+
+*** less explicit indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
 |       | Bob's your uncle |                  |
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |
 
 if (not (estranged or dead))
+
+*** but indentation doesn't go backwards
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | Bob's your uncle |                  |
+| MEANS | NOT              | Bob is estranged |
+| OR    |                  | Bob is dead      |
+
+if ((not estranged) or dead))
 
 *** Unless as the only term in a regulative rule
 :PROPERTIES:

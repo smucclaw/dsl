@@ -427,7 +427,7 @@ pMeansRule = debugName "pMeansRule" $ do
     else return $ Constitutive
          { name = head dnew -- we lose the ordering
          , keyword = Given
-         , letbind = RPParamText d
+         , letbind = AA.Leaf $ RPParamText d
          , cond = addneg
                   (snd <$> mergePBRS (w<>i))
                   (snd <$> mergePBRS u)
@@ -548,7 +548,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   return $ Constitutive
     { name = name
     , keyword = copula
-    , letbind = mletbind
+    , letbind = AA.Leaf mletbind
     , cond = addneg
              (snd <$> mergePBRS whenifs)
              (snd <$> mergePBRS unlesses)

@@ -105,7 +105,7 @@ data Rule = Regulative
           | Constitutive
             { name     :: ConstitutiveName   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
-            , letbind  :: RelationalPredicate
+            , letbind  :: BoolStructR
             , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
             , given    :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
@@ -202,6 +202,9 @@ rp2texts (RPConstraint  mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts
+
+text2rp :: Text.Text -> RelationalPredicate
+text2rp = RPParamText . text2pt
 
 -- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text

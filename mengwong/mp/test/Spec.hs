@@ -57,7 +57,7 @@ defaultReg = Regulative
 defaultCon = Constitutive
   { name = ""
   , keyword = Means
-  , letbind = RPBoolStructP $ Leaf $ text2pt "Undefined"
+  , letbind = mkLeafR "Undefined"
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
@@ -88,33 +88,33 @@ main = do
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeafP "walks") } ]
+          `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeafP "walks") } ]
+          `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg {
                             who = Just (All Nothing
-                                         [ mkLeafP "walks"
-                                         , mkLeafP "runs"
+                                         [ mkLeafR "walks"
+                                         , mkLeafR "runs"
                                          , Any Nothing
-                                           [ mkLeafP "eats"
-                                           , mkLeafP "drinks"
+                                           [ mkLeafR "eats"
+                                           , mkLeafR "drinks"
                                            ]
                                          ])
                             } ]
 
       let imbibeRule = [ defaultReg {
                            who = Just (Any Nothing
-                                       [ mkLeafP "walks"
-                                       , mkLeafP "runs"
-                                       , mkLeafP "eats"
+                                       [ mkLeafR "walks"
+                                       , mkLeafR "runs"
+                                       , mkLeafR "eats"
                                        , All Nothing
-                                         [ mkLeafP "drinks"
-                                         , mkLeafP "swallows" ]
+                                         [ mkLeafR "drinks"
+                                         , mkLeafR "swallows" ]
                                        ])
                            } ]
 
@@ -133,7 +133,7 @@ main = do
 
       let degustates = defaultCon
                        { name = "degustates"
-                       , letbind = RPBoolStructP $ Any Nothing [ mkLeaf "eats", mkLeaf "drinks" ]
+                       , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
 
@@ -147,14 +147,14 @@ main = do
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All Nothing
-                                  [ mkLeafP "walks"
-                                  , mkLeafP "degustates"
+                                  [ mkLeafR "walks"
+                                  , mkLeafR "degustates"
                                   ]
                           , srcref = Nothing
                           }
                         , defaultCon
                           { name = "degustates"
-                          , letbind = RPBoolStructP $ Any Nothing [ mkLeaf "eats", mkLeaf "imbibes" ]
+                          , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
                           }
@@ -163,10 +163,10 @@ main = do
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
               { name = "imbibes"
-              , letbind = RPBoolStructR $ All Nothing
-                          [ mkLeafP "drinks"
+              , letbind = All Nothing
+                          [ mkLeafR "drinks"
                           , Any Nothing [ mkLeafR "swallows"
-                                      , mkLeafR "spits" ]
+                                        , mkLeafR "spits" ]
                           ]
               , cond = Nothing
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})
@@ -182,10 +182,10 @@ main = do
 
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
-                                  [ mkLeafP "walks"
-                                  , mkLeafP "eats"
+                                  [ mkLeafR "walks"
+                                  , mkLeafR "eats"
                                   ]
-                          , cond = Just $ mkLeafP "the King wishes"
+                          , cond = Just $ mkLeafR "the King wishes"
                           }
                         ]
 
@@ -212,10 +212,10 @@ main = do
       let singer_chain = [ defaultReg
                          { subj = mkLeaf "person"
                          , who = Just $ All Nothing
-                                 [ mkLeafP "walks"
-                                 , mkLeafP "eats"
+                                 [ mkLeafR "walks"
+                                 , mkLeafR "eats"
                                  ]
-                         , cond = Just $ mkLeafP "the King wishes"
+                         , cond = Just $ mkLeafR "the King wishes"
                          , hence = Just king_pays_singer
                          , lest  = Just singer_must_pay
                          } ]
@@ -289,10 +289,10 @@ main = do
     describe "megaparsing MEANS" $ do
 
       let bobUncle = defaultCon { name = "Bob's your uncle"
-                                , letbind = RPBoolStructP $ Not
+                                , letbind = Not
                                             ( Any Nothing
-                                              [ mkLeaf "Bob is estranged"
-                                              , mkLeaf "Bob is dead"
+                                              [ mkLeafR "Bob is estranged"
+                                              , mkLeafR "Bob is dead"
                                               ]
                                             )
                                 }
@@ -305,22 +305,22 @@ main = do
 
     describe "megaparsing UNLESS semantics" $ do
 
-      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafP "day of silence" ) ) } ] 
+      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ] 
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
                                                  ( All Nothing
-                                                   [ mkLeafP "day of silence"
-                                                   , mkLeafP "observance is mandatory"
+                                                   [ mkLeafR "day of silence"
+                                                   , mkLeafR "observance is mandatory"
                                                    ]
                                                  )
                                                ) } ]
 
-      let dayOfSong = [ defaultReg { cond = Just ( All Nothing [ Not ( mkLeafP "day of silence" )
-                                                               , mkLeafP "day of song" ] ) } ]
+      let dayOfSong = [ defaultReg { cond = Just ( All Nothing [ Not ( mkLeafR "day of silence" )
+                                                               , mkLeafR "day of song" ] ) } ]
 
-      let silenceKing = [ defaultReg { cond = Just ( All Nothing [ mkLeafP "the king wishes"
-                                                                 , Not ( mkLeafP "day of silence" )
+      let silenceKing = [ defaultReg { cond = Just ( All Nothing [ mkLeafR "the king wishes"
+                                                                 , Not ( mkLeafR "day of silence" )
                                                                  ] ) } ]
             
       it "should read EVERY MUST UNLESS" $ do
@@ -355,11 +355,11 @@ main = do
                       
       let silenceMourning = [
             defaultReg { cond = Just ( All Nothing [
-                                         mkLeafP "the king wishes"
+                                         mkLeafR "the king wishes"
                                          , Not
                                            ( Any Nothing
-                                             [ mkLeafP "day of silence"
-                                             , mkLeafP "day of mourning"
+                                             [ mkLeafR "day of silence"
+                                             , mkLeafR "day of mourning"
                                              ]
                                            )
                                          ] ) } ]
@@ -372,11 +372,11 @@ main = do
 
       let mourningForbids = [
             defaultReg { cond = Just ( All Nothing [
-                                         mkLeafP "the king wishes"
+                                         mkLeafR "the king wishes"
                                          , Not
                                            ( All Nothing
-                                             [ mkLeafP "day of mourning"
-                                             , mkLeafP "mourning forbids singing"
+                                             [ mkLeafR "day of mourning"
+                                             , mkLeafR "mourning forbids singing"
                                              ]
                                            ) ] ) } ]
                                          
@@ -416,12 +416,12 @@ main = do
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
                           { name = "Bob's your uncle"
-                          , letbind = RPBoolStructP $ Any Nothing
-                                      [ mkLeaf "Bob is your mother's brother"
-                                      , mkLeaf "Bob is your father's brother"
+                          , letbind = Any Nothing
+                                      [ mkLeafR "Bob is your mother's brother"
+                                      , mkLeafR "Bob is your father's brother"
                                       ]
                           , cond = Just $ Not
-                                ( mkLeafP "Bob is estranged" )
+                                ( mkLeafR "Bob is estranged" )
                           }
                         ]
       it "should handle pilcrows" $ do

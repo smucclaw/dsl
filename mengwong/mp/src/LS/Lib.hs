@@ -356,7 +356,7 @@ pRule = do
   try (pRegRule <?> "regulative rule")
     <|> try (pDecideHorn <?> "DECIDE ... IS ... Horn rule")
     <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
-    <|> try (pMeansRule <?> "nullary MEANS rule")
+--  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
@@ -403,6 +403,14 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
     , srcref  = noSrcRef
     }
 
+--        X MEANS    Y
+-- DECIDE X MEANS    Y
+-- DEEM   X MEANS    Y
+--          IS       Y
+--          INCLUDES Y
+--                     WHEN / IF
+--                               GIVEN
+
 pMeansRule :: Parser Rule
 pMeansRule = debugName "pMeansRule" $ do
   leftY  <- lookAhead pYLocation
@@ -410,13 +418,15 @@ pMeansRule = debugName "pMeansRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
+  
+  
   ((_d,d),gs,w,i,u,means,includes) <- permute $ (,,,,,,)
     <$$> preambleParamText [Deem, Decide]
     <|?> ([], some $ preambleParamText [Given, Upon])
     <|?> ([], some $ preambleBoolStructR [When])
     <|?> ([], some $ preambleBoolStructR [If])
     <|?> ([], some $ preambleBoolStructR [Unless])
-    <|?> ([], some $ preambleBoolStructP [Means])
+    <|?> ([], some $ preambleBoolStructR [Deem, Decide])
     <|?> ([], some $ preambleBoolStructP [Includes])
 
   -- let's extract the new term from the deem line
@@ -957,9 +967,53 @@ rpOrGroup = debugName "rpOrGroup" $ do
                  else AA.Any Nothing (elem1 : elems)
   return toreturn
 
+rpAtomicElement :: Parser BoolStructR
+rpAtomicElement = debugName "rpAtomicElement" $ do
+  try rpNestedBool
+  <|> rpNotElement
+  <|> rpLeafVal
+
 rpElement :: Parser BoolStructR
 rpElement = debugName "rpElement" $ do
-  AA.Leaf <$> pRelationalPredicate
+  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+    <|> rpAtomicElement
+
+
+
+
+
+
+rpConstitutiveAsElement :: Rule -> BoolStructR
+rpConstitutiveAsElement cr = mkLeafR $ name cr
+
+rpNotElement :: Parser BoolStructR
+rpNotElement = debugName "rpNotElement" $ do
+  inner <- pToken MPNot *> rpElement
+  return $ AA.Not inner
+
+rpLeafVal :: Parser BoolStructR
+rpLeafVal = debugName "rpLeafVal" $ do
+  leafVal <- pRelationalPredicate
+  myTraceM $ "rpLeafVal returning " ++ show leafVal
+  return $ AA.Leaf leafVal
+
+
+
+rpNestedBool :: Parser BoolStructR
+rpNestedBool = debugName "rpNestedBool" $ do
+
+  (leftX,foundBool) <- lookAhead (rpLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
+  myTraceM $ "rpNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX
+  withDepth (leftX+1) dBoolStructR
+  
+dBoolStructR :: Parser BoolStructR
+dBoolStructR = debugName "dBoolStructR" $ do
+  rpAndGroup
+
+
+
+
+
 
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" $ do
@@ -1100,23 +1154,66 @@ pSrcRef = do
 pIsRelation :: Parser RelationalPredicate
 pIsRelation = pToken Is *> pConstraint
 
+--              X   IS    your relative
+-- MEANS   NOT  X   IS    estranged
+--          OR  X   IS    dead
+
+-- becomes prolog
+-- yourRelative(X) :- \+ (estranged(X), dead(X)).
+
+-- Hornlike "X is your relative"
+--          Means
+-- no given
+-- no upon
+-- clauses: [ HC2 { hHead = RPConstraint ["X"] RPis ["your uncle"]
+--                  hBody = Just $ AA.Not ( AA.Any Nothing [ RPConstraint ["X"] RPis ["estranged"]
+--                                                         , RPConstraint ["X"] RPis ["dead"] ] ) } ]
+-- rlabel lsource srcref  
+
+-- the informal version:
+-- hHead = RPParamText "Bob's your uncle"
+-- hBody = Just $ AA.Not ( AA.Any Nothing [ RPParamText ["Bob is estranged"]
+--                                        , RPParamText ["Bob is dead"] ] )
+
 pDecideHorn :: Parser Rule
 pDecideHorn = debugName "pDefineHorn" $ do
   (rlabel, srcref) <- pSrcRef
   ((keyword, names, clauses), given, upon) <- permute $ (,,)
-    <$$> defineLimb
+    <$$> try moreStructure <|> lessStructure
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
-  return $ Hornlike { names, keyword, given, clauses, upon, rlabel, srcref
+  return $ Hornlike { names
+                    , keyword = fromMaybe Means keyword
+                    , given, clauses, upon, rlabel, srcref
                     , lsource = noLSource }
   where
-    defineLimb = do
-      keyword <- choice [ pToken Define, pToken Decide ]
-      (((firstWord,isRelation),rhs),body) <- some pOtherVal
-                                             `indentedTuple0` choice [ RPis <$ pToken Is ]
-                                             `indentedTuple0` some pOtherVal
-                                             `indentedTuple0` optional (pToken When *> pBoolStructR)
-      return (keyword, firstWord, [HC2 (RPConstraint firstWord isRelation rhs) body])
+    moreStructure = do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (((firstWord,isRelation),rhs),body) <- pMultiTerm
+                                             `indentedTuple0` choice [ RPis   <$ pToken Is
+                                                                     , RPelem <$ pToken Includes
+                                                                     ]
+                                             `indentedTuple0` pMultiTerm
+                                             `indentedTuple0` optional (choice [ pToken When
+                                                                               , pToken Means
+                                                                               , pToken If
+                                                                               ]
+                                                                         *> pBoolStructR)
+      let hHead = case isRelation of
+                    RPelem -> RPConstraint rhs       RPelem firstWord
+                    _RPis  -> RPConstraint firstWord RPis   rhs
+      return (keyword, firstWord, [HC2 hHead body])
+
+    lessStructure = do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (firstWord,body) <- pMultiTerm
+                          `indentedTuple0` optional (choice [ pToken When
+                                                            , pToken Means
+                                                            , pToken If
+                                                            ]
+                                                      *> pBoolStructR)
+      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
+      
     givenLimb = preambleParamText [Given]
     uponLimb  = preambleParamText [Upon]
       

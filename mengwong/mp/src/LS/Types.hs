@@ -10,7 +10,7 @@ module LS.Types ( module LS.BasicTypes
 
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Data.List.NonEmpty (NonEmpty ((:|)), toList)
+import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import Data.Void (Void)
 import qualified Data.Set           as Set
 import Control.Monad
@@ -248,6 +248,9 @@ data TypeSig = SimpleType ParamType EntityType
 --                                   -- Node "action" [ Node "eat"   [ Node "ice cream" [] ]
 --                                   --               , Node "arg1"  [ Node "val2" [], Node "val3" [] ]
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
+
+multiterm2pt :: [Text.Text] -> ParamText
+multiterm2pt x = pure (fromList x, Nothing)
 
 type ParamText = NonEmpty (NonEmpty Text.Text, Maybe TypeSig) -- but consider the Tree alternative above
 

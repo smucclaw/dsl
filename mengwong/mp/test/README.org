@@ -125,6 +125,50 @@ type DECLARE rule
 | DECLARE | ... | HAS | something | IS | A | Something |
 |         |     |     |           | IS |   | HornClauseRHS |
 
+** lots of variants on horn clauses
+
+*** x is y when z or q
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|      | X | IS | a relative   |
+| WHEN | X | IS | an ancestor  |
+| OR   | X | IS | a descendant |
+| OR   | X | IS | a sibling    |
+
+
+*** x is y means z or q
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | X | IS | a relative   |
+| MEANS | X | IS | an ancestor  |
+| OR    | X | IS | a descendant |
+| OR    | X | IS | a sibling    |
+
+*** x means y when z
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+nope.
+
+*** x includes y when z
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|      | X | INCLUDES | Y            |
+| WHEN | Y | IS       | an ancestor  |
+| OR   | Y | IS       | a descendant |
+| OR   | Y | IS       | a sibling    |
+
 ** RelationalPredicate: IsRelation
 
 MultiText (pToken IS) MultiText

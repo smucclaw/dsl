@@ -548,7 +548,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   return $ Constitutive
     { name = name
     , keyword = copula
-    , letbind = AA.Leaf mletbind
+    , letbind = mletbind
     , cond = addneg
              (snd <$> mergePBRS whenifs)
              (snd <$> mergePBRS unlesses)
@@ -826,9 +826,14 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> RuleBody
 mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbw
 
+-- bob's your uncle
+-- MEANS
+--    bob's your mother's brother
+-- OR bob's your father's mother
+
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
-                -> Parser ( ( Preamble                -- preamble = copula   (means,deem,decide)
-                            , RelationalPredicate)    -- the head of a horn clause
+                           -- preamble = copula   (means,deem,decide)
+                -> Parser (  (Preamble, BoolStructR)  -- body of horn clause
                           , [(Preamble, BoolStructR)] -- positive conditions (when,if)
                           , [(Preamble, BoolStructR)] -- negative conditions (unless)
                           , [(Preamble, ParamText)] -- given    (given params)
@@ -841,7 +846,7 @@ permutationsCon copula ifwhen l4unless l4given =
              <> ", given="    <> show l4given
             ) $ do
   permute $ (,,,)
-    <$$> preambleRelPred copula
+    <$$>             preambleBoolStructR copula
     <|?> ([], some $ preambleBoolStructR ifwhen)
     <|?> ([], some $ preambleBoolStructR l4unless)
     <|?> ([], some $ preambleParamText l4given)

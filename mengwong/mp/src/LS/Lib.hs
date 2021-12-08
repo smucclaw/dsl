@@ -354,11 +354,11 @@ pRule :: Parser Rule
 pRule = do
   _ <- many dnl
   try (pRegRule <?> "regulative rule")
-    <|> try (pDecideHorn <?> "DECIDE ... IS ... Horn rule")
     <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
 --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
+    <|> try (pDecideHorn <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
 pTypeSig :: Parser TypeSig
@@ -387,12 +387,10 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   super <- optional pTypeSig
   myTraceM $ "got super = " <> show super
   _     <- optional dnl
-  has   <- optional (id <$ pToken Has `indented1` many ( (pure <$> pKeyValues) -- basically a single-line ParamText
-                                                         <* optional dnl))
+  has   <- optional (id <$ pToken Has `indented1` some pTypeDefinition)
   myTraceM $ "got has = " <> show has
-  enums <- optional pOneOf
+  enums <- optional pOneOf <* optional dnl
   myTraceM $ "got enums = " <> show enums
-
   return $ TypeDecl
     { name
     , super
@@ -1187,7 +1185,7 @@ pDecideHorn = debugName "pDefineHorn" $ do
                     , given, clauses, upon, rlabel, srcref
                     , lsource = noLSource }
   where
-    moreStructure = do
+    moreStructure = debugName "pDecideHorn moreStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (((firstWord,isRelation),rhs),body) <- pMultiTerm
                                              `indentedTuple0` choice [ RPis   <$ pToken Is
@@ -1197,21 +1195,23 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                              `indentedTuple0` optional (choice [ pToken When
                                                                                , pToken Means
                                                                                , pToken If
-                                                                               ]
-                                                                         *> pBoolStructR)
+                                                                               ] *> pBoolStructR
+                                                                       <|> mkLeafR "OTHERWISE" <$ pToken Otherwise
+                                                                       )
       let hHead = case isRelation of
                     RPelem -> RPConstraint rhs       RPelem firstWord
                     _RPis  -> RPConstraint firstWord RPis   rhs
       return (keyword, firstWord, [HC2 hHead body])
 
-    lessStructure = do
+    lessStructure = debugName "pDecideHorn lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (firstWord,body) <- pMultiTerm
-                          `indentedTuple0` optional (choice [ pToken When
-                                                            , pToken Means
-                                                            , pToken If
-                                                            ]
-                                                      *> pBoolStructR)
+                          `indentedTuple0` (choice [ pToken When
+                                                   , pToken Means
+                                                   , pToken If
+                                                   ] *> (Just <$> pBoolStructR)
+                                            <|> Nothing <$ pToken Otherwise
+                                           )
       return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
       
     givenLimb = preambleParamText [Given]

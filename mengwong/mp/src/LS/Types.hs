@@ -125,7 +125,7 @@ data Rule = Regulative
           | TypeDecl
             { name     :: ConstitutiveName  --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [ParamText] -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text

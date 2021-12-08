@@ -1195,13 +1195,13 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                              `indentedTuple0` optional (choice [ pToken When
                                                                                , pToken Means
                                                                                , pToken If
-                                                                               ] *> pBoolStructR
-                                                                       <|> mkLeafR "OTHERWISE" <$ pToken Otherwise
+                                                                               ] *> (Just <$> pBoolStructR)
+                                                                       <|> Nothing <$ pToken Otherwise
                                                                        )
       let hHead = case isRelation of
                     RPelem -> RPConstraint rhs       RPelem firstWord
                     _RPis  -> RPConstraint firstWord RPis   rhs
-      return (keyword, firstWord, [HC2 hHead body])
+      return (keyword, firstWord, [HC2 hHead (fromMaybe Nothing body)])
 
     lessStructure = debugName "pDecideHorn lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]

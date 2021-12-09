@@ -354,7 +354,7 @@ pRule :: Parser Rule
 pRule = do
   _ <- many dnl
   try (pRegRule <?> "regulative rule")
-    <|> try (id <$ pToken Define `indented0` pTypeDefinition   <?> "ontology definition")
+    <|> try (pTypeDefinition   <?> "ontology definition")
 --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
@@ -382,25 +382,37 @@ pOneOf = id <$ pToken OneOf `indented0` pParamText
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
-  name  <- pOtherVal
-  myTraceM $ "got name = " <> show name
-  super <- optional pTypeSig
-  myTraceM $ "got super = " <> show super
-  _     <- optional dnl
-  has   <- optional (id <$ pToken Has `indented1` some pTypeDefinition)
-  myTraceM $ "got has = " <> show has
-  enums <- optional pOneOf <* optional dnl
-  myTraceM $ "got enums = " <> show enums
-  return $ TypeDecl
-    { name
-    , super
-    , has
-    , enums
-    , rlabel  = noLabel
-    , lsource = noLSource
-    , srcref  = noSrcRef
-    }
+  (proto,g,u) <- permute $ (,,)
+    <$$> defineLimb
+    <|?> (Nothing, givenLimb)
+    <|?> (Nothing, uponLimb)
+  return $ proto { given = snd <$> g, upon = snd <$> u }
+  where
+    defineLimb = do
+      dtoken <- pToken Define
+      name  <- pNameParens
+      myTraceM $ "got name = " <> show name
+      super <- optional pTypeSig
+      myTraceM $ "got super = " <> show super
+      _     <- optional dnl
+      has   <- optional (id <$ pToken Has `indented1` some pTypeDefinition)
+      myTraceM $ "got has = " <> show has
+      enums <- optional pOneOf <* optional dnl
+      myTraceM $ "got enums = " <> show enums
+      return $ TypeDecl
+        { name
+        , super
+        , has
+        , enums
+        , given = Nothing
+        , upon = Nothing
+        , rlabel  = noLabel
+        , lsource = noLSource
+        , srcref  = noSrcRef
+        }
 
+    givenLimb = debugName "pDecideHorn/givenLimb" $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pDecideHorn/uponLimb"  $ Just <$> preambleParamText [Upon]
 --        X MEANS    Y
 -- DECIDE X MEANS    Y
 -- DEEM   X MEANS    Y
@@ -589,7 +601,7 @@ pRegRule = debugName "pRegRule" $ do
 
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
-  entitytype         <- pOtherVal            -- You
+  entitytype         <- pNameParens            -- You
   leftX              <- lookAhead pXLocation
   let keynamewho = pure ((Party, mkLeaf entitytype), Nothing)
   rulebody           <- withDepth leftX (permutationsReg keynamewho)
@@ -721,21 +733,34 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 --  MUST WITHIN 200 years
 --    -> die
 
--- three tokens of the form | some thing | Aka | A Thing |
--- Aka means "also known as"
+-- support name-like expressions tagged with AKA, which means "also known as"
+-- sometimes we want a plain Text.Text
 pNameParens :: Parser ConstitutiveName
-pNameParens = debugName "pNameParens" $ do
-  entitytype  <- pOtherVal            -- Evil World Destroying Corporation
-  let boolEntity = mkLeaf entitytype
+pNameParens = debugName "pNameParens" $ pAKA pOtherVal pure
+
+-- sometimes we want a ParamText
+pPTParens :: Parser ParamText
+pPTParens = debugName "pPTParens" $ pAKA pParamText pt2multiterm
+
+-- sometimes we want a multiterm
+pMultiTermParens :: Parser MultiTerm
+pMultiTermParens = debugName "pMultiTermParens" $ pAKA pMultiTerm id
+
+-- utility function for the above
+pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
+pAKA baseParser toMultiTerm = debugName "pAKA" $ do
+  base <- baseParser
+  let detail = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   entityalias <- optional (pToken Aka *> pOtherVal) -- ("MegaCorp")
   _ <- dnl
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t boolEntity Nothing (Just srcref))) entityalias
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail Nothing (Just srcref))) entityalias
   tell defalias
-  return entitytype
+  return base
+  
 
 pDoAction ::  Parser BoolStructP
 pDoAction = pToken Do >> pAction
@@ -788,7 +813,7 @@ pAction = dBoolStructP
 
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $ do
-  (:|) <$> (pKeyValues <* dnl <?> "paramText head") `indented0` pParams
+  (:|) <$> (pKeyValues <?> "paramText head") `indented0` (optional dnl *> pParams)
 
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
@@ -867,7 +892,7 @@ permutationsCon copula ifwhen l4unless l4given =
 preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
 preambleParamText preambles = do
   preamble <- choice (try . pToken <$> preambles)
-  paramtext <- pParamText
+  paramtext <- pPTParens -- pPTParens is a bit awkward here because of the multiline possibility of a paramtext
   return (preamble, paramtext)
 
 preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)
@@ -1177,7 +1202,7 @@ pDecideHorn :: Parser Rule
 pDecideHorn = debugName "pDefineHorn" $ do
   (rlabel, srcref) <- pSrcRef
   ((keyword, names, clauses), given, upon) <- permute $ (,,)
-    <$$> try moreStructure <|> lessStructure
+    <$$> try includesR <|> try justMultiTerm <|> lessStructure
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
   return $ Hornlike { names
@@ -1185,12 +1210,27 @@ pDecideHorn = debugName "pDefineHorn" $ do
                     , given, clauses, upon, rlabel, srcref
                     , lsource = noLSource }
   where
-    moreStructure = debugName "pDecideHorn moreStructure" $ do
+    -- this is actually kind of a meta-rule, because it really means
+    -- assert(X :- (Y1, Y2)) :- body.
+    
+    includesR = debugName "pDecideHorn/includesR" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (((firstWord,isRelation),rhs),body) <- pMultiTerm
-                                             `indentedTuple0` choice [ RPis   <$ pToken Is
-                                                                     , RPelem <$ pToken Includes
-                                                                     ]
+      (((firstWord,rel),rhs),body) <- pNameParens
+                                             `indentedTuple0` choice [ RPelem <$ pToken Includes ]
+                                             `indentedTuple0` pBoolStructR
+                                             `indentedTuple0` optional (choice [ pToken When
+                                                                               , pToken Means
+                                                                               , pToken If
+                                                                               ] *> (Just <$> pBoolStructR)
+                                                                       <|> Nothing <$ pToken Otherwise
+                                                                       )
+      let hHead = RPBoolStructR [firstWord] rel rhs
+      return (keyword, [firstWord], [HC2 hHead (fromMaybe Nothing body)])
+
+    justMultiTerm = debugName "pDecideHorn/moreStructure" $ do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (((firstWord,rel),rhs),body) <- pNameParens
+                                             `indentedTuple0` choice [ RPis   <$ pToken Is ]
                                              `indentedTuple0` pMultiTerm
                                              `indentedTuple0` optional (choice [ pToken When
                                                                                , pToken Means
@@ -1198,24 +1238,22 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                                                                ] *> (Just <$> pBoolStructR)
                                                                        <|> Nothing <$ pToken Otherwise
                                                                        )
-      let hHead = case isRelation of
-                    RPelem -> RPConstraint rhs       RPelem firstWord
-                    _RPis  -> RPConstraint firstWord RPis   rhs
-      return (keyword, firstWord, [HC2 hHead (fromMaybe Nothing body)])
+      let hHead = RPConstraint [firstWord] rel    rhs
+      return (keyword, [firstWord], [HC2 hHead (fromMaybe Nothing body)])
 
-    lessStructure = debugName "pDecideHorn lessStructure" $ do
+    lessStructure = debugName "pDecideHorn/lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (firstWord,body) <- pMultiTerm
+      (firstWord,body) <- pNameParens
                           `indentedTuple0` (choice [ pToken When
                                                    , pToken Means
                                                    , pToken If
                                                    ] *> (Just <$> pBoolStructR)
                                             <|> Nothing <$ pToken Otherwise
                                            )
-      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
+      return (keyword, [firstWord], [HC2 (RPParamText (multiterm2pt [firstWord])) body])
       
-    givenLimb = preambleParamText [Given]
-    uponLimb  = preambleParamText [Upon]
+    givenLimb = debugName "pDecideHorn/givenLimb" $ preambleParamText [Given]
+    uponLimb  = debugName "pDecideHorn/uponLimb"  $ preambleParamText [Upon]
       
   
 

@@ -127,6 +127,8 @@ data Rule = Regulative
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , given    :: Maybe ParamText
+            , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -139,9 +141,9 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   :: ConstitutiveName   -- "Thing" -- the thing usually said as ("Thing")
-            , detail :: BoolStructP        -- "some thing"
-            , nlhint :: Maybe Text.Text  -- "lang=en number=singular"
+            { name   :: ConstitutiveName  -- "Thing" -- the thing usually said as ("Thing")
+            , detail :: MultiTerm         -- ["some", "thing"]
+            , nlhint :: Maybe Text.Text   -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
           | RuleAlias Text.Text -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
@@ -184,6 +186,7 @@ data HornBody = HBRP HornRP
 
 data RelationalPredicate = RPParamText ParamText
                          | RPConstraint MultiTerm RPRel MultiTerm
+                         | RPBoolStructR MultiTerm RPRel BoolStructR
   deriving (Eq, Show, Generic, ToJSON)
 
 rel2txt :: RPRel -> Text.Text
@@ -197,14 +200,18 @@ rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
 
 rp2texts :: RelationalPredicate -> [Text.Text]
-rp2texts (RPParamText   pt)            = toList $ Text.unwords . toList <$> untypePT pt
-rp2texts (RPConstraint  mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
+rp2texts (RPParamText    pt)            = pt2multiterm pt
+rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
+rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts
 
 text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
+
+pt2multiterm :: ParamText -> MultiTerm
+pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
 
 -- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text

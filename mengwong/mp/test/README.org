@@ -8,7 +8,65 @@ Or you can just run, from the ~mp/~ directory,
   make csv
 #+end_src
 
-* Types, [2021-12-02 Thu]
+* Types [2021-12-02 Thu]
+
+** Value Expressions
+
+*** single non-token words
+
+"foo"
+
+L4Leaf (["eats"], Notype)
+
+*** multiple words
+
+L4Leaf (["foo", "bar", "baz"], Notype)
+
+*** multiline lists of words
+
+| foo |
+| bar |
+| baz |
+
+L4List [ L4Leaf (["foo"], Notype)
+       , L4Leaf (["bar"], Notype)
+       , L4Leaf (["baz"], Notype)
+       ]
+           
+*** and/or trees
+
+| all of: |     |
+|         | foo |
+| AND     | bar |
+| AND     | baz |
+
+AA.All ( L4Leaf (["all of:"],Notype) )
+       [ L4Leaf (["foo",Notype])
+       , L4Leaf (["bar",Notype])
+       , L4Leaf (["baz",Notype]) ]
+
+*** dictionaries of (ValueExp, [ValueExp])
+
+{ Key:    AA.List [AA.Leaf "give", AA.Leaf "bar", AA.Leaf "baz"]
+, Values: [ { Key: "flavour", Values: ["chocolate"] }
+          , { Key: "amount",  Values: ["2 scoops"]  }
+          ]
+}
+
+*** optional AKA aliases
+
+ValueExp "AKA" SingleWord
+
+annexes a DefNameAlias rule connecting SingleWord to ValueExp
+
+*** optional TypeSig type signatures
+
+can be thought of as inline type annotations
+
+| sender | postcode | IS | A | string |
+
+[([ "sender", "postcode" ], string)]
+
 
 ** ParamText
 

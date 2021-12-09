@@ -272,11 +272,11 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefNameAlias ("singer") (mkLeaf "person") Nothing
+            [ DefNameAlias "singer" ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 1, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefNameAlias ("singer") (mkLeaf "person") Nothing
+            [ DefNameAlias ("singer") ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do

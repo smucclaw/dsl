@@ -18,6 +18,7 @@ import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import GHC.Generics
+import Debug.Trace
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -200,7 +201,7 @@ rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
 
-rp2texts :: RelationalPredicate -> [Text.Text]
+rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt
 rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
@@ -217,8 +218,6 @@ pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
 -- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text
 rpFirstWord = head . rp2texts
-
-type MultiTerm = [Text.Text]
 
 data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)
@@ -263,7 +262,9 @@ multiterm2pt x = pure (fromList x, Nothing)
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
 
-type ParamText = NonEmpty (NonEmpty Text.Text, Maybe TypeSig) -- but consider the Tree alternative above
+type MultiTerm = [Text.Text]
+type TypedMulti = (NonEmpty Text.Text, Maybe TypeSig)
+type ParamText = NonEmpty TypedMulti -- but consider the Tree alternative above
 
 text2pt :: a -> NonEmpty (NonEmpty a, Maybe TypeSig)
 text2pt x = pure (pure x, Nothing)
@@ -461,12 +462,31 @@ toToken x = Other x
 pToken :: MyToken -> Parser MyToken
 pToken c = checkDepth >> pTokenMatch (== c) c
 
+pTokenAnyDepth :: MyToken -> Parser MyToken
+pTokenAnyDepth c = pTokenMatch (== c) c
+
 -- | check that the next token is at at least the current level of indentation
 checkDepth :: Parser ()
 checkDepth = do
   depth <- asks callDepth
   leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  if leftX <  depth
+    then myTraceM $ "checkDepth: current location " ++ show leftX ++ " is left of minimum depth " ++ show depth ++ "; considering parse fail"
+    else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
   guard $ leftX >= depth
+
+myTraceM :: String -> Parser ()
+myTraceM x = whenDebug $ do
+  nestDepth <- asks nestLevel
+  traceM $ indentShow nestDepth <> x
+  where
+    indentShow depth = concat $ replicate depth "| "
+
+whenDebug :: Parser () -> Parser ()
+whenDebug act = do
+  isDebug <- asks debug
+  when isDebug act
+
 
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"

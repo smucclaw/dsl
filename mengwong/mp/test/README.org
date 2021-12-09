@@ -125,15 +125,29 @@ X IS HornClauseRHS
 | DECIDE | X | IS | Y |     |   |   |    |
 | WHEN   | Z | IS | Q | AND | P | > | NP |
 
-*** simple define, multi line 3
+*** simple define, multi line 3, and
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-3.csv
+:TABLE_EXPORT_FILE: horn-3-and.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
 | DECIDE | X |    |   |     |   |   |    |
 | IS     | Y |    |   |     |   |   |    |
 | WHEN   | Z | IS | Q | AND | P | > | NP |
+
+BoolStructR should be (AND (z is q) (p gt np))
+
+*** simple define, multi line 3, or
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-3-or.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+BoolStructR should be (OR (z is q) (p gt np))
+
+| DECIDE | X |    |   |    |   |   |    |
+| IS     | Y |    |   |    |   |   |    |
+| WHEN   | Z | IS | Q | OR | P | > | NP |
 
 *** simple define, multi line 4
 :PROPERTIES:
@@ -156,6 +170,36 @@ X IS HornClauseRHS
 | IS     | Y |    |    |
 | WHEN   | Z | IS | Q  |
 | OR     | P | >  | NP |
+
+*** simple define, multi line 6 with non-nested bool
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+"OR" binds tighter than "AND", so we should have (and (or (z is q) (p > np))
+
+| DECIDE | X   |    |       |
+| IS     | Y   |    |       |
+| WHEN   | Z   | IS | Q     |
+| OR     | P   | >  | NP    |
+| AND    | top | IS | level |
+
+*** simple define, multi line 7 with nested bool
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-7.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+"OR" binds tighter than "AND", so explicit nesting should yield (or (z is q) (and (p > np) (top IS level))
+
+| DECIDE | X   |     |    |       |
+| IS     | Y   |     |    |       |
+| WHEN   | Z   | IS  | Q  |       |
+| OR     | P   | >   | NP |       |
+|        | AND | top | IS | level |
+
+Explicit nesting only activates when there's a boolconnector after a newline. if the boolconnector is on the same line we keep going.
 
 ** HornClauseRHS
 

@@ -26,7 +26,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, listToMaybe, isJust)
+import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -956,7 +956,16 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
 
 -- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
 pBoolStructR :: Parser BoolStructR
-pBoolStructR = debugName "pBoolStructR" rpAndGroup
+pBoolStructR = debugName "pBoolStructR" $ do
+  (ands,unlesses) <- permute $ (,)
+    <$$> Just <$> rpAndGroup
+    <|?> (Nothing, Just <$> rpUnlessGroup)
+  return $ fromJust $ addneg ands unlesses
+
+rpUnlessGroup :: Parser BoolStructR
+rpUnlessGroup = debugName "rpUnlessGroup" $ do
+  leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  pToken Unless *> withDepth (leftX + 1) rpAndGroup
 
 rpAndGroup :: Parser BoolStructR
 rpAndGroup = debugName "rpAndGroup" $ do
@@ -976,6 +985,8 @@ rpOrGroup = debugName "rpOrGroup" $ do
                  then elem1
                  else AA.Any Nothing (elem1 : elems)
   return toreturn
+
+-- i think we're going to need an rpUnlessGroup as well
 
 rpElement :: Parser BoolStructR
 rpElement = debugName "rpElement" $ do
@@ -1214,14 +1225,17 @@ pHornlike = debugName "pHornlike" $ do
                                                                      , RPis   <$ pToken Is ]
                                              `indentedTuple0` pBoolStructR
                                              `indentedTuple0` optional whenCase
-      let hHead = RPBoolStructR firstWord rel rhs
-      return (keyword, firstWord, [HC2 hHead (fromMaybe Nothing body)])
+      let hhead = case rhs of
+            AA.Leaf (RPParamText ((y,Nothing) :| [])) -> RPConstraint  firstWord rel (toList y)
+            _                                         -> RPBoolStructR firstWord rel rhs
+      return (keyword, firstWord, [HC2 hhead (fromMaybe Nothing body)])
 
     lessStructure = debugName "pHornlike/lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (firstWord,body) <- pNameParens `indentedTuple0` whenCase
       return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
-      
+
+
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
       

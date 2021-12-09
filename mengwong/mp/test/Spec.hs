@@ -443,16 +443,21 @@ main = do
         let testfile = "test/bob-tail-1.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [ defaultCon 
+          `shouldParse` [ defaultHorn
                           { name = ["Bob's your uncle"]
-                          , letbind = Any Nothing
-                                      [ mkLeafR "Bob is your mother's brother"
-                                      , mkLeafR "Bob is your father's brother"
-                                      ]
-                          , cond = Just $ Not
-                                ( mkLeafR "Bob is estranged" )
+                          , keyword = Means
+                          , clauses = [
+                              HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+                                  , hBody = Just (All Nothing [Any Nothing [Leaf (RPParamText (("Bob is your mother's brother" :| [],Nothing) :| []))
+                                                                           ,Leaf (RPParamText (("Bob is your father's brother" :| [],Nothing) :| []))]
+                                                              ,Not (Leaf (RPParamText (("Bob is estranged" :| [],Nothing) :| [])))])}]
+                          , rlabel = Nothing
+                          , lsource = Nothing
+                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}
+                                          )
                           }
                         ]
+
       it "should handle pilcrows" $ do
         let testfile = "test/pilcrows-1.csv"
         testcsv <- BS.readFile testfile

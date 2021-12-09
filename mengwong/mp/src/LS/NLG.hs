@@ -11,7 +11,7 @@ import LS.Types ( Deontic(..),
       TemporalConstraint (..), TComparison(..),
       ParamText,
       BoolStruct(..),
-      ConstitutiveName,
+      RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -148,9 +148,9 @@ parseFields env rl = case rl of
     parseGiven :: UDEnv -> ParamText -> IO Expr
     parseGiven env pt = parseOut env $ pt2text pt
 
-    -- ConstitutiveName is Text.Text
-    parseName :: UDEnv -> Text.Text -> IO Expr
-    parseName env txt = parseOut env txt
+    -- ConstitutiveName is [Text.Text]
+    parseName :: UDEnv -> [Text.Text] -> IO Expr
+    parseName env txt = parseOut env (Text.unwords txt)
 
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)

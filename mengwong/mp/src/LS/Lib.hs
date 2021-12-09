@@ -445,7 +445,7 @@ pMeansRule = debugName "pMeansRule" $ do
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
-         { name = head dnew -- we lose the ordering
+         { name = dnew
          , keyword = Given
          , letbind = AA.Leaf $ RPParamText d
          , cond = addneg
@@ -601,9 +601,9 @@ pRegRule = debugName "pRegRule" $ do
 
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
-  entitytype         <- pNameParens            -- You
+  entityname         <- AA.Leaf . multiterm2pt <$> pNameParens            -- You
   leftX              <- lookAhead pXLocation
-  let keynamewho = pure ((Party, mkLeaf entitytype), Nothing)
+  let keynamewho = pure ((Party, entityname), Nothing)
   rulebody           <- withDepth leftX (permutationsReg keynamewho)
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
@@ -611,7 +611,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
-                 { subj     = (mkLeaf entitytype)
+                 { subj     = entityname
                  , keyword  = Party
                  , who      = Nothing
                  , cond     = (addneg poscond negcond)
@@ -721,7 +721,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   entitytype   <- lookAhead pNameParens
-  let boolEntity = mkLeaf entitytype
+  let boolEntity = AA.Leaf $ multiterm2pt entitytype
   omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   myTraceM $ "pActor: omgARule = " ++ show omgARule
   tell $ listToDL omgARule
@@ -735,8 +735,8 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 
 -- support name-like expressions tagged with AKA, which means "also known as"
 -- sometimes we want a plain Text.Text
-pNameParens :: Parser ConstitutiveName
-pNameParens = debugName "pNameParens" $ pAKA pOtherVal pure
+pNameParens :: Parser RuleName
+pNameParens = pMultiTermParens
 
 -- sometimes we want a ParamText
 pPTParens :: Parser ParamText
@@ -753,7 +753,7 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   let detail = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional (pToken Aka *> pOtherVal) -- ("MegaCorp")
+  entityalias <- optional (pToken Aka *> some pOtherVal) -- ("MegaCorp")
   _ <- dnl
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -1007,7 +1007,7 @@ rpElement = debugName "rpElement" $ do
 
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
-rpConstitutiveAsElement cr = mkLeafR $ name cr
+rpConstitutiveAsElement = multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
@@ -1078,7 +1078,7 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolStructP
-constitutiveAsElement cr = mkLeaf $ name cr
+constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
 
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" $ do
@@ -1201,11 +1201,11 @@ pIsRelation = pToken Is *> pConstraint
 pDecideHorn :: Parser Rule
 pDecideHorn = debugName "pDefineHorn" $ do
   (rlabel, srcref) <- pSrcRef
-  ((keyword, names, clauses), given, upon) <- permute $ (,,)
+  ((keyword, name, clauses), given, upon) <- permute $ (,,)
     <$$> try includesR <|> try justMultiTerm <|> lessStructure
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
-  return $ Hornlike { names
+  return $ Hornlike { name
                     , keyword = fromMaybe Means keyword
                     , given, clauses, upon, rlabel, srcref
                     , lsource = noLSource }
@@ -1224,8 +1224,8 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                                                                ] *> (Just <$> pBoolStructR)
                                                                        <|> Nothing <$ pToken Otherwise
                                                                        )
-      let hHead = RPBoolStructR [firstWord] rel rhs
-      return (keyword, [firstWord], [HC2 hHead (fromMaybe Nothing body)])
+      let hHead = RPBoolStructR firstWord rel rhs
+      return (keyword, firstWord, [HC2 hHead (fromMaybe Nothing body)])
 
     justMultiTerm = debugName "pDecideHorn/moreStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
@@ -1238,8 +1238,8 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                                                                ] *> (Just <$> pBoolStructR)
                                                                        <|> Nothing <$ pToken Otherwise
                                                                        )
-      let hHead = RPConstraint [firstWord] rel    rhs
-      return (keyword, [firstWord], [HC2 hHead (fromMaybe Nothing body)])
+      let hHead = RPConstraint firstWord rel    rhs
+      return (keyword, firstWord, [HC2 hHead (fromMaybe Nothing body)])
 
     lessStructure = debugName "pDecideHorn/lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
@@ -1250,7 +1250,7 @@ pDecideHorn = debugName "pDefineHorn" $ do
                                                    ] *> (Just <$> pBoolStructR)
                                             <|> Nothing <$ pToken Otherwise
                                            )
-      return (keyword, [firstWord], [HC2 (RPParamText (multiterm2pt [firstWord])) body])
+      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
       
     givenLimb = debugName "pDecideHorn/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pDecideHorn/uponLimb"  $ preambleParamText [Upon]

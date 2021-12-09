@@ -59,6 +59,7 @@ dlToList (DList (Endo f)) = f []
 runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream -> Either (ParseErrorBundle MyStream Void) b
 runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 
+-- intermediate form for a deontic rule
 data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$100)
                          , rbpbrs     :: [(Preamble, BoolStructR)] -- not subject to the party
                          , rbpbrneg   :: [(Preamble, BoolStructR)] -- negative global conditions
@@ -72,8 +73,8 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          }
                       deriving (Eq, Show, Generic)
 
-ruleName :: Rule -> Text.Text
-ruleName (Regulative { subj  = x }) = bsp2text x
+ruleName :: Rule -> RuleName
+ruleName Regulative { subj  = x } = [bsp2text x]
 ruleName x = name x
 
 type RuleLabel = (Text.Text   --  "§"
@@ -103,7 +104,7 @@ data Rule = Regulative
             , having   :: Maybe ParamText  -- HAVING sung...
             }
           | Constitutive
-            { name     :: ConstitutiveName   -- the thing we are defining
+            { name     :: RuleName   -- the thing we are defining
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
             , letbind  :: BoolStructR
             , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
@@ -113,7 +114,7 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | Hornlike
-            { names    :: [ConstitutiveName]
+            { name     :: RuleName
             , keyword  :: MyToken
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
@@ -123,7 +124,7 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | TypeDecl
-            { name     :: ConstitutiveName  --      DEFINE Sign
+            { name     :: RuleName  --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
             , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
@@ -141,8 +142,8 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   :: ConstitutiveName  -- "Thing" -- the thing usually said as ("Thing")
-            , detail :: MultiTerm         -- ["some", "thing"]
+            { name   :: RuleName  -- "Thing" -- the thing usually said as ("Thing")
+            , detail :: RuleName  -- ["some", "thing"]
             , nlhint :: Maybe Text.Text   -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
@@ -151,7 +152,7 @@ data Rule = Regulative
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom
           -- | CaseStm       -- work in progress
-          -- { name   :: ConstitutiveName
+          -- { name   :: RuleName
           -- , limbs  :: [(Maybe BoolStructP -- cond
           --              ,ParamText         -- result
           --              )]
@@ -222,7 +223,7 @@ type MultiTerm = [Text.Text]
 data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)
 
-newtype RelName = RN { getName :: ConstitutiveName }
+newtype RelName = RN { getName :: RuleName }
 
 noLabel :: Maybe (Text.Text, Int, Text.Text)
 noLabel   = Nothing
@@ -242,7 +243,7 @@ data TComparison = TBefore | TAfter | TBy | TOn | TVague
 
 data TemporalConstraint a = TemporalConstraint TComparison Integer a
                           deriving (Eq, Show, Generic, ToJSON)
-type ConstitutiveName = Text.Text
+type RuleName   = MultiTerm
 type EntityType = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
@@ -256,8 +257,11 @@ data TypeSig = SimpleType ParamType EntityType
 --                                   --               , Node "arg1"  [ Node "val2" [], Node "val3" [] ]
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
-multiterm2pt :: [Text.Text] -> ParamText
+multiterm2pt :: MultiTerm -> ParamText
 multiterm2pt x = pure (fromList x, Nothing)
+
+multiterm2bsr :: Rule -> BoolStructR
+multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
 
 type ParamText = NonEmpty (NonEmpty Text.Text, Maybe TypeSig) -- but consider the Tree alternative above
 

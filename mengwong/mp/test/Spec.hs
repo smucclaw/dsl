@@ -55,7 +55,7 @@ defaultReg = Regulative
   }
 
 defaultCon = Constitutive
-  { name = ""
+  { name = []
   , keyword = Means
   , letbind = mkLeafR "Undefined"
   , cond = Nothing
@@ -66,7 +66,7 @@ defaultCon = Constitutive
   }
 
 defaultHorn = Hornlike
-  { names = []
+  { name = []
   , keyword = Means
   , given = Nothing
   , upon  = Nothing
@@ -143,7 +143,7 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
       let degustates = defaultCon
-                       { name = "degustates"
+                       { name = ["degustates"]
                        , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "drinks" ]
                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
                        }
@@ -164,7 +164,7 @@ main = do
                           , srcref = Nothing
                           }
                         , defaultCon
-                          { name = "degustates"
+                          { name = ["degustates"]
                           , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "imbibes" ]
                           , cond = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
@@ -173,7 +173,7 @@ main = do
 
       let imbibeRule3 = imbibeRule2 ++ [
             defaultCon
-              { name = "imbibes"
+              { name = ["imbibes"]
               , letbind = All Nothing
                           [ mkLeafR "drinks"
                           , Any Nothing [ mkLeafR "swallows"
@@ -272,11 +272,11 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefNameAlias "singer" ["person"] Nothing
+            [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 1, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefNameAlias ("singer") ["person"] Nothing
+            [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
@@ -300,7 +300,7 @@ main = do
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
-            { names = ["Bob's your uncle"]
+            { name = ["Bob's your uncle"]
             , keyword = Means
             , clauses =
               [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
@@ -444,7 +444,7 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [ defaultCon 
-                          { name = "Bob's your uncle"
+                          { name = ["Bob's your uncle"]
                           , letbind = Any Nothing
                                       [ mkLeafR "Bob is your mother's brother"
                                       , mkLeafR "Bob is your father's brother"
@@ -544,7 +544,7 @@ main = do
 
     describe "revised parser" $ do
       let simpleHorn = [ Hornlike
-              { names = ["X"]
+              { name = ["X"]
               , keyword = Decide
               , given = Nothing
               , upon = Nothing

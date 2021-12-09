@@ -12,6 +12,8 @@ Or you can just run, from the ~mp/~ directory,
 
 ** Value Expressions
 
+more thinking
+
 *** single non-token words
 
 "foo"

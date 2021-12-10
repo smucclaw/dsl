@@ -996,8 +996,8 @@ rpElement = debugName "rpElement" $ do
   
 rpAtomicElement :: Parser BoolStructR
 rpAtomicElement = debugName "rpAtomicElement" $ do
-  try rpNestedBool
-  <|> rpNotElement
+  try rpNotElement
+  <|> try rpNestedBool
   <|> rpLeafVal
 
 
@@ -1010,7 +1010,7 @@ rpConstitutiveAsElement = multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
-  inner <- pToken MPNot *> rpElement
+  inner <- id <$ pToken MPNot `indented0` dBoolStructR
   return $ AA.Not inner
 
 rpLeafVal :: Parser BoolStructR
@@ -1091,7 +1091,7 @@ pLeafVal = debugName "pLeafVal" $ do
   myTraceM $ "pLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
 
--- should be possible to merge pLeafVal with pNestedBool.
+-- TODO: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 
 pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" $ do

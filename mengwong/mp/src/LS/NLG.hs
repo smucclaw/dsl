@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs #-}
 
 module LS.NLG (
     nlg
@@ -74,7 +75,7 @@ parseOut env txt = do
       expr = case exprs of
         (x : _xs) : _xss -> x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
         _ -> mkApp (mkCId "dummy_N") [] -- dummy expr
-  mapM_ print exprs
+  mapM_ (mapM_ $ putStrLn . showExpr []) exprs
   putStrLn conll
   return expr
 

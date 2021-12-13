@@ -2,9 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs #-}
 
-module LS.NLG (
-    nlg
-    ) where
+module LS.NLG where
 
 import LS.UDExt
 import LS.Types ( Deontic(..),

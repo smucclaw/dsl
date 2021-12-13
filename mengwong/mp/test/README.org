@@ -923,9 +923,9 @@ if ((morbror or farbror) and not estranged)
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|       | Bob's your uncle |    |                  |
-| MEANS | NOT              |    | Bob is estranged |
-|       |                  | OR | Bob is dead      |
+|       | Bob's your uncle |                  |             |
+| MEANS | NOT              | Bob is estranged |             |
+|       |                  | OR               | Bob is dead |
 
 if (not (estranged or dead))
 

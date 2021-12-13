@@ -26,7 +26,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust)
+import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -325,10 +325,11 @@ pToplevel = withDepth 0 $ do
 
 pRules :: Parser [Rule]
 pRules = do
-  wanted <- many (try pRule)
-  _ <- optional pNotARule
+  wanted   <- many (try pRule)
+  notarule <- optional pNotARule
   next <- ([] <$ eof) <|> pRules
-  return $ wanted ++ next
+  wantNotRules <- asks debug
+  return $ wanted ++ next ++ if wantNotRules then maybeToList notarule else []
 
 pNotARule :: Parser Rule
 pNotARule = debugName "pNotARule" $ do
@@ -1082,7 +1083,8 @@ constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
 
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" $ do
-  inner <- pToken MPNot *> pElement
+  depth <- asks callDepth
+  inner <- pToken MPNot *> withDepth (depth+1) pElement
   return $ AA.Not inner
 
 pLeafVal ::  Parser BoolStructP
@@ -1102,7 +1104,7 @@ pNestedBool = debugName "pNestedBool" $ do
 
 pBoolConnector :: Parser MyToken
 pBoolConnector = debugName "pBoolConnector" $ do
-  pToken And <|> pToken Or <|> pToken Unless
+  pToken And <|> pToken Or <|> pToken Unless <|> pToken MPNot
 
 -- helper functions for parsing
 

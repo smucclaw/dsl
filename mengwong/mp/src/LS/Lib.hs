@@ -50,6 +50,7 @@ import LS.XPile.CoreL4
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
+import Data.List (intercalate)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -115,8 +116,14 @@ debugName name p = do
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a
 withDepth n p = do
-  myTraceM ("withDepth(" ++ show n ++ ")")
+  names <- getNames
+  myTraceM (names ++ " setting withDepth(" ++ show n ++ ")")
   local (\st -> st {callDepth= n}) p
+  where
+    getNames = do
+      callStack <- asks parseCallStack
+      return $ intercalate " > " $ reverse callStack
+
 
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
@@ -1026,7 +1033,9 @@ rpLeafVal = debugName "rpLeafVal" $ do
 rpNestedBool :: Parser BoolStructR
 rpNestedBool = debugName "rpNestedBool" $ do
   depth <- asks callDepth
-  (leftX,foundBool) <- lookAhead (rpLeafVal >> dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
+  debugPrint $ "rpNestedBool lookahead looking for some pBoolConnector"
+  (leftX,foundBool) <- lookAhead (rpLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
+  myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; testing if leftX " ++ show leftX ++ " > depth " ++ show depth
   guard (leftX > depth)
   myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; rewinding for dBoolStructR to capture."
   withDepth (leftX+0) dBoolStructR

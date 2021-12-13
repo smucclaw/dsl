@@ -1,6 +1,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 module LS.ToPredicate where
 
 
@@ -8,17 +11,37 @@ import LS.UDExt
 import PGF hiding (Tree)
 import Data.List.Split (splitOn)
 import Data.Char (toUpper)
+import LS.NLG (AnnotatedRule(..))
+import Data.List (intercalate)
+import Data.Bifunctor (first)
+import Data.Maybe (mapMaybe)
 
+newtype Formula = And [Predicate]
+  deriving (Show, Eq)
 
-data Predicate = Not Predicate | Unary String | Binary String
+convertToFormula :: AnnotatedRule -> Formula
+convertToFormula rl@RegulativeA {subjA,whoA,uponA} = And $ mapMaybe (fmap convertToPredicate) [Just subjA, whoA, uponA]
+convertToFormula _ = error "not implemented"
+
+applyFormula :: Formula -> String -> String
+applyFormula (And xs) subj = "\\forall " ++ subj ++ " . " ++ intercalate " && " (map (applyPredicate subj) xs)
+
+applyPredicate :: String -> Predicate -> String
+applyPredicate subj (Unary n) = n ++ "(" ++ subj ++ ")"
+applyPredicate subj (Not pred) = "!" ++ applyPredicate subj pred
+applyPredicate subj (Binary n arg) = n ++ "(" ++ subj ++ ", " ++ arg ++ ")"
+
+type Name = String
+type Arg = String
+data Predicate = Not Predicate | Unary Name | Binary Name Arg
   deriving (Show, Eq)
 
 convertToPredicate :: Expr -> Predicate
 convertToPredicate expr = findHead (fg expr :: GUDS)
 
 removeType :: String -> String
-removeType str | [prefix, _suffix] <- splitOn "_" str = prefix
- | otherwise = error $ "Can't remove type from: " ++ show str
+removeType str | [prefix, _suffix] <- splitOn "_" str = prefix
+ | otherwise = error $ "Can't remove type from: " ++ show str
 
 headName :: CId -> String
 headName = removeType . showCId
@@ -32,11 +55,24 @@ findHead (Groot_only rt) = findHead rt
 findHead (Groot_cop_advmod rt _cp Gnot_advmod) = Not $ findHead rt
 findHead (Groot_mark_nsubj rt _ _) = findHead rt
 findHead (Groot_nsubj rt _) = findHead rt
---findHead (Groot_xcomp rt xc) = mashTogether
 findHead (Groot_xcomp_ccomp (GrootV_ vp) xc (Gccomp_ uds)) =
     Unary (headVP vp `combineName` headXC xc)
-     `combinePredicate` findHead uds
+     `combinePredicate` findHeadAndArg uds
 findHead x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
+
+findHeadAndArg :: Tree a -> (Predicate, String)
+findHeadAndArg uds | [root] <- findRoot uds, [np] <- findNsubj uds = (findHead root, headNP np)
+
+findNsubj :: Tree a -> [GNP]
+findNsubj (Gnsubj_ np) = [np]
+findNsubj x = composOpMonoid findNsubj x
+
+findRoot :: Tree a -> [Groot]
+findRoot rt@(GrootA_ ap) = [rt]
+findRoot rt@(GrootN_ np) = [rt]
+findRoot rt@(GrootV_ vp) = [rt]
+findRoot x = composOpMonoid findRoot x
+
 
 headXC :: Gxcomp -> String
 headXC (GxcompA_ a) = headAP a
@@ -61,8 +97,12 @@ headNP _ = error "not implemented"
 handleAnaphora :: GDet -> String
 handleAnaphora = error "not implemented"
 
+pattern Lexical :: Gf a => String -> a
+pattern Lexical n <- (fmap (first headName) . unApp . gf -> Just (n, []))
+
 headCN :: GCN -> String
-headCN (GUseN n) | Just (n', []) <- unApp (gf n) = headName n' -- organization
+headCN (GUseN (Lexical n)) = n -- organization
+headCN (GUseN (GCompoundN (Lexical n1) (Lexical n2))) = n1 `combineName` n2 -- organization
 headCN (GAdjCN ap cn) = combineName (headAP ap) (headCN cn) -- publicAgency_N
 headCN _ = error "not implemented"
 
@@ -76,8 +116,8 @@ infixr 2 `combinePredicate`
 combineName :: String -> String -> String
 combineName a n = a ++ capitalize n
 
-combinePredicate :: Predicate -> Predicate -> Predicate
-combinePredicate (Unary p1) (Unary p2) = Binary $ p1 `combineName` p2
+combinePredicate :: Predicate -> (Predicate, Arg) -> Predicate
+combinePredicate (Unary p1) (Unary p2, arg) = Binary (p1 `combineName` p2) arg
 
 capitalize :: String  -> String
 capitalize (a:as) = toUpper a : as

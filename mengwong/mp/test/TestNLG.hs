@@ -1,8 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module TestNLG where
 
 import PGF
 import Test.Hspec
 import LS.ToPredicate
+import LS.NLG
+import LS.Types hiding (And)
+import Data.Maybe
 
 nlgTests :: Spec
 nlgTests = do
@@ -40,4 +45,57 @@ nlgTests = do
       -- "become aware that a data breach occurs"
       let Just becomingAware = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
       it "Should convert root_*_ccomp into a binary predicate" $ do
-        convertToPredicate becomingAware `shouldBe` Binary "becomeAwareOccur"
+        convertToPredicate becomingAware `shouldBe` Binary "becomeAwareOccur" "dataBreach"
+
+      it "Should convert a whole Rule into a Formula" $ do
+        convertToFormula defaultRule `shouldBe` And [Unary "organization"]
+        convertToFormula whoRule `shouldBe` And [Unary "organization", Not $ Unary "publicAgency"]
+        convertToFormula ndbRule `shouldBe` And [Unary "organization", Not $ Unary "publicAgency",Binary "becomeAwareOccur" "dataBreach"]
+
+      it "Should apply a Formula to an argument" $ do
+        applyFormula (convertToFormula defaultRule) "org" `shouldBe` "\\forall org . organization(org)"
+        applyFormula (convertToFormula whoRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org)"
+        applyFormula (convertToFormula ndbRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org) && becomeAwareOccur(org, dataBreach)"
+
+defaultRule :: AnnotatedRule
+defaultRule = RegulativeA {
+    subjA = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN organization_N)))",
+    whoA = Nothing,
+    condA = Nothing,
+    deonticA = mkCId "dummy",
+    actionA = fromJust $ readExpr "root_only (rootV_ (UseV sing_V))",
+    temporalA = Nothing,
+    uponA = Nothing,
+    givenA = Nothing
+    }
+
+whoRule :: AnnotatedRule
+whoRule = defaultRule {
+    whoA = readExpr "root_cop_advmod (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod"
+    }
+
+ndbRule :: AnnotatedRule
+ndbRule = whoRule {
+    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
+    }
+
+
+everyOrgNotPublicAg ::  Rule
+everyOrgNotPublicAg = Regulative
+  { subj = mkLeaf "organization"
+  , keyword = Every
+  , who = Just $ mkLeaf "is not a public agency"
+  , cond = Nothing
+  , deontic = DMust
+  , action = mkLeaf "sings"
+  , temporal = Nothing
+  , hence = Nothing
+  , lest = Nothing
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Nothing
+  , upon = []
+  , given = Nothing
+  , having = Nothing
+  , orig = []
+  }

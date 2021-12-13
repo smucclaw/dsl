@@ -108,7 +108,7 @@ parseFields env rl = case rl of
   Regulative {} -> do
     subjA'  <- parseBool env (subj rl)
     whoA'   <- mapM (parseBool env) (who rl)
-    condA'   <- return Nothing --if
+    condA'   <- mapM (parseBool env) (cond rl) --if
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
@@ -127,7 +127,7 @@ parseFields env rl = case rl of
   Constitutive {} -> do
     givenA' <- mapM (parseGiven env) (given rl)
     nameA' <- parseName env (name rl)
-    condA'   <- return Nothing -- when/if/unless
+    condA'   <- mapM (parseBool env) (cond rl) -- when/if/unless
     return ConstitutiveA {
       givenA = givenA',
       nameA = nameA',

@@ -29,11 +29,13 @@ applyFormula (And xs) subj = "\\forall " ++ subj ++ " . " ++ intercalate " && " 
 applyPredicate :: String -> Predicate -> String
 applyPredicate subj (Unary n) = n ++ "(" ++ subj ++ ")"
 applyPredicate subj (Not pred) = "!" ++ applyPredicate subj pred
-applyPredicate subj (Binary n arg) = n ++ "(" ++ subj ++ ", " ++ arg ++ ")"
+applyPredicate subj (Binary n arg) = n ++ "(" ++ intercalate ", " [subj, arg] ++ ")"
+applyPredicate subj (Ternary n a1 a2) = n ++ "(" ++ intercalate ", " [subj, a1, a2] ++  ")"
+
 
 type Name = String
 type Arg = String
-data Predicate = Not Predicate | Unary Name | Binary Name Arg
+data Predicate = Not Predicate | Unary Name | Binary Name Arg | Ternary Name Arg Arg
   deriving (Show, Eq)
 
 convertToPredicate :: Expr -> Predicate
@@ -58,19 +60,41 @@ findHead (Groot_nsubj rt _) = findHead rt
 findHead (Groot_xcomp_ccomp (GrootV_ vp) xc (Gccomp_ uds)) =
     Unary (headVP vp `combineName` headXC xc)
      `combinePredicate` findHeadAndArg uds
+findHead (Groot_ccomp (GrootV_ vp) (Gccomp_ uds)) =
+    Unary (headVP vp) `combinePredicate` findHeadAndArg uds
+findHead (Groot_nsubj_ccomp rt subj cc) = undefined
 findHead x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
 
 findHeadAndArg :: Tree a -> (Predicate, String)
-findHeadAndArg uds | [root] <- findRoot uds, [np] <- findNsubj uds = (findHead root, headNP np)
+findHeadAndArg uds | [] <- findCcomp uds
+                   , [root] <- findRoot uds
+                   , [sub] <- findNsubj uds = (findHead root, headNP sub)
+findHeadAndArg uds | [cc] <- findCcomp uds
+                   , [knowRoot] <- findRoot uds
+                   , [lawyerSubj] <- findNsubj uds
+                   , (Unary occur, databreach) <- findHeadAndArg cc
+                   , (Unary know, lawyer) <- (findHead knowRoot , headNP lawyerSubj)
+                   = (Binary (know `combineName` occur) lawyer, databreach)
+
+findHeadAndArg uds | roots <- findRoot uds, nps <- findNsubj uds = error $ "too many roots:\n "
+  ++ intercalate ", " (map (showExpr [] . gf) roots)
+  ++ "\n and nsubjs\n"
+  ++ intercalate ", " (map (showExpr [] . gf) nps)
 
 findNsubj :: Tree a -> [GNP]
 findNsubj (Gnsubj_ np) = [np]
+findNsubj c@(Gccomp_ uds) = []
 findNsubj x = composOpMonoid findNsubj x
+
+findCcomp :: Tree a -> [GUDS]
+findCcomp (Gccomp_ uds) = [uds]
+findCcomp x = composOpMonoid findCcomp x
 
 findRoot :: Tree a -> [Groot]
 findRoot rt@(GrootA_ ap) = [rt]
 findRoot rt@(GrootN_ np) = [rt]
 findRoot rt@(GrootV_ vp) = [rt]
+findRoot c@(Gccomp_ uds) = []
 findRoot x = composOpMonoid findRoot x
 
 
@@ -118,6 +142,7 @@ combineName a n = a ++ capitalize n
 
 combinePredicate :: Predicate -> (Predicate, Arg) -> Predicate
 combinePredicate (Unary p1) (Unary p2, arg) = Binary (p1 `combineName` p2) arg
+combinePredicate (Unary p1) (Binary p2 arg1, arg2) = Ternary (p1 `combineName` p2) arg1 arg2
 
 capitalize :: String  -> String
 capitalize (a:as) = toUpper a : as

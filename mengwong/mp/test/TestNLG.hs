@@ -57,6 +57,11 @@ nlgTests = do
         applyFormula (convertToFormula whoRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org)"
         applyFormula (convertToFormula ndbRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org) && becomeAwareOccur(org, dataBreach)"
 
+      it "Should handle nested ccomps" $ do
+        convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
+        applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
+
+
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {
     subjA = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN organization_N)))",
@@ -79,6 +84,10 @@ ndbRule = whoRule {
     uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
     }
 
+nestedCcompRule :: AnnotatedRule
+nestedCcompRule = defaultRule {
+    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_nsubj_ccomp (rootV_ (UseV know_V)) (nsubj_ (MassNP (UseN lawyer_N))) (ccomp_ (root_nsubj (rootV_ (UseV occur_V)) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))))"
+    }
 
 everyOrgNotPublicAg ::  Rule
 everyOrgNotPublicAg = Regulative

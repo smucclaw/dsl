@@ -741,7 +741,8 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   let detail = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try (optional dnl *> pToken Aka *> some pOtherVal <* optional dnl) -- ("MegaCorp")
+  entityalias <- optional $ try (optional dnl *> pToken Aka *> some pOtherVal) -- ("MegaCorp")
+  _           <- optional dnl
   -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing

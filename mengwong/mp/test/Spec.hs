@@ -12,6 +12,7 @@ import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
+import TestNLG
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -173,7 +174,7 @@ main = do
               , cond = Nothing
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})
               } ]
-      
+
       it "should parse indented-2.csv (inline constitutive rule)" $ do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
@@ -198,7 +199,7 @@ main = do
                           , action = mkLeaf "pay"
                           , temporal = Just (TemporalConstraint TAfter 20 "min")
                           }
-                        
+
 
       let king_pays_singer_eventually =
             king_pays_singer { temporal = Nothing }
@@ -209,7 +210,7 @@ main = do
                               , action = mkLeaf "pay"
                               , temporal = Just (TemporalConstraint TBefore 1 "supper")
                               }
-                        
+
 
       let singer_chain = [ defaultReg
                          { subj = mkLeaf "person"
@@ -298,7 +299,7 @@ main = do
                                               ]
                                             )
                                 }
-      
+
       it "should start a bool struct" $ do
         let testfile = "test/bob-head-1.csv"
         testcsv <- BS.readFile testfile
@@ -307,7 +308,7 @@ main = do
 
     describe "megaparsing UNLESS semantics" $ do
 
-      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeaf "day of silence" ) ) } ] 
+      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeaf "day of silence" ) ) } ]
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
@@ -324,37 +325,37 @@ main = do
       let silenceKing = [ defaultReg { cond = Just ( All allof [ mkLeaf "the king wishes"
                                                                  , Not ( mkLeaf "day of silence" )
                                                                  ] ) } ]
-            
+
       it "should read EVERY MUST UNLESS" $ do
         let testfile = "test/unless-regulative-1.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSilence
-                      
+
       it "should read EVERY MUST UNLESS IF" $ do
         let testfile = "test/unless-regulative-2.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
-                      
+
       it "should read EVERY MUST IF UNLESS" $ do
         let testfile = "test/unless-regulative-3.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
-                      
+
       it "should read EVERY UNLESS MUST IF" $ do
         let testfile = "test/unless-regulative-4.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
-                      
+
       it "should read EVERY IF MUST UNLESS" $ do
         let testfile = "test/unless-regulative-5.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` silenceKing
-                      
+
       let silenceMourning = [
             defaultReg { cond = Just ( All allof [
                                          mkLeaf "the king wishes"
@@ -381,19 +382,19 @@ main = do
                                              , mkLeaf "mourning forbids singing"
                                              ]
                                            ) ] ) } ]
-                                         
+
       it "should read EVERY MUST IF UNLESS AND" $ do
         let testfile = "test/unless-regulative-7.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` mourningForbids
-                      
+
       it "should read IF NOT when joined" $ do
         let testfile = "test/ifnot-1-joined.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSilence
-                      
+
       it "should read IF-NOT when separate" $ do
         let testfile = "test/ifnot-2-separate.csv"
         testcsv <- BS.readFile testfile
@@ -405,18 +406,18 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` observanceMandatory
-                      
+
       it "should handle NOT AND indented the other way" $ do
         let testfile = "test/ifnot-5-indentation-explicit.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` dayOfSong
-                      
+
       it "should work for constitutive rules" $ do
         let testfile = "test/bob-tail-1.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [ defaultCon 
+          `shouldParse` [ defaultCon
                           { name = "Bob's your uncle"
                           , letbind = Any anyof
                                       [ mkLeaf "Bob is your mother's brother"
@@ -430,13 +431,14 @@ main = do
         let testfile = "test/pilcrows-1.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [ dayOfSilence 
+          `shouldParse` [ dayOfSilence
                         , dayOfSong
                         ]
         -- forM_ (exampleStreams testcsv) $ \stream ->
         --   parseR pRules testfile stream
-        --     `shouldParse` [ defaultCon 
+        --     `shouldParse` [ defaultCon
         --                   ]
+    nlgTests
 
   -- upgrade single OR group to bypass the top level AND group
 

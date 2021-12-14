@@ -36,21 +36,25 @@ table = [ {- [ mylabel ]
         , [ binary  And   myAnd  ]
         ]
 
+getAll :: MyItem lbl a -> [MyItem lbl a]
+getAll (MyAll xs) = xs
+getAll x = [x]
+
 myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myAnd (MyAll a) (MyAll b) = MyAll (a <>  b)
-myAnd (MyAll a) b         = MyAll (a <> [b])
-myAnd        a  (MyAll b) = MyAll (a :   b)
-myAnd        a  b         = MyAll [a ,   b]
+myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
+myAnd a b                          = MyAll (getAll a <> getAll b)
+
+getAny :: MyItem lbl a -> [MyItem lbl a]
+getAny (MyAny xs) = xs
+getAny x = [x]
 
 myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myOr  (MyAny a) (MyAny b) = MyAny (a <> b)
-myOr  (MyAny a) b         = MyAny (a <> [b])
-myOr         a  (MyAny b) = MyAny (a :   b)
-myOr         a  b         = MyAny [a ,   b]
+myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
+myOr a b                          = MyAny (getAny a <> getAny b)
 
 
 
-binary  tname f = InfixL  (f <$ pToken tname)
+binary  tname f = InfixR  (f <$ pToken tname)
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
 mylabel         = Prefix  (MyLabel <$> try pOtherVal)

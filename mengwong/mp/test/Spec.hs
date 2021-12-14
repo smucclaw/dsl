@@ -622,8 +622,8 @@ main = do
         
       let ablcd = (MyAny [MyLeaf "top1"
                         , MyLeaf "top2"
-                        , MyLabel "label3" $ MyAny [ MyLeaf "mid4"
-                                                   , MyLeaf "mid5" ]
+                        , MyLabel "this is a label" $ MyAny [ MyLeaf "mid3"
+                                                            , MyLeaf "mid4" ]
                         ],[])
 
       it "should handle indent-2-c which has a label" $ do

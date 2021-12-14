@@ -1037,7 +1037,7 @@ rpNestedBool = debugName "rpNestedBool" $ do
   myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; testing if leftX " ++ show leftX ++ " > depth " ++ show depth
   guard (leftX > depth)
   myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; rewinding for dBoolStructR to capture."
-  withDepth depth dBoolStructR
+  withDepth (leftX + 0) dBoolStructR
   
 dBoolStructR :: Parser BoolStructR
 dBoolStructR = debugName "dBoolStructR" $ do

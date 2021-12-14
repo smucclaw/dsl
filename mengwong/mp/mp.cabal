@@ -30,6 +30,7 @@ library
       LS.Error
       LS.Lib
       LS.NLG
+      LS.ToPredicate
       LS.Types
       LS.UDExt
       LS.XPile.CoreL4
@@ -116,6 +117,7 @@ test-suite mp-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestNLG
       Paths_mp
   hs-source-dirs:
       test

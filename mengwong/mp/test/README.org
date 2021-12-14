@@ -78,18 +78,17 @@ see src/Parser
 
 *** Indentation depth acts as implicit parentheses.
 
-*** Example 1: no meaningful indentation
+*** indent-2-a: no meaningful indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 originally
-| IF  | A   |   |
-| AND | B   |   |
-| OR  | C   |   |
-| OR  | NOT | D |
-
-| IF  | (A)  |      |
-| AND | (B)  |      |
-| OR  | (C)  |      |
-| OR  | (NOT | (D)) |
+|     | a   |   |
+| AND | b   |   |
+| OR  | c   |   |
+| OR  | NOT | d |
 
 #+begin_example
 if (and a (or b c (not d)))
@@ -99,6 +98,48 @@ if (and a (or b c (not d)))
 (a) && ((b) || (c) || (! (d)))
 #+end_example
 
+**** explicitly
+
+| IF  | (A)  |      |
+| AND | (B)  |      |
+| OR  | (C)  |      |
+| OR  | (NOT | (D)) |
+
+ignoring the newlines,
+
+whenever we increase indentation level we insert a (
+
+whenever we decrease indentation level we insert a )
+
+**** does that rule work for
+
+|           | (a   | (aa | (aaa | (:: | (AType |
+| ))))) AND | (b   |     |      |     |        |
+| ) OR      | (c   |     |      |     |        |
+| ) OR      | (NOT |     |      |     |        |
+|           |      | (d  |      |     |        |
+| )) OR     | (e   |     |      |     |        |
+| )         |      |     |      |     |        |
+
+| MUST | (notify | (to   | (Bob | )) |   |
+|      |         | (from | (    | )) |   |
+|      |         |       |      |    | ) |
+
+Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.
+
+
+*** indent-2-b: slightly harder indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+still means the same thing but with slightly more indentation
+
+|     | a  |     |   |
+| AND | b  |     |   |
+|     | OR | c   |   |
+|     | OR | NOT | d |
 
 ** ParamText
 

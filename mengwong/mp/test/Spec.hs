@@ -587,8 +587,8 @@ main = do
  
     describe "our new parser" $ do
       it "should run at all" $ do
-        let testfile = "test/horn-1.csv"
+        let testfile = "test/indent-2-a.csv"
         testcsv <- BS.readFile testfile
         parseOther December.expr testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [(Leaf "lolol",[]::[Rule])]
+          `shouldParse` [(Leaf "lolol a",[]::[Rule])]
         

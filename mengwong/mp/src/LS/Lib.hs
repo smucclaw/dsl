@@ -300,15 +300,16 @@ vvlookup rs (x,y) = rs !? y >>= (!? x)
 --
 
 stanzaAsStream :: RawStanza -> MyStream
-stanzaAsStream rs = do
+stanzaAsStream rs =
   let vvt = rs
+  in 
   -- MyStream (Text.unpack $ decodeUtf8 s) [ WithPos {..}
-  MyStream rs [ WithPos {..}
-             | y <- [ 0 .. V.length vvt - 1 ]
-             , x <- [ 0 .. V.length (vvt ! y) + 0 ] -- we append a fake ";" token at the end of each line to represent EOL
+  MyStream rs $ parenthesize [ WithPos {..}
+             | y <- [ 0 .. V.length vvt       - 1 ]
+             , x <- [ 0 .. V.length (vvt ! y) - 1 ]
              , let startPos = SourcePos "" (mkPos $ y + 1) (mkPos $ x + 1)
                    endPos   = SourcePos "" (mkPos $ y + 1) (mkPos $ x + 1) -- same
-                   rawToken = if x == V.length (vvt ! y) then ";" else vvt ! y ! x
+                   rawToken = vvt ! y ! x
                    tokenLength = 1
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
@@ -316,10 +317,22 @@ stanzaAsStream rs = do
                    tokenVal = toToken rawToken
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
-
--- deriving (Eq, Ord, Show)
-
---
+  where
+    parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
+    parenthesize mys =
+      concat $ zipWith insertParen mys (tail $ mys ++ [withEOF])
+    withEOF = WithPos eofPos eofPos 1 EOF
+    eofPos = SourcePos "" pos1 pos1
+    insertParen a@WithPos {   endPos = aPos }
+                b@WithPos { startPos = bPos }
+      | aCol <  bCol =  a : replicate (bCol - aCol) goDp --- | foo | bar | -> | foo ( bar |
+      | aCol >  bCol =  a : replicate (aCol - bCol) unDp --- |     | foo | 
+      | otherwise    = [a]                               --- | bar |     | -> | foo ) bar |
+      where
+        aCol = unPos . sourceColumn $ aPos
+        bCol = unPos . sourceColumn $ bPos
+        goDp = b { tokenVal = GoDeeper }
+        unDp = a { tokenVal = UnDeeper }
 -- MyStream is the primary input for our Parsers below.
 --
 

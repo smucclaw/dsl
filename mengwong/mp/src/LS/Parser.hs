@@ -14,7 +14,7 @@ import qualified Data.Text.Lazy as Text
 expr :: Parser BoolStruct
 expr = makeExprParser term table <?> "expression"
 
-term = optional dnl *> (myindented expr <|> plain <?> "term") <* optional dnl
+term = myindented expr <|> plain <?> "term"
 
 table = [ [ prefix  MPNot AA.Not ]
         , [ binary  Or    aaOr   ]
@@ -30,4 +30,4 @@ postfix tname f = Postfix (f <$ pToken tname)
 
 plain = AA.Leaf <$> pOtherVal
 
-myindented _ = empty
+myindented = between (pToken GoDeeper) (pToken UnDeeper)

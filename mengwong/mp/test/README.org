@@ -113,13 +113,13 @@ whenever we decrease indentation level we insert a )
 
 **** does that rule work for
 
-|           | (a   | (aa | (aaa | (:: | (AType |
-| ))))) AND | (b   |     |      |     |        |
-| ) OR      | (c   |     |      |     |        |
-| ) OR      | (NOT |     |      |     |        |
-|           |      | (d  |      |     |        |
-| )) OR     | (e   |     |      |     |        |
-| )         |      |     |      |     |        |
+|             | (a   | (aa | (aaa |   |   | (((:: | (AType |
+| ))))))) AND | (b   |     |      |   |   |       |        |
+| ) OR        | (c   |     |      |   |   |       |        |
+| ) OR        | (NOT |     |      |   |   |       |        |
+|             |      | (d  |      |   |   |       |        |
+| )) OR       | (e   |     |      |   |   |       |        |
+| )           |      |     |      |   |   |       |        |
 
 | MUST | (notify | (to   | (Bob | )) |   |
 |      |         | (from | (    | )) |   |

@@ -48,8 +48,8 @@ data MyToken = Every | Party | TokAll
              | Expect
              | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
              | Otherwise
-             | EOF
-             | GoDeeper | UnDeeper | NoDeeper
+             | SOF | EOF
+             | GoDeeper | UnDeeper
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

@@ -320,9 +320,11 @@ stanzaAsStream rs =
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      concat $ zipWith insertParen mys (tail $ mys ++ [withEOF])
+      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
     withEOF = WithPos eofPos eofPos 1 EOF
     eofPos = SourcePos "" pos1 pos1
+    withSOF = WithPos eofPos eofPos 1 SOF
+    sofPos = SourcePos "" pos1 pos1
     insertParen a@WithPos {   endPos = aPos }
                 b@WithPos { startPos = bPos }
       | aCol <  bCol =  a : replicate (bCol - aCol) goDp --- | foo | bar | -> | foo ( bar |

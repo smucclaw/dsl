@@ -586,9 +586,25 @@ main = do
               
  
     describe "our new parser" $ do
-      it "should run at all" $ do
+      it "should handle indent-2-a" $ do
         let testfile = "test/indent-2-a.csv"
         testcsv <- BS.readFile testfile
         parseOther December.expr testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [(Leaf "lolol a",[]::[Rule])]
+          `shouldParse` [(All Nothing [Leaf "a"
+                                      ,Any Nothing [Any Nothing [Leaf "b"
+                                                                ,Leaf "c"]
+                                                   ,Not (Leaf "d")]],[])]
         
+      it "should run at all" $ do
+        let testfile = "test/indent-2-a.csv"
+        testcsv <- BS.readFile testfile
+        let mystreams = exampleStreams testcsv
+        fmap tokenVal . unMyStream <$> mystreams `shouldBe` [[GoDeeper,Other "a",UnDeeper
+                                                             ,myand
+                                                             ,GoDeeper,Other "b",UnDeeper
+                                                             ,myor,GoDeeper,Other "c",UnDeeper
+                                                             ,myor,GoDeeper,MPNot,GoDeeper
+                                                             ,Other "d"
+                                                             ,UnDeeper,UnDeeper]]
+        where myand = LS.Types.And
+              myor  = LS.Types.Or

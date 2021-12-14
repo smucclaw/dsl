@@ -47,6 +47,7 @@ dependencies:
 - typed-process
 - stm
 - replace-megaparsec
+- parser-combinators
 
 ghc-options: -Wall
 

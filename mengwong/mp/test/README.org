@@ -70,6 +70,36 @@ can be thought of as inline type annotations
 [([ "sender", "postcode" ], string)]
 
 
+** About Indentation, Right-Associativity, and Precedence
+
+see src/Parser
+
+*** At the same depth, NOT binds tighter than OR binds tigher than AND.
+
+*** Indentation depth acts as implicit parentheses.
+
+*** Example 1: no meaningful indentation
+
+originally
+| IF  | A   |   |
+| AND | B   |   |
+| OR  | C   |   |
+| OR  | NOT | D |
+
+| IF  | (A)  |      |
+| AND | (B)  |      |
+| OR  | (C)  |      |
+| OR  | (NOT | (D)) |
+
+#+begin_example
+if (and a (or b c (not d)))
+
+ a  && ( b  ||  c  || (!  d))
+
+(a) && ((b) || (c) || (! (d)))
+#+end_example
+
+
 ** ParamText
 
 one or more normal words with optional typesig

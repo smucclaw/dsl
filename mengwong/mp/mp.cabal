@@ -30,6 +30,7 @@ library
       LS.Error
       LS.Lib
       LS.NLG
+      LS.Parser
       LS.Types
       LS.UDExt
       LS.XPile.CoreL4
@@ -61,6 +62,7 @@ library
     , megaparsec
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog
@@ -99,6 +101,7 @@ executable mp-exe
     , mp
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog
@@ -138,6 +141,7 @@ test-suite mp-test
     , mp
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog

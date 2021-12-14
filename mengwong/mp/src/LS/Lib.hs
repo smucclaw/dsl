@@ -7,7 +7,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
@@ -1038,7 +1037,7 @@ rpNestedBool = debugName "rpNestedBool" $ do
   myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; testing if leftX " ++ show leftX ++ " > depth " ++ show depth
   guard (leftX > depth)
   myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; rewinding for dBoolStructR to capture."
-  withDepth (leftX+0) dBoolStructR
+  withDepth depth dBoolStructR
   
 dBoolStructR :: Parser BoolStructR
 dBoolStructR = debugName "dBoolStructR" $ do

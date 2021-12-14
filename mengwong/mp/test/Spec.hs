@@ -6,6 +6,7 @@ import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
 import LS.Lib
+import qualified LS.Parser as December
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
@@ -84,6 +85,7 @@ main = do
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
   let combine (a,b) = a ++ b
   let parseR = runMyParser combine runConfig
+  let parseOther = runMyParser id runConfig
 
   hspec $ do
     describe "Nothing Test" $ do
@@ -583,3 +585,10 @@ main = do
           `shouldParse` [ simpleHorn ]
               
  
+    describe "our new parser" $ do
+      it "should run at all" $ do
+        let testfile = "test/horn-1.csv"
+        testcsv <- BS.readFile testfile
+        parseOther December.expr testfile `traverse` (exampleStreams testcsv)
+          `shouldParse` [(Leaf "lolol",[]::[Rule])]
+        

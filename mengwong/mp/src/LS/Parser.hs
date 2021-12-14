@@ -11,23 +11,53 @@ import Control.Monad.Combinators.Expr
 import Text.Megaparsec
 import qualified Data.Text.Lazy as Text
 
-expr :: Parser BoolStruct
+
+data MyItem lbl a =
+    MyLeaf                a
+  | MyLabel           lbl (MyItem lbl a)
+  | MyAll     [MyItem lbl a]
+  | MyAny     [MyItem lbl a]
+  | MyNot     (MyItem lbl a)
+  deriving (Eq, Show)
+
+
+
+
+type MyBoolStruct = MyItem Text.Text Text.Text
+
+expr :: Parser MyBoolStruct
 expr = makeExprParser term table <?> "expression"
 
-term = myindented expr <|> plain <?> "term"
+term = myindented expr <|> try (MyLabel <$> pOtherVal <*> plain) <|> plain <?> "term"
 
-table = [ [ prefix  MPNot AA.Not ]
-        , [ binary  Or    aaOr   ]
-        , [ binary  And   aaAnd  ]
+table = [ {- [ mylabel ]
+        ,-} [ prefix  MPNot MyNot ]
+        , [ binary  Or    myOr   ]
+        , [ binary  And   myAnd  ]
         ]
 
-aaOr  a b = AA.Any Nothing [ a, b ]
-aaAnd a b = AA.All Nothing [ a, b ]
+myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myAnd (MyAll a) (MyAll b) = MyAll (a <>  b)
+myAnd (MyAll a) b         = MyAll (a <> [b])
+myAnd        a  (MyAll b) = MyAll (a :   b)
+myAnd        a  b         = MyAll [a ,   b]
+
+myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myOr  (MyAny a) (MyAny b) = MyAny (a <> b)
+myOr  (MyAny a) b         = MyAny (a <> [b])
+myOr         a  (MyAny b) = MyAny (a :   b)
+myOr         a  b         = MyAny [a ,   b]
+
+
 
 binary  tname f = InfixL  (f <$ pToken tname)
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
+mylabel         = Prefix  (MyLabel <$> try pOtherVal)
 
-plain = AA.Leaf <$> pOtherVal
+plain = MyLeaf <$> pOtherVal
 
 myindented = between (pToken GoDeeper) (pToken UnDeeper)
+
+-- 
+

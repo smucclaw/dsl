@@ -130,7 +130,7 @@ Any sufficiently complicated C or Fortran program contains an ad hoc, informally
 
 *** indent-2-b: slightly harder indentation
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-a.csv
+:TABLE_EXPORT_FILE: indent-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -140,6 +140,36 @@ still means the same thing but with slightly more indentation
 | AND | b  |     |   |
 |     | OR | c   |   |
 |     | OR | NOT | d |
+
+** Handle labels at the parents
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1 |                 |
+| OR | top2 |                 |
+| OR |      | this is a label |
+|    |      | mid3            |
+|    | OR   | mid4            |
+
+*** becomes
+|    | (top1) |         |
+| OR | (top2) |         |
+| OR | (      | (label3 |
+|    |        | mid4)   |
+|    | OR     | (mid5)) |
+
+*** how to parse this?
+
+#+begin_src haskell
+    MyAny [ MyLeaf "top1"
+          , MyLeaf "top2"
+          , MyLabel "label3" $
+              MyAny [ MyLeaf "mid4"
+                    , MyLeaf "mid5"]
+          ]
+#+end_src
 
 ** ParamText
 

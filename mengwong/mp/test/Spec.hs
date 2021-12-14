@@ -6,13 +6,14 @@ import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
 import LS.Lib
-import qualified LS.Parser as December
+import LS.Parser
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
+import Control.Monad (when)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -91,6 +92,7 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
+{-
     describe "megaparsing" $ do
 
       it "should parse an unconditional" $ do
@@ -584,27 +586,50 @@ main = do
         parseR pToplevel testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ simpleHorn ]
               
- 
+-}
+
     describe "our new parser" $ do
-      it "should handle indent-2-a" $ do
-        let testfile = "test/indent-2-a.csv"
-        testcsv <- BS.readFile testfile
-        parseOther December.expr testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [(All Nothing [Leaf "a"
-                                      ,Any Nothing [Any Nothing [Leaf "b"
-                                                                ,Leaf "c"]
-                                                   ,Not (Leaf "d")]],[])]
-        
-      it "should run at all" $ do
+      let myand = LS.Types.And
+          myor  = LS.Types.Or
+
+      it "should inject Deeper tokens to match indentation" $ do
         let testfile = "test/indent-2-a.csv"
         testcsv <- BS.readFile testfile
         let mystreams = exampleStreams testcsv
-        fmap tokenVal . unMyStream <$> mystreams `shouldBe` [[GoDeeper,Other "a",UnDeeper
-                                                             ,myand
-                                                             ,GoDeeper,Other "b",UnDeeper
-                                                             ,myor,GoDeeper,Other "c",UnDeeper
-                                                             ,myor,GoDeeper,MPNot,GoDeeper
-                                                             ,Other "d"
-                                                             ,UnDeeper,UnDeeper]]
-        where myand = LS.Types.And
-              myor  = LS.Types.Or
+        fmap tokenVal . unMyStream <$> mystreams `shouldBe` [
+          [GoDeeper,Other "a"
+          ,UnDeeper,myand,GoDeeper,Other "b"
+          ,UnDeeper,myor,GoDeeper,Other "c"
+          ,UnDeeper,myor,GoDeeper,MPNot,GoDeeper,Other "d"
+          ,UnDeeper,UnDeeper]]
+
+      let abcd = (MyAll [MyLeaf "a"
+                        ,MyAny[MyLeaf "b"
+                              ,MyLeaf "c"
+                              ,MyNot (MyLeaf "d")]],[])
+          
+      it "should handle indent-2-a" $ do
+        let testfile = "test/indent-2-a.csv"
+        testcsv <- BS.readFile testfile
+        parseOther expr testfile `traverse` exampleStreams testcsv
+          `shouldParse` [abcd]
+        
+      it "should handle indent-2-b" $ do
+        let testfile = "test/indent-2-b.csv"
+        testcsv <- BS.readFile testfile
+        parseOther expr testfile `traverse` exampleStreams testcsv
+          `shouldParse` [abcd]
+        
+      let ablcd = (MyAny [MyLeaf "top1"
+                        , MyLeaf "top2"
+                        , MyLabel "label3" $ MyAny [ MyLeaf "mid4"
+                                                   , MyLeaf "mid5" ]
+                        ],[])
+
+      it "should handle indent-2-c which has a label" $ do
+        let testfile = "test/indent-2-c.csv"
+        testcsv <- BS.readFile testfile
+        parseOther expr testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ablcd]
+        
+ 

@@ -106,7 +106,6 @@ main = do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [RuleGroup {rlabel = Just ("\167",1,"Hello")}]
 
-{-
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
@@ -114,6 +113,7 @@ main = do
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
+{-
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")

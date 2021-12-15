@@ -473,7 +473,8 @@ checkDepth = do
   leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   if leftX <  depth
     then myTraceM $ "checkDepth: current location " ++ show leftX ++ " is left of minimum depth " ++ show depth ++ "; considering parse fail"
-    else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
+    -- else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
+    else pure ()
   guard $ leftX >= depth
 
 myTraceM :: String -> Parser ()

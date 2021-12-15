@@ -801,10 +801,10 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
 preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
-  leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
-  myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- withDepth leftX pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
+  ands <- myindented pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
 -- let's do a nested and/or tree for relational predicates, not just boolean predicate structures

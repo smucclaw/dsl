@@ -2,9 +2,8 @@
 
 module LS.Parser where
 
-import LS.BasicTypes
 import LS.Types
-import LS.Lib
+import LS.Tokens
 import qualified AnyAll as AA
 
 import Control.Monad.Combinators.Expr

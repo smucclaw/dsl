@@ -39,6 +39,10 @@ import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
 import Options.Generic
 
 import LS.Types
+import LS.Tokens
+import LS.Parser
+import LS.ParamText
+import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import LS.NLG (nlg)
 import Control.Monad.Reader (asks, local)
@@ -49,7 +53,6 @@ import LS.XPile.CoreL4
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
-import Data.List (intercalate)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -92,36 +95,7 @@ someFunc opts = do
 -- printf debugging infrastructure
 
 
-debugPrint :: String -> Parser ()
-debugPrint str = whenDebug $ do
-  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
-  depth     <- asks callDepth
-  leftX     <- lookAhead pXLocation
-  myTraceM ("/ " <> str <> " running. callDepth min=" <> show depth
-            <> "; currently at " ++ show leftX
-            <> "; looking at: " <> show lookingAt)
 
--- force debug=true for this subpath
-alwaysdebugName :: Show a => String -> Parser a -> Parser a
-alwaysdebugName name p = local (\rc -> rc { debug = True }) $ debugName name p
-
-debugName :: Show a => String -> Parser a -> Parser a
-debugName name p = do
-  debugPrint name
-  res <- local (increaseNestLevel name) p
-  myTraceM $ "\\ " <> name <> " has returned " <> show res
-  return res
-
--- | withDepth n p sets the depth to n for parser p
-withDepth :: Depth -> Parser a -> Parser a
-withDepth n p = do
-  names <- getNames
-  myTraceM (names ++ " setting withDepth(" ++ show n ++ ")")
-  local (\st -> st {callDepth= n}) p
-  where
-    getNames = do
-      callStack <- asks parseCallStack
-      return $ intercalate " > " $ reverse callStack
 
 
 runExample :: RunConfig -> ByteString -> IO ()
@@ -371,24 +345,6 @@ pRule = do
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
-pTypeSig :: Parser TypeSig
-pTypeSig = debugName "pTypeSig" $ do
-  _           <- pToken TypeSeparator <|> pToken Is
-  simpletype <|> inlineenum
-  where
-    simpletype = do
-      cardinality <- choice [ TOne      <$ pToken One
-                            , TOne      <$ pToken A_An
-                            , TOptional <$ pToken Optional
-                            , TList0    <$ pToken List0
-                            , TList1    <$ pToken List1 ]
-      base        <- pOtherVal
-      return $ SimpleType cardinality base
-    inlineenum = do
-      InlineEnum TOne <$> pOneOf
-
-pOneOf :: Parser ParamText
-pOneOf = id <$ pToken OneOf `indented0` pParamText
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
@@ -503,65 +459,7 @@ pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGiven" $ do
   some (pRelationalPredicate <* dnl)
 
-pRelationalPredicate :: Parser RelationalPredicate
-pRelationalPredicate = debugName "pRelationalPredicate" $ do
-  try pConstraint <|> try (RPParamText <$> pParamText)
 
-pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm" $ some $ choice [ pOtherVal
-                                                    , pNumAsText ]
-
-pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" $ do
-  (TNumber n) <- pTokenMatch isNumber (TNumber 1234)
-  return (Text.pack $ show n)
-  where
-    isNumber (TNumber _) = True
-    isNumber _           = False
-
--- ["investment"] Is ["savings"] becomes
--- investment(savings)
-
--- ["Minsavings"] Is ["500"] becomes
--- Minsavings is 500
-
--- it all depends if the first letter is uppercase
--- ["dependents"] Is ["5"] becomes
--- dependents(5)
--- ["Dependents"] Is ["5"] becomes
--- dependents is 5
-
-pConstraint :: Parser RelationalPredicate
-pConstraint = debugName "pConstraint" $ do
-  RPConstraint
-    <$> pMultiTerm
-    <*> tok2rel
-    <*> pMultiTerm
-
--- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
-tok2rel :: Parser RPRel
-tok2rel = choice
-    [ RPis      <$ pToken Is      
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
-    , RPnotElem <$ pToken TokNotIn
-    ]
-
-tok2text :: Parser Text.Text
-tok2text = choice
-    [ "IS"     <$ pToken Is      
-    , "=="     <$ pToken TokEQ   
-    , "<"      <$ pToken TokLT   
-    , "<="     <$ pToken TokLTE  
-    , ">"      <$ pToken TokGT   
-    , ">="     <$ pToken TokGTE  
-    , "IN"     <$ pToken TokIn   
-    , "NOT IN" <$ pToken TokNotIn
-    ]
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
@@ -697,14 +595,6 @@ pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
-pRuleLabel :: Parser RuleLabel
-pRuleLabel = debugName "pRuleLabel" $ do
-  (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
-  actualLabel  <- pOtherVal <* dnl
-  return (sym, i, actualLabel)
-  where
-    isRuleMarker (RuleMarker _ _) = True
-    isRuleMarker _                = False
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolStructR)] -> Maybe (Preamble, BoolStructR)
@@ -775,72 +665,10 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = pToken Do >> pAction
 
--- everything in p2 must be at least the same depth as p1
-indented :: Int -> Parser (a -> b) -> Parser a -> Parser b
-indented d p1 p2 = do
-  leftX <- lookAhead pXLocation
-  f     <- p1
-  y     <- withDepth (leftX + d) p2
-  return $ f y
-
-indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
-indentedTuple d p1 p2 = do
-  x     <- tracedepth "left  = " id     p1
-  _     <- tracedepth "nl    = " isJust (optional dnl)
-  y     <- tracedepth "right = " id     p2
-  myTraceM "success; returning"
-  return (x,y)
-  where
-    tracedepth :: Show y => String -> (x -> y) -> Parser x -> Parser x
-    tracedepth lr f p = do
-      depth <- asks callDepth
-      leftX <- lookAhead pXLocation
-      leftY <- lookAhead pYLocation
-      next  <- lookAhead getToken <|> (EOF <$ eof)
-      let prefix = "indentedTuple(" ++ show d ++ "): checkDepth " ++ show depth ++ "; "
-      myTraceM $ prefix ++ "at line " ++ show leftY ++ ", col " ++ show leftX ++ "; looking at " ++ show next
-      s     <- p
-      myTraceM $ prefix ++ lr ++ " matched " ++ show (f s)
-      return s
-
-indentedTuple0, indentedTuple1 :: (Show a, Show b) => Parser a -> Parser b -> Parser (a,b)
-indentedTuple0 = indentedTuple 0
-infixl 4 `indentedTuple0`
-
-indentedTuple1 = indentedTuple 1
-infixl 4 `indentedTuple1`
-
-indented0 :: Parser (a -> b) -> Parser a -> Parser b
-indented0 = indented 0
-infixl 4 `indented0`
-
-indented1 :: Parser (a -> b) -> Parser a -> Parser b
-indented1 = indented 1
-infixl 4 `indented1`
 
 pAction :: Parser BoolStructP
 pAction = dBoolStructP
 
-pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $ do
-  (:|) <$> (pKeyValues <?> "paramText head") `indented0` (optional dnl *> pParams)
-
-  -- === flex for
-  --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
-  --     return $ myhead :| therest
-
-type KVsPair = (NonEmpty Text.Text, Maybe TypeSig) -- so really there are multiple Values
-
-pParams :: Parser [KVsPair]
-pParams = many $ pKeyValues <* dnl    -- head (name+,)*
-
-pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $
-  (,) <$> ((:|) <$> pAnyText `indented1` many pAnyText)
-      <*> optional pTypeSig
-
-pAnyText :: Parser Text.Text
-pAnyText = tok2text <|> pOtherVal
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
@@ -1135,73 +963,6 @@ pBoolConnector = debugName "pBoolConnector" $ do
 anything :: Parser [WithPos MyToken]
 anything = many anySingle
 
--- "discard newline", a reference to GNU Make
-dnl :: Parser [MyToken]
-dnl = some $ pToken EOL
-
-pDeontic :: Parser Deontic
-pDeontic = (pToken Must  >> return DMust)
-           <|> (pToken May   >> return DMay)
-           <|> (pToken Shant >> return DShant)
-
-pNumber :: Parser Integer
-pNumber = token test Set.empty <?> "number"
-  where
-    test (WithPos _ _ _ (TNumber n)) = Just n
-    test _ = Nothing
-
--- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
-pOtherVal :: Parser Text.Text
-pOtherVal = token test Set.empty <?> "Other text"
-  where
-    test (WithPos _ _ _ (TypeSeparator)) = Just "::" -- TODO FIXME -- this was here to allow GIVEN ParamText to contain a type signature
-    test (WithPos _ _ _ (Other t)) = Just t
-    test _ = Nothing
-
-getToken :: Parser MyToken
-getToken = token test Set.empty <?> "any token"
-  where
-    test (WithPos _ _ _ tok) = Just tok
-
-getTokenNonEOL :: Parser MyToken
-getTokenNonEOL = token test Set.empty <?> "any token except EOL"
-  where
-    test (WithPos _ _ _ EOL) = Nothing
-    test (WithPos _ _ _ tok) = Just tok
-
-
--- pInt :: Parser Int
--- pInt = token test Set.empty <?> "integer"
---   where
---     test (WithPos _ _ _ (Int n)) = Just n
---     test _ = Nothing
-
--- pSum :: Parser (Int, Int)
--- pSum = do
---   a <- pInt
---   _ <- pToken Plus
---   b <- pInt
---   return (a, b)
-
--- egStream :: String -> MyStream
--- egStream x = MyStream x (parseMyStream x)
-
-
-
-
-
-
-
-pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = do
-  rlabel <- optional pRuleLabel
-  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  return (rlabel, Just $ SrcRef srcurl srcurl leftX leftY Nothing)
-
-pIsRelation :: Parser RelationalPredicate
-pIsRelation = pToken Is *> pConstraint
 
 --              X   IS    your relative
 -- MEANS   NOT  X   IS    estranged

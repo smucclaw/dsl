@@ -31,6 +31,8 @@ library
       LS.Lib
       LS.NLG
       LS.Parser
+      LS.RelationalPredicates
+      LS.Tokens
       LS.Types
       LS.UDExt
       LS.XPile.CoreL4

@@ -154,20 +154,20 @@ still means the same thing but with slightly more indentation
 |    | OR   | mid4            |
 
 *** becomes
-|    | (top1) |         |
-| OR | (top2) |         |
-| OR | (      | (label3 |
-|    |        | mid4)   |
-|    | OR     | (mid5)) |
+|    | (top1) |                  |
+| OR | (top2) |                  |
+| OR | (      | (this is a label |
+|    |        | mid4)            |
+|    | OR     | (mid5))          |
 
 *** how to parse this?
 
 #+begin_src haskell
     MyAny [ MyLeaf "top1"
           , MyLeaf "top2"
-          , MyLabel "label3" $
-              MyAny [ MyLeaf "mid4"
-                    , MyLeaf "mid5"]
+          , MyLabel "this is a label" $
+              MyAny [ MyLeaf "mid3"
+                    , MyLeaf "mid4"]
           ]
 #+end_src
 

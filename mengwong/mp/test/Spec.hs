@@ -113,7 +113,6 @@ main = do
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
-{-
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
@@ -152,6 +151,7 @@ main = do
         mycsv <- BS.readFile "test/indented-1-checkboxes.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
+{-
       let degustates = defaultCon
                        { name = ["degustates"]
                        , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "drinks" ]
@@ -592,7 +592,7 @@ main = do
         parseR pToplevel testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ simpleHorn ]
               
--}
+--}
 
     describe "our new parser" $ do
       let myand = LS.Types.And

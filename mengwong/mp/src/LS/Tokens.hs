@@ -19,6 +19,12 @@ dnl = some $ pToken EOL
 
 myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
+someIndentation :: Parser a -> Parser a
+someIndentation p = myindented (manyIndentation p)
+
+manyIndentation :: Parser a -> Parser a
+manyIndentation p = someIndentation p <|> p
+
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
@@ -135,11 +141,15 @@ alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName name p = local (\rc -> rc { debug = True }) $ debugName name p
 
 pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm" $ some $ choice [ pOtherVal
+pMultiTerm = debugName "pMultiTerm" $ someDeep $ choice [ pOtherVal
                                                     , pNumAsText ]
 
 
+someDeep :: Parser a -> Parser [a]
+someDeep p = someIndentation $ (:) <$> p <*> manyDeep p
 
+manyDeep :: Parser a -> Parser [a]
+manyDeep p = someDeep p <|> return []
 
 
 
@@ -207,13 +217,13 @@ pAnyText = tok2text <|> pOtherVal
 
 tok2text :: Parser Text.Text
 tok2text = choice
-    [ "IS"     <$ pToken Is      
-    , "=="     <$ pToken TokEQ   
-    , "<"      <$ pToken TokLT   
-    , "<="     <$ pToken TokLTE  
-    , ">"      <$ pToken TokGT   
-    , ">="     <$ pToken TokGTE  
-    , "IN"     <$ pToken TokIn   
+    [ "IS"     <$ pToken Is
+    , "=="     <$ pToken TokEQ
+    , "<"      <$ pToken TokLT
+    , "<="     <$ pToken TokLTE
+    , ">"      <$ pToken TokGT
+    , ">="     <$ pToken TokGTE
+    , "IN"     <$ pToken TokIn
     , "NOT IN" <$ pToken TokNotIn
     ]
 

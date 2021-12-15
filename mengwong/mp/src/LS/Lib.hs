@@ -621,7 +621,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
-  entitytype   <- myindented pNameParens
+  entitytype   <- pNameParens
   let boolEntity = AA.Leaf $ multiterm2pt entitytype
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule
@@ -654,8 +654,7 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   let detail = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try (optional dnl *> pToken Aka *> some pOtherVal) -- ("MegaCorp")
-  _           <- optional dnl
+  entityalias <- optional $ try (pToken Aka *> myindented (some pOtherVal)) -- ("MegaCorp")
   -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
@@ -804,16 +803,21 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- myindented pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  ands <- pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
+
+
 
 -- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
 pBoolStructR :: Parser BoolStructR
 pBoolStructR = debugName "pBoolStructR" $ do
-  (ands,unlesses) <- permute $ (,)
-    <$$> Just <$> rpAndGroup
-    <|?> (Nothing, Just <$> rpUnlessGroup)
-  return $ fromJust $ addneg ands unlesses
+  fmap text2rp <$> pBoolStruct
+
+-- pBoolStructR = debugName "pBoolStructR" $ do
+--   (ands,unlesses) <- permute $ (,)
+--     <$$> Just <$> rpAndGroup
+--     <|?> (Nothing, Just <$> rpUnlessGroup)
+--   return $ fromJust $ addneg ands unlesses
 
 rpUnlessGroup :: Parser BoolStructR
 rpUnlessGroup = debugName "rpUnlessGroup" $ do

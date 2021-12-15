@@ -14,8 +14,9 @@ import LS.Types
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser [MyToken]
--- dnl = many $ pToken EOL
-dnl = some $ pToken EOL
+-- -- dnl = many $ pToken EOL
+dnl = pure []
+-- dnl = some $ pToken EOL
 
 myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
@@ -146,10 +147,10 @@ pMultiTerm = debugName "pMultiTerm" $ someDeep $ choice [ pOtherVal
 
 
 someDeep :: Parser a -> Parser [a]
-someDeep p = someIndentation $ (:) <$> p <*> manyDeep p
+someDeep p = manyIndentation $ (:) <$> p <*> manyDeep p
 
 manyDeep :: Parser a -> Parser [a]
-manyDeep p = someDeep p <|> return []
+manyDeep p = someIndentation (someDeep p) <|> return []
 
 
 

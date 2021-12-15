@@ -322,7 +322,7 @@ pRules :: Parser [Rule]
 pRules = do
   wanted   <- some (try pRule)
   notarule <- optional pNotARule
-  next <- ([] <$ eof) <|> pRules
+  next <- ([] <$ eof) -- <|> pRules
   wantNotRules <- asks debug
   return $ wanted ++ next ++ if wantNotRules then maybeToList notarule else []
 
@@ -336,7 +336,7 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = do
-  _ <- many dnl
+  -- _ <- optional dnl
   try (myindented pRule)
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
     <|> (pRegRule <?> "regulative rule")
@@ -826,8 +826,7 @@ pBoolStructR = debugName "pBoolStructR" $ do
 
 rpUnlessGroup :: Parser BoolStructR
 rpUnlessGroup = debugName "rpUnlessGroup" $ do
-  leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  pToken Unless *> withDepth (leftX + 1) rpAndGroup
+  pToken Unless *> myindented rpAndGroup
 
 rpAndGroup :: Parser BoolStructR
 rpAndGroup = debugName "rpAndGroup" $ do

@@ -196,11 +196,11 @@ main = do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
 
-{-
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
+{-
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"

@@ -1,4 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module LS.Parser where
 
@@ -18,8 +22,9 @@ data MyItem lbl a =
   | MyAny     [MyItem lbl a]
   | MyNot     (MyItem lbl a)
   deriving (Eq, Show)
+  deriving (Functor)
 
-
+deriving instance Functor (AA.Item' a)
 
 
 type MyBoolStruct = MyItem Text.Text Text.Text
@@ -76,7 +81,7 @@ mylabel         = Prefix  (MyLabel <$> try pOtherVal)
 
 plain = MyLeaf <$> pOtherVal
 
-myindented = between (pToken GoDeeper) (pToken UnDeeper)
+-- myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
 -- 
 

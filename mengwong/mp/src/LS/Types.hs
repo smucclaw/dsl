@@ -432,6 +432,7 @@ toToken "LIST1"     = List1
 toToken "AKA"       = Aka
 
 toToken "-§"        = RuleMarker (-1) "§"
+toToken "SECTION"   = RuleMarker   1  "§"
 toToken "§"         = RuleMarker   1  "§"
 toToken "§§"        = RuleMarker   2  "§"
 toToken "§§§"       = RuleMarker   3  "§"

@@ -92,8 +92,9 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-{-
+
     describe "megaparsing" $ do
+
 
       it "should parse an unconditional" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
@@ -101,6 +102,11 @@ main = do
                                      , deontic = DMust
                                      } ]
 
+      it "should parse a rule label" $ do
+        parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
+          `shouldParse` [RuleGroup {rlabel = Just ("\167",1,"Hello")}]
+
+{-
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]

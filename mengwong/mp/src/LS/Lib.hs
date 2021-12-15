@@ -320,7 +320,7 @@ pToplevel = withDepth 0 $ do
 
 pRules :: Parser [Rule]
 pRules = do
-  wanted   <- many (try pRule)
+  wanted   <- some (try pRule)
   notarule <- optional pNotARule
   next <- ([] <$ eof) <|> pRules
   wantNotRules <- asks debug
@@ -337,13 +337,14 @@ pNotARule = debugName "pNotARule" $ do
 pRule :: Parser Rule
 pRule = do
   _ <- many dnl
-  try (pRegRule <?> "regulative rule")
-    <|> try (pTypeDefinition   <?> "ontology definition")
---  <|> try (pMeansRule <?> "nullary MEANS rule")
-    <|> try (pConstitutiveRule <?> "constitutive rule")
-    <|> try (pScenarioRule <?> "scenario rule")
-    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
+  try (myindented pRule)
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
+    <|> (pRegRule <?> "regulative rule")
+--     <|> try (pTypeDefinition   <?> "ontology definition")
+-- --  <|> try (pMeansRule <?> "nullary MEANS rule")
+--     <|> try (pConstitutiveRule <?> "constitutive rule")
+--     <|> try (pScenarioRule <?> "scenario rule")
+--     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
 
 
 pTypeDefinition :: Parser Rule
@@ -489,7 +490,7 @@ pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel
   tentative  <- (try pRegRuleSugary
-                  <|> try pRegRuleNormal
+                  <|> pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
                 ) <* optional dnl
@@ -619,11 +620,12 @@ pActor :: [MyToken] -> Parser (Preamble, BoolStructP)
 pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
-  entitytype   <- lookAhead pNameParens
+  -- entitytype   <- lookAhead pNameParens
+  entitytype   <- myindented pNameParens
   let boolEntity = AA.Leaf $ multiterm2pt entitytype
-  omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
-  myTraceM $ "pActor: omgARule = " ++ show omgARule
-  tell $ listToDL omgARule
+  -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
+  -- myTraceM $ "pActor: omgARule = " ++ show omgARule
+  -- tell $ listToDL omgARule
   return (preamble, boolEntity)
 
 -- Every man AND woman     AKA Adult
@@ -773,7 +775,7 @@ permutationsReg keynamewho =
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
 pDT = debugName "pDT" $ do
   pd <- pDeontic
-  pt <- optional pTemporal <* dnl
+  pt <- optional $ myindented pTemporal -- <* dnl
   return (pd, fromMaybe Nothing pt)
 
 -- the Deontic/Action/Temporal form
@@ -891,9 +893,13 @@ dBoolStructR = debugName "dBoolStructR" $ do
 
 
 
+-- TODO: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" $ do
-  pAndGroup -- walks AND eats OR drinks
+  fmap text2pt <$> pBoolStruct
+
+-- dBoolStructP = debugName "dBoolStructP" $ do
+--   pAndGroup -- walks AND eats OR drinks
 
 pAndGroup ::  Parser BoolStructP
 pAndGroup = debugName "pAndGroup" $ do

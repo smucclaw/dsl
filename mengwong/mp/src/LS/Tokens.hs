@@ -14,7 +14,10 @@ import LS.Types
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser [MyToken]
+-- dnl = many $ pToken EOL
 dnl = some $ pToken EOL
+
+myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)
@@ -102,12 +105,14 @@ pNumAsText = debugName "pNumAsText" $ do
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
   (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
-  actualLabel  <- pOtherVal <* dnl
+  actualLabel  <- indentedOther -- <* dnl
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
 
+indentedOther :: Parser Text.Text
+indentedOther = pOtherVal <|> myindented indentedOther
 
 debugName :: Show a => String -> Parser a -> Parser a
 debugName name p = do

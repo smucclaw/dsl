@@ -30,6 +30,7 @@ library
       LS.Error
       LS.Lib
       LS.NLG
+      LS.ParamText
       LS.Parser
       LS.RelationalPredicates
       LS.Tokens

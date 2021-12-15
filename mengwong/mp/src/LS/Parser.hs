@@ -27,12 +27,12 @@ data MyItem lbl a =
 deriving instance Functor (AA.Item' a)
 
 
-type MyBoolStruct = MyItem Text.Text Text.Text
+type MyBoolStruct = MyItem Text.Text
 
 pBoolStruct :: Parser BoolStruct
-pBoolStruct = toBoolStruct <$> expr
+pBoolStruct = toBoolStruct <$> expr pOtherVal
 
-toBoolStruct :: MyBoolStruct -> BoolStruct
+toBoolStruct :: Show a => MyBoolStruct a -> AA.Item a
 toBoolStruct (MyLeaf txt) = AA.Leaf txt
 toBoolStruct (MyLabel lab (MyAll xs)) = AA.All (Just (AA.Pre lab)) (map toBoolStruct xs)
 toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre lab)) (map toBoolStruct xs)
@@ -43,13 +43,16 @@ toBoolStruct (MyLabel lab (MyLabel lab2 _)) = error $ "labeled label: " ++ show 
 toBoolStruct (MyLabel lab (MyLeaf x)) = error $ "labeled leaf: " ++ show lab ++ " " ++ show x
 toBoolStruct (MyLabel lab (MyNot x)) = error $ "labeled negation: " ++ show lab ++ " " ++ show x
 
-expr :: Parser MyBoolStruct
-expr = makeExprParser term table <?> "expression"
+expr :: Parser a -> Parser (MyBoolStruct a)
+expr p = makeExprParser (term p) table <?> "expression"
 
-term :: Parser MyBoolStruct
-term = myindented expr <|> try (MyLabel <$> pOtherVal <*> plain) <|> plain <?> "term"
+exprP :: Parser (MyBoolStruct Text.Text)
+exprP = expr pOtherVal
 
-table :: [[Operator Parser MyBoolStruct]]
+term :: Parser a -> Parser (MyBoolStruct a)
+term p = myindented (expr p) <|> try (MyLabel <$> pOtherVal <*> plain p) <|> plain p <?> "term"
+
+table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot MyNot ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
@@ -79,7 +82,7 @@ prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
 mylabel         = Prefix  (MyLabel <$> try pOtherVal)
 
-plain = MyLeaf <$> pOtherVal
+plain p = MyLeaf <$> p
 
 -- myindented = between (pToken GoDeeper) (pToken UnDeeper)
 

@@ -342,7 +342,7 @@ pRule = do
     <|> (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
---     <|> try (pConstitutiveRule <?> "constitutive rule")
+    <|> try (pConstitutiveRule <?> "constitutive rule")
 --     <|> try (pScenarioRule <?> "scenario rule")
 --     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
 
@@ -808,16 +808,21 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
 
 
 
+-- TODO: FIXME: this is a hack, because we don't have a good way to parse the thing
+unLeaf :: BoolStructR -> RelationalPredicate
+unLeaf (AA.Leaf x) = x
+unLeaf _ = error "unLeaf: not a leaf"
+
 -- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
 pBoolStructR :: Parser BoolStructR
-pBoolStructR = debugName "pBoolStructR" $ do
-  fmap text2rp <$> pBoolStruct
-
 -- pBoolStructR = debugName "pBoolStructR" $ do
---   (ands,unlesses) <- permute $ (,)
---     <$$> Just <$> rpAndGroup
---     <|?> (Nothing, Just <$> rpUnlessGroup)
---   return $ fromJust $ addneg ands unlesses
+  -- toBoolStruct <$> expr (unLeaf <$> rpElement)
+
+pBoolStructR = debugName "pBoolStructR" $ do
+  (ands,unlesses) <- permute $ (,)
+    <$$> Just <$> rpAndGroup
+    <|?> (Nothing, Just <$> rpUnlessGroup)
+  return $ fromJust $ addneg ands unlesses
 
 rpUnlessGroup :: Parser BoolStructR
 rpUnlessGroup = debugName "rpUnlessGroup" $ do
@@ -826,8 +831,8 @@ rpUnlessGroup = debugName "rpUnlessGroup" $ do
 
 rpAndGroup :: Parser BoolStructR
 rpAndGroup = debugName "rpAndGroup" $ do
-    rpOrGroup1 <- rpOrGroup <* optional dnl
-    rpOrGroupN <- many $ pToken And *> rpOrGroup
+    rpOrGroup1 <- manyIndentation rpOrGroup
+    rpOrGroupN <- many $ pToken And *> manyIndentation rpOrGroup
     let toreturn = if null rpOrGroupN
                    then rpOrGroup1
                    else AA.All Nothing (rpOrGroup1 : rpOrGroupN)
@@ -835,9 +840,8 @@ rpAndGroup = debugName "rpAndGroup" $ do
 
 rpOrGroup :: Parser BoolStructR
 rpOrGroup = debugName "rpOrGroup" $ do
-  depth <- asks callDepth
-  elem1    <- withDepth (depth + 0) rpElement <* optional dnl
-  elems    <- many $ pToken Or *> withDepth (depth+0) rpElement
+  elem1    <- someIndentation rpElement <* optional dnl
+  elems    <- many $ pToken Or *> someIndentation rpElement
   let toreturn = if null elems
                  then elem1
                  else AA.Any Nothing (elem1 : elems)
@@ -854,7 +858,7 @@ rpElement = debugName "rpElement" $ do
 rpAtomicElement :: Parser BoolStructR
 rpAtomicElement = debugName "rpAtomicElement" $ do
   try rpNotElement
-  <|> try rpNestedBool
+  <|> try rpAndGroup
   <|> rpLeafVal
 
 

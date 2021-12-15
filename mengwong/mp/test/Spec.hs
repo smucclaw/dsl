@@ -151,7 +151,6 @@ main = do
         mycsv <- BS.readFile "test/indented-1-checkboxes.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
-{-
       let degustates = defaultCon
                        { name = ["degustates"]
                        , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "drinks" ]
@@ -197,6 +196,7 @@ main = do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
 
+{-
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
@@ -617,13 +617,13 @@ main = do
       it "should handle indent-2-a" $ do
         let testfile = "test/indent-2-a.csv"
         testcsv <- BS.readFile testfile
-        parseOther expr testfile `traverse` exampleStreams testcsv
+        parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [abcd]
         
       it "should handle indent-2-b" $ do
         let testfile = "test/indent-2-b.csv"
         testcsv <- BS.readFile testfile
-        parseOther expr testfile `traverse` exampleStreams testcsv
+        parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [abcd]
         
       let ablcd = (MyAny [MyLeaf "top1"
@@ -635,7 +635,7 @@ main = do
       it "should handle indent-2-c which has a label" $ do
         let testfile = "test/indent-2-c.csv"
         testcsv <- BS.readFile testfile
-        parseOther expr testfile `traverse` exampleStreams testcsv
+        parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
         
  

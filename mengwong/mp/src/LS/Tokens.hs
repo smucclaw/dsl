@@ -23,7 +23,7 @@ someIndentation :: Parser a -> Parser a
 someIndentation p = myindented (manyIndentation p)
 
 manyIndentation :: Parser a -> Parser a
-manyIndentation p = someIndentation p <|> p
+manyIndentation p = try p <|> someIndentation p
 
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)

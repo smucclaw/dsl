@@ -519,18 +519,18 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  { subj     = entityname
                  , keyword  = Party
                  , who      = Nothing
-                 , cond     = (addneg poscond negcond)
-                 , deontic  = (rbdeon rulebody)
-                 , action   = (rbaction rulebody)
-                 , temporal = (rbtemporal rulebody)
+                 , cond     = addneg poscond negcond
+                 , deontic  = rbdeon rulebody
+                 , action   = rbaction rulebody
+                 , temporal = rbtemporal rulebody
                  , hence    = henceLimb
                  , lest     = lestLimb
                  , rlabel   = Nothing -- rule label
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)
-                 , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
-                 , having   = (rbhaving rulebody)
+                 , given    = nonEmpty $ foldMap toList (snd <$> rbgiven rulebody)    -- given
+                 , having   = rbhaving rulebody
                  }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond

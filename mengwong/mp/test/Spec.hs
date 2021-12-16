@@ -298,7 +298,6 @@ main = do
       it "should parse kingly permutations 3" $ do
         mycsv <- BS.readFile "test/if-king-wishes-3.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
-{-
 
       it "should parse chained-regulatives part 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1.csv"
@@ -638,6 +637,7 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ simpleHorn ]
+{-
               
 --}
 

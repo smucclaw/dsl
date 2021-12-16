@@ -12,7 +12,7 @@ Or you can just run, from the ~mp/~ directory,
 
 ** Value Expressions
 
-more thinking
+more thinking, the L4Leaf thing is just a conceptual placeholder for other things
 
 *** single non-token words
 
@@ -553,6 +553,18 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 |   |       | AND   | FALSE  | swallows |            |
 |   | MUST  |       |        |          |            |
 |   | ->    | FALSE | sing   |          |            |
+
+** simple regulative rule for the Must Sing example
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Person |
+| WHO   | walks  |
+| AND   | eats   |
+| OR    | drinks |
+| MUST  | sing   |
 
 ** simple constitutive rule
 :PROPERTIES:

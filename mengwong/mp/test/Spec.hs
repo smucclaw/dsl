@@ -200,7 +200,52 @@ main = do
         mycsv <- BS.readFile "test/indented-3.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
-{-
+      let mustsing1 = [ defaultReg {
+                          subj = Leaf
+                            (
+                              ( "Person" :| []
+                              , Nothing
+                              ) :| []
+                            )
+                          , keyword = Every
+                          , who = Just
+                            ( All Nothing
+                              [ Leaf
+                                ( RPParamText
+                                  (
+                                    ( "walks" :| []
+                                    , Nothing
+                                    ) :| []
+                                  )
+                                )
+                              , Any Nothing
+                                [ Leaf
+                                  ( RPParamText
+                                    (
+                                      ( "eats" :| []
+                                      , Nothing
+                                      ) :| []
+                                    )
+                                  )
+                                , Leaf
+                                  ( RPParamText
+                                    (
+                                      ( "drinks" :| []
+                                      , Nothing
+                                      ) :| []
+                                    )
+                                  )
+                                ]
+                              ]
+                            )
+                          }
+                      ]
+      
+      it "mustsing-1: should handle the most basic form of Matt Wadd's rule" $ do
+        mycsv <- BS.readFile "test/mustsing-1.csv"
+        parseR pRules "" (exampleStream mycsv) `shouldParse` mustsing1
+        
+
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"
@@ -252,6 +297,7 @@ main = do
       it "should parse kingly permutations 3" $ do
         mycsv <- BS.readFile "test/if-king-wishes-3.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
+{-
 
       it "should parse chained-regulatives part 1" $ do
         mycsv <- BS.readFile "test/chained-regulatives-part1.csv"

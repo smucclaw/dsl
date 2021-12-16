@@ -313,14 +313,11 @@ stanzaAsStream rs =
 --
 
 pToplevel :: Parser [Rule]
-pToplevel = withDepth 0 $ do
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  myTraceM $ "topLevel: starting leftX is " ++ show leftX
-  pRules <* eof
+pToplevel = pRules <* eof
 
 pRules :: Parser [Rule]
 pRules = do
-  wanted   <- some (try pRule)
+  wanted   <- some (try pRule) -- some == (pRule)+    many == (pRule)*     optional == (pRule)?
   notarule <- optional pNotARule
   next <- ([] <$ eof) -- <|> pRules
   wantNotRules <- asks debug
@@ -338,13 +335,13 @@ pRule :: Parser Rule
 pRule = do
   -- _ <- optional dnl
   try (myindented pRule)
-    <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
     <|> (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")
 --     <|> try (pScenarioRule <?> "scenario rule")
 --     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
 
 pTypeDefinition :: Parser Rule
@@ -561,21 +558,21 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
 
   let toreturn = Regulative
-                 { subj     = (snd $ rbkeyname rulebody)
-                 , keyword  = (fst $ rbkeyname rulebody)
-                 , who      = (snd <$> rbwho rulebody)
-                 , cond     = (addneg poscond negcond)
-                 , deontic  = (rbdeon rulebody)
-                 , action   = (rbaction rulebody)
-                 , temporal = (rbtemporal rulebody)
+                 { subj     = snd $ rbkeyname rulebody
+                 , keyword  = fst $ rbkeyname rulebody
+                 , who      = snd <$> rbwho rulebody
+                 , cond     = addneg poscond negcond
+                 , deontic  = rbdeon rulebody
+                 , action   = rbaction rulebody
+                 , temporal = rbtemporal rulebody
                  , hence    = henceLimb
                  , lest     = lestLimb
                  , rlabel   = Nothing -- rule label
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)    -- given
-                 , given    = (nonEmpty $ foldMap toList (snd <$> rbgiven rulebody))    -- given
-                 , having   = (rbhaving rulebody)
+                 , given    = nonEmpty $ foldMap toList (snd <$> rbgiven rulebody)    -- given
+                 , having   = rbhaving rulebody
                  }
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond

@@ -448,6 +448,7 @@ toToken ">"         = TokGT
 toToken ">="        = TokGTE
 toToken "="         = TokEQ
 toToken "=="        = TokEQ
+toToken "==="       = TokEQ
 toToken "IN"        = TokIn
 toToken "NOT IN"    = TokNotIn
 

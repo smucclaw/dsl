@@ -560,11 +560,41 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| EVERY | Person |
-| WHO   | walks  |
-| AND   | eats   |
-| OR    | drinks |
-| MUST  | sing   |
+| §     | Matt Wadd's Rule |
+| EVERY | Person           |
+| WHO   | walks            |
+| AND   | eats             |
+| OR    | drinks           |
+| MUST  | sing             |
+
+** simple regulative rule for the Must Sing example with a deadline on the MUST
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §     | Matt Wadd's Rule           |    |             |   |
+| EVERY | Person                     | :: | Singaporean |   |
+| WHO   | walks                      |    |             |   |
+| AND   | eats                       |    |             |   |
+| OR    | drinks                     |    |             |   |
+| IF    | the moon is full           |    |             |   |
+| WHEN  | the king is in a good mood |    |             |   |
+| MUST  | sing                       |    |             |   |
+
+** simple regulative rule for the Must Sing example with a deadline on a separate line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §      | Matt Wadd's Rule |      |
+| EVERY  | Person           |      |
+| WHO    | walks            |      |
+| AND    | eats             |      |
+| OR     | drinks           |      |
+| MUST   | sing             |      |
+| BEFORE | 30               | days |
 
 ** simple constitutive rule
 :PROPERTIES:

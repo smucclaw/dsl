@@ -201,7 +201,8 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
 
       let mustsing1 = [ defaultReg {
-                          subj = Leaf
+                          rlabel = Just ("\167",1,"Matt Wadd's Rule")
+                          , subj = Leaf
                             (
                               ( "Person" :| []
                               , Nothing

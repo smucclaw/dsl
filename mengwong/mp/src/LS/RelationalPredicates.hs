@@ -17,9 +17,12 @@ import LS.ParamText
 
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = debugName "pRelationalPredicate" $ choice
-  [ try pConstraint
-  , try (RPBoolStructR <$> pMultiTerm <*> tok2rel <*> pBoolStructR)
-  , try (RPParamText <$> pParamText)
+  [ try ( debugName "pRP: RPConstraint"
+          pConstraint )
+  , try ( debugName "pRP: RPBoolStructR" $
+          RPBoolStructR <$> pMultiTerm <*> tok2rel <*> pBoolStructR )
+  , try ( debugName "pRP: RPParamText" $
+          RPParamText <$> pParamText )
   ]
     
 
@@ -130,7 +133,7 @@ rpConstitutiveAsElement = multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
-  inner <- id <$ pToken MPNot `indented0` dBoolStructR
+  inner <- id <$ pToken MPNot `indented1` dBoolStructR
   return $ AA.Not inner
 
 rpLeafVal :: Parser BoolStructR

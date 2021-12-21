@@ -11,7 +11,7 @@ import Data.List.NonEmpty
 
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $ do
-  (:|) <$> (pKeyValues <?> "paramText head") `indented0` (optional dnl *> pParams)
+  (:|) <$> (pKeyValues <?> "paramText head") `indented1` (optional dnl *> pParams)
 
 
   -- === flex for
@@ -25,13 +25,12 @@ pParams = many $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $
-  (,) <$> ((:|) <$> pAnyText `indented1` many pAnyText)
-      <*> optional pTypeSig
+             optIndentedTuple ((:|) <$> pAnyText `indented1` manyDeep pAnyText) pTypeSig
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
   _           <- pToken TypeSeparator <|> pToken Is
-  simpletype <|> inlineenum
+  someIndentation (simpletype <|> inlineenum)
   where
     simpletype = do
       cardinality <- choice [ TOne      <$ pToken One
@@ -45,5 +44,5 @@ pTypeSig = debugName "pTypeSig" $ do
       InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
-pOneOf = id <$ pToken OneOf `indented0` pParamText
+pOneOf = id <$ pToken OneOf `indented1` pParamText
 

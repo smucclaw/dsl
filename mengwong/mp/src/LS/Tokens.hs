@@ -150,22 +150,26 @@ pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
   [ debugName "pMT: first, ptOherVal"    pOtherVal
   , debugName "pMT: second, pNumAsText" pNumAsText ]
 
+-- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p =
   debugName "someDeep" $
   manyIndentation $ (:) <$> p <*> manyDeep p
 
+-- zero or more P, monotonically moving to the right, returned in a list
 manyDeep :: (Show a) => Parser a -> Parser [a]
 manyDeep p =
   debugName "manyDeep" $
-  try (debugName "manyDeep calling someDeep" (someDeep p))
-  <|> (debugName "manyDeep returning []" $ return [])
+  try $ debugName "manyDeep calling someDeep" (someDeep p)
+  <|>   debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
 
+-- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p =
   debugName "someIndentation" $
   myindented (manyIndentation p)
 
+-- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
 manyIndentation p =
   debugName "manyIndentation" $
@@ -181,17 +185,21 @@ myindented = between (pToken GoDeeper) (pToken UnDeeper)
 --
 
 -- everything in p2 must be at least the same depth as p1
-indented :: Int -> Parser (a -> b) -> Parser a -> Parser b
+indented :: Show a => Int -> Parser (a -> b) -> Parser a -> Parser b
 indented d p1 p2 = do
-  leftX <- lookAhead pXLocation
   f     <- p1
-  y     <- withDepth (leftX + d) p2
+  y     <- case d of
+    0 -> manyIndentation p2
+    _ -> someIndentation p2
   return $ f y
 
 indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
 indentedTuple d p1 p2 = do
+  indented d ((,) <$> p1) p2
+
+oldindentedTuple d p1 p2 = do
   x     <- tracedepth "left  = " id     p1
-  _     <- tracedepth "nl    = " isJust (optional dnl)
+  _     <- tracedepth "deep  = " isJust (optional dnl)
   y     <- tracedepth "right = " id     p2
   myTraceM "success; returning"
   return (x,y)
@@ -215,14 +223,22 @@ infixl 4 `indentedTuple0`
 indentedTuple1 = indentedTuple 1
 infixl 4 `indentedTuple1`
 
-indented0 :: Parser (a -> b) -> Parser a -> Parser b
+indented0, indented1 :: (Show a, Show b) => Parser (a -> b) -> Parser a -> Parser b
 indented0 = indented 0
 infixl 4 `indented0`
 
-indented1 :: Parser (a -> b) -> Parser a -> Parser b
 indented1 = indented 1
 infixl 4 `indented1`
 
+-- problem is, if the RHS is optional, then an indented1 would wrongly require a GoDeeper!
+-- so what we should do, is this:
+-- optIndented1 returns Just if the thing is found, indented; or Nothing if the thing is not found when indented
+
+optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
+optIndentedTuple p1 p2 = do
+  x <- p1
+  y <- optional (someIndentation p2)
+  return (x,y)
 
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a
@@ -255,7 +271,8 @@ tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 pToken :: MyToken -> Parser MyToken
-pToken c = checkDepth >> pTokenMatch (== c) c
+pToken c = -- checkDepth >>
+  pTokenMatch (== c) c
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
 pTokenAnyDepth c = pTokenMatch (== c) c

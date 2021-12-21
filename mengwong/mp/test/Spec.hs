@@ -331,6 +331,10 @@ main = do
             [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 1, version = Nothing})) ]
 
+      let if_king_wishes_singer_nextline = if_king_wishes ++
+            [ DefNameAlias ["singer"] ["person"] Nothing
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
+
       let if_king_wishes_singer_2 = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
@@ -338,6 +342,10 @@ main = do
       it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
         mycsv <- BS.readFile "test/nl-aliases.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
+
+      it "should parse natural language aliases (\"NL Aliases\") on the next line" $ do
+        mycsv <- BS.readFile "test/nl-aliases-2.csv"
+        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_nextline
 
       let singer_must_pay_params =
             singer_must_pay { action = Leaf (("pay" :| []                 , Nothing)

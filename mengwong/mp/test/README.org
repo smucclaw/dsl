@@ -925,7 +925,7 @@ do the individual components work?
 | PARTY | King |
 | MAY   | pay  |
 
-** simple natural language aliases
+** simple natural language aliases on the same line
 :PROPERTIES:
 :TABLE_EXPORT_FILE: nl-aliases.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -937,6 +937,20 @@ do the individual components work?
 | MUST  |                 |     |        |
 | IF    | the King wishes |     |        |
 | ->    | sing            |     |        |
+
+** simple natural language aliases on the next line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: nl-aliases-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |        |
+|       | AKA             | singer |
+| WHO   | walks           |        |
+| AND   | eats            |        |
+| MUST  |                 |        |
+| IF    | the King wishes |        |
+| ->    | sing            |        |
 
 ** vague temporal spec
 :PROPERTIES:

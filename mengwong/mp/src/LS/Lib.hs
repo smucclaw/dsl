@@ -326,7 +326,7 @@ pRules = do
 pNotARule :: Parser Rule
 pNotARule = debugName "pNotARule" $ do
   myTraceM "pNotARule: starting"
-  toreturn <- NotARule <$> many getTokenNonEOL <* optional dnl <* optional eof
+  toreturn <- NotARule <$> many getTokenNonEOL <* optional dnl
   myTraceM "pNotARule: returning"
   return toreturn
 
@@ -618,7 +618,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
-  entitytype   <- pNameParens
+  entitytype   <- someIndentation pNameParens
   let boolEntity = AA.Leaf $ multiterm2pt entitytype
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule
@@ -634,15 +634,15 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 -- support name-like expressions tagged with AKA, which means "also known as"
 -- sometimes we want a plain Text.Text
 pNameParens :: Parser RuleName
-pNameParens = pMultiTermParens
+pNameParens = pMultiTermAka
 
 -- sometimes we want a ParamText
 pPTParens :: Parser ParamText
 pPTParens = debugName "pPTParens" $ pAKA pParamText pt2multiterm
 
 -- sometimes we want a multiterm
-pMultiTermParens :: Parser MultiTerm
-pMultiTermParens = debugName "pMultiTermParens" $ pAKA pMultiTerm id
+pMultiTermAka :: Parser MultiTerm
+pMultiTermAka = debugName "pMultiTermParens" $ pAKA pMultiTerm id
 
 -- utility function for the above
 pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
@@ -651,7 +651,8 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   let detail = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try (pToken Aka *> myindented (some pOtherVal)) -- ("MegaCorp")
+  entityalias <- optional $ try $ manyIndentation (debugName "Aka Token" (pToken Aka) *>
+                                                   debugName "someDeep pOtherVal" (someDeep pOtherVal)) -- ("MegaCorp")
   -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing

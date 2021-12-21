@@ -18,14 +18,6 @@ dnl :: Parser [MyToken]
 dnl = pure []
 -- dnl = some $ pToken EOL
 
-myindented = between (pToken GoDeeper) (pToken UnDeeper)
-
-someIndentation :: Parser a -> Parser a
-someIndentation p = myindented (manyIndentation p)
-
-manyIndentation :: Parser a -> Parser a
-manyIndentation p = try p <|> someIndentation p
-
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
@@ -142,15 +134,33 @@ alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName name p = local (\rc -> rc { debug = True }) $ debugName name p
 
 pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm" $ someDeep $ choice [ pOtherVal
-                                                    , pNumAsText ]
+pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
+  [ debugName "pMT: first, pOherVal"    pOtherVal
+  , debugName "pMT: second, pNumAsText" pNumAsText ]
 
+someDeep :: (Show a) => Parser a -> Parser [a]
+someDeep p =
+  debugName "someDeep" $
+  manyIndentation $ (:) <$> p <*> manyDeep p
 
-someDeep :: Parser a -> Parser [a]
-someDeep p = manyIndentation $ (:) <$> p <*> manyDeep p
+manyDeep :: (Show a) => Parser a -> Parser [a]
+manyDeep p =
+  debugName "manyDeep" $
+  try (debugName "manyDeep calling someDeep" (someDeep p))
+  <|> (debugName "manyDeep returning []" $ return [])
 
-manyDeep :: Parser a -> Parser [a]
-manyDeep p = someIndentation (someDeep p) <|> return []
+someIndentation :: (Show a) => Parser a -> Parser a
+someIndentation p =
+  debugName "someIndentation" $
+  myindented (manyIndentation p)
+
+manyIndentation :: (Show a) => Parser a -> Parser a
+manyIndentation p =
+  debugName "manyIndentation" $
+  try p <|> someIndentation p
+
+myindented :: (Show a) => Parser a -> Parser a
+myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
 
 

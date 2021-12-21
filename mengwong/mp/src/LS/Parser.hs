@@ -43,13 +43,13 @@ toBoolStruct (MyLabel lab (MyLabel lab2 _)) = error $ "labeled label: " ++ show 
 toBoolStruct (MyLabel lab (MyLeaf x)) = error $ "labeled leaf: " ++ show lab ++ " " ++ show x
 toBoolStruct (MyLabel lab (MyNot x)) = error $ "labeled negation: " ++ show lab ++ " " ++ show x
 
-expr :: Parser a -> Parser (MyBoolStruct a)
+expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 
 exprP :: Parser (MyBoolStruct Text.Text)
 exprP = expr pOtherVal
 
-term :: Parser a -> Parser (MyBoolStruct a)
+term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 term p = myindented (expr p) <|> try (MyLabel <$> pOtherVal <*> plain p) <|> plain p <?> "term"
 
 table :: [[Operator Parser (MyBoolStruct a)]]

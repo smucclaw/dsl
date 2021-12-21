@@ -1,0 +1,75 @@
+#+TITLE: About Reasoning
+
+What questions do we need to ask the end user?
+
+How do we automatically build various transpilation targets?
+
+* Outputting to a State Graph
+
+See draft state graph at top right of the [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit?pli=1#gid=0][PDPA DBNO tab]]. 
+
+Our output will be a timed automaton or Petri Net.
+
+Transitions can be
+- deadlines :: BEFORE 30 days
+- actions :: PDPC demands explanation
+
+To navigate the path, we need to know what happend, and when; that "trace" gives us enough information to navigate to the current state(s).
+
+What facts do we need to gather?
+
+| State1 | Transition | State2 | We must ask          | Then we know                          |
+|--------+------------+--------+----------------------+---------------------------------------|
+| X      | Deadline   | Y      | did X state hold?    | If deadline was met, go R.            |
+|        |            |        | if so, on what date? | If deadline was not, go L.            |
+|        |            |        | did Y state hold?    | If deadline is in the future, stay X. |
+|        |            |        | if so, on what date? |                                       |
+|--------+------------+--------+----------------------+---------------------------------------|
+| X      | Action     | Y      | did X state hold?    | Do we stay in X?                      |
+|        |            |        | if so, on what date? | Or proceed to state X, Y, or ~Y?      |
+|        |            |        | did action occur?    |                                       |
+|        |            |        | if so, on what date? |                                       |
+
+Once these questions are answered we have enough information to proceed to the next state, or remain in the current state.
+
+After all enabled transitions have been evaluated we are left with a residual state graph, or a current marking of a Petri Net, that tells us what the current state of the world is.
+
+From this current state of the world we can:
+- deduce current obligations
+- start to abductively plan for a desired outcome state
+
+* What children follow from a parent state?
+
+| Parent state has deontic | then children are | connector | default   |
+|--------------------------+-------------------+-----------+-----------|
+| MUST,                    | R: happy path     | HENCE     | FULFILLED |
+| SHANT                    | L: unhappy path   | LEST      | BREACH    |
+|--------------------------+-------------------+-----------+-----------|
+| MAY                      | R: happy path     | HENCE     | FULFILLED |
+|                          | L: neutral path   | LEST      | FULFILLED |
+
+A MUST always has two output paths: the happy path goes to the right, and is connected via ~HENCE~. The unhappy path goes to the left, and is connected via ~LEST~. If they are not explicitly given, then by default, the unhappy path is BREACH; the happy path is FULFILLED.
+
+A MAY without an explicit neutral path (where the permitted action is not taken) will, by default, have an implicit neutral to FULFILLED.
+
+* Simple Example
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ../../../test/pdpadbno-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Organisation                                                                    |          |                                   | AKA        | You    |                                  |       |               |
+| WHO   | is                                                                              | not      | a Public Agency                   |            |        |                                  |       |               |
+| MUST  | WITHIN                                                                          |          | 30 days                           |            |        |                                  |       |               |
+| UPON  | becoming aware a data breach may have occurred                                  |          |                                   |            |        |                                  |       |               |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |          |                                   |            |        |                                  |       |               |
+| ➔     |                                                                                 | assess   | if it is a Notifiable Data Breach |            |        |                                  |       |               |
+|       |                                                                                 |          | by                                | performing |        | NDB Qualification                |       |               |
+| HENCE | Notification                                                                    |          |                                   |            |        |                                  |       |               |
+| LEST  |                                                                                 | the PDPC | MAY                               |            |        |                                  |       |               |
+|       |                                                                                 |          | ➔                                 |            | demand | an explanation for your inaction |       |               |
+|       |                                                                                 |          | HENCE                             | You        | MUST   |                                  |       |               |
+|       |                                                                                 |          |                                   |            | ➔      | respond                          |       |               |
+|       |                                                                                 |          |                                   |            |        |                                  | to    | the PDPC      |
+|       |                                                                                 |          |                                   |            |        |                                  | about | your inaction |
+

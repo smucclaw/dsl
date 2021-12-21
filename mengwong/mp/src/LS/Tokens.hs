@@ -235,10 +235,15 @@ infixl 4 `indented1`
 -- optIndented1 returns Just if the thing is found, indented; or Nothing if the thing is not found when indented
 
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
-optIndentedTuple p1 p2 = do
-  x <- p1
-  y <- optional (someIndentation p2)
-  return (x,y)
+optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do
+  (,) <$> p1 `optIndented` p2
+
+optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
+infixl 4 `optIndented`
+optIndented p1 p2 = debugName "optIndented" $ do
+  f <- p1
+  y <- optional p2
+  return $ f y
 
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a

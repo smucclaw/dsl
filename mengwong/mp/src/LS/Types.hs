@@ -266,8 +266,9 @@ multiterm2pt x = pure (fromList x, Nothing)
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
 
+type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
-type TypedMulti = (NonEmpty Text.Text, Maybe TypeSig) --- | apple | orange | banana | :: | Fruit   |
+type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
 type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
                                                       --- |        | immediately    | :: | Urgency |
 

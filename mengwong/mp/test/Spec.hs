@@ -100,8 +100,6 @@ main = do
           `shouldParse` [ defaultReg { subj = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
-{-
-
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [RuleGroup {rlabel = Just ("\167",1,"Hello")}]
@@ -247,6 +245,7 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` mustsing1
         
 
+{-
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"

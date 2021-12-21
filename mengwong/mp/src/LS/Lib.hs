@@ -560,7 +560,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
+  pToken henceLest *> someIndentation (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
 
 

@@ -10,22 +10,23 @@ import LS.Tokens
 import Data.List.NonEmpty
 
 pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $ do
-  (:|) <$> (pKeyValues <?> "paramText head") `indented1` (optional dnl *> pParams)
+pParamText = debugName "pParamText" $
+  (:|) <$> (pKeyValues <?> "paramText head") <*> pParams
 
 
   -- === flex for
   --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
   --     return $ myhead :| therest
 
-type KVsPair = (NonEmpty Text.Text, Maybe TypeSig) -- so really there are multiple Values
-
 pParams :: Parser [KVsPair]
-pParams = many $ pKeyValues <* dnl    -- head (name+,)*
+pParams = manyDeep $ pKeyValues <* dnl    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $
-             optIndentedTuple ((:|) <$> pAnyText `indented1` manyDeep pAnyText) pTypeSig
+pKeyValues = debugName "pKeyValues"
+             (debugName "pAny :| pAny*" $ (:|)
+              <$> debugName "first pAny" pAnyText
+              <*> debugName "subsequent manyDeep pAny" (manyDeep pAnyText))
+             `optIndentedTuple` pTypeSig
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
@@ -44,5 +45,5 @@ pTypeSig = debugName "pTypeSig" $ do
       InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
-pOneOf = id <$ pToken OneOf `indented1` pParamText
+pOneOf = pToken OneOf *> someIndentation pParamText
 

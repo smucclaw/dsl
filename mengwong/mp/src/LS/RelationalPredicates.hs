@@ -133,7 +133,7 @@ rpConstitutiveAsElement = multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
-  inner <- id <$ pToken MPNot `indented1` dBoolStructR
+  inner <- pToken MPNot *> someIndentation dBoolStructR
   return $ AA.Not inner
 
 rpLeafVal :: Parser BoolStructR

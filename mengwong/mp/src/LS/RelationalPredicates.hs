@@ -2,14 +2,12 @@
 
 module LS.RelationalPredicates where
 
-import qualified Data.Set           as Set
-import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Control.Monad.Reader (asks, local)
+import Control.Monad.Reader (asks)
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
-import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
-import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
+import Data.Maybe (fromJust)
+import Data.List.NonEmpty ( nonEmpty, toList )
 
 import qualified AnyAll as AA
 
@@ -18,8 +16,12 @@ import LS.Tokens
 import LS.ParamText
 
 pRelationalPredicate :: Parser RelationalPredicate
-pRelationalPredicate = debugName "pRelationalPredicate" $ do
-  try pConstraint <|> try (RPParamText <$> pParamText)
+pRelationalPredicate = debugName "pRelationalPredicate" $ choice
+  [ try pConstraint
+  , try (RPBoolStructR <$> pMultiTerm <*> tok2rel <*> pBoolStructR)
+  , try (RPParamText <$> pParamText)
+  ]
+    
 
 pIsRelation :: Parser RelationalPredicate
 pIsRelation = pToken Is *> pConstraint
@@ -169,16 +171,16 @@ mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
-  name               <- pNameParens
+  namep              <- pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
     withDepth leftX $ permutationsCon [Means,Includes] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
+  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
 
   return $ Constitutive
-    { name = name
+    { name = namep
     , keyword = copula
     , letbind = mletbind
     , cond = addneg
@@ -187,7 +189,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , given = nonEmpty $ foldMap toList (snd <$> givens)
     , rlabel = noLabel
     , lsource = noLSource
-    , srcref = Just srcref
+    , srcref = Just srcref'
     }
 
 -- bob's your uncle
@@ -241,15 +243,15 @@ pMultiTermAka = debugName "pMultiTermParens" $ pAKA pMultiTerm id
 pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   base <- baseParser
-  let detail = toMultiTerm base
+  let detail' = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   entityalias <- optional $ try $ manyIndentation (debugName "Aka Token" (pToken Aka) *>
                                                    debugName "someDeep pOtherVal" (someDeep pOtherVal)) -- ("MegaCorp")
   -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail Nothing (Just srcref))) entityalias
+  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
+  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
   tell defalias
   return base
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,

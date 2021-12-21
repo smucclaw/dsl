@@ -19,7 +19,6 @@ module LS.Lib where
 import qualified Data.Text.Lazy as Text
 -- import Data.Text.Lazy.Encoding (decodeUtf8)
 import Text.Megaparsec
-import qualified Data.Set           as Set
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
@@ -35,7 +34,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Data.Aeson.Encode.Pretty
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import Options.Generic
 
 import LS.Types
@@ -45,7 +44,7 @@ import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import LS.NLG (nlg)
-import Control.Monad.Reader (asks, local)
+import Control.Monad.Reader (asks)
 import Control.Monad.Writer.Lazy
 
 import LS.XPile.CoreL4
@@ -298,7 +297,6 @@ stanzaAsStream rs =
     withEOF = WithPos eofPos eofPos 1 EOF
     eofPos = SourcePos "" pos1 pos1
     withSOF = WithPos eofPos eofPos 1 SOF
-    sofPos = SourcePos "" pos1 pos1
     insertParen a@WithPos {   endPos = aPos }
                 b@WithPos { startPos = bPos }
       | aCol <  bCol =  a : replicate (bCol - aCol) goDp --- | foo | bar | -> | foo ( bar |
@@ -317,11 +315,12 @@ pToplevel = pRules <* eof
 
 pRules :: Parser [Rule]
 pRules = do
-  wanted   <- some (try pRule) -- some == (pRule)+    many == (pRule)*     optional == (pRule)?
+  wanted   <- some (try pRule)
   notarule <- optional pNotARule
-  next <- ([] <$ eof) -- <|> pRules
+  next <- [] <$ eof -- <|> pRules
   wantNotRules <- asks debug
-  return $ wanted ++ next ++ if wantNotRules then maybeToList notarule else []
+  return $ wanted ++ next ++
+    if wantNotRules then maybeToList notarule else []
 
 pNotARule :: Parser Rule
 pNotARule = debugName "pNotARule" $ do
@@ -400,7 +399,7 @@ pMeansRule = debugName "pMeansRule" $ do
     <|?> ([], some $ preambleBoolStructR [When])
     <|?> ([], some $ preambleBoolStructR [If])
     <|?> ([], some $ preambleBoolStructR [Unless])
-    <|?> ([], some $ preambleBoolStructP [Includes])
+    <|?> ([], some $ preambleBoolStructR [Includes])
 
   -- let's extract the new term from the deem line
   let givens = concatMap (concatMap toList . toList . untypePT . snd) gs :: [Text.Text]
@@ -412,7 +411,7 @@ pMeansRule = debugName "pMeansRule" $ do
          , keyword = Given
          , letbind = AA.Leaf $ RPParamText d
          , cond = addneg
-                  (snd <$> mergePBRS (w<>i))
+                  (snd <$> mergePBRS (w<>i<>includes))
                   (snd <$> mergePBRS u)
          , given = nonEmpty $ foldMap toList (snd <$> gs)
          , rlabel = noLabel

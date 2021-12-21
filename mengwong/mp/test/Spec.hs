@@ -13,7 +13,6 @@ import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Options.Generic (getRecordPure, unwrapRecord)
-import Control.Monad (when)
 
 -- | Create an expectation by saying what the result should be.
 --

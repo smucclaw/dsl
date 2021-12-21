@@ -18,7 +18,6 @@ import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import GHC.Generics
-import Debug.Trace
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -471,29 +470,6 @@ toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = Other x
 
-pToken :: MyToken -> Parser MyToken
-pToken c = checkDepth >> pTokenMatch (== c) c
-
-pTokenAnyDepth :: MyToken -> Parser MyToken
-pTokenAnyDepth c = pTokenMatch (== c) c
-
--- | check that the next token is at at least the current level of indentation
-checkDepth :: Parser ()
-checkDepth = do
-  depth <- asks callDepth
-  leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  if leftX <  depth
-    then myTraceM $ "checkDepth: current location " ++ show leftX ++ " is left of minimum depth " ++ show depth ++ "; considering parse fail"
-    -- else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
-    else pure ()
-  guard $ leftX >= depth
-
-myTraceM :: String -> Parser ()
-myTraceM x = whenDebug $ do
-  nestDepth <- asks nestLevel
-  traceM $ indentShow nestDepth <> x
-  where
-    indentShow depth = concat $ replicate depth "| "
 
 whenDebug :: Parser () -> Parser ()
 whenDebug act = do

@@ -7,10 +7,11 @@ import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
-import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
+import Data.Maybe (isJust)
 import Data.List (intercalate)
 
 import LS.Types
+import Debug.Trace (traceM)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser [MyToken]
@@ -33,7 +34,7 @@ pNumber = token test Set.empty <?> "number"
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
-    test (WithPos _ _ _ (TypeSeparator)) = Just "::" -- TODO FIXME -- this was here to allow GIVEN ParamText to contain a type signature
+    test (WithPos _ _ _ TypeSeparator) = Just "::" -- TODO FIXME -- this was here to allow GIVEN ParamText to contain a type signature
     test (WithPos _ _ _ (Other t)) = Just t
     test _ = Nothing
 
@@ -41,6 +42,15 @@ getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
   where
     test (WithPos _ _ _ tok) = Just tok
+
+myTraceM :: String -> Parser ()
+myTraceM x = whenDebug $ do
+  nestDepth <- asks nestLevel
+  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
+  traceM $ leftPad (show lookingAt) 12 <> indentShow nestDepth <> x
+  where
+    indentShow depth = concat $ replicate depth "| "
+    leftPad str n = take n $ str <> repeat ' '
 
 getTokenNonEOL :: Parser MyToken
 getTokenNonEOL = token test Set.empty <?> "any token except EOL"
@@ -73,11 +83,11 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
 pSrcRef = do
-  rlabel <- optional pRuleLabel
+  rlabel' <- optional pRuleLabel
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
-  return (rlabel, Just $ SrcRef srcurl srcurl leftX leftY Nothing)
+  return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
 
 
 pNumAsText :: Parser Text.Text
@@ -114,28 +124,30 @@ indentedOther :: Parser Text.Text
 indentedOther = pOtherVal <|> myindented indentedOther
 
 debugName :: Show a => String -> Parser a -> Parser a
-debugName name p = do
-  debugPrint name
-  res <- local (increaseNestLevel name) p
-  myTraceM $ "\\ " <> name <> " has returned " <> show res
+debugName dname p = do
+  debugPrint dname
+  res <- local (increaseNestLevel dname) p
+  myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
 
 debugPrint :: String -> Parser ()
 debugPrint str = whenDebug $ do
-  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
-  depth     <- asks callDepth
-  leftX     <- lookAhead pXLocation
-  myTraceM ("/ " <> str <> " running. callDepth min=" <> show depth
-            <> "; currently at " ++ show leftX
-            <> "; looking at: " <> show lookingAt)
+--  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
+--  depth     <- asks callDepth
+--  leftX     <- lookAhead pXLocation
+  myTraceM $ "/ " <> str
+    -- <> " running. callDepth min=" <> show depth
+    -- <> "; currently at " ++ show leftX
+    -- <> "; looking at: " <> show lookingAt
+
 
 -- force debug=true for this subpath
 alwaysdebugName :: Show a => String -> Parser a -> Parser a
-alwaysdebugName name p = local (\rc -> rc { debug = True }) $ debugName name p
+alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
 pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
-  [ debugName "pMT: first, pOherVal"    pOtherVal
+  [ debugName "pMT: first, ptOherVal"    pOtherVal
   , debugName "pMT: second, pNumAsText" pNumAsText ]
 
 someDeep :: (Show a) => Parser a -> Parser [a]
@@ -241,4 +253,21 @@ tok2text = choice
 -- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
 tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
+
+pToken :: MyToken -> Parser MyToken
+pToken c = checkDepth >> pTokenMatch (== c) c
+
+pTokenAnyDepth :: MyToken -> Parser MyToken
+pTokenAnyDepth c = pTokenMatch (== c) c
+
+-- | check that the next token is at at least the current level of indentation
+checkDepth :: Parser ()
+checkDepth = do
+  depth <- asks callDepth
+  leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  if leftX <  depth
+    then myTraceM $ "checkDepth: current location " ++ show leftX ++ " is left of minimum depth " ++ show depth ++ "; considering parse fail"
+    -- else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
+    else pure ()
+  guard $ leftX >= depth
 

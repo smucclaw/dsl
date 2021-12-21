@@ -2,15 +2,12 @@
 
 module LS.ParamText where
 
-import qualified Data.Set           as Set
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Control.Monad.Reader (asks, local)
-import Control.Monad.Writer.Lazy
-import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
 
 import LS.Types
 import LS.Tokens
+import Data.List.NonEmpty
 
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $ do

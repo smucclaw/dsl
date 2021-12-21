@@ -30,7 +30,7 @@ type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 type Parser = WriterT (DList Rule) PlainParser
 type Depth = Int
 type Preamble = MyToken
-type BoolStruct = AA.Item Text.Text
+type BoolStruct  = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
 type BoolStructR = AA.Item RelationalPredicate
 
@@ -90,10 +90,10 @@ data KW a = KW { dictK :: MyToken
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
-            , who      :: Maybe BoolStructR         -- who walks and (eats or drinks)
-            , cond     :: Maybe BoolStructR         -- if it is a saturday
+            , who      :: Maybe BoolStructR         -- WHO walks and (eats or drinks)
+            , cond     :: Maybe BoolStructR         -- IF it is a saturday
             , deontic  :: Deontic            -- must
-            , action   :: BoolStructP          -- fart loudly AND run away
+            , action   :: BoolStructP               -- fart loudly AND run away
             , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
             , hence    :: Maybe Rule
             , lest     :: Maybe Rule
@@ -186,10 +186,15 @@ data HornBody = HBRP HornRP
                       , hbelse :: HornRP } 
   deriving (Eq, Show, Generic, ToJSON)
 
-data RelationalPredicate = RPParamText ParamText
-                         | RPConstraint MultiTerm RPRel MultiTerm
-                         | RPBoolStructR MultiTerm RPRel BoolStructR
+data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
+                         | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
+                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
+                                                                       --          AND
+                                                                       --          right IS brown)
   deriving (Eq, Show, Generic, ToJSON)
+                 -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
+                 -- would need to reduce to
+                 -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "relIs"
@@ -262,9 +267,10 @@ multiterm2pt x = pure (fromList x, Nothing)
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
 
-type MultiTerm = [Text.Text]
-type TypedMulti = (NonEmpty Text.Text, Maybe TypeSig)
-type ParamText = NonEmpty TypedMulti -- but consider the Tree alternative above
+type MultiTerm = [Text.Text]                          --- | apple | orange | banana
+type TypedMulti = (NonEmpty Text.Text, Maybe TypeSig) --- | apple | orange | banana | :: | Fruit   |
+type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
+                                                      --- |        | immediately    | :: | Urgency |
 
 text2pt :: a -> NonEmpty (NonEmpty a, Maybe TypeSig)
 text2pt x = pure (pure x, Nothing)
@@ -350,8 +356,12 @@ toToken "ALL"   =  TokAll -- when parties are treated as a collective, e.g. ALL 
 -- start a boolstruct
 toToken "ALWAYS" = Always
 toToken "NEVER"  = Never
+
+-- qualify a subject
 toToken "WHO" =    Who
-toToken "WHICH" =  Who
+toToken "WHICH" =  Which
+toToken "WHOSE" =  Whose
+
 toToken "WHEN" =   When
 toToken "IF" =     If
 toToken "UPON" =   Upon

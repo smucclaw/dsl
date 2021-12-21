@@ -952,6 +952,64 @@ do the individual components work?
 | IF    | the King wishes |        |
 | ->    | sing            |        |
 
+** increasingly complex WHO fields
+
+*** single-word WHO should be an RPParamText
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |
+| WHO   | eats   |
+| MUST  |        |
+| ->    | sing   |
+
+*** two-word WHO should also be an RPParamText
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |        |
+| WHO   | eats   | rudely |
+| MUST  |        |        |
+| ->    | sing   |        |
+
+
+*** three-word WHO should also be an RPParamText
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |         |         |
+| WHO   | eats   | without | manners |
+| MUST  |        |         |         |
+| ->    | sing   |         |         |
+
+*** three-word WHO with a proper relation should be a Constraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |    |      |
+| WHOSE | eyes   | IS | blue |
+| MUST  |        |    |      |
+| ->    | sing   |    |      |
+
+*** WHO with a recursive BoolStructR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |    |      |
+| WHO   | eyes   | IS | blue |
+| MUST  |        |    |      |
+| ->    | sing   |    |      |
+
 ** vague temporal spec
 :PROPERTIES:
 :TABLE_EXPORT_FILE: t-vaguely.csv

@@ -238,3 +238,7 @@ tok2text = choice
     , "NOT IN" <$ pToken TokNotIn
     ]
 
+-- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
+tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
+tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
+

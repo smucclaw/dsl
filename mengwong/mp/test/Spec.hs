@@ -101,6 +101,7 @@ main = do
           `shouldParse` [ defaultReg { subj = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
+{-
 
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
@@ -645,7 +646,6 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ simpleHorn ]
-{-
               
 --}
 
@@ -693,4 +693,40 @@ main = do
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
         
- 
+    describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
+
+      let whoStructR_1 = defaultReg
+                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| [] , Nothing ) :| [] ) ) ) }
+
+          whoStructR_2 = defaultReg
+                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["rudely"] , Nothing ) :| [] ) ) ) }
+          
+          whoStructR_3 = defaultReg
+                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing ) :| [] ) ) ) }
+          
+          whoStructR_4 = defaultReg
+                         { who = Just ( Leaf ( RPConstraint ["eyes"] RPis ["eyes"] )) }
+          
+      it "(who-1) should handle a simple RPParamText" $ do
+        let testfile = "test/who-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ whoStructR_1 ] ]
+          
+      it "(who-2) should handle a simple RPParamText" $ do
+        let testfile = "test/who-2.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ whoStructR_2 ] ]
+          
+      it "(who-3) should handle a simple RPParamText" $ do
+        let testfile = "test/who-3.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ whoStructR_3 ] ]
+          
+      it "(who-4) should be a constraint" $ do
+        let testfile = "test/who-4.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ whoStructR_4 ] ]

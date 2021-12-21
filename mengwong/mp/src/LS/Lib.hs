@@ -25,7 +25,6 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
 import Text.Pretty.Simple (pPrint)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
@@ -36,6 +35,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Data.Aeson.Encode.Pretty
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
+import Data.Maybe (fromMaybe, listToMaybe, isJust, fromJust, maybeToList)
 import Options.Generic
 
 import LS.Types
@@ -459,30 +459,6 @@ pGivens = debugName "pGiven" $ do
 
 
 
-pConstitutiveRule :: Parser Rule
-pConstitutiveRule = debugName "pConstitutiveRule" $ do
-  leftY              <- lookAhead pYLocation
-  name               <- pNameParens
-  leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-
-  ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    withDepth leftX $ permutationsCon [Means,Includes] [When,If] [Unless] [Given]
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-
-  return $ Constitutive
-    { name = name
-    , keyword = copula
-    , letbind = mletbind
-    , cond = addneg
-             (snd <$> mergePBRS whenifs)
-             (snd <$> mergePBRS unlesses)
-    , given = nonEmpty $ foldMap toList (snd <$> givens)
-    , rlabel = noLabel
-    , lsource = noLSource
-    , srcref = Just srcref
-    }
-
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel
@@ -548,7 +524,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [Every,Party,TokAll]
-                   <*> optional (preambleBoolStructR [Who])
+                   <*> optional (try (manyIndentation (preambleBoolStructR [Who,Which,Whose])))
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
@@ -582,23 +558,12 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
   -- return ( toreturn : appendix )
   return toreturn
 
--- this is probably going to need cleanup
-addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
-addneg Nothing  Nothing   = Nothing
-addneg Nothing  (Just n)  = Just $ AA.Not n
-addneg (Just p) (Just n)  = Just $ AA.All Nothing [p, AA.Not n]
-addneg (Just p) Nothing   = Just p
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   id <$ pToken henceLest `indented1` (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
 
 
--- combine all the boolrules under the first preamble keyword
-mergePBRS :: [(Preamble, BoolStructR)] -> Maybe (Preamble, BoolStructR)
-mergePBRS [] = Nothing
-mergePBRS [x] = Just x
-mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
@@ -631,34 +596,6 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 --  MUST WITHIN 200 years
 --    -> die
 
--- support name-like expressions tagged with AKA, which means "also known as"
--- sometimes we want a plain Text.Text
-pNameParens :: Parser RuleName
-pNameParens = pMultiTermAka
-
--- sometimes we want a ParamText
-pPTParens :: Parser ParamText
-pPTParens = debugName "pPTParens" $ pAKA pParamText pt2multiterm
-
--- sometimes we want a multiterm
-pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermParens" $ pAKA pMultiTerm id
-
--- utility function for the above
-pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
-pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  base <- baseParser
-  let detail = toMultiTerm base
-  leftY       <- lookAhead pYLocation
-  leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try $ manyIndentation (debugName "Aka Token" (pToken Aka) *>
-                                                   debugName "someDeep pOtherVal" (someDeep pOtherVal)) -- ("MegaCorp")
-  -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail Nothing (Just srcref))) entityalias
-  tell defalias
-  return base
   
 
 pDoAction ::  Parser BoolStructP
@@ -696,41 +633,6 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> RuleBody
 mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbw
 
--- bob's your uncle
--- MEANS
---    bob's your mother's brother
--- OR bob's your father's mother
-
-permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
-                           -- preamble = copula   (means,deem,decide)
-                -> Parser (  (Preamble, BoolStructR)  -- body of horn clause
-                          , [(Preamble, BoolStructR)] -- positive conditions (when,if)
-                          , [(Preamble, BoolStructR)] -- negative conditions (unless)
-                          , [(Preamble, ParamText)] -- given    (given params)
-                          )
-permutationsCon copula ifwhen l4unless l4given =
-  debugName ("permutationsCon"
-             <> ": copula="   <> show copula
-             <> ", positive=" <> show ifwhen
-             <> ", negative=" <> show l4unless
-             <> ", given="    <> show l4given
-            ) $ do
-  permute $ (,,,)
-    <$$>             preambleBoolStructR copula
-    <|?> ([], some $ preambleBoolStructR ifwhen)
-    <|?> ([], some $ preambleBoolStructR l4unless)
-    <|?> ([], some $ preambleParamText l4given)
-
--- degustates
---     MEANS eats
---        OR drinks
---      WHEN weekend
-
-preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
-preambleParamText preambles = do
-  preamble <- choice (try . pToken <$> preambles)
-  paramtext <- pPTParens -- pPTParens is a bit awkward here because of the multiline possibility of a paramtext
-  return (preamble, paramtext)
 
 preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)
 preambleRelPred preambles = do
@@ -792,111 +694,6 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 
 
--- a BoolStructR is the new ombibus type for the WHO and COND keywords,
--- being an AnyAll tree of RelationalPredicates.
-
-
-preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
-preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
-  -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  condWord <- choice (try . pToken <$> wanted)
-  -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
-  return (condWord, ands)
-
-
-
--- TODO: FIXME: this is a hack, because we don't have a good way to parse the thing
-unLeaf :: BoolStructR -> RelationalPredicate
-unLeaf (AA.Leaf x) = x
-unLeaf _ = error "unLeaf: not a leaf"
-
--- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
-pBoolStructR :: Parser BoolStructR
--- pBoolStructR = debugName "pBoolStructR" $ do
-  -- toBoolStruct <$> expr (unLeaf <$> rpElement)
-
-pBoolStructR = debugName "pBoolStructR" $ do
-  (ands,unlesses) <- permute $ (,)
-    <$$> Just <$> rpAndGroup
-    <|?> (Nothing, Just <$> rpUnlessGroup)
-  return $ fromJust $ addneg ands unlesses
-
-rpUnlessGroup :: Parser BoolStructR
-rpUnlessGroup = debugName "rpUnlessGroup" $ do
-  pToken Unless *> myindented rpAndGroup
-
-rpAndGroup :: Parser BoolStructR
-rpAndGroup = debugName "rpAndGroup" $ do
-    rpOrGroup1 <- manyIndentation rpOrGroup
-    rpOrGroupN <- many $ pToken And *> manyIndentation rpOrGroup
-    let toreturn = if null rpOrGroupN
-                   then rpOrGroup1
-                   else AA.All Nothing (rpOrGroup1 : rpOrGroupN)
-    return toreturn
-
-rpOrGroup :: Parser BoolStructR
-rpOrGroup = debugName "rpOrGroup" $ do
-  elem1    <- someIndentation rpElement <* optional dnl
-  elems    <- many $ pToken Or *> someIndentation rpElement
-  let toreturn = if null elems
-                 then elem1
-                 else AA.Any Nothing (elem1 : elems)
-  return toreturn
-
--- i think we're going to need an rpUnlessGroup as well
-
-rpElement :: Parser BoolStructR
-rpElement = debugName "rpElement" $ do
-  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
-    <|> do
-    rpAtomicElement
-  
-rpAtomicElement :: Parser BoolStructR
-rpAtomicElement = debugName "rpAtomicElement" $ do
-  try rpNotElement
-  <|> try rpAndGroup
-  <|> rpLeafVal
-
-
-
-
-
-
-rpConstitutiveAsElement :: Rule -> BoolStructR
-rpConstitutiveAsElement = multiterm2bsr
-
-rpNotElement :: Parser BoolStructR
-rpNotElement = debugName "rpNotElement" $ do
-  inner <- id <$ pToken MPNot `indented0` dBoolStructR
-  return $ AA.Not inner
-
-rpLeafVal :: Parser BoolStructR
-rpLeafVal = debugName "rpLeafVal" $ do
-  leafVal <- pRelationalPredicate
-  myTraceM $ "rpLeafVal returning " ++ show leafVal
-  return $ AA.Leaf leafVal
-
-
-
-rpNestedBool :: Parser BoolStructR
-rpNestedBool = debugName "rpNestedBool" $ do
-  depth <- asks callDepth
-  debugPrint $ "rpNestedBool lookahead looking for some pBoolConnector"
-  (leftX,foundBool) <- lookAhead (rpLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
-  myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; testing if leftX " ++ show leftX ++ " > depth " ++ show depth
-  guard (leftX > depth)
-  myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; rewinding for dBoolStructR to capture."
-  withDepth (leftX + 0) dBoolStructR
-  
-dBoolStructR :: Parser BoolStructR
-dBoolStructR = debugName "dBoolStructR" $ do
-  rpAndGroup
-
-
-
-
-
 
 -- TODO: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
@@ -936,10 +733,6 @@ pElement = debugName "pElement" $ do
         try (constitutiveAsElement <$> tellIdFirst pConstitutiveRule)
     <|> pAtomicElement
 
--- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after
-tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
-tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
-
 -- Makes a leaf with just the name of a constitutive rule
 constitutiveAsElement ::  Rule -> BoolStructP
 constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
@@ -964,10 +757,6 @@ pNestedBool = debugName "pNestedBool" $ do
   (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
   myTraceM $ "pNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX
   withDepth leftX dBoolStructP
-
-pBoolConnector :: Parser MyToken
-pBoolConnector = debugName "pBoolConnector" $ do
-  pToken And <|> pToken Or <|> pToken Unless <|> pToken MPNot
 
 -- helper functions for parsing
 

@@ -245,7 +245,7 @@ pMultiTermAka = debugName "pMultiTermParens" $ pAKA pMultiTerm id
 -- utility function for the above
 pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  base <- baseParser
+  base <- debugName "pAKA base" baseParser
   let detail' = toMultiTerm base
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.

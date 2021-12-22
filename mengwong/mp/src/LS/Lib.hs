@@ -485,7 +485,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entityname         <- AA.Leaf . multiterm2pt <$> pNameParens            -- You
   leftX              <- lookAhead pXLocation
   let keynamewho = pure ((Party, entityname), Nothing)
-  rulebody           <- withDepth leftX (permutationsReg keynamewho)
+  rulebody           <- someIndentation (permutationsReg keynamewho)
   -- TODO: refactor and converge the rest of this code block with Normal below
   henceLimb          <- optional $ pHenceLest Hence
   lestLimb           <- optional $ pHenceLest Lest
@@ -568,10 +568,10 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
-    eventually   = mkTC <$> pToken Eventually <*> pure 0 <*> pure ""
-    specifically = indent3 mkTC sometime pNumber pOtherVal
+    eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure 0 <*> pure ""
+    specifically = debugName "pTemporal/specifically" $ indent3 mkTC sometime pNumber pOtherVal
+    vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague 0 <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
-    vaguely      = Just . TemporalConstraint TVague 0 <$> pOtherVal
 
 indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
 indent3 f p1 p2 p3 = do
@@ -809,11 +809,11 @@ pHornlike = debugName "pHornlike" $ do
 
     moreStructure = debugName "pHornlike/moreStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (((firstWord,rel),rhs),body) <- pNameParens
-                                             `indentedTuple0` choice [ RPelem <$ pToken Includes
-                                                                     , RPis   <$ pToken Is ]
-                                             `indentedTuple0` pBoolStructR
-                                             `indentedTuple0` optional whenCase
+      (((firstWord,rel),rhs),body) <- (pNameParens
+                                        `indentedTuple0` choice [ RPelem <$ pToken Includes
+                                                                , RPis   <$ pToken Is ]
+                                        `indentedTuple0` pBoolStructR
+                                      ) `optIndentedTuple` whenCase
       let hhead = case rhs of
             AA.Leaf (RPParamText ((y,Nothing) :| [])) -> RPConstraint  firstWord rel (toList y)
             _                                         -> RPBoolStructR firstWord rel rhs

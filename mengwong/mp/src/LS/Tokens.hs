@@ -144,22 +144,27 @@ alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
 pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
-  [ debugName "pMT: first, ptOherVal"    pOtherVal
+  [ debugName "pMT: first, pOtherVal"   pOtherVal
   , debugName "pMT: second, pNumAsText" pNumAsText ]
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p =
   debugName "someDeep" $
-  manyIndentation $ (:) <$> p <*> manyDeep p
+  manyIndentation ( (:)
+                    <$> debugName "someDeep first part calls base directly" p
+                    <*> debugName "someDeep second part calls manyDeep" (manyDeep p)
+                  )
 
 -- zero or more P, monotonically moving to the right, returned in a list
 manyDeep :: (Show a) => Parser a -> Parser [a]
 manyDeep p =
   debugName "manyDeep" $
-  try $ debugName "manyDeep calling someDeep" (someDeep p)
-  <|>   debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
-
+  (debugName "manyDeep calling someDeep" (try $ someDeep p)
+    <|>
+    debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
+  )
+  
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p =
@@ -237,7 +242,7 @@ optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
 infixl 4 `optIndented`
 optIndented p1 p2 = debugName "optIndented" $ do
   f <- p1
-  y <- optional p2
+  y <- optional (someIndentation p2)
   return $ f y
 
 -- | withDepth n p sets the depth to n for parser p

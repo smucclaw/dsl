@@ -100,6 +100,7 @@ main = do
           `shouldParse` [ defaultReg { subj = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
+
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [RuleGroup {rlabel = Just ("\167",1,"Hello")}]
@@ -245,7 +246,6 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` mustsing1
         
 
-{-
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"
@@ -306,6 +306,7 @@ main = do
         mycsv <- BS.readFile "test/chained-regulatives-part2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
 
+{-
       it "should parse chained-regulatives.csv" $ do
         mycsv <- BS.readFile "test/chained-regulatives.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` singer_chain

@@ -114,14 +114,11 @@ pNumAsText = debugName "pNumAsText" $ do
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
   (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
-  actualLabel  <- indentedOther -- <* dnl
+  actualLabel  <- manyIndentation pOtherVal -- <* dnl
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
-
-indentedOther :: Parser Text.Text
-indentedOther = pOtherVal <|> myindented indentedOther
 
 debugName :: Show a => String -> Parser a -> Parser a
 debugName dname p = do
@@ -178,14 +175,12 @@ manyIndentation p =
 myindented :: (Show a) => Parser a -> Parser a
 myindented = between (pToken GoDeeper) (pToken UnDeeper)
 
-
-
 --
 -- maybe move this to indented.hs
 --
 
 -- everything in p2 must be at least the same depth as p1
-indented :: Show a => Int -> Parser (a -> b) -> Parser a -> Parser b
+indented :: (Show a, Show b) => Int -> Parser (a -> b) -> Parser a -> Parser b
 indented d p1 p2 = do
   f     <- p1
   y     <- case d of

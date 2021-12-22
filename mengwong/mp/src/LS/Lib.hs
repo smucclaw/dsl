@@ -52,7 +52,6 @@ import LS.XPile.CoreL4
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
-import Control.Applicative (liftA2)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -573,11 +572,6 @@ pTemporal = eventually <|> specifically <|> vaguely
     vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague 0 <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
-indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
-indent3 f p1 p2 p3 = do
-  p1' <- p1
-  someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
-
 pPreamble :: [MyToken] -> Parser Preamble
 pPreamble toks = choice (try . pToken <$> toks)
 
@@ -604,7 +598,9 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   
 
 pDoAction ::  Parser BoolStructP
-pDoAction = pToken Do >> pAction
+pDoAction = do
+  _ <- debugName "pDoAction/Do" $ pToken Do
+  debugName "pDoAction/pAction" $ someIndentation pAction
 
 
 pAction :: Parser BoolStructP

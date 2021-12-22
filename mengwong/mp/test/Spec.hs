@@ -306,7 +306,6 @@ main = do
         mycsv <- BS.readFile "test/chained-regulatives-part2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
 
-{-
       it "should parse chained-regulatives.csv" $ do
         mycsv <- BS.readFile "test/chained-regulatives.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` singer_chain
@@ -361,6 +360,7 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
 
+{-
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
@@ -692,6 +692,24 @@ main = do
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
         
+    describe "parser elements and fragments ... should parse" $ do
+      let actionFragment1 :: BoolStructP
+          actionFragment1 = Leaf (text2pt "win")
+
+      it "(action-1) a one-word BoolStructP" $ do
+        let testfile = "test/action-1.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pDoAction testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(actionFragment1,[])]
+
+      it "(action-2) a two-word BoolStructP" $ do
+        let testfile = "test/action-2.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pDoAction testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(Leaf $ ("win" :| ["gloriously"]
+                                 , Nothing):|[]
+                         ,[])]
+      
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg
@@ -704,6 +722,10 @@ main = do
                          { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing ) :| [] ) ) ) }
           
           whoStructR_4 = defaultReg
+                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing )
+                                                             :|          [("sans" :| ["decorum"], Nothing)]) )) }
+          
+          whoStructR_5 = defaultReg
                          { who = Just ( Leaf ( RPConstraint ["eyes"] RPis ["eyes"] )) }
           
       it "(who-1) should handle a simple RPParamText" $ do
@@ -724,8 +746,14 @@ main = do
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_3 ] ]
           
-      it "(who-4) should be a constraint" $ do
+      it "(who-4) should handle a multiline RPParamText" $ do
         let testfile = "test/who-4.csv"
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_4 ] ]
+          
+      it "(who-5) should be a constraint" $ do
+        let testfile = "test/who-5.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ whoStructR_5 ] ]

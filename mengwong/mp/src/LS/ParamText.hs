@@ -9,6 +9,8 @@ import LS.Types
 import LS.Tokens
 import Data.List.NonEmpty
 
+--- | MUST | startParamText        | optionalRestOfLine    | OptionalType   |
+--- |      | optional nextline key | nextline value        |                |
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $
   (:|) <$> (pKeyValues <?> "paramText head") <*> pParams
@@ -19,7 +21,7 @@ pParamText = debugName "pParamText" $
   --     return $ myhead :| therest
 
 pParams :: Parser [KVsPair]
-pParams = manyDeep $ pKeyValues <* dnl    -- head (name+,)*
+pParams = debugName "pParams: calling manyDeep pKeyValues" $ manyIndentation $ many pKeyValues    -- head (name+,)*
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues"

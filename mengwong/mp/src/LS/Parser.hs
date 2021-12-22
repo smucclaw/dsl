@@ -39,9 +39,9 @@ toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre lab)) (map toBoolSt
 toBoolStruct (MyAll mis) = AA.All Nothing (map toBoolStruct mis)
 toBoolStruct (MyAny mis) = AA.Any Nothing (map toBoolStruct mis)
 toBoolStruct (MyNot mi') = AA.Not (toBoolStruct mi')
-toBoolStruct (MyLabel lab (MyLabel lab2 _)) = error $ "labeled label: " ++ show lab ++ " " ++ show lab2
-toBoolStruct (MyLabel lab (MyLeaf x)) = error $ "labeled leaf: " ++ show lab ++ " " ++ show x
-toBoolStruct (MyLabel lab (MyNot x)) = error $ "labeled negation: " ++ show lab ++ " " ++ show x
+toBoolStruct (MyLabel lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> "++" <> lab2) x)
+toBoolStruct (MyLabel lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
+toBoolStruct (MyLabel lab (MyNot x)) = AA.Not $ toBoolStruct x
 
 expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"

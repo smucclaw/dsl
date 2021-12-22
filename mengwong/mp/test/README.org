@@ -874,16 +874,32 @@ do the individual components work?
 | Singer | MUST | BEFORE | 1 | supper |
 |        | ->   | pay    |   |        |
 
+**** Just an Action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: action-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| -> | win |
+
+**** A Bigger Action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: action-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| -> | win | gloriously |
+
 ** chained regulatives with action params
 :PROPERTIES:
 :TABLE_EXPORT_FILE: action-params-singer.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| Singer | MUST | BEFORE | 1 | supper   |
-|        | ->   | pay    |          |
-|        |      | to     | the King |
-|        |      | amount | $20      |
+| Singer | MUST | BEFORE | 1        | supper |
+|        | ->   | pay    |          |        |
+|        |      | to     | the King |        |
+|        |      | amount | $20      |        |
 
 ** Alternative Arrangements of Temporals and Actions
 *** may pay after time
@@ -988,9 +1004,23 @@ do the individual components work?
 | MUST  |        |         |         |
 | ->    | sing   |         |         |
 
-*** three-word WHO with a proper relation should be a Constraint
+*** multi-line WHO RPParamText
 :PROPERTIES:
 :TABLE_EXPORT_FILE: who-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+if there are subsequent lines in the ParamText, those lines MUST start directly under the initial first keyword.
+
+| EVERY | person |         |         |
+| WHO   | eats   | without | manners |
+|       | sans   |         | decorum |
+| MUST  |        |         |         |
+| ->    | sing   |         |         |
+
+*** three-word WHO with a proper relation should be a Constraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1001,7 +1031,7 @@ do the individual components work?
 
 *** WHO with a recursive BoolStructR
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-5.csv
+:TABLE_EXPORT_FILE: who-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

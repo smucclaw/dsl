@@ -12,6 +12,7 @@ import Data.List (intercalate)
 
 import LS.Types
 import Debug.Trace (traceM)
+import Control.Applicative (liftA2)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser [MyToken]
@@ -149,8 +150,7 @@ pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
-someDeep p =
-  debugName "someDeep" $
+someDeep p = debugName "someDeep" $
   manyIndentation ( (:)
                     <$> debugName "someDeep first part calls base directly" p
                     <*> debugName "someDeep second part calls manyDeep" (manyDeep p)
@@ -167,18 +167,18 @@ manyDeep p =
   
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
-someIndentation p =
-  debugName "someIndentation" $
+someIndentation p = debugName "someIndentation" $
   myindented (manyIndentation p)
 
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
-manyIndentation p =
-  debugName "manyIndentation" $
-  try p <|> someIndentation p
+manyIndentation p = 
+  debugName "manyIndentation/leaf?" (try p)
+  <|>
+  debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
 
 myindented :: (Show a) => Parser a -> Parser a
-myindented = between (pToken GoDeeper) (pToken UnDeeper)
+myindented = between (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper) (debugName "myIndented: consuming UnDeeper" $ pToken UnDeeper)
 
 --
 -- maybe move this to indented.hs
@@ -230,9 +230,10 @@ infixl 4 `indented0`
 indented1 = indented 1
 infixl 4 `indented1`
 
--- problem is, if the RHS is optional, then an indented1 would wrongly require a GoDeeper!
--- so what we should do, is this:
--- optIndented1 returns Just if the thing is found, indented; or Nothing if the thing is not found when indented
+indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
+indent3 f p1 p2 p3 = do
+  p1' <- p1
+  someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
 
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
 optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do

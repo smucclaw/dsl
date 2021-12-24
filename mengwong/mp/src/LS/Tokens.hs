@@ -15,9 +15,9 @@ import Debug.Trace (traceM)
 import Control.Applicative (liftA2)
 
 -- "discard newline", a reference to GNU Make
-dnl :: Parser [MyToken]
+dnl :: Parser MyToken
 -- -- dnl = many $ pToken EOL
-dnl = pure []
+dnl = pToken EOL
 -- dnl = some $ pToken EOL
 
 pDeontic :: Parser Deontic
@@ -115,7 +115,7 @@ pNumAsText = debugName "pNumAsText" $ do
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
   (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
-  actualLabel  <- manyIndentation pOtherVal -- <* dnl
+  actualLabel  <- someIndentation pOtherVal
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
@@ -196,6 +196,22 @@ indented d p1 p2 = do
 indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
 indentedTuple d p1 p2 = do
   indented d ((,) <$> p1) p2
+
+-- if we're handling a multiline object whose inner values are at the same depth,
+-- we need to consume the "separator values" consisting of "))((" -- equal numbers of Undeeper+ GoDeeper+
+sameDepth :: (Show a) => Parser a -> Parser [a]
+sameDepth p = debugName "sameDepth" $ do
+  p1 <- p
+  eol <- optional dnl
+  when (isJust eol) $ do
+    myTraceM $ "sameDepth: consumed an EOL"
+  goLefts   <- many $ pToken UnDeeper
+  myTraceM $ "sameDepth: counted " <> show (length goLefts) <> " UnDeeper tokens"
+  _goRights <- replicateM (length goLefts) (pToken GoDeeper)
+  myTraceM   "sameDepth: consumed the same number of GoDeeper tokens; now trying for more input at this depth"
+  next <- (try $ sameDepth p) <|> return []
+  myTraceM $ "sameDepth: exhausted, returning " <> show (length next + 1) <> " tokens: " <> show (p1 : next)
+  return (p1 : next)
 
 oldindentedTuple d p1 p2 = do
   x     <- tracedepth "left  = " id     p1

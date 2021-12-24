@@ -9,19 +9,24 @@ import LS.Types
 import LS.Tokens
 import Data.List.NonEmpty
 
---- | MUST | startParamText        | optionalRestOfLine    | OptionalType   |
---- |      | optional nextline key | nextline value        |                |
+-- there are two possible styles: flat, and tree.
+--- in the flat style, succeeding lines start at the same indentation level as the startParamText:
+--- | MUST | startParamText         | optionalRestOfLine    | OptionalType   |
+--- |      | optional nextline key  | nextline values       |                |
+
+--- in the tree style, succeeding lines could start at a deeper indentation level; if so, they become nested records.
+--- | MUST | startParamText         | optionalRestOfLine    | OptionalType   |
+--- |      | optional nextline key1 | nextline values       |                |
+--- |      | optional nextline key2 | nextline values       |                |
+--- |      |                        | child key 2a          | child values   |
+--- |      |                        | child key 2b          | child values   |
+
+--- for this initial implementation of SFL4 we will allow only the flat style, but in the future we will want to move to the tree style.
+--- the tree style corresponds more naturally to the idea of, e.g., a JSON object that has multi-level objects nested.
+
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $
-  (:|) <$> (pKeyValues <?> "paramText head") <*> pParams
-
-
-  -- === flex for
-  --     (myhead, therest) <- (pKeyValues <* dnl) `indented0` pParams
-  --     return $ myhead :| therest
-
-pParams :: Parser [KVsPair]
-pParams = debugName "pParams: calling manyDeep pKeyValues" $ manyIndentation $ many pKeyValues    -- head (name+,)*
+  (:|) <$> (pKeyValues <?> "paramText first line") <*> (sameDepth pKeyValues <?> "paramText subsequent lines")
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues"

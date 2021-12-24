@@ -299,12 +299,25 @@ stanzaAsStream rs =
     withSOF = WithPos eofPos eofPos 1 SOF
     insertParen a@WithPos {   endPos = aPos }
                 b@WithPos { startPos = bPos }
-      | aCol <  bCol =  a : replicate (bCol - aCol) goDp --- | foo | bar | -> | foo ( bar |
-      | aCol >  bCol =  a : replicate (aCol - bCol) unDp --- |     | foo | 
-      | otherwise    = [a]                               --- | bar |     | -> | foo ) bar |
+      | aCol <= bCol &&
+        aLin <  bLin =  a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
+                        : replicate (aCol - bCol) unDp   --- |     | bar | -> |     ( bar |
+
+                                                         --- | foo |     |    | foo   EOL | -- if it's at the same depth we don't have a GoDeeper, just an EOL.
+                                                         --- | bar |     | -> |       bar |
+
+      | aCol <  bCol =  a                                --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
+                        : replicate (bCol - aCol) goDp
+
+      | aCol >  bCol =  a                                --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
+                        : replicate (aCol - bCol) unDp   --- | bar |     | -> | foo ) bar |
+
+      | otherwise    = [a]                            
       where
         aCol = unPos . sourceColumn $ aPos
         bCol = unPos . sourceColumn $ bPos
+        aLin = unPos . sourceLine   $ aPos
+        bLin = unPos . sourceLine   $ bPos
         goDp = b { tokenVal = GoDeeper }
         unDp = a { tokenVal = UnDeeper }
 -- MyStream is the primary input for our Parsers below.
@@ -325,7 +338,7 @@ pRules = do
 pNotARule :: Parser Rule
 pNotARule = debugName "pNotARule" $ do
   myTraceM "pNotARule: starting"
-  toreturn <- NotARule <$> many getTokenNonEOL <* optional dnl
+  toreturn <- NotARule <$> manyDeep getTokenNonEOL
   myTraceM "pNotARule: returning"
   return toreturn
 
@@ -355,12 +368,11 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
       _dtoken <- pToken Define
       name  <- pNameParens
       myTraceM $ "got name = " <> show name
-      super <- optional pTypeSig
+      super <- someIndentation $ optional pTypeSig
       myTraceM $ "got super = " <> show super
-      _     <- optional dnl
-      has   <- optional (id <$ pToken Has `indented1` some pTypeDefinition)
+      has   <- optional (pToken Has *> someIndentation (sameDepth pTypeDefinition))
       myTraceM $ "got has = " <> show has
-      enums <- optional pOneOf <* optional dnl
+      enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
       return $ TypeDecl
         { name
@@ -438,9 +450,9 @@ pScenarioRule = debugName "pScenarioRule" $ do
 pExpect :: Parser HornClause
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  expect   <- pRelationalPredicate
-  whenpart <- optional pWhenPart
-  _        <- dnl
+  expect   <- someIndentation $ pRelationalPredicate
+  whenpart <- someIndentation $ optional pWhenPart
+
   return $ HC
     { relPred = expect
     , relWhen = whenpart
@@ -454,8 +466,7 @@ pExpect = debugName "pExpect" $ do
           
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGiven" $ do
-  some (pRelationalPredicate <* dnl)
-
+  sameDepth pRelationalPredicate
 
 
 pRegRule :: Parser Rule
@@ -465,7 +476,7 @@ pRegRule = debugName "pRegRule" $ do
                   <|> pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
-                ) <* optional dnl
+                )
   return $ tentative { rlabel = maybeLabel }
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:
@@ -655,7 +666,7 @@ permutationsReg keynamewho =
   try ( debugName "regulative permutation with deontic-action" $ permute ( mkRBfromDA
             <$$> try pDA
             <||> keynamewho
-            <|?> (Nothing, pTemporal <* dnl)
+            <|?> (Nothing, pTemporal)
             <&&> whatnot
           ) )
   where

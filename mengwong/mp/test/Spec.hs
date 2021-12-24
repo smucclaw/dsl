@@ -1,17 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Main where
 
 import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
+import qualified Data.Text.Lazy as Text
 import LS.Lib
 import LS.Parser
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Options.Generic (getRecordPure, unwrapRecord)
 
 -- | Create an expectation by saying what the result should be.
@@ -725,6 +727,9 @@ main = do
                          { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing )
                                                              :|          [("sans" :| ["decorum"], Nothing)]) )) }
           
+          mkWhoStruct x xs = defaultReg
+                         { who = Just ( Leaf ( RPParamText ( (,Nothing) <$> fromList x :| [fromList xs] ))) }
+
           whoStructR_5 = defaultReg
                          { who = Just ( Leaf ( RPConstraint ["eyes"] RPis ["eyes"] )) }
           
@@ -746,8 +751,14 @@ main = do
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_3 ] ]
           
-      it "(who-4) should handle a multiline RPParamText" $ do
-        let testfile = "test/who-4.csv"
+      it "(who-4-a) should handle a multiline RPParamText without indentation" $ do
+        let testfile = "test/who-4-a.csv"
+        testcsv <- BS.readFile testfile
+        parseR pToplevel testfile `traverse` exampleStreams testcsv
+          `shouldParse` [ [ mkWhoStruct (Text.words "eats without manners") (Text.words "sans decorum") ] ]
+          
+      it "(who-4-b) flat style, variant" $ do
+        let testfile = "test/who-4-b.csv"
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_4 ] ]

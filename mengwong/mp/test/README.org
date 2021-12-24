@@ -1004,19 +1004,35 @@ do the individual components work?
 | MUST  |        |         |         |
 | ->    | sing   |         |         |
 
-*** multi-line WHO RPParamText
+*** multi-line WHO RPParamText, flat (same level)
+
+**** variant a
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-4.csv
+:TABLE_EXPORT_FILE: who-4-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-if there are subsequent lines in the ParamText, those lines MUST start directly under the initial first keyword.
+if there are subsequent lines in the ParamText, the "flat" style has the succeeding lines start under the initial first keyword.
 
 | EVERY | person |         |         |
 | WHO   | eats   | without | manners |
 |       | sans   |         | decorum |
+|       | no     | class   |         |
 | MUST  |        |         |         |
 | ->    | sing   |         |         |
+
+**** variant b
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-4-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |       |         |
+| WHO   | eats   |       |         |
+|       | sans   |       | decorum |
+|       | no     | class |         |
+| MUST  |        |       |         |
+| ->    | sing   |       |         |
 
 *** three-word WHO with a proper relation should be a Constraint
 :PROPERTIES:

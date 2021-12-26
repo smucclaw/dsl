@@ -93,7 +93,7 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-
+{-
     describe "megaparsing" $ do
 
 
@@ -362,7 +362,6 @@ main = do
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
 
-{-
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
@@ -648,7 +647,7 @@ main = do
         parseR pToplevel testfile `traverse` (exampleStreams testcsv)
           `shouldParse` [ simpleHorn ]
               
---}
+-}
 
     describe "our new parser" $ do
       let myand = LS.Types.And
@@ -681,19 +680,18 @@ main = do
         testcsv <- BS.readFile testfile
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [abcd]
-        
       let ablcd = (MyAny [MyLeaf "top1"
                         , MyLeaf "top2"
                         , MyLabel "this is a label" $ MyAny [ MyLeaf "mid3"
                                                             , MyLeaf "mid4" ]
                         ],[])
-
       it "should handle indent-2-c which has a label" $ do
         let testfile = "test/indent-2-c.csv"
         testcsv <- BS.readFile testfile
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
         
+{-
     describe "parser elements and fragments ... should parse" $ do
       let actionFragment1 :: BoolStructP
           actionFragment1 = Leaf (text2pt "win")
@@ -768,3 +766,5 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_5 ] ]
+-}
+      

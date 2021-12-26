@@ -50,7 +50,9 @@ exprP :: Parser (MyBoolStruct Text.Text)
 exprP = expr pOtherVal
 
 term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-term p = myindented (expr p) <|> try (MyLabel <$> pOtherVal <*> plain p) <|> plain p <?> "term"
+term p = optional dnl *> myindented (expr p <* optional dnl)
+  <|> try (MyLabel <$> pOtherVal <*> plain p)
+  <|> plain p <?> "term"
 
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot MyNot ]

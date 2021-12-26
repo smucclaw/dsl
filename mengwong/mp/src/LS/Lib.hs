@@ -100,7 +100,9 @@ someFunc opts = do
 runExample :: RunConfig -> ByteString -> IO ()
 runExample rc str = forM_ (exampleStreams str) $ \stream ->
     case runMyParser id rc pToplevel "dummy" stream of
-      Left bundle -> putStr (errorBundlePrettyCustom bundle)
+      Left bundle -> do
+        putStr (errorBundlePrettyCustom bundle)
+        printStream stream
       -- Left bundle -> putStr (errorBundlePretty bundle)
       -- Left bundle -> pPrint bundle
       Right ([], []) -> return ()
@@ -118,8 +120,11 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         when (toUppaal rc) $ do
           pPrint $ Uppaal.toL4TA rules
           putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
-        unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $
+        unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $ do
           pPrint rules
+          printStream stream
+  where
+    printStream stream = pPrint (tokenVal <$> unMyStream stream)
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of
@@ -299,7 +304,7 @@ stanzaAsStream rs =
     withSOF = WithPos eofPos eofPos 1 SOF
     insertParen a@WithPos {   endPos = aPos }
                 b@WithPos { startPos = bPos }
-      | aCol <= bCol &&
+      | aCol <  bCol &&
         aLin <  bLin =  a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
                         : replicate (aCol - bCol) unDp   --- |     | bar | -> |     ( bar |
 
@@ -493,7 +498,7 @@ pRegRule = debugName "pRegRule" $ do
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entityname         <- AA.Leaf . multiterm2pt <$> pNameParens            -- You
-  leftX              <- lookAhead pXLocation
+  _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((Party, entityname), Nothing)
   rulebody           <- someIndentation (permutationsReg keynamewho)
   -- TODO: refactor and converge the rest of this code block with Normal below

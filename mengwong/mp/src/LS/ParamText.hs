@@ -2,7 +2,6 @@
 
 module LS.ParamText where
 
-import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
 
 import LS.Types
@@ -32,7 +31,7 @@ pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues"
              (debugName "pAny :| pAny*" $ (:|)
               <$> debugName "first pAny" pAnyText
-              <*> debugName "subsequent manyDeep pAny" (manyDeep pAnyText))
+              <*> debugName "subsequent someDeep pAny" (someDeep pAnyText))
              `optIndentedTuple` pTypeSig
 
 pTypeSig :: Parser TypeSig

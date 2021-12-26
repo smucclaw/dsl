@@ -144,7 +144,7 @@ alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
 pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm" $ manyDeep $ choice
+pMultiTerm = debugName "pMultiTerm calling manyDeep choice" $ manyDeep $ choice
   [ debugName "pMT: first, pOtherVal"   pOtherVal
   , debugName "pMT: second, pNumAsText" pNumAsText ]
 

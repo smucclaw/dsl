@@ -691,7 +691,6 @@ main = do
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
         
-{-
     describe "parser elements and fragments ... should parse" $ do
       let actionFragment1 :: BoolStructP
           actionFragment1 = Leaf (text2pt "win")
@@ -710,6 +709,7 @@ main = do
                                  , Nothing):|[]
                          ,[])]
       
+{-
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg

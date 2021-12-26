@@ -7,6 +7,7 @@ import Control.Monad.Writer.Lazy
 
 import LS.Types
 import LS.Tokens
+import LS.Parser
 import Data.List.NonEmpty
 
 -- there are two possible styles: flat, and tree.

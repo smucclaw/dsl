@@ -80,6 +80,7 @@ getConfig o = do
         , toBabyL4 = only o == "babyl4" || only o == "corel4"
         , toProlog = only o == "prolog"
         , toUppaal = only o == "uppaal"
+        , saveAKA = False
         }
 
 
@@ -708,7 +709,10 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 -- TODO: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" $ do
-  fmap text2pt <$> pBoolStruct
+  toBoolStruct <$> exprP
+
+exprP :: Parser (MyBoolStruct ParamText)
+exprP = expr pParamText
 
 -- dBoolStructP = debugName "dBoolStructP" $ do
 --   pAndGroup -- walks AND eats OR drinks

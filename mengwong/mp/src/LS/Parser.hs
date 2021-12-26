@@ -26,7 +26,6 @@ data MyItem lbl a =
 
 deriving instance Functor (AA.Item' a)
 
-
 type MyBoolStruct = MyItem Text.Text
 
 pBoolStruct :: Parser BoolStruct
@@ -45,9 +44,6 @@ toBoolStruct (MyLabel lab (MyNot x)) = AA.Not $ toBoolStruct x
 
 expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
-
-exprP :: Parser (MyBoolStruct Text.Text)
-exprP = expr pOtherVal
 
 term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 term p = optional dnl *> myindented (expr p <* optional dnl)

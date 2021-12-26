@@ -664,10 +664,10 @@ main = do
           ,UnDeeper,myor,GoDeeper,MPNot,GoDeeper,Other "d"
           ,UnDeeper,UnDeeper]]
 
-      let abcd = (MyAll [MyLeaf "a"
-                        ,MyAny[MyLeaf "b"
-                              ,MyLeaf "c"
-                              ,MyNot (MyLeaf "d")]],[])
+      let abcd = (MyAll [MyLeaf (text2pt "a")
+                        ,MyAny[MyLeaf (text2pt "b")
+                              ,MyLeaf (text2pt "c")
+                              ,MyNot (MyLeaf (text2pt "d"))]],[])
           
       it "should handle indent-2-a" $ do
         let testfile = "test/indent-2-a.csv"
@@ -680,10 +680,10 @@ main = do
         testcsv <- BS.readFile testfile
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [abcd]
-      let ablcd = (MyAny [MyLeaf "top1"
-                        , MyLeaf "top2"
-                        , MyLabel "this is a label" $ MyAny [ MyLeaf "mid3"
-                                                            , MyLeaf "mid4" ]
+      let ablcd = (MyAny [MyLeaf (text2pt "top1")
+                        , MyLeaf (text2pt "top2")
+                        , MyLabel "this is a label" $ MyAny [ MyLeaf (text2pt "mid3")
+                                                            , MyLeaf (text2pt "mid4") ]
                         ],[])
       it "should handle indent-2-c which has a label" $ do
         let testfile = "test/indent-2-c.csv"

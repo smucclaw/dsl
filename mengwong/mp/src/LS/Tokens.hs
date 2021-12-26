@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.Tokens where
+module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import qualified Data.Set           as Set
 import qualified Data.Text.Lazy as Text
@@ -197,21 +197,10 @@ indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
 indentedTuple d p1 p2 = do
   indented d ((,) <$> p1) p2
 
--- if we're handling a multiline object whose inner values are at the same depth,
--- we need to consume the "separator values" consisting of "))((" -- equal numbers of Undeeper+ GoDeeper+
+-- return one or more items at the same depth.
+-- the interesting thing about this function is the *absence* of someIndentation/manyIndentation
 sameDepth :: (Show a) => Parser a -> Parser [a]
-sameDepth p = debugName "sameDepth" $ do
-  p1 <- p
-  eol <- optional dnl
-  when (isJust eol) $ do
-    myTraceM $ "sameDepth: consumed an EOL"
-  goLefts   <- many $ pToken UnDeeper
-  myTraceM $ "sameDepth: counted " <> show (length goLefts) <> " UnDeeper tokens"
-  _goRights <- replicateM (length goLefts) (pToken GoDeeper)
-  myTraceM   "sameDepth: consumed the same number of GoDeeper tokens; now trying for more input at this depth"
-  next <- (try $ sameDepth p) <|> return []
-  myTraceM $ "sameDepth: exhausted, returning " <> show (length next + 1) <> " tokens: " <> show (p1 : next)
-  return (p1 : next)
+sameDepth p = debugName "sameDepth" $ some p
 
 oldindentedTuple d p1 p2 = do
   x     <- tracedepth "left  = " id     p1

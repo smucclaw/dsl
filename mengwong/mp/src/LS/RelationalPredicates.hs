@@ -3,7 +3,6 @@
 module LS.RelationalPredicates where
 
 import Text.Megaparsec
-import Control.Monad.Reader (asks)
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import Data.Maybe (fromJust)
@@ -236,29 +235,7 @@ pNameParens = pMultiTermAka
 
 -- sometimes we want a ParamText
 pPTParens :: Parser ParamText
-pPTParens = debugName "pPTParens" $ pAKA pParamText pt2multiterm
-
--- sometimes we want a multiterm
-pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermParens" $ pAKA pMultiTerm id
-
--- utility function for the above
-pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
-pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  base <- debugName "pAKA base" baseParser
-  let detail' = toMultiTerm base
-  leftY       <- lookAhead pYLocation
-  leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try $ manyIndentation (debugName "Aka Token" (pToken Aka) *>
-                                                   debugName "someDeep pOtherVal" (someDeep pOtherVal)) -- ("MegaCorp")
-  -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
-  srcurl <- asks sourceURL
-  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
-  let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
-  tell defalias
-  return base
--- a BoolStructR is the new ombibus type for the WHO and COND keywords,
--- being an AnyAll tree of RelationalPredicates.
+pPTParens = debugName "pPTAka" $ pAKA pParamText pt2multiterm
 
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)

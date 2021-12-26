@@ -18,6 +18,7 @@ import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import GHC.Generics
+import qualified Data.Tree as Tree
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -32,6 +33,17 @@ type Preamble = MyToken
 type BoolStruct  = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
 type BoolStructR = AA.Item RelationalPredicate
+
+type MultiTerm = [Text.Text]                          --- | apple | orange | banana
+type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
+type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
+type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
+                                                      --- |        | immediately    | :: | Urgency |
+
+type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothing) [ Node (["immediately" :| [], Urgency) [] ]
+
+mkPTree :: TypedMulti -> [PTree] -> PTree
+mkPTree = Tree.Node
 
 mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
 mkLeaf = AA.Leaf . text2pt
@@ -166,7 +178,7 @@ data HornClause2 = HC2
   , hBody :: Maybe BoolStructR
   }
   deriving (Eq, Show, Generic, ToJSON)
-  
+
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Show, Generic, ToJSON)
 
@@ -182,7 +194,7 @@ type HornRP = AA.Item RelationalPredicate
 data HornBody = HBRP HornRP
               | HBITE { hbif   :: HornRP
                       , hbthen :: HornRP
-                      , hbelse :: HornRP } 
+                      , hbelse :: HornRP }
   deriving (Eq, Show, Generic, ToJSON)
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
@@ -266,12 +278,6 @@ multiterm2pt x = pure (fromList x, Nothing)
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
 
-type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
-type MultiTerm = [Text.Text]                          --- | apple | orange | banana
-type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
-type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
-                                                      --- |        | immediately    | :: | Urgency |
-
 text2pt :: a -> NonEmpty (NonEmpty a, Maybe TypeSig)
 text2pt x = pure (pure x, Nothing)
 
@@ -313,10 +319,10 @@ data SrcRef = SrcRef { url      :: Text.Text
 
 
 mkTComp :: MyToken -> Maybe TComparison
-mkTComp Before     = Just TBefore 
-mkTComp After      = Just TAfter  
-mkTComp By         = Just TBy     
-mkTComp On         = Just TOn     
+mkTComp Before     = Just TBefore
+mkTComp After      = Just TAfter
+mkTComp By         = Just TBy
+mkTComp On         = Just TOn
 mkTComp Eventually = Nothing
 mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ show x ++ " -- this should be handled by a Vaguely"
 
@@ -333,6 +339,7 @@ data RunConfig = RC { debug     :: Bool
                     , toBabyL4  :: Bool
                     , toProlog  :: Bool
                     , toUppaal  :: Bool
+                    , saveAKA   :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

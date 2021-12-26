@@ -44,7 +44,6 @@ import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import LS.NLG (nlg)
-import Control.Monad.Reader (asks)
 import Control.Monad.Writer.Lazy
 
 import LS.XPile.CoreL4
@@ -307,9 +306,6 @@ stanzaAsStream rs =
       | aCol <  bCol &&
         aLin <  bLin =  a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
                         : replicate (aCol - bCol) unDp   --- |     | bar | -> |     ( bar |
-
-                                                         --- | foo |     |    | foo   EOL | -- if it's at the same depth we don't have a GoDeeper, just an EOL.
-                                                         --- | bar |     | -> |       bar |
 
       | aCol <  bCol =  a                                --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
                         : replicate (bCol - aCol) goDp

@@ -164,11 +164,11 @@ main = do
 
       it "should parse a simple constitutive rule" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1.csv"
-        parseR1 pRules "" (exampleStream mycsv) `shouldParse` [degustates]
-{-
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates]
+
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR1 pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All Nothing
@@ -200,6 +200,7 @@ main = do
       it "should parse indented-2.csv (inline constitutive rule)" $ do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
+{-
 
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"

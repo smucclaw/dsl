@@ -51,6 +51,7 @@ import LS.XPile.CoreL4
 import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
+import Debug.Trace (trace)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -301,13 +302,15 @@ stanzaAsStream rs =
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
       tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
-    withEOF = WithPos eofPos eofPos 1 EOF
     eofPos = SourcePos "" pos1 pos1
+    withEOF = WithPos eofPos eofPos 1 EOF
     withSOF = WithPos eofPos eofPos 1 SOF
     insertParen a@WithPos {   endPos = aPos }
                 b@WithPos { startPos = bPos }
-      | aCol <  bCol &&
-        aLin <  bLin =  a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
+      | tokenVal a /= SOF &&
+        aCol <  bCol &&
+        aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
+                        a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
                         : replicate (aCol - bCol) unDp   --- |     | bar | -> |     ( bar |
 
       | aCol <  bCol =  a                                --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
@@ -333,7 +336,7 @@ pToplevel = pRules <* eof
 pRules :: Parser [Rule]
 pRules = do
   wanted   <- some (try pRule)
-  notarule <- optional pNotARule
+  notarule <- optional (notFollowedBy eof *> pNotARule)
   next <- [] <$ eof -- <|> pRules
   wantNotRules <- asks wantNotRules
   return $ wanted ++ next ++
@@ -350,6 +353,7 @@ pNotARule = debugName "pNotARule" $ do
 pRule :: Parser Rule
 pRule = do
   _ <- many dnl
+  notFollowedBy eof
   try (debugName "pRule: unwrapping indentation" $ myindented pRule)
     <|> try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")

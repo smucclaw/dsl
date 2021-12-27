@@ -38,17 +38,18 @@ toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre lab)) (map toBoolSt
 toBoolStruct (MyAll mis) = AA.All Nothing (map toBoolStruct mis)
 toBoolStruct (MyAny mis) = AA.Any Nothing (map toBoolStruct mis)
 toBoolStruct (MyNot mi') = AA.Not (toBoolStruct mi')
-toBoolStruct (MyLabel lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> "++" <> lab2) x)
-toBoolStruct (MyLabel lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
-toBoolStruct (MyLabel lab (MyNot x)) = AA.Not $ toBoolStruct x
+toBoolStruct (MyLabel  lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> "++" <> lab2) x)
+toBoolStruct (MyLabel _lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
+toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 
 expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 
 term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-term p = optional dnl *> someIndentation (expr p <* optional dnl)
-  <|> try (MyLabel <$> pOtherVal <*> plain p)
-  <|> plain p <?> "term"
+term p =
+      try (debugName "term p / 1:someIndentation" (optional dnl *> (someIndentation (expr p) <* optional dnl)))
+  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> pOtherVal <*> expr p))
+  <|> try (debugName "term p / 3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot MyNot ]
@@ -75,11 +76,15 @@ myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 
+binary :: MyToken -> (a -> a -> a) -> Operator Parser a
 binary  tname f = InfixR  (f <$ pToken tname)
+prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
+mylabel :: Operator Parser (MyBoolStruct Text.Text)
 mylabel         = Prefix  (MyLabel <$> try pOtherVal)
 
+plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p
 
 -- myindented = between (pToken GoDeeper) (pToken UnDeeper)

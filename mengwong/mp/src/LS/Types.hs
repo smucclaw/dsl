@@ -354,130 +354,130 @@ magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLES
 
 -- the Rule types employ these tokens, which are meaningful to L4.
 --
-toToken :: Text.Text -> MyToken
+toToken :: Text.Text -> [MyToken]
 
 -- start a regulative rule
-toToken "EVERY" =  Every
-toToken "PARTY" =  Party
-toToken "ALL"   =  TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
+toToken "EVERY" =  pure Every
+toToken "PARTY" =  pure Party
+toToken "ALL"   =  pure TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
 
 -- start a boolstruct
-toToken "ALWAYS" = Always
-toToken "NEVER"  = Never
+toToken "ALWAYS" = pure Always
+toToken "NEVER"  = pure Never
 
 -- qualify a subject
-toToken "WHO" =    Who
-toToken "WHICH" =  Which
-toToken "WHOSE" =  Whose
+toToken "WHO" =    pure Who
+toToken "WHICH" =  pure Which
+toToken "WHOSE" =  pure Whose
 
-toToken "WHEN" =   When
-toToken "IF" =     If
-toToken "UPON" =   Upon
-toToken "GIVEN" =  Given
-toToken "HAVING" = Having
+toToken "WHEN" =   pure When
+toToken "IF" =     pure If
+toToken "UPON" =   pure Upon
+toToken "GIVEN" =  pure Given
+toToken "HAVING" = pure Having
 
-toToken "MEANS" =  Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
-toToken "INCLUDES" =  Includes
-toToken "IS" =     Is
+toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
+toToken "INCLUDES" =  pure Includes
+toToken "IS" =     pure Is
 
 -- boolean connectors
-toToken "OR" =     Or
-toToken "AND" =    And
-toToken "UNLESS" = Unless
-toToken "IF NOT" = Unless
-toToken "NOT"    = MPNot
+toToken "OR" =     pure Or
+toToken "AND" =    pure And
+toToken "UNLESS" = pure Unless
+toToken "IF NOT" = pure Unless
+toToken "NOT"    = pure MPNot
 
 -- deontics
-toToken "MUST" =   Must
-toToken "MAY" =    May
-toToken "SHANT" =  Shant
+toToken "MUST" =   pure Must
+toToken "MAY" =    pure May
+toToken "SHANT" =  pure Shant
 
 -- temporals
-toToken "BEFORE" = Before  -- <
-toToken "WITHIN" = Before  -- <=
-toToken "AFTER"  = After   -- >
-toToken "BY"     = By
-toToken "ON"     = On      -- ==
-toToken "EVENTUALLY" = Eventually
+toToken "BEFORE" = pure Before  -- <
+toToken "WITHIN" = pure Before  -- <=
+toToken "AFTER"  = pure After   -- >
+toToken "BY"     = pure By
+toToken "ON"     = pure On      -- ==
+toToken "EVENTUALLY" = pure Eventually
 
 -- the rest of the regulative rule
-toToken "➔"       =     Do
-toToken "->"      =     Do
-toToken "DO"      =     Do
-toToken "PERFORM" =     Do
+toToken "➔"       =     pure Do
+toToken "->"      =     pure Do
+toToken "DO"      =     pure Do
+toToken "PERFORM" =     pure Do
 
 -- for discarding
-toToken "" =       Empty
-toToken "TRUE" =   Checkbox
-toToken "FALSE" =  Checkbox
-toToken "HOLDS" =  Holds
+toToken "" =       pure Empty
+toToken "TRUE" =   pure Checkbox
+toToken "FALSE" =  pure Checkbox
+toToken "HOLDS" =  pure Holds
 
 -- regulative chains
-toToken "HENCE" = Hence
-toToken  "THEN" = Hence
+toToken "HENCE" = pure Hence
+toToken  "THEN" = pure Hence
 -- trivial contracts
-toToken  "FULFILLED" = Fulfilled
-toToken  "BREACH" = Breach
+toToken  "FULFILLED" = pure Fulfilled
+toToken  "BREACH" = pure Breach
 
-toToken     "LEST" = Lest
-toToken     "ELSE" = Lest
-toToken  "OR ELSE" = Lest
-toToken "XOR ELSE" = Lest
-toToken    "XELSE" = Lest
+toToken     "LEST" = pure Lest
+toToken     "ELSE" = pure Lest
+toToken  "OR ELSE" = pure Lest
+toToken "XOR ELSE" = pure Lest
+toToken    "XELSE" = pure Lest
 
-toToken ";"      = EOL
+toToken ";"      = pure EOL
 
-toToken ":"      = TypeSeparator
-toToken "::"     = TypeSeparator
-toToken "TYPE"   = TypeSeparator
-toToken "IS A"   = TypeSeparator
-toToken "IS AN"  = TypeSeparator
-toToken "A"      = A_An
-toToken "AN"     = A_An
+toToken ":"      = [TypeSeparator, A_An]
+toToken "::"     = [TypeSeparator, A_An]
+toToken "TYPE"   = [TypeSeparator, A_An]
+toToken "IS A"   = [TypeSeparator, A_An]
+toToken "IS AN"  = [TypeSeparator, A_An]
+toToken "A"      = pure A_An
+toToken "AN"     = pure A_An
 
-toToken "DEFINE"    = Define
-toToken "DECIDE"    = Decide
-toToken "ONE OF"    = OneOf
-toToken "AS ONE OF" = OneOf
-toToken "DEEM"      = Deem
-toToken "HAS"       = Has
+toToken "DEFINE"    = pure Define
+toToken "DECIDE"    = pure Decide
+toToken "ONE OF"    = pure OneOf
+toToken "AS ONE OF" = pure OneOf
+toToken "DEEM"      = pure Deem
+toToken "HAS"       = pure Has
 
-toToken "ONE"       = One
-toToken "OPTIONAL"  = Optional
-toToken "LIST0"     = List0
-toToken "LIST1"     = List1
+toToken "ONE"       = pure One
+toToken "OPTIONAL"  = pure Optional
+toToken "LIST0"     = pure List0
+toToken "LIST1"     = pure List1
 
-toToken "AKA"       = Aka
+toToken "AKA"       = pure Aka
 
-toToken "-§"        = RuleMarker (-1) "§"
-toToken "SECTION"   = RuleMarker   1  "§"
-toToken "§"         = RuleMarker   1  "§"
-toToken "§§"        = RuleMarker   2  "§"
-toToken "§§§"       = RuleMarker   3  "§"
-toToken "§§§§"      = RuleMarker   4  "§"
-toToken "§§§§§"     = RuleMarker   5  "§"
-toToken "§§§§§§"    = RuleMarker   6  "§"
+toToken "-§"        = pure $ RuleMarker (-1) "§"
+toToken "SECTION"   = pure $ RuleMarker   1  "§"
+toToken "§"         = pure $ RuleMarker   1  "§"
+toToken "§§"        = pure $ RuleMarker   2  "§"
+toToken "§§§"       = pure $ RuleMarker   3  "§"
+toToken "§§§§"      = pure $ RuleMarker   4  "§"
+toToken "§§§§§"     = pure $ RuleMarker   5  "§"
+toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
 
-toToken "EXPECT"    = Expect
-toToken "<"         = TokLT
-toToken "=<"        = TokLTE
-toToken "<="        = TokLTE
-toToken ">"         = TokGT
-toToken ">="        = TokGTE
-toToken "="         = TokEQ
-toToken "=="        = TokEQ
-toToken "==="       = TokEQ
-toToken "IN"        = TokIn
-toToken "NOT IN"    = TokNotIn
+toToken "EXPECT"    = pure Expect
+toToken "<"         = pure TokLT
+toToken "=<"        = pure TokLTE
+toToken "<="        = pure TokLTE
+toToken ">"         = pure TokGT
+toToken ">="        = pure TokGTE
+toToken "="         = pure TokEQ
+toToken "=="        = pure TokEQ
+toToken "==="       = pure TokEQ
+toToken "IN"        = pure TokIn
+toToken "NOT IN"    = pure TokNotIn
 
-toToken "OTHERWISE" = Otherwise
+toToken "OTHERWISE" = pure Otherwise
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toToken s | [(n,"")] <- reads $ Text.unpack s = TNumber n
+toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
-toToken x = Other x
+toToken x = pure $ Other x
 
 
 whenDebug :: Parser () -> Parser ()

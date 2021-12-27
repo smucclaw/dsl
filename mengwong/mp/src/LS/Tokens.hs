@@ -35,7 +35,6 @@ pNumber = token test Set.empty <?> "number"
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
-    test (WithPos _ _ _ TypeSeparator) = Just "::" -- TODO FIXME -- this was here to allow GIVEN ParamText to contain a type signature
     test (WithPos _ _ _ (Other t)) = Just t
     test _ = Nothing
 
@@ -148,6 +147,9 @@ pMultiTerm = debugName "pMultiTerm calling manyDeep choice" $ manyDeep $ choice
   [ debugName "pMT: first, pOtherVal"   pOtherVal
   , debugName "pMT: second, pNumAsText" pNumAsText ]
 
+pNumOrText :: Parser Text.Text
+pNumOrText = pOtherVal <|> pNumAsText
+
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p = debugName "someDeep" $
@@ -164,7 +166,26 @@ manyDeep p =
     <|>
     debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
   )
-  
+
+-- what if you want to match something like
+-- foo foo foo foo foo (maybe bar)
+someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
+someDeepThen p1 p2 = debugName "someDeepThen" $ do
+  p <- try (debugName "someDeepThen/initial" p1)
+  (typesig, lhs) <- donext
+  return (p:lhs, typesig)
+  where
+    donext = try (debugName "going inner" (try $ someIndentation inner)
+                  <|>
+                  debugName "going base" base)
+    inner = do
+      p1' <- debugName "someDeepThen/inner/p1" $ optional p1
+      maybe base
+        (\p -> fmap (p :) <$> donext)
+        p1'
+    base = debugName "someDeepThen/base" $ do
+      typesig <- optional $ try (someIndentation p2)
+      return (typesig, [])
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
@@ -180,7 +201,7 @@ manyIndentation p =
 myindented :: (Show a) => Parser a -> Parser a
 myindented = between
              (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper)
-             (debugName "myIndented: consuming UnDeeper" $ pToken UnDeeper)
+             (debugName "myindented: consuming UnDeeper" $ pToken UnDeeper)
 
 myoutdented :: (Show a) => Parser a -> Parser a
 myoutdented = between

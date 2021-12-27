@@ -295,7 +295,7 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-                   tokenVal = toToken rawToken
+             , tokenVal <- toToken rawToken
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
   where
@@ -619,11 +619,11 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ someIndentation pAction
+  debugName "pDoAction/pAction" $ pAction
 
 
 pAction :: Parser BoolStructP
-pAction = dBoolStructP
+pAction = debugName "pAction calling dBoolStructP" dBoolStructP
 
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
@@ -714,11 +714,11 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 -- TODO: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
-dBoolStructP = debugName "dBoolStructP" $ do
+dBoolStructP = debugName "dBoolStructP calling exprP" $ do
   toBoolStruct <$> exprP
 
 exprP :: Parser (MyBoolStruct ParamText)
-exprP = expr pParamText
+exprP = debugName "expr pParamText" $ expr pParamText
 
 -- dBoolStructP = debugName "dBoolStructP" $ do
 --   pAndGroup -- walks AND eats OR drinks

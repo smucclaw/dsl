@@ -251,6 +251,53 @@ one or more normal words with optional typesig
 - HAS relation definition
 - DECLARE type declaration
 
+*** paramtext-1: simple case
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word |
+
+*** paramtext-2: simple case, typed
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | IS | A | String |
+
+*** paramtext-2-a: simple case, typed a different way
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | IS A | String |
+
+*** paramtext-2-b: simple case, typed a different way
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | :: | String |
+
+*** paramtext-3: simple case, two words
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two | words |
+*** paramtext-3-b: simple case, two words, typed
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-3-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two | words | :: | String |
+
 *** example: rule action
 
 | NOTIFY | the PDPC            |

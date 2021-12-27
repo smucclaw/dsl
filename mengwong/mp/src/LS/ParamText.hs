@@ -33,8 +33,8 @@ import Data.List.NonEmpty
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $
   (:|)
-  <$> (pKeyValues <?> "pParamText(flat) first line")
-  <*> (sameMany pKeyValues <?> "pParamText(flat) subsequent lines")
+  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValues
+  <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues" (sameMany pKeyValues)
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do
@@ -53,16 +53,18 @@ pTreeSomeWords = debugName "pTreeSomeWords" $ do
     firstLine  <- debugName "pTreeSomeWords: lookahead pMultiTermAka" (lookAhead pKeyValuesAka)
     _firstWord <- debugName "pTreeSomeWords: first line, first word" pAnyText
     (_nextWords, nextLines) <- someIndentation $ (,)
-                              <$> debugName "pTreeSomeWords: first line, subsequent words, no save of AKA" (local (\rc -> rc {saveAKA=False}) pMultiTermAka)
+                              <$> debugName "pTreeSomeWords: first line, subsequent words, no save of AKA"
+                               (local (\rc -> rc {saveAKA=False}) pMultiTermAka)
                               -- it should be possible to merge the pTree*Words functions into a single function that just matches   pMultiTermAka <|> dnl
-                              <*> debugName "pTreeSomeWords: subsequent lines at the same indented level, recursing" (sameDepth pPTree)
+                              <*> debugName "pTreeSomeWords: subsequent lines at the same indented level, recursing"
+                               (sameDepth pPTree)
     return (firstLine, nextLines)
   return $ mkPTree firstLine inners
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
   _           <- pToken TypeSeparator <|> pToken Is
-  someIndentation (simpletype <|> inlineenum)
+  manyIndentation (simpletype <|> inlineenum) -- sometimes there is no GoDeeper between the TypeSeparator and the A_An due to toToken "IS A"
   where
     simpletype = do
       cardinality <- choice [ TOne      <$ pToken One
@@ -70,7 +72,7 @@ pTypeSig = debugName "pTypeSig" $ do
                             , TOptional <$ pToken Optional
                             , TList0    <$ pToken List0
                             , TList1    <$ pToken List1 ]
-      base        <- pOtherVal
+      base        <- someIndentation pOtherVal
       return $ SimpleType cardinality base
     inlineenum = do
       InlineEnum TOne <$> pOneOf
@@ -94,11 +96,9 @@ pKeyValuesAka :: Parser KVsPair
 pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA pKeyValues (toList . fst)
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues"
-             (debugName "pAny :| pAny*" $ (:|)
-              <$> debugName "first pAny" pAnyText
-              <*> debugName "subsequent someDeep pAny" (manyDeep pAnyText))
-             `optIndentedTuple` pTypeSig
+pKeyValues = debugName "pKeyValues" $ do
+             (lhs, typesig) <- pNumOrText `someDeepThen` pTypeSig
+             return (fromList lhs, typesig)
 
 -- utility function for the above
 pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a

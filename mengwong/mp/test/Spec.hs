@@ -6,16 +6,17 @@ module Main where
 import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
-import qualified Data.Text.Lazy as Text
 import LS.Lib
 import LS.Parser
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
-import Options.Generic (getRecordPure, unwrapRecord)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Debug.Trace (traceShowM)
+import System.Environment (lookupEnv)
+import LS.ParamText
+import Data.Maybe (isJust)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -83,15 +84,27 @@ defaultHorn = Hornlike
 
 main :: IO ()
 main = do
-  cmdlineOpts <- unwrapRecord $ (maybe (error "failed to parse empty args") id $ getRecordPure  [])
-  runConfig_ <- getConfig $ cmdlineOpts
+  mpd <- lookupEnv "MP_DEBUG"
+  let runConfig_ = RC
+        { debug = isJust mpd
+        , callDepth = 0
+        , parseCallStack = []
+        , sourceURL = "STDIN"
+        , asJSON = False
+        , toNLG = False
+        , toBabyL4 = False
+        , toProlog = False
+        , toUppaal = False
+        , saveAKA = False
+        , wantNotRules = False
+        }
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
   let parseR = runMyParser combine runConfig
   let parseR1 x y s = runMyParser combine runConfigDebug x y s <* traceShowM (tokenVal <$> unMyStream s)
   let parseOther  = runMyParser id runConfig
-  let parseOther1 = runMyParser id runConfigDebug
+  let parseOther1 x y s = runMyParser id runConfigDebug x y s <* traceShowM (tokenVal <$> unMyStream s)
 
   hspec $ do
     describe "Nothing Test" $ do
@@ -200,7 +213,6 @@ main = do
       it "should parse indented-2.csv (inline constitutive rule)" $ do
         mycsv <- BS.readFile "test/indented-2.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
-{-
 
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
@@ -252,7 +264,6 @@ main = do
         mycsv <- BS.readFile "test/mustsing-1.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` mustsing1
         
-
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"
@@ -362,11 +373,14 @@ main = do
         mycsv <- BS.readFile "test/action-params-singer.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
 
+{-
       it "should parse despite interrupting newlines" $ do
         mycsv <- BS.readFile "test/blank-lines.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
       -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
+-}
 
+{--
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
@@ -708,8 +722,52 @@ main = do
                  , MyLeaf (text2pt "term4")
                  , MyLeaf (text2pt "term5")
                  ],[]) ]
-        
+
     describe "parser elements and fragments ... should parse" $ do
+      let ptFragment1 :: ParamText
+          ptFragment1 = ("one word" :| []  , Nothing) :| []
+          ptFragment2 = ("one word" :| [], Just (SimpleType TOne "String")) :| []
+          ptFragment3  = ("two" :| ["words"], Nothing) :| []
+          ptFragment3b = ("two" :| ["words"], Just (SimpleType TOne "String")) :| []
+
+
+      it "paramtext-1 a single-token untyped ParamText" $ do
+        let testfile = "test/paramtext-1.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment1,[])]
+        
+      it "paramtext-2 a single-token ParamText typed with IS | A" $ do
+        let testfile = "test/paramtext-2.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment2,[])]
+        
+      it "paramtext-2-a a single-token ParamText typed with IS A" $ do
+        let testfile = "test/paramtext-2-a.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment2,[])]
+        
+      it "paramtext-2-b a single-token ParamText typed with ::" $ do
+        let testfile = "test/paramtext-2-b.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment2,[])]
+        
+      it "paramtext-3 a multi-token ParamText, untyped" $ do
+        let testfile = "test/paramtext-3.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment3,[])]
+        
+      it "paramtext-3-b a multi-token ParamText, typed String" $ do
+        let testfile = "test/paramtext-3-b.csv"
+        testcsv <- BS.readFile testfile
+        parseOther pParamText testfile `traverse` exampleStreams testcsv
+          `shouldParse` [(ptFragment3b,[])]
+
+
       let actionFragment1 :: BoolStructP
           actionFragment1 = Leaf (text2pt "win")
 
@@ -728,7 +786,7 @@ main = do
                          ,[])]
       
 {-
-    describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
+describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg
                          { who = Just ( Leaf ( RPParamText ( ( "eats" :| [] , Nothing ) :| [] ) ) ) }
@@ -760,13 +818,14 @@ main = do
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_2 ] ]
+
           
       it "(who-3) should handle a simple RPParamText" $ do
         let testfile = "test/who-3.csv"
         testcsv <- BS.readFile testfile
         parseR pToplevel testfile `traverse` exampleStreams testcsv
           `shouldParse` [ [ whoStructR_3 ] ]
-          
+
       it "(who-4-a) should handle a multiline RPParamText without indentation" $ do
         let testfile = "test/who-4-a.csv"
         testcsv <- BS.readFile testfile

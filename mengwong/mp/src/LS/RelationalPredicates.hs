@@ -173,7 +173,7 @@ mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation
-  namep              <- debugName "calling myindented pNameParens" $ myindented pNameParens
+  namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-

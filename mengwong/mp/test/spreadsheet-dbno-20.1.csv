@@ -1,0 +1,13 @@
+Scenario Testing,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+§,SCENARIO 20.1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,GIVEN,,the data breach relates to,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,the following personal data relating to an individual’s account with an organisation:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,TRUE,the individual’s account identifier,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,GIVEN,,loss of storage medium on which personal data is stored in circumstances where the unauthorised,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,TRUE,disposal,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,of the personal data is likely to occur,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,GIVEN,,the data breach relates to,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,the individual’s,TRUE,full name,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,GIVEN,,the data breach occurred only within an organisation,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,EXPECT,,IT IS,NOT,A Notifiable Data Breach,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+

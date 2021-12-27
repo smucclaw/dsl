@@ -34,7 +34,7 @@ pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $
   (:|)
   <$> (pKeyValues <?> "pParamText(flat) first line")
-  <*> (sameDepth pKeyValues <?> "pParamText(flat) subsequent lines")
+  <*> (sameMany pKeyValues <?> "pParamText(flat) subsequent lines")
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do

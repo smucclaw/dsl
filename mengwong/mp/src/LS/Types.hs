@@ -340,6 +340,7 @@ data RunConfig = RC { debug     :: Bool
                     , toProlog  :: Bool
                     , toUppaal  :: Bool
                     , saveAKA   :: Bool
+                    , wantNotRules :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

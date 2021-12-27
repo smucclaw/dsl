@@ -70,9 +70,7 @@ can be thought of as inline type annotations
 [([ "sender", "postcode" ], string)]
 
 
-** About Indentation, Right-Associativity, and Precedence
-
-see src/Parser
+** About the src/Parser.hs
 
 *** At the same depth, NOT binds tighter than OR binds tigher than AND.
 
@@ -127,6 +125,63 @@ whenever we decrease indentation level we insert a )
 
 Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.
 
+*** Deriving the Grammar
+
+So we know that a binary term looks like this:
+
+|       | term1 |
+| binOp | term2 |
+
+if the "cursor" is initially located in the blank cell, our parser would need to consume:
+
+GoDeeper, term, UnDeeper, binOp, GoDeeper, term, UnDeeper
+
+and that would leave the "cursor" in the same column as it started, on the line after term2.
+
+our ~myindented~ combinator helps tidy this up:
+
+myindented term, binOp, myindented term
+
+**** If term2 were itself a binary expression,
+
+|        | term1   |
+| binOp1 | term2-a |
+| binOp2 | term2-b |
+
+term1 binOp1 (term2-a binOp2 term2-b)
+
+note that in practice the blank cell may not be blank; the cursor may be there after processing an "IF".
+
+**** What if we have an intentional indent?
+
+|     | term1 |       |
+| OR  |       | term2 |
+|     | AND   | term3 |
+| OR  | term4 |       |
+
+Because we normally bind OR tighter than AND we need to indent the AND expression:
+
+(term1 OR (term2 AND term3) OR term4)
+
+so, our "outer" parser would consume
+
+GoDeeper, term1, UnDeeper, OR, GoDeeper
+
+then instead of finding a pOtherVal it needs to consume the inner AND:
+
+GoDeeper, term2, UnDeeper, AND, GoDeeper, term3, UnDeeper
+
+and now it's as though it had just processed a single term2-a, and can proceed back to
+
+UnDeeper, OR, GoDeeper, term4
+
+so the "inner portion" of a nested expression is exactly a
+
+(myindented term) binop (myindented term)
+
+And the outer portion becomes
+
+myindented term1, OR, myindented (myindented term2, AND, myindented term3), OR, myindented term4
 
 *** indent-2-b: slightly harder indentation
 :PROPERTIES:
@@ -141,7 +196,7 @@ still means the same thing but with slightly more indentation
 |     | OR | c   |   |
 |     | OR | NOT | d |
 
-** Handle labels at the parents
+*** indent-2-c: Handle labels at the parents
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indent-2-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -153,14 +208,14 @@ still means the same thing but with slightly more indentation
 |    |      | mid3            |
 |    | OR   | mid4            |
 
-*** becomes
+**** becomes
 |    | (top1) |                  |
 | OR | (top2) |                  |
 | OR | (      | (this is a label |
 |    |        | mid4)            |
 |    | OR     | (mid5))          |
 
-*** how to parse this?
+**** how to parse this?
 
 #+begin_src haskell
     MyAny [ MyLeaf "top1"
@@ -170,6 +225,20 @@ still means the same thing but with slightly more indentation
                     , MyLeaf "mid4"]
           ]
 #+end_src
+
+*** indent-2-d: more indentation variant
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+As discussed above in "Deriving the Grammar":
+
+|    | term1 |       |
+| OR |       | term2 |
+|    | AND   | term3 |
+| OR | term4 |       |
+| OR | term5 |       |
 
 ** ParamText
 

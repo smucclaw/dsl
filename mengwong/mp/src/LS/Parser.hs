@@ -46,7 +46,7 @@ expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 
 term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-term p = optional dnl *> myindented (expr p <* optional dnl)
+term p = optional dnl *> someIndentation (expr p <* optional dnl)
   <|> try (MyLabel <$> pOtherVal <*> plain p)
   <|> plain p <?> "term"
 
@@ -55,6 +55,8 @@ table = [ [ prefix  MPNot MyNot ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
         ]
+
+{- see note in README.org under "About the src/Parser.hs" -}
 
 getAll :: MyItem lbl a -> [MyItem lbl a]
 getAll (MyAll xs) = xs
@@ -72,8 +74,6 @@ getAny x = [x]
 myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
-
-
 
 binary  tname f = InfixR  (f <$ pToken tname)
 prefix  tname f = Prefix  (f <$ pToken tname)

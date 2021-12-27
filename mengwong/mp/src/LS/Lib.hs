@@ -81,6 +81,7 @@ getConfig o = do
         , toProlog = only o == "prolog"
         , toUppaal = only o == "uppaal"
         , saveAKA = False
+        , wantNotRules = False
         }
 
 
@@ -333,7 +334,7 @@ pRules = do
   wanted   <- some (try pRule)
   notarule <- optional pNotARule
   next <- [] <$ eof -- <|> pRules
-  wantNotRules <- asks debug
+  wantNotRules <- asks wantNotRules
   return $ wanted ++ next ++
     if wantNotRules then maybeToList notarule else []
 
@@ -347,9 +348,9 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = do
-  -- _ <- optional dnl
-  try (myindented pRule)
-    <|> (pRegRule <?> "regulative rule")
+  _ <- many dnl
+  try (debugName "pRule: unwrapping indentation" $ myindented pRule)
+    <|> try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (pConstitutiveRule <?> "constitutive rule")

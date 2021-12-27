@@ -85,20 +85,23 @@ main = do
   cmdlineOpts <- unwrapRecord $ (maybe (error "failed to parse empty args") id $ getRecordPure  [])
   runConfig_ <- getConfig $ cmdlineOpts
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
+      runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
   let parseR = runMyParser combine runConfig
-  let parseOther = runMyParser id runConfig
+  let parseR1 = runMyParser combine runConfigDebug
+  let parseOther  = runMyParser id runConfig
+  let parseOther1 = runMyParser id runConfigDebug
 
   hspec $ do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-{-
+
     describe "megaparsing" $ do
 
 
       it "should parse an unconditional" $ do
-        parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
+        parseR pRules "" (exampleStream ",EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ defaultReg { subj = mkLeaf "person"
                                      , deontic = DMust
                                      } ]
@@ -164,8 +167,8 @@ main = do
 
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
-
+        parseR1 pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
+{-
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"
@@ -690,6 +693,19 @@ main = do
         testcsv <- BS.readFile testfile
         parseOther exprP testfile `traverse` exampleStreams testcsv
           `shouldParse` [ablcd]
+
+      it "should handle indent-2-d which goes out, in, out" $ do
+        let testfile = "test/indent-2-d.csv"
+        testcsv <- BS.readFile testfile
+        parseOther exprP testfile `traverse` exampleStreams testcsv
+          `shouldParse` [
+          (MyAny [MyLeaf (text2pt "term1")
+                 , MyAll [ MyLeaf (text2pt "term2")
+                         , MyLeaf (text2pt "term3")
+                         ]
+                 , MyLeaf (text2pt "term4")
+                 , MyLeaf (text2pt "term5")
+                 ],[]) ]
         
     describe "parser elements and fragments ... should parse" $ do
       let actionFragment1 :: BoolStructP

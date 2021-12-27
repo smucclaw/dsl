@@ -178,9 +178,15 @@ manyIndentation p =
   debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
 
 myindented :: (Show a) => Parser a -> Parser a
-myindented = between (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper) (debugName "myIndented: consuming UnDeeper" $ pToken UnDeeper)
+myindented = between
+             (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper)
+             (debugName "myIndented: consuming UnDeeper" $ pToken UnDeeper)
 
---
+myoutdented :: (Show a) => Parser a -> Parser a
+myoutdented = between
+              (debugName "outdented: consuming UnDeeper" $ pToken UnDeeper)
+              (debugName "outdented: consuming GoDeeper" $ pToken GoDeeper)
+  --
 -- maybe move this to indented.hs
 --
 
@@ -199,8 +205,9 @@ indentedTuple d p1 p2 = do
 
 -- return one or more items at the same depth.
 -- the interesting thing about this function is the *absence* of someIndentation/manyIndentation
-sameDepth :: (Show a) => Parser a -> Parser [a]
+sameDepth, sameMany :: (Show a) => Parser a -> Parser [a]
 sameDepth p = debugName "sameDepth" $ some p
+sameMany  p = debugName "sameMany"  $ many p
 
 oldindentedTuple d p1 p2 = do
   x     <- tracedepth "left  = " id     p1

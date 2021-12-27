@@ -124,8 +124,9 @@ runExample rc str = forM_ (exampleStreams str) $ \stream ->
         unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $ do
           pPrint rules
           printStream stream
-  where
-    printStream stream = pPrint (tokenVal <$> unMyStream stream)
+
+printStream :: MonadIO m => MyStream -> m ()
+printStream stream = pPrint (tokenVal <$> unMyStream stream)
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of

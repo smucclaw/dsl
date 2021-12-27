@@ -15,6 +15,7 @@ import LS.Error
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Options.Generic (getRecordPure, unwrapRecord)
+import Debug.Trace (traceShowM)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -88,7 +89,7 @@ main = do
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
   let parseR = runMyParser combine runConfig
-  let parseR1 = runMyParser combine runConfigDebug
+  let parseR1 x y s = runMyParser combine runConfigDebug x y s <* traceShowM (tokenVal <$> unMyStream s)
   let parseOther  = runMyParser id runConfig
   let parseOther1 = runMyParser id runConfigDebug
 
@@ -163,12 +164,12 @@ main = do
 
       it "should parse a simple constitutive rule" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates]
-
+        parseR1 pRules "" (exampleStream mycsv) `shouldParse` [degustates]
+{-
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
         parseR1 pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
-{-
+
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"

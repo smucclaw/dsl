@@ -1,14 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module LS.RelationalPredicates where
 
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
-import Data.Maybe (fromJust)
-import Data.List.NonEmpty ( nonEmpty, toList )
 
 import qualified AnyAll as AA
+import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
+import Text.Parser.Permutation
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList, fromJust)
 
 import LS.Types
 import LS.Tokens
@@ -112,7 +114,8 @@ rpOrGroup = debugName "rpOrGroup" $ do
 
 rpElement :: Parser BoolStructR
 rpElement = debugName "rpElement" $ do
-  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+--  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+  try (rpHornlikeAsElement <$> tellIdFirst pHornlike)
     <|> do
     rpAtomicElement
   
@@ -129,6 +132,9 @@ rpAtomicElement = debugName "rpAtomicElement" $ do
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
+
+rpHornlikeAsElement :: Rule -> BoolStructR
+rpHornlikeAsElement = multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
@@ -256,3 +262,46 @@ preambleParamText preambles = do
   preamble <- choice (try . pToken <$> preambles)
   paramtext <- pPTParens -- pPTParens is a bit awkward here because of the multiline possibility of a paramtext
   return (preamble, paramtext)
+
+pHornlike :: Parser Rule
+pHornlike = debugName "pHornlike" $ do
+  (rlabel, srcref) <- pSrcRef
+  ((keyword, name, clauses), given, upon) <- permute $ (,,)
+    <$$> try moreStructure <|> lessStructure
+    <|?> (Nothing, fmap snd <$> optional givenLimb)
+    <|?> (Nothing, fmap snd <$> optional uponLimb)
+  return $ Hornlike { name
+                    , keyword = fromMaybe Means keyword
+                    , given, clauses, upon, rlabel, srcref
+                    , lsource = noLSource }
+  where
+    -- this is actually kind of a meta-rule, because it really means
+    -- assert(X :- (Y1, Y2)) :- body.
+    
+    whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
+    whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBoolStructR) <|> Nothing <$ pToken Otherwise
+
+    -- DECIDE x IS y WHEN Z IS Q
+
+    moreStructure = debugName "pHornlike/moreStructure" $ do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (((firstWord,rel),rhs),body) <- (pNameParens
+                                        `indentedTuple0` choice [ RPelem <$ pToken Includes
+                                                                , RPis   <$ pToken Is ]
+                                        `indentedTuple0` pBoolStructR
+                                      ) `optIndentedTuple` whenCase
+      let hhead = case rhs of
+            AA.Leaf (RPParamText ((y,Nothing) :| [])) -> RPConstraint  firstWord rel (toList y)
+            _                                         -> RPBoolStructR firstWord rel rhs
+      return (keyword, firstWord, [HC2 hhead (fromMaybe Nothing body)])
+
+    lessStructure = debugName "pHornlike/lessStructure" $ do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (firstWord,body) <- pNameParens `indentedTuple0` whenCase
+      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
+
+
+    givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
+    uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
+      
+

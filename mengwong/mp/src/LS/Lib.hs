@@ -33,10 +33,9 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Data.Aeson.Encode.Pretty
-import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import Options.Generic
+import Data.Maybe (listToMaybe, maybeToList)
 
 import LS.Types
 import LS.Tokens
@@ -237,7 +236,7 @@ getChunks rs = [rs]
   --    -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
   -- toreturn
 
-firstAndLast :: NonEmpty Int -> (Int, Int)
+firstAndLast :: NE.NonEmpty Int -> (Int, Int)
 firstAndLast xs = (NE.head xs, NE.last xs)
 
 -- because sometimes a chunk followed by another chunk is really part of the same chunk.
@@ -422,8 +421,8 @@ pMeansRule = debugName "pMeansRule" $ do
     <|?> ([], some $ preambleBoolStructR [Includes])
 
   -- let's extract the new term from the deem line
-  let givens = concatMap (concatMap toList . toList . untypePT . snd) gs :: [Text.Text]
-      dnew   = [ word | word <- concatMap toList $ toList (untypePT d), word `notElem` givens ]
+  let givens = concatMap (concatMap NE.toList . NE.toList . untypePT . snd) gs :: [Text.Text]
+      dnew   = [ word | word <- concatMap NE.toList $ NE.toList (untypePT d), word `notElem` givens ]
   if length dnew /= 1
     then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
     else return $ Constitutive
@@ -433,7 +432,7 @@ pMeansRule = debugName "pMeansRule" $ do
          , cond = addneg
                   (snd <$> mergePBRS (w<>i<>includes))
                   (snd <$> mergePBRS u)
-         , given = nonEmpty $ foldMap toList (snd <$> gs)
+         , given = NE.nonEmpty $ foldMap NE.toList (snd <$> gs)
          , rlabel = noLabel
          , lsource = noLSource
          , srcref = Just srcref
@@ -523,7 +522,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)
-                 , given    = nonEmpty $ foldMap toList (snd <$> rbgiven rulebody)    -- given
+                 , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
                  }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
@@ -565,7 +564,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)    -- given
-                 , given    = nonEmpty $ foldMap toList (snd <$> rbgiven rulebody)    -- given
+                 , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
                  }
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
@@ -770,12 +769,16 @@ pAtomicElement = debugName "pAtomicElement" $ do
 
 pElement :: Parser BoolStructP
 pElement = debugName "pElement" $ do
-        try (constitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+        try (hornlikeAsElement <$> tellIdFirst pHornlike)
     <|> pAtomicElement
 
 -- Makes a leaf with just the name of a constitutive rule
-constitutiveAsElement ::  Rule -> BoolStructP
-constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
+-- constitutiveAsElement ::  Rule -> BoolStructP
+-- constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
+
+-- Makes a leaf with just the name of a hornlike rule
+hornlikeAsElement ::  Rule -> BoolStructP
+hornlikeAsElement hlr = AA.Leaf $ multiterm2pt $ name hlr
 
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" $ do
@@ -804,68 +807,6 @@ anything :: Parser [WithPos MyToken]
 anything = many anySingle
 
 
---              X   IS    your relative
--- MEANS   NOT  X   IS    estranged
---          OR  X   IS    dead
-
--- becomes prolog
--- yourRelative(X) :- \+ (estranged(X), dead(X)).
-
--- Hornlike "X is your relative"
---          Means
--- no given
--- no upon
--- clauses: [ HC2 { hHead = RPConstraint ["X"] RPis ["your uncle"]
---                  hBody = Just $ AA.Not ( AA.Any Nothing [ RPConstraint ["X"] RPis ["estranged"]
---                                                         , RPConstraint ["X"] RPis ["dead"] ] ) } ]
--- rlabel lsource srcref  
-
--- the informal version:
--- hHead = RPParamText "Bob's your uncle"
--- hBody = Just $ AA.Not ( AA.Any Nothing [ RPParamText ["Bob is estranged"]
---                                        , RPParamText ["Bob is dead"] ] )
-
-pHornlike :: Parser Rule
-pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- pSrcRef
-  ((keyword, name, clauses), given, upon) <- permute $ (,,)
-    <$$> try moreStructure <|> lessStructure
-    <|?> (Nothing, fmap snd <$> optional givenLimb)
-    <|?> (Nothing, fmap snd <$> optional uponLimb)
-  return $ Hornlike { name
-                    , keyword = fromMaybe Means keyword
-                    , given, clauses, upon, rlabel, srcref
-                    , lsource = noLSource }
-  where
-    -- this is actually kind of a meta-rule, because it really means
-    -- assert(X :- (Y1, Y2)) :- body.
-    
-    whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
-    whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBoolStructR) <|> Nothing <$ pToken Otherwise
-
-    -- DECIDE x IS y WHEN Z IS Q
-
-    moreStructure = debugName "pHornlike/moreStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (((firstWord,rel),rhs),body) <- (pNameParens
-                                        `indentedTuple0` choice [ RPelem <$ pToken Includes
-                                                                , RPis   <$ pToken Is ]
-                                        `indentedTuple0` pBoolStructR
-                                      ) `optIndentedTuple` whenCase
-      let hhead = case rhs of
-            AA.Leaf (RPParamText ((y,Nothing) :| [])) -> RPConstraint  firstWord rel (toList y)
-            _                                         -> RPBoolStructR firstWord rel rhs
-      return (keyword, firstWord, [HC2 hhead (fromMaybe Nothing body)])
-
-    lessStructure = debugName "pHornlike/lessStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (firstWord,body) <- pNameParens `indentedTuple0` whenCase
-      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
-
-
-    givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
-    uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
-      
   
 
 pHornClause2 :: Parser HornClause2

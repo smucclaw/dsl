@@ -191,40 +191,47 @@ main = do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
 
-      let imbibeRule2 = [ defaultReg
-                          { who = Just $ All Nothing
-                                  [ mkLeafR "walks"
-                                  , mkLeafR "degustates"
-                                  ]
-                          , srcref = Nothing
+      let imbibeRule2 srcrow srccol = [
+            defaultReg
+              { who = Just $ All Nothing
+                      [ mkLeafR "walks"
+                      , mkLeafR "degustates"
+                      ]
+              , srcref = Nothing
+              }
+            , defaultHorn { name = ["degustates"]
+                          , keyword = Means
+                          , clauses = [HC2 { hHead = RPParamText (("degustates" :| [],Nothing) :| [])
+                                           , hBody = Just (Any Nothing [Leaf (RPParamText (("eats" :| [],Nothing) :| []))
+                                                                       ,Leaf (RPParamText (("imbibes" :| [],Nothing) :| []))])}]
+                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec"
+                                                  , srcrow = srcrow, srccol = srccol
+                                                  , version = Nothing})
                           }
-                        , defaultCon
-                          { name = ["degustates"]
-                          , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "imbibes" ]
-                          , cond = Nothing
-                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})
-                          }
-                        ]
+            ]
 
-      let imbibeRule3 = imbibeRule2 ++ [
-            defaultCon
-              { name = ["imbibes"]
-              , letbind = All Nothing
-                          [ mkLeafR "drinks"
-                          , Any Nothing [ mkLeafR "swallows"
-                                        , mkLeafR "spits" ]
-                          ]
-              , cond = Nothing
-              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})
-              } ]
+
+      let imbibeRule3 sr2 sc2 = imbibeRule2 sr2 sc2 ++ [
+            defaultHorn { name = ["imbibes"]
+                        , keyword = Means
+                        , given = Nothing
+                        , upon = Nothing
+                        , clauses = [HC2 { hHead = RPParamText (("imbibes" :| [],Nothing) :| [])
+                                         , hBody = Just (All Nothing [Leaf (RPParamText (("drinks" :| [],Nothing) :| []))
+                                                                     ,Any Nothing [Leaf (RPParamText (("swallows" :| [],Nothing) :| []))
+                                                                                  ,Leaf (RPParamText (("spits" :| [],Nothing) :| []))]])}]
+                        , rlabel = Nothing
+                        , lsource = Nothing
+                        , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
+            ]              
       
       it "should parse indented-2.csv (inline constitutive rule)" $ do
         mycsv <- BS.readFile "test/indented-2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2 4 3
 
       it "should parse indented-3.csv (defined names in natural positions)" $ do
         mycsv <- BS.readFile "test/indented-3.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3
+        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3 3 3
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")

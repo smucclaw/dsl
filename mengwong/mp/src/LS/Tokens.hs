@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
@@ -313,4 +314,25 @@ checkDepth = do
     -- else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
     else pure ()
   guard $ leftX >= depth
+
+--              X   IS    your relative
+-- MEANS   NOT  X   IS    estranged
+--          OR  X   IS    dead
+
+-- becomes prolog
+-- yourRelative(X) :- \+ (estranged(X), dead(X)).
+
+-- Hornlike "X is your relative"
+--          Means
+-- no given
+-- no upon
+-- clauses: [ HC2 { hHead = RPConstraint ["X"] RPis ["your uncle"]
+--                  hBody = Just $ AA.Not ( AA.Any Nothing [ RPConstraint ["X"] RPis ["estranged"]
+--                                                         , RPConstraint ["X"] RPis ["dead"] ] ) } ]
+-- rlabel lsource srcref  
+
+-- the informal version:
+-- hHead = RPParamText "Bob's your uncle"
+-- hBody = Just $ AA.Not ( AA.Any Nothing [ RPParamText ["Bob is estranged"]
+--                                        , RPParamText ["Bob is dead"] ] )
 

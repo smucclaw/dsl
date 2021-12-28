@@ -169,19 +169,27 @@ main = do
         mycsv <- BS.readFile "test/indented-1-checkboxes.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
 
-      let degustates = defaultCon
-                       { name = ["degustates"]
-                       , letbind = Any Nothing [ mkLeafR "eats", mkLeafR "drinks" ]
-                       , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-                       }
-
+      let degustates = defaultHorn { name = ["degustates"]
+                                   , keyword = Means
+                                   , given = Nothing
+                                   , upon = Nothing
+                                   , clauses = [ HC2 { hHead = RPParamText (("degustates" :| [],Nothing) :| [])
+                                                     , hBody = Just (Any Nothing [Leaf (RPParamText (("eats"   :| [],Nothing) :| []))
+                                                                                 ,Leaf (RPParamText (("drinks" :| [],Nothing) :| []))
+                                                                                 ])}]
+                                   , srcref = Just (SrcRef { url = "test/Spec"
+                                                           , short = "test/Spec"
+                                                           , srcrow = 2
+                                                           , srccol = 1
+                                                           , version = Nothing }) }
+      
       it "should parse a simple constitutive rule" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates]
 
       it "should parse a simple constitutive rule with checkboxes" $ do
         mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
+        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 = [ defaultReg
                           { who = Just $ All Nothing
@@ -377,7 +385,6 @@ main = do
         mycsv <- BS.readFile "test/blank-lines.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
 
-{--
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
@@ -389,24 +396,31 @@ main = do
                                                        ,mkLeafR "Bob is dead"])}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }
 
-          bobUncle2 = bobUncle1
-            { clauses = 
-              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
-                    , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
-                                                 ,      mkLeafR "Bob is dead" ] } ] }
-      
-      it "should start a bool struct with an indented NOT" $ do
+      it "bob-head-1: less indented NOT" $ do
         let testfile = "test/bob-head-1.csv"
+        testcsv <- BS.readFile testfile
+        parseR pRules testfile (exampleStream testcsv)
+          `shouldParse` []
+
+      it "bob-head-1-b: more indented NOT" $ do
+        let testfile = "test/bob-head-1-b.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [bobUncle1]
 
+{--
       it "should handle less indentation" $ do
         let testfile = "test/bob-head-2.csv"
         testcsv <- BS.readFile testfile
         parseR pRules testfile (exampleStream testcsv)
           `shouldParse` [bobUncle1]
 
+      let bobUncle2 = bobUncle1
+            { clauses = 
+              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+                    , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
+                                                 ,      mkLeafR "Bob is dead" ] } ] }
+      
       it "should handle outdentation" $ do
         let testfile = "test/bob-head-3.csv"
         testcsv <- BS.readFile testfile

@@ -1304,11 +1304,25 @@ if ((morbror or farbror) and not estranged)
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+This form is not expected to parse, because having it directly above the OR may cause problems in the parsing
+
 |       | Bob's your uncle |                  |             |
 | MEANS | NOT              | Bob is estranged |             |
 |       |                  | OR               | Bob is dead |
 
 if (not (estranged or dead))
+
+*** more explicit indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+indentating the "Bob is estranged" term to the right of the OR below it, has the most righteous rectitude.
+
+|       | Bob's your uncle |    |                  |
+| MEANS | NOT              |    | Bob is estranged |
+|       |                  | OR | Bob is dead      |
 
 *** less explicit indentation
 :PROPERTIES:

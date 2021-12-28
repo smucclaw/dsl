@@ -358,9 +358,9 @@ pRule = do
     <|> try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
-    <|> try (pConstitutiveRule <?> "constitutive rule")
+--    <|> try (pConstitutiveRule <?> "constitutive rule")
 --     <|> try (pScenarioRule <?> "scenario rule")
---     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
 
 

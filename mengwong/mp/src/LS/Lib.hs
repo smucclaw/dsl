@@ -49,7 +49,6 @@ import Control.Monad.Writer.Lazy
 
 import LS.XPile.CoreL4
 -- import LS.XPile.Prolog
-import qualified Data.List.NonEmpty as NE
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
 import Debug.Trace (trace)
@@ -336,9 +335,9 @@ pToplevel = pRules <* eof
 
 pRules :: Parser [Rule]
 pRules = do
-  wanted   <- some (try pRule)
+  wanted   <- many (try pRule)
   notarule <- optional (notFollowedBy eof *> pNotARule)
-  next <- [] <$ eof -- <|> pRules
+  next <- [] <$ eof <|> pRules
   wantNotRules <- asks wantNotRules
   return $ wanted ++ next ++
     if wantNotRules then maybeToList notarule else []
@@ -346,7 +345,7 @@ pRules = do
 pNotARule :: Parser Rule
 pNotARule = debugName "pNotARule" $ do
   myTraceM "pNotARule: starting"
-  toreturn <- NotARule <$> manyDeep getTokenNonEOL
+  toreturn <- NotARule <$> manyDeep getTokenNonDeep
   myTraceM "pNotARule: returning"
   return toreturn
 

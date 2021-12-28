@@ -373,12 +373,9 @@ main = do
         mycsv <- BS.readFile "test/action-params-singer.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
 
-{-
       it "should parse despite interrupting newlines" $ do
         mycsv <- BS.readFile "test/blank-lines.csv"
         parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
-      -- XXX: this is awful and needs to be fixed.  wtf, head.tail?
--}
 
 {--
     describe "megaparsing MEANS" $ do

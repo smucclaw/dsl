@@ -16,12 +16,12 @@ import LS.Types ( Deontic(..),
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower)
+-- import Data.Char (toLower)
 import Data.Void (Void)
-import Data.List.NonEmpty (toList)
+-- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
-import AnyAll (Item(..))
-import qualified AnyAll as AA
+-- import AnyAll (Item(..))
+-- import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe )
 import Data.List ( elemIndex, intercalate )
 import Replace.Megaparsec ( sepCap )

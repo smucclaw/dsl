@@ -7,7 +7,6 @@ import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
 import Control.Monad.Reader (asks, local)
 import Control.Monad.Writer.Lazy
-import Data.Maybe (isJust)
 import Data.List (intercalate)
 
 import LS.Types
@@ -51,6 +50,13 @@ myTraceM x = whenDebug $ do
   where
     indentShow depth = concat $ replicate depth "| "
     leftPad str n = take n $ str <> repeat ' '
+
+getTokenNonDeep :: Parser MyToken
+getTokenNonDeep = token test Set.empty <?> "any token except GoDeeper / UnDeeper"
+  where
+    test (WithPos _ _ _ GoDeeper) = Nothing
+    test (WithPos _ _ _ UnDeeper) = Nothing
+    test (WithPos _ _ _ tok) = Just tok
 
 getTokenNonEOL :: Parser MyToken
 getTokenNonEOL = token test Set.empty <?> "any token except EOL"
@@ -229,25 +235,6 @@ indentedTuple d p1 p2 = do
 sameDepth, sameMany :: (Show a) => Parser a -> Parser [a]
 sameDepth p = debugName "sameDepth" $ some p
 sameMany  p = debugName "sameMany"  $ many p
-
-oldindentedTuple d p1 p2 = do
-  x     <- tracedepth "left  = " id     p1
-  _     <- tracedepth "deep  = " isJust (optional dnl)
-  y     <- tracedepth "right = " id     p2
-  myTraceM "success; returning"
-  return (x,y)
-  where
-    tracedepth :: Show y => String -> (x -> y) -> Parser x -> Parser x
-    tracedepth lr f p = do
-      depth <- asks callDepth
-      leftX <- lookAhead pXLocation
-      leftY <- lookAhead pYLocation
-      next  <- lookAhead getToken <|> (EOF <$ eof)
-      let prefix = "indentedTuple(" ++ show d ++ "): checkDepth " ++ show depth ++ "; "
-      myTraceM $ prefix ++ "at line " ++ show leftY ++ ", col " ++ show leftX ++ "; looking at " ++ show next
-      s     <- p
-      myTraceM $ prefix ++ lr ++ " matched " ++ show (f s)
-      return s
 
 indentedTuple0, indentedTuple1 :: (Show a, Show b) => Parser a -> Parser b -> Parser (a,b)
 indentedTuple0 = indentedTuple 0

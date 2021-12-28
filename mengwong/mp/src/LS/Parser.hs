@@ -47,8 +47,8 @@ expr p = makeExprParser (term p) table <?> "expression"
 
 term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 term p =
-      try (debugName "term p / 1:someIndentation" (optional dnl *> (someIndentation (expr p) <* optional dnl)))
-  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> pOtherVal <*> expr p))
+      try (debugName "term p / 1:someIndentation" (optional dnl *> (myindented (expr p) <* optional dnl)))
+  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> pOtherVal <*> plain p))
   <|> try (debugName "term p / 3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]

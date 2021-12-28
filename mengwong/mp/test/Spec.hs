@@ -416,6 +416,11 @@ main = do
           `shouldParse` [bobUncle1]
 
 {--
+
+-- this is commented out because it leads to an infinite loop.
+-- What we need to do: instead of whatever it's doing now,
+-- have it use the new Parser.hs code to wrap whatever inner RelationalPredicate parser combinator we're trying to find.
+
       it "should handle less indentation" $ do
         let testfile = "test/bob-head-2.csv"
         testcsv <- BS.readFile testfile

@@ -1330,6 +1330,8 @@ indentating the "Bob is estranged" term to the right of the OR below it, has the
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+this is currently infinilooping. [2021-12-29 Wed 02:44]
+
 |       | Bob's your uncle |                  |
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |

@@ -40,12 +40,18 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
                                                       --- |        | immediately    | :: | Urgency |
 
+text2pt :: Text.Text -> ParamText
+text2pt x = pure (pure x, Nothing)
+
+pt2text :: ParamText -> Text.Text
+pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
+
 type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothing) [ Node (["immediately" :| [], Urgency) [] ]
 
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: a -> AA.Item (NonEmpty (NonEmpty a, Maybe TypeSig))
+mkLeaf :: Text.Text -> AA.Item ParamText
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
@@ -277,12 +283,6 @@ multiterm2pt x = pure (fromList x, Nothing)
 
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
-
-text2pt :: a -> NonEmpty (NonEmpty a, Maybe TypeSig)
-text2pt x = pure (pure x, Nothing)
-
-pt2text :: ParamText -> Text.Text
-pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]

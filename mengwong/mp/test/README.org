@@ -1017,6 +1017,10 @@ do the individual components work?
 |        |      | to     | the King |        |
 |        |      | amount | $20      |        |
 
+this causes problems for the Parser because we see the word "pay" as a Label.
+
+We need a special case to handle it.
+
 ** Alternative Arrangements of Temporals and Actions
 *** may pay after time
 :PROPERTIES:

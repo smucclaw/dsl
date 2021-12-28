@@ -26,7 +26,7 @@ data MyItem lbl a =
 
 deriving instance Functor (AA.Item' a)
 
-type MyBoolStruct = MyItem Text.Text
+type MyBoolStruct = MyItem Text.Text -- TOOD: convert this to a TypedMulti so we preserve the type annotation
 
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = toBoolStruct <$> expr pOtherVal

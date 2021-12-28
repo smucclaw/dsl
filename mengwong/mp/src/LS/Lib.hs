@@ -34,6 +34,7 @@ import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
 import Data.Aeson.Encode.Pretty
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import Options.Generic
 
@@ -718,7 +719,27 @@ dBoolStructP = debugName "dBoolStructP calling exprP" $ do
   toBoolStruct <$> exprP
 
 exprP :: Parser (MyBoolStruct ParamText)
-exprP = debugName "expr pParamText" $ expr pParamText
+exprP = debugName "expr pParamText" $ do
+  raw <- expr pParamText
+  -- rewrite the raw returned from expr pParamText
+  -- expr pParamText has returned MyLabel "pay" (MyLeaf (("to" :| ["the King"],Nothing) :| [("amount" :| ["$20"],Nothing)]))
+  -- to MyLeaf (("pay" :| [], Nothing) :| [("to" :| ["the King"], Nothing) ...
+  return $ case raw of
+    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
+    x -> x
+  where
+    prefixFirstLeaf :: Text.Text -> MyBoolStruct ParamText -> MyBoolStruct ParamText
+    -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
+    prefixFirstLeaf p (MyLeaf x)           = MyLeaf (prefixItem p x)
+    prefixFirstLeaf p (MyLabel lbl myitem) = MyLabel lbl (prefixFirstLeaf p myitem)
+    prefixFirstLeaf p (MyAll (x:xs))       = MyAll (prefixFirstLeaf p x : xs)
+    prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ text2pt p]
+    prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ text2pt p]
+    prefixFirstLeaf p (MyAny (x:xs))       = MyAny (prefixFirstLeaf p x : xs)
+    prefixFirstLeaf p (MyNot  x    )       = MyNot (prefixFirstLeaf p x)
+
+    prefixItem :: Text.Text -> ParamText -> ParamText
+    prefixItem t pt = NE.cons (NE.head $ text2pt t) pt
 
 -- dBoolStructP = debugName "dBoolStructP" $ do
 --   pAndGroup -- walks AND eats OR drinks

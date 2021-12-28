@@ -379,26 +379,19 @@ main = do
       filetest "bob-head-1-b" "more indented NOT"
         (parseR pRules) [bobUncle1]
 
-{--
-
--- this is commented out because it leads to an infinite loop.
--- What we need to do: instead of whatever it's doing now,
--- have it use the new Parser.hs code to wrap whatever inner RelationalPredicate parser combinator we're trying to find.
-
-      it "should handle less indentation" $ do
-        let testfile = "test/bob-head-2.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [bobUncle1]
-
       let bobUncle2 = bobUncle1
             { clauses = 
               [ HC2 { hHead = RPMT ["Bob's your uncle"]
                     , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
                                                  ,      mkLeafR "Bob is dead" ] } ] }
       
+      filetest "bob-head-2" "handle less indentation"
+        (parseR pRules) [bobUncle2]
+
       filetest "bob-head-3" "should handle outdentation"
         (parseR pRules) [bobUncle2]
+
+{--
 
     describe "megaparsing UNLESS semantics" $ do
 

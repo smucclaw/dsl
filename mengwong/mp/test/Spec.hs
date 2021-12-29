@@ -3,19 +3,22 @@
 
 module Main where
 
-import Test.Hspec
 -- import Test.Hspec.Megaparsec hiding (shouldParse)
 import Text.Megaparsec
 import LS.Lib
 import LS.Parser
+import LS.RelationalPredicates
+import LS.ParamText
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
+
+import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Debug.Trace (traceShowM)
+import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
-import LS.ParamText
 import Data.Maybe (isJust)
 
 -- | Create an expectation by saying what the result should be.
@@ -160,14 +163,12 @@ main = do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` imbibeRule
 
-      it "should parse indented-1.csv (inline boolean expression)" $ do
-        mycsv <- BS.readFile "test/indented-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
+      filetest "indented-1" "parse indented-1.csv (inline boolean expression)" 
+        (parseR pRules) imbibeRule
 
 
-      it "should parse indented-1-checkboxes.csv (with checkboxes)" $ do
-        mycsv <- BS.readFile "test/indented-1-checkboxes.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule
+      filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)" 
+        (parseR pRules) imbibeRule
 
       let degustates = defaultHorn { name = ["degustates"]
                                    , keyword = Means
@@ -183,13 +184,11 @@ main = do
                                                            , srccol = 1
                                                            , version = Nothing }) }
       
-      it "should parse a simple constitutive rule" $ do
-        mycsv <- BS.readFile "test/simple-constitutive-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates]
+      filetest "simple-constitutive-1" "should parse a simple constitutive rule" 
+        (parseR pRules) [degustates]
 
-      it "should parse a simple constitutive rule with checkboxes" $ do
-        mycsv <- BS.readFile "test/simple-constitutive-1-checkboxes.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
+      filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes" 
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -225,13 +224,11 @@ main = do
                         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
             ]              
       
-      it "should parse indented-2.csv (inline constitutive rule)" $ do
-        mycsv <- BS.readFile "test/indented-2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule2 4 3
+      filetest "indented-2" "should parse indented-2.csv (inline constitutive rule)" 
+        (parseR pRules) $ imbibeRule2 4 3
 
-      it "should parse indented-3.csv (defined names in natural positions)" $ do
-        mycsv <- BS.readFile "test/indented-3.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` imbibeRule3 3 3
+      filetest "indented-3" "should parse indented-3.csv (defined names in natural positions)" 
+        (parseR pRules) $ imbibeRule3 3 3
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")
@@ -275,9 +272,8 @@ main = do
                           }
                       ]
       
-      it "mustsing-1: should handle the most basic form of Matt Wadd's rule" $ do
-        mycsv <- BS.readFile "test/mustsing-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` mustsing1
+      filetest "mustsing-1" "mustsing-1: should handle the most basic form of Matt Wadd's rule" 
+        (parseR pRules) mustsing1
         
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
@@ -319,45 +315,35 @@ main = do
                          , lest  = Just singer_must_pay
                          } ]
 
-      it "should parse kingly permutations 1" $ do
-        mycsv <- BS.readFile "test/if-king-wishes-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
+      filetest "if-king-wishes-1" "should parse kingly permutations 1" 
+        (parseR pRules) if_king_wishes
 
-      it "should parse kingly permutations 2" $ do
-        mycsv <- BS.readFile "test/if-king-wishes-2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
+      filetest "if-king-wishes-2" "should parse kingly permutations 2" 
+        (parseR pRules) if_king_wishes
 
-      it "should parse kingly permutations 3" $ do
-        mycsv <- BS.readFile "test/if-king-wishes-3.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes
+      filetest "if-king-wishes-3" "should parse kingly permutations 3" 
+        (parseR pRules) if_king_wishes
 
-      it "should parse chained-regulatives part 1" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+      filetest "chained-regulatives-part1" "should parse chained-regulatives part 1" 
+        (parseR pRules) [king_pays_singer]
 
-      it "should parse chained-regulatives part 2" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay]
+      filetest "chained-regulatives-part2" "should parse chained-regulatives part 2" 
+        (parseR pRules) [singer_must_pay]
 
-      it "should parse chained-regulatives.csv" $ do
-        mycsv <- BS.readFile "test/chained-regulatives.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` singer_chain
+      filetest "chained-regulatives" "should parse chained-regulatives.csv" 
+        (parseR pRules) singer_chain
 
-      it "should parse alternative deadline/action arrangement 1" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-1.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+      filetest "chained-regulatives-part1-alternative-1" "should parse alternative deadline/action arrangement 1" 
+        (parseR pRules) [king_pays_singer]
 
-      it "should parse alternative deadline/action arrangement 2" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+      filetest "chained-regulatives-part1-alternative-2" "should parse alternative deadline/action arrangement 2" 
+        (parseR pRules) [king_pays_singer]
 
-      it "should parse alternative deadline/action arrangement 3" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-3.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer]
+      filetest "chained-regulatives-part1-alternative-3" "should parse alternative deadline/action arrangement 3" 
+        (parseR pRules) [king_pays_singer]
 
-      it "should parse alternative arrangement 4, no deadline at all" $ do
-        mycsv <- BS.readFile "test/chained-regulatives-part1-alternative-4.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [king_pays_singer_eventually]
+      filetest "chained-regulatives-part1-alternative-4" "should parse alternative arrangement 4, no deadline at all" 
+        (parseR pRules) [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
@@ -371,26 +357,22 @@ main = do
             [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
-      it "should parse natural language aliases (\"NL Aliases\") aka inline defined names" $ do
-        mycsv <- BS.readFile "test/nl-aliases.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer
+      filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names" 
+        (parseR pRules) if_king_wishes_singer
 
-      it "should parse natural language aliases (\"NL Aliases\") on the next line" $ do
-        mycsv <- BS.readFile "test/nl-aliases-2.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_nextline
+      filetest "nl-aliases-2" "should parse natural language aliases (\"NL Aliases\") on the next line" 
+        (parseR pRules) if_king_wishes_singer_nextline
 
       let singer_must_pay_params =
             singer_must_pay { action = Leaf (("pay" :| []                 , Nothing)
                                              :| [("to"     :| ["the King"], Nothing)
                                                 ,("amount" :| ["$20"]     , Nothing)]) }
 
-      it "should parse action params" $ do
-        mycsv <- BS.readFile "test/action-params-singer.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` [singer_must_pay_params]
+      filetest "action-params-singer" "should parse action params" 
+        (parseR pRules) [singer_must_pay_params]
 
-      it "should parse despite interrupting newlines" $ do
-        mycsv <- BS.readFile "test/blank-lines.csv"
-        parseR pRules "" (exampleStream mycsv) `shouldParse` if_king_wishes_singer_2
+      filetest "blank-lines" "should parse despite interrupting newlines" 
+        (parseR pRules) if_king_wishes_singer_2
 
     describe "megaparsing MEANS" $ do
 
@@ -403,17 +385,11 @@ main = do
                                                        ,mkLeafR "Bob is dead"])}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }
 
-      it "bob-head-1: less indented NOT" $ do
-        let testfile = "test/bob-head-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` []
+      filetest "bob-head-1" "bob-head-1: less indented NOT"
+        (parseR pRules) []
 
-      it "bob-head-1-b: more indented NOT" $ do
-        let testfile = "test/bob-head-1-b.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [bobUncle1]
+      filetest "bob-head-1-b" "more indented NOT"
+        (parseR pRules) [bobUncle1]
 
 {--
 
@@ -433,11 +409,8 @@ main = do
                     , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
                                                  ,      mkLeafR "Bob is dead" ] } ] }
       
-      it "should handle outdentation" $ do
-        let testfile = "test/bob-head-3.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [bobUncle2]
+      filetest "bob-head-3" "should handle outdentation"
+        (parseR pRules) [bobUncle2]
 
     describe "megaparsing UNLESS semantics" $ do
 
@@ -459,35 +432,20 @@ main = do
                                                                  , Not ( mkLeafR "day of silence" )
                                                                  ] ) } ]
             
-      it "should read EVERY MUST UNLESS" $ do
-        let testfile = "test/unless-regulative-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` dayOfSilence
+      filetest "unless-regulative-1" "read EVERY MUST UNLESS" 
+        (parseR pRules) dayOfSilence
                       
-      it "should read EVERY MUST UNLESS IF" $ do
-        let testfile = "test/unless-regulative-2.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` silenceKing
+      filetest "unless-regulative-2" "read EVERY MUST UNLESS IF" 
+        (parseR pRules) silenceKing
                       
-      it "should read EVERY MUST IF UNLESS" $ do
-        let testfile = "test/unless-regulative-3.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` silenceKing
+      filetest "unless-regulative-3" "read EVERY MUST IF UNLESS" 
+        (parseR pRules) silenceKing
                       
-      it "should read EVERY UNLESS MUST IF" $ do
-        let testfile = "test/unless-regulative-4.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` silenceKing
+      filetest "unless-regulative-4" "read EVERY UNLESS MUST IF" 
+        (parseR pRules) silenceKing
                       
-      it "should read EVERY IF MUST UNLESS" $ do
-        let testfile = "test/unless-regulative-5.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` silenceKing
+      filetest "unless-regulative-5" "read EVERY IF MUST UNLESS" 
+        (parseR pRules) silenceKing
                       
       let silenceMourning = [
             defaultReg { cond = Just ( All Nothing [
@@ -500,11 +458,8 @@ main = do
                                            )
                                          ] ) } ]
 
-      it "should read EVERY MUST IF UNLESS OR" $ do
-        let testfile = "test/unless-regulative-6.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` silenceMourning
+      filetest "unless-regulative-6" "should read EVERY MUST IF UNLESS OR" 
+        (parseR pRules) silenceMourning
 
       let mourningForbids = [
             defaultReg { cond = Just ( All Nothing [
@@ -516,41 +471,23 @@ main = do
                                              ]
                                            ) ] ) } ]
                                          
-      it "should read EVERY MUST IF UNLESS AND" $ do
-        let testfile = "test/unless-regulative-7.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` mourningForbids
+      filetest "unless-regulative-7" "should read EVERY MUST IF UNLESS AND" 
+        (parseR pRules) mourningForbids
                       
-      it "should read IF NOT when joined" $ do
-        let testfile = "test/ifnot-1-joined.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` dayOfSilence
+      filetest "ifnot-1-joined" "should read IF NOT when joined" 
+        (parseR pRules) dayOfSilence
                       
-      it "should read IF-NOT when separate" $ do
-        let testfile = "test/ifnot-2-separate.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` dayOfSilence
+      filetest "ifnot-2-separate" "should read IF-NOT when separate" 
+        (parseR pRules) dayOfSilence
 
-      it "should handle NOT ... AND indented" $ do
-        let testfile = "test/ifnot-4-indentation-explicit.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` observanceMandatory
+      filetest "ifnot-4-indentation-explicit" "should handle NOT ... AND indented" 
+        (parseR pRules) observanceMandatory
                       
-      it "should handle NOT AND indented the other way" $ do
-        let testfile = "test/ifnot-5-indentation-explicit.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` dayOfSong
+      filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way" 
+        (parseR pRules) dayOfSong
                       
-      it "should work for constitutive rules" $ do
-        let testfile = "test/bob-tail-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile (exampleStream testcsv)
-          `shouldParse` [ defaultHorn
+      filetest "bob-tail-1" "should work for constitutive rules" 
+        (parseR pRules) [ defaultHorn
                           { name = ["Bob's your uncle"]
                           , keyword = Means
                           , clauses = [
@@ -565,11 +502,8 @@ main = do
                           }
                         ]
 
-      it "should handle pilcrows" $ do
-        let testfile = "test/pilcrows-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [ dayOfSilence 
+      filetest "pilcrows-1" "should handle pilcrows" 
+        (parseR pRules) [ dayOfSilence 
                         , dayOfSong
                         ]
         -- forM_ (exampleStreams testcsv) $ \stream ->
@@ -582,11 +516,8 @@ main = do
   -- defNameAlias should absorb the WHO limb
 
     describe "megaparsing scenarios" $ do
-      it "should handle labeled given/expect" $ do
-        let testfile = "test/scenario-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pRules testfile `traverse` (exampleStreams testcsv)
-          `shouldParse`
+      filetest "scenario-1" "should handle labeled given/expect" 
+        (parseR pRules)
           [ [ Scenario
             { scgiven =
                 [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
@@ -653,6 +584,7 @@ main = do
     --     parseR pRules testfile `traverse` (exampleStreams testcsv)
     --       `shouldParse`
     --       [ [ Scenario
+-}
 
     describe "revised parser" $ do
       let simpleHorn = [ Hornlike
@@ -671,25 +603,19 @@ main = do
                   } ]
               }
             ]
-      it "should parse horn clauses 1" $ do
-        let testfile = "test/horn-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [ simpleHorn ]
+
+      filetest "horn-0-1" "should parse a fragment"
+        (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
+
+      filetest "horn-1" "should parse horn clause on a single line"
+        (parseR1 pToplevel) simpleHorn
               
-      it "should parse horn clauses 2" $ do
-        let testfile = "test/horn-2.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [ simpleHorn ]
+      filetest "horn-2" "should parse horn clauses 2"
+        (parseR pToplevel) simpleHorn 
              
-      it "should parse horn clauses 3" $ do
-        let testfile = "test/horn-3.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` (exampleStreams testcsv)
-          `shouldParse` [ simpleHorn ]
-              
--}
+      filetest "horn-3" "should parse horn clauses 3"
+        (parseR pToplevel) simpleHorn 
+
 
     describe "our new parser" $ do
       let myand = LS.Types.And
@@ -711,40 +637,30 @@ main = do
                               ,MyLeaf (text2pt "c")
                               ,MyNot (MyLeaf (text2pt "d"))]],[])
           
-      it "should handle indent-2-a" $ do
-        let testfile = "test/indent-2-a.csv"
-        testcsv <- BS.readFile testfile
-        parseOther exprP testfile `traverse` exampleStreams testcsv
-          `shouldParse` [abcd]
+      filetest "indent-2-a" "should handle indent-2-a"
+        (parseOther exprP) abcd
         
-      it "should handle indent-2-b" $ do
-        let testfile = "test/indent-2-b.csv"
-        testcsv <- BS.readFile testfile
-        parseOther exprP testfile `traverse` exampleStreams testcsv
-          `shouldParse` [abcd]
+      filetest "indent-2-b" "should handle indent-2-b"
+        (parseOther exprP) abcd 
+
       let ablcd = (MyAny [MyLeaf (text2pt "top1")
                         , MyLeaf (text2pt "top2")
                         , MyLabel "this is a label" $ MyAny [ MyLeaf (text2pt "mid3")
                                                             , MyLeaf (text2pt "mid4") ]
                         ],[])
-      it "should handle indent-2-c which has a label" $ do
-        let testfile = "test/indent-2-c.csv"
-        testcsv <- BS.readFile testfile
-        parseOther exprP testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ablcd]
 
-      it "should handle indent-2-d which goes out, in, out" $ do
-        let testfile = "test/indent-2-d.csv"
-        testcsv <- BS.readFile testfile
-        parseOther exprP testfile `traverse` exampleStreams testcsv
-          `shouldParse` [
+      filetest "indent-2-c" "should handle indent-2-c which has a label"
+        (parseOther exprP) ablcd 
+
+      filetest "indent-2-d" "should handle indent-2-d which goes out, in, out"
+        (parseOther exprP)
           (MyAny [MyLeaf (text2pt "term1")
                  , MyAll [ MyLeaf (text2pt "term2")
                          , MyLeaf (text2pt "term3")
                          ]
                  , MyLeaf (text2pt "term4")
                  , MyLeaf (text2pt "term5")
-                 ],[]) ]
+                 ],[])
 
     describe "parser elements and fragments ... should parse" $ do
       let ptFragment1 :: ParamText
@@ -754,62 +670,37 @@ main = do
           ptFragment3b = ("two" :| ["words"], Just (SimpleType TOne "String")) :| []
 
 
-      it "paramtext-1 a single-token untyped ParamText" $ do
-        let testfile = "test/paramtext-1.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment1,[])]
+      filetest "paramtext-1" "paramtext-1 a single-token untyped ParamText"
+        (parseOther pParamText) (ptFragment1,[])
         
-      it "paramtext-2 a single-token ParamText typed with IS | A" $ do
-        let testfile = "test/paramtext-2.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment2,[])]
+      filetest "paramtext-2" "should paramtext-2 a single-token ParamText typed with IS | A"
+        (parseOther pParamText) (ptFragment2,[])
         
-      it "paramtext-2-a a single-token ParamText typed with IS A" $ do
-        let testfile = "test/paramtext-2-a.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment2,[])]
+      filetest "paramtext-2-a" "should paramtext-2-a a single-token ParamText typed with IS A"
+        (parseOther pParamText) (ptFragment2,[])
         
-      it "paramtext-2-b a single-token ParamText typed with ::" $ do
-        let testfile = "test/paramtext-2-b.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment2,[])]
+      filetest "paramtext-2-b" "should paramtext-2-b a single-token ParamText typed with ::"
+        (parseOther pParamText) (ptFragment2,[])
         
-      it "paramtext-3 a multi-token ParamText, untyped" $ do
-        let testfile = "test/paramtext-3.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment3,[])]
+      filetest "paramtext-3" "should paramtext-3 a multi-token ParamText, untyped"
+        (parseOther pParamText) (ptFragment3,[])
         
-      it "paramtext-3-b a multi-token ParamText, typed String" $ do
-        let testfile = "test/paramtext-3-b.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pParamText testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(ptFragment3b,[])]
+      filetest "paramtext-3-b" "should paramtext-3-b a multi-token ParamText, typed String"
+        (parseOther pParamText) (ptFragment3b,[])
 
 
       let actionFragment1 :: BoolStructP
           actionFragment1 = Leaf (text2pt "win")
 
-      it "(action-1) a one-word BoolStructP" $ do
-        let testfile = "test/action-1.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pDoAction testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(actionFragment1,[])]
+      filetest "action-1" "should a one-word BoolStructP"
+        (parseOther pDoAction)(actionFragment1,[])
 
-      it "(action-2) a two-word BoolStructP" $ do
-        let testfile = "test/action-2.csv"
-        testcsv <- BS.readFile testfile
-        parseOther pDoAction testfile `traverse` exampleStreams testcsv
-          `shouldParse` [(Leaf $ ("win" :| ["gloriously"]
-                                 , Nothing):|[]
-                         ,[])]
+      filetest "action-2" "should a two-word BoolStructP"
+        (parseOther pDoAction) (Leaf $ ("win" :| ["gloriously"]
+                                                 , Nothing):|[]
+                               ,[])
       
-{-
-describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
+    describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg
                          { who = Just ( Leaf ( RPParamText ( ( "eats" :| [] , Nothing ) :| [] ) ) ) }
@@ -830,41 +721,29 @@ describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
           whoStructR_5 = defaultReg
                          { who = Just ( Leaf ( RPConstraint ["eyes"] RPis ["eyes"] )) }
           
-      it "(who-1) should handle a simple RPParamText" $ do
-        let testfile = "test/who-1.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ whoStructR_1 ] ]
+      filetest "who-1" "should handle a simple RPParamText"
+        (parseR pToplevel) [ whoStructR_1 ] 
           
-      it "(who-2) should handle a simple RPParamText" $ do
-        let testfile = "test/who-2.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ whoStructR_2 ] ]
+      filetest "who-2" "should handle a simple RPParamText"
+        (parseR pToplevel) [ whoStructR_2 ] 
+          
+      filetest "who-3" "should handle a simple RPParamText"
+        (parseR pToplevel) [ whoStructR_3 ] 
 
+{- infinite loop here
+      filetest "who-4-a" "should handle a multiline RPParamText without indentation"
+        (parseR pToplevel) [ mkWhoStruct (Text.words "eats without manners") (Text.words "sans decorum") ] 
           
-      it "(who-3) should handle a simple RPParamText" $ do
-        let testfile = "test/who-3.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ whoStructR_3 ] ]
-
-      it "(who-4-a) should handle a multiline RPParamText without indentation" $ do
-        let testfile = "test/who-4-a.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ mkWhoStruct (Text.words "eats without manners") (Text.words "sans decorum") ] ]
+      filetest "who-4-b" "should flat style, variant"
+        (parseR pToplevel) [ whoStructR_4 ] 
           
-      it "(who-4-b) flat style, variant" $ do
-        let testfile = "test/who-4-b.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ whoStructR_4 ] ]
-          
-      it "(who-5) should be a constraint" $ do
-        let testfile = "test/who-5.csv"
-        testcsv <- BS.readFile testfile
-        parseR pToplevel testfile `traverse` exampleStreams testcsv
-          `shouldParse` [ [ whoStructR_5 ] ]
+      filetest "who-5" "should be a constraint"
+        (parseR pToplevel) [ whoStructR_5 ] 
 -}
-      
+
+filetest testfile desc parseFunc expected =
+  it ("(" ++ testfile ++ ") " ++ desc) $ do
+  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  parseFunc testfile `traverse` exampleStreams testcsv
+    `shouldParse` [ expected ]
+  

@@ -9,8 +9,7 @@ import Text.Parser.Permutation
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Text.Parser.Permutation
-import Data.Maybe (fromMaybe, listToMaybe, maybeToList, fromJust)
+import Data.Maybe (fromMaybe, fromJust)
 
 import LS.Types
 import LS.Tokens
@@ -114,8 +113,8 @@ rpOrGroup = debugName "rpOrGroup" $ do
 
 rpElement :: Parser BoolStructR
 rpElement = debugName "rpElement" $ do
---  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
-  try (rpHornlikeAsElement <$> tellIdFirst pHornlike)
+  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
+-- try (rpHornlikeAsElement <$> tellIdFirst pHornlike)
     <|> do
     rpAtomicElement
   
@@ -134,7 +133,7 @@ rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
 
 rpHornlikeAsElement :: Rule -> BoolStructR
-rpHornlikeAsElement = multiterm2bsr
+rpHornlikeAsElement =  multiterm2bsr
 
 rpNotElement :: Parser BoolStructR
 rpNotElement = debugName "rpNotElement" $ do
@@ -266,8 +265,8 @@ preambleParamText preambles = do
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- pSrcRef
-  ((keyword, name, clauses), given, upon) <- permute $ (,,)
-    <$$> try moreStructure <|> lessStructure
+  ((keyword, name, clauses), given, upon) <- debugName "pHornlike / permute" $ permute $ (,,)
+    <$$> someStructure
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
   return $ Hornlike { name
@@ -283,9 +282,11 @@ pHornlike = debugName "pHornlike" $ do
 
     -- DECIDE x IS y WHEN Z IS Q
 
+    someStructure = try moreStructure <|> try lessStructure
+
     moreStructure = debugName "pHornlike/moreStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (((firstWord,rel),rhs),body) <- (pNameParens
+      (((firstWord,rel),rhs),body) <- manyIndentation $ (pNameParens
                                         `indentedTuple0` choice [ RPelem <$ pToken Includes
                                                                 , RPis   <$ pToken Is ]
                                         `indentedTuple0` pBoolStructR
@@ -297,11 +298,17 @@ pHornlike = debugName "pHornlike" $ do
 
     lessStructure = debugName "pHornlike/lessStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (firstWord,body) <- pNameParens `indentedTuple0` whenCase
+      (firstWord,body) <- manyIndentation $ pNameParens `indentedTuple0` whenCase
       return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
       
-
+pRelPred :: Parser RelationalPredicate
+pRelPred = do -- TODO switch this over to the Parser expr term approach
+  ((x,is),y) <- manyDeep pOtherVal
+                `indentedTuple0` choice [RPelem <$ pToken Includes
+                                        ,RPis   <$ pToken Is]
+                `indentedTuple0` manyDeep pAnyText
+  return $ RPConstraint x is y

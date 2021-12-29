@@ -318,6 +318,16 @@ DECLARE ParamText
 
 ** HornClause
 
+*** fragments
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+a tiny fragment of a horn clause
+
+| X | IS | Y |
+
 *** simple define, single line
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-1.csv

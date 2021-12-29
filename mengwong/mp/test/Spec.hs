@@ -84,6 +84,13 @@ defaultHorn = Hornlike
   , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   }
 
+filetest :: (ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+filetest testfile desc parseFunc expected =
+  it (testfile ++ ": " ++ desc) $ do
+  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  parseFunc testfile `traverse` exampleStreams testcsv
+    `shouldParse` [ expected ]
+  
 
 main :: IO ()
 main = do
@@ -166,7 +173,6 @@ main = do
       filetest "indented-1" "parse indented-1.csv (inline boolean expression)" 
         (parseR pRules) imbibeRule
 
-
       filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)" 
         (parseR pRules) imbibeRule
 
@@ -224,10 +230,10 @@ main = do
                         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
             ]              
       
-      filetest "indented-2" "should parse indented-2.csv (inline constitutive rule)" 
+      filetest "indented-2" "inline constitutive rule" 
         (parseR pRules) $ imbibeRule2 4 3
 
-      filetest "indented-3" "should parse indented-3.csv (defined names in natural positions)" 
+      filetest "indented-3" "defined names in natural positions" 
         (parseR pRules) $ imbibeRule3 3 3
 
       let mustsing1 = [ defaultReg {
@@ -608,7 +614,7 @@ main = do
         (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 
       filetest "horn-1" "should parse horn clause on a single line"
-        (parseR1 pToplevel) simpleHorn
+        (parseR pToplevel) simpleHorn
               
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn 
@@ -673,19 +679,19 @@ main = do
       filetest "paramtext-1" "paramtext-1 a single-token untyped ParamText"
         (parseOther pParamText) (ptFragment1,[])
         
-      filetest "paramtext-2" "should paramtext-2 a single-token ParamText typed with IS | A"
+      filetest "paramtext-2" "a single-token ParamText typed with IS | A"
         (parseOther pParamText) (ptFragment2,[])
         
-      filetest "paramtext-2-a" "should paramtext-2-a a single-token ParamText typed with IS A"
+      filetest "paramtext-2-a" "a single-token ParamText typed with IS A"
         (parseOther pParamText) (ptFragment2,[])
         
-      filetest "paramtext-2-b" "should paramtext-2-b a single-token ParamText typed with ::"
+      filetest "paramtext-2-b" "a single-token ParamText typed with ::"
         (parseOther pParamText) (ptFragment2,[])
         
-      filetest "paramtext-3" "should paramtext-3 a multi-token ParamText, untyped"
+      filetest "paramtext-3" "a multi-token ParamText, untyped"
         (parseOther pParamText) (ptFragment3,[])
         
-      filetest "paramtext-3-b" "should paramtext-3-b a multi-token ParamText, typed String"
+      filetest "paramtext-3-b" "a multi-token ParamText, typed String"
         (parseOther pParamText) (ptFragment3b,[])
 
 
@@ -741,9 +747,3 @@ main = do
         (parseR pToplevel) [ whoStructR_5 ] 
 -}
 
-filetest testfile desc parseFunc expected =
-  it ("(" ++ testfile ++ ") " ++ desc) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
-  parseFunc testfile `traverse` exampleStreams testcsv
-    `shouldParse` [ expected ]
-  

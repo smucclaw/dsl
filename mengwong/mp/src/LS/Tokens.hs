@@ -196,6 +196,9 @@ someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
   myindented (manyIndentation p)
 
+someIndentation' :: Parser a -> Parser a
+someIndentation' p = myindented' (manyIndentation' p)
+
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
 manyIndentation p = 
@@ -203,8 +206,19 @@ manyIndentation p =
   <|>
   debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
 
+manyIndentation' :: Parser a -> Parser a
+manyIndentation' p = 
+  (try p)
+  <|>
+  (try $ someIndentation' p)
+
 myindented :: (Show a) => Parser a -> Parser a
 myindented = between
+             (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper)
+             (debugName "myindented: consuming UnDeeper" $ pToken UnDeeper)
+
+myindented' :: Parser a -> Parser a
+myindented' = between
              (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper)
              (debugName "myindented: consuming UnDeeper" $ pToken UnDeeper)
 
@@ -264,6 +278,15 @@ optIndented p1 p2 = debugName "optIndented" $ do
   f <- p1
   y <- optional (someIndentation p2)
   return $ f y
+
+-- let's do us a combinator that does the same as `indentedTuple0` but in applicative style
+indentChain :: Parser (a -> b) -> Parser a -> Parser b
+indentChain p1 p2 = do -- can't do the debugName because the functions aren't showable
+  o1 <- p1
+  o2 <- someIndentation' p2
+  return $ o1 o2
+infixr 4 `indentChain`
+
 
 -- | withDepth n p sets the depth to n for parser p
 withDepth :: Depth -> Parser a -> Parser a

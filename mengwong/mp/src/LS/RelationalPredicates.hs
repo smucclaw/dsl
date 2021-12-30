@@ -304,11 +304,36 @@ pHornlike = debugName "pHornlike" $ do
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
-      
+
+      {-
 pRelPred :: Parser RelationalPredicate
-pRelPred = debugName "pRelPred" $ do -- TODO switch this over to the Parser expr term approach
-  (x,(is,y)) <- pMultiTerm
-                `indentedTuple0` (choice [RPelem <$ pToken Includes
-                                         ,RPis   <$ pToken Is])
-                `indentedTuple0` pMultiTerm
-  return $ RPConstraint x is y
+pRelPred = do -- TODO switch this over to the Parser expr term approach
+  RPConstraint <$>> pMultiTerm
+    <>>> (choice [ RPelem <$ pToken Includes
+                          , RPis   <$ pToken Is])
+    <>>> pMultiTerm
+-}
+
+-- ok, the problem here is that the indentation needs to be evaluated in an infixr precedence
+-- but the "applicative" constructor needs to run in an infixl precedence.  :(
+
+pRelPred :: Parser RelationalPredicate
+pRelPred = (pure RPConstraint) `indentChain` (pMultiTerm
+           `indentChain` ((RPis <$ pToken Is)
+                           `indentChain` pMultiTerm))
+
+-- pRelPred :: Parser RelationalPredicate
+-- pRelPred =
+--   fmap RPConstraint (
+--   ((pMultiTerm
+--     `indentChain` (choice [ RPelem <$ pToken Includes
+--                            , RPis   <$ pToken Is]))
+--     `indentChain` pMultiTerm))
+
+-- (<$>>) = fmap
+-- infixl 5 <$>>
+
+(<>>>) = indentChain
+infixl 4 <>>>
+  
+  

@@ -61,6 +61,12 @@ mkLeafR = AA.Leaf . RPParamText . text2pt
 untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
 untypePT = fmap fst
 
+tm2mt :: TypedMulti -> MultiTerm
+tm2mt = toList . fst
+
+mt2tm :: MultiTerm -> TypedMulti
+mt2tm x = (fromList x, Nothing)
+
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
   deriving newtype (Semigroup, Monoid)
@@ -204,6 +210,7 @@ data HornBody = HBRP HornRP
   deriving (Eq, Show, Generic, ToJSON)
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
+                         | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
                                                                        --          AND

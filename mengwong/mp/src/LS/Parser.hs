@@ -8,6 +8,7 @@ module LS.Parser where
 
 import LS.Types
 import LS.Tokens
+import LS.ParamText
 import qualified AnyAll as AA
 
 import Control.Monad.Combinators.Expr
@@ -42,17 +43,15 @@ toBoolStruct (MyLabel  lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> "++
 toBoolStruct (MyLabel _lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
 toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 
-expr :: (Show a) => Parser a -> Parser (MyBoolStruct a)
+expr,term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
-
-term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 term p =
       try (debugName "term p / 1:someIndentation" (optional dnl *> (myindented (expr p) <* optional dnl)))
   <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> pOtherVal <*> plain p))
   <|> try (debugName "term p / 3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]
-table = [ [ prefix  MPNot MyNot ]
+table = [ [ prefix  MPNot MyNot  ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
         ]
@@ -77,7 +76,7 @@ myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
-binary  tname f = InfixR  (f <$ pToken tname)
+binary  tname f = InfixR  (f <$ (debugName ("binary(" <> show tname <> ")") $ pToken tname))
 prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
@@ -87,7 +86,36 @@ mylabel         = Prefix  (MyLabel <$> try pOtherVal)
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p
 
--- myindented = between (pToken GoDeeper) (pToken UnDeeper)
+-- we parse at two levels:
+-- the boolstruct of a relationalpredicate (outer), and
+-- the relationalpredicate itself (inner).
 
--- 
+-- let's start with the parser for the relationalpredicate itself.
+-- we deal with inputs of type MultiTerm, leaving out the TypeSig,
+-- and we construct values of type RelationalPredicate
+
+pRP, pRP' :: Parser RelationalPredicate
+pRP = debugName "pRP" $ rpExpr pMultiTerm
+
+-- if we want to allow inline type annotations
+pRP' = rpExpr (tm2mt <$> pKeyValuesAka)
+
+-- the expr/term/table parser is not so good with doing chained indentation. :-(
+
+rpExpr,rpTerm :: Parser MultiTerm -> Parser RelationalPredicate
+rpExpr p = makeExprParser (rpTerm p) rpTable <?> "RP expression"
+rpTerm p
+  = try (debugName "rpTerm / 1: indented" ( myindented (rpExpr p) ) <?> "indented rpTerm")
+  <|> try (debugName "rpTerm / 3: rp" ( RPMT <$> p ) <?> "RPMT MultiTerm")
+
+rpTable :: [[Operator Parser RelationalPredicate]]
+rpTable = [ [ binary Is rpIs ] ]
+
+rpIs :: RelationalPredicate -> RelationalPredicate -> RelationalPredicate
+rpIs (RPMT x) (RPMT y) = RPConstraint x RPis y
+rpIs x y = error $ "rpIs: expecting only RPMT input, got: " <> show x <> "=" <> show y
+
+-- then we start with entire relationalpredicates, and wrap them into BoolStructR
+pBSR :: Parser BoolStructR
+pBSR = toBoolStruct <$> expr pRP
 

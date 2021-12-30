@@ -611,10 +611,10 @@ main = do
             ]
 
       filetest "horn-0-1" "should parse a fragment"
-        (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
-
+        (parseOther1 pRP) ( RPConstraint ["X"] RPis ["Y"], [] )
+{-
       filetest "horn-1" "should parse horn clause on a single line"
-        (parseR pToplevel) simpleHorn
+        (parseR1 pToplevel) simpleHorn
               
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn 
@@ -622,7 +622,7 @@ main = do
       filetest "horn-3" "should parse horn clauses 3"
         (parseR pToplevel) simpleHorn 
 
-
+-}
     describe "our new parser" $ do
       let myand = LS.Types.And
           myor  = LS.Types.Or

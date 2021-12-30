@@ -32,9 +32,9 @@ pIsRelation = pToken Is *> pConstraint
 pConstraint :: Parser RelationalPredicate
 pConstraint = debugName "pConstraint" $ do
   RPConstraint
-    <$> pMultiTerm
+    <$> pMultiTermAka
     <*> tok2rel
-    <*> pMultiTerm
+    <*> pMultiTermAka
 
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel

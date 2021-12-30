@@ -9,6 +9,7 @@ module LS.Parser where
 import LS.Types
 import LS.Tokens
 import LS.ParamText
+import LS.RelationalPredicates
 import qualified AnyAll as AA
 
 import Control.Monad.Combinators.Expr
@@ -117,5 +118,5 @@ rpIs x y = error $ "rpIs: expecting only RPMT input, got: " <> show x <> "=" <> 
 
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
-pBSR = toBoolStruct <$> expr pRP
+pBSR = toBoolStruct <$> expr pRelPred
 

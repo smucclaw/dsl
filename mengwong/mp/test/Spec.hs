@@ -611,8 +611,9 @@ main = do
             ]
 
       filetest "horn-0-1" "should parse a fragment"
-        (parseOther1 pRP) ( RPConstraint ["X"] RPis ["Y"], [] )
+        (parseOther1 pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 {-
+
       filetest "horn-1" "should parse horn clause on a single line"
         (parseR1 pToplevel) simpleHorn
               

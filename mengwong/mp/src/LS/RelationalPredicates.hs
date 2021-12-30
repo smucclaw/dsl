@@ -286,7 +286,7 @@ pHornlike = debugName "pHornlike" $ do
 
     moreStructure = debugName "pHornlike/moreStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (((firstWord,rel),rhs),body) <- manyIndentation $ (pNameParens
+      ((firstWord,(rel,rhs)),body) <- manyIndentation $ (pNameParens
                                         `indentedTuple0` choice [ RPelem <$ pToken Includes
                                                                 , RPis   <$ pToken Is ]
                                         `indentedTuple0` pBoolStructR
@@ -306,9 +306,9 @@ pHornlike = debugName "pHornlike" $ do
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
       
 pRelPred :: Parser RelationalPredicate
-pRelPred = do -- TODO switch this over to the Parser expr term approach
-  ((x,is),y) <- manyDeep pOtherVal
-                `indentedTuple0` choice [RPelem <$ pToken Includes
-                                        ,RPis   <$ pToken Is]
-                `indentedTuple0` manyDeep pAnyText
+pRelPred = debugName "pRelPred" $ do -- TODO switch this over to the Parser expr term approach
+  (x,(is,y)) <- pMultiTerm
+                `indentedTuple0` (choice [RPelem <$ pToken Includes
+                                         ,RPis   <$ pToken Is])
+                `indentedTuple0` pMultiTerm
   return $ RPConstraint x is y

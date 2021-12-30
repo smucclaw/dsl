@@ -237,10 +237,10 @@ sameMany  p = debugName "sameMany"  $ many p
 
 indentedTuple0, indentedTuple1 :: (Show a, Show b) => Parser a -> Parser b -> Parser (a,b)
 indentedTuple0 = indentedTuple 0
-infixl 4 `indentedTuple0`
+infixr 4 `indentedTuple0`
 
 indentedTuple1 = indentedTuple 1
-infixl 4 `indentedTuple1`
+infixr 4 `indentedTuple1`
 
 indented0, indented1 :: (Show a, Show b) => Parser (a -> b) -> Parser a -> Parser b
 indented0 = indented 0

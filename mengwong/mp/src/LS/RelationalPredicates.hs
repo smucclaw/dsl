@@ -318,22 +318,11 @@ pRelPred = do -- TODO switch this over to the Parser expr term approach
 -- but the "applicative" constructor needs to run in an infixl precedence.  :(
 
 pRelPred :: Parser RelationalPredicate
-pRelPred = (pure RPConstraint) `indentChain` (pMultiTerm
-           `indentChain` ((RPis <$ pToken Is)
-                           `indentChain` pMultiTerm))
+pRelPred = indent3 RPConstraint pMultiTerm pRPRel pMultiTerm
+           <|> RPMT <$> pMultiTerm
+           <|> indent3 RPBoolStructR pMultiTerm pRPRel pBoolStructR
 
--- pRelPred :: Parser RelationalPredicate
--- pRelPred =
---   fmap RPConstraint (
---   ((pMultiTerm
---     `indentChain` (choice [ RPelem <$ pToken Includes
---                            , RPis   <$ pToken Is]))
---     `indentChain` pMultiTerm))
+pRPRel = (choice [ RPelem <$ pToken Includes
+                 , RPis   <$ pToken Is]))
 
--- (<$>>) = fmap
--- infixl 5 <$>>
-
-(<>>>) = indentChain
-infixl 4 <>>>
-  
   

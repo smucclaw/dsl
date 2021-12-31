@@ -328,6 +328,16 @@ a tiny fragment of a horn clause
 
 | X | IS | Y |
 
+**** fragments
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+a tiny fragment of a horn clause
+
+| IS | IS |
+
 *** simple define, single line
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-1.csv

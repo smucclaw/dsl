@@ -268,6 +268,8 @@ indent3 f p1 p2 p3 = do
   p1' <- p1
   someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
 
+-- indent2 should be something like Constructor <$> pOne `indentChain` pTwo
+
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
 optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do
   (,) <$> p1 `optIndented` p2
@@ -281,11 +283,8 @@ optIndented p1 p2 = debugName "optIndented" $ do
 
 -- let's do us a combinator that does the same as `indentedTuple0` but in applicative style
 indentChain :: Parser (a -> b) -> Parser a -> Parser b
-indentChain p1 p2 = do -- can't do the debugName because the functions aren't showable
-  o1 <- p1
-  o2 <- someIndentation' p2
-  return $ o1 o2
-infixr 4 `indentChain`
+indentChain p1 p2 = p1 <*> someIndentation' p2
+infixl 4 `indentChain`
 
 
 -- | withDepth n p sets the depth to n for parser p

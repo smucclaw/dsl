@@ -334,9 +334,9 @@ a tiny fragment of a horn clause
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-a tiny fragment of a horn clause
+let's put a DECIDE in front of it
 
-| IS | IS |
+| DECIDE | X | IS | Y |
 
 *** simple define, single line
 :PROPERTIES:
@@ -1110,7 +1110,9 @@ We need a special case to handle it.
 
 ** increasingly complex WHO fields
 
-*** single-word WHO should be an RPParamText
+we're switching from RPParamText to MultiTerm to keep things simpler
+
+*** single-word WHO should be an RPMT
 :PROPERTIES:
 :TABLE_EXPORT_FILE: who-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1121,7 +1123,7 @@ We need a special case to handle it.
 | MUST  |        |
 | ->    | sing   |
 
-*** two-word WHO should also be an RPParamText
+*** two-word WHO should also be an RPMT
 :PROPERTIES:
 :TABLE_EXPORT_FILE: who-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1133,7 +1135,7 @@ We need a special case to handle it.
 | ->    | sing   |        |
 
 
-*** three-word WHO should also be an RPParamText
+*** three-word WHO should also be an RPMT
 :PROPERTIES:
 :TABLE_EXPORT_FILE: who-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1143,36 +1145,6 @@ We need a special case to handle it.
 | WHO   | eats   | without | manners |
 | MUST  |        |         |         |
 | ->    | sing   |         |         |
-
-*** multi-line WHO RPParamText, flat (same level)
-
-**** variant a
-:PROPERTIES:
-:TABLE_EXPORT_FILE: who-4-a.csv
-:TABLE_EXPORT_FORMAT: orgtbl-to-csv
-:END:
-
-if there are subsequent lines in the ParamText, the "flat" style has the succeeding lines start under the initial first keyword.
-
-| EVERY | person |         |         |
-| WHO   | eats   | without | manners |
-|       | sans   |         | decorum |
-|       | no     | class   |         |
-| MUST  |        |         |         |
-| ->    | sing   |         |         |
-
-**** variant b
-:PROPERTIES:
-:TABLE_EXPORT_FILE: who-4-b.csv
-:TABLE_EXPORT_FORMAT: orgtbl-to-csv
-:END:
-
-| EVERY | person |       |         |
-| WHO   | eats   |       |         |
-|       | sans   |       | decorum |
-|       | no     | class |         |
-| MUST  |        |       |         |
-| ->    | sing   |       |         |
 
 *** three-word WHO with a proper relation should be a Constraint
 :PROPERTIES:
@@ -1185,7 +1157,7 @@ if there are subsequent lines in the ParamText, the "flat" style has the succeed
 | MUST  |        |    |      |
 | ->    | sing   |    |      |
 
-*** WHO with a recursive BoolStructR
+*** TODO WHO with a recursive BoolStructR
 :PROPERTIES:
 :TABLE_EXPORT_FILE: who-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv

@@ -16,25 +16,7 @@ import LS.Tokens
 import LS.ParamText
 
 pRelationalPredicate :: Parser RelationalPredicate
-pRelationalPredicate = debugName "pRelationalPredicate" $ choice
-  [ try ( debugName "pRP: RPConstraint"
-          pConstraint )
-  , try ( debugName "pRP: RPBoolStructR" $
-          RPBoolStructR <$> pMultiTerm <*> tok2rel <*> pBoolStructR )
-  , try ( debugName "pRP: RPParamText" $
-          RPParamText <$> pParamText )
-  ]
-    
-
-pIsRelation :: Parser RelationalPredicate
-pIsRelation = pToken Is *> pConstraint
-
-pConstraint :: Parser RelationalPredicate
-pConstraint = debugName "pConstraint" $ do
-  RPConstraint
-    <$> pMultiTermAka
-    <*> tok2rel
-    <*> pMultiTermAka
+pRelationalPredicate = pRelPred
 
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
@@ -282,47 +264,23 @@ pHornlike = debugName "pHornlike" $ do
 
     -- DECIDE x IS y WHEN Z IS Q
 
-    someStructure = try moreStructure <|> try lessStructure
-
-    moreStructure = debugName "pHornlike/moreStructure" $ do
+    someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      ((firstWord,(rel,rhs)),body) <- manyIndentation $ (pNameParens
-                                        `indentedTuple0` choice [ RPelem <$ pToken Includes
-                                                                , RPis   <$ pToken Is ]
-                                        `indentedTuple0` pBoolStructR
-                                      ) `optIndentedTuple` whenCase
-      let hhead = case rhs of
-            AA.Leaf (RPParamText ((y,Nothing) :| [])) -> RPConstraint  firstWord rel (toList y)
-            _                                         -> RPBoolStructR firstWord rel rhs
-      return (keyword, firstWord, [HC2 hhead (fromMaybe Nothing body)])
-
-    lessStructure = debugName "pHornlike/lessStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (firstWord,body) <- manyIndentation $ pNameParens `indentedTuple0` whenCase
-      return (keyword, firstWord, [HC2 (RPParamText (multiterm2pt firstWord)) body])
-
+      (relPred, whenpart) <- someIndentation (pRelPred `optIndentedTuple` whenCase)
+      return (keyword, getFirstWord relPred, [HC2 relPred (fromMaybe Nothing whenpart)])
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
 
-      {-
 pRelPred :: Parser RelationalPredicate
-pRelPred = do -- TODO switch this over to the Parser expr term approach
-  RPConstraint <$>> pMultiTerm
-    <>>> (choice [ RPelem <$ pToken Includes
-                          , RPis   <$ pToken Is])
-    <>>> pMultiTerm
--}
-
--- ok, the problem here is that the indentation needs to be evaluated in an infixr precedence
--- but the "applicative" constructor needs to run in an infixl precedence.  :(
-
-pRelPred :: Parser RelationalPredicate
-pRelPred = indent3 RPConstraint pMultiTerm pRPRel pMultiTerm
+pRelPred = try (indent3 RPConstraint pMultiTerm tok2rel pMultiTerm)
+           <|> try (indent3 RPBoolStructR pMultiTerm tok2rel pBoolStructR)
            <|> RPMT <$> pMultiTerm
-           <|> indent3 RPBoolStructR pMultiTerm pRPRel pBoolStructR
 
-pRPRel = (choice [ RPelem <$ pToken Includes
-                 , RPis   <$ pToken Is]))
+getFirstWord :: RelationalPredicate -> RuleName
+getFirstWord (RPParamText pt) = pt2multiterm pt
+getFirstWord (RPMT mt)        = mt
+getFirstWord (RPConstraint mt _ _) = mt
+getFirstWord (RPBoolStructR mt _ _) = mt
 
-  
+

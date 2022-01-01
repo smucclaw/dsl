@@ -263,12 +263,14 @@ infixl 4 `indented0`
 indented1 = indented 1
 infixl 4 `indented1`
 
+-- while an "indent2" is easy enough -- Constructor <$> pOne `indentChain` pTwo
+-- an indent3 isn't as easy as just stacking on another      `indentChain` pThree
+-- you have to do it this way instead.
 indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
 indent3 f p1 p2 p3 = do
   p1' <- p1
   someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
 
--- indent2 should be something like Constructor <$> pOne `indentChain` pTwo
 
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
 optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do

@@ -180,9 +180,9 @@ main = do
                                    , keyword = Means
                                    , given = Nothing
                                    , upon = Nothing
-                                   , clauses = [ HC2 { hHead = RPParamText (("degustates" :| [],Nothing) :| [])
-                                                     , hBody = Just (Any Nothing [Leaf (RPParamText (("eats"   :| [],Nothing) :| []))
-                                                                                 ,Leaf (RPParamText (("drinks" :| [],Nothing) :| []))
+                                   , clauses = [ HC2 { hHead = RPMT ["degustates"]
+                                                     , hBody = Just (Any Nothing [Leaf (RPMT ["eats"])
+                                                                                 ,Leaf (RPMT ["drinks"])
                                                                                  ])}]
                                    , srcref = Just (SrcRef { url = "test/Spec"
                                                            , short = "test/Spec"
@@ -206,9 +206,9 @@ main = do
               }
             , defaultHorn { name = ["degustates"]
                           , keyword = Means
-                          , clauses = [HC2 { hHead = RPParamText (("degustates" :| [],Nothing) :| [])
-                                           , hBody = Just (Any Nothing [Leaf (RPParamText (("eats" :| [],Nothing) :| []))
-                                                                       ,Leaf (RPParamText (("imbibes" :| [],Nothing) :| []))])}]
+                          , clauses = [HC2 { hHead = RPMT ["degustates"]
+                                           , hBody = Just (Any Nothing [Leaf (RPMT ["eats"])
+                                                                       ,Leaf (RPMT ["imbibes"])])}]
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec"
                                                   , srcrow = srcrow, srccol = srccol
                                                   , version = Nothing})
@@ -221,20 +221,18 @@ main = do
                         , keyword = Means
                         , given = Nothing
                         , upon = Nothing
-                        , clauses = [HC2 { hHead = RPParamText (("imbibes" :| [],Nothing) :| [])
-                                         , hBody = Just (All Nothing [Leaf (RPParamText (("drinks" :| [],Nothing) :| []))
-                                                                     ,Any Nothing [Leaf (RPParamText (("swallows" :| [],Nothing) :| []))
-                                                                                  ,Leaf (RPParamText (("spits" :| [],Nothing) :| []))]])}]
+                        , clauses = [HC2 { hHead = RPMT ["imbibes"]
+                                         , hBody = Just (All Nothing [Leaf (RPMT ["drinks"])
+                                                                     ,Any Nothing [Leaf (RPMT ["swallows"])
+                                                                                  ,Leaf (RPMT ["spits"])]])}]
                         , rlabel = Nothing
                         , lsource = Nothing
                         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
             ]              
       
-      filetest "indented-2" "inline constitutive rule" 
-        (parseR pRules) $ imbibeRule2 4 3
+--      filetest "indented-2" "inline constitutive rule" (parseR pRules) $ imbibeRule2 4 3
 
-      filetest "indented-3" "defined names in natural positions" 
-        (parseR pRules) $ imbibeRule3 3 3
+--      filetest "indented-3" "defined names in natural positions" (parseR pRules) $ imbibeRule3 3 3
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")
@@ -248,30 +246,12 @@ main = do
                           , who = Just
                             ( All Nothing
                               [ Leaf
-                                ( RPParamText
-                                  (
-                                    ( "walks" :| []
-                                    , Nothing
-                                    ) :| []
-                                  )
-                                )
+                                ( RPMT ["walks"] )
                               , Any Nothing
                                 [ Leaf
-                                  ( RPParamText
-                                    (
-                                      ( "eats" :| []
-                                      , Nothing
-                                      ) :| []
-                                    )
-                                  )
+                                  ( RPMT ["eats"])
                                 , Leaf
-                                  ( RPParamText
-                                    (
-                                      ( "drinks" :| []
-                                      , Nothing
-                                      ) :| []
-                                    )
-                                  )
+                                  ( RPMT ["drinks"] )
                                 ]
                               ]
                             )
@@ -386,7 +366,7 @@ main = do
             { name = ["Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+              [ HC2 { hHead = RPMT ["Bob's your uncle"]
                     , hBody = Just $ Not ( Any Nothing [mkLeafR "Bob is estranged"
                                                        ,mkLeafR "Bob is dead"])}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }
@@ -395,7 +375,7 @@ main = do
         (parseR pRules) []
 
       filetest "bob-head-1-b" "more indented NOT"
-        (parseR pRules) [bobUncle1]
+        (parseR1 pRules) [bobUncle1]
 
 {--
 
@@ -411,7 +391,7 @@ main = do
 
       let bobUncle2 = bobUncle1
             { clauses = 
-              [ HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
+              [ HC2 { hHead = RPMT ["Bob's your uncle"]
                     , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
                                                  ,      mkLeafR "Bob is dead" ] } ] }
       
@@ -497,10 +477,10 @@ main = do
                           { name = ["Bob's your uncle"]
                           , keyword = Means
                           , clauses = [
-                              HC2 { hHead = RPParamText (("Bob's your uncle" :| [],Nothing) :| [])
-                                  , hBody = Just (All Nothing [Any Nothing [Leaf (RPParamText (("Bob is your mother's brother" :| [],Nothing) :| []))
-                                                                           ,Leaf (RPParamText (("Bob is your father's brother" :| [],Nothing) :| []))]
-                                                              ,Not (Leaf (RPParamText (("Bob is estranged" :| [],Nothing) :| [])))])}]
+                              HC2 { hHead = RPMT ["Bob's your uncle"]
+                                  , hBody = Just (All Nothing [Any Nothing [Leaf (RPMT ["Bob is your mother's brother"])
+                                                                           ,Leaf (RPMT ["Bob is your father's brother"])]
+                                                              ,Not (Leaf (RPMT ["Bob is estranged"]))])}]
                           , rlabel = Nothing
                           , lsource = Nothing
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}
@@ -593,13 +573,10 @@ main = do
 -}
 
     describe "revised parser" $ do
-      let simpleHorn = [ Hornlike
+
+      let simpleHorn = [ defaultHorn
               { name = ["X"]
               , keyword = Decide
-              , given = Nothing
-              , upon = Nothing
-              , rlabel = Nothing
-              , lsource = Nothing
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
               , clauses =
                 [ HC2
@@ -609,18 +586,36 @@ main = do
                   } ]
               }
             ]
+      let simpleHorn10 = [ defaultHorn
+              { name = ["X"]
+              , keyword = Decide
+              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              , clauses =
+                [ HC2
+                  { hHead = RPConstraint ["X"] RPis ["Y"]
+                  , hBody = Just $ Leaf (RPConstraint ["Z"] RPis ["Q"])
+                  } ]
+              }
+            ]
+      let simpleHorn02 = [ defaultHorn
+              { name = ["X"]
+              , keyword = Decide
+              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              , clauses =
+                [ HC2
+                  { hHead = RPConstraint ["X"] RPis ["Y"]
+                  , hBody = Nothing
+                  } ]
+              }
+            ]
+      
+      filetest "horn-0-1" "should parse X IS Y"
+        (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 
-      filetest "horn-0-1" "should parse a fragment"
-        (parseOther1 pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
+      filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR1 pToplevel) simpleHorn02
 
-      filetest "horn-0-2" "should parse a fragment"
-        (parseOther1 pRelPred) ( RP2 RPis RPis, [] )
-
+      filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
 {-
-
-      filetest "horn-1" "should parse horn clause on a single line"
-        (parseR1 pToplevel) simpleHorn
-              
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn 
              
@@ -714,41 +709,23 @@ main = do
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg
-                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| [] , Nothing ) :| [] ) ) ) }
+                         { who = Just ( Leaf ( RPMT ["eats"] ) ) }
 
           whoStructR_2 = defaultReg
-                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["rudely"] , Nothing ) :| [] ) ) ) }
+                         { who = Just ( Leaf ( RPMT ["eats"] ) ) }
           
           whoStructR_3 = defaultReg
-                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing ) :| [] ) ) ) }
+                         { who = Just ( Leaf ( RPMT ["eats", "without", "manners"] ) ) }
           
           whoStructR_4 = defaultReg
-                         { who = Just ( Leaf ( RPParamText ( ( "eats" :| ["without", "manners"] , Nothing )
-                                                             :|          [("sans" :| ["decorum"], Nothing)]) )) }
+                         { who = Just ( Leaf ( RPMT ["eats", "sans", "decorum"] )) }
           
-          mkWhoStruct x xs = defaultReg
-                         { who = Just ( Leaf ( RPParamText ( (,Nothing) <$> fromList x :| [fromList xs] ))) }
-
-          whoStructR_5 = defaultReg
-                         { who = Just ( Leaf ( RPConstraint ["eyes"] RPis ["eyes"] )) }
-          
-      filetest "who-1" "should handle a simple RPParamText"
+      filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ] 
           
-      filetest "who-2" "should handle a simple RPParamText"
+      filetest "who-2" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_2 ] 
           
-      filetest "who-3" "should handle a simple RPParamText"
+      filetest "who-3" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_3 ] 
-
-{- infinite loop here
-      filetest "who-4-a" "should handle a multiline RPParamText without indentation"
-        (parseR pToplevel) [ mkWhoStruct (Text.words "eats without manners") (Text.words "sans decorum") ] 
-          
-      filetest "who-4-b" "should flat style, variant"
-        (parseR pToplevel) [ whoStructR_4 ] 
-          
-      filetest "who-5" "should be a constraint"
-        (parseR pToplevel) [ whoStructR_5 ] 
--}
 

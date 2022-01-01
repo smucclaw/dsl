@@ -460,7 +460,7 @@ pExpect :: Parser HornClause
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
   expect   <- someIndentation $ pRelationalPredicate
-  whenpart <- someIndentation $ optional pWhenPart
+  whenpart <- optional pWhenPart
 
   return $ HC
     { relPred = expect
@@ -470,7 +470,7 @@ pExpect = debugName "pExpect" $ do
     pWhenPart :: Parser HornBody
     pWhenPart = do
       _when   <- pToken When
-      HBRP . AA.Leaf <$> pRelationalPredicate
+      HBRP . AA.Leaf <$> someIndentation pRelationalPredicate
       -- TODO: add support for more complex boolstructs of relational predicates
           
 pGivens :: Parser [RelationalPredicate]
@@ -658,7 +658,7 @@ mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb
 preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)
 preambleRelPred preambles = do
   preamble <- choice (try . pToken <$> preambles)
-  relpred  <- pRelationalPredicate
+  relpred  <- someIndentation pRelationalPredicate
   return (preamble, relpred)
 
 permutationsReg :: Parser ((Preamble, BoolStructP), Maybe (Preamble, BoolStructR))

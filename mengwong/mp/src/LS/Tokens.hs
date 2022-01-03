@@ -205,19 +205,19 @@ manyDeepThen p1 p2 = debugName "someDeepThen" $ do
     donext = debugName "going inner" (try $ someIndentation $ manyDeepThen p1 p2)
              <|> debugName "going rhs" base
     base = debugName "manyDeepThen/base" $ do
-      rhs <- try (someIndentation p2)
+      rhs <- try (manyIndentation p2)
       return ([], rhs)
 
 manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
-manyDeepThenMaybe p1 p2 = debugName "someDeepThenMaybe" $ do
-  p <- try (debugName "someDeepThenMaybe/initial" p1)
+manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
+  p <- try (debugName "manyDeepThenMaybe/initial" p1)
   (lhs, rhs) <- donext
   return (p:lhs, rhs)
   where
     donext = debugName "going inner" (try $ someIndentation $ manyDeepThenMaybe p1 p2)
              <|> debugName "going rhs" base
-    base = debugName "manyThenMaybe/base" $ do
-      rhs <- optional $ try (someIndentation p2)
+    base = debugName "manyDeepThenMaybe/base" $ do
+      rhs <- optional $ try (manyIndentation p2)
       return ([], rhs)
 
 

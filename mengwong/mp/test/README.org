@@ -196,7 +196,7 @@ still means the same thing but with slightly more indentation
 |     | OR | c   |   |
 |     | OR | NOT | d |
 
-*** indent-2-c: Handle labels at the parents
+*** indent-2-c: Handle labels at the parents; this is not expected to parse
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indent-2-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -228,7 +228,7 @@ OR, (godeeper, label, undeeper), boolstructr
           ]
 #+end_src
 
-*** indent-2-c-2: more label variation, right
+*** indent-2-c-2: more label variation, right; ; this is not expected to parse
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indent-2-c-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -242,7 +242,7 @@ OR, (godeeper, label, undeeper), boolstructr
 
 OR, godeeper, (godeeper, godeeper, label, undeeper, undeeper), boolstructr
 
-*** indent-2-c-3: more label variation, left
+*** indent-2-c-3: more label variation, left; this is the only working syntax for the moment, so we shall use this for the demo.
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indent-2-c-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv

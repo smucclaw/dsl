@@ -48,8 +48,8 @@ expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 term p = debugName "term p" $ do
   try (debugName "term p/1:label" $ do
-          lbl <- someDeep pAnyText <* dnl
-          debugPrint $ "got label: " ++ show lbl
+          lbl <- someDeep pNumOrText <* debugName "matching EOL" dnl
+          debugPrint $ "got label then EOL: " ++ show lbl
           inner <- expr p
           debugPrint $ "got inner: " ++ show inner
           return $ MyLabel lbl inner)

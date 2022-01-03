@@ -334,9 +334,16 @@ stanzaAsStream rs =
 pToplevel :: Parser [Rule]
 pToplevel = pRules <* eof
 
-pRules :: Parser [Rule]
-pRules = do
-  wanted   <- many (try pRule)
+-- do not allow NotARule parsing
+
+pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
+pRulesOnly = do
+  try (some pRule) <* eof
+
+pRules = pRulesOnly
+
+pRulesAndNotRules = do
+  wanted   <- try $ many pRule
   notarule <- optional (notFollowedBy eof *> pNotARule)
   next <- [] <$ eof <|> pRules
   wantNotRules <- asks wantNotRules
@@ -359,10 +366,12 @@ pRule = debugName "pRule" $ do
     <|> try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
---    <|> try (pConstitutiveRule <?> "constitutive rule")
+    <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
 --     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
+
+-- if we get back a constitutive, we can rewrite it to a Hornlike here
 
 
 pTypeDefinition :: Parser Rule

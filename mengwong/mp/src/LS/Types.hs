@@ -138,11 +138,11 @@ data Rule = Regulative
             , srcref   :: Maybe SrcRef
             }
           | Hornlike
-            { name     :: RuleName
-            , keyword  :: MyToken
-            , given    :: Maybe ParamText
-            , upon     :: Maybe ParamText
-            , clauses  :: [HornClause2]
+            { name     :: RuleName           -- colour
+            , keyword  :: MyToken            -- decide / define / means
+            , given    :: Maybe ParamText    -- applicant has submitted fee
+            , upon     :: Maybe ParamText    -- second request occurs
+            , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

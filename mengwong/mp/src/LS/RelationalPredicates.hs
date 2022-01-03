@@ -157,6 +157,13 @@ mergePBRS [] = Nothing
 mergePBRS [x] = Just x
 mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 
+c2hornlike :: Rule -> Rule
+c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref } =
+  let clauses = pure $ HC2 (RPBoolStructR name RPis letbind) cond
+      upon = Nothing
+  in Hornlike { name, keyword, given, upon, clauses, rlabel, lsource, srcref   }
+c2hornlike r = r
+
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftY              <- lookAhead pYLocation

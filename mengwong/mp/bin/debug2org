@@ -28,9 +28,9 @@ for (@input) {
   if (not length $slash) { $slash = " " }
   
   my $outlhs = "*" x $numpipes . " $slash " . $text;
-  my $spacing = 100 - length($outlhs) - $numpipes;
+  my $spacing = 120 - length($outlhs) - $numpipes;
      $prefix =~ s/ +$//;
-  my $out = $outlhs . " " x $spacing . ":$prefix:";
+  my $out = $outlhs . " " x $spacing . " :$prefix:";
   print $out, "\n";
   
 }

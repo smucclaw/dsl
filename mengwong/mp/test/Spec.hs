@@ -176,20 +176,22 @@ main = do
       filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)" 
         (parseR pRules) imbibeRule
 
-      let degustates = defaultHorn { name = ["degustates"]
-                                   , keyword = Means
-                                   , given = Nothing
-                                   , upon = Nothing
-                                   , clauses = [ HC2 { hHead = RPMT ["degustates"]
-                                                     , hBody = Just (Any Nothing [Leaf (RPMT ["eats"])
-                                                                                 ,Leaf (RPMT ["drinks"])
-                                                                                 ])}]
-                                   , srcref = Just (SrcRef { url = "test/Spec"
-                                                           , short = "test/Spec"
-                                                           , srcrow = 2
-                                                           , srccol = 1
-                                                           , version = Nothing }) }
-      
+      let degustates = defaultHorn
+            { name = ["degustates"]
+            , keyword = Means
+            , given = Nothing
+            , upon = Nothing
+            , clauses = [ HC2
+                          { hHead = RPBoolStructR ["degustates"]
+                                    RPis (Any Nothing [Leaf (RPMT ["eats"])
+                                                      ,Leaf (RPMT ["drinks"])])
+                          , hBody = Nothing } ]
+            , srcref = Just (SrcRef { url = "test/Spec"
+                                    , short = "test/Spec"
+                                    , srcrow = 1
+                                    , srccol = 1
+                                    , version = Nothing }) }
+        
       filetest "simple-constitutive-1" "should parse a simple constitutive rule" 
         (parseR pRules) [degustates]
 

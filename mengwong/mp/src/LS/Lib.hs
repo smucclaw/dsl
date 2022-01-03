@@ -326,7 +326,7 @@ stanzaAsStream rs =
         bCol = unPos . sourceColumn $ bPos
         aLin = unPos . sourceLine   $ aPos
         bLin = unPos . sourceLine   $ bPos
-        goDp = b { tokenVal = GoDeeper, startPos = aPos }
+        goDp = b { tokenVal = GoDeeper, startPos = bPos }
         unDp = a { tokenVal = UnDeeper, endPos   = bPos }
 -- MyStream is the primary input for our Parsers below.
 --
@@ -734,7 +734,7 @@ exprP = debugName "expr pParamText" $ do
   -- expr pParamText has returned MyLabel "pay" (MyLeaf (("to" :| ["the King"],Nothing) :| [("amount" :| ["$20"],Nothing)]))
   -- to MyLeaf (("pay" :| [], Nothing) :| [("to" :| ["the King"], Nothing) ...
   return $ case raw of
---    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
+    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText

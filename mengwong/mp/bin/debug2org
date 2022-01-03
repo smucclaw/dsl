@@ -1,0 +1,37 @@
+#!/usr/bin/perl
+
+# usage: stack test |& bin/debug2org > debug.org
+# then open debug.org in emacs org-mode
+
+use strict;
+
+my @input = <>;
+chomp @input;
+
+my ($pipe_line) = grep { /\| \| \|/ } @input;
+my ($prefix_length) = length (($pipe_line =~ /^([^|]+)\|/)[0]);
+# print $prefix_length;
+
+for (@input) {
+  my $prefix = substr($_, 0, $prefix_length);
+  my $rhs = substr($_, $prefix_length);
+#  print $prefix, "\n";
+#  print $rhs, "\n";
+
+  my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/]?) (.*)/;
+#  print $pipes, "\n";
+#  print $slash, "\n";
+  my $numpipes = length($pipes) / 2 + 1;
+
+  if (not $slash and not $pipes) { print $_, "\n"; next; }
+
+  my $outlhs = "*" x $numpipes . " " . $text;
+  my $spacing = 100 - length($outlhs) - $numpipes;
+     $prefix =~ s/ +$//;
+  my $out = $outlhs . " " x $spacing . ":$prefix:";
+  print $out, "\n";
+  
+}
+
+
+

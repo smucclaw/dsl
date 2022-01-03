@@ -55,7 +55,7 @@ mkLeaf :: Text.Text -> AA.Item ParamText
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
-mkLeafR = AA.Leaf . RPParamText . text2pt
+mkLeafR x = AA.Leaf $ RPMT [x]
 
 -- remove the TypeSig from a ParamText
 untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)

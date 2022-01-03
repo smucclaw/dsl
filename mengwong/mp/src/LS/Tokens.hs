@@ -48,16 +48,21 @@ getWithPos = token test Set.empty <?> "any token"
   where
     test wp@(WithPos _ _ _ tok)
       | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
-      | otherwise                            = Just $ show tok
-    showpos wp = Just $ show (tokenVal wp) ++
+      | otherwise                            = showpos wp
+    showtok wp = Just $ show $ tokenVal wp
+    showpos wp = Just $
       show (unPos $ sourceLine   $ startPos wp) ++ "," ++
-      show (unPos $ sourceColumn $ startPos wp)
+      show (unPos $ sourceColumn $ startPos wp) ++ ":" ++
+      show (tokenVal wp)
+
+tokenViewColumnSize :: Int
+tokenViewColumnSize = 15
 
 myTraceM :: String -> Parser ()
 myTraceM x = whenDebug $ do
   nestDepth <- asks nestLevel
   lookingAt <- lookAhead getWithPos <|> ("EOF" <$ eof)
-  traceM $ leftPad lookingAt 12 <> indentShow nestDepth <> x
+  traceM $ leftPad lookingAt tokenViewColumnSize <> indentShow nestDepth <> x
   where
     indentShow depth = concat $ replicate depth "| "
     leftPad str n = take n $ str <> repeat ' '

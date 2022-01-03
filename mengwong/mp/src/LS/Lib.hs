@@ -326,8 +326,8 @@ stanzaAsStream rs =
         bCol = unPos . sourceColumn $ bPos
         aLin = unPos . sourceLine   $ aPos
         bLin = unPos . sourceLine   $ bPos
-        goDp = b { tokenVal = GoDeeper }
-        unDp = a { tokenVal = UnDeeper }
+        goDp = b { tokenVal = GoDeeper, startPos = aPos }
+        unDp = a { tokenVal = UnDeeper, endPos   = bPos }
 -- MyStream is the primary input for our Parsers below.
 --
 

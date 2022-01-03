@@ -45,7 +45,7 @@ data Item' lbl a =
   | Not             (Item' lbl a)
   deriving (Eq, Show, Generic)
 
-instance (Semigroup b) => Semigroup (Item' a b) where
+instance Semigroup (Item' a b) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)

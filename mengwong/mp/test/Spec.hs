@@ -392,8 +392,6 @@ main = do
       filetest "bob-head-3" "should handle outdentation"
         (parseR pRules) [bobUncle2]
 
-{--
-
     describe "megaparsing UNLESS semantics" $ do
 
       let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ] 
@@ -485,9 +483,9 @@ main = do
                         ]
 
       filetest "pilcrows-1" "should handle pilcrows" 
-        (parseR pRules) [ dayOfSilence 
-                        , dayOfSong
-                        ]
+        (parseR pRules) ( dayOfSilence 
+                        ++ dayOfSong )
+
         -- forM_ (exampleStreams testcsv) $ \stream ->
         --   parseR pRules testfile stream
         --     `shouldParse` [ defaultCon 
@@ -500,7 +498,7 @@ main = do
     describe "megaparsing scenarios" $ do
       filetest "scenario-1" "should handle labeled given/expect" 
         (parseR pRules)
-          [ [ Scenario
+          [ Scenario
             { scgiven =
                 [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
                 , RPConstraint
@@ -557,7 +555,7 @@ main = do
                          }
                        )
             }
-          ] ]
+          ]
           
     -- describe "megaparsing DECIDE layouts" $ do
     --   it "should handle multiline" $ do
@@ -566,7 +564,6 @@ main = do
     --     parseR pRules testfile `traverse` (exampleStreams testcsv)
     --       `shouldParse`
     --       [ [ Scenario
--}
 
     describe "revised parser" $ do
 
@@ -611,14 +608,13 @@ main = do
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
       filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
-{-
+
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn 
              
       filetest "horn-3" "should parse horn clauses 3"
         (parseR pToplevel) simpleHorn 
 
--}
     describe "our new parser" $ do
       let myand = LS.Types.And
           myor  = LS.Types.Or
@@ -651,9 +647,9 @@ main = do
                                                               , MyLeaf (text2pt "mid4") ]
                         ],[])
 
-      filetest "indent-2-c" "label samecol" (parseOther1 exprP) ablcd 
-      filetest "indent-2-c-2" "label right" (parseOther1 exprP) ablcd 
-      filetest "indent-2-c-3" "label left"  (parseOther1 exprP) ablcd 
+      filetest "indent-2-c" "label samecol" (parseOther exprP) ablcd 
+      filetest "indent-2-c-2" "label right" (parseOther exprP) ablcd 
+      filetest "indent-2-c-3" "label left"  (parseOther exprP) ablcd 
 
       filetest "indent-2-d" "should handle indent-2-d which goes out, in, out"
         (parseOther exprP)

@@ -361,8 +361,8 @@ main = do
       filetest "action-params-singer" "should parse action params" 
         (parseR pRules) [singer_must_pay_params]
 
-      filetest "blank-lines" "should parse despite interrupting newlines" 
-        (parseR pRules) if_king_wishes_singer_2
+--      filetest "blank-lines" "should parse despite interrupting newlines" 
+--        (parseR pRules) if_king_wishes_singer_2
 
     describe "megaparsing MEANS" $ do
 
@@ -608,13 +608,13 @@ main = do
 
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
-      filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
+      -- filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
 
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn 
              
-      filetest "horn-3" "should parse horn clauses 3"
-        (parseR pToplevel) simpleHorn 
+      -- syntax unsupported at this time; we need continuation passing style
+      -- filetest "horn-3" "should parse horn clauses 3" (parseR pToplevel) simpleHorn 
 
     describe "our new parser" $ do
       let myand = LS.Types.And

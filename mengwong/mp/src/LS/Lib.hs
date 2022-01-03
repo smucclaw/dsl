@@ -362,14 +362,14 @@ pRule :: Parser Rule
 pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
-  try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
-    <|> try (pRegRule <?> "regulative rule")
+  try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
 --     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
+    <|> try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
 
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 

@@ -393,14 +393,13 @@ X IS HornClauseRHS
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-***** simple define, multi line 3, and
+***** simple define, multi line 3, and; we don't support this syntax for now.
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-3-and.csv
+:TABLE_EXPORT_FILE: horn-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| DECIDE | X |    |   |     |   |   |    |
-| IS     | Y |    |   |     |   |   |    |
+| DECIDE | X | IS | Y |     |   |   |    |
 | WHEN   | Z | IS | Q | AND | P | > | NP |
 
 BoolStructR should be (AND (z is q) (p gt np))
@@ -413,8 +412,7 @@ BoolStructR should be (AND (z is q) (p gt np))
 
 BoolStructR should be (OR (z is q) (p gt np))
 
-| DECIDE | X |    |   |    |   |   |    |
-| IS     | Y |    |   |    |   |   |    |
+| DECIDE | X | IS | Y |    |   |   |    |
 | WHEN   | Z | IS | Q | OR | P | > | NP |
 
 ***** simple define, multi line 4

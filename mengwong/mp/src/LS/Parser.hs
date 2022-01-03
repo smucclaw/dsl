@@ -47,8 +47,10 @@ toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 expr,term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 term p =
-      try (debugName "term p / 1:someIndentation" (optional dnl *> (myindented (expr p) <* optional dnl)))
-  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> (someDeep pOtherVal) <*> plain p))
+      try (debugName "term p / 2:label" (MyLabel
+                                             <$> (debugName "label" $ fst <$> someDeepThenMaybe pNumOrText dnl)
+                                             <*> (debugName "2/plain p" $ plain p)))
+  <|> try (debugName "term p / 1:someIndentation" (optional dnl *> (myindented (expr p) <* optional dnl)))
   <|> try (debugName "term p / 3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]

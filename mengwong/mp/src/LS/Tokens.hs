@@ -43,11 +43,21 @@ getToken = token test Set.empty <?> "any token"
   where
     test (WithPos _ _ _ tok) = Just tok
 
+getWithPos :: Parser String
+getWithPos = token test Set.empty <?> "any token"
+  where
+    test wp@(WithPos _ _ _ tok)
+      | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
+      | otherwise                            = Just $ show tok
+    showpos wp = Just $ show (tokenVal wp) ++
+      show (unPos $ sourceLine   $ startPos wp) ++ "," ++
+      show (unPos $ sourceColumn $ startPos wp)
+
 myTraceM :: String -> Parser ()
 myTraceM x = whenDebug $ do
   nestDepth <- asks nestLevel
-  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
-  traceM $ leftPad (show lookingAt) 12 <> indentShow nestDepth <> x
+  lookingAt <- lookAhead getWithPos <|> ("EOF" <$ eof)
+  traceM $ leftPad lookingAt 12 <> indentShow nestDepth <> x
   where
     indentShow depth = concat $ replicate depth "| "
     leftPad str n = take n $ str <> repeat ' '

@@ -208,6 +208,8 @@ still means the same thing but with slightly more indentation
 |    |      | mid3            |
 |    | OR   | mid4            |
 
+OR, (godeeper, label, undeeper), boolstructr
+
 **** becomes
 |    | (top1) |                  |
 | OR | (top2) |                  |
@@ -226,6 +228,34 @@ still means the same thing but with slightly more indentation
           ]
 #+end_src
 
+*** indent-2-c-2: more label variation, right
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1 |      |                 |
+| OR | top2 |      |                 |
+| OR |      |      | this is a label |
+|    |      | mid3 |                 |
+|    | OR   | mid4 |                 |
+
+OR, godeeper, (godeeper, godeeper, label, undeeper, undeeper), boolstructr
+
+*** indent-2-c-3: more label variation, left
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1            |      |   |
+| OR | top2            |      |   |
+| OR | this is a label |      |   |
+|    |                 | mid3 |   |
+|    | OR              | mid4 |   |
+
+or, godeeper, label, samedepth boolstructr
+
 *** indent-2-d: more indentation variant
 :PROPERTIES:
 :TABLE_EXPORT_FILE: indent-2-d.csv
@@ -240,18 +270,18 @@ As discussed above in "Deriving the Grammar":
 | OR | term4 |       |
 | OR | term5 |       |
 
-** ParamText
+**** ParamText
 
 one or more normal words with optional typesig
 
-*** contexts
+***** contexts
 
 - Rule Action
 - GIVEN parameter input to a DECIDE function
 - HAS relation definition
 - DECLARE type declaration
 
-*** paramtext-1: simple case
+***** paramtext-1: simple case
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -259,7 +289,7 @@ one or more normal words with optional typesig
 
 | one word |
 
-*** paramtext-2: simple case, typed
+***** paramtext-2: simple case, typed
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -267,7 +297,7 @@ one or more normal words with optional typesig
 
 | one word | IS | A | String |
 
-*** paramtext-2-a: simple case, typed a different way
+***** paramtext-2-a: simple case, typed a different way
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-2-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -275,7 +305,7 @@ one or more normal words with optional typesig
 
 | one word | IS A | String |
 
-*** paramtext-2-b: simple case, typed a different way
+***** paramtext-2-b: simple case, typed a different way
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -283,14 +313,14 @@ one or more normal words with optional typesig
 
 | one word | :: | String |
 
-*** paramtext-3: simple case, two words
+***** paramtext-3: simple case, two words
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
 | two | words |
-*** paramtext-3-b: simple case, two words, typed
+***** paramtext-3-b: simple case, two words, typed
 :PROPERTIES:
 :TABLE_EXPORT_FILE: paramtext-3-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -298,27 +328,27 @@ one or more normal words with optional typesig
 
 | two | words | :: | String |
 
-*** example: rule action
+***** example: rule action
 
 | NOTIFY | the PDPC            |
 | with   | a list of names     |
 | using  | a prescribed format |
 
-*** example: GIVEN parameter input to a DECIDE function
+***** example: GIVEN parameter input to a DECIDE function
 
 | GIVEN | Sign1 |   | Sign2 | IS | A | Sign |   |   |   |
 
-*** example: HAS relation definition
+***** example: HAS relation definition
 
 HAS ParamText
 
-*** example: DECLARE
+***** example: DECLARE
 
 DECLARE ParamText
 
-** HornClause
+**** HornClause
 
-*** fragments
+***** fragments
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-0-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -328,7 +358,7 @@ a tiny fragment of a horn clause
 
 | X | IS | Y |
 
-**** fragments
+****** fragments
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-0-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -338,7 +368,7 @@ let's put a DECIDE in front of it
 
 | DECIDE | X | IS | Y |
 
-*** simple define, single line
+***** simple define, single line
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -353,7 +383,7 @@ X IS HornClauseRHS
 | DECIDE | X | IS | Y | WHEN | Z | IS | Q | AND | P | > | NP |
 
 
-*** simple define, multi line 2
+***** simple define, multi line 2
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -362,7 +392,7 @@ X IS HornClauseRHS
 | DECIDE | X | IS | Y |     |   |   |    |
 | WHEN   | Z | IS | Q | AND | P | > | NP |
 
-*** simple define, multi line 3, and
+***** simple define, multi line 3, and
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3-and.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -374,7 +404,7 @@ X IS HornClauseRHS
 
 BoolStructR should be (AND (z is q) (p gt np))
 
-*** simple define, multi line 3, or
+***** simple define, multi line 3, or
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3-or.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -386,7 +416,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | IS     | Y |    |   |    |   |   |    |
 | WHEN   | Z | IS | Q | OR | P | > | NP |
 
-*** simple define, multi line 4
+***** simple define, multi line 4
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -397,7 +427,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-*** simple define, multi line 5
+***** simple define, multi line 5
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -408,7 +438,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | OR     | P | >  | NP |
 
-*** simple define, multi line 6 with non-nested bool
+***** simple define, multi line 6 with non-nested bool
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -422,7 +452,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | OR     | P   | >  | NP    |
 | AND    | top | IS | level |
 
-*** simple define, multi line 7 with nested bool
+***** simple define, multi line 7 with nested bool
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -438,7 +468,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 
 Explicit nesting only activates when there's a boolconnector after a newline. if the boolconnector is on the same line we keep going.
 
-** HornClauseRHS
+**** HornClauseRHS
 
 something ... IS HornClauseRHS
 
@@ -446,7 +476,7 @@ ParamText <*> optional (pToken WHEN *> RelationalPredicate)
 
 fragment of a HornClause with a constraint RelationalPredicate sans the X part
 
-*** examples: HAS IS method definition in a type declaration
+***** examples: HAS IS method definition in a type declaration
 
 | DECLARE |   | Round  | IS | A | Type   |        |   |      |                  |       |                  |
 | HAS     | 2 | Player | IS | A | Player |        |   |      |                  |       |                  |
@@ -455,7 +485,7 @@ fragment of a HornClause with a constraint RelationalPredicate sans the X part
 
 HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
 
-*** contexts
+***** contexts
 
 constitutive rule
 
@@ -466,9 +496,9 @@ type DECLARE rule
 | DECLARE | ... | HAS | something | IS | A | Something |
 |         |     |     |           | IS |   | HornClauseRHS |
 
-** lots of variants on horn clauses
+**** lots of variants on horn clauses
 
-*** x is y when z or q
+***** x is y when z or q
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-variant-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -480,7 +510,7 @@ type DECLARE rule
 | OR   | X | IS | a sibling    |
 
 
-*** x is y means z or q
+***** x is y means z or q
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-variant-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -491,7 +521,7 @@ type DECLARE rule
 | OR    | X | IS | a descendant |
 | OR    | X | IS | a sibling    |
 
-*** x means y when z
+***** x means y when z
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-variant-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -499,7 +529,7 @@ type DECLARE rule
 
 nope.
 
-*** x includes y when z
+***** x includes y when z
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-variant-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -510,7 +540,7 @@ nope.
 | OR   | Y | IS       | a descendant |
 | OR   | Y | IS       | a sibling    |
 
-** RelationalPredicate: IsRelation
+**** RelationalPredicate: IsRelation
 
 MultiText (pToken IS) MultiText
 
@@ -518,7 +548,7 @@ MultiText (pToken IS) MultiText
 
 used for equality and unification
 
-*** simple relationalpredicate in a WHO
+***** simple relationalpredicate in a WHO
 :PROPERTIES:
 :TABLE_EXPORT_FILE: relpred-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -529,11 +559,11 @@ used for equality and unification
 | MUST  | sing       |
 
 
-** RelationalPredicate: Constraint
+**** RelationalPredicate: Constraint
 
 MultiText RelToken MultiText
 
-*** examples:
+***** examples:
 
 | P | > | NP |
 
@@ -543,11 +573,11 @@ MultiText RelToken MultiText
 
 | degustates|
 
-*** contexts
+***** contexts
 
 - part of a HornClause
   
-** RelationalPredicate: N-ary Predicate
+**** RelationalPredicate: N-ary Predicate
 
 ParamText list of words, untyped.
 
@@ -555,19 +585,19 @@ ParamText list of words, untyped.
 - where the ~Predicate~ is an n-ary predicate
 - where n is the number of RecordNames preceding the Predicate
 
-*** examples: unary predicate, type Bool
+***** examples: unary predicate, type Bool
 
 | DECIDE | Person | isMortal | WHEN | Person | isHuman |
 
-*** examples: unary function, type Player
+***** examples: unary function, type Player
 
 | DECLARE | Round | winner
 
-*** contexts
+***** contexts
 
 - part of a HornClause
 
-** ConstitutiveRule, Binary Predicate definition, explicit, infix
+**** ConstitutiveRule, Binary Predicate definition, explicit, infix
 
 | GIVEN  | Sign1 |       | Sign2 | IS | A        | Sign |       |    |          |
 | DECIDE | Sign1 | beats | Sign2 |    |          |      |       |    |          |
@@ -575,18 +605,18 @@ ParamText list of words, untyped.
 |        | "     | "     | "     | "  | Scissors | "    | "     | "  | Paper    |
 |        | "     | "     | "     | "  | Paper    | "    | "     | "  | Rock     |
 
-** Binary Predicate definition, compact
+**** Binary Predicate definition, compact
 
 |       |          | beats |          |
 | MEANS | Rock     | beats | Scissors |
 |       | Scissors | beats | Rock     |
 |       | Paper    | beats | Rock     |
 
-** Type Declaration
+**** Type Declaration
 
 DECLARE ParamText
 
-** HasRelation
+**** HasRelation
 
 
 

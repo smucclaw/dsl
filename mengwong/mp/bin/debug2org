@@ -12,6 +12,8 @@ my ($pipe_line) = grep { /\| \| \|/ } @input;
 my ($prefix_length) = length (($pipe_line =~ /^([^|]+)\|/)[0]);
 # print $prefix_length;
 
+print "* preface", "\n";
+
 for (@input) {
   my $prefix = substr($_, 0, $prefix_length);
   my $rhs = substr($_, $prefix_length);

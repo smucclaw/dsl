@@ -312,7 +312,7 @@ stanzaAsStream rs =
         aCol <  bCol &&
         aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
                         a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
-                        : replicate (aCol - bCol) unDp   --- |     | bar | -> |     ( bar |
+                        : replicate (bCol - aCol) goDp   --- |     | bar | -> |     ( bar |
 
       | aCol <  bCol =  a                                --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
                         : replicate (bCol - aCol) goDp
@@ -734,7 +734,7 @@ exprP = debugName "expr pParamText" $ do
   -- expr pParamText has returned MyLabel "pay" (MyLeaf (("to" :| ["the King"],Nothing) :| [("amount" :| ["$20"],Nothing)]))
   -- to MyLeaf (("pay" :| [], Nothing) :| [("to" :| ["the King"], Nothing) ...
   return $ case raw of
-    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
+--    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText

@@ -111,10 +111,11 @@ main = do
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
+  let dumpStream s = traceShowM (tokenVal <$> unMyStream s)
   let parseR = runMyParser combine runConfig
-  let parseR1 x y s = runMyParser combine runConfigDebug x y s <* traceShowM (tokenVal <$> unMyStream s)
+  let parseR1 x y s = dumpStream s >> runMyParser combine runConfigDebug x y s
   let parseOther  = runMyParser id runConfig
-  let parseOther1 x y s = runMyParser id runConfigDebug x y s <* traceShowM (tokenVal <$> unMyStream s)
+  let parseOther1 x y s = dumpStream s >> runMyParser id runConfigDebug x y s
 
   hspec $ do
     describe "Nothing Test" $ do
@@ -650,8 +651,9 @@ main = do
                                                               , MyLeaf (text2pt "mid4") ]
                         ],[])
 
-      filetest "indent-2-c" "should handle indent-2-c which has a label"
-        (parseOther exprP) ablcd 
+      filetest "indent-2-c" "label samecol" (parseOther1 exprP) ablcd 
+      filetest "indent-2-c-2" "label right" (parseOther1 exprP) ablcd 
+      filetest "indent-2-c-3" "label left"  (parseOther1 exprP) ablcd 
 
       filetest "indent-2-d" "should handle indent-2-d which goes out, in, out"
         (parseOther exprP)
@@ -707,7 +709,7 @@ main = do
                          { who = Just ( Leaf ( RPMT ["eats"] ) ) }
 
           whoStructR_2 = defaultReg
-                         { who = Just ( Leaf ( RPMT ["eats"] ) ) }
+                         { who = Just ( Leaf ( RPMT ["eats", "rudely"] ) ) }
           
           whoStructR_3 = defaultReg
                          { who = Just ( Leaf ( RPMT ["eats", "without", "manners"] ) ) }

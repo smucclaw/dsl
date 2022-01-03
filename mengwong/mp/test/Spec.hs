@@ -198,7 +198,7 @@ main = do
         (parseR pRules) [degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes" 
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -370,11 +370,11 @@ main = do
             { name = ["Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [ HC2 { hHead = RPMT ["Bob's your uncle"]
-                    , hBody = Just $ Not ( Any Nothing [mkLeafR "Bob is estranged"
-                                                       ,mkLeafR "Bob is dead"])}]
-            , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }
-
+              [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [Leaf (RPMT ["Bob is estranged"])
+                                                                                      ,Leaf (RPMT ["Bob is dead"])]))
+                   , hBody = Nothing}]
+            , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
+      
       filetest "bob-head-1" "bob-head-1: less indented NOT"
         (parseR pRules) []
 

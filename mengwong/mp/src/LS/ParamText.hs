@@ -97,7 +97,7 @@ pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA pKeyValues (toList . fst)
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do
-             (lhs, typesig) <- pNumOrText `someDeepThen` pTypeSig
+             (lhs, typesig) <- pNumOrText `someDeepThenMaybe` pTypeSig
              return (fromList lhs, typesig)
 
 -- utility function for the above

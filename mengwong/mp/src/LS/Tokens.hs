@@ -172,25 +172,40 @@ manyDeep p =
     debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
   )
 
+someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
+someDeepThen p1 p2 = someIndentation $ manyDeepThen p1 p2
+someDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
+someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
+
+
+-- continuation:
 -- what if you want to match something like
--- foo foo foo foo foo (maybe bar)
-someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
-someDeepThen p1 p2 = debugName "someDeepThen" $ do
+-- foo foo foo foo foo (bar)
+manyDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
+manyDeepThen p1 p2 = debugName "someDeepThen" $ do
   p <- try (debugName "someDeepThen/initial" p1)
-  (typesig, lhs) <- donext
-  return (p:lhs, typesig)
+  (lhs, rhs) <- donext
+  return (p:lhs, rhs)
   where
-    donext = try (debugName "going inner" (try $ someIndentation inner)
-                  <|>
-                  debugName "going base" base)
-    inner = do
-      p1' <- debugName "someDeepThen/inner/p1" $ optional p1
-      maybe base
-        (\p -> fmap (p :) <$> donext)
-        p1'
-    base = debugName "someDeepThen/base" $ do
-      typesig <- optional $ try (someIndentation p2)
-      return (typesig, [])
+    donext = debugName "going inner" (try $ someIndentation $ manyDeepThen p1 p2)
+             <|> debugName "going rhs" base
+    base = debugName "manyDeepThen/base" $ do
+      rhs <- try (someIndentation p2)
+      return ([], rhs)
+
+manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
+manyDeepThenMaybe p1 p2 = debugName "someDeepThenMaybe" $ do
+  p <- try (debugName "someDeepThenMaybe/initial" p1)
+  (lhs, rhs) <- donext
+  return (p:lhs, rhs)
+  where
+    donext = debugName "going inner" (try $ someIndentation $ manyDeepThenMaybe p1 p2)
+             <|> debugName "going rhs" base
+    base = debugName "manyThenMaybe/base" $ do
+      rhs <- optional $ try (someIndentation p2)
+      return ([], rhs)
+
+
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
@@ -267,10 +282,9 @@ infixl 4 `indented1`
 -- an indent3 isn't as easy as just stacking on another      `indentChain` pThree
 -- you have to do it this way instead.
 indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
-indent3 f p1 p2 p3 = do
+indent3 f p1 p2 p3 = debugName "indent3" $ do
   p1' <- p1
   someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
-
 
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
 optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do

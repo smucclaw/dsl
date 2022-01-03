@@ -377,7 +377,7 @@ main = do
         (parseR pRules) []
 
       filetest "bob-head-1-b" "more indented NOT"
-        (parseR1 pRules) [bobUncle1]
+        (parseR pRules) [bobUncle1]
 
 {--
 
@@ -614,7 +614,7 @@ main = do
       filetest "horn-0-1" "should parse X IS Y"
         (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 
-      filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR1 pToplevel) simpleHorn02
+      filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
       filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
 {-

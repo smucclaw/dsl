@@ -1,464 +1,469 @@
 mp> test (suite: mp-test, args: --match "/megaparsing/simple-constitutive-1: should parse a simple constitutive rule/")
 
-GoDeeper    / pRule: unwrapping indentation
-GoDeeper    | / myindented: consuming GoDeeper
-Other "degus| \ myindented: consuming GoDeeper has returned GoDeeper
-Other "degus| / pRule: unwrapping indentation
-Other "degus| | / myindented: consuming GoDeeper
-Other "degus| / pRegRule
-Other "degus| | / pRuleLabel
-Other "degus| | / pRegRuleSugary
-Other "degus| | | / pMultiTermAka
-Other "degus| | | | / pAKA
-Other "degus| | | | | / pAKA base
-Other "degus| | | | | | / pMultiTerm calling someDeep choice
-Other "degus| | | | | | | / someDeep
-Other "degus| | | | | | | | / manyIndentation/leaf?
-Other "degus| | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | \ someDeep first part calls base directly has returned "degustates"
-UnDeeper    | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | / pNumAsText
-UnDeeper    | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | \ manyIndentation/leaf? has returned ["degustates"]
-UnDeeper    | | | | | | | \ someDeep has returned ["degustates"]
-UnDeeper    | | | | | | \ pMultiTerm calling someDeep choice has returned ["degustates"]
-UnDeeper    | | | | | \ pAKA base has returned ["degustates"]
-UnDeeper    | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | / Aka Token
-UnDeeper    | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | / someIndentation
-UnDeeper    | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | \ pAKA has returned ["degustates"]
-UnDeeper    | | | \ pMultiTermAka has returned ["degustates"]
-UnDeeper    | | | / someIndentation
-UnDeeper    | | | | / myindented: consuming GoDeeper
-Other "degus| | / pRegRuleNormal
-Other "degus| | | / permutationsReg
-Other "degus| | | | / regulative permutation with deontic-temporal
-Other "degus| | | | | / preambleBoolStructR [Unless]
-Other "degus| | | | | / preambleBoolStructR [When,If]
-Other "degus| | | | | / pDT
-Other "degus| | | | | | / optIndentedTuple
-Other "degus| | | | | | | / optIndented
-Other "degus| | | | | / pActor [Every,Party,TokAll]
-Other "degus| | | | | / pDoAction/Do
-Other "degus| | | | / regulative permutation with deontic-action
-Other "degus| | | | | / preambleBoolStructR [Unless]
-Other "degus| | | | | / preambleBoolStructR [When,If]
-Other "degus| | | | | / pTemporal/eventually
-Other "degus| | | | | / pTemporal/specifically
-Other "degus| | | | | / pTemporal/vaguely
-UnDeeper    | | | | | \ pTemporal/vaguely has returned Just (TemporalConstraint TVague 0 "degustates")
-UnDeeper    | | | | | / preambleBoolStructR [Unless]
-UnDeeper    | | | | | / preambleBoolStructR [When,If]
-UnDeeper    | | | | | / pActor [Every,Party,TokAll]
-UnDeeper    | | | | | / pDA
-Other "degus| / pHornlike
-Other "degus| | / pRuleLabel
-Other "degus| | / pHornlike / permute
-Other "degus| | | / pHornlike/uponLimb
-Other "degus| | | / pHornlike/givenLimb
-Other "degus| | | / pHornlike/someStructure
-Other "degus| | | | / someIndentation
-Other "degus| | | | | / myindented: consuming GoDeeper
-Other "degus| | | / pHornlike/someStructure
-Other "degus| | | | / someIndentation
-Other "degus| | | | | / myindented: consuming GoDeeper
-Other "degus| | | / pHornlike/givenLimb
-Other "degus| | | / pHornlike/uponLimb
-Other "degus| | | / pHornlike/someStructure
-Other "degus| | | | / someIndentation
-Other "degus| | | | | / myindented: consuming GoDeeper
-Other "degus| | | / pHornlike/someStructure
-Other "degus| | | | / someIndentation
-Other "degus| | | | | / myindented: consuming GoDeeper
-Other "degus| | | / pHornlike/someStructure
-Other "degus| | | | / someIndentation
-Other "degus| | | | | / myindented: consuming GoDeeper
-Other "degus| / pRuleLabel
-GoDeeper    / pRegRule
-GoDeeper    | / pRuleLabel
-GoDeeper    | / pRegRuleSugary
-GoDeeper    | | / pMultiTermAka
-GoDeeper    | | | / pAKA
-GoDeeper    | | | | / pAKA base
-GoDeeper    | | | | | / pMultiTerm calling someDeep choice
-GoDeeper    | | | | | | / someDeep
-GoDeeper    | | | | | | | / manyIndentation/leaf?
-GoDeeper    | | | | | | | | / someDeep first part calls base directly
-GoDeeper    | | | | | | | | | / pNumAsText
-GoDeeper    | | | | | | | / manyIndentation/deeper; calling someIndentation
-GoDeeper    | | | | | | | | / someIndentation
-GoDeeper    | | | | | | | | | / myindented: consuming GoDeeper
-Other "degus| | | | | | | | | \ myindented: consuming GoDeeper has returned GoDeeper
-Other "degus| | | | | | | | | / manyIndentation/leaf?
-Other "degus| | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | \ someDeep first part calls base directly has returned "degustates"
-UnDeeper    | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / pNumAsText
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | \ manyIndentation/leaf? has returned ["degustates"]
-UnDeeper    | | | | | | | | | / myindented: consuming UnDeeper
-Means       | | | | | | | | | \ myindented: consuming UnDeeper has returned UnDeeper
-Means       | | | | | | | | \ someIndentation has returned ["degustates"]
-Means       | | | | | | | \ manyIndentation/deeper; calling someIndentation has returned ["degustates"]
-Means       | | | | | | \ someDeep has returned ["degustates"]
-Means       | | | | | \ pMultiTerm calling someDeep choice has returned ["degustates"]
-Means       | | | | \ pAKA base has returned ["degustates"]
-Means       | | | | / manyIndentation/leaf?
-Means       | | | | | / Aka Token
-Means       | | | | / manyIndentation/deeper; calling someIndentation
-Means       | | | | | / someIndentation
-Means       | | | | | | / myindented: consuming GoDeeper
-Means       | | | \ pAKA has returned ["degustates"]
-Means       | | \ pMultiTermAka has returned ["degustates"]
-Means       | | / someIndentation
-Means       | | | / myindented: consuming GoDeeper
-GoDeeper    | / pRegRuleNormal
-GoDeeper    | | / permutationsReg
-GoDeeper    | | | / regulative permutation with deontic-temporal
-GoDeeper    | | | | / preambleBoolStructR [Unless]
-GoDeeper    | | | | / preambleBoolStructR [When,If]
-GoDeeper    | | | | / pDT
-GoDeeper    | | | | | / optIndentedTuple
-GoDeeper    | | | | | | / optIndented
-GoDeeper    | | | | / pActor [Every,Party,TokAll]
-GoDeeper    | | | | / pDoAction/Do
-GoDeeper    | | | / regulative permutation with deontic-action
-GoDeeper    | | | | / preambleBoolStructR [Unless]
-GoDeeper    | | | | / preambleBoolStructR [When,If]
-GoDeeper    | | | | / pTemporal/eventually
-GoDeeper    | | | | / pTemporal/specifically
-GoDeeper    | | | | / pTemporal/vaguely
-GoDeeper    | | | | / pActor [Every,Party,TokAll]
-GoDeeper    | | | | / pDA
-GoDeeper    / pHornlike
-GoDeeper    | / pRuleLabel
-GoDeeper    | / pHornlike / permute
-GoDeeper    | | / pHornlike/uponLimb
-GoDeeper    | | / pHornlike/givenLimb
-GoDeeper    | | / pHornlike/someStructure
-GoDeeper    | | | / someIndentation
-GoDeeper    | | | | / myindented: consuming GoDeeper
-Other "degus| | | | \ myindented: consuming GoDeeper has returned GoDeeper
-Other "degus| | | | / manyIndentation/leaf?
-Other "degus| | | | | / optIndentedTuple
-Other "degus| | | | | | / optIndented
-Other "degus| | | | | | | / pMultiTerm calling someDeep choice
-Other "degus| | | | | | | | / someDeep
-Other "degus| | | | | | | | | / manyIndentation/leaf?
-Other "degus| | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | \ someDeep first part calls base directly has returned "degustates"
-UnDeeper    | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / pNumAsText
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | \ manyIndentation/leaf? has returned ["degustates"]
-UnDeeper    | | | | | | | | \ someDeep has returned ["degustates"]
-UnDeeper    | | | | | | | \ pMultiTerm calling someDeep choice has returned ["degustates"]
-UnDeeper    | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | / myindented: consuming GoDeeper
-Other "degus| | | | | | | / pMultiTerm calling someDeep choice
-Other "degus| | | | | | | | / someDeep
-Other "degus| | | | | | | | | / manyIndentation/leaf?
-Other "degus| | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | \ someDeep first part calls base directly has returned "degustates"
-UnDeeper    | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / pNumAsText
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | \ manyIndentation/leaf? has returned ["degustates"]
-UnDeeper    | | | | | | | | \ someDeep has returned ["degustates"]
-UnDeeper    | | | | | | | \ pMultiTerm calling someDeep choice has returned ["degustates"]
-UnDeeper    | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | / myindented: consuming GoDeeper
-Other "degus| | | | | | | / pMultiTerm calling someDeep choice
-Other "degus| | | | | | | | / someDeep
-Other "degus| | | | | | | | | / manyIndentation/leaf?
-Other "degus| | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | \ someDeep first part calls base directly has returned "degustates"
-UnDeeper    | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / pNumAsText
-UnDeeper    | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | \ manyIndentation/leaf? has returned ["degustates"]
-UnDeeper    | | | | | | | | \ someDeep has returned ["degustates"]
-UnDeeper    | | | | | | | \ pMultiTerm calling someDeep choice has returned ["degustates"]
-UnDeeper    | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | \ optIndented has returned (RPMT ["degustates"],Nothing)
-UnDeeper    | | | | | \ optIndentedTuple has returned (RPMT ["degustates"],Nothing)
-UnDeeper    | | | | \ manyIndentation/leaf? has returned (RPMT ["degustates"],Nothing)
-UnDeeper    | | | | / myindented: consuming UnDeeper
-Means       | | | | \ myindented: consuming UnDeeper has returned UnDeeper
-Means       | | | \ someIndentation has returned (RPMT ["degustates"],Nothing)
-Means       | | \ pHornlike/someStructure has returned (Nothing,["degustates"],[HC2 {hHead = RPMT ["degustates"], hBody = Nothing}])
-Means       | \ pHornlike / permute has returned ((Nothing,["degustates"],[HC2 {hHead = RPMT ["degustates"], hBody = Nothing}]),Nothing,Nothing)
-Means       \ pHornlike has returned Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["degustates"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}
-Means       / pRule: unwrapping indentation
-Means       | / myindented: consuming GoDeeper
-Means       / pRegRule
-Means       | / pRuleLabel
-Means       | / pRegRuleSugary
-Means       | | / pMultiTermAka
-Means       | | | / pAKA
-Means       | | | | / pAKA base
-Means       | | | | | / pMultiTerm calling someDeep choice
-Means       | | | | | | / someDeep
-Means       | | | | | | | / manyIndentation/leaf?
-Means       | | | | | | | | / someDeep first part calls base directly
-Means       | | | | | | | | | / pNumAsText
-Means       | | | | | | | / manyIndentation/deeper; calling someIndentation
-Means       | | | | | | | | / someIndentation
-Means       | | | | | | | | | / myindented: consuming GoDeeper
-Means       | / pRegRuleNormal
-Means       | | / permutationsReg
-Means       | | | / regulative permutation with deontic-temporal
-Means       | | | | / preambleBoolStructR [Unless]
-Means       | | | | / preambleBoolStructR [When,If]
-Means       | | | | / pDT
-Means       | | | | | / optIndentedTuple
-Means       | | | | | | / optIndented
-Means       | | | | / pActor [Every,Party,TokAll]
-Means       | | | | / pDoAction/Do
-Means       | | | / regulative permutation with deontic-action
-Means       | | | | / preambleBoolStructR [Unless]
-Means       | | | | / preambleBoolStructR [When,If]
-Means       | | | | / pTemporal/eventually
-Means       | | | | / pTemporal/specifically
-Means       | | | | / pTemporal/vaguely
-Means       | | | | / pActor [Every,Party,TokAll]
-Means       | | | | / pDA
-Means       / pHornlike
-Means       | / pRuleLabel
-Means       | / pHornlike / permute
-Means       | | / pHornlike/uponLimb
-Means       | | / pHornlike/givenLimb
-Means       | | / pHornlike/someStructure
-Means       | | | / someIndentation
-Means       | | | | / myindented: consuming GoDeeper
-Means       | | / pHornlike/someStructure
-Means       | | | / someIndentation
-Means       | | | | / myindented: consuming GoDeeper
-Means       | | / pHornlike/givenLimb
-Means       | | / pHornlike/uponLimb
-Means       | | / pHornlike/someStructure
-Means       | | | / someIndentation
-Means       | | | | / myindented: consuming GoDeeper
-Means       | | / pHornlike/someStructure
-Means       | | | / someIndentation
-Means       | | | | / myindented: consuming GoDeeper
-Means       | | / pHornlike/someStructure
-Means       | | | / someIndentation
-Means       | | | | / myindented: consuming GoDeeper
-Means       / pRuleLabel
-Means       / pNotARule
-Means       | pNotARule: starting
-Means       | / manyDeep
-Means       | | / manyDeep calling someDeep
-Means       | | | / someDeep
-Means       | | | | / manyIndentation/leaf?
-Means       | | | | | / someDeep first part calls base directly
-GoDeeper    | | | | | \ someDeep first part calls base directly has returned Means
-GoDeeper    | | | | | / someDeep second part calls manyDeep
-GoDeeper    | | | | | | / manyDeep
-GoDeeper    | | | | | | | / manyDeep calling someDeep
-GoDeeper    | | | | | | | | / someDeep
-GoDeeper    | | | | | | | | | / manyIndentation/leaf?
-GoDeeper    | | | | | | | | | | / someDeep first part calls base directly
-GoDeeper    | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-GoDeeper    | | | | | | | | | | / someIndentation
-GoDeeper    | | | | | | | | | | | / myindented: consuming GoDeeper
-Other "eats"| | | | | | | | | | | \ myindented: consuming GoDeeper has returned GoDeeper
-Other "eats"| | | | | | | | | | | / manyIndentation/leaf?
-Other "eats"| | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | \ someDeep first part calls base directly has returned Other "eats"
-UnDeeper    | | | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | | | \ manyIndentation/leaf? has returned [Other "eats"]
-UnDeeper    | | | | | | | | | | | / myindented: consuming UnDeeper
-Or          | | | | | | | | | | | \ myindented: consuming UnDeeper has returned UnDeeper
-Or          | | | | | | | | | | \ someIndentation has returned [Other "eats"]
-Or          | | | | | | | | | \ manyIndentation/deeper; calling someIndentation has returned [Other "eats"]
-Or          | | | | | | | | \ someDeep has returned [Other "eats"]
-Or          | | | | | | | \ manyDeep calling someDeep has returned [Other "eats"]
-Or          | | | | | | \ manyDeep has returned [Other "eats"]
-Or          | | | | | \ someDeep second part calls manyDeep has returned [Other "eats"]
-Or          | | | | \ manyIndentation/leaf? has returned [Means,Other "eats"]
-Or          | | | \ someDeep has returned [Means,Other "eats"]
-Or          | | \ manyDeep calling someDeep has returned [Means,Other "eats"]
-Or          | \ manyDeep has returned [Means,Other "eats"]
-Or          | pNotARule: returning
-Or          \ pNotARule has returned NotARule [Means,Other "eats"]
-Or          / pRule: unwrapping indentation
-Or          | / myindented: consuming GoDeeper
-Or          / pRegRule
-Or          | / pRuleLabel
-Or          | / pRegRuleSugary
-Or          | | / pMultiTermAka
-Or          | | | / pAKA
-Or          | | | | / pAKA base
-Or          | | | | | / pMultiTerm calling someDeep choice
-Or          | | | | | | / someDeep
-Or          | | | | | | | / manyIndentation/leaf?
-Or          | | | | | | | | / someDeep first part calls base directly
-Or          | | | | | | | | | / pNumAsText
-Or          | | | | | | | / manyIndentation/deeper; calling someIndentation
-Or          | | | | | | | | / someIndentation
-Or          | | | | | | | | | / myindented: consuming GoDeeper
-Or          | / pRegRuleNormal
-Or          | | / permutationsReg
-Or          | | | / regulative permutation with deontic-temporal
-Or          | | | | / preambleBoolStructR [Unless]
-Or          | | | | / preambleBoolStructR [When,If]
-Or          | | | | / pDT
-Or          | | | | | / optIndentedTuple
-Or          | | | | | | / optIndented
-Or          | | | | / pActor [Every,Party,TokAll]
-Or          | | | | / pDoAction/Do
-Or          | | | / regulative permutation with deontic-action
-Or          | | | | / preambleBoolStructR [Unless]
-Or          | | | | / preambleBoolStructR [When,If]
-Or          | | | | / pTemporal/eventually
-Or          | | | | / pTemporal/specifically
-Or          | | | | / pTemporal/vaguely
-Or          | | | | / pActor [Every,Party,TokAll]
-Or          | | | | / pDA
-Or          / pHornlike
-Or          | / pRuleLabel
-Or          | / pHornlike / permute
-Or          | | / pHornlike/uponLimb
-Or          | | / pHornlike/givenLimb
-Or          | | / pHornlike/someStructure
-Or          | | | / someIndentation
-Or          | | | | / myindented: consuming GoDeeper
-Or          | | / pHornlike/someStructure
-Or          | | | / someIndentation
-Or          | | | | / myindented: consuming GoDeeper
-Or          | | / pHornlike/givenLimb
-Or          | | / pHornlike/uponLimb
-Or          | | / pHornlike/someStructure
-Or          | | | / someIndentation
-Or          | | | | / myindented: consuming GoDeeper
-Or          | | / pHornlike/someStructure
-Or          | | | / someIndentation
-Or          | | | | / myindented: consuming GoDeeper
-Or          | | / pHornlike/someStructure
-Or          | | | / someIndentation
-Or          | | | | / myindented: consuming GoDeeper
-Or          / pRuleLabel
-Or          / pNotARule
-Or          | pNotARule: starting
-Or          | / manyDeep
-Or          | | / manyDeep calling someDeep
-Or          | | | / someDeep
-Or          | | | | / manyIndentation/leaf?
-Or          | | | | | / someDeep first part calls base directly
-GoDeeper    | | | | | \ someDeep first part calls base directly has returned Or
-GoDeeper    | | | | | / someDeep second part calls manyDeep
-GoDeeper    | | | | | | / manyDeep
-GoDeeper    | | | | | | | / manyDeep calling someDeep
-GoDeeper    | | | | | | | | / someDeep
-GoDeeper    | | | | | | | | | / manyIndentation/leaf?
-GoDeeper    | | | | | | | | | | / someDeep first part calls base directly
-GoDeeper    | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-GoDeeper    | | | | | | | | | | / someIndentation
-GoDeeper    | | | | | | | | | | | / myindented: consuming GoDeeper
-Other "drink| | | | | | | | | | | \ myindented: consuming GoDeeper has returned GoDeeper
-Other "drink| | | | | | | | | | | / manyIndentation/leaf?
-Other "drink| | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | \ someDeep first part calls base directly has returned Other "drinks"
-UnDeeper    | | | | | | | | | | | | / someDeep second part calls manyDeep
-UnDeeper    | | | | | | | | | | | | | / manyDeep
-UnDeeper    | | | | | | | | | | | | | | / manyDeep calling someDeep
-UnDeeper    | | | | | | | | | | | | | | | / someDeep
-UnDeeper    | | | | | | | | | | | | | | | | / manyIndentation/leaf?
-UnDeeper    | | | | | | | | | | | | | | | | | / someDeep first part calls base directly
-UnDeeper    | | | | | | | | | | | | | | | | / manyIndentation/deeper; calling someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | | / someIndentation
-UnDeeper    | | | | | | | | | | | | | | | | | | / myindented: consuming GoDeeper
-UnDeeper    | | | | | | | | | | | | | | / someDeep failed, manyDeep defaulting to retun []
-UnDeeper    | | | | | | | | | | | | | | \ someDeep failed, manyDeep defaulting to retun [] has returned []
-UnDeeper    | | | | | | | | | | | | | \ manyDeep has returned []
-UnDeeper    | | | | | | | | | | | | \ someDeep second part calls manyDeep has returned []
-UnDeeper    | | | | | | | | | | | \ manyIndentation/leaf? has returned [Other "drinks"]
-UnDeeper    | | | | | | | | | | | / myindented: consuming UnDeeper
-EOF         | | | | | | | | | | | \ myindented: consuming UnDeeper has returned UnDeeper
-EOF         | | | | | | | | | | \ someIndentation has returned [Other "drinks"]
-EOF         | | | | | | | | | \ manyIndentation/deeper; calling someIndentation has returned [Other "drinks"]
-EOF         | | | | | | | | \ someDeep has returned [Other "drinks"]
-EOF         | | | | | | | \ manyDeep calling someDeep has returned [Other "drinks"]
-EOF         | | | | | | \ manyDeep has returned [Other "drinks"]
-EOF         | | | | | \ someDeep second part calls manyDeep has returned [Other "drinks"]
-EOF         | | | | \ manyIndentation/leaf? has returned [Or,Other "drinks"]
-EOF         | | | \ someDeep has returned [Or,Other "drinks"]
-EOF         | | \ manyDeep calling someDeep has returned [Or,Other "drinks"]
-EOF         | \ manyDeep has returned [Or,Other "drinks"]
-EOF         | pNotARule: returning
-EOF         \ pNotARule has returned NotARule [Or,Other "drinks"]
+* / pRule                                                                                          :GoDeeper:
+** / pRule: unwrapping indentation and recursing                                                  :GoDeeper:
+*** / myindented: consuming GoDeeper                                                             :GoDeeper:
+*** \ myindented: consuming GoDeeper has returned GoDeeper                                       :Other "degus:
+*** / pRule                                                                                      :Other "degus:
+**** / pRule: unwrapping indentation and recursing                                              :Other "degus:
+***** / myindented: consuming GoDeeper                                                         :Other "degus:
+**** / pRegRule                                                                                 :Other "degus:
+***** / pRuleLabel                                                                             :Other "degus:
+***** / pRegRuleSugary                                                                         :Other "degus:
+****** / pMultiTermAka                                                                        :Other "degus:
+******* / pAKA                                                                               :Other "degus:
+******** / pAKA base                                                                        :Other "degus:
+********* / pMultiTerm calling someDeep choice                                             :Other "degus:
+********** / someDeep                                                                     :Other "degus:
+*********** / manyIndentation/leaf?                                                      :Other "degus:
+************ / someDeep first part calls base directly                                  :Other "degus:
+************ \ someDeep first part calls base directly has returned "degustates"        :UnDeeper:
+************ / someDeep second part calls manyDeep                                      :UnDeeper:
+************* / manyDeep                                                               :UnDeeper:
+************** / manyDeep calling someDeep                                            :UnDeeper:
+*************** / someDeep                                                           :UnDeeper:
+**************** / manyIndentation/leaf?                                            :UnDeeper:
+***************** / someDeep first part calls base directly                        :UnDeeper:
+****************** / pNumAsText                                                   :UnDeeper:
+**************** / manyIndentation/deeper; calling someIndentation                  :UnDeeper:
+***************** / someIndentation                                                :UnDeeper:
+****************** / myindented: consuming GoDeeper                               :UnDeeper:
+************** / someDeep failed, manyDeep defaulting to retun []                     :UnDeeper:
+************** \ someDeep failed, manyDeep defaulting to retun [] has returned []     :UnDeeper:
+************* \ manyDeep has returned []                                               :UnDeeper:
+************ \ someDeep second part calls manyDeep has returned []                      :UnDeeper:
+*********** \ manyIndentation/leaf? has returned ["degustates"]                          :UnDeeper:
+********** \ someDeep has returned ["degustates"]                                         :UnDeeper:
+********* \ pMultiTerm calling someDeep choice has returned ["degustates"]                 :UnDeeper:
+******** \ pAKA base has returned ["degustates"]                                            :UnDeeper:
+******** / manyIndentation/leaf?                                                            :UnDeeper:
+********* / Aka Token                                                                      :UnDeeper:
+******** / manyIndentation/deeper; calling someIndentation                                  :UnDeeper:
+********* / someIndentation                                                                :UnDeeper:
+********** / myindented: consuming GoDeeper                                               :UnDeeper:
+******* \ pAKA has returned ["degustates"]                                                   :UnDeeper:
+****** \ pMultiTermAka has returned ["degustates"]                                            :UnDeeper:
+****** / someIndentation                                                                      :UnDeeper:
+******* / myindented: consuming GoDeeper                                                     :UnDeeper:
+***** / pRegRuleNormal                                                                         :Other "degus:
+****** / permutationsReg                                                                      :Other "degus:
+******* / regulative permutation with deontic-temporal                                       :Other "degus:
+******** / preambleBoolStructR [Unless]                                                     :Other "degus:
+******** / preambleBoolStructR [When,If]                                                    :Other "degus:
+******** / pDT                                                                              :Other "degus:
+********* / optIndentedTuple                                                               :Other "degus:
+********** / optIndented                                                                  :Other "degus:
+******** / pActor [Every,Party,TokAll]                                                      :Other "degus:
+******** / pDoAction/Do                                                                     :Other "degus:
+******* / regulative permutation with deontic-action                                         :Other "degus:
+******** / preambleBoolStructR [Unless]                                                     :Other "degus:
+******** / preambleBoolStructR [When,If]                                                    :Other "degus:
+******** / pTemporal/eventually                                                             :Other "degus:
+******** / pTemporal/specifically                                                           :Other "degus:
+******** / pTemporal/vaguely                                                                :Other "degus:
+******** \ pTemporal/vaguely has returned Just (TemporalConstraint TVague 0 "degustates")   :UnDeeper:
+******** / preambleBoolStructR [Unless]                                                     :UnDeeper:
+******** / preambleBoolStructR [When,If]                                                    :UnDeeper:
+******** / pActor [Every,Party,TokAll]                                                      :UnDeeper:
+******** / pDA                                                                              :UnDeeper:
+**** / pHornlike                                                                                :Other "degus:
+***** / pRuleLabel                                                                             :Other "degus:
+***** / pHornlike / permute                                                                    :Other "degus:
+****** / pHornlike/uponLimb                                                                   :Other "degus:
+****** / pHornlike/givenLimb                                                                  :Other "degus:
+****** / pHornlike/someStructure                                                              :Other "degus:
+******* / someIndentation                                                                    :Other "degus:
+******** / myindented: consuming GoDeeper                                                   :Other "degus:
+****** / pHornlike/someStructure                                                              :Other "degus:
+******* / someIndentation                                                                    :Other "degus:
+******** / myindented: consuming GoDeeper                                                   :Other "degus:
+****** / pHornlike/givenLimb                                                                  :Other "degus:
+****** / pHornlike/uponLimb                                                                   :Other "degus:
+****** / pHornlike/someStructure                                                              :Other "degus:
+******* / someIndentation                                                                    :Other "degus:
+******** / myindented: consuming GoDeeper                                                   :Other "degus:
+****** / pHornlike/someStructure                                                              :Other "degus:
+******* / someIndentation                                                                    :Other "degus:
+******** / myindented: consuming GoDeeper                                                   :Other "degus:
+****** / pHornlike/someStructure                                                              :Other "degus:
+******* / someIndentation                                                                    :Other "degus:
+******** / myindented: consuming GoDeeper                                                   :Other "degus:
+**** / pRuleLabel                                                                               :Other "degus:
+** / pRegRule                                                                                     :GoDeeper:
+*** / pRuleLabel                                                                                 :GoDeeper:
+*** / pRegRuleSugary                                                                             :GoDeeper:
+**** / pMultiTermAka                                                                            :GoDeeper:
+***** / pAKA                                                                                   :GoDeeper:
+****** / pAKA base                                                                            :GoDeeper:
+******* / pMultiTerm calling someDeep choice                                                 :GoDeeper:
+******** / someDeep                                                                         :GoDeeper:
+********* / manyIndentation/leaf?                                                          :GoDeeper:
+********** / someDeep first part calls base directly                                      :GoDeeper:
+*********** / pNumAsText                                                                 :GoDeeper:
+********* / manyIndentation/deeper; calling someIndentation                                :GoDeeper:
+********** / someIndentation                                                              :GoDeeper:
+*********** / myindented: consuming GoDeeper                                             :GoDeeper:
+*********** \ myindented: consuming GoDeeper has returned GoDeeper                       :Other "degus:
+*********** / manyIndentation/leaf?                                                      :Other "degus:
+************ / someDeep first part calls base directly                                  :Other "degus:
+************ \ someDeep first part calls base directly has returned "degustates"        :UnDeeper:
+************ / someDeep second part calls manyDeep                                      :UnDeeper:
+************* / manyDeep                                                               :UnDeeper:
+************** / manyDeep calling someDeep                                            :UnDeeper:
+*************** / someDeep                                                           :UnDeeper:
+**************** / manyIndentation/leaf?                                            :UnDeeper:
+***************** / someDeep first part calls base directly                        :UnDeeper:
+****************** / pNumAsText                                                   :UnDeeper:
+**************** / manyIndentation/deeper; calling someIndentation                  :UnDeeper:
+***************** / someIndentation                                                :UnDeeper:
+****************** / myindented: consuming GoDeeper                               :UnDeeper:
+************** / someDeep failed, manyDeep defaulting to retun []                     :UnDeeper:
+************** \ someDeep failed, manyDeep defaulting to retun [] has returned []     :UnDeeper:
+************* \ manyDeep has returned []                                               :UnDeeper:
+************ \ someDeep second part calls manyDeep has returned []                      :UnDeeper:
+*********** \ manyIndentation/leaf? has returned ["degustates"]                          :UnDeeper:
+*********** / myindented: consuming UnDeeper                                             :UnDeeper:
+*********** \ myindented: consuming UnDeeper has returned UnDeeper                       :Means:
+********** \ someIndentation has returned ["degustates"]                                  :Means:
+********* \ manyIndentation/deeper; calling someIndentation has returned ["degustates"]    :Means:
+******** \ someDeep has returned ["degustates"]                                             :Means:
+******* \ pMultiTerm calling someDeep choice has returned ["degustates"]                     :Means:
+****** \ pAKA base has returned ["degustates"]                                                :Means:
+****** / manyIndentation/leaf?                                                                :Means:
+******* / Aka Token                                                                          :Means:
+****** / manyIndentation/deeper; calling someIndentation                                      :Means:
+******* / someIndentation                                                                    :Means:
+******** / myindented: consuming GoDeeper                                                   :Means:
+***** \ pAKA has returned ["degustates"]                                                       :Means:
+**** \ pMultiTermAka has returned ["degustates"]                                                :Means:
+**** / someIndentation                                                                          :Means:
+***** / myindented: consuming GoDeeper                                                         :Means:
+*** / pRegRuleNormal                                                                             :GoDeeper:
+**** / permutationsReg                                                                          :GoDeeper:
+***** / regulative permutation with deontic-temporal                                           :GoDeeper:
+****** / preambleBoolStructR [Unless]                                                         :GoDeeper:
+****** / preambleBoolStructR [When,If]                                                        :GoDeeper:
+****** / pDT                                                                                  :GoDeeper:
+******* / optIndentedTuple                                                                   :GoDeeper:
+******** / optIndented                                                                      :GoDeeper:
+****** / pActor [Every,Party,TokAll]                                                          :GoDeeper:
+****** / pDoAction/Do                                                                         :GoDeeper:
+***** / regulative permutation with deontic-action                                             :GoDeeper:
+****** / preambleBoolStructR [Unless]                                                         :GoDeeper:
+****** / preambleBoolStructR [When,If]                                                        :GoDeeper:
+****** / pTemporal/eventually                                                                 :GoDeeper:
+****** / pTemporal/specifically                                                               :GoDeeper:
+****** / pTemporal/vaguely                                                                    :GoDeeper:
+****** / pActor [Every,Party,TokAll]                                                          :GoDeeper:
+****** / pDA                                                                                  :GoDeeper:
+** / pHornlike                                                                                    :GoDeeper:
+*** / pRuleLabel                                                                                 :GoDeeper:
+*** / pHornlike / permute                                                                        :GoDeeper:
+**** / pHornlike/uponLimb                                                                       :GoDeeper:
+**** / pHornlike/givenLimb                                                                      :GoDeeper:
+**** / pHornlike/someStructure                                                                  :GoDeeper:
+***** / someIndentation                                                                        :GoDeeper:
+****** / myindented: consuming GoDeeper                                                       :GoDeeper:
+****** \ myindented: consuming GoDeeper has returned GoDeeper                                 :Other "degus:
+****** / manyIndentation/leaf?                                                                :Other "degus:
+******* / optIndentedTuple                                                                   :Other "degus:
+******** / optIndented                                                                      :Other "degus:
+********* / pMultiTerm calling someDeep choice                                             :Other "degus:
+********** / someDeep                                                                     :Other "degus:
+*********** / manyIndentation/leaf?                                                      :Other "degus:
+************ / someDeep first part calls base directly                                  :Other "degus:
+************ \ someDeep first part calls base directly has returned "degustates"        :UnDeeper:
+************ / someDeep second part calls manyDeep                                      :UnDeeper:
+************* / manyDeep                                                               :UnDeeper:
+************** / manyDeep calling someDeep                                            :UnDeeper:
+*************** / someDeep                                                           :UnDeeper:
+**************** / manyIndentation/leaf?                                            :UnDeeper:
+***************** / someDeep first part calls base directly                        :UnDeeper:
+****************** / pNumAsText                                                   :UnDeeper:
+**************** / manyIndentation/deeper; calling someIndentation                  :UnDeeper:
+***************** / someIndentation                                                :UnDeeper:
+****************** / myindented: consuming GoDeeper                               :UnDeeper:
+************** / someDeep failed, manyDeep defaulting to retun []                     :UnDeeper:
+************** \ someDeep failed, manyDeep defaulting to retun [] has returned []     :UnDeeper:
+************* \ manyDeep has returned []                                               :UnDeeper:
+************ \ someDeep second part calls manyDeep has returned []                      :UnDeeper:
+*********** \ manyIndentation/leaf? has returned ["degustates"]                          :UnDeeper:
+********** \ someDeep has returned ["degustates"]                                         :UnDeeper:
+********* \ pMultiTerm calling someDeep choice has returned ["degustates"]                 :UnDeeper:
+********* / someIndentation                                                                :UnDeeper:
+********** / myindented: consuming GoDeeper                                               :UnDeeper:
+********* / pMultiTerm calling someDeep choice                                             :Other "degus:
+********** / someDeep                                                                     :Other "degus:
+*********** / manyIndentation/leaf?                                                      :Other "degus:
+************ / someDeep first part calls base directly                                  :Other "degus:
+************ \ someDeep first part calls base directly has returned "degustates"        :UnDeeper:
+************ / someDeep second part calls manyDeep                                      :UnDeeper:
+************* / manyDeep                                                               :UnDeeper:
+************** / manyDeep calling someDeep                                            :UnDeeper:
+*************** / someDeep                                                           :UnDeeper:
+**************** / manyIndentation/leaf?                                            :UnDeeper:
+***************** / someDeep first part calls base directly                        :UnDeeper:
+****************** / pNumAsText                                                   :UnDeeper:
+**************** / manyIndentation/deeper; calling someIndentation                  :UnDeeper:
+***************** / someIndentation                                                :UnDeeper:
+****************** / myindented: consuming GoDeeper                               :UnDeeper:
+************** / someDeep failed, manyDeep defaulting to retun []                     :UnDeeper:
+************** \ someDeep failed, manyDeep defaulting to retun [] has returned []     :UnDeeper:
+************* \ manyDeep has returned []                                               :UnDeeper:
+************ \ someDeep second part calls manyDeep has returned []                      :UnDeeper:
+*********** \ manyIndentation/leaf? has returned ["degustates"]                          :UnDeeper:
+********** \ someDeep has returned ["degustates"]                                         :UnDeeper:
+********* \ pMultiTerm calling someDeep choice has returned ["degustates"]                 :UnDeeper:
+********* / someIndentation                                                                :UnDeeper:
+********** / myindented: consuming GoDeeper                                               :UnDeeper:
+********* / pMultiTerm calling someDeep choice                                             :Other "degus:
+********** / someDeep                                                                     :Other "degus:
+*********** / manyIndentation/leaf?                                                      :Other "degus:
+************ / someDeep first part calls base directly                                  :Other "degus:
+************ \ someDeep first part calls base directly has returned "degustates"        :UnDeeper:
+************ / someDeep second part calls manyDeep                                      :UnDeeper:
+************* / manyDeep                                                               :UnDeeper:
+************** / manyDeep calling someDeep                                            :UnDeeper:
+*************** / someDeep                                                           :UnDeeper:
+**************** / manyIndentation/leaf?                                            :UnDeeper:
+***************** / someDeep first part calls base directly                        :UnDeeper:
+****************** / pNumAsText                                                   :UnDeeper:
+**************** / manyIndentation/deeper; calling someIndentation                  :UnDeeper:
+***************** / someIndentation                                                :UnDeeper:
+****************** / myindented: consuming GoDeeper                               :UnDeeper:
+************** / someDeep failed, manyDeep defaulting to retun []                     :UnDeeper:
+************** \ someDeep failed, manyDeep defaulting to retun [] has returned []     :UnDeeper:
+************* \ manyDeep has returned []                                               :UnDeeper:
+************ \ someDeep second part calls manyDeep has returned []                      :UnDeeper:
+*********** \ manyIndentation/leaf? has returned ["degustates"]                          :UnDeeper:
+********** \ someDeep has returned ["degustates"]                                         :UnDeeper:
+********* \ pMultiTerm calling someDeep choice has returned ["degustates"]                 :UnDeeper:
+********* / someIndentation                                                                :UnDeeper:
+********** / myindented: consuming GoDeeper                                               :UnDeeper:
+******** \ optIndented has returned (RPMT ["degustates"],Nothing)                           :UnDeeper:
+******* \ optIndentedTuple has returned (RPMT ["degustates"],Nothing)                        :UnDeeper:
+****** \ manyIndentation/leaf? has returned (RPMT ["degustates"],Nothing)                     :UnDeeper:
+****** / myindented: consuming UnDeeper                                                       :UnDeeper:
+****** \ myindented: consuming UnDeeper has returned UnDeeper                                 :Means:
+***** \ someIndentation has returned (RPMT ["degustates"],Nothing)                             :Means:
+**** \ pHornlike/someStructure has returned (Nothing,["degustates"],[HC2 {hHead = RPMT ["degustates"], hBody = Nothing}]):Means:
+*** \ pHornlike / permute has returned ((Nothing,["degustates"],[HC2 {hHead = RPMT ["degustates"], hBody = Nothing}]),Nothing,Nothing):Means:
+** \ pHornlike has returned Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["degustates"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}:Means:
+* \ pRule has returned Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["degustates"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}:Means:
+* / pRule                                                                                          :Means:
+** / pRule: unwrapping indentation and recursing                                                  :Means:
+*** / myindented: consuming GoDeeper                                                             :Means:
+** / pRegRule                                                                                     :Means:
+*** / pRuleLabel                                                                                 :Means:
+*** / pRegRuleSugary                                                                             :Means:
+**** / pMultiTermAka                                                                            :Means:
+***** / pAKA                                                                                   :Means:
+****** / pAKA base                                                                            :Means:
+******* / pMultiTerm calling someDeep choice                                                 :Means:
+******** / someDeep                                                                         :Means:
+********* / manyIndentation/leaf?                                                          :Means:
+********** / someDeep first part calls base directly                                      :Means:
+*********** / pNumAsText                                                                 :Means:
+********* / manyIndentation/deeper; calling someIndentation                                :Means:
+********** / someIndentation                                                              :Means:
+*********** / myindented: consuming GoDeeper                                             :Means:
+*** / pRegRuleNormal                                                                             :Means:
+**** / permutationsReg                                                                          :Means:
+***** / regulative permutation with deontic-temporal                                           :Means:
+****** / preambleBoolStructR [Unless]                                                         :Means:
+****** / preambleBoolStructR [When,If]                                                        :Means:
+****** / pDT                                                                                  :Means:
+******* / optIndentedTuple                                                                   :Means:
+******** / optIndented                                                                      :Means:
+****** / pActor [Every,Party,TokAll]                                                          :Means:
+****** / pDoAction/Do                                                                         :Means:
+***** / regulative permutation with deontic-action                                             :Means:
+****** / preambleBoolStructR [Unless]                                                         :Means:
+****** / preambleBoolStructR [When,If]                                                        :Means:
+****** / pTemporal/eventually                                                                 :Means:
+****** / pTemporal/specifically                                                               :Means:
+****** / pTemporal/vaguely                                                                    :Means:
+****** / pActor [Every,Party,TokAll]                                                          :Means:
+****** / pDA                                                                                  :Means:
+** / pHornlike                                                                                    :Means:
+*** / pRuleLabel                                                                                 :Means:
+*** / pHornlike / permute                                                                        :Means:
+**** / pHornlike/uponLimb                                                                       :Means:
+**** / pHornlike/givenLimb                                                                      :Means:
+**** / pHornlike/someStructure                                                                  :Means:
+***** / someIndentation                                                                        :Means:
+****** / myindented: consuming GoDeeper                                                       :Means:
+**** / pHornlike/someStructure                                                                  :Means:
+***** / someIndentation                                                                        :Means:
+****** / myindented: consuming GoDeeper                                                       :Means:
+**** / pHornlike/givenLimb                                                                      :Means:
+**** / pHornlike/uponLimb                                                                       :Means:
+**** / pHornlike/someStructure                                                                  :Means:
+***** / someIndentation                                                                        :Means:
+****** / myindented: consuming GoDeeper                                                       :Means:
+**** / pHornlike/someStructure                                                                  :Means:
+***** / someIndentation                                                                        :Means:
+****** / myindented: consuming GoDeeper                                                       :Means:
+**** / pHornlike/someStructure                                                                  :Means:
+***** / someIndentation                                                                        :Means:
+****** / myindented: consuming GoDeeper                                                       :Means:
+** / pRuleLabel                                                                                   :Means:
+* / pNotARule                                                                                      :Means:
+*  pNotARule: starting                                                                            :Means:
+** / manyDeep                                                                                     :Means:
+*** / manyDeep calling someDeep                                                                  :Means:
+**** / someDeep                                                                                 :Means:
+***** / manyIndentation/leaf?                                                                  :Means:
+****** / someDeep first part calls base directly                                              :Means:
+****** \ someDeep first part calls base directly has returned Means                           :GoDeeper:
+****** / someDeep second part calls manyDeep                                                  :GoDeeper:
+******* / manyDeep                                                                           :GoDeeper:
+******** / manyDeep calling someDeep                                                        :GoDeeper:
+********* / someDeep                                                                       :GoDeeper:
+********** / manyIndentation/leaf?                                                        :GoDeeper:
+*********** / someDeep first part calls base directly                                    :GoDeeper:
+********** / manyIndentation/deeper; calling someIndentation                              :GoDeeper:
+*********** / someIndentation                                                            :GoDeeper:
+************ / myindented: consuming GoDeeper                                           :GoDeeper:
+************ \ myindented: consuming GoDeeper has returned GoDeeper                     :Other "eats":
+************ / manyIndentation/leaf?                                                    :Other "eats":
+************* / someDeep first part calls base directly                                :Other "eats":
+************* \ someDeep first part calls base directly has returned Other "eats"      :UnDeeper:
+************* / someDeep second part calls manyDeep                                    :UnDeeper:
+************** / manyDeep                                                             :UnDeeper:
+*************** / manyDeep calling someDeep                                          :UnDeeper:
+**************** / someDeep                                                         :UnDeeper:
+***************** / manyIndentation/leaf?                                          :UnDeeper:
+****************** / someDeep first part calls base directly                      :UnDeeper:
+***************** / manyIndentation/deeper; calling someIndentation                :UnDeeper:
+****************** / someIndentation                                              :UnDeeper:
+******************* / myindented: consuming GoDeeper                             :UnDeeper:
+*************** / someDeep failed, manyDeep defaulting to retun []                   :UnDeeper:
+*************** \ someDeep failed, manyDeep defaulting to retun [] has returned []   :UnDeeper:
+************** \ manyDeep has returned []                                             :UnDeeper:
+************* \ someDeep second part calls manyDeep has returned []                    :UnDeeper:
+************ \ manyIndentation/leaf? has returned [Other "eats"]                        :UnDeeper:
+************ / myindented: consuming UnDeeper                                           :UnDeeper:
+************ \ myindented: consuming UnDeeper has returned UnDeeper                     :Or:
+*********** \ someIndentation has returned [Other "eats"]                                :Or:
+********** \ manyIndentation/deeper; calling someIndentation has returned [Other "eats"]  :Or:
+********* \ someDeep has returned [Other "eats"]                                           :Or:
+******** \ manyDeep calling someDeep has returned [Other "eats"]                            :Or:
+******* \ manyDeep has returned [Other "eats"]                                               :Or:
+****** \ someDeep second part calls manyDeep has returned [Other "eats"]                      :Or:
+***** \ manyIndentation/leaf? has returned [Means,Other "eats"]                                :Or:
+**** \ someDeep has returned [Means,Other "eats"]                                               :Or:
+*** \ manyDeep calling someDeep has returned [Means,Other "eats"]                                :Or:
+** \ manyDeep has returned [Means,Other "eats"]                                                   :Or:
+*  pNotARule: returning                                                                           :Or:
+* \ pNotARule has returned NotARule [Means,Other "eats"]                                           :Or:
+* / pRule                                                                                          :Or:
+** / pRule: unwrapping indentation and recursing                                                  :Or:
+*** / myindented: consuming GoDeeper                                                             :Or:
+** / pRegRule                                                                                     :Or:
+*** / pRuleLabel                                                                                 :Or:
+*** / pRegRuleSugary                                                                             :Or:
+**** / pMultiTermAka                                                                            :Or:
+***** / pAKA                                                                                   :Or:
+****** / pAKA base                                                                            :Or:
+******* / pMultiTerm calling someDeep choice                                                 :Or:
+******** / someDeep                                                                         :Or:
+********* / manyIndentation/leaf?                                                          :Or:
+********** / someDeep first part calls base directly                                      :Or:
+*********** / pNumAsText                                                                 :Or:
+********* / manyIndentation/deeper; calling someIndentation                                :Or:
+********** / someIndentation                                                              :Or:
+*********** / myindented: consuming GoDeeper                                             :Or:
+*** / pRegRuleNormal                                                                             :Or:
+**** / permutationsReg                                                                          :Or:
+***** / regulative permutation with deontic-temporal                                           :Or:
+****** / preambleBoolStructR [Unless]                                                         :Or:
+****** / preambleBoolStructR [When,If]                                                        :Or:
+****** / pDT                                                                                  :Or:
+******* / optIndentedTuple                                                                   :Or:
+******** / optIndented                                                                      :Or:
+****** / pActor [Every,Party,TokAll]                                                          :Or:
+****** / pDoAction/Do                                                                         :Or:
+***** / regulative permutation with deontic-action                                             :Or:
+****** / preambleBoolStructR [Unless]                                                         :Or:
+****** / preambleBoolStructR [When,If]                                                        :Or:
+****** / pTemporal/eventually                                                                 :Or:
+****** / pTemporal/specifically                                                               :Or:
+****** / pTemporal/vaguely                                                                    :Or:
+****** / pActor [Every,Party,TokAll]                                                          :Or:
+****** / pDA                                                                                  :Or:
+** / pHornlike                                                                                    :Or:
+*** / pRuleLabel                                                                                 :Or:
+*** / pHornlike / permute                                                                        :Or:
+**** / pHornlike/uponLimb                                                                       :Or:
+**** / pHornlike/givenLimb                                                                      :Or:
+**** / pHornlike/someStructure                                                                  :Or:
+***** / someIndentation                                                                        :Or:
+****** / myindented: consuming GoDeeper                                                       :Or:
+**** / pHornlike/someStructure                                                                  :Or:
+***** / someIndentation                                                                        :Or:
+****** / myindented: consuming GoDeeper                                                       :Or:
+**** / pHornlike/givenLimb                                                                      :Or:
+**** / pHornlike/uponLimb                                                                       :Or:
+**** / pHornlike/someStructure                                                                  :Or:
+***** / someIndentation                                                                        :Or:
+****** / myindented: consuming GoDeeper                                                       :Or:
+**** / pHornlike/someStructure                                                                  :Or:
+***** / someIndentation                                                                        :Or:
+****** / myindented: consuming GoDeeper                                                       :Or:
+**** / pHornlike/someStructure                                                                  :Or:
+***** / someIndentation                                                                        :Or:
+****** / myindented: consuming GoDeeper                                                       :Or:
+** / pRuleLabel                                                                                   :Or:
+* / pNotARule                                                                                      :Or:
+*  pNotARule: starting                                                                            :Or:
+** / manyDeep                                                                                     :Or:
+*** / manyDeep calling someDeep                                                                  :Or:
+**** / someDeep                                                                                 :Or:
+***** / manyIndentation/leaf?                                                                  :Or:
+****** / someDeep first part calls base directly                                              :Or:
+****** \ someDeep first part calls base directly has returned Or                              :GoDeeper:
+****** / someDeep second part calls manyDeep                                                  :GoDeeper:
+******* / manyDeep                                                                           :GoDeeper:
+******** / manyDeep calling someDeep                                                        :GoDeeper:
+********* / someDeep                                                                       :GoDeeper:
+********** / manyIndentation/leaf?                                                        :GoDeeper:
+*********** / someDeep first part calls base directly                                    :GoDeeper:
+********** / manyIndentation/deeper; calling someIndentation                              :GoDeeper:
+*********** / someIndentation                                                            :GoDeeper:
+************ / myindented: consuming GoDeeper                                           :GoDeeper:
+************ \ myindented: consuming GoDeeper has returned GoDeeper                     :Other "drink:
+************ / manyIndentation/leaf?                                                    :Other "drink:
+************* / someDeep first part calls base directly                                :Other "drink:
+************* \ someDeep first part calls base directly has returned Other "drinks"    :UnDeeper:
+************* / someDeep second part calls manyDeep                                    :UnDeeper:
+************** / manyDeep                                                             :UnDeeper:
+*************** / manyDeep calling someDeep                                          :UnDeeper:
+**************** / someDeep                                                         :UnDeeper:
+***************** / manyIndentation/leaf?                                          :UnDeeper:
+****************** / someDeep first part calls base directly                      :UnDeeper:
+***************** / manyIndentation/deeper; calling someIndentation                :UnDeeper:
+****************** / someIndentation                                              :UnDeeper:
+******************* / myindented: consuming GoDeeper                             :UnDeeper:
+*************** / someDeep failed, manyDeep defaulting to retun []                   :UnDeeper:
+*************** \ someDeep failed, manyDeep defaulting to retun [] has returned []   :UnDeeper:
+************** \ manyDeep has returned []                                             :UnDeeper:
+************* \ someDeep second part calls manyDeep has returned []                    :UnDeeper:
+************ \ manyIndentation/leaf? has returned [Other "drinks"]                      :UnDeeper:
+************ / myindented: consuming UnDeeper                                           :UnDeeper:
+************ \ myindented: consuming UnDeeper has returned UnDeeper                     :EOF:
+*********** \ someIndentation has returned [Other "drinks"]                              :EOF:
+********** \ manyIndentation/deeper; calling someIndentation has returned [Other "drinks"]:EOF:
+********* \ someDeep has returned [Other "drinks"]                                         :EOF:
+******** \ manyDeep calling someDeep has returned [Other "drinks"]                          :EOF:
+******* \ manyDeep has returned [Other "drinks"]                                             :EOF:
+****** \ someDeep second part calls manyDeep has returned [Other "drinks"]                    :EOF:
+***** \ manyIndentation/leaf? has returned [Or,Other "drinks"]                                 :EOF:
+**** \ someDeep has returned [Or,Other "drinks"]                                                :EOF:
+*** \ manyDeep calling someDeep has returned [Or,Other "drinks"]                                 :EOF:
+** \ manyDeep has returned [Or,Other "drinks"]                                                    :EOF:
+*  pNotARule: returning                                                                           :EOF:
+* \ pNotARule has returned NotARule [Or,Other "drinks"]                                            :EOF:
 
 megaparsing
   simple-constitutive-1: should parse a simple constitutive rule FAILED [1]
@@ -472,13 +477,13 @@ Failures:
 
   To rerun use: --match "/megaparsing/simple-constitutive-1: should parse a simple constitutive rule/"
 
-Randomized with seed 1237775332
+Randomized with seed 1940569928
 
-Finished in 0.0066 seconds
+Finished in 0.0052 seconds
 1 example, 1 failure
 
 mp> Test suite mp-test failed
 Test suite failure for package mp-0.1.0.0
-    mp-test:  exited with: ExitFailure 1
+*  exited with: ExitFailure 1                                                                     :    mp-test::
 Logs printed to console
 

@@ -352,10 +352,10 @@ pNotARule = debugName "pNotARule" $ do
 
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
-pRule = do
+pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
-  try (debugName "pRule: unwrapping indentation" $ myindented pRule)
+  try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
     <|> try (pRegRule <?> "regulative rule")
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")

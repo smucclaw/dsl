@@ -389,8 +389,9 @@ X IS HornClauseRHS
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| DECIDE | X | IS | Y |     |   |   |    |
-| WHEN   | Z | IS | Q | AND | P | > | NP |
+| DECIDE | X | IS | Y  |
+| WHEN   | Z | IS | Q  |
+| AND    | P | >  | NP |
 
 ***** simple define, multi line 3, and
 :PROPERTIES:

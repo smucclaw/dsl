@@ -16,7 +16,7 @@ import LS.Error
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
-import Debug.Trace (traceShowM)
+import Debug.Trace (traceShowM, traceM)
 import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
@@ -112,7 +112,7 @@ main = do
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
-  let dumpStream s = traceShowM (tokenVal <$> unMyStream s)
+  let dumpStream s = traceM "* Tokens" >> traceShowM (tokenVal <$> unMyStream s)
   let parseR x y s      = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
   let parseR1 x y s     =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
   let parseOther x y s  = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s

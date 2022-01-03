@@ -6,10 +6,11 @@ module LS.RelationalPredicates where
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
+import Debug.Trace
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, fromJust)
+import Data.Maybe (fromMaybe, fromJust, maybeToList)
 
 import LS.Types
 import LS.Tokens
@@ -254,18 +255,24 @@ preambleParamText preambles = do
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- pSrcRef
-  ((keyword, name, clauses), given, upon) <- debugName "pHornlike / permute" $ permute $ (,,)
+  ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
     <$$> someStructure
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
+    <|?> (Nothing, whenCase)
   return $ Hornlike { name
                     , keyword = fromMaybe Means keyword
-                    , given, clauses, upon, rlabel, srcref
+                    , given
+                    , clauses = addWhen topwhen clauses
+                    , upon, rlabel, srcref
                     , lsource = noLSource }
   where
+    addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
+    addWhen mbsr hcs = [ hc2 { hBody = hBody hc2 <> mbsr }
+                       | hc2 <- hcs ]
+
     -- this is actually kind of a meta-rule, because it really means
     -- assert(X :- (Y1, Y2)) :- body.
-    
     whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
     whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBoolStructR) <|> Nothing <$ pToken Otherwise
 

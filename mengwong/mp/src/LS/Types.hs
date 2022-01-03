@@ -40,6 +40,7 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
                                                       --- |        | immediately    | :: | Urgency |
 
+
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
@@ -66,6 +67,9 @@ tm2mt = toList . fst
 
 mt2tm :: MultiTerm -> TypedMulti
 mt2tm x = (fromList x, Nothing)
+
+mt2pt :: MultiTerm -> ParamText
+mt2pt ts = pure (fromList ts, Nothing)
 
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])

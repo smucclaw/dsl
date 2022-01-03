@@ -737,18 +737,18 @@ exprP = debugName "expr pParamText" $ do
     MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
     x -> x
   where
-    prefixFirstLeaf :: Text.Text -> MyBoolStruct ParamText -> MyBoolStruct ParamText
+    prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText
     -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
     prefixFirstLeaf p (MyLeaf x)           = MyLeaf (prefixItem p x)
     prefixFirstLeaf p (MyLabel lbl myitem) = MyLabel lbl (prefixFirstLeaf p myitem)
     prefixFirstLeaf p (MyAll (x:xs))       = MyAll (prefixFirstLeaf p x : xs)
-    prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ text2pt p]
-    prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ text2pt p]
+    prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ mt2pt p]
+    prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ mt2pt p]
     prefixFirstLeaf p (MyAny (x:xs))       = MyAny (prefixFirstLeaf p x : xs)
     prefixFirstLeaf p (MyNot  x    )       = MyNot (prefixFirstLeaf p x)
 
-    prefixItem :: Text.Text -> ParamText -> ParamText
-    prefixItem t pt = NE.cons (NE.head $ text2pt t) pt
+    prefixItem :: [Text.Text] -> ParamText -> ParamText
+    prefixItem t pt = NE.cons (NE.fromList t, Nothing) pt
 
 -- dBoolStructP = debugName "dBoolStructP" $ do
 --   pAndGroup -- walks AND eats OR drinks

@@ -28,19 +28,19 @@ data MyItem lbl a =
 
 deriving instance Functor (AA.Item' a)
 
-type MyBoolStruct = MyItem Text.Text -- TOOD: convert this to a TypedMulti so we preserve the type annotation
+type MyBoolStruct = MyItem MultiTerm
 
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = toBoolStruct <$> expr pOtherVal
 
 toBoolStruct :: Show a => MyBoolStruct a -> AA.Item a
 toBoolStruct (MyLeaf txt) = AA.Leaf txt
-toBoolStruct (MyLabel lab (MyAll xs)) = AA.All (Just (AA.Pre lab)) (map toBoolStruct xs)
-toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre lab)) (map toBoolStruct xs)
+toBoolStruct (MyLabel lab (MyAll xs)) = AA.All (Just (AA.Pre (Text.unwords lab))) (map toBoolStruct xs)
+toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre (Text.unwords lab))) (map toBoolStruct xs)
 toBoolStruct (MyAll mis) = AA.All Nothing (map toBoolStruct mis)
 toBoolStruct (MyAny mis) = AA.Any Nothing (map toBoolStruct mis)
 toBoolStruct (MyNot mi') = AA.Not (toBoolStruct mi')
-toBoolStruct (MyLabel  lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> "++" <> lab2) x)
+toBoolStruct (MyLabel  lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> lab2) x)
 toBoolStruct (MyLabel _lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
 toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 
@@ -48,7 +48,7 @@ expr,term :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 term p =
       try (debugName "term p / 1:someIndentation" (optional dnl *> (myindented (expr p) <* optional dnl)))
-  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> pOtherVal <*> plain p))
+  <|> try (debugName "term p / 2:pOtherVal" (MyLabel <$> (someDeep pOtherVal) <*> plain p))
   <|> try (debugName "term p / 3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]
@@ -82,7 +82,7 @@ prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
 mylabel :: Operator Parser (MyBoolStruct Text.Text)
-mylabel         = Prefix  (MyLabel <$> try pOtherVal)
+mylabel         = Prefix  (MyLabel <$> try (manyDeep pOtherVal))
 
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p

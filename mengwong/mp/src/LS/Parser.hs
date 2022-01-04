@@ -58,7 +58,8 @@ notLabelTerm p =
   <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]
-table = [ [ prefix  MPNot MyNot  ]
+table = [ [ prefix  MPNot  MyNot  ]
+        , [ prefix  Unless MyNot  ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
         ]

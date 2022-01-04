@@ -1325,8 +1325,6 @@ if ((morbror or farbror) and not estranged)
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-This form is not expected to parse, because having it directly above the OR may cause problems in the parsing
-
 |       | Bob's your uncle |                  |             |
 | MEANS | NOT              | Bob is estranged |             |
 |       |                  | OR               | Bob is dead |
@@ -1339,26 +1337,25 @@ if (not (estranged or dead))
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-indentating the "Bob is estranged" term to the right of the OR below it, has the most righteous rectitude.
+indenting the "Bob is estranged" term to the right of the OR below it, has the most righteous rectitude.
 
 |       | Bob's your uncle |    |                  |
 | MEANS | NOT              |    | Bob is estranged |
 |       |                  | OR | Bob is dead      |
 
-*** less explicit indentation                                                         :shouldfail:
+if (not (estranged or dead))
+
+*** less explicit indentation                                                           :expected:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-this is not expected to parse. see the bob-head-1-b above as the only approved form.
-
 |       | Bob's your uncle |                  |
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |
 
-if (not (estranged or dead))
-
+if (not estranged) or dead)
 
 *** but indentation doesn't go backwards
 :PROPERTIES:
@@ -1371,6 +1368,7 @@ if (not (estranged or dead))
 | OR    | Bob is dead      |                  |
 
 if ((not estranged) or dead))
+
 *** combined with other connectors
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-4.csv

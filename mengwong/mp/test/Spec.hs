@@ -375,24 +375,38 @@ main = do
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
 
-      when ("this is not expected to parse" == "true") $
-        filetest "bob-head-1" "less indented NOT" (parseR pRules) [bobUncle1]
+      filetest "bob-head-1" "less indented NOT" (parseR pRules) [bobUncle1]
 
       filetest "bob-head-1-b" "more indented NOT"
         (parseR pRules) [bobUncle1]
 
       let bobUncle2 = bobUncle1
             { clauses = 
-              [ HC2 { hHead = RPMT ["Bob's your uncle"]
-                    , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
-                                                 ,      mkLeafR "Bob is dead" ] } ] }
+              [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (Leaf (RPMT ["Bob is estranged"]))
+                                                                                  ,Leaf (RPMT ["Bob is dead"])])
+                   , hBody = Nothing } ] }
       
-      when ("this is not expected to parse" == "true") $
-        filetest "bob-head-2" "handle less indentation"
+      filetest "bob-head-2" "handle less indentation"
           (parseR pRules) [bobUncle2]
 
       filetest "bob-head-3" "should handle outdentation"
         (parseR pRules) [bobUncle2]
+                      
+      filetest "bob-tail-1" "should work for constitutive rules" 
+        (parseR pRules) [ defaultHorn
+                          { name = ["Bob's your uncle"]
+                          , keyword = Means
+                          , clauses = [
+                              HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Leaf (RPMT ["Bob is your mother's brother"])
+                                                                                                 ,Leaf (RPMT ["Bob is your father's brother"])])
+                                  , hBody = Just (Not (Leaf (RPMT ["Bob is estranged"])))
+                                  } ]
+                          , rlabel = Nothing
+                          , lsource = Nothing
+                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}
+                                          )
+                          }
+                        ]
 
     describe "megaparsing UNLESS semantics" $ do
 
@@ -467,22 +481,6 @@ main = do
                       
       filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way" 
         (parseR pRules) dayOfSong
-                      
-      filetest "bob-tail-1" "should work for constitutive rules" 
-        (parseR pRules) [ defaultHorn
-                          { name = ["Bob's your uncle"]
-                          , keyword = Means
-                          , clauses = [
-                              HC2 { hHead = RPMT ["Bob's your uncle"]
-                                  , hBody = Just (All Nothing [Any Nothing [Leaf (RPMT ["Bob is your mother's brother"])
-                                                                           ,Leaf (RPMT ["Bob is your father's brother"])]
-                                                              ,Not (Leaf (RPMT ["Bob is estranged"]))])}]
-                          , rlabel = Nothing
-                          , lsource = Nothing
-                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}
-                                          )
-                          }
-                        ]
 
       filetest "pilcrows-1" "should handle pilcrows" 
         (parseR pRules) ( dayOfSilence 

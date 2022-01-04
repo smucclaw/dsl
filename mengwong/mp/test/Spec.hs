@@ -87,7 +87,7 @@ defaultHorn = Hornlike
 
 filetest :: (ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc) $ do
+  it (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -371,11 +371,11 @@ main = do
             , keyword = Means
             , clauses =
               [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [Leaf (RPMT ["Bob is estranged"])
-                                                                                      ,Leaf (RPMT ["Bob is dead"])]))
+                                                                                       ,Leaf (RPMT ["Bob is dead"])]))
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
       
-      filetest "bob-head-1" "bob-head-1: less indented NOT"
+      filetest "bob-head-1" "less indented NOT"
         (parseR pRules) []
 
       filetest "bob-head-1-b" "more indented NOT"

@@ -12,23 +12,56 @@ my ($pipe_line) = grep { /\| \| \|/ } @input;
 my ($prefix_length) = length (($pipe_line =~ /^([^|]+)\|/)[0]);
 # print $prefix_length;
 
-print "* preface", "\n";
+print <<EOPROPERTIES;
+* preface
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+
+EOPROPERTIES
+    
+my $inzone = 0; my $donework = 0;
 
 for (@input) {
+  # stop at first blank line encountered after the main zone
+  if ($donework and length == 0 and $inzone) {
+    $inzone = 0;
+    print "\n\n* final\n";
+    print <<EOPROPERTIES;
+* main
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+
+EOPROPERTIES
+  }
+
   my $prefix = substr($_, 0, $prefix_length);
   my $rhs = substr($_, $prefix_length);
+  
 #  print $prefix, "\n";
 #  print $rhs, "\n";
+  if (not $inzone and substr($rhs, 0, 1) =~ /[|\/\\]/) { $inzone = 1 }
+  if (not $inzone) { print "$_\n"; next }
 
   my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/]?) (.*)/;
 #  print $pipes, "\n";
 #  print $slash, "\n";
-  my $numpipes = length($pipes) / 2 + 1;
-
+  my $numpipes = length($pipes) / 2 + 1 + 1;
   if (not $slash and not $pipes) { print $_, "\n"; next; }
-
   if (not length $slash) { $slash = " " }
   
+  if ($numpipes == 2 and not $donework) {
+    $donework = 1; $inzone = 1;
+    print <<EOPROPERTIES;
+* main
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
+EOPROPERTIES
+  }
+
   my $outlhs = "*" x $numpipes . " $slash " . $text;
   my $spacing = 120 - length($outlhs) - $numpipes;
      $prefix =~ s/ +$//;

@@ -1,0 +1,14 @@
+#!/usr/bin/perl -l
+
+my @stacktest = qx(stack test);
+
+for (grep { /To rerun use/ } @stacktest) {
+  my ($match, $filename) = /(--match .*\/(.*)\/")$/;
+
+  my $torun = qq(match='$match'; filename="$filename"; MP_DEBUG=True stack test --ta "\$match" 2>&1 | bin/debug2org > out/$filename.org);
+  print $torun;
+  
+  my $runout = qx($torun);
+  print $runout;
+}
+

@@ -236,21 +236,26 @@ fourIs :: Parser (MyToken,MyToken,MyToken,MyToken)
 fourIs = debugName "fourIs" $ do
   (,,,)
     $>| pT
-    <>| pT
-    <>| pT
-    <<| pT
+    |>| pT
+    |>| pT
+    |<< pT
   where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
 
-threeIs :: Parser (MyToken,(MyToken,MyToken),MyToken)
+threeIs :: Parser (MyToken, (MyToken,MyToken) ,MyToken)
 threeIs = debugName "threeIs" $ do
   (,,)
     $>| pT
-    >>| pTT
-    <<| pT
+    ||| pTT
+    |<< pT
   where pT  = debugName "Is/An" (pToken Is <|> pToken A_An)
-        pTT = debugName "(pT,pT)" $ (,) $>| pT <|| pT
+        pTT = debugName "(pT,pT)" $ (,) $>| pT |>| pT
     
 
+($>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser (b,Int)
+($||)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser (b,Int)
+(|>|)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser (b,Int)
+(|||)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser (b,Int)
+(|<<)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  b     
 
 f $>| p2 = do
   r <- p2
@@ -259,47 +264,34 @@ infixl 4 $>|
 
 
 
-($>|)            :: Show a =>        (a -> b)      -> Parser  a        -> Parser (b,Int)
-(>$|)            :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser (b,Int)
-(<>|)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser (b,Int)
-(>>|)            :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser (b,Int)
-(<<|)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  b
-(<||)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser (b,Int)
-
-f >$| p2 = do
+f $|| p2 = do
   (r,n) <- p2
   return (f r,n)
-infixl 4 >$|
+infixl 4 $||
 
-p1 <>| p2 = do
+p1 |>| p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "<>| going right" p2
+  r <- debugName "|>| going right" p2
   return (l r, n + length deepers )
-infixl 4 <>|
+infixl 4 |>|
 
 
-p1 >>| p2 = do
+p1 ||| p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  (r,m) <- debugName ">>| going right" p2
+  (r,m) <- debugName "||| going right" p2
   return (l r, n + length deepers + m )
-infixl 4 >>|
+infixl 4 |||
 
   
-p1 <<| p2 = do
+p1 |<< p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "<<| going right and closing" p2 <* float (n + length deepers)
+  r <- debugName "|<< going right and closing" p2 <* float (n + length deepers)
   return (l r)
-infixl 4 <<|
+infixl 4 |<<
   
-p1 <|| p2 = do
-  (l,n) <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "<|| going right" p2
-  return (l r, n + length deepers)
-infixl 4 <||
   
 float :: Int -> Parser ()
 float n = debugName "float" $ do

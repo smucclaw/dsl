@@ -482,9 +482,10 @@ main = do
       filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way" 
         (parseR pRules) dayOfSong
 
-      filetest "pilcrows-1" "should handle pilcrows" 
-        (parseR pRules) ( dayOfSilence 
-                        ++ dayOfSong )
+      it "pilcrows-1" $ do
+        testcsv <- BS.readFile ("test/" <> "pilcrows-1" <> ".csv")
+        parseR pRules "pilcrows-1" `traverse` exampleStreams testcsv
+          `shouldParse` [ dayOfSilence, dayOfSong]
 
         -- forM_ (exampleStreams testcsv) $ \stream ->
         --   parseR pRules testfile stream

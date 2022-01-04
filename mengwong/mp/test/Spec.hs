@@ -99,6 +99,7 @@ main = do
   let runConfig_ = RC
         { debug = isJust mpd
         , callDepth = 0
+        , oldDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
         , asJSON = False
@@ -497,7 +498,7 @@ main = do
   -- defNameAlias should absorb the WHO limb
 
     describe "megaparsing scenarios" $ do
-      filetest "scenario-1" "should handle labeled given/expect" 
+      when False $ filetest "scenario-1" "should handle labeled given/expect" 
         (parseR pRules)
           [ Scenario
             { scgiven =
@@ -733,3 +734,6 @@ main = do
       filetest "who-3" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_3 ] 
 
+      it "sameline threeIs float" $ do
+        parseOther1 threeIs "" (exampleStream "A,IS,IS,IS\n")
+          `shouldParse` ((A_An,Is,Is,Is), [])

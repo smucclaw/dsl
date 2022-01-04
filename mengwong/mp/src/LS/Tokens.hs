@@ -218,9 +218,40 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
       rhs <- optional $ try (manyIndentation p2)
       return ([], rhs)
 
+-- wrap everything to the right on the same line; unwraps the same depth of UnDeepers
 sameLine :: (Show a) => Parser a -> Parser a
-sameLine p = debugName "sameline" $ p
+sameLine p = do
+  depth <- asks callDepth
+  local (\st -> st {oldDepth = depth}) $
+    debugName ("sameline(" ++ show depth ++ ")") p
+
+float :: Parser ()
+float = debugName "float" $ do
+  newdepth <- asks callDepth
+  olddepth <- asks oldDepth
+  let n = newdepth - olddepth
+  debugPrint $ "sameLine/float: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
+  replicateM_ n (pToken UnDeeper)
+  debugPrint "sameLine: success!"
+
+
+(<>>) :: Show a => Parser (a -> b) -> Parser a -> Parser b
+p1 <>> p2 = do
+  l <- p1
+  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
+  l <$> plusDepth (length deepers) (debugName "going right" p2)
+infixl 4 <>>
+
+(<<>) :: Show a => Parser (a -> b) -> Parser a -> Parser b
+p1 <<> p2 = do
+  p1 <>> (p2 <* float)
+infixl 4 <<>
   
+plusDepth :: Show a => Int -> Parser a -> Parser a
+plusDepth n p = do
+  depth <- asks callDepth
+  debugPrint $ "plusDepth: adding " ++ show n ++ " to callDepth " ++ show depth ++ " = " ++ show (n + depth)
+  local (\st -> st {callDepth = n + depth}) (debugName "plusDepthing right" p)
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
@@ -232,13 +263,13 @@ someIndentation' p = myindented' (manyIndentation' p)
 
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
-manyIndentation p = 
+manyIndentation p =
   debugName "manyIndentation/leaf?" (try p)
   <|>
   debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
 
 manyIndentation' :: Parser a -> Parser a
-manyIndentation' p = 
+manyIndentation' p =
   (try p)
   <|>
   (try $ someIndentation' p)

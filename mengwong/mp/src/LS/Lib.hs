@@ -73,6 +73,7 @@ getConfig o = do
   return RC
         { debug = maybe (dbug o) (read :: String -> Bool) mpd
         , callDepth = 0
+        , oldDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
         , asJSON = maybe False (read :: String -> Bool) mpj
@@ -829,4 +830,9 @@ pHornHead2 = pRelationalPredicate
 
 pHornBody2 :: Parser BoolStructR
 pHornBody2 = pBSR
+
+threeIs :: Parser (MyToken,MyToken,MyToken,MyToken)
+threeIs = debugName "threeIs" $ do
+  sameLine $ (,,,) <$> pT <>> pT <>> pT <<> pT
+  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
 

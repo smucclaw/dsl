@@ -344,6 +344,7 @@ mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> pure tt <*> pure uni
 
 data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int
+                    , oldDepth  :: Int
                     , parseCallStack :: [String]
                     , sourceURL :: Text.Text
                     , asJSON    :: Bool

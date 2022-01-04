@@ -735,6 +735,11 @@ main = do
       filetest "who-3" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_3 ] 
 
-      it "sameline threeIs float" $ do
+      it "sameline fourIs float" $ do
         parseOther fourIs "" (exampleStream "A,IS,IS,IS\n")
           `shouldParse` ((A_An,Is,Is,Is), [])
+
+      it "sameline threeIs float" $ do
+        parseOther threeIs "" (exampleStream "A,IS,IS,IS\n")
+          `shouldParse` ((A_An,(Is,Is),Is), [])
+

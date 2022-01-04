@@ -227,50 +227,79 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 --          (baz IS quux)  -- another RelationalPredicate
 -- and then they are joined by "AND" to form a BoolStructR
 --
--- if they were broken across multiple lines that would be fine -- the foo and the baz would be at the same indentation level because after bar we would get a bunch of undeepers.
+-- if they were broken across multiple lines that would be fine -- the foo and the baz would be at the same indentation level because after bar we would get a bunch of UnDeepers.
 -- but compound expressions on the same line don't consume UnDeepers
 -- so we need this family of combinators to operate
 
 -- typical usage:
 fourIs :: Parser (MyToken,MyToken,MyToken,MyToken)
-fourIs = debugName "threeIs" $ do
-  sameLine $ (,,,)
+fourIs = debugName "fourIs" $ do
+  (,,,)
     $>| pT
     <>| pT
     <>| pT
     <<| pT
   where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
 
+threeIs :: Parser (MyToken,(MyToken,MyToken),MyToken)
+threeIs = debugName "threeIs" $ do
+  (,,)
+    $>| pT
+    >>| pTT
+    <<| pT
+  where pT  = debugName "Is/An" (pToken Is <|> pToken A_An)
+        pTT = debugName "(pT,pT)" $ (,) $>| pT <|| pT
+    
 
 
--- wrap everything to the right on the same line; unwraps the same depth of UnDeepers
-sameLine :: (Show a) => Parser a -> Parser a
-sameLine p = do
-  depth <- asks callDepth
-  local (\st -> st {oldDepth = depth}) $
-    debugName ("sameline(" ++ show depth ++ ")") p
-
-($>|) :: Show a => (a -> b) -> Parser a -> Parser (b,Int)
 f $>| p2 = do
   r <- p2
   return (f r,0)
 infixl 4 $>|
 
-(<>|) :: Show a => Parser (a -> b, Int) -> Parser a -> Parser (b,Int)
+
+
+($>|)            :: Show a =>        (a -> b)      -> Parser  a        -> Parser (b,Int)
+(>$|)            :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser (b,Int)
+(<>|)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser (b,Int)
+(>>|)            :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser (b,Int)
+(<<|)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  b
+(<||)            :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser (b,Int)
+
+f >$| p2 = do
+  (r,n) <- p2
+  return (f r,n)
+infixl 4 >$|
+
 p1 <>| p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "going right" p2
+  r <- debugName "<>| going right" p2
   return (l r, n + length deepers )
 infixl 4 <>|
 
-(<<|) :: Show a => Parser (a -> b, Int) -> Parser a -> Parser b
+
+p1 >>| p2 = do
+  (l,n) <- p1
+  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
+  (r,m) <- debugName ">>| going right" p2
+  return (l r, n + length deepers + m )
+infixl 4 >>|
+
+  
 p1 <<| p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- p2 <* float (n + length deepers)
+  r <- debugName "<<| going right and closing" p2 <* float (n + length deepers)
   return (l r)
 infixl 4 <<|
+  
+p1 <|| p2 = do
+  (l,n) <- p1
+  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
+  r <- debugName "<|| going right" p2
+  return (l r, n + length deepers)
+infixl 4 <||
   
 float :: Int -> Parser ()
 float n = debugName "float" $ do
@@ -279,11 +308,11 @@ float n = debugName "float" $ do
   debugPrint "sameLine: success!"
 
 
-plusDepth :: Show a => Int -> Parser a -> Parser a
-plusDepth n p = do
-  depth <- asks callDepth
-  debugPrint $ "plusDepth: adding " ++ show n ++ " to callDepth " ++ show depth ++ " = " ++ show (n + depth)
-  local (\st -> st {callDepth = n + depth}) (debugName "plusDepthing right" p)
+
+
+
+
+
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a

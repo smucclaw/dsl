@@ -218,6 +218,31 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
       rhs <- optional $ try (manyIndentation p2)
       return ([], rhs)
 
+
+
+
+-- combinators for compound expressions on the same line
+-- e.g. "foo IS bar AND baz IS quux"
+-- contains (foo IS bar)   -- a RelationalPredicate
+--          (baz IS quux)  -- another RelationalPredicate
+-- and then they are joined by "AND" to form a BoolStructR
+--
+-- if they were broken across multiple lines that would be fine -- the foo and the baz would be at the same indentation level because after bar we would get a bunch of undeepers.
+-- but compound expressions on the same line don't consume UnDeepers
+-- so we need this family of combinators to operate
+
+-- typical usage:
+fourIs :: Parser (MyToken,MyToken,MyToken,MyToken)
+fourIs = debugName "threeIs" $ do
+  sameLine $ (,,,)
+    $>| pT
+    <>| pT
+    <>| pT
+    <<| pT
+  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
+
+
+
 -- wrap everything to the right on the same line; unwraps the same depth of UnDeepers
 sameLine :: (Show a) => Parser a -> Parser a
 sameLine p = do
@@ -225,28 +250,35 @@ sameLine p = do
   local (\st -> st {oldDepth = depth}) $
     debugName ("sameline(" ++ show depth ++ ")") p
 
-float :: Parser ()
-float = debugName "float" $ do
-  newdepth <- asks callDepth
-  olddepth <- asks oldDepth
-  let n = newdepth - olddepth
+($>|) :: Show a => (a -> b) -> Parser a -> Parser (b,Int)
+f $>| p2 = do
+  r <- p2
+  return (f r,0)
+infixl 4 $>|
+
+(<>|) :: Show a => Parser (a -> b, Int) -> Parser a -> Parser (b,Int)
+p1 <>| p2 = do
+  (l,n) <- p1
+  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
+  r <- debugName "going right" p2
+  return (l r, n + length deepers )
+infixl 4 <>|
+
+(<<|) :: Show a => Parser (a -> b, Int) -> Parser a -> Parser b
+p1 <<| p2 = do
+  (l,n) <- p1
+  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
+  r <- p2 <* float (n + length deepers)
+  return (l r)
+infixl 4 <<|
+  
+float :: Int -> Parser ()
+float n = debugName "float" $ do
   debugPrint $ "sameLine/float: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
   replicateM_ n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 
 
-(<>>) :: Show a => Parser (a -> b) -> Parser a -> Parser b
-p1 <>> p2 = do
-  l <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  l <$> plusDepth (length deepers) (debugName "going right" p2)
-infixl 4 <>>
-
-(<<>) :: Show a => Parser (a -> b) -> Parser a -> Parser b
-p1 <<> p2 = do
-  p1 <>> (p2 <* float)
-infixl 4 <<>
-  
 plusDepth :: Show a => Int -> Parser a -> Parser a
 plusDepth n p = do
   depth <- asks callDepth

@@ -831,8 +831,4 @@ pHornHead2 = pRelationalPredicate
 pHornBody2 :: Parser BoolStructR
 pHornBody2 = pBSR
 
-threeIs :: Parser (MyToken,MyToken,MyToken,MyToken)
-threeIs = debugName "threeIs" $ do
-  sameLine $ (,,,) <$> pT <>> pT <>> pT <<> pT
-  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
 

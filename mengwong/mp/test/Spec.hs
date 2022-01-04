@@ -9,6 +9,7 @@ import LS.Lib
 import LS.Parser
 import LS.RelationalPredicates
 import LS.ParamText
+import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
@@ -735,5 +736,5 @@ main = do
         (parseR pToplevel) [ whoStructR_3 ] 
 
       it "sameline threeIs float" $ do
-        parseOther1 threeIs "" (exampleStream "A,IS,IS,IS\n")
+        parseOther fourIs "" (exampleStream "A,IS,IS,IS\n")
           `shouldParse` ((A_An,Is,Is,Is), [])

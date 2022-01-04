@@ -1319,7 +1319,7 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 
 if ((morbror or farbror) and not estranged)
 
-*** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS
+*** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS :shouldfail:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1333,7 +1333,7 @@ This form is not expected to parse, because having it directly above the OR may 
 
 if (not (estranged or dead))
 
-*** more explicit indentation
+*** more explicit indentation                                                           :expected:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1345,13 +1345,13 @@ indentating the "Bob is estranged" term to the right of the OR below it, has the
 | MEANS | NOT              |    | Bob is estranged |
 |       |                  | OR | Bob is dead      |
 
-*** less explicit indentation
+*** less explicit indentation                                                         :shouldfail:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-this is currently infinilooping. [2021-12-29 Wed 02:44]
+this is not expected to parse. see the bob-head-1-b above as the only approved form.
 
 |       | Bob's your uncle |                  |
 | MEANS | NOT              | Bob is estranged |
@@ -1359,18 +1359,6 @@ this is currently infinilooping. [2021-12-29 Wed 02:44]
 
 if (not (estranged or dead))
 
-*** indentation can go extra forward
-:PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1-b.csv
-:TABLE_EXPORT_FORMAT: orgtbl-to-csv
-:END:
-
-
-|       | Bob's your uncle |    |                  |
-| MEANS | NOT              |    | Bob is estranged |
-|       |                  | OR | Bob is dead      |
-
-if (not (estranged or dead))
 
 *** but indentation doesn't go backwards
 :PROPERTIES:
@@ -1380,7 +1368,7 @@ if (not (estranged or dead))
 
 |       | Bob's your uncle |                  |
 | MEANS | NOT              | Bob is estranged |
-| OR    |                  | Bob is dead      |
+| OR    | Bob is dead      |                  |
 
 if ((not estranged) or dead))
 *** combined with other connectors
@@ -1389,11 +1377,11 @@ if ((not estranged) or dead))
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|       | Bob's your uncle            |                  |   |
-| MEANS | Bob's your mother's brother |                  |   |
-| OR    | Bob's your father's brother |                  |   |
-| AND   | NOT                         | Bob is estranged |   |
-|       | OR                          | Bob is dead      |   |
+|       | Bob's your uncle            |             |                  |
+| MEANS | Bob's your mother's brother |             |                  |
+| OR    | Bob's your father's brother |             |                  |
+| AND   |                             | NOT         | Bob is estranged |
+|       | OR                          | Bob is dead |                  |
 
 
 

@@ -8,8 +8,6 @@ module LS.Parser where
 
 import LS.Types
 import LS.Tokens
-import LS.ParamText
-import LS.RelationalPredicates
 import qualified AnyAll as AA
 
 import Control.Monad.Combinators.Expr
@@ -95,36 +93,4 @@ mylabel         = Prefix  (MyLabel <$> try (manyDeep pOtherVal))
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p
 
--- we parse at two levels:
--- the boolstruct of a relationalpredicate (outer), and
--- the relationalpredicate itself (inner).
-
--- let's start with the parser for the relationalpredicate itself.
--- we deal with inputs of type MultiTerm, leaving out the TypeSig,
--- and we construct values of type RelationalPredicate
-
-pRP, pRP' :: Parser RelationalPredicate
-pRP = debugName "pRP" $ rpExpr pMultiTerm
-
--- if we want to allow inline type annotations
-pRP' = rpExpr (tm2mt <$> pKeyValuesAka)
-
--- the expr/term/table parser is not so good with doing chained indentation. :-(
-
-rpExpr,rpTerm :: Parser MultiTerm -> Parser RelationalPredicate
-rpExpr p = makeExprParser (rpTerm p) rpTable <?> "RP expression"
-rpTerm p
-  = try (debugName "rpTerm / 1: indented" ( myindented (rpExpr p) ) <?> "indented rpTerm")
-  <|> try (debugName "rpTerm / 3: rp" ( RPMT <$> p ) <?> "RPMT MultiTerm")
-
-rpTable :: [[Operator Parser RelationalPredicate]]
-rpTable = [ [ binary Is rpIs ] ]
-
-rpIs :: RelationalPredicate -> RelationalPredicate -> RelationalPredicate
-rpIs (RPMT x) (RPMT y) = RPConstraint x RPis y
-rpIs x y = error $ "rpIs: expecting only RPMT input, got: " <> show x <> "=" <> show y
-
--- then we start with entire relationalpredicates, and wrap them into BoolStructR
-pBSR :: Parser BoolStructR
-pBSR = toBoolStruct <$> expr pRelPred
-
+-- we can't use the expr style parser to deal with things that go deeper; only expressions whose terms are at basically the same level of indentation. so we don't use it for the insides of relationalpredicates, only linking them up with a AND/OR/NOT to create a BoolStructR

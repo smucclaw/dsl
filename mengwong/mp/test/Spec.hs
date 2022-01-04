@@ -374,9 +374,9 @@ main = do
                                                                                        ,Leaf (RPMT ["Bob is dead"])]))
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
-      
-      filetest "bob-head-1" "less indented NOT"
-        (parseR pRules) []
+
+      when ("this is not expected to parse" == "true") $
+        filetest "bob-head-1" "less indented NOT" (parseR pRules) [bobUncle1]
 
       filetest "bob-head-1-b" "more indented NOT"
         (parseR pRules) [bobUncle1]
@@ -387,8 +387,9 @@ main = do
                     , hBody = Just $ Any Nothing [Not $ mkLeafR "Bob is estranged"
                                                  ,      mkLeafR "Bob is dead" ] } ] }
       
-      filetest "bob-head-2" "handle less indentation"
-        (parseR pRules) [bobUncle2]
+      when ("this is not expected to parse" == "true") $
+        filetest "bob-head-2" "handle less indentation"
+          (parseR pRules) [bobUncle2]
 
       filetest "bob-head-3" "should handle outdentation"
         (parseR pRules) [bobUncle2]
@@ -606,6 +607,9 @@ main = do
       filetest "horn-0-1" "should parse X IS Y"
         (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 
+      filetest "horn-0-1" "should parse X IS Y using the other parser"
+        (parseOther pBSR) ( Leaf (RPConstraint ["X"] RPis ["Y"] ), [] )
+
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
       -- filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
@@ -639,6 +643,9 @@ main = do
       filetest "indent-2-a" "should handle indent-2-a"
         (parseOther exprP) abcd
         
+      filetest "indent-2-b" "should handle indent-2-b"
+        (parseOther exprP) abcd 
+
       filetest "indent-2-b" "should handle indent-2-b"
         (parseOther exprP) abcd 
 

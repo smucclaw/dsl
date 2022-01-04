@@ -15,6 +15,7 @@ import Data.Maybe (fromMaybe, fromJust, maybeToList)
 import LS.Types
 import LS.Tokens
 import LS.ParamText
+import LS.Parser
 
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = pRelPred
@@ -38,90 +39,12 @@ unLeaf :: BoolStructR -> RelationalPredicate
 unLeaf (AA.Leaf x) = x
 unLeaf _ = error "unLeaf: not a leaf"
 
--- let's do a nested and/or tree for relational predicates, not just boolean predicate structures
-pBoolStructR :: Parser BoolStructR
--- pBoolStructR = debugName "pBoolStructR" $ do
-  -- toBoolStruct <$> expr (unLeaf <$> rpElement)
-
--- first choice:  simple constraint
-{-
-    example: ["eyes"] RPis ["blue"]
-    AA.Leaf (RPConstraint  ["eyes"] RPis ["blue"])
--}    
-
--- second choice: recursive boolstructR
-{- example: eyes IS (left IS blue AND right IS brown)
-    AA.Leaf (RPBoolStructR MultiTerm RPRel (AA.All [ RPConstraint ["left"]  RPis ["blue"]
-                                                   , RPConstraint ["right"] RPis ["brown"] ]))
-
-   example: blue OR brown
-    AA.Any [ RPParamText ("blue"  :| [], Nothing) :| []
-           , RPParamText ("brown" :| [], Nothing) :| [] ]
--}
-
--- third choice: wrapper for ParamText
-{- example: cloudless blue skies
-    AA.Leaf (RPParamText ("cloudless" :| ["blue", "skies"], Nothing) :| [])
--}
-
-pBoolStructR = debugName "pBoolStructR" $ do
-  (ands,unlesses) <- permute $ (,)
-    <$$> Just <$> rpAndGroup
-    <|?> (Nothing, Just <$> rpUnlessGroup)
-  return $ fromJust $ addneg ands unlesses
-
-rpUnlessGroup :: Parser BoolStructR
-rpUnlessGroup = debugName "rpUnlessGroup" $ do
-  pToken Unless *> myindented rpAndGroup
-
-rpAndGroup :: Parser BoolStructR
-rpAndGroup = debugName "rpAndGroup" $ do
-    rpOrGroup1 <- manyIndentation rpOrGroup
-    rpOrGroupN <- many $ pToken And *> manyIndentation rpOrGroup
-    let toreturn = if null rpOrGroupN
-                   then rpOrGroup1
-                   else AA.All Nothing (rpOrGroup1 : rpOrGroupN)
-    return toreturn
-
-rpOrGroup :: Parser BoolStructR
-rpOrGroup = debugName "rpOrGroup" $ do
-  elem1    <- someIndentation rpElement <* optional dnl
-  elems    <- many $ pToken Or *> someIndentation rpElement
-  let toreturn = if null elems
-                 then elem1
-                 else AA.Any Nothing (elem1 : elems)
-  return toreturn
-
--- i think we're going to need an rpUnlessGroup as well
-
-rpElement :: Parser BoolStructR
-rpElement = debugName "rpElement" $ do
-  try (rpConstitutiveAsElement <$> tellIdFirst pConstitutiveRule)
--- try (rpHornlikeAsElement <$> tellIdFirst pHornlike)
-    <|> do
-    rpAtomicElement
-  
-rpAtomicElement :: Parser BoolStructR
-rpAtomicElement = debugName "rpAtomicElement" $ do
-  try rpNotElement
-  <|> try rpAndGroup
-  <|> rpLeafVal
-
-
-
-
-
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
 
 rpHornlikeAsElement :: Rule -> BoolStructR
 rpHornlikeAsElement =  multiterm2bsr
-
-rpNotElement :: Parser BoolStructR
-rpNotElement = debugName "rpNotElement" $ do
-  inner <- pToken MPNot *> someIndentation dBoolStructR
-  return $ AA.Not inner
 
 rpLeafVal :: Parser BoolStructR
 rpLeafVal = debugName "rpLeafVal" $ do
@@ -130,21 +53,7 @@ rpLeafVal = debugName "rpLeafVal" $ do
   return $ AA.Leaf leafVal
 
 
-
-rpNestedBool :: Parser BoolStructR
-rpNestedBool = debugName "rpNestedBool" $ do
-  depth <- asks callDepth
-  debugPrint $ "rpNestedBool lookahead looking for some pBoolConnector"
-  (leftX,foundBool) <- lookAhead (rpLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
-  myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; testing if leftX " ++ show leftX ++ " > depth " ++ show depth
-  guard (leftX > depth)
-  myTraceM $ "rpNestedBool lookahead matched " ++ show foundBool ++ " at location " ++ show leftX ++ "; rewinding for dBoolStructR to capture."
-  withDepth (leftX + 0) dBoolStructR
   
-dBoolStructR :: Parser BoolStructR
-dBoolStructR = debugName "dBoolStructR" $ do
-  rpAndGroup
-
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
@@ -238,7 +147,7 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- manyIndentation pBoolStructR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  ands <- manyIndentation pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
 
@@ -274,7 +183,7 @@ pHornlike = debugName "pHornlike" $ do
     -- this is actually kind of a meta-rule, because it really means
     -- assert(X :- (Y1, Y2)) :- body.
     whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
-    whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBoolStructR) <|> Nothing <$ pToken Otherwise
+    whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBSR) <|> Nothing <$ pToken Otherwise
 
     -- DECIDE x IS y WHEN Z IS Q
 
@@ -286,16 +195,22 @@ pHornlike = debugName "pHornlike" $ do
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
 
+    getFirstWord :: RelationalPredicate -> RuleName
+    getFirstWord (RPParamText pt) = pt2multiterm pt
+    getFirstWord (RPMT mt)        = mt
+    getFirstWord (RPConstraint mt _ _) = mt
+    getFirstWord (RPBoolStructR mt _ _) = mt
+
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   try (debugName "RPConstraint" $ indent3 RPConstraint pMultiTerm tok2rel pMultiTerm)
-    <|> try (debugName "RPBoolStructR" $ indent3 RPBoolStructR pMultiTerm tok2rel pBoolStructR)
+    <|> try (debugName "RPBoolStructR" $ indent3 RPBoolStructR pMultiTerm tok2rel pBSR)
     <|> try (debugName "RPMT" $ RPMT <$> pMultiTerm)
 
-getFirstWord :: RelationalPredicate -> RuleName
-getFirstWord (RPParamText pt) = pt2multiterm pt
-getFirstWord (RPMT mt)        = mt
-getFirstWord (RPConstraint mt _ _) = mt
-getFirstWord (RPBoolStructR mt _ _) = mt
+
+-- then we start with entire relationalpredicates, and wrap them into BoolStructR
+pBSR :: Parser BoolStructR
+pBSR = toBoolStruct <$> expr pRelPred
+
 
 

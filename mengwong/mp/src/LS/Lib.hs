@@ -831,5 +831,5 @@ pHornHead2 :: Parser RelationalPredicate
 pHornHead2 = pRelationalPredicate
 
 pHornBody2 :: Parser BoolStructR
-pHornBody2 = pBoolStructR
+pHornBody2 = pBSR
 

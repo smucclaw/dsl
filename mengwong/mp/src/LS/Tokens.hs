@@ -51,7 +51,7 @@ getWithPos = token test Set.empty <?> "any token"
       | otherwise                            = showpos wp
     showtok wp = Just $ show $ tokenVal wp
     showpos wp = Just $
-      show (unPos $ sourceLine   $ startPos wp) ++ "," ++
+      show (unPos $ sourceLine   $ startPos wp) ++ "." ++
       show (unPos $ sourceColumn $ startPos wp) ++ ":" ++
       show (tokenVal wp)
 
@@ -152,10 +152,8 @@ debugName dname p = do
 debugPrint :: String -> Parser ()
 debugPrint str = whenDebug $ do
 --  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
---  depth     <- asks callDepth
 --  leftX     <- lookAhead pXLocation
   myTraceM $ "/ " <> str
-    -- <> " running. callDepth min=" <> show depth
     -- <> "; currently at " ++ show leftX
     -- <> "; looking at: " <> show lookingAt
 
@@ -220,6 +218,9 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
       rhs <- optional $ try (manyIndentation p2)
       return ([], rhs)
 
+sameLine :: (Show a) => Parser a -> Parser a
+sameLine p = debugName "sameline" $ p
+  
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
@@ -317,17 +318,10 @@ indentChain :: Parser (a -> b) -> Parser a -> Parser b
 indentChain p1 p2 = p1 <*> someIndentation' p2
 infixl 4 `indentChain`
 
-
--- | withDepth n p sets the depth to n for parser p
-withDepth :: Depth -> Parser a -> Parser a
-withDepth n p = do
-  names <- getNames
-  myTraceM (names ++ " setting withDepth(" ++ show n ++ ")")
-  local (\st -> st {callDepth= n}) p
-  where
-    getNames = do
-      callStack <- asks parseCallStack
-      return $ intercalate " > " $ reverse callStack
+showStack :: Parser String
+showStack = do
+  callStack <- asks parseCallStack
+  return $ intercalate " > " $ reverse callStack
 
 pAnyText :: Parser Text.Text
 pAnyText = tok2text <|> pOtherVal
@@ -349,41 +343,8 @@ tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 pToken :: MyToken -> Parser MyToken
-pToken c = -- checkDepth >>
-  pTokenMatch (== c) c
+pToken c = pTokenMatch (== c) c
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
 pTokenAnyDepth c = pTokenMatch (== c) c
-
--- | check that the next token is at at least the current level of indentation
-checkDepth :: Parser ()
-checkDepth = do
-  depth <- asks callDepth
-  leftX <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  if leftX <  depth
-    then myTraceM $ "checkDepth: current location " ++ show leftX ++ " is left of minimum depth " ++ show depth ++ "; considering parse fail"
-    -- else myTraceM $ "checkDepth: current location " ++ show leftX ++ " is right of minimum depth " ++ show depth ++ "; guard succeeds"
-    else pure ()
-  guard $ leftX >= depth
-
---              X   IS    your relative
--- MEANS   NOT  X   IS    estranged
---          OR  X   IS    dead
-
--- becomes prolog
--- yourRelative(X) :- \+ (estranged(X), dead(X)).
-
--- Hornlike "X is your relative"
---          Means
--- no given
--- no upon
--- clauses: [ HC2 { hHead = RPConstraint ["X"] RPis ["your uncle"]
---                  hBody = Just $ AA.Not ( AA.Any Nothing [ RPConstraint ["X"] RPis ["estranged"]
---                                                         , RPConstraint ["X"] RPis ["dead"] ] ) } ]
--- rlabel lsource srcref  
-
--- the informal version:
--- hHead = RPParamText "Bob's your uncle"
--- hBody = Just $ AA.Not ( AA.Any Nothing [ RPParamText ["Bob is estranged"]
---                                        , RPParamText ["Bob is dead"] ] )
 

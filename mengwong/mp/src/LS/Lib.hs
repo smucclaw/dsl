@@ -366,7 +366,7 @@ pRule = debugName "pRule" $ do
 --     <|> try (pTypeDefinition   <?> "ontology definition")
 -- --  <|> try (pMeansRule <?> "nullary MEANS rule")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
---     <|> try (pScenarioRule <?> "scenario rule")
+    <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
     <|> try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
@@ -458,7 +458,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   (expects,givens) <- permute $ (,)
     <$$> some pExpect
-    <|?> ([], pToken Given >> pGivens)
+    <|?> ([], pToken Given >> someIndentation pGivens)
   return $ Scenario
     { scgiven = givens
     , expect  = expects
@@ -483,7 +483,7 @@ pExpect = debugName "pExpect" $ do
       -- TODO: add support for more complex boolstructs of relational predicates
           
 pGivens :: Parser [RelationalPredicate]
-pGivens = debugName "pGiven" $ do
+pGivens = debugName "pGivens" $ do
   sameDepth pRelationalPredicate
 
 
@@ -713,10 +713,9 @@ pDA = debugName "pDA" $ do
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
 preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  $ do
-  leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
   myTraceM ("preambleBoolStructP: found: " ++ show condWord)
-  ands <- withDepth leftX dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
 
@@ -750,8 +749,6 @@ exprP = debugName "expr pParamText" $ do
     prefixItem :: [Text.Text] -> ParamText -> ParamText
     prefixItem t pt = NE.cons (NE.fromList t, Nothing) pt
 
--- dBoolStructP = debugName "dBoolStructP" $ do
---   pAndGroup -- walks AND eats OR drinks
 
 pAndGroup ::  Parser BoolStructP
 pAndGroup = debugName "pAndGroup" $ do
@@ -764,9 +761,8 @@ pAndGroup = debugName "pAndGroup" $ do
 
 pOrGroup ::  Parser BoolStructP
 pOrGroup = debugName "pOrGroup" $ do
-  depth <- asks callDepth
-  elem1    <- withDepth (depth + 1) pElement
-  elems    <- many $ pToken Or *> withDepth (depth+1) pElement
+  elem1    <- pElement
+  elems    <- many $ pToken Or *> pElement
   let toreturn = if null elems
                  then elem1
                  else AA.Any Nothing (elem1 : elems)
@@ -777,6 +773,8 @@ pAtomicElement = debugName "pAtomicElement" $ do
   try pNestedBool
     <|> pNotElement
     <|> pLeafVal
+
+-- TODO: switch all this over the the Expr parser
 
 pElement :: Parser BoolStructP
 pElement = debugName "pElement" $ do
@@ -793,8 +791,7 @@ hornlikeAsElement hlr = AA.Leaf $ multiterm2pt $ name hlr
 
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" $ do
-  depth <- asks callDepth
-  inner <- pToken MPNot *> withDepth (depth+1) pElement
+  inner <- pToken MPNot *> pElement
   return $ AA.Not inner
 
 pLeafVal ::  Parser BoolStructP
@@ -810,7 +807,7 @@ pNestedBool = debugName "pNestedBool" $ do
   -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
   (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
   myTraceM $ "pNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX
-  withDepth leftX dBoolStructP
+  dBoolStructP
 
 -- helper functions for parsing
 

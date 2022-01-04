@@ -81,7 +81,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    withDepth leftX $ permutationsCon [Means,Includes] [When,If] [Unless] [Given]
+    permutationsCon [Means,Includes] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
 

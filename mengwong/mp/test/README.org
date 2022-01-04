@@ -358,7 +358,7 @@ a tiny fragment of a horn clause
 
 | X | IS | Y |
 
-****** fragments
+****** decide
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-0-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -367,6 +367,22 @@ a tiny fragment of a horn clause
 let's put a DECIDE in front of it
 
 | DECIDE | X | IS | Y |
+
+***** horn-0-3: multiterm support in RPConstraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| X1 | X2 | IS | Y |
+
+***** horn-0-4: multiterm support in RPConstraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| X1 | X2 | IS | Y1 | Y2 |
 
 ***** simple define, single line
 :PROPERTIES:

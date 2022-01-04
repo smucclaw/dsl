@@ -609,6 +609,9 @@ main = do
       filetest "horn-0-1" "should parse X IS Y using the other parser"
         (parseOther pBSR) ( Leaf (RPConstraint ["X"] RPis ["Y"] ), [] )
 
+      filetest "horn-0-3" "should parse X1 X2 IS Y"
+        (parseOther pBSR) ( Leaf (RPConstraint ["X1", "X2"] RPis ["Y"] ), [] )
+
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
       -- filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10

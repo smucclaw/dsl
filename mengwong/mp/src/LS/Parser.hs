@@ -93,4 +93,12 @@ mylabel         = Prefix  (MyLabel <$> try (manyDeep pOtherVal))
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p
 
--- we can't use the expr style parser to deal with things that go deeper; only expressions whose terms are at basically the same level of indentation. so we don't use it for the insides of relationalpredicates, only linking them up with a AND/OR/NOT to create a BoolStructR
+
+
+
+
+
+
+
+
+

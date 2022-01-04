@@ -26,9 +26,8 @@ for (@input) {
   # stop at first blank line encountered after the main zone
   if ($donework and length == 0 and $inzone) {
     $inzone = 0;
-    print "\n\n* final\n";
     print <<EOPROPERTIES;
-* main
+* final
 :PROPERTIES:
 :VISIBILITY: all
 :END:

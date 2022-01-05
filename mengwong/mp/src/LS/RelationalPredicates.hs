@@ -139,7 +139,7 @@ pNameParens = pMultiTermAka
 
 -- sometimes we want a ParamText
 pPTParens :: Parser ParamText
-pPTParens = debugName "pPTAka" $ pAKA slParamText pt2multiterm
+pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
@@ -156,10 +156,10 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
 
 
 preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
-preambleParamText preambles = do
-  preamble <- choice (try . pToken <$> preambles)
-  paramtext <- pPTParens -- pPTParens is a bit awkward here because of the multiline possibility of a paramtext
-  return (preamble, paramtext)
+preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles) $ do
+  (,)
+    $>| choice (try . pToken <$> preambles)
+    |>< pPTParens
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do

@@ -473,7 +473,7 @@ pExpect = debugName "pExpect" $ do
 
   return $ HC2
     { hHead = relPred
-    , hBody = join whenpart
+    , hBody = whenpart
     }
           
 pGivens :: Parser [RelationalPredicate]

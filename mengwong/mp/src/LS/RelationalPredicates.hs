@@ -188,7 +188,7 @@ pHornlike = debugName "pHornlike" $ do
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
-      return (keyword, inferRuleName relPred, [HC2 relPred (join whenpart)])
+      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
@@ -204,12 +204,18 @@ pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   slRelPred |<< undeepers
 
-relPredNextlineWhen = pRelPred `optIndentedTuple` whenCase
-relPredSamelineWhen = (,) $*| slRelPred |>< optional whenCase
+relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
+relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
+  (x,y) <- debugName "pRelPred optIndentedTuple whenCase" (pRelPred `optIndentedTuple` whenCase)
+  return (x, join y)
+relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
+relPredSamelineWhen = debugName "relPredSamelineWhen" $ (,) $*| slRelPred |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $ optional whenCase))
 whenCase :: Parser (Maybe BoolStructR)
-whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBSR) <|> Nothing <$ pToken Otherwise
+whenCase = debugName "whenCase" $ do
+  try (whenMeansIf *> (Just <$> pBSR))
+  <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
 whenMeansIf :: Parser MyToken
-whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
+whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If ]
 
 slRelPred :: Parser (RelationalPredicate, Int)
 slRelPred = debugName "slRelPred" $ do
@@ -217,13 +223,18 @@ slRelPred = debugName "slRelPred" $ do
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
     <|> try ( debugName "RPMT"          rpMT )
   
+slMultiTerm :: Parser (MultiTerm, Int)
 slMultiTerm = debugName "slMultiTerm" $ (.:|) (debugName "pNumOrText" pNumOrText)
+rpMT :: Parser (RelationalPredicate, Int)
 rpMT          = RPMT          $*| slMultiTerm
+rpConstraint :: Parser (RelationalPredicate, Int)
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
+
+rpBoolStructR :: Parser (RelationalPredicate, Int)
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
-pBSR = toBoolStruct <$> expr pRelPred
+pBSR = debugName "pBSR" $ toBoolStruct <$> expr pRelPred
 
 
 

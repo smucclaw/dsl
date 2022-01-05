@@ -235,6 +235,9 @@ main = do
                         , lsource = Nothing
                         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
             ]              
+
+      -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
+      -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
       
 --      filetest "indented-2" "inline constitutive rule" (parseR pRules) $ imbibeRule2 4 3
 

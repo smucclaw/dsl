@@ -368,10 +368,23 @@ infixl 4 $*|
 
 p1 |>| p2 = do
   (l,n) <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "|>| going right" p2
-  return (l r, n + length deepers )
+  (r,m) <- debugName "|>| calling manyDeepers" $ manyDeepers p2
+  return (l r, n + m )
 infixl 4 |>|
+
+manyDeepers :: Show a => Parser a -> Parser (a,Int)
+manyDeepers p = debugName "manyDeepers" $ do
+  try recurse <|> base
+  where
+    base = debugName "manyDeepers/base" $ do
+      out <- p
+      debugPrint $ "manyDeepers/base got " ++ show out
+      return (out,0)
+    recurse = debugName "manyDeepers/recurse" $ do
+      _ <- pToken GoDeeper
+      (out, m) <- manyDeepers p
+      return (out, m+1)
+  
 
 p1 |*| p2 = do
   (l,n) <- p1

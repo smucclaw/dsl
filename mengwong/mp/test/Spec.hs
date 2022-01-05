@@ -742,13 +742,6 @@ main = do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
 
-    describe "Prolog" $ do
-
-      it "shouldbe" $ do
-        testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
-        let dbno1 = parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
-        (show . fmap sfl4ToProlog <$> dbno1) `shouldParse` "potato"
-
     describe "PDPA" $ do          
 
       filetest "pdpadbno-1" "must assess"
@@ -885,4 +878,16 @@ main = do
         }
         ]
 
+
+    describe "Prolog" $ do
+
+      it "pdpadbno1" $ do
+        testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
+        let dbno1 = parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
+        (show . fmap sfl4ToProlog <$> dbno1) `shouldParse` "potato"
+
+      it "degustates" $ do
+        testcsv <- BS.readFile ("test/" <> "simple-constitutive-1" <> ".csv")
+        let rules = parseR pRules "simple-constitutive-1" `traverse` exampleStreams testcsv
+        (show . fmap sfl4ToProlog <$> rules) `shouldParse` "potato"
 

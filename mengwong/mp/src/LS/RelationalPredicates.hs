@@ -190,16 +190,16 @@ pHornlike = debugName "pHornlike" $ do
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (relPred, whenpart) <- manyIndentation (pRelPred `optIndentedTuple` whenCase)
-      return (keyword, getFirstWord relPred, [HC2 relPred (fromMaybe Nothing whenpart)])
+      return (keyword, inferRuleName relPred, [HC2 relPred (fromMaybe Nothing whenpart)])
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
 
-    getFirstWord :: RelationalPredicate -> RuleName
-    getFirstWord (RPParamText pt) = pt2multiterm pt
-    getFirstWord (RPMT mt)        = mt
-    getFirstWord (RPConstraint mt _ _) = mt
-    getFirstWord (RPBoolStructR mt _ _) = mt
+    inferRuleName :: RelationalPredicate -> RuleName
+    inferRuleName (RPParamText pt)       = pt2multiterm pt
+    inferRuleName (RPMT mt)              = mt
+    inferRuleName (RPConstraint  mt _ _) = mt
+    inferRuleName (RPBoolStructR mt _ _) = mt
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do

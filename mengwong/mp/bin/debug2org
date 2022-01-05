@@ -61,8 +61,14 @@ EOPROPERTIES
 EOPROPERTIES
   }
 
+  my ($row,$col) = $prefix =~ /^(\d+)_(\d+)/;
+
+  my $indent = ($col - 1) * 2 + ($prefix =~ /GoDeeper/ ? -1 :
+                                 $prefix =~ /UnDeeper/ ? 1
+                                 : 0);
+  
   my $outlhs = "*" x $numpipes . " $slash " . $text;
-  my $spacing = 120 - length($outlhs) - $numpipes;
+  my $spacing = 120 - length($outlhs) - $numpipes + $indent;
      $prefix =~ s/ +$//;
   my $out = $outlhs . " " x $spacing . " :$prefix:";
   print $out, "\n";

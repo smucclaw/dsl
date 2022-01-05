@@ -49,11 +49,11 @@ getWithPos = token test Set.empty <?> "any token"
     test wp@(WithPos _ _ _ tok)
       | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
       | otherwise                            = showpos wp
-    showtok wp = Just $ show $ tokenVal wp
     showpos wp = Just $
-      show (unPos $ sourceLine   $ startPos wp) ++ "." ++
+      show (unPos $ sourceLine   $ startPos wp) ++ "_" ++
       show (unPos $ sourceColumn $ startPos wp) ++ ":" ++
       show (tokenVal wp)
+    _showtok wp = Just $ show $ tokenVal wp
 
 tokenViewColumnSize :: Int
 tokenViewColumnSize = 15
@@ -267,12 +267,13 @@ threeIs = debugName "threeIs" $ do
 
 (|:|) p = debugName "|:| someLike" $ do
   (p1,n) <- p
-  fmap (n+) <$> (try (deeper p1) <|> nomore)
+  (ps,m) <- try deeper <|> nomore
+  return (p1:ps, n+m)
   where
-    deeper p1 = debugName "deeper" $ do
+    deeper = debugName "deeper" $ do
       deepers <- debugName "some GoDeeper" $ some (pToken GoDeeper)
       (next,m) <- (|:|) p
-      return (p1:next, m + length deepers)
+      return (next, m + length deepers)
     nomore = debugName "noMore" $ return ([],0)
 infixl 4 |:|, ..|, .:|
   

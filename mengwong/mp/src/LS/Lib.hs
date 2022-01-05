@@ -465,10 +465,11 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entityname         <- AA.Leaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((Party, entityname), Nothing)
-  rulebody           <- someIndentation (permutationsReg keynamewho)
-  -- TODO: refactor and converge the rest of this code block with Normal below
-  henceLimb          <- optional $ pHenceLest Hence
-  lestLimb           <- optional $ pHenceLest Lest
+  (rulebody,henceLimb,lestLimb) <- someIndentation ((,,)
+                                                     <$> permutationsReg keynamewho
+                                                     <*> optional (pHenceLest Hence)
+                                                     <*> optional (pHenceLest Lest)
+                                                   )
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
@@ -541,9 +542,11 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
-  pToken henceLest *> someIndentation (try pRegRule <|> RuleAlias <$> (pOtherVal <* dnl))
-
-
+  pToken henceLest *> someIndentation innerRule
+  where
+    innerRule =
+      try pRegRule
+      <|> RuleAlias <$> (optional (pToken Goto) *> pOtherVal)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely

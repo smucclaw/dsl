@@ -1753,28 +1753,25 @@ what if we say
 
 ** Rule Groups and Rule Labels
 :PROPERTIES:
-:TABLE_EXPORT_FILE: rulelabels.csv
+:TABLE_EXPORT_FILE: pdpadbno-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|              |   |   | §     | Notification                                                                    |          |                                   |     |         |                                  |         |               |
-|              |   |   |       |                                                                                 |          |                                   |     |         |                                  |         |               |
-|              |   |   |       | this is part of a rule group                                                    |          |                                   |     |         |                                  |         |               |
-|              |   |   |       |                                                                                 |          |                                   |     |         |                                  |         |               |
-|              |   |   | §§    | to PDPC                                                                         |          |                                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | EVERY | Organisation                                                                    |          |                                   |     | ("you") |                                  |         |               |
-| (Act §4.1.c) |   |   | WHO   | is                                                                              | not      | a Public Agency                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | MUST  | WITHIN                                                                          |          | 30 days                           |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | UPON  | becoming aware a data breach may have occurred                                  |          |                                   |     |         |                                  |         |               |
-| (Act §26C.1) |   |   | WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |          |                                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | ➔     |                                                                                 | assess   | if it is a Notifiable Data Breach |     |         |                                  |         |               |
-|              |   |   | HENCE | Notification                                                                    |          |                                   |     |         |                                  |         |               |
-| (AdvG §20.4) |   |   | LEST  |                                                                                 | the PDPC | MAY                               |     |         |                                  |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          | ➔                                 |     | demand  | an explanation for your inaction |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          | HENCE                             | you | MUST    |                                  |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     | ➔       |                                  | respond |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | to      | the PDPC      |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | about   | your inaction |
+| EVERY | Organisation                                                                    |                                   |                 | AKA               | You    |                                  |       |               |
+| WHO   | is                                                                              | not                               | a Public Agency |                   |        |                                  |       |               |
+| MUST  | WITHIN                                                                          | 30                                | days            |                   |        |                                  |       |               |
+| UPON  | becoming aware a data breach may have occurred                                  |                                   |                 |                   |        |                                  |       |               |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                 |                   |        |                                  |       |               |
+| ->    | assess                                                                          | if it is a Notifiable Data Breach |                 |                   |        |                                  |       |               |
+|       | by                                                                              | performing                        |                 | NDB Qualification |        |                                  |       |               |
+| HENCE | Notification                                                                    |                                   |                 |                   |        |                                  |       |               |
+| LEST  |                                                                                 | the PDPC                          | MAY             |                   |        |                                  |       |               |
+|       |                                                                                 |                                   | ->              |                   | demand | an explanation for your inaction |       |               |
+|       |                                                                                 |                                   | HENCE           | You               | MUST   |                                  |       |               |
+|       |                                                                                 |                                   |                 |                   | ->     | respond                          |       |               |
+|       |                                                                                 |                                   |                 |                   |        |                                  | to    | the PDPC      |
+|       |                                                                                 |                                   |                 |                   |        |                                  | about | your inaction |
+
 
 ** Nested Or Group with pre/post labels
 

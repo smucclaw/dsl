@@ -436,6 +436,7 @@ toToken     "ELSE" = pure Lest
 toToken  "OR ELSE" = pure Lest
 toToken "XOR ELSE" = pure Lest
 toToken    "XELSE" = pure Lest
+toToken  "GOTO" = pure Goto
 
 toToken ";"      = pure EOL
 

@@ -37,7 +37,7 @@ data MyToken = Every | Party | TokAll
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
              | Distinct -- entity modifier in GIVEN
              | Unless
-             | Hence | Lest | Fulfilled | Breach
+             | Hence | Lest | Fulfilled | Breach | Goto
              | TNumber Integer
              | Other Text.Text
              | Do

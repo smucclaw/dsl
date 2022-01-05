@@ -740,3 +740,140 @@ main = do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
 
+    describe "PDPA" $ do          
+
+      filetest "pdpadbno-1" "must assess"
+        (parseR pToplevel) 
+        [ Regulative
+        { subj = Leaf
+            (
+                ( "Organisation" :| []
+                , Nothing
+                ) :| []
+            )
+        , keyword = Every
+        , who = Just
+            ( Leaf
+                ( RPMT
+                    [ "is"
+                    , "not"
+                    , "a Public Agency"
+                    ]
+                )
+            )
+        , cond = Just
+            ( Leaf
+                ( RPMT [ "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
+            )
+        , deontic = DMust
+        , action = Leaf
+            (
+                ( "assess" :| [ "if it is a Notifiable Data Breach" ]
+                , Nothing
+                ) :|
+                [
+                    ( "by" :|
+                        [ "performing"
+                        , "NDB Qualification"
+                        ]
+                    , Nothing
+                    )
+                ]
+            )
+        , temporal = Just ( TemporalConstraint TBefore 30 "days" )
+        , hence = Just ( RuleAlias "Notification" )
+        , lest = Just
+            ( Regulative
+                { subj = Leaf
+                    (
+                        ( "the PDPC" :| []
+                        , Nothing
+                        ) :| []
+                    )
+                , keyword = Party
+                , who = Nothing
+                , cond = Nothing
+                , deontic = DMay
+                , action = Leaf
+                    (
+                        ( "demand" :| [ "an explanation for your inaction" ]
+                        , Nothing
+                        ) :| []
+                    )
+                , temporal = Nothing
+                , hence = Just
+                    ( Regulative
+                        { subj = Leaf
+                            (
+                                ( "You" :| []
+                                , Nothing
+                                ) :| []
+                            )
+                        , keyword = Party
+                        , who = Nothing
+                        , cond = Nothing
+                        , deontic = DMust
+                        , action = Leaf
+                            (
+                                ( "respond" :| []
+                                , Nothing
+                                ) :|
+                                [
+                                    ( "to" :| [ "the PDPC" ]
+                                    , Nothing
+                                    )
+                                ,
+                                    ( "about" :| [ "your inaction" ]
+                                    , Nothing
+                                    )
+                                ]
+                            )
+                        , temporal = Nothing
+                        , hence = Nothing
+                        , lest = Nothing
+                        , rlabel = Nothing
+                        , lsource = Nothing
+                        , srcref = Nothing
+                        , upon = Nothing
+                        , given = Nothing
+                        , having = Nothing
+                        }
+                    )
+                , lest = Nothing
+                , rlabel = Nothing
+                , lsource = Nothing
+                , srcref = Nothing
+                , upon = Nothing
+                , given = Nothing
+                , having = Nothing
+                }
+            )
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Just
+            (
+                ( "becoming aware a data breach may have occurred" :| []
+                , Nothing
+                ) :| []
+            )
+        , given = Nothing
+        , having = Nothing
+        }
+        , DefNameAlias
+        { name = [ "You" ]
+        , detail = [ "Organisation" ]
+        , nlhint = Nothing
+        , srcref = Just
+            ( SrcRef
+                { url = "test/Spec"
+                , short = "test/Spec"
+                , srcrow = 6
+                , srccol = 1
+                , version = Nothing
+                }
+            )
+        }
+        ]
+
+

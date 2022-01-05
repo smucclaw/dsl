@@ -2,7 +2,7 @@
 
 module LS.XPile.Prolog where
 
-import LS.Types as SFL4
+import LS as SFL4
 import Language.Prolog
 import qualified Data.Text.Lazy as Text
 import qualified Data.Map as Map
@@ -23,15 +23,15 @@ sfl4ToProlog rs =
     concatMap (rule2clause analysis) rs
 
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
-rule2clause st cr@Constitutive { keyword = Means } = letbind2clause st (name cr) (cond cr) (letbind cr)
-rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (name td) ens
+rule2clause st cr@Hornlike { keyword = Means } = hornlike2clauses st (Text.unwords $ name cr) (clauses cr)
+rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $ name td) ens
 -- [ TypeDecl
 --     { name = "Chirality"
 --     , enums = Just (
 --             ( "Left" :| [] ) :|
 --             [ "Right" :| [] ]
 
-rule2clause st td@TypeDecl { has   = Just has }    = describeDict st (name td) (super td) has
+rule2clause st td@TypeDecl { has   = Just rules }    = describeDict st (Text.unwords $ name td) (super td) rules
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -48,7 +48,7 @@ rule2clause st td@TypeDecl { has   = Just has }    = describeDict st (name td) (
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ describeParent st (name td) sup
+rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ describeParent st (Text.unwords (name td)) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just
@@ -56,13 +56,13 @@ rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ descr
 
 rule2clause st _ = [ mkComment "clause Not Handled" ]
 
-describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [ParamText] -> [Clause]
-describeDict st tname mparent hases =
+describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [Rule] -> [Clause]
+describeDict st tname mparent rules =
   maybe [] (\parent -> [describeParent st tname parent]) mparent
   ++
-  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (pt2text pt), vart typeDesc]) []
-  | pt@((_,ts):|_) <- hases
-  , let typeDesc = maybe "untyped" showtype ts
+  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (Text.unwords $ name rule), vart typeDesc]) []
+  | rule <- rules
+  , let typeDesc = maybe "untyped" showtype (super rule)
   ]
 
 showtype (SimpleType TOne      tt) = tt
@@ -97,34 +97,38 @@ clpEnums st tname ens =
 mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
 
--- TODO: convert the upstream of all this stuff to a HornClause
-letbind2clause :: Analysis -> Text.Text -> Maybe BoolStructR -> RelationalPredicate -> [Clause]
-letbind2clause st fname cond (RPFunction multiterm) =
-  let args = Prelude.filter (/= fname) multiterm
-  in pure $ Clause (Struct (Text.unpack fname) (vart <$> args))
-     (case cond of
-         Nothing  -> []
-         Just bsr -> bsr2struct bsr
-     )
+hornlike2clauses :: Analysis -> Text.Text -> [HornClause2] -> [Clause]
+hornlike2clauses st fname hc2s =
+  [ clause
+  | hc2 <- hc2s
+  , let lhses = rp2goal $ hHead hc2
+        rhs   = mbsr2rhs $ hBody hc2
+  , lhs <- lhses
+  , let clause = Clause lhs rhs
+  ]
 
-bsp2struct :: BoolStructP -> [Goal]
+bsp2struct :: BoolStructP -> [Term]
 bsp2struct (Leaf pt)     = pure (vart . pt2text $ pt)
 bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt -- how do you say \+ in Language.Prolog?
 bsp2struct (All _lbl xs) =    concatMap bsp2struct xs
 bsp2struct (Any _lbl xs) = vart "or" : concatMap bsp2struct xs
 
-bsr2struct :: BoolStructR -> [Goal]
+bsr2struct :: BoolStructR -> [Term]
 bsr2struct (Leaf rt)     = rp2goal rt
 bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt -- how do you say \+ in Language.Prolog?
 bsr2struct (All _lbl xs) =    concatMap bsr2struct xs
 bsr2struct (Any _lbl xs) = vart "or" : concatMap bsr2struct xs
 
-rp2goal :: RelationalPredicate -> [Goal]
-rp2goal (RPFunction [])            = error "empty multiterm in RelationalPredicate RPFunction"
-rp2goal (RPFunction [x])           = pure $ vart x
-rp2goal (RPFunction (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
-rp2goal (RPBoolStructP bsp)        = bsp2struct bsp
+mbsr2rhs :: Maybe BoolStructR -> [Term]
+mbsr2rhs Nothing = []
+mbsr2rhs (Just bsr) = bsr2struct bsr
+
+rp2goal :: RelationalPredicate -> [Term]
+rp2goal (RPMT [x])           = pure $ vart x
+rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
+rp2goal (RPBoolStructR lhs rel bsr) = Struct (Text.unpack $ Text.unwords lhs) <$> [bsr2struct bsr]
 rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (vart <$> mt1) ++ (vart <$> mt2)
+
 
 rel2f = Text.unpack . rel2txt
 

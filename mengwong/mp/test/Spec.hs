@@ -14,6 +14,8 @@ import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
 
+import LS.XPile.Prolog
+
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
@@ -739,6 +741,13 @@ main = do
       it "sameline threeIs float" $ do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
+
+    describe "Prolog" $ do
+
+      it "shouldbe" $ do
+        testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
+        let dbno1 = parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
+        (show . fmap sfl4ToProlog <$> dbno1) `shouldParse` "potato"
 
     describe "PDPA" $ do          
 

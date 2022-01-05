@@ -39,6 +39,7 @@ library
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle
+      LS.XPile.Prolog
       LS.XPile.SVG
       LS.XPile.Uppaal
       LS.XPile.VueJSON

@@ -549,7 +549,7 @@ pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
     eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure 0 <*> pure ""
-    specifically = debugName "pTemporal/specifically" $ indent3 mkTC sometime pNumber pOtherVal
+    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |>| pNumber |>< pOtherVal
     vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague 0 <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
@@ -654,8 +654,12 @@ permutationsReg keynamewho =
 -- MAY EVENTUALLY
 --  -> pay
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
-pDT = debugName "pDT" (fmap join <$> pDeontic `optIndentedTuple` pTemporal)
-
+pDT = debugName "pDT" $ do
+  (pd,pt) <- (,)
+    $>| pDeontic
+    |>< optional pTemporal
+  return (pd, join pt)
+  
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do

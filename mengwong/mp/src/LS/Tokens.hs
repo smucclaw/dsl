@@ -220,50 +220,123 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 
 
 
+{- ABOUT THE SAMELINE COMBINATORS
+   We need combinators for compound expressions on the same line.
 
--- combinators for compound expressions on the same line
--- e.g. "foo IS bar AND baz IS quux"
--- contains (foo IS bar)   -- a RelationalPredicate
---          (baz IS quux)  -- another RelationalPredicate
--- and then they are joined by "AND" to form a BoolStructR
---
--- if they were broken across multiple lines that would be fine -- the foo and the baz would be at the same indentation level because after bar we would get a bunch of UnDeepers.
--- but compound expressions on the same line don't consume UnDeepers
--- so we need this family of combinators to operate
+   Example: "foo IS bar AND baz IS quux"
+   contains (foo IS bar)   -- a RelationalPredicate
+            (baz IS quux)  -- another RelationalPredicate
+   and then they are joined by "AND" to form a BoolStructR
 
--- typical usage:
-fourIs :: Parser (MyToken,MyToken,MyToken,MyToken)
-fourIs = debugName "fourIs" $ do
-  (,,,)
-    $>| pT
-    |>| pT
-    |>| pT
-    |<< pT
-  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
+   The constructor is something like (And [ RPConstraint ["foo"] RPis ["bar"]
+                                          , RPConstraint ["baz"] RPis ["quux"] ])
 
-threeIs :: Parser (MyToken, (MyToken,MyToken) ,MyToken)
-threeIs = debugName "threeIs" $ do
-  (,,)
-    $>| pT
-    ||| pTT
-    |<< pT
-  where pT  = debugName "Is/An" (pToken Is <|> pToken A_An)
-        pTT = debugName "(pT,pT)" $ (,) $>| pT |>| pT
-    
+   In a simple world, where we don't have GoDeepers and UnDeepers to think about, an applicative-style constructor would be something like
+     RPConstraint <$> pMultiTerm <*> tok2rel <*> pMultiTerm
 
-($>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)
-($||)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)
-(|>|)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  (b,Int)
-(|||)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser  (b,Int)
-(||<)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b
-(|<<)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser   b     
+   But this doesn't work, because the pMultiTerm is implemented using a `someDeep` which expects to tidy up its UnDeepers at the end:
+     (f(o(o))) IS (b(a(r)))
+
+   If the sub-expressions were broken across multiple lines that would be fine --
+   the foo and the baz would be at the same indentation level because after bar we would get a bunch of UnDeepers.
+     (f(o(o)))
+     IS
+     (b(a(r)))
+
+   But when we're dealing with expressions that are on the same line, what we need instead is to be able to match
+     (fo(o(o(  IS (b(a(r)))))))
+
+   ... pending all the UnDeepers to the end! So we introduce a family of combinators to support the above.
+
+   The way to solve this using the sameline combinator is something like
+      RPConstraint
+        $*| dMultiTerm
+        |>| tok2rel
+        |*< dMultiTerm
+      where dMultiTerm = (.:|) pNumOrText, which lifts a plain parser into the fancy combinator, slapping a "some" alongside.
+
+   We lift a Parser a into a Parser (a, Int) where the Int records the number of UnDeepers needed to be consumed at the end.
+
+   At the end, the combinators (||<) and (|$<) are responsible for consuming, or "floating", those UnDeepers.
+   The idea of "UnDeeper" corresponds with "moving to the left", which is why we see the character '<' at the right of the sigil.
+
+   To get parsers into the combinator, we can lift by using a fish operator (<>|) -- but this is usually only used in helper functions.
+
+   The more conventional way to build a parser chain is to use applicative style, and that's why we have combinators that
+   - get the chain started  :: ($>|) and ($*|)
+   - keep the chain running :: (|>|) and (|*|)
+   - end the chain          :: (||<) and (|$<)
+   
+   In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
+
+   What do the characters mean? Generally:
+   - $ means a function, typically a data constructor, which consumes one or more arguments to return a value
+   - > means an argument to that constructor, typically a plain parser that returns the value needed by the constructor
+   - | means a fancified curry coming from the left, that is part of the chain; or returning a fancified curry to the right
+   - * means an argument to the constructor which itself has been fancified
+   - < means this combinator is responsible for consuming undeepers
+
+   Together, the first character represents the left argument, the second the right, and the third the output.
+   Then you can basically hook them up by playing dominos, ahem, by checking that the types are consistent.
+-}
+
+-- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
+($>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
+($*|)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
+(|>|)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  (b,Int)  -- continue    fancy plain
+(|*|)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser  (b,Int)  -- continue    fancy fancy
+(|*<)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
+(|><)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser   b       -- end         fancy plain
+
+-- we have convenience combinators for some, many, and optional; these do not consume GoDeeper.
 (|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
 (|.|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- many
 (..|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- many
 (.:|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- some
+(.?|)  :: Show a => Parser  a            ->                Parser (Maybe a ,Int) -- optional
 
-(..|) x = (|.|) (id $>| x)
-(.:|) x = (|:|) (id $>| x)
+-- and a simple lifter
+(<>|)  :: Show a => Parser  a            ->                     Parser ( a ,Int) -- lift
+
+{- so, how do these things work in action? here are some examples: -}
+
+-- typical usage:
+_fourIs :: Parser (MyToken,MyToken,MyToken,MyToken)
+_fourIs = debugName "fourIs" $
+  (,,,)
+    $>| pT
+    |>| pT
+    |>| pT
+    |>< pT
+  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
+
+_threeIs :: Parser (MyToken, (MyToken,MyToken) ,MyToken)
+_threeIs = debugName "threeIs" $
+  (,,)
+    $>| pT
+    |*| pTT
+    |>< pT
+  where pT  = debugName "Is/An" (pToken Is <|> pToken A_An)
+        pTT = debugName "(pT,pT)" $ (,) $>| pT |>| pT
+    
+_twoIsSomeAn :: Parser (MyToken,[MyToken],MyToken)
+_twoIsSomeAn = debugName "twoIsSomeAn" $
+  (,,)
+    $*| pT
+    |*| pTT
+    |*< pT
+  where pT  = (<>|) (pToken Is)
+        pTT = (.:|) (pToken A_An)
+
+-- implementation of the combinators
+
+(..|) x = (|.|) $ (<>|) x            -- usage: (..|) pOtherVal   is       many pOtherVal
+(.:|) x = (|:|) $ (<>|) x            -- usage: (.:|) pOtherVal   is       some pOtherVal
+(.?|) p =         (<>|) (optional p) -- usage: (.?|) pOtherVal   is   optional pOtherval
+
+(<>|) p = do
+  p1 <- p
+  return (p1, 0)
 
 (|:|) p = debugName "|:| someLike" $ do
   (p1,n) <- p
@@ -285,12 +358,10 @@ f $>| p2 = do
   return (f r,0)
 infixl 4 $>|
 
-
-
-f $|| p2 = do
-  (r,n) <- debugName "$||" p2
+f $*| p2 = do
+  (r,n) <- debugName "$*|" p2
   return (f r,n)
-infixl 4 $||
+infixl 4 $*|
 
 p1 |>| p2 = do
   (l,n) <- p1
@@ -299,30 +370,30 @@ p1 |>| p2 = do
   return (l r, n + length deepers )
 infixl 4 |>|
 
-
-p1 ||| p2 = do
+p1 |*| p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  (r,m) <- debugName "||| going right" p2
+  (r,m) <- debugName "|*| going right" p2
   return (l r, n + length deepers + m )
-infixl 4 |||
+infixl 4 |*|
 
-  
-p1 |<< p2 = do
+p1 |>< p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
   r <- debugName "|<< going right and closing" p2 <* float (n + length deepers)
   return (l r)
-infixl 4 |<<
+infixl 4 |><
   
-p1 ||< p2 = do
+p1 |*< p2 = do
   (l,n) <- p1
   deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  (r,m) <- debugName "||< going right and closing" p2
+  (r,m) <- debugName "|*< going right and closing" p2
   _     <- float (n + length deepers + m)
   return (l r)
-infixl 4 ||<
-  
+infixl 4 |*<
+
+-- consume all the UnDeepers that have been stacked off to the right
+-- which is to say, inside the snd of the Parser (_,Int)
   
 float :: Int -> Parser ()
 float n = debugName "float" $ do

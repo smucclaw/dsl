@@ -499,7 +499,7 @@ main = do
   -- defNameAlias should absorb the WHO limb
 
     describe "megaparsing scenarios" $ do
-      when False $ filetest "scenario-1" "should handle labeled given/expect" 
+      filetest "scenario-1" "should handle labeled given/expect" 
         (parseR pRules)
           [ Scenario
             { scgiven =
@@ -736,10 +736,10 @@ main = do
         (parseR pToplevel) [ whoStructR_3 ] 
 
       it "sameline fourIs float" $ do
-        parseOther fourIs "" (exampleStream "A,IS,IS,IS\n")
+        parseOther _fourIs "" (exampleStream "A,IS,IS,IS\n")
           `shouldParse` ((A_An,Is,Is,Is), [])
 
       it "sameline threeIs float" $ do
-        parseOther threeIs "" (exampleStream "A,IS,IS,IS\n")
+        parseOther _threeIs "" (exampleStream "A,IS,IS,IS\n")
           `shouldParse` ((A_An,(Is,Is),Is), [])
 

@@ -203,7 +203,7 @@ pHornlike = debugName "pHornlike" $ do
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
-  try (debugName "RPConstraint" $ RPConstraint $|| dMultiTerm |>| tok2rel ||< dMultiTerm)
+  try (debugName "RPConstraint" $ RPConstraint $*| dMultiTerm |>| tok2rel |*< dMultiTerm)
     <|> try (debugName "RPBoolStructR" $ indent3 RPBoolStructR pMultiTerm tok2rel pBSR)
     <|> try (debugName "RPMT" $ RPMT <$> pMultiTerm)
   where dMultiTerm = debugName "dMultiTerm" $ (.:|) (debugName "pNumOrText" pNumOrText)

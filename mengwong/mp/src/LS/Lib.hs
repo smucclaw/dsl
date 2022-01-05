@@ -364,8 +364,7 @@ pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
   try (pRegRule <?> "regulative rule")
---     <|> try (pTypeDefinition   <?> "ontology definition")
--- --  <|> try (pMeansRule <?> "nullary MEANS rule")
+    <|> try (pTypeDefinition   <?> "ontology definition")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
@@ -385,9 +384,8 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
   where
     defineLimb = do
       _dtoken <- pToken Define
-      name  <- pNameParens
+      (name,super)  <- (,) $>| pNameParens |>< optional pTypeSig
       myTraceM $ "got name = " <> show name
-      super <- someIndentation $ optional pTypeSig
       myTraceM $ "got super = " <> show super
       has   <- optional (pToken Has *> someIndentation (sameDepth pTypeDefinition))
       myTraceM $ "got has = " <> show has
@@ -407,48 +405,8 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
 
     givenLimb = debugName "pHornlike/givenLimb" $ Just <$> preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ Just <$> preambleParamText [Upon]
---        X MEANS    Y
--- DECIDE X MEANS    Y
--- DEEM   X MEANS    Y
---          IS       Y
---          INCLUDES Y
---                     WHEN / IF
---                               GIVEN
 
-pMeansRule :: Parser Rule
-pMeansRule = debugName "pMeansRule" $ do
-  leftY  <- lookAhead pYLocation
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  
-  
-  ((_d,d),gs,w,i,u,includes) <- permute $ (,,,,,)
-    <$$> preambleParamText [Deem, Decide]
-    <|?> ([], some $ preambleParamText [Given, Upon])
-    <|?> ([], some $ preambleBoolStructR [When])
-    <|?> ([], some $ preambleBoolStructR [If])
-    <|?> ([], some $ preambleBoolStructR [Unless])
-    <|?> ([], some $ preambleBoolStructR [Includes])
-
-  -- let's extract the new term from the deem line
-  let givens = concatMap (concatMap NE.toList . NE.toList . untypePT . snd) gs :: [Text.Text]
-      dnew   = [ word | word <- concatMap NE.toList $ NE.toList (untypePT d), word `notElem` givens ]
-  if length dnew /= 1
-    then error "DEEM should identify exactly one term which was not previously found in the GIVEN line"
-    else return $ Constitutive
-         { name = dnew
-         , keyword = Given
-         , letbind = AA.Leaf $ RPParamText d
-         , cond = addneg
-                  (snd <$> mergePBRS (w<>i<>includes))
-                  (snd <$> mergePBRS u)
-         , given = NE.nonEmpty $ foldMap NE.toList (snd <$> gs)
-         , rlabel = noLabel
-         , lsource = noLSource
-         , srcref = Just srcref
-         }
 
 pScenarioRule :: Parser Rule
 pScenarioRule = debugName "pScenarioRule" $ do

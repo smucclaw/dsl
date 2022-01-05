@@ -257,7 +257,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 
    We lift a Parser a into a Parser (a, Int) where the Int records the number of UnDeepers needed to be consumed at the end.
 
-   At the end, the combinators (|*<) and (|$<) are responsible for consuming, or "undeepersing", those UnDeepers.
+   At the end, the combinators (|*<) and (|$<) are responsible for consuming, or "undeepering", those UnDeepers.
    The idea of "UnDeeper" corresponds with "moving to the left", which is why we see the character '<' at the right of the sigil.
 
    To get parsers into the combinator, we can lift by using a fish operator (<>|) -- but this is usually only used in helper functions.
@@ -289,7 +289,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 (|><)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser   b       -- end         fancy plain
 (|<<)  ::           Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
 
--- we have convenience combinators for some, many, and optional; these do not consume GoDeeper.
+-- we have convenience combinators for some, many, and optional.
 (|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
 (|.|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- many
 (..|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- many

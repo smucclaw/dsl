@@ -182,17 +182,13 @@ pHornlike = debugName "pHornlike" $ do
 
     -- this is actually kind of a meta-rule, because it really means
     -- assert(X :- (Y1, Y2)) :- body.
-    whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
-    whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBSR) <|> Nothing <$ pToken Otherwise
 
     -- DECIDE x IS y WHEN Z IS Q
 
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (relPred, whenpart) <- manyIndentation (relPredNextlineWhen <|> relPredSamelineWhen)
-      return (keyword, inferRuleName relPred, [HC2 relPred (fromMaybe Nothing whenpart)])
-    relPredNextlineWhen = pRelPred `optIndentedTuple` whenCase
-    relPredSamelineWhen = pRelPred `optIndentedTuple` whenCase
+      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+      return (keyword, inferRuleName relPred, [HC2 relPred (join whenpart)])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
@@ -208,6 +204,12 @@ pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   slRelPred |<< undeepers
 
+relPredNextlineWhen = pRelPred `optIndentedTuple` whenCase
+relPredSamelineWhen = (,) $*| slRelPred |>< optional whenCase
+whenCase :: Parser (Maybe BoolStructR)
+whenCase = debugName "whenCase" $ whenMeansIf *> (Just <$> pBSR) <|> Nothing <$ pToken Otherwise
+whenMeansIf :: Parser MyToken
+whenMeansIf = choice [ pToken When, pToken Means, pToken If ]
 
 slRelPred :: Parser (RelationalPredicate, Int)
 slRelPred = debugName "slRelPred" $ do

@@ -164,7 +164,7 @@ data Rule = Regulative
             }
           | Scenario
             { scgiven  :: [RelationalPredicate]
-            , expect   :: [HornClause]      -- investment is savings when dependents is 5
+            , expect   :: [HornClause2]      -- investment is savings when dependents is 5
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

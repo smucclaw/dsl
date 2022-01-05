@@ -466,22 +466,15 @@ pScenarioRule = debugName "pScenarioRule" $ do
     , rlabel = rlabel, lsource = Nothing, srcref = Just srcref
     }
 
-pExpect :: Parser HornClause
+pExpect :: Parser HornClause2
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  expect   <- someIndentation $ pRelationalPredicate
-  whenpart <- optional pWhenPart
+  (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
 
-  return $ HC
-    { relPred = expect
-    , relWhen = whenpart
+  return $ HC2
+    { hHead = relPred
+    , hBody = join whenpart
     }
-  where
-    pWhenPart :: Parser HornBody
-    pWhenPart = do
-      _when   <- pToken When
-      HBRP . AA.Leaf <$> someIndentation pRelationalPredicate
-      -- TODO: add support for more complex boolstructs of relational predicates
           
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" $ do
@@ -492,7 +485,7 @@ pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel
   tentative  <- (try pRegRuleSugary
-                  <|> pRegRuleNormal
+                  <|> try pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
                 )

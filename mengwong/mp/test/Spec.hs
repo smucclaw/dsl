@@ -514,31 +514,25 @@ main = do
                   ] RPis [ "steady" ]
                 ]
             , expect =
-              [ HC
-                { relPred = RPConstraint [ "investment" ] RPis [ "savings" ]
-                , relWhen = Just
-                            ( HBRP
+              [ HC2
+                { hHead = RPConstraint [ "investment" ] RPis [ "savings" ]
+                , hBody = Just
                               ( Leaf
                                 ( RPConstraint [ "dependents" ] RPis [ "5" ] )
                               )
-                            )
                 }
-              , HC
-                { relPred = RPConstraint [ "investment" ] RPis [ "combination" ]
-                , relWhen = Just
-                            ( HBRP
+              , HC2
+                { hHead = RPConstraint [ "investment" ] RPis [ "combination" ]
+                , hBody = Just
                               ( Leaf
                                 ( RPConstraint [ "dependents" ] RPis [ "3" ] )
                               )
-                            )
                 }
-              , HC
-                { relPred = RPConstraint [ "investment" ] RPis [ "stocks" ]
-                , relWhen = Just
-                            ( HBRP
+              , HC2
+                { hHead = RPConstraint [ "investment" ] RPis [ "stocks" ]
+                , hBody = Just
                               ( Leaf
                                 ( RPConstraint [ "dependents" ] RPis [ "0" ] )
-                              )
                             )
                 }
               ]

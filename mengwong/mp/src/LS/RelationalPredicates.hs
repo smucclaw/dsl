@@ -189,8 +189,11 @@ pHornlike = debugName "pHornlike" $ do
 
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (relPred, whenpart) <- manyIndentation (pRelPred `optIndentedTuple` whenCase)
+      (relPred, whenpart) <- manyIndentation (relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred (fromMaybe Nothing whenpart)])
+    relPredNextlineWhen = pRelPred `optIndentedTuple` whenCase
+    relPredSamelineWhen = pRelPred `optIndentedTuple` whenCase
+
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
@@ -203,11 +206,19 @@ pHornlike = debugName "pHornlike" $ do
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
-  try (debugName "RPConstraint" $ RPConstraint $*| dMultiTerm |>| tok2rel |*< dMultiTerm)
-    <|> try (debugName "RPBoolStructR" $ indent3 RPBoolStructR pMultiTerm tok2rel pBSR)
-    <|> try (debugName "RPMT" $ RPMT <$> pMultiTerm)
-  where dMultiTerm = debugName "dMultiTerm" $ (.:|) (debugName "pNumOrText" pNumOrText)
+  slRelPred |<< undeepers
 
+
+slRelPred :: Parser (RelationalPredicate, Int)
+slRelPred = debugName "slRelPred" $ do
+  try       ( debugName "RPConstraint"  rpConstraint )
+    <|> try ( debugName "RPBoolStructR" rpBoolStructR )
+    <|> try ( debugName "RPMT"          rpMT )
+  
+slMultiTerm = debugName "slMultiTerm" $ (.:|) (debugName "pNumOrText" pNumOrText)
+rpMT          = RPMT          $*| slMultiTerm
+rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
+rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
 pBSR = toBoolStruct <$> expr pRelPred

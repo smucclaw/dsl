@@ -257,7 +257,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 
    We lift a Parser a into a Parser (a, Int) where the Int records the number of UnDeepers needed to be consumed at the end.
 
-   At the end, the combinators (||<) and (|$<) are responsible for consuming, or "floating", those UnDeepers.
+   At the end, the combinators (|*<) and (|$<) are responsible for consuming, or "undeepersing", those UnDeepers.
    The idea of "UnDeeper" corresponds with "moving to the left", which is why we see the character '<' at the right of the sigil.
 
    To get parsers into the combinator, we can lift by using a fish operator (<>|) -- but this is usually only used in helper functions.
@@ -265,7 +265,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    The more conventional way to build a parser chain is to use applicative style, and that's why we have combinators that
    - get the chain started  :: ($>|) and ($*|)
    - keep the chain running :: (|>|) and (|*|)
-   - end the chain          :: (||<) and (|$<)
+   - end the chain          :: (|*<) and (|><) ... also |<< if you want to control that manually
    
    In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
 
@@ -287,6 +287,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 (|*|)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser  (b,Int)  -- continue    fancy fancy
 (|*<)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
 (|><)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser   b       -- end         fancy plain
+(|<<)  ::           Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
 
 -- we have convenience combinators for some, many, and optional; these do not consume GoDeeper.
 (|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
@@ -310,26 +311,28 @@ _fourIs = debugName "fourIs" $
     |>< pT
   where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
 
+-- instead of ending with a |>< you can keep it going and end with an explicit undeepers.
 _threeIs :: Parser (MyToken, (MyToken,MyToken) ,MyToken)
 _threeIs = debugName "threeIs" $
   (,,)
     $>| pT
     |*| pTT
-    |>< pT
-  where pT  = debugName "Is/An" (pToken Is <|> pToken A_An)
+    |>| pT
+    |<< undeepers
+  where pT  = debugName "Is" (pToken Is)
         pTT = debugName "(pT,pT)" $ (,) $>| pT |>| pT
+        --- because the final sigil in the chain ends with a |, pTT is suitable for use with a * in the parent expression
     
 _twoIsSomeAn :: Parser (MyToken,[MyToken],MyToken)
 _twoIsSomeAn = debugName "twoIsSomeAn" $
   (,,)
     $*| pT
-    |*| pTT
+    |*| pAn
     |*< pT
   where pT  = (<>|) (pToken Is)
-        pTT = (.:|) (pToken A_An)
+        pAn = (.:|) (pToken A_An)
 
 -- implementation of the combinators
-
 (..|) x = (|.|) $ (<>|) x            -- usage: (..|) pOtherVal   is       many pOtherVal
 (.:|) x = (|:|) $ (<>|) x            -- usage: (.:|) pOtherVal   is       some pOtherVal
 (.?|) p =         (<>|) (optional p) -- usage: (.?|) pOtherVal   is   optional pOtherval
@@ -377,27 +380,24 @@ p1 |*| p2 = do
   return (l r, n + length deepers + m )
 infixl 4 |*|
 
-p1 |>< p2 = do
-  (l,n) <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  r <- debugName "|<< going right and closing" p2 <* float (n + length deepers)
-  return (l r)
+p1 |>< p2 = p1 |>| p2 |<< undeepers
 infixl 4 |><
   
-p1 |*< p2 = do
-  (l,n) <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  (r,m) <- debugName "|*< going right and closing" p2
-  _     <- float (n + length deepers + m)
-  return (l r)
+p1 |*< p2 = p1 |*| p2 |<< undeepers
 infixl 4 |*<
 
+p1 |<< p2 = do
+  (result, n) <- p1
+  p2 n
+  return result
+infixl 4 |<<
+  
 -- consume all the UnDeepers that have been stacked off to the right
 -- which is to say, inside the snd of the Parser (_,Int)
   
-float :: Int -> Parser ()
-float n = debugName "float" $ do
-  debugPrint $ "sameLine/float: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
+undeepers :: Int -> Parser ()
+undeepers n = debugName "undeepers" $ do
+  debugPrint $ "sameLine/undeepers: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
   replicateM_ n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 

@@ -740,6 +740,6 @@ main = do
           `shouldParse` ((A_An,Is,Is,Is), [])
 
       it "sameline threeIs float" $ do
-        parseOther _threeIs "" (exampleStream "A,IS,IS,IS\n")
-          `shouldParse` ((A_An,(Is,Is),Is), [])
+        parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
+          `shouldParse` ((Is,(Is,Is),Is), [])
 

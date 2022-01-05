@@ -139,7 +139,7 @@ pNameParens = pMultiTermAka
 
 -- sometimes we want a ParamText
 pPTParens :: Parser ParamText
-pPTParens = debugName "pPTAka" $ pAKA pParamText pt2multiterm
+pPTParens = debugName "pPTAka" $ pAKA slParamText pt2multiterm
 
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
@@ -223,8 +223,6 @@ slRelPred = debugName "slRelPred" $ do
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
     <|> try ( debugName "RPMT"          rpMT )
   
-slMultiTerm :: Parser (MultiTerm, Int)
-slMultiTerm = debugName "slMultiTerm" $ (.:|) (debugName "pNumOrText" pNumOrText)
 rpMT :: Parser (RelationalPredicate, Int)
 rpMT          = RPMT          $*| slMultiTerm
 rpConstraint :: Parser (RelationalPredicate, Int)

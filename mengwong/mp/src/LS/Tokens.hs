@@ -165,6 +165,11 @@ alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
 
+slMultiTerm :: SLParser [Text.Text]
+slMultiTerm = (.:|) pNumOrText
+
+
+
 pNumOrText :: Parser Text.Text
 pNumOrText = pOtherVal <|> pNumAsText
 
@@ -280,6 +285,8 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    Then you can basically hook them up by playing dominos, ahem, by checking that the types are consistent.
 -}
 
+type SLParser a = Parser (a, Int)
+
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
 ($>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
 ($*|)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
@@ -288,6 +295,16 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 (|*<)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
 (|><)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser   b       -- end         fancy plain
 (|<<)  ::           Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
+
+($>>)  :: Show a => Parser  a            ->                     Parser ( a,Int)   -- consume any GoDeepers, then parse
+(|>>)  :: Show a => Parser (a,      Int) ->                     Parser ( a,Int)   -- consume any GoDeepers, then parse
+
+(|?|)  :: Show a => Parser (a,      Int) ->                Parser (Maybe a, Int) -- optional for an SLParser
+(|?|) p = do
+  try (do
+          (out,n) <- (|>>) p
+          return (Just out, n))
+    <|> return (Nothing, 0)
 
 -- we have convenience combinators for some, many, and optional.
 (|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
@@ -368,29 +385,14 @@ infixl 4 $*|
 
 p1 |>| p2 = do
   (l,n) <- p1
-  (r,m) <- debugName "|>| calling manyDeepers" $ manyDeepers p2
+  (r,m) <- debugName "|>| calling $>>" $ ($>>) p2
   return (l r, n + m )
 infixl 4 |>|
 
-manyDeepers :: Show a => Parser a -> Parser (a,Int)
-manyDeepers p = debugName "manyDeepers" $ do
-  try recurse <|> base
-  where
-    base = debugName "manyDeepers/base" $ do
-      out <- p
-      debugPrint $ "manyDeepers/base got " ++ show out
-      return (out,0)
-    recurse = debugName "manyDeepers/recurse" $ do
-      _ <- pToken GoDeeper
-      (out, m) <- manyDeepers p
-      return (out, m+1)
-  
-
 p1 |*| p2 = do
   (l,n) <- p1
-  deepers <- some (debugName "GoDeeper" $ pToken GoDeeper)
-  (r,m) <- debugName "|*| going right" p2
-  return (l r, n + length deepers + m )
+  (r,m) <- (|>>) p2
+  return (l r, n + m)
 infixl 4 |*|
 
 p1 |>< p2 = p1 |>| p2 |<< undeepers
@@ -418,6 +420,31 @@ undeepers n = debugName "undeepers" $ do
 
 
 
+($>>) p = debugName "$>>" $ do
+  try recurse <|> base
+  where
+    base = debugName "$>>/base" $ do
+      out <- p
+      debugPrint $ "$>>/base got " ++ show out
+      return (out,0)
+    recurse = debugName "$>>/recurse" $ do
+      _ <- pToken GoDeeper
+      (out, m) <- ($>>) p
+      return (out, m+1)
+infixl 4 $>>
+
+(|>>) p = debugName "|>>" $ do
+  try recurse <|> base
+  where
+    base = debugName "$>>/base" $ do
+      (out,n) <- p
+      debugPrint $ "$>>/base got " ++ show out
+      return (out,n)
+    recurse = debugName "$>>/recurse" $ do
+      _ <- pToken GoDeeper
+      (out, m) <- (|>>) p
+      return (out, m+1)
+infixl 4 |>>
 
 
 

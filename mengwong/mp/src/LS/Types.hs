@@ -40,7 +40,6 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
                                                       --- |        | immediately    | :: | Urgency |
 
-
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 

@@ -4,6 +4,7 @@ module LS.ParamText where
 
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
+import qualified Data.Text.Lazy as Text
 
 import LS.Types
 import LS.Tokens
@@ -82,18 +83,52 @@ pOneOf = pToken OneOf *> someIndentation pParamText
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermAka" $ pAKA pMultiTerm id
+pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
 
 -- head of nonempty list
 pSingleTermAka :: Parser KVsPair
-pSingleTermAka = debugName "pSingleTermAka" $ pAKA pSingleTerm (toList . fst)
+pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 
 pSingleTerm :: Parser KVsPair
 pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple` pTypeSig
 
+slParamText :: SLParser ParamText
+slParamText = debugName "slParamText" $ do
+  (kvspair,n) <- slTypedMulti
+  return (pure kvspair,n)
+
+slTypedMulti :: SLParser KVsPair
+slTypedMulti = debugName "slTypedMulti" $ do
+  ((l,ts),n) <- (,)
+    $*| slMultiTerm
+    |*| (|?|) slTypeSig
+  return ((fromList l, ts),n)
+
+slTypeSig :: SLParser TypeSig
+slTypeSig = debugName "slTypeSig" $ do
+  ((typesep, typesig),n) <- (,)
+       $>| (pToken TypeSeparator <|> pToken Is)
+       |*| (simpletype <|> inlineenum)
+  return (typesig,n)
+  where
+    simpletype = SimpleType
+                 $>| choice [ TOne      <$ pToken One
+                            , TOne      <$ pToken A_An
+                            , TOptional <$ pToken Optional
+                            , TList0    <$ pToken List0
+                            , TList1    <$ pToken List1 ]
+                 |>| pOtherVal
+    inlineenum = InlineEnum TOne $*| slOneOf
+
+slOneOf :: SLParser ParamText
+slOneOf = do
+  (flip const)
+    $>| pToken OneOf
+    |>| pParamText
+
 -- a nonempty list, with an optional type signature
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA pKeyValues (toList . fst)
+pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA ((<>|) pKeyValues) (toList . fst)
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do
@@ -101,15 +136,17 @@ pKeyValues = debugName "pKeyValues" $ do
              return (fromList lhs, typesig)
 
 -- utility function for the above
-pAKA :: (Show a) => Parser a -> (a -> MultiTerm) -> Parser a
+pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  base <- debugName "pAKA base" baseParser
+  (base, entityalias) <- (,)
+                         $*| debugName "pAKA base" baseParser
+                         |*< ((|?|) akapart)
+  
   let detail' = toMultiTerm base
+
   leftY       <- lookAhead pYLocation
   leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  entityalias <- optional $ try $ manyIndentation (debugName "Aka Token" (pToken Aka) *>
-                                                   debugName "someDeep pOtherVal" (someDeep pOtherVal)) -- ("MegaCorp")
-  -- myTraceM $ "pAKA: entityalias = " ++ show entityalias
+  debugPrint $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
@@ -118,3 +155,10 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,
 -- being an AnyAll tree of RelationalPredicates.
 
+  where
+    akapart :: SLParser RuleName
+    akapart = debugName "PAKA/akapart" $ do
+      ((akatoken, akaval),n) <- (,)
+                                $>| debugName "Aka Token" (pToken Aka)
+                                |*| (.:|) pOtherVal
+      return (akaval,n)

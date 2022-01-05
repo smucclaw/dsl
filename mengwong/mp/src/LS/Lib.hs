@@ -462,7 +462,7 @@ pRegRule = debugName "pRegRule" $ do
 
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
-  entityname         <- AA.Leaf . multiterm2pt <$> pNameParens            -- You
+  entityname         <- AA.Leaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((Party, entityname), Nothing)
   rulebody           <- someIndentation (permutationsReg keynamewho)

@@ -115,34 +115,37 @@ Future extension: Maybe use ((initial)) to represent a start state
 #+begin_src text
   // start petri dsl "pdpadbno-1" -- see mp/bin/mkpetrinet
     (INITIAL)
-      [aware]                                                  [ label = "upon becoming aware a data breach may have occurred" ]
-        (is_aware)                                             [ label = "is aware a data breach may have occurred" ]
-          [assessment:done]                                    [ label = "within 30 days" ]
-            (assessment done)
-              <is_notifiable:yes>
+      [become aware]                                           [ label = "upon becoming aware\na data breach may\nhave occurred" ]
+        (is aware)                                             [ label = "must assess" ]
+          [assessment - done]                                  [ label = "done (within 30 days)" ]
+            <is it notifiable?>
+              [is notifiable - yes]                              [label="yes"]
                 | see NDB Qualification
-                ()
-                  [notify PDPC:done]                           [ label = "within 3 days" ]
-                    (PDPC notified)
-                      <exceptions:no>                          
-                        ()
-                          [notify users:done]                  [ label = "within 3 days" ]
-                            (FULFILLED)
-                      <exceptions:yes>
-                        |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
-                          |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
-                          |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
-                        |     (Act §4.1.c)    you are a Public Agency
-                        |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
-                        |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
-                        |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
-                        (FULFILLED)
-                  [notify PDPC:not done]
+                (must notify PDPC)
+                  [notify PDPC - done]                           [label = "done (within 3 days)"]
+                    (FULFILLED)
+                  [notify PDPC - not done]                       [label="not done"]
                     (BREACH)
-              <is_notifiable:no>
+                <are there exceptions?>
+                  [exceptions - no]                          [label="no exceptions"]
+                    (must notify users)
+                      [notify users - done]                  [label = "done (within 3 days)"]
+                        (FULFILLED)
+                      [notify users - not done]              [label="not done"]
+                        (BREACH)
+                  [exceptions - yes]                         [label="exceptions"]
+                    |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
+                      |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
+                      |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
+                    |     (Act §4.1.c)    you are a Public Agency
+                    |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
+                    |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
+                    |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
+                    (FULFILLED)
+              [is notifiable - no]                               [label="no"]
                 (FULFILLED)
-  
-          [assessment:not done]
+
+          [assessment - not done]                              [label="not done"]
             (BREACH)
   // end petri dsl
 #+end_src

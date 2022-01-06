@@ -9,20 +9,21 @@ for (<>) {
   push @input, $_ if /start petri dsl/ ... /end petri dsl/;
 }
 
-warn @input;
 my $lastLineno = @input;
 
 my $global = {};
 
 # a parse tree is represented by nested lists
-my $root = { children => [] };
 
 my $lineno = 0;
-my $initialDepth = numLeadingSpaces($lineno); print STDERR "initial depth = $initialDepth\n";
-parse($root, $lineno, $initialDepth);
+my $initialDepth = numLeadingSpaces($lineno);
+my $root = parse($lineno, $initialDepth);
+
+# warn YAML::Dump($root);
+ast2dot($root);
 
 sub parse {
-  my ($parentNode, $currentLine, $depth) = @_; # return a list of nodes, at the current depth
+  my ($currentLine, $depth) = @_; # return a node rooted at the current depth
   # construct current node as the current line plus parsed children
   # 1. if the current line is too shallow, return nothing
   # 2. if the current line is just right, parse it and make it a new root for the children
@@ -31,44 +32,167 @@ sub parse {
 
   my $currentDepth = numLeadingSpaces($currentLine);
   local $_ = $input[$currentLine];
-  print STDERR "<<< ($currentDepth) $_";
+  # warn "<<< $currentLine ($currentDepth) $_\n";
 
-  my @childlines = # takeWhile (numLeadingSpaces($_) < $currentDepth) ($currentLine .. $lastLineno)
-      childlines($currentLine+1, $currentDepth);
+  # takeWhile (numLeadingSpaces($_) < $currentDepth) ($currentLine .. $lastLineno)
+  my @childlines = childlines($currentLine+1, $currentDepth);
 
-  print "determined childlines are:";
-  print ("     < $input[$_]") for @childlines;
+  # warn "determined childlines are:\n";
+  # warn ("     < $input[$_]\n") for @childlines;
   my @childheads = grep { numLeadingSpaces($_) == $currentDepth+2 } @childlines;
-  print "childheads are @childheads";
+  # warn "childheads are @childheads\n";
   
-  my $currentNode = { type => "",
-                      str => "", endStr => "",
-                      children => [] };
+  my $currentNode = { type => "", str => "", endStr => "", children => [] };
   # parse current line
   if (/start petri dsl \"(.+)\"/) {
-    $currentNode->{str} = "digraph $1 {";
+    $currentNode->{type} = "digraph";
+    $currentNode->{str} = "digraph \"$1\" {";
     $currentNode->{endStr} = "}";
   }
-  elsif (/^\s*\((.*)\).*(\[.*\])?\s*$/) {
-    warn "  > matched status $1          $2\n";
-    $currentNode->{str} = "STATE     $1    $2";
-    $currentNode->{endStr} = "";
+  elsif (/^\s*\((.*)\)\s*(\[.*\])?\s*$/) {
+    # warn "  > matched status $1          $2\n";
+    $currentNode->{type} = "state";
+    $currentNode->{name} = $1;
+    $currentNode->{label} = $2;
   }
-  elsif (/^\s*\[(.*)\].*(\[.*\])?\s*$/) {
-    warn "  > matched transition $1          $2\n";
-    $currentNode->{str} = "TRANSITION     $1    $2";
-    $currentNode->{endStr} = "";
+  elsif (/^\s*\[(.*?)\]\s*(\[.*\])?\s*$/) {
+    # warn "  > matched transition $1          $2\n";
+    $currentNode->{type} = "transition";
+    $currentNode->{name} = $1;
+    $currentNode->{label} = $2;
   }
-  elsif (/^\s*\<(.*)\>.*(\[.*\])?\s*$/) {
-    warn "  > matched decision $1          $2\n";
-    $currentNode->{str} = "DECISION     $1    $2";
-    $currentNode->{endStr} = "";
+  elsif (/^\s*\<(.*)\>\s*(\[.*\])?\s*$/) {
+    # warn "  > matched decision $1          $2\n";
+    $currentNode->{type} = "state";
+    $currentNode->{name} = $1;
+    $currentNode->{label} = $2;
+    $currentNode->{shape} = "diamond";
+  }
+  elsif (/^\s*(\||&)\s*(\(.*\))?\s+(.*)?\s*$/) {
+    # warn "  > matched $1 tree element (source $2) value $3\n";
+    $currentNode->{type} = "leaf";
+    $currentNode->{name} = $1;
+    $currentNode->{legalSrc} = $2;
+    $currentNode->{value} = $3;
+  }
+  else {
+    warn "  ! got something unexpected: $_\n";
+    $currentNode->{str} = $_;
   }
 
-  my @children = map { parse($currentNode, $_, $currentDepth+2) } @childheads;
+  my ($nextIndentLevel) = sort (map { numLeadingSpaces($_) } @childheads);
+  
+  my @children = map { parse($_, $nextIndentLevel) } @childheads;
   $currentNode->{children} = \@children;
-  print YAML::Dump($currentNode);
-  return ($currentNode);
+  # warn "$currentLine returning $currentNode\n";
+  # warn YAML::Dump($currentNode);
+  return $currentNode;
+}
+
+sub ast2dot {
+  my $node = shift;
+  if ($node->{type} eq "digraph") {
+    print $node->{str};
+
+    print <<EOPREFIX;
+  subgraph states {
+    graph [shape=circle,color=gray];
+    node [shape=circle];
+EOPREFIX
+    ast2dot($_) for uniq( grep { $_->{type} eq "state" } descendants($node) );
+    print "  }";
+    
+    print <<EOPREFIX;
+  subgraph transitions {
+    node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+EOPREFIX
+    my @all_transitions = uniq( grep { $_->{type} eq "transition" } descendants($node) );
+    # group transitions that are children of the same parent state
+    for my $node (uniq( grep { $_->{type} eq "state" } descendants($node))) {
+      my @childTransitions = uniq( grep { $_->{type} eq "transition" } @{$node->{children}});
+      next if not @childTransitions;
+      print "    { rank = same;";
+      ast2dot($_) for @childTransitions;
+      print "    }";
+    }
+    print "  }";
+    
+    print "  // state-to-transition edges";
+    drawTransitionChildren($_) for uniq( grep { $_->{type} eq "state" } descendants($node) );
+
+    print "";
+    print "  // transition-to-state edges";
+    drawStateChildren($_) for uniq( grep { $_->{type} eq "transition" } descendants($node) );
+
+  }
+  elsif ($node->{type} eq "state")      { dumpState($node) }
+  elsif ($node->{type} eq "transition") { dumpTransition($node) }
+  print $node->{endStr} if $node->{endStr};
+}
+
+sub dumpState      { dumpSorT(shift, "state") }
+sub dumpTransition { dumpSorT(shift, "transition") }
+sub dumpSorT {
+  my ($node, $defaultName) = @_;
+  my $name = nodename($node);
+  my $label = $node->{label};
+  if (my $shape = $node->{shape}) {
+    if ($label) { $label =~ s/\[/[shape=$shape;/; }
+    else        { $label = qq([shape=$shape]) }
+  }
+  print ("      $name\t" . ($label ? $label : ""));
+}
+sub nodename {
+  my $node = shift;
+  my $name = $node->{name};
+  $name = qq("$name") if $name =~ /\s/;
+  return $name;
+}
+
+sub drawTransitionChildren { drawSomeChildren(shift, "transition") }
+sub drawStateChildren      { drawSomeChildren(shift, "state") }
+sub drawSomeChildren {
+  my ($node, $ofType) = @_;
+  foreach my $c (uniq( grep { $_->{type} eq $ofType } @{$node->{children}} )) {
+    
+    # decide the headport and tailports of the edge.
+    # if we're a state->transition edge,
+    #    if the transition contains the string "not done" then we use the sad label
+    #                                              "done" then we use the happy label
+    #    if the transition is the first child we use the happy label
+    #    if the transition is not the first child we use the sad label
+    
+    my @label = ();
+    my @rightlabel = ("headport=n", "tailport=se");
+    my @leftlabel  = ("headport=n", "tailport=sw");
+    my @happyLabel = (@rightlabel, "color=green");
+    my @sadLabel   = (@leftlabel, "color=brown");
+
+    if ($ofType eq "transition") {
+      if ($node->{shape} eq "diamond") {
+        if (not isFirstBranch($node, $c)) { @label = @leftlabel; }
+        else                              { @label = @rightlabel }
+      }
+      elsif ($c->{name} =~ /not done/ or not isFirstBranch($node, $c)) {
+        @label = @sadLabel
+      } else {
+        @label = @happyLabel
+      }
+    }
+    my $label = @label ? "[" . join(",", @label) . "]" : "";
+    print "  " . nodename($node) . " -> " . nodename($c) . ($label ? "\t\t$label" : "");
+  }
+}
+
+sub isFirstBranch {
+  my ($parent, $child) = @_;
+  return ($child->{name} eq $parent->{children}->[0]->{name});
+}
+    
+
+sub descendants {
+  my $node = shift;
+  return ($node, map { descendants($_) } @{$node->{children}});
 }
 
 sub numLeadingSpaces {
@@ -79,13 +203,11 @@ sub numLeadingSpaces {
 sub childlines {
   my ($cLine, $cDepth) = @_;
   if ($cLine > $lastLineno) { warn "EOF\n"; return () }
-  if ($input[$cLine] =~ /\S/ and numLeadingSpaces($cLine) <= $cDepth) { warn "base\n"; return () }
+  if ($input[$cLine] =~ /\S/ and numLeadingSpaces($cLine) <= $cDepth) { return () }
   return ($cLine, childlines($cLine+1, $cDepth));
 }
 
-foreach my $lineno (0 .. $#input) {
-  my $line = $input[$lineno];
-
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_->{name}}++ } @_;
 }
-
-

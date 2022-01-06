@@ -1,0 +1,91 @@
+#!/usr/bin/perl -l
+
+use strict;
+use YAML;
+
+my @input;
+for (<>) {
+  chomp;
+  push @input, $_ if /start petri dsl/ ... /end petri dsl/;
+}
+
+warn @input;
+my $lastLineno = @input;
+
+my $global = {};
+
+# a parse tree is represented by nested lists
+my $root = { children => [] };
+
+my $lineno = 0;
+my $initialDepth = numLeadingSpaces($lineno); print STDERR "initial depth = $initialDepth\n";
+parse($root, $lineno, $initialDepth);
+
+sub parse {
+  my ($parentNode, $currentLine, $depth) = @_; # return a list of nodes, at the current depth
+  # construct current node as the current line plus parsed children
+  # 1. if the current line is too shallow, return nothing
+  # 2. if the current line is just right, parse it and make it a new root for the children
+  #    - handle current line based on the specific syntax that is appearing here
+  # 3. identify children as those lines within the current section whose depth is two in from the current depth; recurse
+
+  my $currentDepth = numLeadingSpaces($currentLine);
+  local $_ = $input[$currentLine];
+  print STDERR "<<< ($currentDepth) $_";
+
+  my @childlines = # takeWhile (numLeadingSpaces($_) < $currentDepth) ($currentLine .. $lastLineno)
+      childlines($currentLine+1, $currentDepth);
+
+  print "determined childlines are:";
+  print ("     < $input[$_]") for @childlines;
+  my @childheads = grep { numLeadingSpaces($_) == $currentDepth+2 } @childlines;
+  print "childheads are @childheads";
+  
+  my $currentNode = { type => "",
+                      str => "", endStr => "",
+                      children => [] };
+  # parse current line
+  if (/start petri dsl \"(.+)\"/) {
+    $currentNode->{str} = "digraph $1 {";
+    $currentNode->{endStr} = "}";
+  }
+  elsif (/^\s*\((.*)\).*(\[.*\])?\s*$/) {
+    warn "  > matched status $1          $2\n";
+    $currentNode->{str} = "STATE     $1    $2";
+    $currentNode->{endStr} = "";
+  }
+  elsif (/^\s*\[(.*)\].*(\[.*\])?\s*$/) {
+    warn "  > matched transition $1          $2\n";
+    $currentNode->{str} = "TRANSITION     $1    $2";
+    $currentNode->{endStr} = "";
+  }
+  elsif (/^\s*\<(.*)\>.*(\[.*\])?\s*$/) {
+    warn "  > matched decision $1          $2\n";
+    $currentNode->{str} = "DECISION     $1    $2";
+    $currentNode->{endStr} = "";
+  }
+
+  my @children = map { parse($currentNode, $_, $currentDepth+2) } @childheads;
+  $currentNode->{children} = \@children;
+  print YAML::Dump($currentNode);
+  return ($currentNode);
+}
+
+sub numLeadingSpaces {
+  my $lineno = shift;
+  return length (($input[$lineno] =~ /^( +)/)[0]);
+}
+
+sub childlines {
+  my ($cLine, $cDepth) = @_;
+  if ($cLine > $lastLineno) { warn "EOF\n"; return () }
+  if ($input[$cLine] =~ /\S/ and numLeadingSpaces($cLine) <= $cDepth) { warn "base\n"; return () }
+  return ($cLine, childlines($cLine+1, $cDepth));
+}
+
+foreach my $lineno (0 .. $#input) {
+  my $line = $input[$lineno];
+
+}
+
+

@@ -151,40 +151,72 @@ Future extension: Maybe use ((initial)) to represent a start state
 #+end_src
 
 #+begin_src dot
-  subgraph states {
-    initial;
-    is_aware;
-    assess_hence;
-    assess_lest;
-    pdpc_informed;
-    users_informed;
-    users_ignorant;
-    fulfilled;
-    breach;
+  digraph "pdpadbno-1" {
+    subgraph states {
+      graph [shape=circle,color=gray];
+      node [shape=circle];
+
+        INITIAL
+        "is aware"        [ label = "must assess" ]
+        "is it notifiable?"       [shape=diamond]
+        "must notify PDPC"
+        FULFILLED
+        BREACH
+        "are there exceptions?"   [shape=diamond]
+        "must notify users"
+    }
+    subgraph transitions {
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+
+      { rank = same;
+        "become aware"    [ label = "upon becoming aware\na data breach may\nhave occurred" ]
+      }
+      { rank = same;
+        "assessment - done"       [ label = "done (within 30 days)" ]
+        "assessment - not done"   [label="not done"]
+      }
+      { rank = same;
+        "is notifiable - yes"     [label="yes"]
+        "is notifiable - no"      [label="no"]
+      }
+      { rank = same;
+        "notify PDPC - done"      [label = "done (within 3 days)"]
+        "notify PDPC - not done"  [label="not done"]
+      }
+      { rank = same;
+        "exceptions - no" [label="no exceptions"]
+        "exceptions - yes"        [label="exceptions"]
+      }
+      { rank = same;
+        "notify users - done"     [label = "done (within 3 days)"]
+        "notify users - not done" [label="not done"]
+      }
+    }
+    // state-to-transition edges
+    INITIAL -> "become aware"             [headport=n,tailport=se,color=green]
+    "is aware" -> "assessment - done"             [headport=n,tailport=se,color=green]
+    "is aware" -> "assessment - not done"         [headport=n,tailport=sw,color=brown]
+    "is it notifiable?" -> "is notifiable - yes"          [headport=n,tailport=se]
+    "is it notifiable?" -> "is notifiable - no"           [headport=n,tailport=sw]
+    "must notify PDPC" -> "notify PDPC - done"            [headport=n,tailport=se,color=green]
+    "must notify PDPC" -> "notify PDPC - not done"                [headport=n,tailport=sw,color=brown]
+    "are there exceptions?" -> "exceptions - no"          [headport=n,tailport=se]
+    "are there exceptions?" -> "exceptions - yes"         [headport=n,tailport=sw]
+    "must notify users" -> "notify users - done"          [headport=n,tailport=se,color=green]
+    "must notify users" -> "notify users - not done"              [headport=n,tailport=sw,color=brown]
+
+    // transition-to-state edges
+    "become aware" -> "is aware"
+    "assessment - done" -> "is it notifiable?"
+    "is notifiable - yes" -> "must notify PDPC"
+    "is notifiable - yes" -> "are there exceptions?"
+    "notify PDPC - done" -> FULFILLED
+    "notify PDPC - not done" -> BREACH
+    "exceptions - no" -> "must notify users"
+    "notify users - done" -> FULFILLED
+    "notify users - not done" -> BREACH
+    "exceptions - yes" -> FULFILLED
+    "is notifiable - no" -> FULFILLED
+    "assessment - not done" -> BREACH
   }
-
-  subgraph transitions {
-    aware     [ label = "upon becoming aware a data breach may have occurred" ];
-    assess    [ label = "assess if it is a Notifiable Data Breach\nwithin 30 days" ];
-    notifiable_yes;
-    notifiable_no;
-    users_notifiable_yes;
-    users_notifiable_no;
-  }
-
-  initial -> aware -> is_aware -> assess -> assess_hence;
-                                  assess -> assess_lest;
-
-  assess_hence -> notifiable_yes;
-  assess_hence -> notifiable_no -> fulfilled;
-
-  have to notify PDPC but not end user if we have taken technological measures
-
-  notifiable_yes -> pdpc_informed -> users_notifiable_yes -> users_informed -> fulfilled;
-                                     users_notifiable_yes -> users_ignorant -> breach;
-                    pdpc_informed -> users_notifiable_no                    -> fulfilled;
-
-
-
-  -}
 #+end_src

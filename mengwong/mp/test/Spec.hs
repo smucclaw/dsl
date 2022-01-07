@@ -858,6 +858,88 @@ main = do
         }
         ]
 
+      filetest "pdpadbno-6" "exemption: unlikely"
+        (parseR pToplevel) 
+        [ Hornlike
+          { name =
+            [ "it is"
+            , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
+            ]
+          , keyword = Decide
+          , given = Just
+            (
+              ( "an individual" :| []
+              , Nothing
+              ) :|
+              [
+                ( "who" :| [ "is affected by an NDB" ]
+                , Nothing
+                )
+              ]
+            )
+          , upon = Nothing
+          , clauses =
+              [ HC2
+                { hHead = RPMT
+                          [ "it is"
+                          , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
+                          ]
+                , hBody = Just
+                          ( Any Nothing
+                            [ Leaf
+                              ( RPMT
+                                [ "the organisation has taken any action"
+                                , "to"
+                                , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
+                                ]
+                              )
+                            , Leaf
+                              ( RPMT
+                                [ "the organisation already implemented any technological measure"
+                                , "to"
+                                , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
+                                ]
+                              )
+                            ]
+                          )
+                }
+              ]
+          , rlabel = Nothing
+          , lsource = Nothing
+          , srcref = Just
+            ( SrcRef
+              { url = "test/Spec"
+              , short = "test/Spec"
+              , srcrow = 1
+              , srccol = 1
+              , version = Nothing
+              }
+            )
+          }
+        , DefNameAlias
+          { name = [ "Unlikely" ]
+          , detail =
+            [ "it is"
+            , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
+            ]
+          , nlhint = Nothing
+          , srcref = Just
+            ( SrcRef
+              { url = "test/Spec"
+              , short = "test/Spec"
+              , srcrow = 5
+              , srccol = 3
+              , version = Nothing
+              }
+            )
+          }
+        ]
+
+      filetest "pdpadbno-5" "notification to PDPC"
+        (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"to PDPC"), lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 10, srccol = 12, version = Nothing})}]
+
+      filetest "pdpadbno-7" "notification to users"
+        (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"to Notifiable Individuals"), lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
 
     describe "Prolog" $ do
 

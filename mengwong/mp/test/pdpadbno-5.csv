@@ -1,0 +1,12 @@
+§§,to PDPC,,,,,,,,
+You,MUST,,WITHIN,3,days,,,,
+TRUE,IF,TRUE,it is,an NDB,,,,,
+,UNLESS,FALSE,you are a Public Agency,,,,,,
+,,,,,,,,,
+,➔,,NOTIFY,the PDPC,,,,,
+,,,in,the form and manner specified at www.pdpc.gov.sg,,,,,
+,,,with,a Notification Message,,,,// can we link to a constitutive rule?,
+,,,and,(optional),,a list of individuals for whom notification waiver is sought,// we need PTree parsing if we want to indent more,,
+,,,,,,,,,
+,HENCE,,the PDPC,MAY,,NOTIFY,you,,
+,,,,,,with,a list of individuals to exclude from notification,AKA,the PDPC Exclusion List

@@ -1974,7 +1974,7 @@ what if we say
 | IF     | TRUE                      | it is                                      | an NDB                                             |                         |
 | UNLESS | FALSE                     | you are a Public Agency                    |                                                    |                         |
 | PARTY  | You                       |                                            |                                                    |                         |
-| MUST   |                           | WITHIN                                     | 3 days                                             |                         |
+| MUST   |                           | WITHIN                                     | 3                                                  | days                    |
 | ➔      |                           | NOTIFY                                     | each of the Notifiable Individuals                 |                         |
 |        |                           | in                                         | any manner that is reasonable in the circumstances |                         |
 |        |                           | with                                       | a message obeying a certain format                 |                         |
@@ -1985,17 +1985,19 @@ what if we say
 |        |                           | LESS                                       | the individuals on                                 | the LEA Exclusion List  |
 |        |                           |                                            |                                                    |                         |
 
+
 **** pdpadbno-7: simpler version to test setPlus and setLess
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-7-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §§    | section 7    |       |                                |
-| IF    | it is an NDB |       |                                |
-| PARTY | You          |       |                                |
-| MUST  | Party Hearty |       |                                |
-| WHERE | Party Hearty | MEANS | to party with great enthusiasm |
+| §§    | section 7    |                                |
+| IF    | it is an NDB |                                |
+| PARTY | You          |                                |
+| MUST  | Party Hearty |                                |
+| WHERE |              | Party Hearty                   |
+|       | MEANS        | to party with great enthusiasm |
 
 *** Part 1 of the Schedule
 :PROPERTIES:

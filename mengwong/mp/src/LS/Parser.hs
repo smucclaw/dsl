@@ -80,6 +80,11 @@ myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+setLess a (MyAll ((MyLeaf l):bs))
+  | all (\b -> case b of
+            MyNot _ -> True
+            _       -> False
+        ) bs = MyAll (a : MyNot (MyLeaf l) : bs)
 setLess a b = MyAll (getAll a <> [MyNot b])
 
 getAny :: MyItem lbl a -> [MyItem lbl a]

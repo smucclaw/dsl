@@ -24,7 +24,7 @@ my $inzone = 0; my $donework = 0;
 
 for (@input) {
   # stop at first blank line encountered after the main zone
-  if ($donework and length == 0 and $inzone) {
+  if ($donework and $inzone and (length == 0 or /^\[ /)) {
     $inzone = 0;
     print <<EOPROPERTIES;
 * final
@@ -40,7 +40,7 @@ EOPROPERTIES
   
 #  print $prefix, "\n";
 #  print $rhs, "\n";
-  if (not $inzone and substr($rhs, 0, 1) =~ /[|\/\\]/) { $inzone = 1 }
+  if (not $inzone and not $donework and substr($rhs, 0, 1) =~ /[|\/\\]/) { $inzone = 1 }
   if (not $inzone) { print "$_\n"; next }
 
   my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/]?) (.*)/;

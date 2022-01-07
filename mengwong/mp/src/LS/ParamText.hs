@@ -138,9 +138,13 @@ pKeyValues = debugName "pKeyValues" $ do
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  (base, entityalias) <- (,)
+  slAKA baseParser toMultiTerm |<< undeepers
+
+slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
+slAKA baseParser toMultiTerm = debugName "slAKA" $ do
+  ((base, entityalias),n) <- (,)
                          $*| debugName "pAKA base" baseParser
-                         |*< ((|?|) akapart)
+                         |*| ((|?|) akapart)
   
   let detail' = toMultiTerm base
 
@@ -151,7 +155,7 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
   tell defalias
-  return base
+  return (base,n)
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,
 -- being an AnyAll tree of RelationalPredicates.
 

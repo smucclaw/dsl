@@ -24,7 +24,7 @@ my $inzone = 0; my $donework = 0;
 
 for (@input) {
   # stop at first blank line encountered after the main zone
-  if ($donework and $inzone and (length == 0 or /^\[ /)) {
+  if ($donework and $inzone and (length == 0 or /^\[ / or /^\d+:\d+:/)) {
     $inzone = 0;
     print <<EOPROPERTIES;
 * final

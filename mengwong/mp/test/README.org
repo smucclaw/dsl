@@ -1956,12 +1956,12 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| GIVEN | an individual         |                                                                                                     |    |                                                                                                      |
-| WHO   | is affected by an NDB |                                                                                                     |    |                                                                                                      |
-| DEEM  | it is                 | unlikely that the notifiable data breach will result in significant harm to the affected individual |    |                                                                                                      |
-| AKA   | "Unlikely"            |                                                                                                     |    |                                                                                                      |
-| IF    | FALSE                 | the organisation has taken any action                                                               | to | render it unlikely that the notifiable data breach will result in significant harm to the individual |
-| OR    | TRUE                  | the organisation already implemented any technological measure                                      | "  | "                                                                                                    |
+| GIVEN  | an individual |                                                                                                     |     |            |
+| DECIDE | it is         | unlikely that the notifiable data breach will result in significant harm to the affected individual | AKA | "Unlikely" |
+| IF     | FALSE         | the organisation has taken any action                                                               | to  | render it unlikely that the notifiable data breach will result in significant harm to the individual |
+| OR     | TRUE          | the organisation already implemented any technological measure                                      | "   | "                                                                                                    |
+
+|        | who           | is affected by an NDB                                                                               |     |                                                                                                      |
 
 
 *** Notification to users

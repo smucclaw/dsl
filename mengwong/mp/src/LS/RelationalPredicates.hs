@@ -224,7 +224,7 @@ slRelPred = debugName "slRelPred" $ do
     <|> try ( debugName "RPMT"          rpMT )
   
 rpMT :: Parser (RelationalPredicate, Int)
-rpMT          = RPMT          $*| slMultiTerm
+rpMT          = RPMT          $*| slAKA slMultiTerm id
 rpConstraint :: Parser (RelationalPredicate, Int)
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 

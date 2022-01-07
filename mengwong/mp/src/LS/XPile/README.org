@@ -118,31 +118,31 @@ Future extension: Maybe use ((initial)) to represent a start state
       [pa - is not]                              [label="is not a Public Agency"]
         (upon)
           [become aware]                                           [ label = "becoming aware\na data breach may\nhave occurred" ]
-            (is aware)                                             [ label = "must assess\nif the data breach\nis Notifiable" ]
-              [assessment - done]                                  [ label = "done (within 30 days)" ]
+            (is aware)                                             [ label = "must assess\n(within 30 days)\nif the data breach\nis Notifiable" ]
+              [assessment - done]                                  [ label = "done" ]
                 <is it notifiable?>
+                  | see NDB Qualification
                   [is notifiable - yes]                              [label="yes"]
-                    | see NDB Qualification
-                    (must notify PDPC)
-                      [notify PDPC - done]                           [label = "done (within 3 days)"]
+                    (must notify PDPC)                        [label="must notify PDPC\n(within 3 days)"]
+                      [notify PDPC - done]                           [label = "done"]
                         (FULFILLED)
                       [notify PDPC - not done]                       [label="not done"]
                         (BREACH)
                     <are there exceptions?>
+                      |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
+                        |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
+                        |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
+                      |     (Act §4.1.c)    you are a Public Agency
+                      |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
+                      |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
+                      |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
                       [exceptions - no]                          [label="no exceptions"]
-                        (must notify users)
-                          [notify users - done]                  [label = "done (within 3 days)"]
+                        (must notify users)                      [label="must notify users\n(within 3 days)"]
+                          [notify users - done]                  [label = "done"]
                             (FULFILLED)
                           [notify users - not done]              [label="not done"]
                             (BREACH)
                       [exceptions - yes]                         [label="exceptions"]
-                        |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
-                          |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
-                          |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
-                        |     (Act §4.1.c)    you are a Public Agency
-                        |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
-                        |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
-                        |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
                         (FULFILLED)
                   [is notifiable - no]                               [label="no"]
                     (FULFILLED)

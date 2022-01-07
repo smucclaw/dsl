@@ -42,44 +42,16 @@ sub parse {
   my @childheads = grep { numLeadingSpaces($_) == $currentDepth+2 } @childlines;
   # warn "childheads are @childheads\n";
   
-  my $currentNode = { type => "", str => "", endStr => "", children => [] };
-  # parse current line
-  if (/start petri dsl \"(.+)\"/) {
-    $currentNode->{type} = "digraph";
-    $currentNode->{str} = "digraph \"$1\" {";
-    $currentNode->{endStr} = "}";
-  }
-  elsif (/^\s*\((.*)\)\s*(\[.*\])?\s*$/) {
-    # warn "  > matched status $1          $2\n";
-    $currentNode->{type} = "state";
-    $currentNode->{name} = $1;
-    $currentNode->{label} = $2;
-  }
-  elsif (/^\s*\[(.*?)\]\s*(\[.*\])?\s*$/) {
-    # warn "  > matched transition $1          $2\n";
-    $currentNode->{type} = "transition";
-    $currentNode->{name} = $1;
-    $currentNode->{label} = $2;
-  }
-  elsif (/^\s*\<(.*)\>\s*(\[.*\])?\s*$/) {
-    # warn "  > matched decision $1          $2\n";
-    $currentNode->{type} = "state";
-    $currentNode->{name} = $1;
-    $currentNode->{label} = $2;
-    $currentNode->{shape} = "diamond";
-  }
-  elsif (/^\s*(\||&)\s*(\(.*\))?\s+(.*)?\s*$/) {
-    # warn "  > matched $1 tree element (source $2) value $3\n";
-    $currentNode->{type} = "leaf";
-    $currentNode->{name} = $1;
-    $currentNode->{legalSrc} = $2;
-    $currentNode->{value} = $3;
-  }
-  else {
-    warn "  ! got something unexpected: $_\n";
-    $currentNode->{str} = $_;
-  }
-
+  my $currentNode = (/start petri dsl \"(.+)\"/           ? { type => "digraph", str => "digraph \"$1\" {", endStr => "}" } :
+                     /^\s*(\||&)\s*(\(.*\))?\s+(.*)?\s*$/ ? { type => "leaf", name=>$1, legalSrc=>$2, value=>$3 } :
+                     /^\s*\((.*)\)\s*(\[.*\])?\s*$/       ? mkNode("state",      $1, $2) :
+                     /^\s*\[(.*?)\]\s*(\[.*\])?\s*$/      ? mkNode("transition", $1, $2) :
+                     /^\s*\<(.*)\>\s*(\[.*\])?\s*$/       ? mkNode("diamond",    $1, $2) :
+                     do {
+                       warn "  ! mkpetrinet parser got something unexpected: $_\n";
+                       return {str => $_}
+                     });
+                     
   my ($nextIndentLevel) = sort (map { numLeadingSpaces($_) } @childheads);
   
   my @children = map { parse($_, $nextIndentLevel) } @childheads;
@@ -88,6 +60,8 @@ sub parse {
   # warn YAML::Dump($currentNode);
   return $currentNode;
 }
+
+sub mkNode { {type => shift, name => shift, label => shift} }
 
 sub ast2dot {
   my $node = shift;
@@ -98,8 +72,11 @@ sub ast2dot {
   subgraph states {
     graph [shape=circle,color=gray];
     node [shape=circle];
+    // force BREACH to be left of FULFILLED
+    { rank = same; BREACH -> FULFILLED [style="invis"] }
+
 EOPREFIX
-    ast2dot($_) for uniq( grep { $_->{type} eq "state" } descendants($node) );
+    ast2dot($_) for uniq( grep { $_->{type} =~ /state|diamond/ } descendants($node) );
     print "  }";
     
     print <<EOPREFIX;
@@ -108,7 +85,7 @@ EOPREFIX
 EOPREFIX
     my @all_transitions = uniq( grep { $_->{type} eq "transition" } descendants($node) );
     # group transitions that are children of the same parent state
-    for my $node (uniq( grep { $_->{type} eq "state" } descendants($node))) {
+    for my $node (uniq( grep { $_->{type} =~ /state|diamond/ } descendants($node))) {
       my @childTransitions = uniq( grep { $_->{type} eq "transition" } @{$node->{children}});
       next if not @childTransitions;
       print "    { rank = same;";
@@ -118,29 +95,36 @@ EOPREFIX
     print "  }";
     
     print "  // state-to-transition edges";
-    drawTransitionChildren($_) for uniq( grep { $_->{type} eq "state" } descendants($node) );
+    drawTransitionChildren($_) for uniq( grep { $_->{type} =~ /state|diamond/ } descendants($node) );
 
     print "";
     print "  // transition-to-state edges";
     drawStateChildren($_) for uniq( grep { $_->{type} eq "transition" } descendants($node) );
-
+   
   }
   elsif ($node->{type} eq "state")      { dumpState($node) }
   elsif ($node->{type} eq "transition") { dumpTransition($node) }
+  elsif ($node->{type} eq "diamond")    { $node->{shape} = "diamond"; dumpState($node) }
   print $node->{endStr} if $node->{endStr};
 }
 
 sub dumpState      { dumpSorT(shift, "state") }
 sub dumpTransition { dumpSorT(shift, "transition") }
 sub dumpSorT {
-  my ($node, $defaultName) = @_;
+  my ($node, $dumpStyle) = @_;
   my $name = nodename($node);
   my $label = $node->{label};
+  $label =~ s/^\[|\]\s*$//g;
+  my @label = split(/,\s*/, $label);
+  
   if (my $shape = $node->{shape}) {
-    if ($label) { $label =~ s/\[/[shape=$shape;/; }
-    else        { $label = qq([shape=$shape]) }
+    push @label, "shape=$shape";
   }
-  print ("      $name\t" . ($label ? $label : ""));
+  if ($dumpStyle eq "state") {
+    if ($node->{name} eq "FULFILLED") { push @label, "color=green" }
+    if ($node->{name} eq "BREACH")    { push @label, "color=brown" }
+  }
+  print ("      $name\t" . (@label ? "[".join(",",@label)."]" : ""));
 }
 sub nodename {
   my $node = shift;
@@ -150,10 +134,10 @@ sub nodename {
 }
 
 sub drawTransitionChildren { drawSomeChildren(shift, "transition") }
-sub drawStateChildren      { drawSomeChildren(shift, "state") }
+sub drawStateChildren      { drawSomeChildren(shift, qr/state|diamond/) }
 sub drawSomeChildren {
   my ($node, $ofType) = @_;
-  foreach my $c (uniq( grep { $_->{type} eq $ofType } @{$node->{children}} )) {
+  foreach my $c (uniq( grep { $_->{type} =~ /$ofType/ } @{$node->{children}} )) {
     
     # decide the headport and tailports of the edge.
     # if we're a state->transition edge,
@@ -173,12 +157,15 @@ sub drawSomeChildren {
         if (not isFirstBranch($node, $c)) { @label = @leftlabel; }
         else                              { @label = @rightlabel }
       }
-      elsif ($c->{name} =~ /not done/ or not isFirstBranch($node, $c)) {
-        @label = @sadLabel
-      } else {
-        @label = @happyLabel
-      }
+      elsif ($c->{name} =~ /not done/ or not isFirstBranch($node, $c)) { @label = @sadLabel }
+      else                                                             { @label = @happyLabel }
     }
+    # every edge that points to FULFILLED gets colored green; to BREACH, brown
+    if ($ofType =~ /state/) {
+      if ($c->{name} eq "FULFILLED") { @label = "color=green"; }
+      if ($c->{name} eq "BREACH"   ) { @label = "color=brown"; }
+    }
+
     my $label = @label ? "[" . join(",", @label) . "]" : "";
     print "  " . nodename($node) . " -> " . nodename($c) . ($label ? "\t\t$label" : "");
   }
@@ -207,6 +194,7 @@ sub childlines {
   return ($cLine, childlines($cLine+1, $cDepth));
 }
 
+# if we wanted to merge label attributes, we would do it here
 sub uniq {
   my %seen;
   return grep { !$seen{$_->{name}}++ } @_;

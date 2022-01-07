@@ -114,39 +114,43 @@ Future extension: Maybe use ((initial)) to represent a start state
 
 #+begin_src text
   // start petri dsl "pdpadbno-1" -- see mp/bin/mkpetrinet
-    (INITIAL)
-      [become aware]                                           [ label = "upon becoming aware\na data breach may\nhave occurred" ]
-        (is aware)                                             [ label = "must assess" ]
-          [assessment - done]                                  [ label = "done (within 30 days)" ]
-            <is it notifiable?>
-              [is notifiable - yes]                              [label="yes"]
-                | see NDB Qualification
-                (must notify PDPC)
-                  [notify PDPC - done]                           [label = "done (within 3 days)"]
-                    (FULFILLED)
-                  [notify PDPC - not done]                       [label="not done"]
-                    (BREACH)
-                <are there exceptions?>
-                  [exceptions - no]                          [label="no exceptions"]
-                    (must notify users)
-                      [notify users - done]                  [label = "done (within 3 days)"]
+    <INITIAL>                                        [label="Every Organisation which"]
+      [pa - is not]                              [label="is not a Public Agency"]
+        (upon)
+          [become aware]                                           [ label = "becoming aware\na data breach may\nhave occurred" ]
+            (is aware)                                             [ label = "must assess\nif the data breach\nis Notifiable" ]
+              [assessment - done]                                  [ label = "done (within 30 days)" ]
+                <is it notifiable?>
+                  [is notifiable - yes]                              [label="yes"]
+                    | see NDB Qualification
+                    (must notify PDPC)
+                      [notify PDPC - done]                           [label = "done (within 3 days)"]
                         (FULFILLED)
-                      [notify users - not done]              [label="not done"]
+                      [notify PDPC - not done]                       [label="not done"]
                         (BREACH)
-                  [exceptions - yes]                         [label="exceptions"]
-                    |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
-                      |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
-                      |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
-                    |     (Act §4.1.c)    you are a Public Agency
-                    |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
-                    |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
-                    |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
+                    <are there exceptions?>
+                      [exceptions - no]                          [label="no exceptions"]
+                        (must notify users)
+                          [notify users - done]                  [label = "done (within 3 days)"]
+                            (FULFILLED)
+                          [notify users - not done]              [label="not done"]
+                            (BREACH)
+                      [exceptions - yes]                         [label="exceptions"]
+                        |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
+                          |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
+                          |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
+                        |     (Act §4.1.c)    you are a Public Agency
+                        |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
+                        |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
+                        |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
+                        (FULFILLED)
+                  [is notifiable - no]                               [label="no"]
                     (FULFILLED)
-              [is notifiable - no]                               [label="no"]
-                (FULFILLED)
 
-          [assessment - not done]                              [label="not done"]
-            (BREACH)
+              [assessment - not done]                              [label="not done"]
+                (BREACH)
+      [pa - is]                                  [label="is a Public Agency"]
+        (FULFILLED)
   // end petri dsl
 #+end_src
 
@@ -155,13 +159,17 @@ Future extension: Maybe use ((initial)) to represent a start state
     subgraph states {
       graph [shape=circle,color=gray];
       node [shape=circle];
+      // force BREACH to be left of FULFILLED
+      { rank = same; BREACH -> FULFILLED [style="invis"] }
 
-        INITIAL
-        "is aware"        [ label = "must assess" ]
+
+        INITIAL   [label="Every Organisation which",shape=diamond]
+        upon
+        "is aware"        [ label = "must assess\nif the data breach\nis Notifiable" ]
         "is it notifiable?"       [shape=diamond]
         "must notify PDPC"
-        FULFILLED
-        BREACH
+        FULFILLED [color=green]
+        BREACH    [color=brown]
         "are there exceptions?"   [shape=diamond]
         "must notify users"
     }
@@ -169,7 +177,11 @@ Future extension: Maybe use ((initial)) to represent a start state
       node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
 
       { rank = same;
-        "become aware"    [ label = "upon becoming aware\na data breach may\nhave occurred" ]
+        "pa - is not"     [label="is not a Public Agency"]
+        "pa - is" [label="is a Public Agency"]
+      }
+      { rank = same;
+        "become aware"    [ label = "becoming aware\na data breach may\nhave occurred" ]
       }
       { rank = same;
         "assessment - done"       [ label = "done (within 30 days)" ]
@@ -193,7 +205,9 @@ Future extension: Maybe use ((initial)) to represent a start state
       }
     }
     // state-to-transition edges
-    INITIAL -> "become aware"             [headport=n,tailport=se,color=green]
+    INITIAL -> "pa - is not"              [headport=n,tailport=se]
+    INITIAL -> "pa - is"          [headport=n,tailport=sw]
+    upon -> "become aware"                [headport=n,tailport=se,color=green]
     "is aware" -> "assessment - done"             [headport=n,tailport=se,color=green]
     "is aware" -> "assessment - not done"         [headport=n,tailport=sw,color=brown]
     "is it notifiable?" -> "is notifiable - yes"          [headport=n,tailport=se]
@@ -206,17 +220,19 @@ Future extension: Maybe use ((initial)) to represent a start state
     "must notify users" -> "notify users - not done"              [headport=n,tailport=sw,color=brown]
 
     // transition-to-state edges
+    "pa - is not" -> upon
     "become aware" -> "is aware"
     "assessment - done" -> "is it notifiable?"
     "is notifiable - yes" -> "must notify PDPC"
     "is notifiable - yes" -> "are there exceptions?"
-    "notify PDPC - done" -> FULFILLED
-    "notify PDPC - not done" -> BREACH
+    "notify PDPC - done" -> FULFILLED             [color=green]
+    "notify PDPC - not done" -> BREACH            [color=brown]
     "exceptions - no" -> "must notify users"
-    "notify users - done" -> FULFILLED
-    "notify users - not done" -> BREACH
-    "exceptions - yes" -> FULFILLED
-    "is notifiable - no" -> FULFILLED
-    "assessment - not done" -> BREACH
+    "notify users - done" -> FULFILLED            [color=green]
+    "notify users - not done" -> BREACH           [color=brown]
+    "exceptions - yes" -> FULFILLED               [color=green]
+    "is notifiable - no" -> FULFILLED             [color=green]
+    "assessment - not done" -> BREACH             [color=brown]
+    "pa - is" -> FULFILLED                [color=green]
   }
 #+end_src

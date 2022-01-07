@@ -50,6 +50,8 @@ data MyToken = Every | Party | TokAll
              | Otherwise
              | SOF | EOF
              | GoDeeper | UnDeeper
+             | SetPlus | SetLess -- set union and subtraction
+             | Where -- like in Haskell
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

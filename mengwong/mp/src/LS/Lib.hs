@@ -488,6 +488,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)
                  , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
+                 , wwhere    = rbwhere rulebody
                  }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
@@ -603,8 +604,10 @@ mkRBfromDT :: BoolStructP
            -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
+           -> [HornClause2]
            -> RuleBody
-mkRBfromDT rba (rbkn,rbw) (rbd,rbt) rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbw
+mkRBfromDT rba (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere =
+  RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
 mkRBfromDA :: (Deontic, BoolStructP)
            -> ((Preamble, BoolStructP ) -- every person or thing
@@ -615,8 +618,10 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText         -- having
+           -> [HornClause2]
            -> RuleBody
-mkRBfromDA (rbd,rba) (rbkn,rbw) rbt rbpb rbpbneg rbu rbg rbh = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbw
+mkRBfromDA (rbd,rba) (rbkn,rbwho) rbt rbpb rbpbneg rbu rbg rbh rbwhere
+  = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
 
 preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)

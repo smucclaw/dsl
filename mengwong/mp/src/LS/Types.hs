@@ -97,6 +97,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
                          , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
+                         , rbwhere    :: [HornClause2]             -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
                       deriving (Eq, Show, Generic)
 
@@ -399,6 +400,10 @@ toToken "UNLESS" = pure Unless
 toToken "IF NOT" = pure Unless
 toToken "NOT"    = pure MPNot
 
+-- set operators
+toToken "PLUS"   = pure SetPlus
+toToken "LESS"   = pure SetLess
+
 -- deontics
 toToken "MUST" =   pure Must
 toToken "MAY" =    pure May
@@ -484,6 +489,8 @@ toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
 
 toToken "OTHERWISE" = pure Otherwise
+
+toToken "WHERE"     = pure Where
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.

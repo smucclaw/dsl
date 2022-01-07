@@ -61,7 +61,12 @@ table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
+        , [ binary  SetLess   setLess  ]
+        , [ binary  SetPlus   myOr  ]
         ]
+
+-- SetPlus is an Or
+-- SetLess is an And Not:   X LESS Y is X AND NOT Y
 
 {- see note in README.org under "About the src/Parser.hs" -}
 
@@ -73,6 +78,9 @@ getAll x = [x]
 myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
+
+setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+setLess a b = MyAll (getAll a <> [MyNot b])
 
 getAny :: MyItem lbl a -> [MyItem lbl a]
 getAny (MyAny xs) = xs

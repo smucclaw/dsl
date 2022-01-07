@@ -513,7 +513,7 @@ pXLocation = token test Set.empty <|> pure 0 <?> "x location"
     test (WithPos (SourcePos _ _y x) _ _ _) = Just (unPos x)
 
 pYLocation :: Parser Depth
-pYLocation = token test Set.empty <?> "y location"
+pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
     test (WithPos (SourcePos _ y _x) _ _ _) = Just (unPos y)
 

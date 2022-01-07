@@ -34,7 +34,7 @@ import Data.List.NonEmpty
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $
   (:|)
-  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValues
+  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka
   <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues" (sameMany pKeyValues)
 
 pPTree :: Parser PTree
@@ -106,7 +106,7 @@ slTypedMulti = debugName "slTypedMulti" $ do
 
 slTypeSig :: SLParser TypeSig
 slTypeSig = debugName "slTypeSig" $ do
-  ((typesep, typesig),n) <- (,)
+  ((_typesep, typesig),n) <- (,)
        $>| (pToken TypeSeparator <|> pToken Is)
        |*| (simpletype <|> inlineenum)
   return (typesig,n)
@@ -126,14 +126,19 @@ slOneOf = do
     $>| pToken OneOf
     |>| pParamText
 
--- a nonempty list, with an optional type signature
+-- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA ((<>|) pKeyValues) (toList . fst)
+pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<< undeepers
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $ do
-             (lhs, typesig) <- pNumOrText `manyDeepThenMaybe` pTypeSig
-             return (fromList lhs, typesig)
+pKeyValues = debugName "pKeyValues" $ do slKeyValues |<< undeepers
+
+slKeyValues :: SLParser KVsPair
+slKeyValues = debugName "slKeyValues" $ do
+             ((lhs, typesig),n) <- (,)
+                                   $*| (.:|) pNumOrText
+                                   |*| (|?|) slTypeSig
+             return ((fromList lhs, typesig),n)
 
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
@@ -143,13 +148,14 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugName "slAKA" $ do
   ((base, entityalias),n) <- (,)
-                         $*| debugName "pAKA base" baseParser
-                         |*| ((|?|) akapart)
-  
+                         $*| debugName "slAKA base" baseParser
+                         |*| debugName "slAKA optional akapart" ((|?|) akapart)
+
+  debugPrint "slAKA: proceeding after base and entityalias are retrieved ..."
   let detail' = toMultiTerm base
 
   leftY       <- lookAhead pYLocation
-  leftX       <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX       <- lookAhead pXLocation
   debugPrint $ "pAKA: entityalias = " ++ show entityalias
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
@@ -162,7 +168,7 @@ slAKA baseParser toMultiTerm = debugName "slAKA" $ do
   where
     akapart :: SLParser RuleName
     akapart = debugName "PAKA/akapart" $ do
-      ((akatoken, akaval),n) <- (,)
+      ((_akatoken, akaval),n) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| (.:|) pOtherVal
       return (akaval,n)

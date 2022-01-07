@@ -680,6 +680,7 @@ main = do
           ptFragment2 = ("one word" :| [], Just (SimpleType TOne "String")) :| []
           ptFragment3  = ("two" :| ["words"], Nothing) :| []
           ptFragment3b = ("two" :| ["words"], Just (SimpleType TOne "String")) :| []
+          ptFragment4a = ptFragment3b <> (("next" :| ["line"], Nothing) :| [])
 
 
       filetest "paramtext-1" "paramtext-1 a single-token untyped ParamText"
@@ -699,6 +700,9 @@ main = do
         
       filetest "paramtext-3-b" "a multi-token ParamText, typed String"
         (parseOther pParamText) (ptFragment3b,[])
+
+      filetest "paramtext-4-a" "a multi-line ParamText, typed String"
+        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 6, srccol = 1, version = Nothing})}])
 
 
       let actionFragment1 :: BoolStructP

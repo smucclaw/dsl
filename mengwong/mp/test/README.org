@@ -327,6 +327,14 @@ one or more normal words with optional typesig
 :END:
 
 | two | words | :: | String |
+***** paramtext-4-a: multiline
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-4-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two  | words | :: | String | AKA | TwoWords |
+| next | line  |    |        |     |          |
 
 ***** example: rule action
 
@@ -1956,12 +1964,12 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| GIVEN  | an individual |                                                                                                     |     |            |
-| DECIDE | it is         | unlikely that the notifiable data breach will result in significant harm to the affected individual | AKA | "Unlikely" |
+| GIVEN  | an individual |                                                                                                     |     |                                                                                                      |
+|        | who           | is affected by an NDB                                                                               |     |                                                                                                      |
+| DECIDE | it is         | unlikely that the notifiable data breach will result in significant harm to the affected individual | AKA | "Unlikely"                                                                                           |
 | IF     | FALSE         | the organisation has taken any action                                                               | to  | render it unlikely that the notifiable data breach will result in significant harm to the individual |
 | OR     | TRUE          | the organisation already implemented any technological measure                                      | "   | "                                                                                                    |
 
-|        | who           | is affected by an NDB                                                                               |     |                                                                                                      |
 
 
 *** Notification to users

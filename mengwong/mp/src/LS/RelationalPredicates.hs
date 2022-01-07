@@ -137,7 +137,7 @@ pBoolConnector = debugName "pBoolConnector" $ do
 pNameParens :: Parser RuleName
 pNameParens = pMultiTermAka
 
--- sometimes we want a ParamText
+-- sometimes we want a ParamText -- single line -- with possibility of an AKA on the right hand side
 pPTParens :: Parser ParamText
 pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 
@@ -159,7 +159,7 @@ preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
 preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles) $ do
   (,)
     $>| choice (try . pToken <$> preambles)
-    |>< pPTParens
+    |>< pParamText
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do

@@ -300,7 +300,7 @@ type SLParser a = Parser (a, Int)
 (|>>)  :: Show a => Parser (a,      Int) ->                     Parser ( a,Int)   -- consume any GoDeepers, then parse
 
 (|?|)  :: Show a => Parser (a,      Int) ->                Parser (Maybe a, Int) -- optional for an SLParser
-(|?|) p = do
+(|?|) p = debugName "|?| optional something" $ do
   try (do
           (out,n) <- (|>>) p
           return (Just out, n))

@@ -1991,10 +1991,11 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §§    | section 7    |
-| IF    | it is an NDB |
-| PARTY | You          |
-| MUST  | party        |
+| §§    | section 7    |       |                                |
+| IF    | it is an NDB |       |                                |
+| PARTY | You          |       |                                |
+| MUST  | Party Hearty |       |                                |
+| WHERE | Party Hearty | MEANS | to party with great enthusiasm |
 
 *** Part 1 of the Schedule
 :PROPERTIES:

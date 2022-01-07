@@ -488,7 +488,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)
                  , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
-                 , wwhere    = rbwhere rulebody
+                 , wwhere   = rbwhere rulebody
                  }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
@@ -531,6 +531,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)    -- given
                  , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
+                 , wwhere   = rbwhere rulebody
                  }
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond
@@ -604,7 +605,7 @@ mkRBfromDT :: BoolStructP
            -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
-           -> [HornClause2]
+           -> [Rule]
            -> RuleBody
 mkRBfromDT rba (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere =
   RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
@@ -618,7 +619,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> [(Preamble, ParamText )] -- upon  conditions
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText         -- having
-           -> [HornClause2]
+           -> [Rule]
            -> RuleBody
 mkRBfromDA (rbd,rba) (rbkn,rbwho) rbt rbpb rbpbneg rbu rbg rbh rbwhere
   = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
@@ -654,6 +655,7 @@ permutationsReg keynamewho =
                 <|?> ([], some $ preambleParamText [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
+                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>

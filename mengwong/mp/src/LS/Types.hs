@@ -97,7 +97,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
                          , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
-                         , rbwhere    :: [HornClause2]             -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
+                         , rbwhere    :: [Rule]      -- Hornlike rules only, please       -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
                       deriving (Eq, Show, Generic)
 
@@ -130,6 +130,7 @@ data Rule = Regulative
             , upon     :: Maybe ParamText
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
+            , wwhere   :: [Rule]
             }
           | Constitutive
             { name     :: RuleName   -- the thing we are defining

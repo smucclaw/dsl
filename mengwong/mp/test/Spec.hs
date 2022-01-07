@@ -64,6 +64,7 @@ defaultReg = Regulative
   , upon = Nothing
   , given = Nothing
   , having = Nothing
+  , wwhere = []
   }
 
 defaultCon = Constitutive
@@ -746,7 +747,7 @@ main = do
 
       filetest "pdpadbno-1" "must assess"
         (parseR pToplevel) 
-        [ Regulative
+        [ defaultReg
         { subj = Leaf
             (
                 ( "Organisation" :| []
@@ -785,7 +786,7 @@ main = do
         , temporal = Just ( TemporalConstraint TBefore 30 "days" )
         , hence = Just ( RuleAlias "Notification" )
         , lest = Just
-            ( Regulative
+            ( defaultReg
                 { subj = Leaf
                     (
                         ( "the PDPC" :| []
@@ -793,8 +794,6 @@ main = do
                         ) :| []
                     )
                 , keyword = Party
-                , who = Nothing
-                , cond = Nothing
                 , deontic = DMay
                 , action = Leaf
                     (
@@ -804,7 +803,7 @@ main = do
                     )
                 , temporal = Nothing
                 , hence = Just
-                    ( Regulative
+                    ( defaultReg
                         { subj = Leaf
                             (
                                 ( "You" :| []
@@ -812,8 +811,6 @@ main = do
                                 ) :| []
                             )
                         , keyword = Party
-                        , who = Nothing
-                        , cond = Nothing
                         , deontic = DMust
                         , action = Leaf
                             (
@@ -830,37 +827,16 @@ main = do
                                     )
                                 ]
                             )
-                        , temporal = Nothing
-                        , hence = Nothing
-                        , lest = Nothing
-                        , rlabel = Nothing
-                        , lsource = Nothing
-                        , srcref = Nothing
-                        , upon = Nothing
-                        , given = Nothing
-                        , having = Nothing
                         }
                     )
-                , lest = Nothing
-                , rlabel = Nothing
-                , lsource = Nothing
-                , srcref = Nothing
-                , upon = Nothing
-                , given = Nothing
-                , having = Nothing
                 }
             )
-        , rlabel = Nothing
-        , lsource = Nothing
-        , srcref = Nothing
         , upon = Just
             (
                 ( "becoming aware a data breach may have occurred" :| []
                 , Nothing
                 ) :| []
             )
-        , given = Nothing
-        , having = Nothing
         }
         , DefNameAlias
         { name = [ "You" ]

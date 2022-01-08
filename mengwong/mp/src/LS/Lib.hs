@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
 {-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
+{-# LANGUAGE TupleSections #-}
 
 
 module LS.Lib where
@@ -51,6 +52,8 @@ import LS.XPile.CoreL4
 import Data.List (transpose)
 import qualified LS.XPile.Uppaal as Uppaal
 import Debug.Trace (trace)
+import Data.Void (Void)
+import Data.Either (rights)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -59,10 +62,19 @@ import Debug.Trace (trace)
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal"
                    , dbug :: w ::: Bool <!> "False"
+                   , file :: w ::: NoLabel [String] <?> "filename..."
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
+
+-- technique for getting varargs argv https://github.com/Gabriel439/Haskell-Optparse-Generic-Library/issues/65
+newtype NoLabel a = NoLabel a  deriving (Generic, Show)
+
+instance ParseFields a => ParseRecord (NoLabel a)
+instance ParseFields a => ParseFields (NoLabel a) where
+  parseFields msg _ _ def = fmap NoLabel (parseFields msg Nothing Nothing def)
+
 
 
 getConfig :: Opts Unwrapped -> IO RunConfig
@@ -86,45 +98,49 @@ getConfig o = do
         }
 
 
-
-someFunc :: Opts Unwrapped -> IO ()
-someFunc opts = do
-  runConfig <- getConfig opts
-  myinput <- BS.getContents
-  runExample runConfig myinput
-
--- printf debugging infrastructure
-
-
-
-
-
-runExample :: RunConfig -> ByteString -> IO ()
-runExample rc str = forM_ (exampleStreams str) $ \stream ->
-    case runMyParser id rc pToplevel "dummy" stream of
-      Left bundle -> do
-        putStr (errorBundlePrettyCustom bundle)
-        printStream stream
-      -- Left bundle -> putStr (errorBundlePretty bundle)
-      -- Left bundle -> pPrint bundle
-      Right ([], []) -> return ()
-      Right (xs, xs') -> do
-        let rules = xs ++ xs'
-        when (asJSON rc) $
-          putStrLn $ toString $ encodePretty rules
-        when (toNLG rc) $ do
-          naturalLangSents <- mapM nlg xs
-          mapM_ (putStrLn . Text.unpack) naturalLangSents
-        when (toBabyL4 rc) $ do
-          pPrint $ sfl4ToCorel4 rules
---        when (toProlog rc) $ do
---          pPrint $ sfl4ToProlog rules
-        when (toUppaal rc) $ do
-          pPrint $ Uppaal.toL4TA rules
-          putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
-        unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $ do
-          pPrint rules
+parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]]
+parseRules o = do
+  runConfig <- getConfig o
+  let files = getNoLabel $ file o
+  concat <$> mapM (parseFile runConfig) files
+  
+  where
+    getNoLabel (NoLabel x) = x
+    getBS "-"   = BS.getContents
+    getBS other = BS.readFile other  
+    parseFile rc filename = do
+      bs <- getBS filename
+      mapM (parseStream rc filename) (exampleStreams bs)
+    parseStream rc filename stream = do
+      case runMyParser id rc pToplevel filename stream of
+        Left bundle -> do
+          putStr (errorBundlePrettyCustom bundle)
           printStream stream
+          return (Left bundle)
+        -- Left bundle -> putStr (errorBundlePretty bundle)
+        -- Left bundle -> pPrint bundle
+        Right ([], []) -> return $ Right []
+        Right (xs, xs') -> return $ Right (xs ++ xs')
+          
+
+dumpRules :: Opts Unwrapped -> IO [Rule]
+dumpRules opts = do
+  rc <- getConfig opts
+  rules <- concat . rights <$> parseRules opts
+
+  when (asJSON rc) $
+    putStrLn $ toString $ encodePretty rules
+  when (toNLG rc) $ do
+    naturalLangSents <- mapM nlg rules
+    mapM_ (putStrLn . Text.unpack) naturalLangSents
+  when (toBabyL4 rc) $ do
+    pPrint $ sfl4ToCorel4 rules
+  when (toUppaal rc) $ do
+    pPrint $ Uppaal.toL4TA rules
+    putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
+  unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $ do
+    pPrint rules
+  return rules
 
 printStream :: MonadIO m => MyStream -> m ()
 printStream stream = pPrint (tokenVal <$> unMyStream stream)

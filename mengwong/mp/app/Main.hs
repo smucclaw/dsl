@@ -6,14 +6,23 @@ import Control.Monad.State
 import Control.Applicative
 import Data.List
 import Options.Generic
+import Text.Pretty.Simple (pPrint)
 
+import LS.XPile.Prolog
 
 
 main :: IO ()
 main = do
   opts <- unwrapRecord "mp"
-  SFL4.someFunc opts
+  rc <- SFL4.getConfig opts
 
+  rules <- SFL4.dumpRules opts
+
+  when (SFL4.toProlog rc) $ do
+    pPrint $ sfl4ToProlog rules
+
+-- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
+-- file2rules opts 
 
 type Parser a = StateT String Maybe a
 

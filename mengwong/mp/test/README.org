@@ -1856,14 +1856,14 @@ what if we say
 :END:
 
 | EVERY | Data Intermediary                                                               |                                                                               | AKA | You |
-| WHO   | is not                                                                          | processing personal data on behalf of and for the purposes of a public agency |     |     |
+| WHICH | is not                                                                          | processing personal data on behalf of and for the purposes of a public agency |     |     |
 | MUST  | without undue delay                                                             |                                                                               |     |     |
 | UPON  | becoming aware a data breach involving a client Organisation may have occurred  |                                                                               |     |     |
 | WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                                                               |     |     |
 | ➔     | NOTIFY                                                                          | the Organisation                                                              |     |     |
 |       | for which                                                                       | you act as a Data Intermediary                                                |     |     |
 
-*** Data Intermediaries, Part 2
+*** 3: Data Intermediaries, Part 2
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1873,7 +1873,7 @@ what if we say
 | WHICH | processes personal data on behalf of and for the purposes of a public agency    |                                |     |
 | MUST  | without undue delay                                                             |                                |     |
 | UPON  | becoming aware a data breach involving a client public agency may have occurred |                                |     |
-| ➔     | notify                                                                          | the Public Agency              |     |
+| ➔     | NOTIFY                                                                          | the Public Agency              |     |
 |       | for which                                                                       | you act as a Data Intermediary |     |
 
 *** setting   dataBreach { Notifiable = True }
@@ -1931,7 +1931,7 @@ what if we say
 |   |                   |             | IF                                                                                   | FALSE                                                                                           | if the data breach affects not fewer than                                                                           |          |                                                                                       |       |                                                                                                             |                        |                  | the prescribed number of affected individuals                                                      |                       |           |       |          |    |       |              |
 |   |                   |             | OR                                                                                   | FALSE                                                                                           | in other prescribed circumstances.                                                                                  |          |                                                                                       |       |                                                                                                             |                        |                  | IS                                                                                                 | 500                   | (Regs §4) |       |          |    |       |              |
 
-*** notification to PDPC
+*** 5: notification to PDPC
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1951,7 +1951,7 @@ what if we say
 |      |         |       |                         |                                                  |      | with                                                         | a list of individuals to exclude from notification | AKA                                    | the PDPC Exclusion List |
 
 
-*** exception
+*** 6: "Unlikely" significant harm exception
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1965,7 +1965,7 @@ what if we say
 
 
 
-*** Notification to users
+*** 7: Notification to users
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv

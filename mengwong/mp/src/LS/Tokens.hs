@@ -270,7 +270,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    The more conventional way to build a parser chain is to use applicative style, and that's why we have combinators that
    - get the chain started  :: ($>|) and ($*|)
    - keep the chain running :: (|>|) and (|*|)
-   - end the chain          :: (|*<) and (|><) ... also |<< if you want to control that manually
+   - end the chain          :: (|><) and (|*<) ... also |<< if you want to control that manually
    
    In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
 

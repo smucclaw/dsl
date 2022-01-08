@@ -176,7 +176,7 @@ data Rule = Regulative
             , nlhint :: Maybe Text.Text   -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
-          | RuleAlias Text.Text -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
+          | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
           | RuleGroup { rlabel :: Maybe RuleLabel
                       , srcref :: Maybe SrcRef }  -- § NextStep
           | RegFulfilled  -- trivial top

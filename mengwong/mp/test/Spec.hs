@@ -777,7 +777,7 @@ main = do
                 ]
             )
         , temporal = Just ( TemporalConstraint TBefore 30 "days" )
-        , hence = Just ( RuleAlias "Notification" )
+        , hence = Just ( RuleAlias ["Notification"] )
         , lest = Just
             ( defaultReg
                 { subj = Leaf

@@ -21,7 +21,6 @@ import qualified Data.Text.Lazy as Text
 -- import Data.Text.Lazy.Encoding (decodeUtf8)
 import Text.Megaparsec
 import Data.ByteString.Lazy (ByteString)
-import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
@@ -33,7 +32,6 @@ import System.Environment (lookupEnv)
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.List.Split as DLS
 import Text.Parser.Permutation
-import Data.Aeson.Encode.Pretty
 import qualified Data.List.NonEmpty as NE
 import Options.Generic
 import Data.Maybe (listToMaybe, maybeToList)
@@ -44,13 +42,11 @@ import LS.Parser
 import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
-import LS.NLG (nlg)
 import Control.Monad.Writer.Lazy
 
-import LS.XPile.CoreL4
--- import LS.XPile.Prolog
+-- import LS.XPile.CoreL4
+-- import Data.ByteString.Lazy.UTF8 (toString)
 import Data.List (transpose)
-import qualified LS.XPile.Uppaal as Uppaal
 import Debug.Trace (trace)
 import Data.Void (Void)
 import Data.Either (rights)
@@ -114,7 +110,9 @@ parseRules o = do
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
+          putStrLn $ "* error while parsing " ++ filename
           putStr (errorBundlePrettyCustom bundle)
+          putStrLn "** stream"
           printStream stream
           return (Left bundle)
         -- Left bundle -> putStr (errorBundlePretty bundle)
@@ -124,23 +122,8 @@ parseRules o = do
           
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
-dumpRules opts = do
-  rc <- getConfig opts
-  rules <- concat . rights <$> parseRules opts
+dumpRules opts = concat . rights <$> parseRules opts
 
-  when (asJSON rc) $
-    putStrLn $ toString $ encodePretty rules
-  when (toNLG rc) $ do
-    naturalLangSents <- mapM nlg rules
-    mapM_ (putStrLn . Text.unpack) naturalLangSents
-  when (toBabyL4 rc) $ do
-    pPrint $ sfl4ToCorel4 rules
-  when (toUppaal rc) $ do
-    pPrint $ Uppaal.toL4TA rules
-    putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
-  unless (asJSON rc || toBabyL4 rc || toNLG rc || toProlog rc) $ do
-    pPrint rules
-  return rules
 
 printStream :: MonadIO m => MyStream -> m ()
 printStream stream = pPrint (tokenVal <$> unMyStream stream)
@@ -568,7 +551,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   where
     innerRule =
       try pRegRule
-      <|> RuleAlias <$> (optional (pToken Goto) *> pOtherVal)
+      <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pOtherVal)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely

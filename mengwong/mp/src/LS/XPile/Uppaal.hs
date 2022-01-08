@@ -26,7 +26,7 @@ toL4TA rules = foldr (addRule henceChannels) emptyTASys { channelsOfSys =  Set.t
     henceChannels = Set.fromList $ concatMap getHence rules
 
 getHence :: SFL4.Rule -> [String]
-getHence Regulative{ hence = Just (RuleAlias rname)} = [unpack rname]
+getHence Regulative{ hence = Just (RuleAlias rname)} = unpack <$> rname
 getHence _ = []
 -- TODO: Handle recursive Hence
 

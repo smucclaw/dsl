@@ -60,7 +60,7 @@ defaultReg = Regulative
   , lest = Nothing
   , rlabel = Nothing
   , lsource = Nothing
-  , srcref = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   , upon = Nothing
   , given = Nothing
   , having = Nothing
@@ -133,25 +133,25 @@ main = do
 
       it "should parse an unconditional" $ do
         parseR pRules "" (exampleStream ",EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { subj = mkLeaf "person"
-                                     , deontic = DMust
-                                     } ]
+          `shouldParse` [ srcrow2 $ defaultReg { subj = mkLeaf "person"
+                                               , deontic = DMust
+                                               } ]
 
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
-          `shouldParse` [RuleGroup {rlabel = Just ("\167",1,"Hello")}]
+          `shouldParse` [srcrow2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
+          `shouldParse` [ srccol2 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg { who = Just (mkLeafR "walks") } ]
+          `shouldParse` [ srccol2 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ defaultReg {
+          `shouldParse` [ srccol2 <$> srcrow2 $ defaultReg {
                             who = Just (All Nothing
                                          [ mkLeafR "walks"
                                          , mkLeafR "runs"
@@ -175,13 +175,13 @@ main = do
 
       it "should parse indentedDummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` imbibeRule
+          `shouldParse` (srccol2 <$> srcrow2 <$> imbibeRule)
 
       filetest "indented-1" "parse indented-1.csv (inline boolean expression)" 
-        (parseR pRules) imbibeRule
+        (parseR pRules) (srcrow2 <$> imbibeRule)
 
       filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)" 
-        (parseR pRules) imbibeRule
+        (parseR pRules) (srcrow2 <$> imbibeRule)
 
       let degustates = defaultHorn
             { name = ["degustates"]
@@ -193,17 +193,13 @@ main = do
                                     RPis (Any Nothing [Leaf (RPMT ["eats"])
                                                       ,Leaf (RPMT ["drinks"])])
                           , hBody = Nothing } ]
-            , srcref = Just (SrcRef { url = "test/Spec"
-                                    , short = "test/Spec"
-                                    , srcrow = 1
-                                    , srccol = 1
-                                    , version = Nothing }) }
+            }
         
       filetest "simple-constitutive-1" "should parse a simple constitutive rule" 
-        (parseR pRules) [degustates]
+        (parseR pRules) [srcrow2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes" 
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -211,7 +207,6 @@ main = do
                       [ mkLeafR "walks"
                       , mkLeafR "degustates"
                       ]
-              , srcref = Nothing
               }
             , defaultHorn { name = ["degustates"]
                           , keyword = Means
@@ -311,6 +306,7 @@ main = do
                          , cond = Just $ mkLeafR "the King wishes"
                          , hence = Just king_pays_singer
                          , lest  = Just singer_must_pay
+                         , srcref = Nothing
                          } ]
 
       filetest "if-king-wishes-1" "should parse kingly permutations 1" 
@@ -329,7 +325,7 @@ main = do
         (parseR pRules) [singer_must_pay]
 
       filetest "chained-regulatives" "should parse chained-regulatives.csv" 
-        (parseR pRules) singer_chain
+        (parseR pRules) (srcrow1' <$> srcrow_ <$> singer_chain)
 
       filetest "chained-regulatives-part1-alternative-1" "should parse alternative deadline/action arrangement 1" 
         (parseR pRules) [king_pays_singer]
@@ -383,10 +379,10 @@ main = do
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
 
-      filetest "bob-head-1" "less indented NOT" (parseR pRules) [bobUncle1]
+      filetest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
 
       filetest "bob-head-1-b" "more indented NOT"
-        (parseR pRules) [bobUncle1]
+        (parseR pRules) [srcrow2 bobUncle1]
 
       let bobUncle2 = bobUncle1
             { clauses = 
@@ -395,10 +391,10 @@ main = do
                    , hBody = Nothing } ] }
       
       filetest "bob-head-2" "handle less indentation"
-          (parseR pRules) [bobUncle2]
+          (parseR pRules) [srcrow2 bobUncle2]
 
       filetest "bob-head-3" "should handle outdentation"
-        (parseR pRules) [bobUncle2]
+        (parseR pRules) [srcrow2 bobUncle2]
                       
       filetest "bob-tail-1" "should work for constitutive rules" 
         (parseR pRules) [ defaultHorn
@@ -411,7 +407,7 @@ main = do
                                   } ]
                           , rlabel = Nothing
                           , lsource = Nothing
-                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}
+                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}
                                           )
                           }
                         ]
@@ -430,7 +426,8 @@ main = do
                                                ) } ]
 
       let dayOfSong = [ defaultReg { cond = Just ( All Nothing [ Not ( mkLeafR "day of silence" )
-                                                               , mkLeafR "day of song" ] ) } ]
+                                                               , mkLeafR "day of song" ] )
+                                   , srcref = (\x -> x  { srcrow = 1 }) <$> (srcref defaultReg) } ]
 
       let silenceKing = [ defaultReg { cond = Just ( All Nothing [ mkLeafR "the king wishes"
                                                                  , Not ( mkLeafR "day of silence" )
@@ -493,7 +490,7 @@ main = do
       it "pilcrows-1" $ do
         testcsv <- BS.readFile ("test/" <> "pilcrows-1" <> ".csv")
         parseR pRules "pilcrows-1" `traverse` exampleStreams testcsv
-          `shouldParse` [ dayOfSilence, dayOfSong]
+          `shouldParse` [ dayOfSilence, srcrow2 <$> dayOfSong ]
 
         -- forM_ (exampleStreams testcsv) $ \stream ->
         --   parseR pRules testfile stream
@@ -548,15 +545,7 @@ main = do
                        , "Scenario 1"
                        )
             , lsource = Nothing
-            , srcref = Just
-                       ( SrcRef
-                         { url = "test/Spec"
-                         , short = "test/Spec"
-                         , srcrow = 1
-                         , srccol = 2
-                         , version = Nothing
-                         }
-                       )
+            , srcref = srcref defaultReg
             }
           ]
           
@@ -806,6 +795,7 @@ main = do
                         ) :| []
                     )
                 , temporal = Nothing
+                , srcref = Nothing
                 , hence = Just
                     ( defaultReg
                         { subj = Leaf
@@ -816,6 +806,7 @@ main = do
                             )
                         , keyword = Party
                         , deontic = DMust
+                        , srcref = Nothing
                         , action = Leaf
                             (
                                 ( "respond" :| []
@@ -859,13 +850,13 @@ main = do
         ]
 
       filetest "pdpadbno-2" "data intermediaries"
-        (parseR pToplevel) [Regulative {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague 0 "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague 0 "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 1, version = Nothing})}]
 
       filetest "pdpadbno-3" "data intermediaries"
-        (parseR pToplevel) [Regulative {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague 0 "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague 0 "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing})}]
 
       filetest "pdpadbno-5" "notification to PDPC"
-        (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"to PDPC"), lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 10, srccol = 12, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"to PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 10, srccol = 12, version = Nothing})}]
 
       filetest "pdpadbno-6" "exemption: unlikely"
         (parseR pToplevel) 
@@ -945,7 +936,7 @@ main = do
         ]
 
       filetest "pdpadbno-7" "notification to users"
-        (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"to Notifiable Individuals"), lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
+        (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"to Notifiable Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
 
     describe "Prolog" $ do
 
@@ -959,3 +950,11 @@ main = do
         let rules = parseR pRules "simple-constitutive-1" `traverse` exampleStreams testcsv
         (show . fmap sfl4ToProlog <$> rules) `shouldParse` "potato"
 
+srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
+srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
+srcrow1     = srcrow' 1
+srcrow2     = srcrow' 2
+srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
+srccol1     = srccol' 1
+srccol2     = srccol' 2
+srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }

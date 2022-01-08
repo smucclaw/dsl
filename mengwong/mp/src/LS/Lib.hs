@@ -102,7 +102,7 @@ parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rul
 parseRules o = do
   runConfig <- getConfig o
   let files = getNoLabel $ file o
-  concat <$> mapM (parseFile runConfig) files
+  concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
   
   where
     getNoLabel (NoLabel x) = x
@@ -379,13 +379,21 @@ pRule :: Parser Rule
 pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
-  try (pRegRule <?> "regulative rule")
+
+  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  srcurl <- asks sourceURL
+  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
+
+  foundRule <- try (pRegRule <?> "regulative rule")
     <|> try (pTypeDefinition   <?> "ontology definition")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
-    <|> try (RuleGroup . Just <$> pRuleLabel <?> "standalone rule section heading")
+    <|> try ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
+
+  return $ foundRule { srcref = Just srcref }
 
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 
@@ -427,17 +435,13 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
 pScenarioRule :: Parser Rule
 pScenarioRule = debugName "pScenarioRule" $ do
   rlabel <- optional pRuleLabel
-  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
   (expects,givens) <- permute $ (,)
     <$$> some pExpect
     <|?> ([], pToken Given >> someIndentation pGivens)
   return $ Scenario
     { scgiven = givens
     , expect  = expects
-    , rlabel = rlabel, lsource = Nothing, srcref = Just srcref
+    , rlabel = rlabel, lsource = Nothing, srcref = Nothing
     }
 
 pExpect :: Parser HornClause2

@@ -177,7 +177,8 @@ data Rule = Regulative
             , srcref :: Maybe SrcRef
             }
           | RuleAlias Text.Text -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
-          | RuleGroup { rlabel :: Maybe RuleLabel }  -- § NextStep
+          | RuleGroup { rlabel :: Maybe RuleLabel
+                      , srcref :: Maybe SrcRef }  -- § NextStep
           | RegFulfilled  -- trivial top
           | RegBreach     -- trivial bottom
           -- | CaseStm       -- work in progress

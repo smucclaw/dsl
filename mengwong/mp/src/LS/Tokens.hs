@@ -283,6 +283,9 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 
    Together, the first character represents the left argument, the second the right, and the third the output.
    Then you can basically hook them up by playing dominos, ahem, by checking that the types are consistent.
+
+   Some examples follow below. To see the SLParser combinators in use, see ParamText,
+   where the p* Parsers tend to wrap the sl* SLParsers.
 -}
 
 type SLParser a = Parser (a, Int)

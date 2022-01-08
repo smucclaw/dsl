@@ -48,6 +48,7 @@ dependencies:
 - stm
 - replace-megaparsec
 - parser-combinators
+- fgl
 
 ghc-options: -Wall
 

@@ -344,6 +344,17 @@ mkTC :: MyToken -> Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> pure tt <*> pure unit
 -- TODO: Consider supporting non-integer time constraints
 
+data NatLang = NLen
+
+tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
+tc2nl NLen Nothing = "eventually"
+tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", Text.pack (show n), t ]
+tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     Text.pack (show n), t ]
+tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  Text.pack (show n), t ]
+tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     Text.pack (show n), t ]
+tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", Text.pack (show n), t ]
+
+
 data RunConfig = RC { debug     :: Bool
                     , callDepth :: Int
                     , oldDepth  :: Int

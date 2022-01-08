@@ -58,6 +58,7 @@ library
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud
@@ -96,6 +97,7 @@ executable mp-exe
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud
@@ -136,6 +138,7 @@ test-suite mp-test
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud

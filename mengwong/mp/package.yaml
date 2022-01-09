@@ -49,6 +49,7 @@ dependencies:
 - replace-megaparsec
 - parser-combinators
 - fgl
+- graphviz
 
 ghc-options: -Wall
 

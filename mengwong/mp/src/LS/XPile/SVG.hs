@@ -4,10 +4,12 @@
 module LS.XPile.SVG where
 
 import LS
+import LS.XPile.Petri
+import AnyAll as AA
+
 import Text.Pretty.Simple
 import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy (Text)
-import AnyAll as AA
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe)
 

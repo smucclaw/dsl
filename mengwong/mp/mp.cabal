@@ -39,6 +39,7 @@ library
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle
+      LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.SVG
       LS.XPile.Uppaal
@@ -62,6 +63,7 @@ library
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec
@@ -101,6 +103,7 @@ executable mp-exe
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec
@@ -142,6 +145,7 @@ test-suite mp-test
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec

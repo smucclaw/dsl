@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
-module LS.XPile.Petri where
+module LS.XPile.Petri(module LS.XPile.Petri) where
 
 import qualified Data.Text.Lazy as Text
 import Data.Text.Lazy (Text)
@@ -27,6 +27,11 @@ data PNode = PN { ntype  :: NType
 
 type Petri = Gr PNode PLabel
 
+mkPlace,mkTrans,mkDecis :: Text -> PNode
+mkPlace x = PN Place x []
+mkTrans x = PN Trans x []
+mkDecis x = PN Decis x []
+
 mySecondFGL :: Gr PNode PLabel
 mySecondFGL = mkGraph
               [ (1, PN Place "start"   [])
@@ -42,7 +47,7 @@ mySecondFGL = mkGraph
 petriGP :: DotGraph Node
 petriGP = graphToDot (petriParams mySecondFGL) mySecondFGL
 
-main = putStrLn . Text.unpack $ renderDot $ unqtDot petriGP
+-- main = putStrLn . Text.unpack $ renderDot $ unqtDot petriGP
 
 petriParams :: Gr PNode PLabel -> GraphvizParams Int PNode PLabel Int PNode
 petriParams g = Params

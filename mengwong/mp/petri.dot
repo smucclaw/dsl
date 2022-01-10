@@ -14,8 +14,8 @@ digraph {
         12 [label="the PDPC"];
         13 [label="may\ndemand an explanation for your inaction\neventually"
            ,shape=diamond];
-        16 [label=You];
-        17 [label="must\nrespond\neventually"
+        15 [label=You];
+        16 [label="must\nrespond\neventually"
            ,shape=diamond];
     }
     subgraph transitions {
@@ -31,8 +31,8 @@ digraph {
         9 [label="assessment done"];
         10 [label="not done"];
         14 [label="demand occurred"];
-        18 [label="response done"];
-        19 [label="not done"];
+        17 [label="response done"];
+        18 [label="not done"];
     }
     2 -> 3;
     3 -> 4;
@@ -49,13 +49,13 @@ digraph {
     12 -> 13;
     13 -> 14 [tailport=se
              ,comment="southeast for positive"];
-    14 -> 16;
-    16 -> 17;
-    17 -> 18 [tailport=se
+    14 -> 15;
+    15 -> 16;
+    16 -> 17 [tailport=se
              ,comment="southeast for positive"];
-    17 -> 19 [tailport=sw
+    16 -> 18 [tailport=sw
              ,comment="southwest for negative"];
-    18 -> 1 [color=green];
-    19 -> 0 [color=brown
+    17 -> 1 [color=green];
+    18 -> 0 [color=brown
             ,comment="onoes, go to breach"];
 }

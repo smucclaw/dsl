@@ -39,7 +39,7 @@ data Predicate = Not Predicate | Unary Name | Binary Name Arg | Ternary Name Arg
   deriving (Show, Eq)
 
 convertToPredicate :: Expr -> Predicate
-convertToPredicate expr = findHead (fg expr :: GUDS)
+convertToPredicate expr = mkPredicate (fg expr :: GUDS)
 
 removeType :: String -> String
 removeType str | [prefix, _suffix] <- splitOn "_" str = prefix
@@ -50,30 +50,33 @@ headName = removeType . showCId
 
 data SomeTree = forall b. SomeTree (Tree b)
 
-findHead :: Gf (Tree a) => Tree a -> Predicate
-findHead (GrootN_ x) = Unary $ headNP x
-findHead (GrootV_ x) = Unary $ headVP x
-findHead (Groot_only rt) = findHead rt
-findHead (Groot_cop_advmod rt _cp Gnot_advmod) = Not $ findHead rt
-findHead (Groot_mark_nsubj rt _ _) = findHead rt
-findHead (Groot_nsubj rt _) = findHead rt
-findHead (Groot_xcomp_ccomp (GrootV_ vp) xc (Gccomp_ uds)) =
+mkPredicate :: Gf (Tree a) => Tree a -> Predicate
+mkPredicate (GrootN_ x) = Unary $ headNP x
+mkPredicate (GrootV_ x) = Unary $ headVP x
+mkPredicate (Groot_cop_advmod root _ Gnot_advmod) = Not $ mkPredicate root -- TODO: use findNeg for more general solution?
+mkPredicate (Groot_only rt) = mkPredicate rt
+mkPredicate (Groot_mark_nsubj rt _ _) = mkPredicate rt
+mkPredicate (Groot_nsubj rt _) = mkPredicate rt
+mkPredicate (Groot_xcomp (GrootV_ vp) (GxcompA_ccomp_ ap (Gccomp_ uds))) =
+    Unary (headVP vp `combineName` headAP ap)
+     `combinePredicate` findHeadAndArg uds
+mkPredicate (Groot_xcomp_ccomp (GrootV_ vp) xc (Gccomp_ uds)) =
     Unary (headVP vp `combineName` headXC xc)
      `combinePredicate` findHeadAndArg uds
-findHead (Groot_ccomp (GrootV_ vp) (Gccomp_ uds)) =
+mkPredicate (Groot_ccomp (GrootV_ vp) (Gccomp_ uds)) =
     Unary (headVP vp) `combinePredicate` findHeadAndArg uds
-findHead (Groot_nsubj_ccomp rt subj cc) = undefined
-findHead x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
+mkPredicate (Groot_nsubj_ccomp rt subj cc) = undefined
+mkPredicate x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
 
 findHeadAndArg :: Tree a -> (Predicate, String)
 findHeadAndArg uds | [] <- findCcomp uds
                    , [root] <- findRoot uds
-                   , [sub] <- findNsubj uds = (findHead root, headNP sub)
+                   , [sub] <- findNsubj uds = (mkPredicate root, headNP sub)
 findHeadAndArg uds | [cc] <- findCcomp uds
                    , [knowRoot] <- findRoot uds
                    , [lawyerSubj] <- findNsubj uds
                    , (Unary occur, databreach) <- findHeadAndArg cc
-                   , (Unary know, lawyer) <- (findHead knowRoot , headNP lawyerSubj)
+                   , (Unary know, lawyer) <- (mkPredicate knowRoot, headNP lawyerSubj)
                    = (Binary (know `combineName` occur) lawyer, databreach)
 
 findHeadAndArg uds | roots <- findRoot uds, nps <- findNsubj uds = error $ "too many roots:\n "
@@ -89,6 +92,11 @@ findNsubj x = composOpMonoid findNsubj x
 findCcomp :: Tree a -> [GUDS]
 findCcomp (Gccomp_ uds) = [uds]
 findCcomp x = composOpMonoid findCcomp x
+
+findNeg :: Tree a -> [Gadvmod]
+findNeg Gnot_advmod = [Gnot_advmod]
+findNeg (Gccomp_ _) = []
+findNeg x = composOpMonoid findNeg x
 
 findRoot :: Tree a -> [Groot]
 findRoot rt@(GrootA_ ap) = [rt]
@@ -126,8 +134,10 @@ pattern Lexical n <- (fmap (first headName) . unApp . gf -> Just (n, []))
 
 headCN :: GCN -> String
 headCN (GUseN (Lexical n)) = n -- organization
-headCN (GUseN (GCompoundN (Lexical n1) (Lexical n2))) = n1 `combineName` n2 -- organization
-headCN (GAdjCN ap cn) = combineName (headAP ap) (headCN cn) -- publicAgency_N
+headCN (GUseN (GCompoundN (Lexical n1) (Lexical n2))) =
+   n1 `combineName` n2         -- dataBreach
+headCN (GAdjCN ap cn) =        -- publicAgency
+   headAP ap `combineName` headCN cn
 headCN _ = error "not implemented"
 
 headAP :: GAP -> String

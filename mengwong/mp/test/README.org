@@ -8,6 +8,652 @@ Or you can just run, from the ~mp/~ directory,
   make csv
 #+end_src
 
+* Types [2021-12-02 Thu]
+
+** Value Expressions
+
+more thinking, the L4Leaf thing is just a conceptual placeholder for other things
+
+*** single non-token words
+
+"foo"
+
+L4Leaf (["eats"], Notype)
+
+*** multiple words
+
+L4Leaf (["foo", "bar", "baz"], Notype)
+
+*** multiline lists of words
+
+| foo |
+| bar |
+| baz |
+
+L4List [ L4Leaf (["foo"], Notype)
+       , L4Leaf (["bar"], Notype)
+       , L4Leaf (["baz"], Notype)
+       ]
+           
+*** and/or trees
+
+| all of: |     |
+|         | foo |
+| AND     | bar |
+| AND     | baz |
+
+AA.All ( L4Leaf (["all of:"],Notype) )
+       [ L4Leaf (["foo",Notype])
+       , L4Leaf (["bar",Notype])
+       , L4Leaf (["baz",Notype]) ]
+
+*** dictionaries of (ValueExp, [ValueExp])
+
+{ Key:    AA.List [AA.Leaf "give", AA.Leaf "bar", AA.Leaf "baz"]
+, Values: [ { Key: "flavour", Values: ["chocolate"] }
+          , { Key: "amount",  Values: ["2 scoops"]  }
+          ]
+}
+
+*** optional AKA aliases
+
+ValueExp "AKA" SingleWord
+
+annexes a DefNameAlias rule connecting SingleWord to ValueExp
+
+*** optional TypeSig type signatures
+
+can be thought of as inline type annotations
+
+| sender | postcode | IS | A | string |
+
+[([ "sender", "postcode" ], string)]
+
+
+** About the src/Parser.hs
+
+*** At the same depth, NOT binds tighter than OR binds tigher than AND.
+
+*** Indentation depth acts as implicit parentheses.
+
+*** indent-2-a: no meaningful indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+originally
+|     | a   |   |
+| AND | b   |   |
+| OR  | c   |   |
+| OR  | NOT | d |
+
+#+begin_example
+if (and a (or b c (not d)))
+
+ a  && ( b  ||  c  || (!  d))
+
+(a) && ((b) || (c) || (! (d)))
+#+end_example
+
+**** explicitly
+
+| IF  | (A)  |      |
+| AND | (B)  |      |
+| OR  | (C)  |      |
+| OR  | (NOT | (D)) |
+
+ignoring the newlines,
+
+whenever we increase indentation level we insert a (
+
+whenever we decrease indentation level we insert a )
+
+**** does that rule work for
+
+|             | (a   | (aa | (aaa |   |   | (((:: | (AType |
+| ))))))) AND | (b   |     |      |   |   |       |        |
+| ) OR        | (c   |     |      |   |   |       |        |
+| ) OR        | (NOT |     |      |   |   |       |        |
+|             |      | (d  |      |   |   |       |        |
+| )) OR       | (e   |     |      |   |   |       |        |
+| )           |      |     |      |   |   |       |        |
+
+| MUST | (notify | (to   | (Bob | )) |   |
+|      |         | (from | (    | )) |   |
+|      |         |       |      |    | ) |
+
+Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.
+
+*** Deriving the Grammar
+
+So we know that a binary term looks like this:
+
+|       | term1 |
+| binOp | term2 |
+
+if the "cursor" is initially located in the blank cell, our parser would need to consume:
+
+GoDeeper, term, UnDeeper, binOp, GoDeeper, term, UnDeeper
+
+and that would leave the "cursor" in the same column as it started, on the line after term2.
+
+our ~myindented~ combinator helps tidy this up:
+
+myindented term, binOp, myindented term
+
+**** If term2 were itself a binary expression,
+
+|        | term1   |
+| binOp1 | term2-a |
+| binOp2 | term2-b |
+
+term1 binOp1 (term2-a binOp2 term2-b)
+
+note that in practice the blank cell may not be blank; the cursor may be there after processing an "IF".
+
+**** What if we have an intentional indent?
+
+|     | term1 |       |
+| OR  |       | term2 |
+|     | AND   | term3 |
+| OR  | term4 |       |
+
+Because we normally bind OR tighter than AND we need to indent the AND expression:
+
+(term1 OR (term2 AND term3) OR term4)
+
+so, our "outer" parser would consume
+
+GoDeeper, term1, UnDeeper, OR, GoDeeper
+
+then instead of finding a pOtherVal it needs to consume the inner AND:
+
+GoDeeper, term2, UnDeeper, AND, GoDeeper, term3, UnDeeper
+
+and now it's as though it had just processed a single term2-a, and can proceed back to
+
+UnDeeper, OR, GoDeeper, term4
+
+so the "inner portion" of a nested expression is exactly a
+
+(myindented term) binop (myindented term)
+
+And the outer portion becomes
+
+myindented term1, OR, myindented (myindented term2, AND, myindented term3), OR, myindented term4
+
+*** indent-2-b: slightly harder indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+still means the same thing but with slightly more indentation
+
+|     | a  |     |   |
+| AND | b  |     |   |
+|     | OR | c   |   |
+|     | OR | NOT | d |
+
+*** indent-2-c: Handle labels at the parents; this is not expected to parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1 |                 |
+| OR | top2 |                 |
+| OR |      | this is a label |
+|    |      | mid3            |
+|    | OR   | mid4            |
+
+OR, (godeeper, label, undeeper), boolstructr
+
+**** becomes
+|    | (top1) |                  |
+| OR | (top2) |                  |
+| OR | (      | (this is a label |
+|    |        | mid4)            |
+|    | OR     | (mid5))          |
+
+**** how to parse this?
+
+#+begin_src haskell
+    MyAny [ MyLeaf "top1"
+          , MyLeaf "top2"
+          , MyLabel "this is a label" $
+              MyAny [ MyLeaf "mid3"
+                    , MyLeaf "mid4"]
+          ]
+#+end_src
+
+*** indent-2-c-2: more label variation, right; ; this is not expected to parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1 |      |                 |
+| OR | top2 |      |                 |
+| OR |      |      | this is a label |
+|    |      | mid3 |                 |
+|    | OR   | mid4 |                 |
+
+OR, godeeper, (godeeper, godeeper, label, undeeper, undeeper), boolstructr
+
+*** indent-2-c-3: more label variation, left; this is the only working syntax for the moment, so we shall use this for the demo.
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-c-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|    | top1            |      |   |
+| OR | top2            |      |   |
+| OR | this is a label |      |   |
+|    |                 | mid3 |   |
+|    | OR              | mid4 |   |
+
+or, godeeper, label, samedepth boolstructr
+
+*** indent-2-d: more indentation variant
+:PROPERTIES:
+:TABLE_EXPORT_FILE: indent-2-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+As discussed above in "Deriving the Grammar":
+
+|    | term1 |       |
+| OR |       | term2 |
+|    | AND   | term3 |
+| OR | term4 |       |
+| OR | term5 |       |
+
+**** ParamText
+
+one or more normal words with optional typesig
+
+***** contexts
+
+- Rule Action
+- GIVEN parameter input to a DECIDE function
+- HAS relation definition
+- DECLARE type declaration
+
+***** paramtext-1: simple case
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word |
+
+***** paramtext-2: simple case, typed
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | IS | A | String |
+
+***** paramtext-2-a: simple case, typed a different way
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | IS A | String |
+
+***** paramtext-2-b: simple case, typed a different way
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word | :: | String |
+
+***** paramtext-3: simple case, two words
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two | words |
+***** paramtext-3-b: simple case, two words, typed
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-3-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two | words | :: | String |
+***** paramtext-4-a: multiline
+:PROPERTIES:
+:TABLE_EXPORT_FILE: paramtext-4-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| two  | words | :: | String | AKA | TwoWords |
+| next | line  |    |        |     |          |
+
+***** example: rule action
+
+| NOTIFY | the PDPC            |
+| with   | a list of names     |
+| using  | a prescribed format |
+
+***** example: GIVEN parameter input to a DECIDE function
+
+| GIVEN | Sign1 |   | Sign2 | IS | A | Sign |   |   |   |
+
+***** example: HAS relation definition
+
+HAS ParamText
+
+***** example: DECLARE
+
+DECLARE ParamText
+
+**** HornClause
+
+***** fragments
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+a tiny fragment of a horn clause
+
+| X | IS | Y |
+
+****** decide
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+let's put a DECIDE in front of it
+
+| DECIDE | X | IS | Y |
+
+***** horn-0-3: multiterm support in RPConstraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| X1 | X2 | IS | Y |
+
+***** horn-0-4: multiterm support in RPConstraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-0-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| X1 | X2 | IS | Y1 | Y2 |
+
+***** simple define, single line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+(head :: RelationalPredicate) WHEN (body :: AnyAll RelationalPredicate)
+
+but also
+
+X IS HornClauseRHS
+
+| DECIDE | X | IS | Y | WHEN | Z | IS | Q | AND | P | > | NP |
+
+
+***** simple define, multi line 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X | IS | Y  |
+| WHEN   | Z | IS | Q  |
+| AND    | P | >  | NP |
+
+***** simple define, multi line 3, and; we don't support this syntax for now.
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X | IS | Y |     |   |   |    |
+| WHEN   | Z | IS | Q | AND | P | > | NP |
+
+BoolStructR should be (AND (z is q) (p gt np))
+
+***** simple define, multi line 3, or
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-3-or.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+BoolStructR should be (OR (z is q) (p gt np))
+
+| DECIDE | X | IS | Y |    |   |   |    |
+| WHEN   | Z | IS | Q | OR | P | > | NP |
+
+***** simple define, multi line 4
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X |    |    |
+| IS     | Y |    |    |
+| WHEN   | Z | IS | Q  |
+| AND    | P | >  | NP |
+
+***** simple define, multi line 5
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | X |    |    |
+| IS     | Y |    |    |
+| WHEN   | Z | IS | Q  |
+| OR     | P | >  | NP |
+
+***** simple define, multi line 6 with non-nested bool
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+"OR" binds tighter than "AND", so we should have (and (or (z is q) (p > np))
+
+| DECIDE | X   |    |       |
+| IS     | Y   |    |       |
+| WHEN   | Z   | IS | Q     |
+| OR     | P   | >  | NP    |
+| AND    | top | IS | level |
+
+***** simple define, multi line 7 with nested bool
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-7.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+"OR" binds tighter than "AND", so explicit nesting should yield (or (z is q) (and (p > np) (top IS level))
+
+| DECIDE | X   |     |    |       |
+| IS     | Y   |     |    |       |
+| WHEN   | Z   | IS  | Q  |       |
+| OR     | P   | >   | NP |       |
+|        | AND | top | IS | level |
+
+Explicit nesting only activates when there's a boolconnector after a newline. if the boolconnector is on the same line we keep going.
+
+**** HornClauseRHS
+
+something ... IS HornClauseRHS
+
+ParamText <*> optional (pToken WHEN *> RelationalPredicate)
+
+fragment of a HornClause with a constraint RelationalPredicate sans the X part
+
+***** examples: HAS IS method definition in a type declaration
+
+| DECLARE |   | Round  | IS | A | Type   |        |   |      |                  |       |                  |
+| HAS     | 2 | Player | IS | A | Player |        |   |      |                  |       |                  |
+| HAS     | 1 | winner | IS | A | Player |        |   |      |                  |       |                  |
+|         |   |        | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
+
+HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
+
+***** contexts
+
+constitutive rule
+
+| DECIDE | X | IS | Y | ... |
+
+type DECLARE rule
+
+| DECLARE | ... | HAS | something | IS | A | Something |
+|         |     |     |           | IS |   | HornClauseRHS |
+
+**** lots of variants on horn clauses
+
+***** x is y when z or q
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|      | X | IS | a relative   |
+| WHEN | X | IS | an ancestor  |
+| OR   | X | IS | a descendant |
+| OR   | X | IS | a sibling    |
+
+
+***** x is y means z or q
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | X | IS | a relative   |
+| MEANS | X | IS | an ancestor  |
+| OR    | X | IS | a descendant |
+| OR    | X | IS | a sibling    |
+
+***** x means y when z
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+nope.
+
+***** x includes y when z
+:PROPERTIES:
+:TABLE_EXPORT_FILE: horn-variant-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|      | X | INCLUDES | Y            |
+| WHEN | Y | IS       | an ancestor  |
+| OR   | Y | IS       | a descendant |
+| OR   | Y | IS       | a sibling    |
+
+**** RelationalPredicate: IsRelation
+
+MultiText (pToken IS) MultiText
+
+| X | IS | HornClauseRHS |
+
+used for equality and unification
+
+***** simple relationalpredicate in a WHO
+:PROPERTIES:
+:TABLE_EXPORT_FILE: relpred-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Person     |
+| WHO   | degustates |
+| MUST  | sing       |
+
+
+**** RelationalPredicate: Constraint
+
+MultiText RelToken MultiText
+
+***** examples:
+
+| P | > | NP |
+
+| NOT | isMortal  |
+
+| isMortal |
+
+| degustates|
+
+***** contexts
+
+- part of a HornClause
+  
+**** RelationalPredicate: N-ary Predicate
+
+ParamText list of words, untyped.
+
+- Words obey the form   ~RecordName+ Predicate~
+- where the ~Predicate~ is an n-ary predicate
+- where n is the number of RecordNames preceding the Predicate
+
+***** examples: unary predicate, type Bool
+
+| DECIDE | Person | isMortal | WHEN | Person | isHuman |
+
+***** examples: unary function, type Player
+
+| DECLARE | Round | winner
+
+***** contexts
+
+- part of a HornClause
+
+**** ConstitutiveRule, Binary Predicate definition, explicit, infix
+
+| GIVEN  | Sign1 |       | Sign2 | IS | A        | Sign |       |    |          |
+| DECIDE | Sign1 | beats | Sign2 |    |          |      |       |    |          |
+| IS     | TRUE  | WHEN  | Sign1 | IS | Rock     | AND  | Sign2 | IS | Scissors |
+|        | "     | "     | "     | "  | Scissors | "    | "     | "  | Paper    |
+|        | "     | "     | "     | "  | Paper    | "    | "     | "  | Rock     |
+
+**** Binary Predicate definition, compact
+
+|       |          | beats |          |
+| MEANS | Rock     | beats | Scissors |
+|       | Scissors | beats | Rock     |
+|       | Paper    | beats | Rock     |
+
+**** Type Declaration
+
+DECLARE ParamText
+
+**** HasRelation
+
+
+
+* Keywords
+
+** DECIDE
+
+followed by
+
+HornClause
+
+
+
+* Tests
 ** Not a Rule
 :PROPERTIES:
 :TABLE_EXPORT_FILE: notarule-1.csv
@@ -96,6 +742,48 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 |   |       | AND   | FALSE  | swallows |            |
 |   | MUST  |       |        |          |            |
 |   | ->    | FALSE | sing   |          |            |
+
+** simple regulative rule for the Must Sing example
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §     | Matt Wadd's Rule |
+| EVERY | Person           |
+| WHO   | walks            |
+| AND   | eats             |
+| OR    | drinks           |
+| MUST  | sing             |
+
+** simple regulative rule for the Must Sing example with a deadline on the MUST
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §     | Matt Wadd's Rule           |    |             |   |
+| EVERY | Person                     | :: | Singaporean |   |
+| WHO   | walks                      |    |             |   |
+| AND   | eats                       |    |             |   |
+| OR    | drinks                     |    |             |   |
+| IF    | the moon is full           |    |             |   |
+| WHEN  | the king is in a good mood |    |             |   |
+| MUST  | sing                       |    |             |   |
+
+** simple regulative rule for the Must Sing example with a deadline on a separate line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: mustsing-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §      | Matt Wadd's Rule |      |
+| EVERY  | Person           |      |
+| WHO    | walks            |      |
+| AND    | eats             |      |
+| OR     | drinks           |      |
+| MUST   | sing             |      |
+| BEFORE | 30               | days |
 
 ** simple constitutive rule
 :PROPERTIES:
@@ -196,7 +884,7 @@ Note the defined terms in this example have moved one cell left to more natural 
 
 |   | degustates | MEANS | eats | AND | drinks | OR | farts |
 
-** Multiple Preambles and BoolRules
+** Multiple Preambles and BoolStructs
 :PROPERTIES:
 :TABLE_EXPORT_FILE: multiple-preambles.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -268,7 +956,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 | IF    | the King wishes | // | scope quantification slightly different vs 4        |
 | ->    | sing            | // | suggests that the King is consulted for each person |
 
-** with multiple preambleBoolRules
+** with multiple preambleBoolStructPs
 :PROPERTIES:
 :TABLE_EXPORT_FILE: if-king-wishes-queen.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -362,9 +1050,9 @@ do the individual components work?
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| PARTY | King  |     |
-| MAY   | pay   |     |
-| AFTER | 20    | min |
+| PARTY | King |     |
+| MAY   | pay  |     |
+| AFTER | 20   | min |
 
 **** the singer part
 :PROPERTIES:
@@ -375,16 +1063,36 @@ do the individual components work?
 | Singer | MUST | BEFORE | 1 | supper |
 |        | ->   | pay    |   |        |
 
+**** Just an Action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: action-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| -> | win |
+
+**** A Bigger Action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: action-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| -> | win | gloriously |
+
 ** chained regulatives with action params
 :PROPERTIES:
 :TABLE_EXPORT_FILE: action-params-singer.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| Singer | MUST | BEFORE | 1 | supper   |
-|        | ->   | pay    |          |
-|        |      | to     | the King |
-|        |      | amount | $20      |
+| Singer | MUST | BEFORE | 1        | supper |
+|        | ->   | pay    |          |        |
+|        |      | to     | the King |        |
+|        |      | amount | $20      |        |
+
+this causes problems for the Parser because we see the word "pay" as a Label.
+
+We need a special case to handle it.
 
 ** Alternative Arrangements of Temporals and Actions
 *** may pay after time
@@ -426,7 +1134,7 @@ do the individual components work?
 | PARTY | King |
 | MAY   | pay  |
 
-** simple natural language aliases
+** simple natural language aliases on the same line
 :PROPERTIES:
 :TABLE_EXPORT_FILE: nl-aliases.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -438,6 +1146,80 @@ do the individual components work?
 | MUST  |                 |     |        |
 | IF    | the King wishes |     |        |
 | ->    | sing            |     |        |
+
+** simple natural language aliases on the next line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: nl-aliases-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person          |        |
+|       | AKA             | singer |
+| WHO   | walks           |        |
+| AND   | eats            |        |
+| MUST  |                 |        |
+| IF    | the King wishes |        |
+| ->    | sing            |        |
+
+** increasingly complex WHO fields
+
+we're switching from RPParamText to MultiTerm to keep things simpler
+
+*** single-word WHO should be an RPMT
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |
+| WHO   | eats   |
+| MUST  |        |
+| ->    | sing   |
+
+*** two-word WHO should also be an RPMT
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |        |
+| WHO   | eats   | rudely |
+| MUST  |        |        |
+| ->    | sing   |        |
+
+
+*** three-word WHO should also be an RPMT
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |         |         |
+| WHO   | eats   | without | manners |
+| MUST  |        |         |         |
+| ->    | sing   |         |         |
+
+*** three-word WHO with a proper relation should be a Constraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |    |      |
+| WHOSE | eyes   | IS | blue |
+| MUST  |        |    |      |
+| ->    | sing   |    |      |
+
+*** TODO WHO with a recursive BoolStructR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: who-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person |    |      |
+| WHO   | eyes   | IS | blue |
+| MUST  |        |    |      |
+| ->    | sing   |    |      |
 
 ** vague temporal spec
 :PROPERTIES:
@@ -561,9 +1343,35 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 
 if ((morbror or farbror) and not estranged)
 
-*** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS
+*** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS :shouldfail:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | Bob's your uncle |                  |             |
+| MEANS | NOT              | Bob is estranged |             |
+|       |                  | OR               | Bob is dead |
+
+if (not (estranged or dead))
+
+*** more explicit indentation                                                           :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+indenting the "Bob is estranged" term to the right of the OR below it, has the most righteous rectitude.
+
+|       | Bob's your uncle |    |                  |
+| MEANS | NOT              |    | Bob is estranged |
+|       |                  | OR | Bob is dead      |
+
+if (not (estranged or dead))
+
+*** less explicit indentation                                                           :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -571,7 +1379,33 @@ if ((morbror or farbror) and not estranged)
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |
 
-if (not (estranged or dead))
+if (not estranged) or dead)
+
+*** but indentation doesn't go backwards
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | Bob's your uncle |                  |
+| MEANS | NOT              | Bob is estranged |
+| OR    | Bob is dead      |                  |
+
+if ((not estranged) or dead))
+
+*** combined with other connectors
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | Bob's your uncle            |             |                  |
+| MEANS | Bob's your mother's brother |             |                  |
+| OR    | Bob's your father's brother |             |                  |
+| AND   |                             | NOT         | Bob is estranged |
+|       | OR                          | Bob is dead |                  |
+
+
 
 *** Unless as the only term in a regulative rule
 :PROPERTIES:
@@ -927,28 +1761,25 @@ what if we say
 
 ** Rule Groups and Rule Labels
 :PROPERTIES:
-:TABLE_EXPORT_FILE: rulelabels.csv
+:TABLE_EXPORT_FILE: pdpadbno-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|              |   |   | §     | Notification                                                                    |          |                                   |     |         |                                  |         |               |
-|              |   |   |       |                                                                                 |          |                                   |     |         |                                  |         |               |
-|              |   |   |       | this is part of a rule group                                                    |          |                                   |     |         |                                  |         |               |
-|              |   |   |       |                                                                                 |          |                                   |     |         |                                  |         |               |
-|              |   |   | §§    | to PDPC                                                                         |          |                                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | EVERY | Organisation                                                                    |          |                                   |     | ("you") |                                  |         |               |
-| (Act §4.1.c) |   |   | WHO   | is                                                                              | not      | a Public Agency                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | MUST  | WITHIN                                                                          |          | 30 days                           |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | UPON  | becoming aware a data breach may have occurred                                  |          |                                   |     |         |                                  |         |               |
-| (Act §26C.1) |   |   | WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |          |                                   |     |         |                                  |         |               |
-| (Act §26C.2) |   |   | ➔     |                                                                                 | assess   | if it is a Notifiable Data Breach |     |         |                                  |         |               |
-|              |   |   | HENCE | Notification                                                                    |          |                                   |     |         |                                  |         |               |
-| (AdvG §20.4) |   |   | LEST  |                                                                                 | the PDPC | MAY                               |     |         |                                  |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          | ➔                                 |     | demand  | an explanation for your inaction |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          | HENCE                             | you | MUST    |                                  |         |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     | ➔       |                                  | respond |               |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | to      | the PDPC      |
-| (AdvG §20.4) |   |   |       |                                                                                 |          |                                   |     |         |                                  | about   | your inaction |
+| EVERY | Organisation                                                                    |                                   |                 | AKA               | You    |                                  |               |   |
+| WHO   | is                                                                              | not                               | a Public Agency |                   |        |                                  |               |   |
+| MUST  | WITHIN                                                                          | 30                                | days            |                   |        |                                  |               |   |
+| UPON  | becoming aware a data breach may have occurred                                  |                                   |                 |                   |        |                                  |               |   |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                 |                   |        |                                  |               |   |
+| ->    | assess                                                                          | if it is a Notifiable Data Breach |                 |                   |        |                                  |               |   |
+|       | by                                                                              | performing                        |                 | NDB Qualification |        |                                  |               |   |
+| HENCE | Notification                                                                    |                                   |                 |                   |        |                                  |               |   |
+| LEST  |                                                                                 | the PDPC                          | MAY             |                   |        |                                  |               |   |
+|       |                                                                                 |                                   | ->              |                   | demand | an explanation for your inaction |               |   |
+|       |                                                                                 |                                   | HENCE           | You               | MUST   |                                  |               |   |
+|       |                                                                                 |                                   |                 |                   | ->     | respond                          |               |   |
+|       |                                                                                 |                                   |                 |                   |        | to                               | the PDPC      |   |
+|       |                                                                                 |                                   |                 |                   |        | about                            | your inaction |   |
+
 
 ** Nested Or Group with pre/post labels
 
@@ -970,9 +1801,288 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+| §      | Scenario 1   |            |    |             |      |            |    |   |
 | GIVEN  | amount saved |            | IS | 22000       |      |            |    |   |
 |        | earnings     | amount     | IS | 25000       |      |            |    |   |
 |        | earnings     | steadiness | IS | steady      |      |            |    |   |
 | EXPECT |              | investment | IS | savings     | WHEN | dependents | IS | 5 |
 | "      |              | "          | "  | combination | "    | "          | "  | 3 |
 | "      |              | "          | "  | stocks      | "    | "          | "  | 0 |
+
+** Decide has a WHEN and AND on separate lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income   |            | IS | adequate |           |   |   |   |   |   |
+| WHEN   | earnings | steadiness | IS | steady   |           |   |   |   |   |   |
+| AND    | earnings | amount     |    | >        | minincome |   |   |   |   |   |
+|        |          |            |    |          |           |   |   |   |   |   |
+
+** Decide has a WHEN separate and AND on same line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income   |            | IS | adequate |     |          |        |   |   |           |
+| WHEN   | earnings | steadiness | IS | steady   | AND | earnings | amount |   | > | minincome |
+
+** Decide has a WHEN and AND on the same line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income |   | IS | adequate | WHEN | earnings | steadiness | IS | steady | AND | earnings | amount |   | > | minincome |   |
+
+
+** Decide has an OTHERWISE default
+:PROPERTIES:
+:TABLE_EXPORT_FILE: financialadvisor-decide-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | income |   | IS | adequate   | WHEN | earnings  | steadiness | IS | steady | AND | earnings | amount |   | > | minincome |   |
+| "      | "      |   | "  | inadequate |      | OTHERWISE |            |    |        |     |          |        |   |   |           |   |
+
+** More PDPA Stuff
+
+*** Data Intermediaries, Part 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Data Intermediary                                                               |                                                                               | AKA | You |
+| WHICH | is not                                                                          | processing personal data on behalf of and for the purposes of a public agency |     |     |
+| MUST  | without undue delay                                                             |                                                                               |     |     |
+| UPON  | becoming aware a data breach involving a client Organisation may have occurred  |                                                                               |     |     |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                                                               |     |     |
+| ➔     | NOTIFY                                                                          | the Organisation                                                              |     |     |
+|       | for which                                                                       | you act as a Data Intermediary                                                |     |     |
+
+*** 3: Data Intermediaries, Part 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Data Intermediary                                                               | AKA                            | You |
+| WHICH | processes personal data on behalf of and for the purposes of a public agency    |                                |     |
+| MUST  | without undue delay                                                             |                                |     |
+| UPON  | becoming aware a data breach involving a client public agency may have occurred |                                |     |
+| ➔     | NOTIFY                                                                          | the Public Agency              |     |
+|       | for which                                                                       | you act as a Data Intermediary |     |
+
+*** setting   dataBreach { Notifiable = True }
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| § | NDB Qualification |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | A                 | data breach |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | IS                | TRUE        | a Notifiable Data Breach                                                             |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | AKA               | "NDB"       |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | IF                | TRUE        | a data breach                                                                        |                                                                                                 |                                                                                                                     | occurred |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             | IS                                                                                   | any                                                                                             | unauthorised                                                                                                        |          |                                                                                       | FALSE | access                                                                                                      |                        |                  | // maybe the label also needs to be a paramtext!? ["any","unauthorised"]                           |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | FALSE | use                                                                                                         |                        |                  | // so that the test engine's GIVEN fact-finder can match  unauthorised disclosure of personal data |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | TRUE  | disclosure                                                                                                  |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | FALSE | copying                                                                                                     |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | FALSE | modification                                                                                                |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | TRUE  | disposal                                                                                                    |                        |                  | of personal data                                                                                   |                       |           |       |          |    |       |              |
+|   |                   |             | OR                                                                                   | loss of storage medium on which personal data is stored in circumstances where the unauthorised |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       | access       |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    | OR    | use          |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    | OR    | disclosure   |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    | OR    | copying      |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    | OR    | modification |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    | OR    | disposal     |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | UNLESS            | FALSE       | the data breach occurred only within an organisation                                 |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | AND               | TRUE        | it results in, or is likely to result in, significant harm to an affected individual |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             | IF                                                                                   | FALSE                                                                                           | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 | IF                                                                                                                  | FALSE    | the data breach relates to                                                            |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       | TRUE  |                                                                                                             |                        | the individual’s | TRUE                                                                                               | full name             |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        | ,                | FALSE                                                                                              | alias                 |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        | OR               | FALSE                                                                                              | identification number |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | AND                                                                                   | FALSE | any of the prescribed personal data or classes of personal data relating to the individual                  |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       | set out in                                                                                                  | Part 1 of the Schedule |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       | subject to                                                                                                  | Part 2 of the Schedule |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             | OR                                                                                   | TRUE                                                                                            | in other prescribed circumstances.                                                                                  |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 | MEANS                                                                                                               | all of   | the following personal data relating to an individual’s account with an organisation: |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     | TRUE     | the individual’s account identifier                                                   |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | INCLUDES                                                                              | FALSE | an account                                                                                                  |                        | name             |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | TRUE  |                                                                                                             |                        | number           |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | FALSE | a number assigned to any account the individual has with an organisation that is a bank or finance company. |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 | AND                                                                                                                 | TRUE     | any                                                                                   | FALSE | password                                                                                                    |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       | TRUE  | security code                                                                                               |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       | FALSE | access code                                                                                                 |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       | FALSE | response to a security question                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       | FALSE | biometric data                                                                                              |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          | OR                                                                                    | FALSE | other data                                                                                                  |                        |                  |                                                                                                    |                       | that is   | FALSE | used     | to | allow | access to    |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       | or        | FALSE | required |    | or    | use of       |
+|   |                   |             |                                                                                      |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   | OR                | FALSE       | it is, or is likely to be, of a significant scale                                    |                                                                                                 |                                                                                                                     |          |                                                                                       |       |                                                                                                             |                        |                  |                                                                                                    |                       |           |       |          |    |       |              |
+|   |                   |             | IF                                                                                   | FALSE                                                                                           | if the data breach affects not fewer than                                                                           |          |                                                                                       |       |                                                                                                             |                        |                  | the prescribed number of affected individuals                                                      |                       |           |       |          |    |       |              |
+|   |                   |             | OR                                                                                   | FALSE                                                                                           | in other prescribed circumstances.                                                                                  |          |                                                                                       |       |                                                                                                             |                        |                  | IS                                                                                                 | 500                   | (Regs §4) |       |          |    |       |              |
+
+*** 5: notification to PDPC
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-5.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §§   | to PDPC |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+| You  | MUST    |       | WITHIN                  | 3                                                | days |                                                              |                                                    |                                        |                         |
+| TRUE | IF      | TRUE  | it is                   | an NDB                                           |      |                                                              |                                                    |                                        |                         |
+|      | UNLESS  | FALSE | you are a Public Agency |                                                  |      |                                                              |                                                    |                                        |                         |
+|      |         |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+|      | ➔       |       | NOTIFY                  | the PDPC                                         |      |                                                              |                                                    |                                        |                         |
+|      |         |       | in                      | the form and manner specified at www.pdpc.gov.sg |      |                                                              |                                                    |                                        |                         |
+|      |         |       | with                    | a Notification Message                           |      |                                                              |                                                    | // can we link to a constitutive rule? |                         |
+|      |         |       | and                     | (optional)                                       |      | a list of individuals for whom notification waiver is sought | // we need PTree parsing if we want to indent more |                                        |                         |
+|      |         |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+|      | HENCE   |       | the PDPC                | MAY                                              |      | NOTIFY                                                       | you                                                |                                        |                         |
+|      |         |       |                         |                                                  |      | with                                                         | a list of individuals to exclude from notification | AKA                                    | the PDPC Exclusion List |
+
+
+*** 6: "Unlikely" significant harm exception
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-6.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| GIVEN  | an individual |                                                                                                     |     |                                                                                                      |
+|        | who           | is affected by an NDB                                                                               |     |                                                                                                      |
+| DECIDE | it is         | unlikely that the notifiable data breach will result in significant harm to the affected individual | AKA | Unlikely                                                                                             |
+| IF     | FALSE         | the organisation has taken any action                                                               | to  | render it unlikely that the notifiable data breach will result in significant harm to the individual |
+| OR     | TRUE          | the organisation already implemented any technological measure                                      | "   | "                                                                                                    |
+
+
+
+*** 7: Notification to users
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-7.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §§     | to Notifiable Individuals |                                            |                                                    |                         |
+| IF     | TRUE                      | it is                                      | an NDB                                             |                         |
+| UNLESS | FALSE                     | you are a Public Agency                    |                                                    |                         |
+| PARTY  | You                       |                                            |                                                    |                         |
+| MUST   |                           | WITHIN                                     | 3                                                  | days                    |
+| ➔      |                           | NOTIFY                                     | each of the Notifiable Individuals                 |                         |
+|        |                           | in                                         | any manner that is reasonable in the circumstances |                         |
+|        |                           | with                                       | a message obeying a certain format                 |                         |
+| WHERE  |                           | the Notifiable Individuals                 |                                                    |                         |
+|        | MEANS                     | the set of individuals affected by the NDB |                                                    |                         |
+|        |                           | LESS                                       | the individuals who are deemed                     | Unlikely                |
+|        |                           | LESS                                       | the individuals on                                 | the PDPC Exclusion List |
+|        |                           | LESS                                       | the individuals on                                 | the LEA Exclusion List  |
+|        |                           |                                            |                                                    |                         |
+
+
+**** pdpadbno-7-a: simpler regular version to test setPlus and setLess
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-7-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §§    | section 7    |                                |
+| IF    | it is an NDB |                                |
+| PARTY | You          |                                |
+| MUST  | Party Hearty |                                |
+| WHERE |              | Party Hearty                   |
+|       | MEANS        | to party with great enthusiasm |
+
+**** pdpadbno-7-b: simpler sugary version to test if an IF can precede a You Must
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-7-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+decision: a Sugary thing has to start with You MUST.
+
+The "IF" line has to go below.
+
+|     | §§    | section 7    |                                |                                |
+| You | MUST  | Party Hearty |                                | // if you flip these two lines |
+|     | IF    | it is an NDB |                                | // it doesn't parse.           |
+|     | WHERE |              | Party Hearty                   |                                |
+|     |       | MEANS        | to party with great enthusiasm |                                |
+
+*** Part 1 of the Schedule
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-8.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| any of the prescribed personal data or classes of personal data relating to the individual |       |       |      |                                                                                                                                                                                                                                                                                                                              |
+| IS                                                                                         | FALSE |       |    1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                                                                                          |
+| OR                                                                                         | FALSE |       |    2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                                                                                                         |
+| OR                                                                                         | FALSE |       |    3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                                                                                                         |
+| OR                                                                                         | FALSE |       |    4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                                                                                               |
+| OR                                                                                         | FALSE |       |    5 | Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —                                                                                                                                                                                              |
+|                                                                                            |       | FALSE |  5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                                                                                              |
+|                                                                                            | OR    | FALSE |  5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                                                                                            |
+|                                                                                            | OR    | FALSE |  5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA;                                                                           |
+|                                                                                            | OR    | FALSE |  5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                                                                                                       |
+|                                                                                            | OR    | FALSE |  5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                                                                                                         |
+|                                                                                            | OR    | FALSE |  5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                                                                                                        |
+| OR                                                                                         | FALSE |       |    6 | Any information that identifies, or is likely to lead to the identification of —                                                                                                                                                                                                                                             |
+|                                                                                            |       | FALSE |  6.a | the individual who has been or is the subject of any investigation, examination, assessment or treatment under the VAA relating to whether the individual is a vulnerable adult experiencing or at risk of abuse, neglect or self-neglect;                                                                                   |
+|                                                                                            | OR    | FALSE |  6.b | the individual as a vulnerable adult who has been committed to a place of temporary care and protection or place of safety or to the care of a fit person under the VAA;                                                                                                                                                     |
+|                                                                                            | OR    | FALSE |  6.c | the individual as a vulnerable adult who is the subject of an order made by a court under the VAA;                                                                                                                                                                                                                           |
+|                                                                                            | OR    | FALSE |  6.d | a place of temporary care and protection or place of safety in which an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is committed, or the location of such a place of temporary care and protection or place of safety; or                                                                    |
+|                                                                                            | OR    | FALSE |  6.e | a fit person under whose care an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is placed, or the location of the premises of such a fit person.                                                                                                                                                |
+| OR                                                                                         | FALSE |       |    7 | Any private key of or relating to the individual that is used or may be used —                                                                                                                                                                                                                                               |
+|                                                                                            |       | FALSE |  7.a | to create a secure electronic record or secure electronic signature;                                                                                                                                                                                                                                                         |
+|                                                                                            | OR    | FALSE |  7.b | to verify the integrity of a secure electronic record; or                                                                                                                                                                                                                                                                    |
+|                                                                                            | OR    | FALSE |  7.c | to verify the authenticity or integrity of a secure electronic signature.                                                                                                                                                                                                                                                    |
+| OR                                                                                         | FALSE |       |    8 | The net worth of the individual.                                                                                                                                                                                                                                                                                             |
+| OR                                                                                         | FALSE |       |    9 | The deposit of moneys by the individual with any organisation.                                                                                                                                                                                                                                                               |
+| OR                                                                                         | FALSE |       |   10 | The withdrawal by the individual of moneys deposited with any organisation.                                                                                                                                                                                                                                                  |
+| OR                                                                                         | FALSE |       |   11 | The granting by an organisation of advances, loans and other facilities by which the individual, being a customer of the organisation, has access to funds or financial guarantees.                                                                                                                                          |
+| OR                                                                                         | FALSE |       |   12 | The incurring by the organisation of any liabilities other than those mentioned in paragraph 11 on behalf of the individual.                                                                                                                                                                                                 |
+| OR                                                                                         | FALSE |       |   13 | The payment of any moneys, or transfer of any property, by any person to the individual, including the amount of the moneys paid or the value of the property transferred, as the case may be.                                                                                                                               |
+| OR                                                                                         | FALSE |       |   14 | The creditworthiness of the individual.                                                                                                                                                                                                                                                                                      |
+| OR                                                                                         | FALSE |       |   15 | The individual’s investment in any capital markets products.                                                                                                                                                                                                                                                                 |
+| OR                                                                                         | FALSE |       |   16 | The existence, and amount due or outstanding, of any debt —                                                                                                                                                                                                                                                                  |
+|                                                                                            |       | FALSE | 16.a | owed by the individual to an organisation; or                                                                                                                                                                                                                                                                                |
+|                                                                                            | OR    | FALSE | 16.b | owed by an organisation to the individual.                                                                                                                                                                                                                                                                                   |
+| OR                                                                                         | FALSE |       |   17 | Any of the following:                                                                                                                                                                                                                                                                                                        |
+|                                                                                            |       | FALSE | 17.a | the terms and conditions of any accident and health policy or life policy (called in this item the applicable policy) of which the individual is the policy owner or under which the individual is a beneficiary;                                                                                                            |
+|                                                                                            | OR    | FALSE | 17.b | the premium payable by the policy owner under the applicable policy;                                                                                                                                                                                                                                                         |
+|                                                                                            | OR    | FALSE | 17.c | the benefits payable to any beneficiary under the applicable policy;                                                                                                                                                                                                                                                         |
+|                                                                                            | OR    | FALSE | 17.d | any information relating to any claim on, or payment under, the applicable policy, including the condition of the health of the individual and the diagnosis, treatment, prevention or alleviation of any ailment, condition, disability, disease, disorder or injury that the individual has suffered or is suffering from; |
+|                                                                                            | OR    | FALSE | 17.e | any other information that the individual is the policy owner of, or a beneficiary under, an applicable policy.                                                                                                                                                                                                              |
+| OR                                                                                         | FALSE |       |   18 | The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:                                                                                                                                                                                   |
+|                                                                                            |       | FALSE | 18.a | any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;                                                                                                                                                                                                                              |
+|                                                                                            | OR    | FALSE | 18.b | Human Immunodeficiency Virus Infection;                                                                                                                                                                                                                                                                                      |
+|                                                                                            | OR    | FALSE | 18.c | schizophrenia or delusional disorder;                                                                                                                                                                                                                                                                                        |
+|                                                                                            | OR    | FALSE | 18.d | substance abuse and addiction, including drug addiction and alcoholism.                                                                                                                                                                                                                                                      |
+| OR                                                                                         | FALSE |       |   19 | The provision of treatment to the individual for or in respect of —                                                                                                                                                                                                                                                          |
+|                                                                                            |       | FALSE | 19.a | the donation or receipt of a human egg or human sperm; or                                                                                                                                                                                                                                                                    |
+|                                                                                            | OR    | FALSE | 19.b | any contraceptive operation or procedure or abortion.                                                                                                                                                                                                                                                                        |
+| OR                                                                                         | FALSE |       |   20 | Any of the following:                                                                                                                                                                                                                                                                                                        |
+|                                                                                            |       | FALSE | 20.a | subject to section 4(4)(b) of the Act, the donation and removal of any organ from the body of the deceased individual for the purpose of its transplantation into the body of another individual;                                                                                                                            |
+|                                                                                            | OR    | FALSE | 20.b | the donation and removal of any specified organ from the individual, being a living organ donor, for the purpose of its transplantation into the body of another individual;                                                                                                                                                 |
+|                                                                                            | OR    | FALSE | 20.c | the transplantation of any organ mentioned in sub-paragraph (a) or (b) into the body of the individual.                                                                                                                                                                                                                      |
+| OR                                                                                         | FALSE |       |   21 | Subject to section 4(4)(b) of the Act, the suicide or attempted suicide of the individual.                                                                                                                                                                                                                                   |
+| OR                                                                                         | FALSE |       |   22 | Domestic abuse, child abuse or sexual abuse involving or alleged to involve the individual.                                                                                                                                                                                                                                  |
+| OR                                                                                         | FALSE |       |   23 | Any of the following:                                                                                                                                                                                                                                                                                                        |
+|                                                                                            |       | FALSE | 23.a | information that the individual is or had been adopted pursuant to an adoption order made under the Adoption of Children Act (Cap. 4), or is or had been the subject of an application for an adoption order;                                                                                                                |
+|                                                                                            | OR    | FALSE | 23.b | the identity of the natural father or mother of the individual;                                                                                                                                                                                                                                                              |
+|                                                                                            | OR    | FALSE | 23.c | the identity of the adoptive father or mother of the individual;                                                                                                                                                                                                                                                             |
+|                                                                                            | OR    | FALSE | 23.d | the identity of any applicant for an adoption order;                                                                                                                                                                                                                                                                         |
+|                                                                                            | OR    | FALSE | 23.e | the identity of any person whose consent is necessary under that Act for an adoption order to be made, whether or not the court has dispensed with the consent of that person in accordance with that Act;                                                                                                                   |
+|                                                                                            | OR    | FALSE | 23.f | any other information that the individual is or had been an adopted child or relating to the adoption of the individual.                                                                                                                                                                                                     |
+|                                                                                            |       |       |      |                                                                                                                                                                                                                                                                                                                              |
+
+
+

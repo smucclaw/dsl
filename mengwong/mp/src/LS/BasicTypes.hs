@@ -22,7 +22,7 @@ data MyStream = MyStream
   deriving Show
 
 data MyToken = Every | Party | TokAll
-             | Who
+             | Who | Which | Whose
              | Must | May | Shant
              | If | When | Always | Never
              | Or | And | MPNot
@@ -37,7 +37,7 @@ data MyToken = Every | Party | TokAll
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
              | Distinct -- entity modifier in GIVEN
              | Unless
-             | Hence | Lest | Fulfilled | Breach
+             | Hence | Lest | Fulfilled | Breach | Goto
              | TNumber Integer
              | Other Text.Text
              | Do
@@ -47,6 +47,11 @@ data MyToken = Every | Party | TokAll
              | RuleMarker Int Text.Text
              | Expect
              | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
+             | Otherwise
+             | SOF | EOF
+             | GoDeeper | UnDeeper
+             | SetPlus | SetLess -- set union and subtraction
+             | Where -- like in Haskell
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.

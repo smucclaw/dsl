@@ -10,17 +10,17 @@ import LS.Types ( Deontic(..),
       TemporalConstraint (..), TComparison(..),
       ParamText,
       BoolStruct(..),
-      ConstitutiveName,
-      Rule(..), BoolStructP, pt2text, bsp2text )
+      RuleName,
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower)
+-- import Data.Char (toLower)
 import Data.Void (Void)
-import Data.List.NonEmpty (toList)
+-- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
-import AnyAll (Item(..))
-import qualified AnyAll as AA
+-- import AnyAll (Item(..))
+-- import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe )
 import Data.List ( elemIndex, intercalate )
 import Replace.Megaparsec ( sepCap )
@@ -106,8 +106,8 @@ parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {} -> do
     subjA'  <- parseBool env (subj rl)
-    whoA'   <- mapM (parseBool env) (who rl)
-    condA'   <- mapM (parseBool env) (cond rl) --if
+    whoA'   <- mapM (parseBSR env) (who rl)
+    condA'   <- return Nothing --if
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
@@ -126,7 +126,7 @@ parseFields env rl = case rl of
   Constitutive {} -> do
     givenA' <- mapM (parseGiven env) (given rl)
     nameA' <- parseName env (name rl)
-    condA'   <- mapM (parseBool env) (cond rl) -- when/if/unless
+    condA'   <- mapM (parseBSR env) (cond rl) -- when/if/unless
     return ConstitutiveA {
       givenA = givenA',
       nameA = nameA',
@@ -147,18 +147,18 @@ parseFields env rl = case rl of
     parseGiven :: UDEnv -> ParamText -> IO Expr
     parseGiven env pt = parseOut env $ pt2text pt
 
-    -- ConstitutiveName is Text.Text
-    parseName :: UDEnv -> Text.Text -> IO Expr
-    parseName env txt = parseOut env txt
+    -- ConstitutiveName is [Text.Text]
+    parseName :: UDEnv -> [Text.Text] -> IO Expr
+    parseName env txt = parseOut env (Text.unwords txt)
 
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)
 
-    parseUpon :: UDEnv -> [BoolStructP] -> IO (Maybe Expr)
-    parseUpon env (bs:_) = do
-      parse <- parseOut env (bsp2text bs)
-      return $ Just parse
-    parseUpon _ [] = return Nothing
+    parseBSR :: UDEnv -> BoolStructR -> IO Expr
+    parseBSR env bsr = parseOut env (bsr2text bsr)
+
+    parseUpon :: UDEnv -> Maybe ParamText -> IO (Maybe Expr)
+    parseUpon env mpt = sequence $ parseOut env . pt2text <$> mpt
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of

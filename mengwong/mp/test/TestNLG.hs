@@ -93,7 +93,7 @@ everyOrgNotPublicAg ::  Rule
 everyOrgNotPublicAg = Regulative
   { subj = mkLeaf "organization"
   , keyword = Every
-  , who = Just $ mkLeaf "is not a public agency"
+  , who = Just $ multiterm2bsr' ["is not a public agency"]
   , cond = Nothing
   , deontic = DMust
   , action = mkLeaf "sings"
@@ -103,8 +103,7 @@ everyOrgNotPublicAg = Regulative
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = Nothing
-  , upon = []
+  , upon = Nothing
   , given = Nothing
   , having = Nothing
-  , orig = []
   }

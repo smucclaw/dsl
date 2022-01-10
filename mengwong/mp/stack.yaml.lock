@@ -5,18 +5,18 @@
 
 packages:
 - completed:
-    size: 2951229
+    size: 2951222
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/fcc4fb004dbe82cbe809c1271e629740c43c3e1e.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/9f52fe526a469164d57f843cd008125fd25a69a2.tar.gz
     name: anyall
     version: 0.1.0.0
-    sha256: d89c66dc819d98f9e372f524558d330e7a785e85e1b4ca5b3ca9ae8a1bc60b73
+    sha256: 723abc5d1464392040e4001f4ef34781bf707861071e82f1bd689732e5be5c3d
     pantry-tree:
       size: 1268
-      sha256: 4a73cdd5eea40753b760df0df25d1e1058b5a906d5e105773054218e10fa2a1f
+      sha256: e2a406da7d8ff668af43b93bf5e1cf5a0c7d4f425e9913976bb560839dc4e653
   original:
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/fcc4fb004dbe82cbe809c1271e629740c43c3e1e.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/9f52fe526a469164d57f843cd008125fd25a69a2.tar.gz
 - completed:
     size: 3154513
     subdir: .

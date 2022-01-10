@@ -13,6 +13,7 @@ import qualified AnyAll as AA
 import L4.PrintProg
 import qualified Data.ByteString.Lazy.Char8 as T
 import L4.SyntaxManipulation
+import Data.Maybe (fromMaybe)
 
 type Ann = ()
 
@@ -25,7 +26,7 @@ toL4TA rules = foldr (addRule henceChannels) emptyTASys { channelsOfSys =  Set.t
     henceChannels = Set.fromList $ concatMap getHence rules
 
 getHence :: SFL4.Rule -> [String]
-getHence Regulative{ hence = Just (RuleAlias rname)} = [unpack rname]
+getHence Regulative{ hence = Just (RuleAlias rname)} = unpack <$> rname
 getHence _ = []
 -- TODO: Handle recursive Hence
 
@@ -46,7 +47,7 @@ addRule hc r ts = ts
 -- TODO: Make it recursive to handle missing fields gracefully
 ruleToTA :: SFL4.Rule -> Maybe TL.Text -> (TA (), [VarDecl ()])
 -- ruleToTA Regulative{rlabel, temporal, upon= [ AA.Leaf upn ]} Nothing = TA 
-ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= [ AA.Leaf upn ] , cond = Just cnd} _ = (TA
+ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= upn , cond = Just cnd} _ = (TA
     { nameOfTA = rName
     , annotOfTA = ()
     , locsOfTA = [initialLoc, uponLoc, ifBranchOkLoc, successLoc, breachLoc, timeConstraintSatisfiedLoc]
@@ -61,13 +62,13 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
     ruleTimer = Clock $ "time" ++ rName
     initialLoc = Loc "Initial"
-    uponLoc = Loc $ "Upon_" ++ pt2varname upn -- TODO: Make this urgent when supported
+    uponLoc = Loc $ "Upon_" ++ fromMaybe "START" (pt2varname <$> upn) -- TODO: Make this urgent when supported
     uponTransition = (simpleTransition initialLoc uponLoc) {
                                  actionOfTransition = TransitionAction [ruleTimer] (Skip ())
                                  }
     ifBranchOkLoc = Loc "RuleTriggers"
     successLoc = Loc "Sucess"
-    ifCond = boolRulesToExpr cnd
+    ifCond = boolStructRToExpr cnd
     ifCondDecls = extractDecls (fv ifCond)
     ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
                                  guardOfTransition = TransitionGuard [] (Just (() <$ ifCond))
@@ -112,11 +113,20 @@ negateCompar BCne = BCeq
 pt2varname :: ParamText -> String
 pt2varname = toValidName  . unpack . pt2text
 
-boolRulesToExpr :: BoolRulesP -> CoreL4.Expr (Tp ())
-boolRulesToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
-boolRulesToExpr (AA.Not  x)  = notExpr (boolRulesToExpr x)
-boolRulesToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolRulesToExpr <$> xs)
-boolRulesToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolRulesToExpr <$> xs)
+rp2varname :: RelationalPredicate -> String
+rp2varname = toValidName  . unpack . rp2text
+
+boolStructPToExpr :: BoolStructP -> CoreL4.Expr (Tp ())
+boolStructPToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
+boolStructPToExpr (AA.Not  x)  = notExpr (boolStructPToExpr x)
+boolStructPToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructPToExpr <$> xs)
+boolStructPToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructPToExpr <$> xs)
+
+boolStructRToExpr :: BoolStructR -> CoreL4.Expr (Tp ())
+boolStructRToExpr (AA.Leaf rp) = mkVarE . GlobalVar . QVarName BooleanT $ rp2varname rp
+boolStructRToExpr (AA.Not  bs)  = notExpr (boolStructRToExpr bs)
+boolStructRToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructRToExpr <$> xs)
+boolStructRToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructRToExpr <$> xs)
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src
@@ -154,7 +164,7 @@ Q: Global clock?
 -}
 
 -- data Rule = Regulative
---             { subj     :: BoolStructP               -- man AND woman AND child
+--             { subj     :: BoolStrucPt               -- man AND woman AND child
 --             , keyword  :: MyToken                   -- Every | Party | TokAll
 --             , who      :: Maybe BoolStructP         -- who walks and (eats or drinks)
 --             , cond     :: Maybe BoolStructP         -- if it is a saturday

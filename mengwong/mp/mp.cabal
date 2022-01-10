@@ -30,12 +30,17 @@ library
       LS.Error
       LS.Lib
       LS.NLG
+      LS.ParamText
+      LS.Parser
+      LS.RelationalPredicates
+      LS.Tokens
       LS.ToPredicate
       LS.Types
       LS.UDExt
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle
+      LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.SVG
       LS.XPile.Uppaal
@@ -55,14 +60,17 @@ library
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog
@@ -92,15 +100,18 @@ executable mp-exe
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mp
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog
@@ -132,15 +143,18 @@ test-suite mp-test
     , bytestring
     , cassava
     , containers
+    , fgl
     , generic-data
     , gf
     , gf-ud
+    , graphviz
     , hspec
     , hspec-megaparsec
     , megaparsec
     , mp
     , mtl
     , optparse-generic
+    , parser-combinators
     , parsers
     , pretty-simple
     , prolog

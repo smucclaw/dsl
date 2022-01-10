@@ -6,7 +6,7 @@ import L4.Syntax as CoreL4
 
 import LS.Types as SFL4
 import L4.Annotation
-import Data.Text.Lazy (unpack)
+import Data.Text.Lazy (unpack, unwords)
 
 -- output to Core L4 for further transformation
 
@@ -34,7 +34,6 @@ sfl4ToCorel4Rule Regulative
             , upon     -- UPON entering the club (event prereq trigger)
             , given
             , having   -- HAVING sung...
-            , orig
             } = undefined
 sfl4ToCorel4Rule Constitutive
             { name     -- the thing we are defining
@@ -45,7 +44,6 @@ sfl4ToCorel4Rule Constitutive
             , rlabel
             , lsource
             , srcref
-            , orig
             } = undefined
 sfl4ToCorel4Rule TypeDecl
             { name     --      DEFINE Sign
@@ -55,7 +53,7 @@ sfl4ToCorel4Rule TypeDecl
             , rlabel
             , lsource
             , srcref
-            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack name, defOfClassDecl = ClassDef [] []})
+            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack (Data.Text.Lazy.unwords name), defOfClassDecl = ClassDef [] []})
 sfl4ToCorel4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   -- "Thing"
             , detail -- "some thing"

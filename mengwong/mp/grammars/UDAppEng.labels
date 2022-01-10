@@ -218,19 +218,21 @@
 #auxfun APAddComma_helper_ furry and small fluffyCute : APComma -> Conj -> AP -> ListAP -> ConjListAP = MkTriple_ and small (ConsAP furry fluffyCute) ; dummy head
 
 -- ** NP **
--- cat and dog (+ horse + capybara)
+-- cat, horse, capybara and dog
 #auxfun CommaNP_ np comma : NP -> Comma -> NPComma = np ; head punct
 
-#auxfun AndDogCont_ and dog : Conj -> NP -> Pair_Conj_NP = MkPair_ and dog ; cc head
+#auxfun AndDogPair_ and dog : Conj -> NP -> Pair_Conj_NP = MkPair_ and dog ; cc head
 
 #auxfun NP2_ cat andDog : NP -> Pair_Conj_NP -> NP = UsePair_ (NP2_helper_ cat) andDog ; head conj
 #auxfun NP2_helper_ cat and dog :  NP -> Conj -> NP -> NP = ConjNP and (BaseNP cat dog) ; head dummy nonexistent
 
-#auxfun NPBaseComma_ cat dog andHorse : NP -> NPComma -> Pair_Conj_NP -> ConjListNP = UsePair_ (NPBaseComma_helper_ cat dog) andHorse ; head conj conj
-#auxfun NPBaseComma_helper_ cat dog and horse : NP -> NPComma -> Conj -> NP -> ConjListNP = MkTriple_ and cat (BaseNP dog horse) ; head dummy dummy
+-- type PrefixNP = ListNP -> ListNP
 
-#auxfun ConjListToNP2_ and_cat_dogHorseCapybara : ConjListNP -> NP = UseTriple_ ConjListToNP2_helper_ and_cat_dogHorseCapybara ; head
-#auxfun ConjListToNP2_helper_ and cat dogHorseCapybara : Conj -> NP -> ListNP -> NP = ConjNP and (ConsNP cat dogHorseCapybara) ; notreal head dummy
+#auxfun Compose_ f g x : b2c -> a2b -> a -> c = f (g x) ; head dummy dummy
 
-#auxfun NPAddComma_ cat and_dog_horseCapybara  : NPComma -> ConjListNP -> ConjListNP = UseTriple_ (NPAddComma_helper_ cat) and_dog_horseCapybara ; conj head
-#auxfun NPAddComma_helper_ cat and dog horseCapybara : NPComma -> Conj -> NP -> ListNP -> ConjListNP = MkTriple_ and cat (ConsNP dog horseCapybara) ; dummy head
+#auxfun NPListHead_ cat : NP -> PrefixNP = ConsNP cat ; head
+
+#auxfun NPAddComma_ cat horse : PrefixNP -> NPComma -> PrefixNP = Compose_ cat (ConsNP horse) ; head conj
+
+#auxfun NPCompleteList_ catHorse capybara and_dog : PrefixNP -> NPComma -> Pair_Conj_NP -> NP = UsePair_ (NPCompleteList_helper_ catHorse capybara) and_dog ; head conj conj
+#auxfun NPCompleteList_helper_ catHorse capybara and dog : PrefixNP -> NPComma -> Conj -> NP -> NP = ConjNP and (catHorse (BaseNP capybara dog)) ; head dummy dummy dummy

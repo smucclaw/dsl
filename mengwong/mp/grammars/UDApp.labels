@@ -14,6 +14,7 @@
 #fun obl_ head                -- Adv -> obl
 #fun nmod_ case head          -- Prep -> NP -> nmod ;
 #fun nsubjPass_ head          -- NP -> nsubjPass
+#fun xcompA_ccomp_ head ccomp -- AP -> ccomp -> xcomp
 #fun punct_ head
 
 #fun root_nsubj head nsubj                         -- root -> nsubj -> UDS ;               -- the cat sleeps
@@ -25,8 +26,9 @@
 #fun root_nsubj_aux_aclRelcl_obl head nsubj aux acl:relcl obl
 #fun root_nsubjPass_aux_auxPass head nsubj:pass aux aux:pass  -- everyone should be notified
 #fun root_nsubj_aux_obl head nsubj aux obl
-#fun root_nsubj_cop_cc_conj head nsubj cop cc conj  -- he is big and old
-
+--#fun root_nsubj_cop_cc_conj head nsubj cop cc conj  -- he is big and old
+#fun root_advmod_xcomp head advmod xcomp
+#fun root_xcomp head xcomp
 #fun root_mark_nsubj_aux_aux head mark nsubj aux aux
 #fun root_nsubj_aux head nsubj aux
 #fun root_nsubj_aux_aclRelcl head nsubj aux acl:relcl
@@ -282,18 +284,18 @@
 #fun root_case head case
 #fun root_case_amod head case amod
 #fun root_case_amod_amod head case amod amod
-#fun root_case_amod_conj_conj head case amod conj conj
+--#fun root_case_amod_conj_conj head case amod conj conj
 #fun root_case_compound head case compound
 #fun root_case_det head case det
 #fun root_case_det_amod head case det amod
-#fun root_case_det_compound_conj head case det compound conj
+--#fun root_case_det_compound_conj head case det compound conj
 #fun root_case_det_nmod head case det nmod
 #fun root_case_nummod head case nummod
 #fun root_case_nummod_acl head case nummod acl
 #fun root_case_nummod_nummod head case nummod nummod
 #fun root_cc head cc
 #fun root_cc_aux_cop_det_nmod head cc aux cop det nmod
-#fun root_cc_conj head cc conj
+--#fun root_cc_conj head cc conj
 #fun root_cc_cop_xcomp head cc cop xcomp
 #fun root_cc_det_nmod head cc det nmod
 #fun root_cc_nmod head cc nmod
@@ -306,17 +308,17 @@
 #fun root_compound_appos head compound appos
 #fun root_compound_compound head compound compound
 #fun root_compound_compound_appos head compound compound appos
-#fun root_compound_compound_conj head compound compound conj
-#fun root_compound_conj_acl head compound conj acl
+--#fun root_compound_compound_conj head compound compound conj
+--#fun root_compound_conj_acl head compound conj acl
 #fun root_compound_flat head compound flat
-#fun root_conj head conj
-#fun root_conj_acl head conj acl
-#fun root_conj_appos head conj appos
-#fun root_conj_case head conj case
-#fun root_conj_nmod head conj nmod
-#fun root_conj_parataxis head conj parataxis
+--#fun root_conj head conj
+--#fun root_conj_acl head conj acl
+--#fun root_conj_appos head conj appos
+--#fun root_conj_case head conj case
+--#fun root_conj_nmod head conj nmod
+--#fun root_conj_parataxis head conj parataxis
 #fun root_cop head cop
-#fun root_cop_conj_conj head cop conj conj
+--#fun root_cop_conj_conj head cop conj conj
 #fun root_cop_det_compound_amod head cop det compound amod
 #fun root_cop_det_nmod head cop det nmod
 #fun root_cop_advmod head cop advmod
@@ -337,9 +339,9 @@
 #fun root_det_compound head det compound
 #fun root_det_compound_compound head det compound compound
 #fun root_det_compound_compound_nmod_appos head det compound compound nmod appos
-#fun root_det_conj_acl head det conj acl
-#fun root_det_conj_nmod head det conj nmod
-#fun root_det_conj_obj head det conj obj
+--#fun root_det_conj_acl head det conj acl
+--#fun root_det_conj_nmod head det conj nmod
+--#fun root_det_conj_obj head det conj obj
 #fun root_det_nmod head det nmod
 #fun root_det_nmodPoss head det nmod:poss
 #fun root_det_nmodPoss_compound head det nmod:poss compound
@@ -388,12 +390,12 @@
 #fun root_nsubj_aux_conj head nsubj aux conj
 #fun root_nsubj_aux_conj_obl head nsubj aux conj obl
 #fun root_nsubj_aux_obj head nsubj aux obj
-#fun root_nsubj_aux_obj_conj_conj head nsubj aux obj conj conj
+--#fun root_nsubj_aux_obj_conj_conj head nsubj aux obj conj conj
 #fun root_nsubj_aux_obj_obl head nsubj aux obj obl
 #fun root_nsubj_aux_obj_obl_advmod_advcl head nsubj aux obj obl advmod advcl
 #fun root_nsubj_aux_obj_obl_obl head nsubj aux obj obl obl
 #fun root_nsubj_ccomp head nsubj ccomp
-#fun root_nsubj_conj head nsubj conj
+--#fun root_nsubj_conj head nsubj conj
 #fun root_nsubj_conj_obl head nsubj conj obl
 #fun root_nsubj_cop head nsubj cop
 #fun root_nsubj_cop_aclRelcl head nsubj cop acl:relcl
@@ -403,7 +405,7 @@
 #fun root_nsubj_cop_det_amod_compound head nsubj cop det amod compound
 #fun root_nsubj_cop_det_compound head nsubj cop det compound
 #fun root_nsubj_cop_det_compound_conj head nsubj cop det compound conj
-#fun root_nsubj_cop_det_conj head nsubj cop det conj
+--#fun root_nsubj_cop_det_conj head nsubj cop det conj
 #fun root_nsubj_cop_det_nmod head nsubj cop det nmod
 #fun root_nsubj_cop_nmodPoss head nsubj cop nmod:poss
 #fun root_nsubj_det head nsubj det
@@ -420,7 +422,7 @@
 #fun root_nummod_det_acl head nummod det acl
 #fun root_nummod_det_aclRelcl head nummod det acl:relcl
 #fun root_nummod_det_amod head nummod det amod
-#fun root_nummod_det_amod_conj_conj head nummod det amod conj conj
+--#fun root_nummod_det_amod_conj_conj head nummod det amod conj conj
 #fun root_nummod_det_conj_nmod head nummod det conj nmod
 #fun root_nummod_det_conj_nmod_cc head nummod det conj nmod cc
 #fun root_nummod_det_nmod head nummod det nmod
@@ -443,3 +445,22 @@
 #fun root_obl_xcomp head obl xcomp
 #fun root_parataxis head parataxis
 #fun root_xcomp_ccomp head xcomp ccomp
+#fun root_advcl_det_compound_amod_advcl head advcl  det  compound  amod  advcl
+#fun root_advcl_nsubjPass_auxPass head advcl  nsubj:pass  aux:pass
+#fun root_advcl_nsubj_aux_advcl head advcl  nsubj  aux  advcl
+#fun root_advcl_nsubj_aux_advmod_obj head advcl  nsubj  aux  advmod  obj
+#fun root_advcl_nsubj_aux_ccomp head advcl  nsubj  aux  ccomp
+#fun root_advcl_nsubj_aux_obj_advmod_conj head advcl  nsubj  aux  obj  advmod  conj
+#fun root_advcl_nsubj_aux_obl_obj head advcl  nsubj  aux  obl  obj
+#fun root_advcl_nsubj_conj head advcl  nsubj  conj
+#fun root_advcl_nsubj_cop head advcl  nsubj  cop
+#fun root_advcl_nsubj_cop_case_amod_nmod head advcl  nsubj  cop  case  amod  nmod
+#fun root_advcl_nsubj_cop_det_amod head advcl  nsubj  cop  det  amod
+#fun root_advcl_nsubj_xcomp head advcl  nsubj  xcomp
+#fun root_mark_nsubj_nsubj_xcomp head mark  nsubj  nsubj  xcomp
+#fun root_nsubj_aux_obj_conj_parataxis head nsubj  aux  obj  conj  parataxis
+#fun root_nsubj_cop_advcl_conj head nsubj  cop  advcl  conj
+#fun root_nsubj_cop_det_aclRelcl head nsubj  cop  det  acl:relcl
+--#fun root_nsubj_cop_det_amod_conj_conj_conj_conj_conj_conj head nsubj  cop  det  amod  conj  conj  conj  conj  conj  conj
+#fun root_nsubj_cop_obl_parataxis head nsubj  cop  obl  parataxis
+#fun root_nsubj_obj_advcl head nsubj  obj  advcl

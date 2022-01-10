@@ -51,11 +51,13 @@ nlgTests = do
         convertToFormula defaultRule `shouldBe` And [Unary "organization"]
         convertToFormula whoRule `shouldBe` And [Unary "organization", Not $ Unary "publicAgency"]
         convertToFormula ndbRule `shouldBe` And [Unary "organization", Not $ Unary "publicAgency",Binary "becomeAwareOccur" "dataBreach"]
+        convertToFormula ndbRule_correctXcomp `shouldBe` And [Unary "organization", Not $ Unary "publicAgency",Binary "becomeAwareOccur" "dataBreach"]
 
       it "Should apply a Formula to an argument" $ do
         applyFormula (convertToFormula defaultRule) "org" `shouldBe` "\\forall org . organization(org)"
         applyFormula (convertToFormula whoRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org)"
         applyFormula (convertToFormula ndbRule) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org) && becomeAwareOccur(org, dataBreach)"
+        applyFormula (convertToFormula ndbRule_correctXcomp) "org" `shouldBe` "\\forall org . organization(org) && !publicAgency(org) && becomeAwareOccur(org, dataBreach)"
 
       it "Should handle nested ccomps" $ do
         convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
@@ -83,6 +85,11 @@ ndbRule :: AnnotatedRule
 ndbRule = whoRule {
     uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
     }
+
+ndbRule_correctXcomp :: AnnotatedRule
+ndbRule_correctXcomp = whoRule {
+    uponA = readExpr "root_xcomp (rootV_ (UseV become_V)) (xcompA_ccomp_ (PositA aware_A) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N)))))))"
+}
 
 nestedCcompRule :: AnnotatedRule
 nestedCcompRule = defaultRule {

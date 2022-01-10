@@ -42,7 +42,7 @@ main = do
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules
 
-  when (SFL4.only opts == "native") $ pPrint rules
+  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts 

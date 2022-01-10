@@ -25,7 +25,7 @@ import Data.GraphViz.Printing (renderDot)
 import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
                                          , CompassPoint(..)
                                          , PortPos(..))
-import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState)
+import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
 
 type RuleSet = [Rule]
 
@@ -84,16 +84,17 @@ data GraphState = GS { lastNode :: Node, curentGraph :: NodesEdges }
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
 
-instance Semigroup a => Semigroup (GraphMonad a) where
-  a <> b = (<>) <$> a <*> b
+-- instance Semigroup a => Semigroup (GraphMonad a) where
+--   a <> b = (<>) <$> a <*> b
 
-instance Monoid a => Monoid (GraphMonad a) where
-  mempty = pure mempty
+-- instance Monoid a => Monoid (GraphMonad a) where
+--   mempty = pure mempty
 
 newNode :: PNode -> GraphMonad Node
 newNode lbl = do
   gs@GS {lastNode = n} <- GM get
   let n' = succ n
+  -- traceM $ "newNode: " <> show n' <> " " <> show lbl
   GM . put $ gs {lastNode = n' , curentGraph = curentGraph gs <> NE [ (n', lbl) ] [] }
   return n'
 
@@ -102,59 +103,64 @@ newEdge n1 n2 lbl = do
   gs@GS {curentGraph = g} <- GM get
   GM . put $ gs {curentGraph = g <> NE [] [ (n1, n2, lbl) ] }
 
+newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
+newEdge' (a,b,c) = newEdge a b c
+
 -- runGM :: Petri -> GraphMonad a -> a
-runGM :: Petri -> GraphMonad NodesEdges -> NodesEdges
-runGM gr (GM m) = traceShow (null (neNodes cg) || ln == maximum (map fst $ neNodes cg), neNodes cg == neNodes res) res
+runGM :: Petri -> GraphMonad a -> NodesEdges
+runGM gr (GM m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
         (res, GS ln cg) = runState m (GS n0 mempty)
-  
+
+-- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
+getGraph :: Petri -> GraphMonad Petri
+getGraph g0 = do
+    g <- GM $ gets curentGraph
+    return $ insertNE g g0
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Petri -> Rule -> GraphMonad NodesEdges
-r2fgl rs sg RegFulfilled   = pure mempty
-r2fgl rs sg RegBreach      = pure mempty
+r2fgl :: RuleSet -> Petri -> Rule -> GraphMonad (Maybe Node)
+r2fgl rs sg RegFulfilled   = pure Nothing
+r2fgl rs sg RegBreach      = pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl rs sg (RuleAlias rn) = do
+r2fgl rs sg0 (RuleAlias rn) = do
+  sg <- getGraph sg0
   let ntxt = Text.unwords rn
       already = getNodeByLabel sg ntxt
-  newNum <- newNode $ mkPlace ntxt
-  pure $ maybe (NE [(newNum, mkPlace ntxt)] []) (const mempty) already
+  maybe (fmap Just . newNode $ mkPlace ntxt) (pure . Just) already
 r2fgl rs sg r@(Regulative{..}) = do
   -- let newN = newNodes 9 sg
   --     -- new n = newN !! n
   -- traceShowM newN
   let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
-  whoNE <- case who of Nothing  -> do everyN <- newNode $ mkPlace everywho; pure $ NE [ ( everyN, mkPlace everywho) ] [] 
+  whoN  <- case who of Nothing  -> newNode $ mkPlace everywho
                        Just bsr -> do everyN <- newNode $ mkDecis everywho
                                       whoN <- newNode $ mkTrans $ "who " <> bsr2text bsr
-                                      pure $ NE [ ( everyN, mkDecis everywho )
-                                         , ( whoN, mkTrans ("who " <> bsr2text bsr) ) ]
-                                         [ ( everyN, whoN, []) ]
-  upoNE <- case upon of Nothing -> mempty
+                                      newEdge everyN whoN []
+                                      pure whoN
+  upoN  <- case upon of Nothing -> pure whoN
                         Just pt -> do 
                               uponN <- newNode $ mkPlace "upon"
                               uponCondN <- newNode $ mkTrans $ pt2text pt
-                              pure $ NE [ ( uponN, mkPlace "upon")
-                                         , ( uponCondN, mkTrans (pt2text pt) ) ]
-                                         [ ( fst $ last $ neNodes whoNE, uponN, [] )
-                                         , ( uponN,       uponCondN, []) ]
-  let cNE = whoNE <> upoNE
-  conNE <- case cond of Nothing  -> mempty
+                              newEdge' ( whoN,      uponN, [])
+                              newEdge' ( uponN, uponCondN, [])
+                              pure uponCondN
+  -- let cNE = whoNE <> upoNE
+  conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
                             ifN <- newNode $ mkDecis "if"
                             ifCondN <- newNode $ mkTrans $ bsr2text bsr
-                            pure $ NE [ ( ifN, mkDecis "if"  )
-                                         , ( ifCondN, mkTrans (bsr2text bsr) ) ]
-                                         [ ( fst $ last $ neNodes cNE,  ifN, [] )
-                                         , ( ifN, ifCondN, [] ) ]
-  let dNE = cNE <> conNE
-  (dtaNE, onSuccessN, onFailureN) <- do
+                            newEdge' ( upoN,    ifN, [] )
+                            newEdge' ( ifN, ifCondN, [] ) 
+                            pure ifCondN
+  -- let dNE = cNE <> conNE
+  (onSuccessN, onFailureN) <- do
     let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
         temp = tc2nl NLen temporal
         actn = actionFragments action
@@ -162,41 +168,38 @@ r2fgl rs sg r@(Regulative{..}) = do
                                       , Text.unwords . NE.toList . fst . NE.head $ head actn
                                       , temp
                                       ])
-        successLab = mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+        successLab = mkTrans $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
     obligationN <- newNode oblLab
     onSuccessN <- newNode successLab
-    (failureNE, onFailureN) <- if deontic /= DMay then do 
+    onFailureN <- if deontic /= DMay then do 
         onFailureN <- newNode $ mkTrans $ lestWord deontic
-        pure (NE [( onFailureN, mkTrans $ lestWord deontic )] [( obligationN, onFailureN, swport)], Just onFailureN)
-      else pure (mempty, Nothing)
+        newEdge' ( obligationN, onFailureN, swport)
+        pure (Just onFailureN)
+      else pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
-    let neRet = NE [ ( obligationN, oblLab)
-           , ( onSuccessN, successLab)
-           ]
-           [ ( fst $ last $ neNodes dNE, obligationN, [] )
-           , ( obligationN, onSuccessN, seport)]
-           <> failureNE
-    pure (neRet, onSuccessN, onFailureN)
+    newEdge' ( conN, obligationN, [] )
+    newEdge' ( obligationN, onSuccessN, seport)
+    pure (onSuccessN, onFailureN)
            
-  let sg1 = insertNE (dNE <> dtaNE) sg
+  -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  henceNEs <- maybe (pure mempty) (r2fgl rs sg1) hence
+  mbHenceN <- maybe (pure Nothing) (r2fgl rs sg) hence
   -- traceM $ "henceNEs: " <> show henceNEs
-  let sg2 = insertNE henceNEs sg1
+  -- let sg2 = insertNE henceNEs sg1
 
-  lestNEs  <- maybe (pure mempty) (r2fgl rs sg2) lest
+  mbLestN  <- maybe (pure Nothing) (r2fgl rs sg) lest
   -- traceM $ "lestNEs: " <> show lestNEs
-  let sg3 = insertNE lestNEs  sg2
+  -- let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
-      toHence = if not (null (neNodes henceNEs))
-                then NE [] [(onSuccessN, fst . head . neNodes $ henceNEs, [])]
-                else NE [] [(onSuccessN, 1, [])]
-      toLest
-        | not (null (neNodes lestNEs)), Just nd <- onFailureN = NE [] [(nd, fst . head . neNodes $ lestNEs, [])]
-        | deontic /= DMay , Just nd <- onFailureN = NE [] [(nd, 0, [Comment "onoes, go to breach"])]
-        | otherwise = mempty
-  pure $ dNE <> dtaNE <> henceNEs <> toHence <> lestNEs <> toLest
+  case mbHenceN of Just henceN -> newEdge onSuccessN henceN []
+                   Nothing -> newEdge onSuccessN 1 []
+  let toLest
+        | Just lestN <- mbLestN, Just nd <- onFailureN = newEdge' (nd, lestN, [])
+        | deontic /= DMay , Just nd <- onFailureN = newEdge' (nd, 0, [Comment "onoes, go to breach"])
+        | otherwise = pure ()
+  toLest
+  pure $ Just whoN
   where
     vp2np "assess" = "assessment"
     vp2np "respond" = "response"
@@ -211,7 +214,7 @@ r2fgl rs sg r@(Regulative{..}) = do
     lestWord DMay   = error "a MAY has no LEST"  -- this should never arise
     lestWord DShant = "violation"
 
-r2fgl rs sg r = pure mempty
+r2fgl rs sg r = pure Nothing
 
 c2n :: Context a b -> Node
 c2n (_, n, nl, _) = n

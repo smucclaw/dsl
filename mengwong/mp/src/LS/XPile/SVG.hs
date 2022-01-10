@@ -53,8 +53,7 @@ getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
 
 insrules :: RuleSet -> Petri -> Petri
-insrules rs sg = foldr (\r sg -> let nes = traceShowId $ runGM sg (r2fgl rs sg r)
-                              in traceShowId $ insertNE nes sg
+insrules rs sg = foldr (\r g -> traceShowId $ runGM g (r2fgl rs r)
                        ) sg rs
 
 data NodesEdges = NE { neNodes :: [LNode PNode], neEdges :: [LEdge PLabel] }
@@ -79,7 +78,7 @@ do
 
 -}
 
-data GraphState = GS { lastNode :: Node, curentGraph :: NodesEdges }
+data GraphState = GS { lastNode :: Node, curentGraph :: Petri }
 
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
@@ -92,48 +91,47 @@ newtype GraphMonad a = GM { runGM_ :: State GraphState a }
 
 newNode :: PNode -> GraphMonad Node
 newNode lbl = do
-  gs@GS {lastNode = n} <- GM get
+  gs@GS {lastNode = n, curentGraph = g} <- GM get
   let n' = succ n
   -- traceM $ "newNode: " <> show n' <> " " <> show lbl
-  GM . put $ gs {lastNode = n' , curentGraph = curentGraph gs <> NE [ (n', lbl) ] [] }
+  GM . put $ gs {lastNode = n' , curentGraph = insNode (n', lbl) g }
   return n'
 
 newEdge :: Node -> Node -> PLabel -> GraphMonad ()
 newEdge n1 n2 lbl = do
   gs@GS {curentGraph = g} <- GM get
-  GM . put $ gs {curentGraph = g <> NE [] [ (n1, n2, lbl) ] }
+  GM . put $ gs {curentGraph = insEdge (n1, n2, lbl) g }
 
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
 newEdge' (a,b,c) = newEdge a b c
 
 -- runGM :: Petri -> GraphMonad a -> a
-runGM :: Petri -> GraphMonad a -> NodesEdges
+runGM :: Petri -> GraphMonad a -> Petri
 runGM gr (GM m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
-        (res, GS ln cg) = runState m (GS n0 mempty)
+        (_res, GS _ln cg) = runState m (GS n0 gr)
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
-getGraph :: Petri -> GraphMonad Petri
-getGraph g0 = do
-    g <- GM $ gets curentGraph
-    return $ insertNE g g0
+getGraph :: GraphMonad Petri
+getGraph = do
+    GM $ gets curentGraph
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Petri -> Rule -> GraphMonad (Maybe Node)
-r2fgl rs sg RegFulfilled   = pure Nothing
-r2fgl rs sg RegBreach      = pure Nothing
+r2fgl :: RuleSet -> Rule -> GraphMonad (Maybe Node)
+r2fgl rs RegFulfilled   = pure Nothing
+r2fgl rs RegBreach      = pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl rs sg0 (RuleAlias rn) = do
-  sg <- getGraph sg0
+r2fgl rs (RuleAlias rn) = do
+  sg <- getGraph
   let ntxt = Text.unwords rn
       already = getNodeByLabel sg ntxt
   maybe (fmap Just . newNode $ mkPlace ntxt) (pure . Just) already
-r2fgl rs sg r@(Regulative{..}) = do
+r2fgl rs r@(Regulative{..}) = do
   -- let newN = newNodes 9 sg
   --     -- new n = newN !! n
   -- traceShowM newN
@@ -183,11 +181,11 @@ r2fgl rs sg r@(Regulative{..}) = do
            
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  mbHenceN <- maybe (pure Nothing) (r2fgl rs sg) hence
+  mbHenceN <- maybe (pure Nothing) (r2fgl rs) hence
   -- traceM $ "henceNEs: " <> show henceNEs
   -- let sg2 = insertNE henceNEs sg1
 
-  mbLestN  <- maybe (pure Nothing) (r2fgl rs sg) lest
+  mbLestN  <- maybe (pure Nothing) (r2fgl rs) lest
   -- traceM $ "lestNEs: " <> show lestNEs
   -- let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
@@ -214,7 +212,7 @@ r2fgl rs sg r@(Regulative{..}) = do
     lestWord DMay   = error "a MAY has no LEST"  -- this should never arise
     lestWord DShant = "violation"
 
-r2fgl rs sg r = pure Nothing
+r2fgl rs r = pure Nothing
 
 c2n :: Context a b -> Node
 c2n (_, n, nl, _) = n

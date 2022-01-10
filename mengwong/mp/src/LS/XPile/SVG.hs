@@ -51,7 +51,7 @@ getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln)
 
 insrules :: RuleSet -> Petri -> Petri
 insrules rs sg = foldr (\r sg -> let nes = traceShowId (r2fgl rs sg r)
-                              in insertNE nes sg
+                              in traceShowId $ insertNE nes sg
                        ) sg rs
 
 data NodesEdges = NE { neNodes :: [LNode PNode], neEdges :: [LEdge PLabel] }
@@ -64,6 +64,17 @@ instance Monoid NodesEdges where
 
 insertNE :: DynGraph gr => NodesEdges -> gr PNode PLabel -> gr PNode PLabel
 insertNE ne = insEdges (neEdges ne) . insNodes (neNodes ne)
+
+{-
+
+Alternative imperative approach:
+
+do
+  node1 <- newNode
+  node2 <- newNode
+  let edge = (node1, node2, "")
+
+-}
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Petri -> Rule -> NodesEdges
@@ -80,36 +91,39 @@ r2fgl rs sg (RuleAlias rn) = let ntxt = Text.unwords rn
                                           in toreturn
                              in maybe (NE [(newNum, mkPlace ntxt)] []) (const mempty) already
 r2fgl rs sg r@(Regulative{..}) =
-  let newN = newNodes 10 sg
+  let newN = traceShowId $ newNodes 9 sg
+      new n = newN !! n
       everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
-      whoNE = case who of Nothing  -> NE [ ( newN !! 0 , mkPlace everywho) ] []
-                          Just bsr -> NE [ ( newN !! 0, mkDecis everywho )
-                                         , ( newN !! 1, mkTrans ("who " <> bsr2text bsr) ) ] 
-                                         [ ( newN !! 0, newN !! 1, []) ]
+      whoNE = case who of Nothing  -> NE [ ( new 0 , mkPlace everywho) ] []
+                          Just bsr -> NE [ ( new 0, mkDecis everywho )
+                                         , ( new 1, mkTrans ("who " <> bsr2text bsr) ) ]
+                                         [ ( new 0, new 1, []) ]
       upoNE = case upon of Nothing -> mempty
-                           Just pt -> NE [ ( newN !! 2, mkPlace "upon")
-                                         , ( newN !! 3, mkTrans (pt2text pt) ) ] 
-                                         [ ( fst $ last $ neNodes whoNE, newN !! 2, [] )
-                                         , ( newN !! 2,       newN !! 3, []) ]
+                           Just pt -> NE [ ( new 2, mkPlace "upon")
+                                         , ( new 3, mkTrans (pt2text pt) ) ]
+                                         [ ( fst $ last $ neNodes whoNE, new 2, [] )
+                                         , ( new 2,       new 3, []) ]
       cNE = whoNE <> upoNE
       conNE = case cond of Nothing  -> mempty
-                           Just bsr -> NE [ ( newN !! 4, mkDecis "if"  )
-                                         , ( newN !! 5, mkTrans (bsr2text bsr) ) ] 
-                                         [ ( fst $ last $ neNodes $ cNE,  newN !! 4, [] )
-                                         , ( newN !! 4, newN !! 5, [] ) ]
+                           Just bsr -> NE [ ( new 4, mkDecis "if"  )
+                                         , ( new 5, mkTrans (bsr2text bsr) ) ]
+                                         [ ( fst $ last $ neNodes cNE,  new 4, [] )
+                                         , ( new 4, new 5, [] ) ]
       dNE = cNE <> conNE
       dtaNE = let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
                   temp = tc2nl NLen temporal
                   actn = actionFragments action
-                  in NE ([ ( newN !! 6, mkDecis (addnewlines [ deon
+                  in NE ([ ( new 6, mkDecis (addnewlines [ deon
                                                , Text.unwords . NE.toList . fst . NE.head $ head actn
                                                , temp
                                                 ]))
-           , ( newN !! 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
-           ] ++ [( newN !! 8, mkTrans $ lestWord deontic ) | deontic /= DMay]) ([ ( fst $ last $ neNodes dNE, newN !! 6, [] )
-           , ( newN !! 6, newN !! 7, [Comment "HELLO WHERE IS THIS 1"])]
-           ++ [( newN !! 6, newN !! 8, [Comment "HELLO WHERE IS THIS 2"]) | deontic /= DMay])
+           , ( new 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
+           ] ++ [( new 8, mkTrans $ lestWord deontic ) | deontic /= DMay])
+           ([ ( fst $ last $ neNodes dNE, new 6, [] )
+           , ( new 6, new 7, [Comment "HELLO WHERE IS THIS 1"])]
+           ++ [( new 6, new 8, [Comment "HELLO WHERE IS THIS 2"]) | deontic /= DMay]
+           )
       sg1 = insertNE (dNE <> dtaNE) sg
 
       henceNEs = maybe mempty (r2fgl rs sg1) hence
@@ -120,11 +134,11 @@ r2fgl rs sg r@(Regulative{..}) =
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
       toHence = if not (null (neNodes henceNEs))
-                then NE [] [(newN !! 7, fst . head . neNodes $ henceNEs, [])]
-                else NE [] [(newN !! 7, 1, [])]
+                then NE [] [(new 7, fst . head . neNodes $ henceNEs, [])]
+                else NE [] [(new 7, 1, [])]
       toLest
-        | not (null (neNodes lestNEs)) = NE [] [(newN !! 8, fst . head . neNodes $ lestNEs, [])]
-        | deontic /= DMay = NE [] [(newN !! 8, 0, [Comment "onoes, go to breach"])]
+        | not (null (neNodes lestNEs)) = NE [] [(new 8, fst . head . neNodes $ lestNEs, [])]
+        | deontic /= DMay = NE [] [(new 8, 0, [Comment "onoes, go to breach"])]
         | otherwise = mempty
   in dNE <> dtaNE <> henceNEs <> toHence <> lestNEs <> toLest
   where
@@ -150,7 +164,7 @@ c2n (_, n, nl, _) = n
   party Who is Nothing       (party)
 
   party Who is Just          <party>
-                               [who-pos] 
+                               [who-pos]
 
   upon is Just                   (Upon)
                                    [event]

@@ -92,4 +92,4 @@ fmtPetriEdge :: Graph gr => gr PNode PLabel -> (Node, Node, PLabel) -> [Attribut
 fmtPetriEdge g (_s,e,el) -- if the edge goes to BREACH then we paint the edge brown
   | (ntext <$> lab g e) == Just "BREACH"    = color Brown : el
   | (ntext <$> lab g e) == Just "FULFILLED" = color Green : el
-  | otherwise                               = []  
+  | otherwise                               = el

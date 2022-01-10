@@ -50,7 +50,7 @@ getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
 
 insrules :: RuleSet -> Petri -> Petri
-insrules rs sg = foldr (\r sg -> let (ns, es) = r2fgl rs sg r
+insrules rs sg = foldr (\r sg -> let (ns, es) = traceShowId (r2fgl rs sg r)
                               in insEdges es $ insNodes ns sg
                        ) sg rs
 
@@ -98,8 +98,8 @@ r2fgl rs sg r@(Regulative{..}) =
                          , ( newN !! 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
                          ] ++ [( newN !! 8, mkTrans $ lestWord deontic ) | deontic /= DMay]
                        , [ ( fst $ last dN, newN !! 6, [] )
-                         , ( newN !! 6, newN !! 7, seport)]
-                         ++ [( newN !! 6, newN !! 8, swport) | deontic /= DMay]
+                         , ( newN !! 6, newN !! 7, [Comment "HELLO WHERE IS THIS 1"])]
+                         ++ [( newN !! 6, newN !! 8, [Comment "HELLO WHERE IS THIS 2"]) | deontic /= DMay]
                          )
       sg1 = insNodes (dN++dtaN) $
             insEdges (dE++dtaE) sg
@@ -117,7 +117,7 @@ r2fgl rs sg r@(Regulative{..}) =
       toLest  = if not (null (fst lestNEs))
                 then ([],[(newN !! 8, fst . head . fst $ lestNEs, [])])
                 else if deontic /= DMay
-                     then ([],[(newN !! 8, 0, [])])
+                     then ([],[(newN !! 8, 0, [Comment "onoes, go to breach"])])
                      else ([],[])
   in ((dN ++ dtaN ++ fst henceNEs ++ fst toHence ++ fst lestNEs ++ fst toLest)
      ,(dE ++ dtaE ++ snd henceNEs ++ snd toHence ++ snd lestNEs ++ snd toLest))

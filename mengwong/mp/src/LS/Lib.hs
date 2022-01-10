@@ -98,12 +98,17 @@ parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rul
 parseRules o = do
   runConfig <- getConfig o
   let files = getNoLabel $ file o
-  concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
+  if null files
+    then parseSTDIN runConfig { sourceURL="STDIN" }
+    else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
   
   where
     getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
     getBS other = BS.readFile other  
+    parseSTDIN rc = do
+      bs <- BS.getContents
+      mapM (parseStream rc "STDIN") (exampleStreams bs)
     parseFile rc filename = do
       bs <- getBS filename
       mapM (parseStream rc filename) (exampleStreams bs)

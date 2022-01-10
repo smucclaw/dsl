@@ -84,6 +84,12 @@ newtype GraphState = GS { lastNode :: Node }
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
 
+instance Semigroup a => Semigroup (GraphMonad a) where
+  a <> b = (<>) <$> a <*> b
+
+instance Monoid a => Monoid (GraphMonad a) where
+  mempty = pure mempty
+
 newNode :: GraphMonad Node
 newNode = do
   n <- lastNode <$> GM get
@@ -104,60 +110,74 @@ r2fgl rs sg RegBreach      = pure mempty
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl rs sg (RuleAlias rn) = let ntxt = Text.unwords rn
-                                 already = getNodeByLabel sg ntxt
-                                 newNum = let toreturn = head $ newNodes 1 sg
-                                          in toreturn
-                             in pure $ maybe (NE [(newNum, mkPlace ntxt)] []) (const mempty) already
+r2fgl rs sg (RuleAlias rn) = do
+  let ntxt = Text.unwords rn
+      already = getNodeByLabel sg ntxt
+  newNum <- newNode
+  pure $ maybe (NE [(newNum, mkPlace ntxt)] []) (const mempty) already
 r2fgl rs sg r@(Regulative{..}) = do
-  let newN = traceShowId $ newNodes 9 sg
-      new n = newN !! n
-      everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
+  -- let newN = newNodes 9 sg
+  --     -- new n = newN !! n
+  -- traceShowM newN
+  let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
-  let whoNE = case who of Nothing  -> NE [ ( new 0 , mkPlace everywho) ] []
-                          Just bsr -> NE [ ( new 0, mkDecis everywho )
-                                         , ( new 1, mkTrans ("who " <> bsr2text bsr) ) ]
-                                         [ ( new 0, new 1, []) ]
-  let upoNE = case upon of Nothing -> mempty
-                           Just pt -> NE [ ( new 2, mkPlace "upon")
-                                         , ( new 3, mkTrans (pt2text pt) ) ]
-                                         [ ( fst $ last $ neNodes whoNE, new 2, [] )
-                                         , ( new 2,       new 3, []) ]
-      cNE = whoNE <> upoNE
-  let conNE = case cond of Nothing  -> mempty
-                           Just bsr -> NE [ ( new 4, mkDecis "if"  )
-                                         , ( new 5, mkTrans (bsr2text bsr) ) ]
-                                         [ ( fst $ last $ neNodes cNE,  new 4, [] )
-                                         , ( new 4, new 5, [] ) ]
-      dNE = cNE <> conNE
+  whoNE <- case who of Nothing  -> do everyN <- newNode; pure $ NE [ ( everyN, mkPlace everywho) ] [] 
+                       Just bsr -> do everyN <- newNode
+                                      whoN <- newNode
+                                      pure $ NE [ ( everyN, mkDecis everywho )
+                                         , ( whoN, mkTrans ("who " <> bsr2text bsr) ) ]
+                                         [ ( everyN, whoN, []) ]
+  upoNE <- case upon of Nothing -> mempty
+                        Just pt -> do 
+                              uponN <- newNode
+                              uponCondN <- newNode
+                              pure $ NE [ ( uponN, mkPlace "upon")
+                                         , ( uponCondN, mkTrans (pt2text pt) ) ]
+                                         [ ( fst $ last $ neNodes whoNE, uponN, [] )
+                                         , ( uponN,       uponCondN, []) ]
+  let cNE = whoNE <> upoNE
+  conNE <- case cond of Nothing  -> mempty
+                        Just bsr -> do
+                            ifN <- newNode
+                            ifCondN <- newNode
+                            pure $ NE [ ( ifN, mkDecis "if"  )
+                                         , ( ifCondN, mkTrans (bsr2text bsr) ) ]
+                                         [ ( fst $ last $ neNodes cNE,  ifN, [] )
+                                         , ( ifN, ifCondN, [] ) ]
+  let dNE = cNE <> conNE
+  obligationN <- newNode
+  onSuccessN <- newNode
+  onFailureN <- newNode
   let dtaNE = let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
                   temp = tc2nl NLen temporal
                   actn = actionFragments action
-                  in NE ([ ( new 6, mkDecis (addnewlines [ deon
+                  in NE ([ ( obligationN, mkDecis (addnewlines [ deon
                                                , Text.unwords . NE.toList . fst . NE.head $ head actn
                                                , temp
                                                 ]))
-           , ( new 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
-           ] ++ [( new 8, mkTrans $ lestWord deontic ) | deontic /= DMay])
-           ([ ( fst $ last $ neNodes dNE, new 6, [] )
-           , ( new 6, new 7, seport)]
-           ++ [( new 6, new 8, swport) | deontic /= DMay]
+           , ( onSuccessN, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
+           ] ++ [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay])
+           ([ ( fst $ last $ neNodes dNE, obligationN, [] )
+           , ( obligationN, onSuccessN, seport)]
+           ++ [( obligationN, onFailureN, swport) | deontic /= DMay]
            )
   let sg1 = insertNE (dNE <> dtaNE) sg
 
   henceNEs <- maybe (pure mempty) (r2fgl rs sg1) hence
+  -- traceM $ "henceNEs: " <> show henceNEs
   let sg2 = insertNE henceNEs sg1
 
   lestNEs  <- maybe (pure mempty) (r2fgl rs sg2) lest
+  -- traceM $ "lestNEs: " <> show lestNEs
   let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
       toHence = if not (null (neNodes henceNEs))
-                then NE [] [(new 7, fst . head . neNodes $ henceNEs, [])]
-                else NE [] [(new 7, 1, [])]
+                then NE [] [(onSuccessN, fst . head . neNodes $ henceNEs, [])]
+                else NE [] [(onSuccessN, 1, [])]
       toLest
-        | not (null (neNodes lestNEs)) = NE [] [(new 8, fst . head . neNodes $ lestNEs, [])]
-        | deontic /= DMay = NE [] [(new 8, 0, [Comment "onoes, go to breach"])]
+        | not (null (neNodes lestNEs)) = NE [] [(onFailureN, fst . head . neNodes $ lestNEs, [])]
+        | deontic /= DMay = NE [] [(onFailureN, 0, [Comment "onoes, go to breach"])]
         | otherwise = mempty
   pure $ dNE <> dtaNE <> henceNEs <> toHence <> lestNEs <> toLest
   where

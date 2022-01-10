@@ -12,10 +12,10 @@ digraph {
           ,shape=diamond];
         11 [label=Notification];
         12 [label="the PDPC"];
-        18 [label="may\ndemand an explanation for your inaction\neventually"
+        13 [label="may\ndemand an explanation for your inaction\neventually"
            ,shape=diamond];
-        20 [label=You];
-        26 [label="must\nrespond\neventually"
+        16 [label=You];
+        17 [label="must\nrespond\neventually"
            ,shape=diamond];
     }
     subgraph transitions {
@@ -30,9 +30,9 @@ digraph {
         7 [label="the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"];
         9 [label="assessment done"];
         10 [label="not done"];
-        19 [label="demand occurred"];
-        27 [label="response done"];
-        28 [label="not done"];
+        14 [label="demand occurred"];
+        18 [label="response done"];
+        19 [label="not done"];
     }
     2 -> 3;
     3 -> 4;
@@ -46,16 +46,16 @@ digraph {
             ,comment="southwest for negative"];
     9 -> 11;
     10 -> 12;
-    12 -> 18;
-    18 -> 19 [tailport=se
+    12 -> 13;
+    13 -> 14 [tailport=se
              ,comment="southeast for positive"];
-    19 -> 20;
-    20 -> 26;
-    26 -> 27 [tailport=se
+    14 -> 16;
+    16 -> 17;
+    17 -> 18 [tailport=se
              ,comment="southeast for positive"];
-    26 -> 28 [tailport=sw
+    17 -> 19 [tailport=sw
              ,comment="southwest for negative"];
-    27 -> 1 [color=green];
-    28 -> 0 [color=brown
+    18 -> 1 [color=green];
+    19 -> 0 [color=brown
             ,comment="onoes, go to breach"];
 }

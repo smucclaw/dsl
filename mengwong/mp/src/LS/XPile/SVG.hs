@@ -50,14 +50,28 @@ getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
 
 insrules :: RuleSet -> Petri -> Petri
-insrules rs sg = foldr (\r sg -> let (ns, es) = traceShowId (r2fgl rs sg r)
+insrules rs sg = foldr (\r sg -> let NE ns es = traceShowId (r2fgl rs sg r)
                               in insEdges es $ insNodes ns sg
                        ) sg rs
 
+data NodesEdges = NE { neNodes :: [LNode PNode], neEdges :: [LEdge PLabel] }
+  deriving Show
+
+instance Semigroup NodesEdges where
+  (NE ns es) <> (NE ns' es') = NE (ns ++ ns') (es ++ es')
+instance Monoid NodesEdges where
+  mempty = NE [] []
+
+insertNE :: DynGraph gr => NodesEdges -> gr PNode PLabel -> gr PNode PLabel
+insertNE ne = insEdges (neEdges ne) . insNodes (neNodes ne)
+
+ne :: ([LNode PNode], [LEdge PLabel]) -> NodesEdges
+ne = uncurry NE
+
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Petri -> Rule -> ([LNode PNode], [LEdge PLabel])
-r2fgl rs sg RegFulfilled   = ([],[])
-r2fgl rs sg RegBreach      = ([],[])
+r2fgl :: RuleSet -> Petri -> Rule -> NodesEdges
+r2fgl rs sg RegFulfilled   = mempty
+r2fgl rs sg RegBreach      = mempty
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
@@ -67,7 +81,7 @@ r2fgl rs sg (RuleAlias rn) = let ntxt = Text.unwords rn
                                  already = getNodeByLabel sg ntxt
                                  newNum = let toreturn = head $ newNodes 1 sg
                                           in toreturn
-                             in maybe ([(newNum, mkPlace ntxt)], []) (const ([],[])) already
+                             in maybe (NE [(newNum, mkPlace ntxt)] []) (const mempty) already
 r2fgl rs sg r@(Regulative{..}) =
   let newN = newNodes 10 sg
       everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
@@ -104,23 +118,23 @@ r2fgl rs sg r@(Regulative{..}) =
       sg1 = insNodes (dN++dtaN) $
             insEdges (dE++dtaE) sg
 
-      henceNEs = maybe ([],[]) (r2fgl rs sg1) hence
-      sg2 = insEdges (snd henceNEs) $ insNodes (fst henceNEs) sg1
+      henceNEs = maybe mempty (r2fgl rs sg1) hence
+      sg2 = insertNE henceNEs sg1
 
-      lestNEs  = maybe ([],[]) (r2fgl rs sg2) lest
-      sg3 = insEdges (snd lestNEs)  $ insNodes (fst lestNEs)  sg2
+      lestNEs  = maybe mempty (r2fgl rs sg2) lest
+      sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
-      toHence = if not (null (fst henceNEs))
-                then ([],[(newN !! 7, fst . head . fst $ henceNEs, [])])
+      toHence = if not (null (neNodes henceNEs))
+                then ([],[(newN !! 7, fst . head . neNodes $ henceNEs, [])])
                 else ([],[(newN !! 7, 1, [])])
-      toLest  = if not (null (fst lestNEs))
-                then ([],[(newN !! 8, fst . head . fst $ lestNEs, [])])
+      toLest  = if not (null (neNodes lestNEs))
+                then ([],[(newN !! 8, fst . head . neNodes $ lestNEs, [])])
                 else if deontic /= DMay
                      then ([],[(newN !! 8, 0, [Comment "onoes, go to breach"])])
                      else ([],[])
-  in ((dN ++ dtaN ++ fst henceNEs ++ fst toHence ++ fst lestNEs ++ fst toLest)
-     ,(dE ++ dtaE ++ snd henceNEs ++ snd toHence ++ snd lestNEs ++ snd toLest))
+  in ne ((dN ++ dtaN ++ neNodes henceNEs ++ fst toHence ++ neNodes lestNEs ++ fst toLest)
+     ,(dE ++ dtaE ++ neEdges henceNEs ++ snd toHence ++ neEdges lestNEs ++ snd toLest))
   where
     vp2np "assess" = "assessment"
     vp2np "respond" = "response"
@@ -135,7 +149,7 @@ r2fgl rs sg r@(Regulative{..}) =
     lestWord DMay   = error "a MAY has no LEST"  -- this should never arise
     lestWord DShant = "violation"
 
-r2fgl rs sg r = ([],[])
+r2fgl rs sg r = mempty
 
 c2n :: Context a b -> Node
 c2n (_, n, nl, _) = n

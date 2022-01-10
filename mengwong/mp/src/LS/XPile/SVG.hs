@@ -121,8 +121,8 @@ r2fgl rs sg r@(Regulative{..}) =
            , ( new 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
            ] ++ [( new 8, mkTrans $ lestWord deontic ) | deontic /= DMay])
            ([ ( fst $ last $ neNodes dNE, new 6, [] )
-           , ( new 6, new 7, [Comment "HELLO WHERE IS THIS 1"])]
-           ++ [( new 6, new 8, [Comment "HELLO WHERE IS THIS 2"]) | deontic /= DMay]
+           , ( new 6, new 7, seport)]
+           ++ [( new 6, new 8, swport) | deontic /= DMay]
            )
       sg1 = insertNE (dNE <> dtaNE) sg
 

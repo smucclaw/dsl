@@ -37,8 +37,9 @@ import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 
 myUDEnv :: IO UDEnv
-myUDEnv = getEnv (path "UDApp") "Eng" "UDS"
-  where path x = "grammars/" ++ x
+myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
+
+gfPath x = "../../inari/ud/grammars/modular/" ++ x
 
 unpacked :: L8.ByteString -> String
 unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
@@ -92,7 +93,7 @@ nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
-   gr <- readPGF "grammars/UDExt.pgf"
+   gr <- readPGF (gfPath "UDExt.pgf")
    let lang = head $ languages gr
        subjectRaw = subjA annotatedRule
        actionRaw = actionA annotatedRule

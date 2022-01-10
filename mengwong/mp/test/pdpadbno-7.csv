@@ -1,14 +1,14 @@
-§§,to Notifiable Individuals,,,,
-IF,TRUE,it is,an NDB,,
-UNLESS,FALSE,you are a Public Agency,,,
-PARTY,You,,,,
-MUST,,WITHIN,3,days,
-➔,,NOTIFY,each of the Notifiable Individuals,,
-,,in,any manner that is reasonable in the circumstances,,
-,,with,a message obeying a certain format,,
-WHERE,,the Notifiable Individuals,,,
-,MEANS,the set of individuals affected by the NDB,,,
-,,LESS,the individuals who are deemed,Unlikely,
-,,LESS,the individuals on,the PDPC Exclusion List,
-,,LESS,the individuals on,the LEA Exclusion List,
-,,,,,
+§§,to Notifiable Individuals,,,
+IF,TRUE,it is,an NDB,
+UNLESS,FALSE,you are a Public Agency,,
+PARTY,You,,,
+MUST,,WITHIN,3,days
+➔,,NOTIFY,each of the Notifiable Individuals,
+,,in,any manner that is reasonable in the circumstances,
+,,with,a message obeying a certain format,
+WHERE,,the Notifiable Individuals,,
+,MEANS,the set of individuals affected by the NDB,,
+,,LESS,the individuals who are deemed,Unlikely
+,,LESS,the individuals on,the PDPC Exclusion List
+,,LESS,the individuals on,the LEA Exclusion List
+,,,,

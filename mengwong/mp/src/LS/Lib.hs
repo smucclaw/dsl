@@ -388,11 +388,12 @@ pRule = debugName "pRule" $ do
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
+  maybeLabel <- optional pRuleLabel
   (proto,g,u) <- permute $ (,,)
     <$$> defineLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
-  return $ proto { given = snd <$> g, upon = snd <$> u }
+  return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
     defineLimb = do
       _dtoken <- pToken Define

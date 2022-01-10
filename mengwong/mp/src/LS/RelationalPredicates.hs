@@ -76,6 +76,7 @@ c2hornlike r = r
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
+  maybeLabel <- optional pRuleLabel
   leftY              <- lookAhead pYLocation
   namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -93,7 +94,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
              (snd <$> mergePBRS whenifs)
              (snd <$> mergePBRS unlesses)
     , given = nonEmpty $ foldMap toList (snd <$> givens)
-    , rlabel = noLabel
+    , rlabel = maybeLabel
     , lsource = noLSource
     , srcref = Just srcref'
     }

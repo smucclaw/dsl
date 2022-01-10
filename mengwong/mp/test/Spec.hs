@@ -906,7 +906,7 @@ main = do
                           )
                 }
               ]
-          , rlabel = Nothing
+          , rlabel =Just ("\167", 2, "Unlikely")
           , lsource = Nothing
           , srcref = Just
             ( SrcRef
@@ -930,7 +930,7 @@ main = do
               { url = "test/Spec"
               , short = "test/Spec"
               , srcrow = 5
-              , srccol = 3
+              , srccol = 4
               , version = Nothing
               }
             )

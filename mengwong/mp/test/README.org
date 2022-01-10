@@ -2023,7 +2023,7 @@ The "IF" line has to go below.
 |     | WHERE |              | Party Hearty                   |                                |
 |     |       | MEANS        | to party with great enthusiasm |                                |
 
-*** let's use rule groups to group specific rules
+*** 8: Notification is 5 and 7. let's use rule groups to group specific rules
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pdpadbno-8.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv

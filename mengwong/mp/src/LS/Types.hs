@@ -70,6 +70,9 @@ mt2tm x = (fromList x, Nothing)
 mt2pt :: MultiTerm -> ParamText
 mt2pt ts = pure (fromList ts, Nothing)
 
+mt2text :: MultiTerm -> Text.Text
+mt2text = Text.unwords
+
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
   deriving newtype (Semigroup, Monoid)
@@ -109,6 +112,9 @@ type RuleLabel = (Text.Text   --  "§"
                  ,Int         --   1
                  ,Text.Text   --  "My First Rule"
                  )
+
+rl2text :: RuleLabel -> Text.Text
+rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 
 -- maybe we should have a proper dict orientation here
 data KW a = KW { dictK :: MyToken

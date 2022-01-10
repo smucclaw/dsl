@@ -86,37 +86,36 @@ r2fgl rs sg r@(Regulative{..}) =
   let newN = newNodes 10 sg
       everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
-      (whoN,whoE) = case who of Nothing  -> ( [ ( newN !! 0 , mkPlace everywho) ], [] )
-                                Just bsr -> ( [ ( newN !! 0, mkDecis everywho )
+      whoNE = case who of Nothing  -> ne ( [ ( newN !! 0 , mkPlace everywho) ], [] )
+                          Just bsr -> ne ( [ ( newN !! 0, mkDecis everywho )
                                               , ( newN !! 1, mkTrans ("who " <> bsr2text bsr) ) ]
                                             , [ ( newN !! 0, newN !! 1, []) ] )
-      (upoN,upoE) = case upon of Nothing -> ( [], [] )
-                                 Just pt -> ( [ ( newN !! 2, mkPlace "upon")
+      upoNE = case upon of Nothing -> ne ( [], [] )
+                           Just pt -> ne ( [ ( newN !! 2, mkPlace "upon")
                                               , ( newN !! 3, mkTrans (pt2text pt) ) ]
-                                            , [ ( fst $ last whoN, newN !! 2, [] )
+                                            , [ ( fst $ last $ neNodes whoNE, newN !! 2, [] )
                                               , ( newN !! 2,       newN !! 3, []) ] )
-      (cN,cE) = (whoN ++ upoN, whoE ++ upoE)
-      (conN,conE) = case cond of Nothing  -> ( [], [] )
-                                 Just bsr -> ( [ ( newN !! 4, mkDecis "if"  )
+      cNE = whoNE <> upoNE
+      conNE = case cond of Nothing  -> ne ( [], [] )
+                           Just bsr -> ne ( [ ( newN !! 4, mkDecis "if"  )
                                                , ( newN !! 5, mkTrans (bsr2text bsr) ) ]
-                                             , [ ( fst $ last cN,  newN !! 4, [] )
+                                             , [ ( fst $ last $ neNodes $ cNE,  newN !! 4, [] )
                                                , ( newN !! 4, newN !! 5, [] ) ] )
-      (dN,dE) = (cN ++ conN, cE ++ conE)
-      (dtaN,dtaE) = let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
-                        temp = tc2nl NLen temporal
-                        actn = actionFragments action
-                    in ( [ ( newN !! 6, mkDecis (addnewlines [ deon
+      dNE = cNE <> conNE
+      dtaNE = let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
+                  temp = tc2nl NLen temporal
+                  actn = actionFragments action
+                  in ne ( [ ( newN !! 6, mkDecis (addnewlines [ deon
                                                              , Text.unwords . NE.toList . fst . NE.head $ head actn
                                                              , temp
                                                               ])) -- TODO: fix this -- if we have multiple actions we need to show each one
                          , ( newN !! 7, mkTrans $ (vp2np $ actionWord $ head $ actionFragments action) <> " " <> henceWord deontic)
                          ] ++ [( newN !! 8, mkTrans $ lestWord deontic ) | deontic /= DMay]
-                       , [ ( fst $ last dN, newN !! 6, [] )
+                       , [ ( fst $ last $ neNodes dNE, newN !! 6, [] )
                          , ( newN !! 6, newN !! 7, [Comment "HELLO WHERE IS THIS 1"])]
                          ++ [( newN !! 6, newN !! 8, [Comment "HELLO WHERE IS THIS 2"]) | deontic /= DMay]
                          )
-      sg1 = insNodes (dN++dtaN) $
-            insEdges (dE++dtaE) sg
+      sg1 = insertNE (dNE <> dtaNE)  sg
 
       henceNEs = maybe mempty (r2fgl rs sg1) hence
       sg2 = insertNE henceNEs sg1
@@ -126,15 +125,14 @@ r2fgl rs sg r@(Regulative{..}) =
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
       toHence = if not (null (neNodes henceNEs))
-                then ([],[(newN !! 7, fst . head . neNodes $ henceNEs, [])])
-                else ([],[(newN !! 7, 1, [])])
-      toLest  = if not (null (neNodes lestNEs))
-                then ([],[(newN !! 8, fst . head . neNodes $ lestNEs, [])])
-                else if deontic /= DMay
-                     then ([],[(newN !! 8, 0, [Comment "onoes, go to breach"])])
-                     else ([],[])
-  in ne ((dN ++ dtaN ++ neNodes henceNEs ++ fst toHence ++ neNodes lestNEs ++ fst toLest)
-     ,(dE ++ dtaE ++ neEdges henceNEs ++ snd toHence ++ neEdges lestNEs ++ snd toLest))
+                then ne ([],[(newN !! 7, fst . head . neNodes $ henceNEs, [])])
+                else ne ([],[(newN !! 7, 1, [])])
+      toLest
+        | not (null (neNodes lestNEs)) = ne ([],[(newN !! 8, fst . head . neNodes $ lestNEs, [])])
+        | deontic /= DMay = ne ([],[(newN !! 8, 0, [Comment "onoes, go to breach"])])
+        | otherwise = ne ([],[])
+  in ne (neNodes dNE ++ neNodes dtaNE ++ neNodes henceNEs ++ neNodes toHence ++ neNodes lestNEs ++ neNodes toLest
+        ,neEdges dNE ++ neEdges dtaNE ++ neEdges henceNEs ++ neEdges toHence ++ neEdges lestNEs ++ neEdges toLest)
   where
     vp2np "assess" = "assessment"
     vp2np "respond" = "response"

@@ -98,9 +98,13 @@ digraph {
            ,comment="OrigRL \"Notify Individuals\""];
         33 [label="not done"];
         34 [label="split (and)"
-           ,comment=IsInfra];
+           ,comment=IsInfra
+           ,comment=IsSplit
+           ,comment=IsAnd];
         35 [label="join (and)"
-           ,comment=IsInfra];
+           ,comment=IsInfra
+           ,comment=IsJoin
+           ,comment=IsAnd];
     }
     2 -> 3;
     3 -> 4;
@@ -114,7 +118,7 @@ digraph {
             ,comment="southwest for negative"];
     9 -> 11;
     10 -> 12;
-    11 -> 34 [comment="added by split from parent node"];
+    11 -> 20 [comment="due to mergePetri"];
     12 -> 13;
     13 -> 14 [tailport=se
              ,comment="southeast for positive"];
@@ -126,9 +130,9 @@ digraph {
              ,comment="southwest for negative"];
     17 -> 1 [color=green];
     18 -> 0 [color=brown];
-    19 -> 22 [comment=reordered];
-    20 -> 21;
-    21 -> 19 [comment=reordered];
+    19 -> 34 [comment="due to mergePetri"];
+    20 -> 21 [comment="due to mergePetri"];
+    21 -> 19 [comment="due to mergePetri"];
     22 -> 23 [tailport=se
              ,comment="southeast for positive"];
     22 -> 24 [tailport=sw
@@ -139,17 +143,14 @@ digraph {
     26 -> 27 [tailport=se
              ,comment="southeast for positive"];
     27 -> 35 [comment="added by join from tailnode"];
-    28 -> 31 [comment=reordered];
-    29 -> 30;
-    30 -> 28 [comment=reordered];
     31 -> 32 [tailport=se
              ,comment="southeast for positive"];
     31 -> 33 [tailport=sw
              ,comment="southwest for negative"];
     32 -> 35 [comment="added by join from tailnode"];
     33 -> 0 [color=brown];
-    34 -> 20 [comment=reordered];
-    34 -> 29 [comment=reordered];
+    34 -> 22 [comment="due to mergePetri"];
+    34 -> 31 [comment="due to mergePetri"];
     35 -> 1 [color=green
             ,comment="added by join to fulfilledNode"];
 }

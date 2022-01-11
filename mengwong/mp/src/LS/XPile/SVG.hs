@@ -32,7 +32,7 @@ import Data.Foldable (find)
 import System.IO.Unsafe (unsafePerformIO)
 import WordNet.DB
 import WordNet.Structured
-import Data.List (isPrefixOf, sortOn, isSuffixOf)
+import Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
 import Text.EditDistance
 import GHC.Base (join)
 import Control.Monad (forM_)
@@ -40,7 +40,8 @@ import Control.Monad (forM_)
 data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCond | IsThen
           | OrigRL Text
           | Temporal Text
-          | IsInfra | HideIfChildless
+          | IsInfra | IsSplit | IsJoin | IsOr | IsAnd
+          | HideIfChildless
           deriving (Eq,Show)
 
 type PNodeD = PNode Deet
@@ -68,32 +69,64 @@ rLabelR _                 = Nothing
 toPetri :: [Rule] -> Text.Text
 toPetri rules =
   let petri1 = insrules rules startGraph
-      rulesConnected = connectRules petri1 rules
-      reordered = reorder rules rulesConnected
-      merged = mergePetri rules reordered
-  in renderDot $ unqtDot $ graphToDot (petriParams rulesConnected) merged
+      rewritten = mergePetri rules $
+                  condElimination rules $
+                  reorder rules $
+                  connectRules petri1 rules
+  in renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder rules og = runGM og $ do
   -- x You if then must -> x if then you must
   forM_ [ (x0, you1, if2, then3, must4)
-        | you1 <- nodes $ labfilter (hasDeet IsParty) og
-        , x0            <- pre og you1
-        , (if2,ifl)     <- lsuc og you1   , maybe False (hasDeet IsCond) (lab og if2)
-        , (then3,thenl) <- lsuc og if2    , maybe False (hasDeet IsThen) (lab og then3)
-        , (must4,mustl) <- lsuc og then3  , maybe False (hasDeet IsDeon) (lab og must4)
+        | you1  <- nodes $ labfilter (hasDeet IsParty) og
+        , x0    <- pre og you1
+        , if2   <- suc og you1   , maybe False (hasDeet IsCond) (lab og if2)
+        , then3 <- suc og if2    , maybe False (hasDeet IsThen) (lab og then3)
+        , must4 <- suc og then3  , maybe False (hasDeet IsDeon) (lab og must4)
         ] $ \(x0, you1, if2, then3, must4) -> do
     delEdge' (x0, you1)
     delEdge' (    you1, if2)
     delEdge' (               then3, must4)
-    newEdge' (x0,       if2, [Comment "reordered"])
-    newEdge' (               then3, you1, [Comment "reordered"])
+    newEdge' (x0,       if2,                     [Comment "reordered"])
+    newEdge' (               then3, you1,        [Comment "reordered"])
     newEdge' (                      you1, must4, [Comment "reordered"])
 
 
 mergePetri :: [Rule] -> PetriD -> PetriD
-mergePetri rules og = runGM og $ do
+mergePetri rules og = foldl (mergePetri' rules) og (nodes $ labfilter (hasDeet IsSplit) og)
+  
+mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
+mergePetri' rules og splitNode = runGM og $ do
   -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
+  traceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
+  forM_ [ twins
+        | let twins = suc og splitNode
+        , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
+        , length twins > 1
+        ] $ \twins -> do
+    let grandchildren = concatMap (suc og) twins
+        survivor : _ = twins
+        parents = pre og splitNode
+    forM_ twins         (\n -> delEdge' (splitNode,n))
+    forM_ twins         (\n -> forM_ grandchildren (\gc -> delEdge' (n,gc)))
+    forM_ grandchildren (\gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"]))
+    forM_ parents       (\n  -> do
+                            newEdge' (n, survivor, [Comment "due to mergePetri"])
+                            delEdge' (n, splitNode)
+                        )
+    newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
+
+    traceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
+    newPetri <- getGraph
+    traceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
+    gs <- GM get
+    GM . put $ gs {curentGraph = foldl (mergePetri' rules) newPetri [splitNode]}
+
+condElimination :: [Rule] -> PetriD -> PetriD
+condElimination rules og = runGM og $ do
+  -- if (a) { ... if (x y z a) { ...
+  --                        ^ delete
   return ()
 
 fromRuleAlias :: Attribute
@@ -107,8 +140,8 @@ splitJoin :: [Rule]      -- background input ruleset
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  splitnode <- newNode (PN Trans "split (and)" [] [IsInfra])
-  joinnode  <- newNode (PN Trans "join (and)" [] [IsInfra])
+  splitnode <- newNode (PN Trans "split (and)" [] [IsInfra,IsSplit,IsAnd])
+  joinnode  <- newNode (PN Trans "join (and)" [] [IsInfra,IsJoin,IsAnd])
   let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
       successTails    = [ n
                         | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs

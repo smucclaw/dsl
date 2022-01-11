@@ -140,14 +140,16 @@ splitJoin :: [Rule]      -- background input ruleset
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  splitnode <- newNode (PN Trans "split (and)" [] [IsInfra,IsSplit,IsAnd])
-  joinnode  <- newNode (PN Trans "join (and)" [] [IsInfra,IsJoin,IsAnd])
   let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
       successTails    = [ n
                         | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs
                         , m <- suc og n -- there is a direct link to FULFILLED
                         , m == fulfilledNode
                         ]
+      splitText = if length headsOfChildren == 2 then "both" else "split (and)"
+      joinText  = "all done"
+  splitnode <- newNode (PN Trans splitText [] [IsInfra,IsAnd,IsSplit])
+  joinnode  <- newNode (PN Trans  joinText [] [IsInfra,IsAnd,IsJoin])
   newEdge' (entry,splitnode, [Comment "added by split from parent node"])
   newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
   mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]

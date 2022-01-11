@@ -97,14 +97,14 @@ digraph {
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify Individuals\""];
         33 [label="not done"];
-        34 [label="split (and)"
+        34 [label=both
            ,comment=IsInfra
-           ,comment=IsSplit
-           ,comment=IsAnd];
-        35 [label="join (and)"
+           ,comment=IsAnd
+           ,comment=IsSplit];
+        35 [label="all done"
            ,comment=IsInfra
-           ,comment=IsJoin
-           ,comment=IsAnd];
+           ,comment=IsAnd
+           ,comment=IsJoin];
     }
     2 -> 3;
     3 -> 4;

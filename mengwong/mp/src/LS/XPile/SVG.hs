@@ -106,7 +106,7 @@ mergePetri' rules og splitNode = runGM og $ do
         , length twins > 1
         ] $ \twins -> do
     let grandchildren = concatMap (suc og) twins
-        survivor : _ = twins
+        survivor : excess = twins
         parents = pre og splitNode
     forM_ twins         (\n -> delEdge' (splitNode,n))
     forM_ twins         (\n -> forM_ grandchildren (\gc -> delEdge' (n,gc)))
@@ -115,6 +115,7 @@ mergePetri' rules og splitNode = runGM og $ do
                             newEdge' (n, survivor, [Comment "due to mergePetri"])
                             delEdge' (n, splitNode)
                         )
+    forM_ excess        delNode'
     newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
 
     traceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
@@ -146,6 +147,7 @@ splitJoin rs og sj sgs entry = runGM og $ do
                         , m <- suc og n -- there is a direct link to FULFILLED
                         , m == fulfilledNode
                         ]
+      -- TODO: handle Or splits -- with an "Or" instead
       splitText = if length headsOfChildren == 2 then "both" else "split (and)"
       joinText  = "all done"
   splitnode <- newNode (PN Trans splitText [] [IsInfra,IsAnd,IsSplit])
@@ -343,6 +345,11 @@ delEdge' :: (Node, Node) -> GraphMonad ()
 delEdge' (n1,n2) = do
   gs@GS {curentGraph = g} <- GM get
   GM . put $ gs {curentGraph = delEdge (n1, n2) g }
+
+delNode' :: Node -> GraphMonad ()
+delNode' n1 = do
+  gs@GS {curentGraph = g} <- GM get
+  GM . put $ gs {curentGraph = delNode n1 g }
 
 -- runGM :: PetriD -> GraphMonad a -> a
 runGM :: PetriD -> GraphMonad a -> PetriD

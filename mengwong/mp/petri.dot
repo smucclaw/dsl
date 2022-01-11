@@ -46,13 +46,6 @@ digraph {
         26 [label="may\nNOTIFY you\neventually"
            ,shape=diamond
            ,comment=IsDeon];
-        28 [label=You
-           ,comment=IsFirstNode
-           ,comment="OrigRL \"Notify Individuals\""
-           ,comment=IsParty];
-        29 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
-           ,shape=diamond
-           ,comment=IsCond];
         31 [label="must\nNOTIFY each of the Notifiable Individuals\nbefore 3 days"
            ,shape=diamond
            ,comment=IsDeon];
@@ -91,7 +84,6 @@ digraph {
            ,comment="Temporal \"eventually\""
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify PDPC\""];
-        30 [label=then,comment=IsThen];
         32 [label="NOTIFY done"
            ,comment="Temporal \"before 3 days\""
            ,comment=IsLastHappy

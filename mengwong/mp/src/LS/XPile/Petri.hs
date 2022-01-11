@@ -11,8 +11,8 @@ import Data.GraphViz.Attributes
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment)
-                                         , StyleItem(..), StyleName(..))
+import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment, Rank)
+                                         , StyleItem(..), StyleName(..), RankType(..))
 
 --------------------------------------------------------------------------------
 -- fgl
@@ -76,6 +76,8 @@ petriParams g = Params
   }
 
 clusterby :: (Int,PNode a) -> LNodeCluster Int (PNode a)
+clusterby a@( 0,PN Place _ _ _) = C 3 (N a) -- breach
+clusterby a@( 1,PN Place _ _ _) = C 3 (N a) -- fulfilled
 clusterby a@(_n,PN Place _ _ _) = C 1 (N a)
 clusterby a@(_n,PN Trans _ _ _) = C 2 (N a)
 clusterby a@(_n,PN Decis _ _ _) = C 1 (N a)
@@ -83,6 +85,7 @@ clusterby a@(_n,PN Decis _ _ _) = C 1 (N a)
 clusterid :: Node -> GraphID
 clusterid 1 = Str "places"
 clusterid 2 = Str "transitions"
+clusterid 3 = Str "breachfulfilled"
 clusterid _ = Str "other"
 
 fmtcluster :: Node -> [GlobalAttributes]
@@ -93,6 +96,7 @@ fmtcluster 2 = [NodeAttrs [ shape BoxShape
                           , fillColor Black
                           , fontColor White
                           , FontName "Monaco" ] ]
+fmtcluster 3 = [GraphAttrs [ Rank SameRank ] ]
 fmtcluster _ = []
 
 tcsd :: (Show a) => [a] -> [Attribute]
@@ -106,7 +110,7 @@ fmtPetriNode (_n,PN Trans txt lbls ds)             = toLabel txt                
 fmtPetriNode (_n,PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
 
 fmtPetriEdge :: Graph gr => gr (PNode a) PLabel -> (Node, Node, PLabel) -> [Attribute]
-fmtPetriEdge g (_s,e,el) -- if the edge goes to BREACH then we paint the edge brown
-  | (ntext <$> lab g e) == Just "BREACH"    = color Brown : el
-  | (ntext <$> lab g e) == Just "FULFILLED" = color Green : el
-  | otherwise                               = el
+fmtPetriEdge g (s,e,el) -- if the edge goes to BREACH then we paint the edge brown
+  | (ntext <$> lab g e) == Just "BREACH"                = color Brown : el
+  | (ntext <$> lab g e) == Just "FULFILLED" && s /= 0   = color Green : el
+  | otherwise                                           = el

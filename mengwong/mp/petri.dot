@@ -2,12 +2,6 @@ digraph {
     graph [compound=true];
     subgraph places {
         node [shape=circle];
-        0 [label=BREACH
-          ,color=brown
-          ,comment=IsInfra];
-        1 [label=FULFILLED
-          ,color=green
-          ,comment=IsInfra];
         2 [label="Every Organisation"
           ,shape=diamond
           ,comment=IsFirstNode
@@ -98,6 +92,17 @@ digraph {
            ,comment=IsAnd
            ,comment=IsJoin];
     }
+    subgraph breachfulfilled {
+        graph [rank=same];
+        0 [label=BREACH
+          ,color=brown
+          ,comment=IsInfra];
+        1 [label=FULFILLED
+          ,color=green
+          ,comment=IsInfra];
+    }
+    0 -> 1 [comment="this will render as invisible, but will be on same rank"
+           ,style=invis];
     2 -> 3;
     3 -> 4;
     4 -> 5;

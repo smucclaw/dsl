@@ -23,9 +23,9 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import qualified Data.Map           as Map
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
+import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment, Style)
                                          , CompassPoint(..)
-                                         , PortPos(..))
+                                         , PortPos(..), StyleItem(..), StyleName (Invisible))
 import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
 import Control.Applicative.Combinators
 import Data.Foldable (find)
@@ -283,7 +283,9 @@ prefix n t = Text.pack (replicate n ' ') <> t
 
 startGraph :: PetriD
 startGraph = mkGraph [ (fulfilledNode, PN Place "FULFILLED" [] [IsInfra])
-                     , (breachNode,    mkPlaceA [IsInfra] "BREACH"      ) ] []
+                     , (breachNode,    mkPlaceA [IsInfra] "BREACH"      ) ]
+             [ (breachNode, fulfilledNode, [ Comment "this will render as invisible, but will be on same rank"
+                                           , Data.GraphViz.Attributes.Complete.Style [ SItem Invisible [] ] ]) ]
 
 fulfilledNode :: Node
 fulfilledNode = 1

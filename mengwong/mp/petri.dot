@@ -11,39 +11,51 @@ digraph {
         2 [label="Every Organisation"
           ,shape=diamond
           ,comment=IsFirstNode
-          ,comment="OrigRL \"Assess\""];
+          ,comment="OrigRL \"Assess\""
+          ,comment=IsParty];
         4 [label=upon];
         6 [label="if the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"
-          ,shape=diamond];
+          ,shape=diamond
+          ,comment=IsCond];
         8 [label="must\nassess if it is a Notifiable Data Breach\nbefore 30 days"
-          ,shape=diamond];
+          ,shape=diamond
+          ,comment=IsDeon];
         11 [label=Notification
            ,comment=IsFirstNode
            ,comment=FromRuleAlias
            ,comment="OrigRL \"Notification\""];
         12 [label="the PDPC"];
         13 [label="may\ndemand an explanation for your inaction\neventually"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsDeon];
         15 [label=You];
         16 [label="must\nrespond\neventually"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsDeon];
         19 [label=You
            ,comment=IsFirstNode
-           ,comment="OrigRL \"Notify PDPC\""];
+           ,comment="OrigRL \"Notify PDPC\""
+           ,comment=IsParty];
         20 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsCond];
         22 [label="must\nNOTIFY the PDPC\nbefore 3 days"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsDeon];
         25 [label="the PDPC"];
         26 [label="may\nNOTIFY you\neventually"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsDeon];
         28 [label=You
            ,comment=IsFirstNode
-           ,comment="OrigRL \"Notify Individuals\""];
+           ,comment="OrigRL \"Notify Individuals\""
+           ,comment=IsParty];
         29 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsCond];
         31 [label="must\nNOTIFY each of the Notifiable Individuals\nbefore 3 days"
-           ,shape=diamond];
+           ,shape=diamond
+           ,comment=IsDeon];
     }
     subgraph transitions {
         node [shape=box
@@ -54,7 +66,7 @@ digraph {
              ,fontname=Monaco];
         3 [label="who is not a Public Agency"];
         5 [label="becoming aware a data breach may have occurred"];
-        7 [label=then];
+        7 [label=then,comment=IsThen];
         9 [label="assessment done"
           ,comment="Temporal \"before 30 days\""
           ,comment=IsLastHappy
@@ -62,12 +74,14 @@ digraph {
         10 [label="not done"];
         14 [label="demand occurred"
            ,comment="Temporal \"eventually\""
-           ,comment=IsLastHappy];
+           ,comment=IsLastHappy
+           ,comment="OrigRL \"Assess\""];
         17 [label="response done"
            ,comment="Temporal \"eventually\""
-           ,comment=IsLastHappy];
+           ,comment=IsLastHappy
+           ,comment="OrigRL \"Assess\""];
         18 [label="not done"];
-        21 [label=then];
+        21 [label=then,comment=IsThen];
         23 [label="NOTIFY done"
            ,comment="Temporal \"before 3 days\""
            ,comment=IsLastHappy
@@ -75,16 +89,17 @@ digraph {
         24 [label="not done"];
         27 [label="NOTIFY occurred"
            ,comment="Temporal \"eventually\""
-           ,comment=IsLastHappy];
-        30 [label=then];
+           ,comment=IsLastHappy
+           ,comment="OrigRL \"Notify PDPC\""];
+        30 [label=then,comment=IsThen];
         32 [label="NOTIFY done"
            ,comment="Temporal \"before 3 days\""
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify Individuals\""];
         33 [label="not done"];
-        34 [label="split (all)"
+        34 [label="split (and)"
            ,comment=IsInfra];
-        35 [label="join (all)"
+        35 [label="join (and)"
            ,comment=IsInfra];
     }
     2 -> 3;
@@ -99,7 +114,7 @@ digraph {
             ,comment="southwest for negative"];
     9 -> 11;
     10 -> 12;
-    11 -> 34;
+    11 -> 34 [comment="added by split from parent node"];
     12 -> 13;
     13 -> 14 [tailport=se
              ,comment="southeast for positive"];
@@ -111,30 +126,30 @@ digraph {
              ,comment="southwest for negative"];
     17 -> 1 [color=green];
     18 -> 0 [color=brown];
-    19 -> 20;
+    19 -> 22 [comment=reordered];
     20 -> 21;
-    21 -> 22;
+    21 -> 19 [comment=reordered];
     22 -> 23 [tailport=se
              ,comment="southeast for positive"];
     22 -> 24 [tailport=sw
              ,comment="southwest for negative"];
     23 -> 25;
-    23 -> 35 [comment="added by join from tailnode"];
     24 -> 0 [color=brown];
     25 -> 26;
     26 -> 27 [tailport=se
              ,comment="southeast for positive"];
-    27 -> 1 [color=green];
-    28 -> 29;
+    27 -> 35 [comment="added by join from tailnode"];
+    28 -> 31 [comment=reordered];
     29 -> 30;
-    30 -> 31;
+    30 -> 28 [comment=reordered];
     31 -> 32 [tailport=se
              ,comment="southeast for positive"];
     31 -> 33 [tailport=sw
              ,comment="southwest for negative"];
-    32 -> 1 [color=green];
     32 -> 35 [comment="added by join from tailnode"];
     33 -> 0 [color=brown];
-    34 -> 19 [comment="added by split to headnode"];
-    34 -> 28 [comment="added by split to headnode"];
+    34 -> 20 [comment=reordered];
+    34 -> 29 [comment=reordered];
+    35 -> 1 [color=green
+            ,comment="added by join to fulfilledNode"];
 }

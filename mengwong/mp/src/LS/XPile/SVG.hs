@@ -27,6 +27,7 @@ import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
                                          , CompassPoint(..)
                                          , PortPos(..))
 import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
+import Control.Applicative.Combinators
 import Data.Foldable (find)
 import System.IO.Unsafe (unsafePerformIO)
 import WordNet.DB
@@ -34,8 +35,9 @@ import WordNet.Structured
 import Data.List (isPrefixOf, sortOn, isSuffixOf)
 import Text.EditDistance
 import GHC.Base (join)
+import Control.Monad (forM_)
 
-data Deet = IsFirstNode | IsLastHappy | FromRuleAlias
+data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCond | IsThen
           | OrigRL Text
           | Temporal Text
           | IsInfra | HideIfChildless
@@ -67,7 +69,32 @@ toPetri :: [Rule] -> Text.Text
 toPetri rules =
   let petri1 = insrules rules startGraph
       rulesConnected = connectRules petri1 rules
-  in renderDot $ unqtDot $ graphToDot (petriParams rulesConnected) rulesConnected
+      reordered = reorder rules rulesConnected
+      merged = mergePetri rules reordered
+  in renderDot $ unqtDot $ graphToDot (petriParams rulesConnected) merged
+
+reorder :: [Rule] -> PetriD -> PetriD
+reorder rules og = runGM og $ do
+  -- x You if then must -> x if then you must
+  forM_ [ (x0, you1, if2, then3, must4)
+        | you1 <- nodes $ labfilter (hasDeet IsParty) og
+        , x0            <- pre og you1
+        , (if2,ifl)     <- lsuc og you1   , maybe False (hasDeet IsCond) (lab og if2)
+        , (then3,thenl) <- lsuc og if2    , maybe False (hasDeet IsThen) (lab og then3)
+        , (must4,mustl) <- lsuc og then3  , maybe False (hasDeet IsDeon) (lab og must4)
+        ] $ \(x0, you1, if2, then3, must4) -> do
+    delEdge' (x0, you1)
+    delEdge' (    you1, if2)
+    delEdge' (               then3, must4)
+    newEdge' (x0,       if2, [Comment "reordered"])
+    newEdge' (               then3, you1, [Comment "reordered"])
+    newEdge' (                      you1, must4, [Comment "reordered"])
+
+
+mergePetri :: [Rule] -> PetriD -> PetriD
+mergePetri rules og = runGM og $ do
+  -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
+  return ()
 
 fromRuleAlias :: Attribute
 fromRuleAlias = Comment "from RuleAlias"
@@ -83,10 +110,16 @@ splitJoin rs og sj sgs entry = runGM og $ do
   splitnode <- newNode (PN Trans "split (and)" [] [IsInfra])
   joinnode  <- newNode (PN Trans "join (and)" [] [IsInfra])
   let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
-      successTails    = nodes $ labfilter (hasDeet IsLastHappy) sgs
-  newEdge' (entry,splitnode, [])
+      successTails    = [ n
+                        | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs
+                        , m <- suc og n -- there is a direct link to FULFILLED
+                        , m == fulfilledNode
+                        ]
+  newEdge' (entry,splitnode, [Comment "added by split from parent node"])
+  newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
   mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
   mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
+  mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasDeet :: Eq a => a -> PNode a -> Bool
 hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
@@ -225,7 +258,7 @@ getNodeByDeets :: PetriD -> [Deet] -> Maybe Node
 getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 
 insrules :: RuleSet -> PetriD -> PetriD
-insrules rs sg = runGM sg $ mapM (r2fgl rs) rs
+insrules rs sg = runGM sg $ mapM (r2fgl rs Nothing) rs
 
 {-
 
@@ -271,6 +304,11 @@ overwriteNode n pn = do
   GM . put $ gs {curentGraph = insNode (n, pn) g }
   return n
 
+delEdge' :: (Node, Node) -> GraphMonad ()
+delEdge' (n1,n2) = do
+  gs@GS {curentGraph = g} <- GM get
+  GM . put $ gs {curentGraph = delEdge (n1, n2) g }
+
 -- runGM :: PetriD -> GraphMonad a -> a
 runGM :: PetriD -> GraphMonad a -> PetriD
 runGM gr (GM m) = cg
@@ -284,27 +322,27 @@ getGraph = do
     GM $ gets curentGraph
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Rule -> GraphMonad (Maybe Node)
-r2fgl rs RegFulfilled   = pure Nothing
-r2fgl rs RegBreach      = pure Nothing
+r2fgl :: RuleSet -> Maybe Text -> Rule -> GraphMonad (Maybe Node)
+r2fgl rs defRL RegFulfilled   = pure Nothing
+r2fgl rs defRL RegBreach      = pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl rs (RuleAlias rn) = do
+r2fgl rs defRL (RuleAlias rn) = do
   sg <- getGraph
   let ntxt = Text.unwords rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
 
-r2fgl rs r@Regulative{..} = do
+r2fgl rs defRL r@Regulative{..} = do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
-        return [IsFirstNode,OrigRL (rl2text rl)]
-      origRLdeet = maybeToList (OrigRL . rl2text <$> rlabel)
+        return [IsFirstNode,OrigRL (rl2text rl), IsParty]
+      origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
 
   let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
@@ -329,8 +367,8 @@ r2fgl rs r@Regulative{..} = do
                               pure uponCondN
   conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
-                            ifN <- newNode $ mkDecis ("if " <> bsr2textnl bsr)
-                            ifCondN <- newNode $ mkTrans "then"
+                            ifN     <- newNode $ (addDeet $ mkDecis ("if " <> bsr2textnl bsr)) IsCond
+                            ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
                             newEdge' ( upoN,    ifN, [] )
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
@@ -345,7 +383,7 @@ r2fgl rs r@Regulative{..} = do
         successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
                      vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
 
-    obligationN <- newNode oblLab
+    obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
     mbOnFailureN <- if deontic /= DMay then do
         onFailureN <- newNode $ mkTrans $ lestWord deontic
@@ -359,10 +397,10 @@ r2fgl rs r@Regulative{..} = do
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  henceN <- fromMaybe fulfilledNode <$> maybe (pure Nothing) (r2fgl rs) hence
+  henceN <- fromMaybe fulfilledNode <$> maybe (pure Nothing) (r2fgl rs (rl2text <$> rlabel <|> defRL)) hence
   newEdge onSuccessN henceN []
 
-  lestN  <- fromMaybe breachNode <$> maybe (pure Nothing) (r2fgl rs) lest
+  lestN  <- fromMaybe breachNode <$> maybe (pure Nothing) (r2fgl rs (rl2text <$> rlabel <|> defRL)) lest
   -- traceM $ "lestNEs: " <> show lestNEs
   -- let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
@@ -388,7 +426,7 @@ r2fgl rs r@Regulative{..} = do
     lestWord DShant = "violation"
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
-r2fgl rs r = pure Nothing
+r2fgl rs defRL r = pure Nothing
 
 
 -- TODO: make all this work so vp2np will use wordnet to generate the NPs

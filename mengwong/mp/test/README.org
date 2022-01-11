@@ -1940,18 +1940,18 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §§   | to PDPC |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
-| You  | MUST    |       | WITHIN                  | 3                                                | days |                                                              |                                                    |                                        |                         |
-| TRUE | IF      | TRUE  | it is                   | an NDB                                           |      |                                                              |                                                    |                                        |                         |
-|      | UNLESS  | FALSE | you are a Public Agency |                                                  |      |                                                              |                                                    |                                        |                         |
-|      |         |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
-|      | ➔       |       | NOTIFY                  | the PDPC                                         |      |                                                              |                                                    |                                        |                         |
-|      |         |       | in                      | the form and manner specified at www.pdpc.gov.sg |      |                                                              |                                                    |                                        |                         |
-|      |         |       | with                    | a Notification Message                           |      |                                                              |                                                    | // can we link to a constitutive rule? |                         |
-|      |         |       | and                     | (optional)                                       |      | a list of individuals for whom notification waiver is sought | // we need PTree parsing if we want to indent more |                                        |                         |
-|      |         |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
-|      | HENCE   |       | the PDPC                | MAY                                              |      | NOTIFY                                                       | you                                                |                                        |                         |
-|      |         |       |                         |                                                  |      | with                                                         | a list of individuals to exclude from notification | AKA                                    | the PDPC Exclusion List |
+| §§   | Notify PDPC |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+| You  | MUST        |       | WITHIN                  | 3                                                | days |                                                              |                                                    |                                        |                         |
+| TRUE | IF          | TRUE  | it is                   | an NDB                                           |      |                                                              |                                                    |                                        |                         |
+|      | UNLESS      | FALSE | you are a Public Agency |                                                  |      |                                                              |                                                    |                                        |                         |
+|      |             |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+|      | ➔           |       | NOTIFY                  | the PDPC                                         |      |                                                              |                                                    |                                        |                         |
+|      |             |       | in                      | the form and manner specified at www.pdpc.gov.sg |      |                                                              |                                                    |                                        |                         |
+|      |             |       | with                    | a Notification Message                           |      |                                                              |                                                    | // can we link to a constitutive rule? |                         |
+|      |             |       | and                     | (optional)                                       |      | a list of individuals for whom notification waiver is sought | // we need PTree parsing if we want to indent more |                                        |                         |
+|      |             |       |                         |                                                  |      |                                                              |                                                    |                                        |                         |
+|      | HENCE       |       | the PDPC                | MAY                                              |      | NOTIFY                                                       | you                                                |                                        |                         |
+|      |             |       |                         |                                                  |      | with                                                         | a list of individuals to exclude from notification | AKA                                    | the PDPC Exclusion List |
 
 
 *** 6: "Unlikely" significant harm exception
@@ -1975,20 +1975,20 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §§     | to Notifiable Individuals |                                            |                                                    |                         |
-| IF     | TRUE                      | it is                                      | an NDB                                             |                         |
-| UNLESS | FALSE                     | you are a Public Agency                    |                                                    |                         |
-| PARTY  | You                       |                                            |                                                    |                         |
-| MUST   |                           | WITHIN                                     | 3                                                  | days                    |
-| ➔      |                           | NOTIFY                                     | each of the Notifiable Individuals                 |                         |
-|        |                           | in                                         | any manner that is reasonable in the circumstances |                         |
-|        |                           | with                                       | a message obeying a certain format                 |                         |
-| WHERE  |                           | the Notifiable Individuals                 |                                                    |                         |
-|        | MEANS                     | the set of individuals affected by the NDB |                                                    |                         |
-|        |                           | LESS                                       | the individuals who are deemed                     | Unlikely                |
-|        |                           | LESS                                       | the individuals on                                 | the PDPC Exclusion List |
-|        |                           | LESS                                       | the individuals on                                 | the LEA Exclusion List  |
-|        |                           |                                            |                                                    |                         |
+| §§     | Notify Individuals |                                            |                                                    |                         |
+| IF     | TRUE               | it is                                      | an NDB                                             |                         |
+| UNLESS | FALSE              | you are a Public Agency                    |                                                    |                         |
+| PARTY  | You                |                                            |                                                    |                         |
+| MUST   |                    | WITHIN                                     | 3                                                  | days                    |
+| ➔      |                    | NOTIFY                                     | each of the Notifiable Individuals                 |                         |
+|        |                    | in                                         | any manner that is reasonable in the circumstances |                         |
+|        |                    | with                                       | a message obeying a certain format                 |                         |
+| WHERE  |                    | the Notifiable Individuals                 |                                                    |                         |
+|        | MEANS              | the set of individuals affected by the NDB |                                                    |                         |
+|        |                    | LESS                                       | the individuals who are deemed                     | Unlikely                |
+|        |                    | LESS                                       | the individuals on                                 | the PDPC Exclusion List |
+|        |                    | LESS                                       | the individuals on                                 | the LEA Exclusion List  |
+|        |                    |                                            |                                                    |                         |
 
 *** 7 extras
 
@@ -2029,14 +2029,14 @@ The "IF" line has to go below.
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §            | Notification              |
-| Notification |                           |
-| MEANS        | to Notifiable Individuals |
-| AND          | to PDPC                   |
+| §            | Notification       |
+| Notification |                    |
+| MEANS        | Notify Individuals |
+| AND          | Notify PDPC        |
 
 *** Part 1 of the Schedule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-8.csv
+:TABLE_EXPORT_FILE: pdpadbno-part1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

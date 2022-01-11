@@ -37,7 +37,7 @@ import Text.EditDistance
 type RuleSet = [Rule]
 
 getRuleByName :: RuleSet -> RuleName -> Maybe Rule
-getRuleByName rs rn = listToMaybe (filter (\r -> ruleName r == rn) rs)
+getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 
 getRuleByLabel :: RuleSet -> Text -> Maybe Rule
 getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
@@ -96,7 +96,6 @@ connectRules sg rules =
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
   where
     labelfilter (PN _ txt attrs) = fromRuleAlias `elem` attrs
-    labelfilter _                = False
 
 expandRulesByLabel :: [Rule] -> Text -> [Rule]
 expandRulesByLabel rules txt =
@@ -109,8 +108,8 @@ expandRulesByLabel rules txt =
   ]
 
 expandRule :: [Rule] -> Rule -> [Rule]
-expandRule rules r@(Regulative{..}) = [r]
-expandRule rules r@(Hornlike{..}) =
+expandRule rules r@Regulative{..} = [r]
+expandRule rules r@Hornlike{..} =
   -- we support hornlike expressions of the form x is y and z; we return y and z
   [ q
   | clause <- clauses
@@ -157,19 +156,11 @@ breachNode = 0
 getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
 
+getNodeByAttribute :: Petri -> Attribute -> Maybe Node
+getNodeByAttribute gr attr = listToMaybe $ nodes $ labfilter (\ln -> attr `elem` nlabel ln) gr
+
 insrules :: RuleSet -> Petri -> Petri
 insrules rs sg = runGM sg $ mapM (r2fgl rs) rs
-
-data NodesEdges = NE { neNodes :: [LNode PNode], neEdges :: [LEdge PLabel] }
-  deriving (Show, Eq)
-
-instance Semigroup NodesEdges where
-  (NE ns es) <> (NE ns' es') = NE (ns ++ ns') (es ++ es')
-instance Monoid NodesEdges where
-  mempty = NE [] []
-
-insertNE :: DynGraph gr => NodesEdges -> gr PNode PLabel -> gr PNode PLabel
-insertNE ne = insEdges (neEdges ne) . insNodes (neNodes ne)
 
 {-
 
@@ -209,6 +200,12 @@ newEdge n1 n2 lbl = do
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
 newEdge' (a,b,c) = newEdge a b c
 
+overwriteNode :: Node -> PNode -> GraphMonad Node
+overwriteNode n pn = do
+  gs@GS {curentGraph = g} <- GM get
+  GM . put $ gs {curentGraph = insNode (n, pn) g }
+  return n
+
 -- runGM :: Petri -> GraphMonad a -> a
 runGM :: Petri -> GraphMonad a -> Petri
 runGM gr (GM m) = cg
@@ -220,6 +217,9 @@ runGM gr (GM m) = cg
 getGraph :: GraphMonad Petri
 getGraph = do
     GM $ gets curentGraph
+
+labelComment :: Text -> Attribute
+labelComment = Comment . ("First node of rule labeled: "<>)
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Rule -> GraphMonad (Maybe Node)
@@ -233,17 +233,25 @@ r2fgl rs RegBreach      = pure Nothing
 r2fgl rs (RuleAlias rn) = do
   sg <- getGraph
   let ntxt = Text.unwords rn
-      already = getNodeByLabel sg ntxt
-  maybe (fmap Just . newNode $ mkPlace ntxt) (pure . Just) already
-r2fgl rs r@(Regulative{..}) = do
-  -- let newN = newNodes 9 sg
-  --     -- new n = newN !! n
-  -- traceShowM newN
+  let myLabel = labelComment ntxt
+      already = getNodeByAttribute sg myLabel
+  maybe (fmap Just . newNode $ pAddAttribute myLabel $ mkPlace ntxt) (pure . Just) already
+r2fgl rs r@Regulative{..} = do
+  sg <- getGraph
+  let myLabel = labelComment . rl2text <$> rlabel
+  let already = getNodeByAttribute sg =<< myLabel
+
   let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
-  whoN  <- case who of Nothing  -> newNode $ mkPlace everywho
-                       Just bsr -> do everyN <- newNode $ mkDecis everywho
-                                      whoN <- newNode $ mkTrans $ "who " <> bsr2text bsr
+
+  let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
+                                    Just _bsr  -> mkDecis everywho
+      firstNodeLabel = maybe id pAddAttribute myLabel firstNodeLabel0
+  everyN <- case already of
+    Nothing -> newNode firstNodeLabel
+    Just n  -> overwriteNode n firstNodeLabel
+  whoN  <- case who of Nothing  -> pure everyN
+                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> bsr2text bsr
                                       newEdge everyN whoN []
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
@@ -313,6 +321,7 @@ r2fgl rs r@(Regulative{..}) = do
     lestWord DMay   = error "a MAY has no LEST"  -- this should never arise
     lestWord DShant = "violation"
 
+-- r2fgl rs r@Hornlike{} = pure Nothing
 r2fgl rs r = pure Nothing
 
 

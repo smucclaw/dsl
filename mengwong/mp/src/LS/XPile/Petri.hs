@@ -32,6 +32,9 @@ mkPlace x = PN Place x []
 mkTrans x = PN Trans x []
 mkDecis x = PN Decis x []
 
+pAddAttribute :: Attribute -> PNode -> PNode
+pAddAttribute x pn = pn {nlabel = x : nlabel pn}
+
 mySecondFGL :: Gr PNode PLabel
 mySecondFGL = mkGraph
               [ (1, PN Place "start"   [])

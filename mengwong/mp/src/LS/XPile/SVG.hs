@@ -20,7 +20,7 @@ import           Text.Pretty.Simple
 import qualified Data.Text.Lazy     as Text
 import           Data.Text.Lazy              (Text)
 import qualified Data.List.NonEmpty as NE
-import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust)
+import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import qualified Data.Map           as Map
 import Data.GraphViz.Printing (renderDot)
 import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
@@ -33,11 +33,12 @@ import WordNet.DB
 import WordNet.Structured
 import Data.List (isPrefixOf, sortOn, isSuffixOf)
 import Text.EditDistance
+import GHC.Base (join)
 
 data Deet = IsFirstNode | IsLastHappy | FromRuleAlias
           | OrigRL Text
           | Temporal Text
-          | IsInfra
+          | IsInfra | HideIfChildless
           deriving (Eq,Show)
 
 type PNodeD = PNode Deet
@@ -75,99 +76,119 @@ data SplitJoin = SJAny | SJAll deriving (Eq, Show)
 splitJoin :: [Rule]      -- background input ruleset
           -> PetriD      -- original whole graph
           -> SplitJoin   -- whether we are doing an Any or an All wrapper
-          -> [PetriD]    -- subgraphs which are to live together under the split/join.
+          -> PetriD    -- subgraphs which are to live together under the split/join.
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  splitnode <- newNode (PN Place "split (all)" [] [IsInfra])
-  joinnode  <- newNode (PN Place "join (all)" [] [IsInfra])
-  let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) og
-      successTails    = nodes $ labfilter (hasDeet IsLastHappy) og
+  splitnode <- newNode (PN Trans "split (and)" [] [IsInfra])
+  joinnode  <- newNode (PN Trans "join (and)" [] [IsInfra])
+  let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
+      successTails    = nodes $ labfilter (hasDeet IsLastHappy) sgs
   newEdge' (entry,splitnode, [])
-  mapM_ newEdge' [ (splitnode, headnode, []) | headnode <- headsOfChildren ]
-  mapM_ newEdge' [ ( tailnode, joinnode, []) | tailnode <- successTails    ]
+  mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
+  mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
 
+hasDeet :: Eq a => a -> PNode a -> Bool
 hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
+hasDeets :: (Foldable t, Eq a) => t a -> PNode a -> Bool
 hasDeets xs (PN _ _ _ deets) = all ( `elem` deets ) xs
+addDeet :: PNode a -> a -> PNode a
 addDeet  (PN a b c d) dt  = PN a b c (dt:d)
+addDeets :: PNode a -> [a] -> PNode a
 addDeets (PN a b c d) dts = PN a b c (dts++d)
+
+getOrigRL :: PNodeD -> Maybe Text
+getOrigRL (PN _ _ _ ds) = listToMaybe [ t | (OrigRL t) <- ds ]
 
 connectRules :: PetriD -> [Rule] -> PetriD
 connectRules sg rules =
-  -- a node that is any HENCE GOTO RuleName will have the comment "from RuleAlias"
-  -- e.g. [label=Notification,comment="from RuleAlias"]
+  -- a node that is any HENCE GOTO RuleName will have the deet "FromRuleAlias"
+  -- e.g. [label=Notification] [FromRuleAlias]
   -- and it will have no outdegeres
   --
-  -- if the link can be fulfilled trivially, the existing code already does that
+  -- if the link can be fulfilled trivially, the r2fgl existing code already does that
   -- but the link might be to a Hornlike which expands to multiple rules
   --
   -- let's search for all ruleAlias nodes, and plan to expand them
   -- 
 
   let subgraphOfAliases = labfilter (hasDeet FromRuleAlias) sg
-
   -- another way to find it might be to look for head nodes that have no outdegrees
 
       aliasNodes = nodes subgraphOfAliases
 
       -- all labeled rules
-      rls = traceShowId $ fmap rl2text . rLabelR <$> rules
+      rls = trace "rls = " $ traceShowId $ fmap rl2text . rLabelR <$> rules
 
       -- if the ruleLabel is for a Hornlike, expand accordingly.
       -- we mirror the structure of the BoolStruct inside the head of the Hornlike,
       -- with combinations of split/join over AND/OR.
-      
+
       -- later on we will probably want to use a join transition to model an OR.
-      aliasRules = [ (n,r)
+      aliasRules = [ (n,outgraph)
                    | n <- aliasNodes
-                   , let mTxt = traceShowId $ nodeTxt <$> lab subgraphOfAliases n
-                   , isJust mTxt
-                   , r <- expandRulesByLabel rules (fromJust mTxt)
+                   , let nrl = trace "OrigRL = " $ traceShowId $ getOrigRL =<< lab sg n
+                   , let r = getRuleByLabel rules =<< nrl
+                   , let outs = maybe [] (expandRule rules) r
+                   , let rlouts = fmap rl2text <$> (rlabel <$> outs)
+                   , let outgraph = labfilter (\pn -> any (\x -> x pn) [ hasDeet (OrigRL rlout')
+                                                                       | rlout <- rlouts
+                                                                       , isJust rlout
+                                                                       , let rlout' = fromJust rlout
+                                                                       ] ) sg
                    ]
-      ers = [ er'
-            | (nodea,noderule) <- aliasRules
-            , let ar' = rl2text <$> rLabelR noderule
-            , isJust ar'
-            , let ar'' = fromJust ar'
-            , let er = traceShowId $ expandRulesByLabel rules ar''
-            , er' <- er
-            ]
+      headNodes = [ headNode
+                  | (orign, outgraph) <- aliasRules
+                  , headNode <- nodes $ labfilter (hasDeet IsFirstNode) outgraph
+                  ]
+      tailNodes = [ tailNode
+                  | (orign, outgraph) <- aliasRules
+                  , tailNode <- nodes $ labfilter (hasDeet IsLastHappy) outgraph
+                  ]
   in  trace (unlines ((\n -> "node " <> show n <> " is a ruleAlias: " <>
                         Text.unpack (maybe "(nothing)" showNode (lab subgraphOfAliases n)))
                        <$> aliasNodes))
       -- while our initial pass over rule expansion takes care of direct expansions, we need the Hornlike rules to expand also. bit of debugging, but we can get rid of this later when it works
       trace ("all known rulelabels are " ++ show rls)
       trace ("we need to expand RuleAlias nodes " ++ show aliasNodes)
-      trace ("maybe they expand to " ++ show ers)
-      sg
+      trace ("maybe they expand to headnodes " ++ show headNodes)
+      trace ("and the outgraphs have happy tails " ++ show tailNodes)
+      foldl (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
-
 
 expandRulesByLabel :: [Rule] -> Text -> [Rule]
 expandRulesByLabel rules txt =
-  [ q
-  | r <- rules
-  , let mt = rl2text <$> rLabelR r
-  , Just txt == mt
-  , let qs = expandRule rules r
-  , q <- qs
-  ]
+  let toreturn =
+        [ q
+        | r <- rules
+        , let mt = rl2text <$> rLabelR r
+        , Just txt == mt
+        , let qs = expandRule rules r
+        , q <- qs
+        ]
+  in trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
+     toreturn
 
 expandRule :: [Rule] -> Rule -> [Rule]
 expandRule rules r@Regulative{..} = [r]
 expandRule rules r@Hornlike{..} =
-  -- we support hornlike expressions of the form x is y and z; we return y and z
-  [ q
-  | clause <- clauses
-  , let rlbl' = rl2text <$> rLabelR r
-        bsr = hHead clause
-  , isJust rlbl'
-  , mt <- aaLeaves (AA.Leaf bsr)
-  -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
-  -- TODO: we have to add a layer of testing if each term returned is itself the name of a hornlike rulelabel
-  -- for now we assume it is not.
-  , q <- expandRulesByLabel rules (mt2text mt)
-  ]
+  let toreturn =
+        -- we support hornlike expressions of the form x is y and z; we return y and z
+        [ q
+        | clause <- clauses
+        , let rlbl' = rl2text <$> rLabelR r
+              bsr = trace ("expandRule: got head " ++ show (hHead clause)) $
+                    hHead clause
+        , isJust rlbl'
+        , mt <- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr))) $ aaLeaves (AA.Leaf bsr)
+        -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
+        -- TODO: we have to add a layer of testing if each term returned is itself the name of a hornlike rulelabel
+        -- for now we assume it is not.
+        , q <- expandRulesByLabel rules (mt2text mt)
+        ]
+  in trace ("expandRule: called with input " ++ show rlabel)
+     trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
+     toreturn
 expandRule _ _ = []
 
 
@@ -283,6 +304,7 @@ r2fgl rs r@Regulative{..} = do
   let myLabel = do
         rl <- rlabel
         return [IsFirstNode,OrigRL (rl2text rl)]
+      origRLdeet = maybeToList (OrigRL . rl2text <$> rlabel)
   let already = getNodeByDeets sg =<< myLabel
 
   let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
@@ -305,7 +327,6 @@ r2fgl rs r@Regulative{..} = do
                               newEdge' ( whoN,      uponN, [])
                               newEdge' ( uponN, uponCondN, [])
                               pure uponCondN
-  -- let cNE = whoNE <> upoNE
   conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
                             ifN <- newNode $ mkDecis ("if " <> bsr2textnl bsr)
@@ -313,7 +334,6 @@ r2fgl rs r@Regulative{..} = do
                             newEdge' ( upoN,    ifN, [] )
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
-  -- let dNE = cNE <> conNE
   (onSuccessN, mbOnFailureN) <- do
     let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
         temp = tc2nl NLen temporal
@@ -322,8 +342,9 @@ r2fgl rs r@Regulative{..} = do
                                       , Text.unwords . NE.toList . fst . NE.head $ head actn
                                       , temp
                                       ])
-        successLab = mkTransA [Temporal temp] $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
-                     
+        successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
+                     vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+
     obligationN <- newNode oblLab
     onSuccessN <- newNode successLab
     mbOnFailureN <- if deontic /= DMay then do
@@ -523,4 +544,6 @@ actionFragments _           = []
 
 actionWord :: ParamText -> Text.Text
 actionWord = NE.head . fst . NE.head
+
+
 

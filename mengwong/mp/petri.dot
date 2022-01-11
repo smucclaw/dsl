@@ -1,0 +1,140 @@
+digraph {
+    graph [compound=true];
+    subgraph places {
+        node [shape=circle];
+        0 [label=BREACH
+          ,color=brown
+          ,comment=IsInfra];
+        1 [label=FULFILLED
+          ,color=green
+          ,comment=IsInfra];
+        2 [label="Every Organisation"
+          ,shape=diamond
+          ,comment=IsFirstNode
+          ,comment="OrigRL \"Assess\""];
+        4 [label=upon];
+        6 [label="if the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"
+          ,shape=diamond];
+        8 [label="must\nassess if it is a Notifiable Data Breach\nbefore 30 days"
+          ,shape=diamond];
+        11 [label=Notification
+           ,comment=IsFirstNode
+           ,comment=FromRuleAlias
+           ,comment="OrigRL \"Notification\""];
+        12 [label="the PDPC"];
+        13 [label="may\ndemand an explanation for your inaction\neventually"
+           ,shape=diamond];
+        15 [label=You];
+        16 [label="must\nrespond\neventually"
+           ,shape=diamond];
+        19 [label=You
+           ,comment=IsFirstNode
+           ,comment="OrigRL \"Notify PDPC\""];
+        20 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
+           ,shape=diamond];
+        22 [label="must\nNOTIFY the PDPC\nbefore 3 days"
+           ,shape=diamond];
+        25 [label="the PDPC"];
+        26 [label="may\nNOTIFY you\neventually"
+           ,shape=diamond];
+        28 [label=You
+           ,comment=IsFirstNode
+           ,comment="OrigRL \"Notify Individuals\""];
+        29 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
+           ,shape=diamond];
+        31 [label="must\nNOTIFY each of the Notifiable Individuals\nbefore 3 days"
+           ,shape=diamond];
+    }
+    subgraph transitions {
+        node [shape=box
+             ,height=0.2
+             ,style=filled
+             ,fillcolor=black
+             ,fontcolor=white
+             ,fontname=Monaco];
+        3 [label="who is not a Public Agency"];
+        5 [label="becoming aware a data breach may have occurred"];
+        7 [label=then];
+        9 [label="assessment done"
+          ,comment="Temporal \"before 30 days\""
+          ,comment=IsLastHappy
+          ,comment="OrigRL \"Assess\""];
+        10 [label="not done"];
+        14 [label="demand occurred"
+           ,comment="Temporal \"eventually\""
+           ,comment=IsLastHappy];
+        17 [label="response done"
+           ,comment="Temporal \"eventually\""
+           ,comment=IsLastHappy];
+        18 [label="not done"];
+        21 [label=then];
+        23 [label="NOTIFY done"
+           ,comment="Temporal \"before 3 days\""
+           ,comment=IsLastHappy
+           ,comment="OrigRL \"Notify PDPC\""];
+        24 [label="not done"];
+        27 [label="NOTIFY occurred"
+           ,comment="Temporal \"eventually\""
+           ,comment=IsLastHappy];
+        30 [label=then];
+        32 [label="NOTIFY done"
+           ,comment="Temporal \"before 3 days\""
+           ,comment=IsLastHappy
+           ,comment="OrigRL \"Notify Individuals\""];
+        33 [label="not done"];
+        34 [label="split (all)"
+           ,comment=IsInfra];
+        35 [label="join (all)"
+           ,comment=IsInfra];
+    }
+    2 -> 3;
+    3 -> 4;
+    4 -> 5;
+    5 -> 6;
+    6 -> 7;
+    7 -> 8;
+    8 -> 9 [tailport=se
+           ,comment="southeast for positive"];
+    8 -> 10 [tailport=sw
+            ,comment="southwest for negative"];
+    9 -> 11;
+    10 -> 12;
+    11 -> 34;
+    12 -> 13;
+    13 -> 14 [tailport=se
+             ,comment="southeast for positive"];
+    14 -> 15;
+    15 -> 16;
+    16 -> 17 [tailport=se
+             ,comment="southeast for positive"];
+    16 -> 18 [tailport=sw
+             ,comment="southwest for negative"];
+    17 -> 1 [color=green];
+    18 -> 0 [color=brown];
+    19 -> 20;
+    20 -> 21;
+    21 -> 22;
+    22 -> 23 [tailport=se
+             ,comment="southeast for positive"];
+    22 -> 24 [tailport=sw
+             ,comment="southwest for negative"];
+    23 -> 25;
+    23 -> 35 [comment="added by join from tailnode"];
+    24 -> 0 [color=brown];
+    25 -> 26;
+    26 -> 27 [tailport=se
+             ,comment="southeast for positive"];
+    27 -> 1 [color=green];
+    28 -> 29;
+    29 -> 30;
+    30 -> 31;
+    31 -> 32 [tailport=se
+             ,comment="southeast for positive"];
+    31 -> 33 [tailport=sw
+             ,comment="southwest for negative"];
+    32 -> 1 [color=green];
+    32 -> 35 [comment="added by join from tailnode"];
+    33 -> 0 [color=brown];
+    34 -> 19 [comment="added by split to headnode"];
+    34 -> 28 [comment="added by split to headnode"];
+}

@@ -95,15 +95,15 @@ fmtcluster 2 = [NodeAttrs [ shape BoxShape
                           , FontName "Monaco" ] ]
 fmtcluster _ = []
 
-tcsd :: (Show a) => a -> Attribute
-tcsd = Comment . Text.pack . show
+tcsd :: (Show a) => [a] -> [Attribute]
+tcsd = fmap $ Comment . Text.pack . show
 
 fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
-fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green : tcsd ds : lbls 
-fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown : tcsd ds : lbls 
-fmtPetriNode (_n,PN Place txt lbls ds) = toLabel txt : tcsd ds : lbls 
-fmtPetriNode (_n,PN Trans txt lbls ds) = toLabel txt : tcsd ds : lbls
-fmtPetriNode (_n,PN Decis txt lbls ds) = toLabel txt : shape DiamondShape : tcsd ds : lbls
+fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls 
+fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls 
+fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls 
+fmtPetriNode (_n,PN Trans txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
+fmtPetriNode (_n,PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
 
 fmtPetriEdge :: Graph gr => gr (PNode a) PLabel -> (Node, Node, PLabel) -> [Attribute]
 fmtPetriEdge g (_s,e,el) -- if the edge goes to BREACH then we paint the edge brown

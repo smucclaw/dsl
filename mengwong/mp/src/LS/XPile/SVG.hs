@@ -58,8 +58,7 @@ getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
 
 insrules :: RuleSet -> Petri -> Petri
-insrules rs sg = foldr (\r g -> runGM g (r2fgl rs r)
-                       ) sg rs
+insrules rs sg = runGM sg $ mapM (r2fgl rs) rs
 
 data NodesEdges = NE { neNodes :: [LNode PNode], neEdges :: [LEdge PLabel] }
   deriving (Show, Eq)

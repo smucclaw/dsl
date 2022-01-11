@@ -56,6 +56,5 @@ digraph {
     16 -> 18 [tailport=sw
              ,comment="southwest for negative"];
     17 -> 1 [color=green];
-    18 -> 0 [color=brown
-            ,comment="onoes, go to breach"];
+    18 -> 0 [color=brown];
 }

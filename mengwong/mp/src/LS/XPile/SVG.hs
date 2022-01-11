@@ -45,9 +45,14 @@ prefix :: Int -> Text.Text -> Text.Text
 prefix n t = Text.pack (replicate n ' ') <> t
 
 startGraph :: Petri
-startGraph = mkGraph [ (1, PN Place "FULFILLED" [])
-                     , (0, PN Place "BREACH"    []) ] []
+startGraph = mkGraph [ (fulfilledNode, PN Place "FULFILLED" [])
+                     , (breachNode, PN Place "BREACH"    []) ] []
 
+fulfilledNode :: Node
+fulfilledNode = 1
+
+breachNode :: Node
+breachNode = 0
 
 getNodeByLabel :: Petri -> Text -> Maybe Node
 getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
@@ -158,7 +163,7 @@ r2fgl rs r@(Regulative{..}) = do
                             newEdge' ( ifN, ifCondN, [] ) 
                             pure ifCondN
   -- let dNE = cNE <> conNE
-  (onSuccessN, onFailureN) <- do
+  (onSuccessN, mbOnFailureN) <- do
     let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
         temp = tc2nl NLen temporal
         actn = actionFragments action
@@ -169,7 +174,7 @@ r2fgl rs r@(Regulative{..}) = do
         successLab = mkTrans $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
     obligationN <- newNode oblLab
     onSuccessN <- newNode successLab
-    onFailureN <- if deontic /= DMay then do 
+    mbOnFailureN <- if deontic /= DMay then do 
         onFailureN <- newNode $ mkTrans $ lestWord deontic
         newEdge' ( obligationN, onFailureN, swport)
         pure (Just onFailureN)
@@ -177,26 +182,23 @@ r2fgl rs r@(Regulative{..}) = do
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
     newEdge' ( conN, obligationN, [] )
     newEdge' ( obligationN, onSuccessN, seport)
-    pure (onSuccessN, onFailureN)
+    pure (onSuccessN, mbOnFailureN)
            
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  mbHenceN <- maybe (pure Nothing) (r2fgl rs) hence
-  -- traceM $ "henceNEs: " <> show henceNEs
-  -- let sg2 = insertNE henceNEs sg1
+  henceN <- fromMaybe fulfilledNode <$> maybe (pure Nothing) (r2fgl rs) hence
+  newEdge onSuccessN henceN []
 
-  mbLestN  <- maybe (pure Nothing) (r2fgl rs) lest
+  lestN  <- fromMaybe breachNode <$> maybe (pure Nothing) (r2fgl rs) lest
   -- traceM $ "lestNEs: " <> show lestNEs
   -- let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
-  case mbHenceN of Just henceN -> newEdge onSuccessN henceN []
-                   Nothing -> newEdge onSuccessN 1 []
-  let toLest
-        | Just lestN <- mbLestN, Just nd <- onFailureN = newEdge' (nd, lestN, [])
-        | deontic /= DMay , Just nd <- onFailureN = newEdge' (nd, 0, [Comment "onoes, go to breach"])
-        | otherwise = pure ()
-  toLest
+  case mbOnFailureN of
+    Just onFailureN -> newEdge onFailureN lestN []
+    Nothing -> pure ()
+
+  -- Return the first node
   pure $ Just whoN
   where
     vp2np "assess" = "assessment"

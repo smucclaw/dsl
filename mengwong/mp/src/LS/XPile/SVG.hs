@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TransformListComp #-}
 
 module LS.XPile.SVG where
 
@@ -27,6 +28,11 @@ import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
                                          , PortPos(..))
 import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
 import Data.Foldable (find)
+import System.IO.Unsafe (unsafePerformIO)
+import WordNet.DB
+import WordNet.Structured
+import Data.List (isPrefixOf, sortOn, isSuffixOf)
+import Text.EditDistance
 
 type RuleSet = [Rule]
 
@@ -241,7 +247,7 @@ r2fgl rs r@(Regulative{..}) = do
                                       newEdge everyN whoN []
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
-                        Just pt -> do 
+                        Just pt -> do
                               uponN <- newNode $ mkPlace "upon"
                               uponCondN <- newNode $ mkTrans $ pt2text pt
                               newEdge' ( whoN,      uponN, [])
@@ -253,7 +259,7 @@ r2fgl rs r@(Regulative{..}) = do
                             ifN <- newNode $ mkDecis "if"
                             ifCondN <- newNode $ mkTrans $ bsr2text bsr
                             newEdge' ( upoN,    ifN, [] )
-                            newEdge' ( ifN, ifCondN, [] ) 
+                            newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
   -- let dNE = cNE <> conNE
   (onSuccessN, mbOnFailureN) <- do
@@ -267,7 +273,7 @@ r2fgl rs r@(Regulative{..}) = do
         successLab = mkTrans $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
     obligationN <- newNode oblLab
     onSuccessN <- newNode successLab
-    mbOnFailureN <- if deontic /= DMay then do 
+    mbOnFailureN <- if deontic /= DMay then do
         onFailureN <- newNode $ mkTrans $ lestWord deontic
         newEdge' ( obligationN, onFailureN, swport)
         pure (Just onFailureN)
@@ -276,7 +282,7 @@ r2fgl rs r@(Regulative{..}) = do
     newEdge' ( conN, obligationN, [] )
     newEdge' ( obligationN, onSuccessN, seport)
     pure (onSuccessN, mbOnFailureN)
-           
+
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
   henceN <- fromMaybe fulfilledNode <$> maybe (pure Nothing) (r2fgl rs) hence
@@ -308,6 +314,102 @@ r2fgl rs r@(Regulative{..}) = do
     lestWord DShant = "violation"
 
 r2fgl rs r = pure Nothing
+
+
+-- TODO: make all this work so vp2np will use wordnet to generate the NPs
+helper :: Text -> IO Text
+helper ogWord = do
+  -- Suppose that ogWord is "respond". The word "respond" belongs to three synsets, with the following glosses:
+  -- 1) show a response or a reaction to something, 2) react verbally, 3) respond favorably.
+
+  resultRaw <- getDerivations' $ Text.unpack ogWord :: IO [(Synset, [(SynsetLink, Synset)])]
+  -- We get a list of derivs for "respond",
+  -- and also three synsets for "respond":
+  let
+      hmm =
+        [ (score, candidate, fromWord, toWord, defn derivSynset)
+        | (ogSynset, derivs) <- resultRaw
+        , (synsetLink, derivSynset) <- derivs -- Each of these
+        , let fromWord = getWord ogSynset (lfrm synsetLink)
+        , let toWord = getWord derivSynset (lto synsetLink)
+        , isNoun derivSynset
+        , not (isHuman derivSynset)
+        , (score, candidate) <- sortBySimilarity ogWord derivSynset
+        -- , not $ looksLikeHuman candidate
+        , then sortOn by score
+--        , then sortOn by
+        , let sameWord = whichword ogSynset == lfrm synsetLink
+        , let candidateEquals = candidate == toWord
+        ]
+      --candidateDerivations = sortBySimilarity ogWord
+  mapM_ print hmm
+  pure $ Text.pack $ (\(a,b,c,d,e) -> b) $ head hmm
+
+-- sortingFun :: Bool -> Bool -> – -> Bool
+-- sortingFun responseFollowsRespond candidateEqualsX _ = _
+
+isHuman :: Synset -> Bool
+isHuman synset = or [pref `isPrefixOf` def | pref <- humanPrefixes] || aPersonWho (words def)
+  where
+    def = defn synset
+    humanPrefixes = ["(a person", "(someone", "(one who"]
+    aPersonWho ("(a":_:"who":_) = True
+    aPersonWho ("(an":_:"who":_) = True
+    aPersonWho _ = False
+
+looksLikeHuman :: String -> Bool
+looksLikeHuman w = "or" `isSuffixOf` w || "ee" `isSuffixOf` w
+
+isNoun :: Synset -> Bool
+isNoun Synset {pos=Noun} = True
+isNoun _ = False
+
+type SimilarityScore = Int
+
+sortBySimilarity :: Text -> Synset -> [(SimilarityScore, String)]
+sortBySimilarity w synset =
+  [ (score, candidate)
+  | candidate <- sWords synset
+  , let score = levenshteinDistance defaultEditCosts w' candidate
+  ]
+  where w' = Text.unpack w
+
+exampleVerbs :: [Text]
+exampleVerbs = map Text.toLower
+  ["Achieve", "Assemble", "Accelerate", "Administer", "Allow",
+   "Apply", "Appear", "Appoint", "Analyze", "Budget", "Buy",
+   "Balance", "Bring", "Build", "Chase", "Check", "Choose", "Close",
+   "Collaborate", "Collect", "Comment", "Communicate", "Compare",
+   "Convince", "Continue", "Coordinate", "Cut", "Debate", "Defend",
+   "Decide", "Discover", "Eat", "Encourage", "Establish", "Earn",
+   "Examine", "Expect", "Experiment", "Explain", "Explore", "Fall",
+   "Feed", "Fry", "Fight", "Fit", "Follow", "Go", "Give", "Grow",
+   "Gain", "Generate", "Hang", "Happen", "Hate", "Hear", "Howl",
+   "Hop", "Hug", "Help", "Hold", "Hurt", "Hide", "Identify", "Ignore",
+   "Imply", "Illustrate", "Inform", "Include", "Introduce", "Invest",
+   "Irritate", "Jog", "Joke", "Jump", "Judge", "Keep", "Knock",
+   "Kick", "Kill", "Laugh", "Learn", "Lay", "Leave", "Lie", "Live",
+   "Lose", "Listen", "Lift", "Love", "Like", "Make", "Manage",
+   "Maintain", "Measure", "Meet", "Mix", "Mention", "Melt", "Move",
+   "Need", "Negotiate", "Observe", "Obtain", "Order", "Offer", "Open",
+   "Own", "Paint", "Pass", "Pay", "Performed", "Persist", "Promise",
+   "Play", "Pinch", "Parse", "Participate", "Provide", "Put", "Pull",
+   "Quit", "Quack", "Qualify", "Raise", "Read", "Realize", "Revere",
+   "Reflect", "Recommend", "Reduce", "Relate", "Report", "Require",
+   "Reset", "Renew", "Retire", "Resist", "Reach", "Roar", "Ride",
+   "Roast", "Run", "Say", "Sing", "Sit", "Send", "Shake", "Shower",
+   "Show", "Shame", "Shock", "Shrink", "Speak", "Solve", "Specify",
+   "Steal", "Serve", "Stop", "Stretch", "Stick", "Submit", "Suggest",
+   "Strike", "Study", "Snuggle", "Surprise", "Swim", "Take", "Talk",
+   "Taste", "Tear", "Trap", "Tell", "Tend", "Teach", "Think", "Throw",
+   "Understand", "Value", "Volunteer", "Wait", "Walk", "Warn", "Warm",
+   "Want", "Win", "Wish", "Write", "Watch", "Wave", "Wear", "Yearn"]
+
+{- use in ghci
+:l LS.XPile.SVG
+resultRaw <- getDerivations' "respond"
+mapM_ print . concat $ (\(s,derivs) -> [(getWord s (lfrm l), getWord y (lto l) ,l,y{links=[]}) | (l,y) <- derivs, isNoun y, whichword s == lfrm l]) <$> resultRaw
+-}
 
 c2n :: Context a b -> Node
 c2n (_, n, nl, _) = n

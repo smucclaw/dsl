@@ -50,6 +50,8 @@ dependencies:
 - parser-combinators
 - fgl
 - graphviz
+- wordnet
+- edit-distance
 
 ghc-options: -Wall
 

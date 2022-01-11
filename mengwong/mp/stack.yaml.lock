@@ -65,16 +65,27 @@ packages:
   original:
     hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
 - completed:
-    size: 1348343
-    url: https://github.com/anka-213/gf-ud/archive/bca99baaa32a156cb9126e1f2a878d4e0a14872d.tar.gz
+    size: 1350910
+    url: https://github.com/anka-213/gf-ud/archive/260ded190dd2c9bda869421b9611a50ed9ac1f0e.tar.gz
     name: gf-ud
     version: 0.1.0.0
-    sha256: 8b86ea4f1f2ff62bbb43291df7d16055d728199a861df28dd3585201488472a8
+    sha256: b7e85ca9e70a3ba7cac06de7c828aad159a9988f06d0f3766ef8b1385a5f3fae
     pantry-tree:
-      size: 6063
-      sha256: a3cba380f4d183f58a26946e7eac685c60b76bdd31bb1c1387c24cbb34adaf57
+      size: 6417
+      sha256: 7903a46aedcd130f8a69056c4dc5a250ed9735c08625a9e786b11c4be1603a6f
   original:
-    url: https://github.com/anka-213/gf-ud/archive/bca99baaa32a156cb9126e1f2a878d4e0a14872d.tar.gz
+    url: https://github.com/anka-213/gf-ud/archive/260ded190dd2c9bda869421b9611a50ed9ac1f0e.tar.gz
+- completed:
+    size: 16398419
+    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
+    name: wordnet
+    version: 0.1.1.0
+    sha256: 6a59dbb54d0067e9bbd95456b74be72481ec2e1835a85e7d2c5e7cc6472a23e4
+    pantry-tree:
+      size: 5871
+      sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
+  original:
+    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
     hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
     pantry-tree:

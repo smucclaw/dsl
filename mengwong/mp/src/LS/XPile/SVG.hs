@@ -26,6 +26,7 @@ import Data.GraphViz.Attributes.Complete (Attribute(TailPort,HeadPort, Comment)
                                          , CompassPoint(..)
                                          , PortPos(..))
 import Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
+import Data.Foldable (find)
 
 type RuleSet = [Rule]
 

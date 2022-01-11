@@ -34,6 +34,14 @@ import WordNet.Structured
 import Data.List (isPrefixOf, sortOn, isSuffixOf)
 import Text.EditDistance
 
+data Deet = IsFirstNode | IsLastHappy | FromRuleAlias
+          | OrigRL Text
+          | Temporal Text
+          | IsInfra
+          deriving (Eq,Show)
+
+type PNodeD = PNode Deet
+type PetriD = Petri Deet
 type RuleSet = [Rule]
 
 getRuleByName :: RuleSet -> RuleName -> Maybe Rule
@@ -63,14 +71,52 @@ toPetri rules =
 fromRuleAlias :: Attribute
 fromRuleAlias = Comment "from RuleAlias"
 
-connectRules :: Petri -> [Rule] -> Petri
+data SplitJoin = SJAny | SJAll deriving (Eq, Show)
+splitJoin :: [Rule]      -- background input ruleset
+          -> PetriD      -- original whole graph
+          -> SplitJoin   -- whether we are doing an Any or an All wrapper
+          -> [PetriD]    -- subgraphs which are to live together under the split/join.
+          -> Node        -- entry point node that leads into the split
+          -> PetriD      -- rewritten whole graph
+splitJoin rs og sj sgs entry = runGM og $ do
+  splitnode <- newNode (PN Place "split (all)" [] [IsInfra])
+  joinnode  <- newNode (PN Place "join (all)" [] [IsInfra])
+  let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) og
+      successTails    = nodes $ labfilter (hasDeet IsLastHappy) og
+  newEdge' (entry,splitnode, [])
+  mapM_ newEdge' [ (splitnode, headnode, []) | headnode <- headsOfChildren ]
+  mapM_ newEdge' [ ( tailnode, joinnode, []) | tailnode <- successTails    ]
+
+hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
+hasDeets xs (PN _ _ _ deets) = all ( `elem` deets ) xs
+addDeet  (PN a b c d) dt  = PN a b c (dt:d)
+addDeets (PN a b c d) dts = PN a b c (dts++d)
+
+connectRules :: PetriD -> [Rule] -> PetriD
 connectRules sg rules =
   -- a node that is any HENCE GOTO RuleName will have the comment "from RuleAlias"
-  let subgraphOfAliases = labfilter labelfilter sg
+  -- e.g. [label=Notification,comment="from RuleAlias"]
+  -- and it will have no outdegeres
+  --
+  -- if the link can be fulfilled trivially, the existing code already does that
+  -- but the link might be to a Hornlike which expands to multiple rules
+  --
+  -- let's search for all ruleAlias nodes, and plan to expand them
+  -- 
+
+  let subgraphOfAliases = labfilter (hasDeet FromRuleAlias) sg
+
+  -- another way to find it might be to look for head nodes that have no outdegrees
+
       aliasNodes = nodes subgraphOfAliases
+
+      -- all labeled rules
       rls = traceShowId $ fmap rl2text . rLabelR <$> rules
+
       -- if the ruleLabel is for a Hornlike, expand accordingly.
-      -- for now we expand AND as a simple split to all branches, all leaves
+      -- we mirror the structure of the BoolStruct inside the head of the Hornlike,
+      -- with combinations of split/join over AND/OR.
+      
       -- later on we will probably want to use a join transition to model an OR.
       aliasRules = [ (n,r)
                    | n <- aliasNodes
@@ -89,13 +135,13 @@ connectRules sg rules =
   in  trace (unlines ((\n -> "node " <> show n <> " is a ruleAlias: " <>
                         Text.unpack (maybe "(nothing)" showNode (lab subgraphOfAliases n)))
                        <$> aliasNodes))
+      -- while our initial pass over rule expansion takes care of direct expansions, we need the Hornlike rules to expand also. bit of debugging, but we can get rid of this later when it works
       trace ("all known rulelabels are " ++ show rls)
-      trace ("what does that expand to?" ++ show aliasRules)
-      trace ("maybe to " ++ show ers)
+      trace ("we need to expand RuleAlias nodes " ++ show aliasNodes)
+      trace ("maybe they expand to " ++ show ers)
       sg
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
-  where
-    labelfilter (PN _ txt attrs) = fromRuleAlias `elem` attrs
+
 
 expandRulesByLabel :: [Rule] -> Text -> [Rule]
 expandRulesByLabel rules txt =
@@ -134,18 +180,19 @@ aaLeaves (AA.All _ xs) = concatMap aaLeaves xs
 aaLeaves (AA.Any _ xs) = concatMap aaLeaves xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
 aaLeaves (AA.Not _) = error "unable to handle a Not definition in expanding aaLeaves for expandRule"
 
-showNode :: PNode -> Text
-showNode (PN _ txt attrs) = txt <> " / " <> Text.unwords (Text.pack . show <$> attrs)
+showNode :: PNodeD -> Text
+showNode (PN _ txt attrs deets) = txt <> " / " <> Text.unwords ((Text.pack . show <$> attrs) <>
+                                                                (Text.pack . show <$> deets) )
 
-nodeTxt :: PNode -> Text
-nodeTxt (PN _ txt _) = txt
+nodeTxt :: PNodeD -> Text
+nodeTxt (PN _ txt _ _) = txt
 
 prefix :: Int -> Text.Text -> Text.Text
 prefix n t = Text.pack (replicate n ' ') <> t
 
-startGraph :: Petri
-startGraph = mkGraph [ (fulfilledNode, PN Place "FULFILLED" [])
-                     , (breachNode, PN Place "BREACH"    []) ] []
+startGraph :: PetriD
+startGraph = mkGraph [ (fulfilledNode, PN Place "FULFILLED" [] [IsInfra])
+                     , (breachNode,    mkPlaceA [IsInfra] "BREACH"      ) ] []
 
 fulfilledNode :: Node
 fulfilledNode = 1
@@ -153,13 +200,10 @@ fulfilledNode = 1
 breachNode :: Node
 breachNode = 0
 
-getNodeByLabel :: Petri -> Text -> Maybe Node
-getNodeByLabel gr ntxt = listToMaybe $ nodes $ labnfilter (\ln -> ntext (snd ln) == ntxt) gr
+getNodeByDeets :: PetriD -> [Deet] -> Maybe Node
+getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 
-getNodeByAttribute :: Petri -> Attribute -> Maybe Node
-getNodeByAttribute gr attr = listToMaybe $ nodes $ labfilter (\ln -> attr `elem` nlabel ln) gr
-
-insrules :: RuleSet -> Petri -> Petri
+insrules :: RuleSet -> PetriD -> PetriD
 insrules rs sg = runGM sg $ mapM (r2fgl rs) rs
 
 {-
@@ -173,7 +217,7 @@ do
 
 -}
 
-data GraphState = GS { lastNode :: Node, curentGraph :: Petri }
+data GraphState = GS { lastNode :: Node, curentGraph :: PetriD }
 
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
@@ -184,7 +228,7 @@ newtype GraphMonad a = GM { runGM_ :: State GraphState a }
 -- instance Monoid a => Monoid (GraphMonad a) where
 --   mempty = pure mempty
 
-newNode :: PNode -> GraphMonad Node
+newNode :: PNodeD -> GraphMonad Node
 newNode lbl = do
   gs@GS {lastNode = n, curentGraph = g} <- GM get
   let n' = succ n
@@ -200,26 +244,23 @@ newEdge n1 n2 lbl = do
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
 newEdge' (a,b,c) = newEdge a b c
 
-overwriteNode :: Node -> PNode -> GraphMonad Node
+overwriteNode :: Node -> PNodeD -> GraphMonad Node
 overwriteNode n pn = do
   gs@GS {curentGraph = g} <- GM get
   GM . put $ gs {curentGraph = insNode (n, pn) g }
   return n
 
--- runGM :: Petri -> GraphMonad a -> a
-runGM :: Petri -> GraphMonad a -> Petri
+-- runGM :: PetriD -> GraphMonad a -> a
+runGM :: PetriD -> GraphMonad a -> PetriD
 runGM gr (GM m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
         (_res, GS _ln cg) = runState m (GS n0 gr)
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
-getGraph :: GraphMonad Petri
+getGraph :: GraphMonad PetriD
 getGraph = do
     GM $ gets curentGraph
-
-labelComment :: Text -> Attribute
-labelComment = Comment . ("First node of rule labeled: "<>)
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Rule -> GraphMonad (Maybe Node)
@@ -233,20 +274,23 @@ r2fgl rs RegBreach      = pure Nothing
 r2fgl rs (RuleAlias rn) = do
   sg <- getGraph
   let ntxt = Text.unwords rn
-  let myLabel = labelComment ntxt
-      already = getNodeByAttribute sg myLabel
-  maybe (fmap Just . newNode $ pAddAttribute myLabel $ mkPlace ntxt) (pure . Just) already
+  let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
+  maybe (fmap Just . newNode $
+         mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
+
 r2fgl rs r@Regulative{..} = do
   sg <- getGraph
-  let myLabel = labelComment . rl2text <$> rlabel
-  let already = getNodeByAttribute sg =<< myLabel
+  let myLabel = do
+        rl <- rlabel
+        return [IsFirstNode,OrigRL (rl2text rl)]
+  let already = getNodeByDeets sg =<< myLabel
 
   let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
                                 <> [ subj2nl NLen subj ] )
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
                                     Just _bsr  -> mkDecis everywho
-      firstNodeLabel = maybe id pAddAttribute myLabel firstNodeLabel0
+      firstNodeLabel = maybe firstNodeLabel0 (addDeets firstNodeLabel0) myLabel
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
@@ -264,8 +308,8 @@ r2fgl rs r@Regulative{..} = do
   -- let cNE = whoNE <> upoNE
   conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
-                            ifN <- newNode $ mkDecis "if"
-                            ifCondN <- newNode $ mkTrans $ bsr2text bsr
+                            ifN <- newNode $ mkDecis ("if " <> bsr2textnl bsr)
+                            ifCondN <- newNode $ mkTrans "then"
                             newEdge' ( upoN,    ifN, [] )
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
@@ -278,7 +322,8 @@ r2fgl rs r@Regulative{..} = do
                                       , Text.unwords . NE.toList . fst . NE.head $ head actn
                                       , temp
                                       ])
-        successLab = mkTrans $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+        successLab = mkTransA [Temporal temp] $ vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+                     
     obligationN <- newNode oblLab
     onSuccessN <- newNode successLab
     mbOnFailureN <- if deontic /= DMay then do

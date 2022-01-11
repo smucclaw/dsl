@@ -9,7 +9,7 @@ import Options.Generic
 import Text.Pretty.Simple (pPrint)
 
 import LS.XPile.CoreL4
-import LS.XPile.Petri
+-- import LS.XPile.Petri
 
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog

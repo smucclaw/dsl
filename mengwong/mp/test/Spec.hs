@@ -16,6 +16,8 @@ import LS.Error
 import TestNLG
 
 import LS.XPile.Prolog
+import LS.XPile.Petri
+import LS.XPile.SVG
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
@@ -25,6 +27,7 @@ import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
 import Control.Monad (when)
+import Data.Either (fromRight)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -940,6 +943,7 @@ main = do
       filetest "pdpadbno-7" "notification to users"
         (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore 3 "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"to Notifiable Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
 
+{-
     describe "Prolog" $ do
 
       it "pdpadbno1" $ do
@@ -951,7 +955,36 @@ main = do
         testcsv <- BS.readFile ("test/" <> "simple-constitutive-1" <> ".csv")
         let rules = parseR pRules "simple-constitutive-1" `traverse` exampleStreams testcsv
         (show . fmap sfl4ToProlog <$> rules) `shouldParse` "potato"
+-}
 
+
+{- tests for the Petri net backend -}
+
+--    describe "Petri" $ do
+
+      -- can we output a simple petri net
+      -- it "petri-1" $ do
+      --   testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
+      --   rawRules <- fromRight $ parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
+      --   let rules = insrules rawRules startGraph
+      --       asPetri = renderDot $ unqtDot $ graphToDot (petriParams rules) rules
+      --   asPetri `shouldBe` (myReadFile "... expected.dot")
+
+      -- rule expansion directly, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
+
+      -- rule expansion via a single hornlike, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
+
+      -- rule expansion via two layers of hornlike, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
+
+      -- "AND" split/join should do the right thing
+
+      -- "OR" split/join should do the right thing
+
+      -- graph transformation eliminates if (a) { ... if (a) ... }
+      -- -- we see this in the rule for Notify Individuals
+
+
+-- bits of infrastructure
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
 srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
 srcrow1     = srcrow' 1

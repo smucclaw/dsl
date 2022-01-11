@@ -11,7 +11,7 @@ import Data.GraphViz.Attributes
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound)
+import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment)
                                          , StyleItem(..), StyleName(..))
 
 --------------------------------------------------------------------------------
@@ -20,26 +20,37 @@ import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Com
 
 data NType = Place | Trans | Decis deriving (Eq, Show)
 type PLabel = Attributes -- used later for graphviz, basically things like (color,blue), (label,somestring)
-data PNode = PN { ntype  :: NType
-                , ntext  :: Text
-                , nlabel :: Attributes }
+data PNode a = PN { ntype  :: NType
+                  , ntext  :: Text
+                  , nlabel :: Attributes
+                  , ndeets :: [a]
+                  }
              deriving (Eq, Show)
 
-type Petri = Gr PNode PLabel
+type Petri a = Gr (PNode a) PLabel
 
-mkPlace,mkTrans,mkDecis :: Text -> PNode
-mkPlace x = PN Place x []
-mkTrans x = PN Trans x []
-mkDecis x = PN Decis x []
+mkPlace,mkTrans,mkDecis :: Text -> (PNode a)
+mkPlace x = PN Place x [] []
+mkTrans x = PN Trans x [] []
+mkDecis x = PN Decis x [] []
 
-pAddAttribute :: Attribute -> PNode -> PNode
+-- usage: mkPlaceC "start node" "comment label for start node"
+mkXC :: NType -> [a] -> Text -> PNode a
+mkXC x a l = PN x l [] a
+
+mkPlaceA,mkTransA,mkDecisA :: [a] -> Text -> PNode a
+mkPlaceA = mkXC Place
+mkTransA = mkXC Trans
+mkDecisA = mkXC Decis
+
+pAddAttribute :: Attribute -> PNode a -> PNode a
 pAddAttribute x pn = pn {nlabel = x : nlabel pn}
 
-mySecondFGL :: Gr PNode PLabel
+mySecondFGL :: Gr (PNode ()) PLabel
 mySecondFGL = mkGraph
-              [ (1, PN Place "start"   [])
-              , (2, PN Trans "compute" [])
-              , (3, PN Place "end"     [color Black]) ]
+              [ (1, PN Place "start"   [] [])
+              , (2, PN Trans "compute" [] [])
+              , (3, PN Place "end"     [color Black] []) ]
               [ (1,2, [])
               , (2,3, []) ]
 
@@ -52,7 +63,7 @@ petriGP = graphToDot (petriParams mySecondFGL) mySecondFGL
 
 -- main = putStrLn . Text.unpack $ renderDot $ unqtDot petriGP
 
-petriParams :: Gr PNode PLabel -> GraphvizParams Int PNode PLabel Int PNode
+petriParams :: (Show a) => Gr (PNode a) PLabel -> GraphvizParams Int (PNode a) PLabel Int (PNode a)
 petriParams g = Params
   { isDirected       = True
   , globalAttributes = [GraphAttrs [Compound True]]
@@ -64,10 +75,10 @@ petriParams g = Params
   , fmtEdge          = fmtPetriEdge g
   }
 
-clusterby :: (Int,PNode) -> LNodeCluster Int PNode
-clusterby a@(_n,(PN Place _ _)) = C 1 (N a)
-clusterby a@(_n,(PN Trans _ _)) = C 2 (N a)
-clusterby a@(_n,(PN Decis _ _)) = C 1 (N a)
+clusterby :: (Int,PNode a) -> LNodeCluster Int (PNode a)
+clusterby a@(_n,PN Place _ _ _) = C 1 (N a)
+clusterby a@(_n,PN Trans _ _ _) = C 2 (N a)
+clusterby a@(_n,PN Decis _ _ _) = C 1 (N a)
 
 clusterid :: Node -> GraphID
 clusterid 1 = Str "places"
@@ -84,14 +95,17 @@ fmtcluster 2 = [NodeAttrs [ shape BoxShape
                           , FontName "Monaco" ] ]
 fmtcluster _ = []
 
-fmtPetriNode :: (Node, PNode) -> [Attribute]
-fmtPetriNode (_n,(PN Place txt@"FULFILLED" lbls)) = toLabel txt : color Green : lbls 
-fmtPetriNode (_n,(PN Place txt@"BREACH"    lbls)) = toLabel txt : color Brown : lbls 
-fmtPetriNode (_n,(PN Place txt lbls)) = toLabel txt : lbls 
-fmtPetriNode (_n,(PN Trans txt lbls)) = toLabel txt : lbls
-fmtPetriNode (_n,(PN Decis txt lbls)) = toLabel txt : shape DiamondShape : lbls
+tcsd :: (Show a) => a -> Attribute
+tcsd = Comment . Text.pack . show
 
-fmtPetriEdge :: Graph gr => gr PNode PLabel -> (Node, Node, PLabel) -> [Attribute]
+fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
+fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green : tcsd ds : lbls 
+fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown : tcsd ds : lbls 
+fmtPetriNode (_n,PN Place txt lbls ds) = toLabel txt : tcsd ds : lbls 
+fmtPetriNode (_n,PN Trans txt lbls ds) = toLabel txt : tcsd ds : lbls
+fmtPetriNode (_n,PN Decis txt lbls ds) = toLabel txt : shape DiamondShape : tcsd ds : lbls
+
+fmtPetriEdge :: Graph gr => gr (PNode a) PLabel -> (Node, Node, PLabel) -> [Attribute]
 fmtPetriEdge g (_s,e,el) -- if the edge goes to BREACH then we paint the edge brown
   | (ntext <$> lab g e) == Just "BREACH"    = color Brown : el
   | (ntext <$> lab g e) == Just "FULFILLED" = color Green : el

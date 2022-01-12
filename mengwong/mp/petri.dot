@@ -6,8 +6,9 @@ digraph {
           ,shape=diamond
           ,comment=IsFirstNode
           ,comment="OrigRL \"Assess\""
+          ,comment=IsParty
           ,comment=IsParty];
-        4 [label=upon];
+        4 [label=upon,comment=IsUpon];
         6 [label="if the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"
           ,shape=diamond
           ,comment=IsCond];
@@ -18,17 +19,19 @@ digraph {
            ,comment=IsFirstNode
            ,comment=FromRuleAlias
            ,comment="OrigRL \"Notification\""];
-        12 [label="the PDPC"];
+        12 [label="the PDPC"
+           ,comment=IsParty];
         13 [label="may\ndemand an explanation for your inaction\neventually"
            ,shape=diamond
            ,comment=IsDeon];
-        15 [label=You];
+        15 [label=You,comment=IsParty];
         16 [label="must\nrespond\neventually"
            ,shape=diamond
            ,comment=IsDeon];
         19 [label=You
            ,comment=IsFirstNode
            ,comment="OrigRL \"Notify PDPC\""
+           ,comment=IsParty
            ,comment=IsParty];
         20 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
            ,shape=diamond
@@ -36,7 +39,8 @@ digraph {
         22 [label="must\nNOTIFY the PDPC\nbefore 3 days"
            ,shape=diamond
            ,comment=IsDeon];
-        25 [label="the PDPC"];
+        25 [label="the PDPC"
+           ,comment=IsParty];
         26 [label="may\nNOTIFY you\neventually"
            ,shape=diamond
            ,comment=IsDeon];
@@ -52,7 +56,9 @@ digraph {
              ,fontcolor=white
              ,fontname=Monaco];
         3 [label="who is not a Public Agency"];
-        5 [label="becoming aware a data breach may have occurred"];
+        5 [label="becoming aware a data breach may have occurred"
+          ,comment=IsUpon
+          ,comment=IsCond];
         7 [label=then,comment=IsThen];
         9 [label="assessment done"
           ,comment="Temporal \"before 30 days\""

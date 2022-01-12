@@ -99,7 +99,7 @@ mergePetri rules og = foldl (mergePetri' rules) og (nodes $ labfilter (hasDeet I
 mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
 mergePetri' rules og splitNode = runGM og $ do
   -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
-  traceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
+  -- traceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
   forM_ [ twins
         | let twins = suc og splitNode
         , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
@@ -118,11 +118,11 @@ mergePetri' rules og splitNode = runGM og $ do
     forM_ excess        delNode'
     newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
 
-    traceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
+    -- traceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
+    -- traceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
     newPetri <- getGraph
-    traceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
     gs <- GM get
-    GM . put $ gs {curentGraph = foldl (mergePetri' rules) newPetri [splitNode]}
+    GM . put $ gs {curentGraph = mergePetri' rules newPetri splitNode }
 
 condElimination :: [Rule] -> PetriD -> PetriD
 condElimination rules og = runGM og $ do
@@ -188,7 +188,7 @@ connectRules sg rules =
       aliasNodes = nodes subgraphOfAliases
 
       -- all labeled rules
-      rls = trace "rls = " $ traceShowId $ fmap rl2text . rLabelR <$> rules
+      rls = {- trace "rls = " $ traceShowId $ -} fmap rl2text . rLabelR <$> rules
 
       -- if the ruleLabel is for a Hornlike, expand accordingly.
       -- we mirror the structure of the BoolStruct inside the head of the Hornlike,
@@ -197,7 +197,7 @@ connectRules sg rules =
       -- later on we will probably want to use a join transition to model an OR.
       aliasRules = [ (n,outgraph)
                    | n <- aliasNodes
-                   , let nrl = trace "OrigRL = " $ traceShowId $ getOrigRL =<< lab sg n
+                   , let nrl = {- trace "OrigRL = " $ traceShowId $ -} getOrigRL =<< lab sg n
                    , let r = getRuleByLabel rules =<< nrl
                    , let outs = maybe [] (expandRule rules) r
                    , let rlouts = fmap rl2text <$> (rlabel <$> outs)
@@ -215,14 +215,14 @@ connectRules sg rules =
                   | (orign, outgraph) <- aliasRules
                   , tailNode <- nodes $ labfilter (hasDeet IsLastHappy) outgraph
                   ]
-  in  trace (unlines ((\n -> "node " <> show n <> " is a ruleAlias: " <>
-                        Text.unpack (maybe "(nothing)" showNode (lab subgraphOfAliases n)))
-                       <$> aliasNodes))
-      -- while our initial pass over rule expansion takes care of direct expansions, we need the Hornlike rules to expand also. bit of debugging, but we can get rid of this later when it works
-      trace ("all known rulelabels are " ++ show rls)
-      trace ("we need to expand RuleAlias nodes " ++ show aliasNodes)
-      trace ("maybe they expand to headnodes " ++ show headNodes)
-      trace ("and the outgraphs have happy tails " ++ show tailNodes)
+  in  -- trace (unlines ((\n -> "node " <> show n <> " is a ruleAlias: " <>
+      --                   Text.unpack (maybe "(nothing)" showNode (lab subgraphOfAliases n)))
+      --                  <$> aliasNodes))
+      -- -- while our initial pass over rule expansion takes care of direct expansions, we need the Hornlike rules to expand also. bit of debugging, but we can get rid of this later when it works
+      -- trace ("all known rulelabels are " ++ show rls)
+      -- trace ("we need to expand RuleAlias nodes " ++ show aliasNodes)
+      -- trace ("maybe they expand to headnodes " ++ show headNodes)
+      -- trace ("and the outgraphs have happy tails " ++ show tailNodes)
       foldl (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
 
@@ -236,7 +236,7 @@ expandRulesByLabel rules txt =
         , let qs = expandRule rules r
         , q <- qs
         ]
-  in trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
+  in -- trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
      toreturn
 
 expandRule :: [Rule] -> Rule -> [Rule]
@@ -247,17 +247,18 @@ expandRule rules r@Hornlike{..} =
         [ q
         | clause <- clauses
         , let rlbl' = rl2text <$> rLabelR r
-              bsr = trace ("expandRule: got head " ++ show (hHead clause)) $
+              bsr = -- trace ("expandRule: got head " ++ show (hHead clause))
                     hHead clause
         , isJust rlbl'
-        , mt <- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr))) $ aaLeaves (AA.Leaf bsr)
+        , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
+                aaLeaves (AA.Leaf bsr)
         -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
         -- TODO: we have to add a layer of testing if each term returned is itself the name of a hornlike rulelabel
         -- for now we assume it is not.
         , q <- expandRulesByLabel rules (mt2text mt)
         ]
-  in trace ("expandRule: called with input " ++ show rlabel)
-     trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
+  in -- trace ("expandRule: called with input " ++ show rlabel)
+     -- trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
      toreturn
 expandRule _ _ = []
 

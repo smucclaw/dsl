@@ -147,7 +147,13 @@ splitJoin rs og sj sgs entry = runGM og $ do
                         , m <- suc og n -- there is a direct link to FULFILLED
                         , m == fulfilledNode
                         ]
-      -- TODO: handle Or splits -- with an "Or" instead
+      -- TODO: handle Or splits
+      -- but we have to think about the semantics of an "or" in a contract ...
+      -- maybe you are allowed to take multiple courses of action in parallel, rather than choosing one up front.
+      -- normally, an AND split/join looks like       P T (P ... P)+ T   so multiple tokens spawn and then wait for one another before enabling the last T.
+      -- an OR split/join looks like                  T P (T ... T)+ P   but that means the choice is immediate, only one token is available to many paths
+      -- however, what i'm thinking of looks like     P T (P ... T)+ P   so that execution can proceed in parallel but whoever is first to the end can win.
+      
       splitText = if length headsOfChildren == 2 then "both" else "split (and)"
       joinText  = "all done"
   splitnode <- newNode (PN Trans splitText [] [IsInfra,IsAnd,IsSplit])
@@ -253,8 +259,6 @@ expandRule rules r@Hornlike{..} =
         , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
                 aaLeaves (AA.Leaf bsr)
         -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
-        -- TODO: we have to add a layer of testing if each term returned is itself the name of a hornlike rulelabel
-        -- for now we assume it is not.
         , q <- expandRulesByLabel rules (mt2text mt)
         ]
   in -- trace ("expandRule: called with input " ++ show rlabel)

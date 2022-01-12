@@ -37,7 +37,7 @@ import Text.EditDistance
 import GHC.Base (join)
 import Control.Monad (forM_)
 
-data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCond | IsThen
+data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCond | IsThen | IsUpon
           | OrigRL Text
           | Temporal Text
           | IsInfra | IsSplit | IsJoin | IsOr | IsAnd
@@ -399,7 +399,8 @@ r2fgl rs defRL r@Regulative{..} = do
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
                                     Just _bsr  -> mkDecis everywho
-      firstNodeLabel = maybe firstNodeLabel0 (addDeets firstNodeLabel0) myLabel
+      firstNodeLabel1 = addDeet firstNodeLabel0 IsParty
+      firstNodeLabel = maybe firstNodeLabel1 (addDeets firstNodeLabel1) myLabel
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
@@ -409,8 +410,8 @@ r2fgl rs defRL r@Regulative{..} = do
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
                         Just pt -> do
-                              uponN <- newNode $ mkPlace "upon"
-                              uponCondN <- newNode $ mkTrans $ pt2text pt
+                              uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
+                              uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
                               newEdge' ( whoN,      uponN, [])
                               newEdge' ( uponN, uponCondN, [])
                               pure uponCondN

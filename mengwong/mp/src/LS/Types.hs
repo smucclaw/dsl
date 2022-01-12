@@ -120,6 +120,7 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 data KW a = KW { dictK :: MyToken
                , dictV :: a }
 
+-- TODO: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll

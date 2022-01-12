@@ -482,46 +482,110 @@ r2fgl rs defRL r = pure Nothing
 -- TODO: make all this work so vp2np will use wordnet to generate the NPs
 helper :: Text -> IO Text
 helper ogWord = do
-  -- Suppose that ogWord is "respond". The word "respond" belongs to three synsets, with the following glosses:
-  -- 1) show a response or a reaction to something, 2) react verbally, 3) respond favorably.
+  {- Suppose that ogWord is "respond". The word "respond" belongs to three synsets:
+      1) sWords=[react, respond],         defn=show a response or a reaction to something
+      2) sWords=[answer, reply, respond], defn=react verbally
+      3) sWords=[respond]                 defn=respond favorably; "cancer responded to therapy"
+    In vanilla WordNet, derivation is a morphological feature, so you would't get "reaction" for "respond".
+    But in haskell-wordnet, the function getDerivations' takes a single word, like "respond",
+    and looks up the derivations of /all words in all its synsets/: [react, respond, answer, reply].
+    Furthermore, it even looks at the synsets of all the derivations, so we get quite a few links ahead.
 
+    Simplified example: suppose respond only has two synonyms over all synsets, "react" and "respond".
+    respond --synons--> [react, respond]                              -- synonyms of responds over /all synsets/
+            --derivs--> [reaction, responder, …]                      -- derivations of all those synonyms
+            --synDer--> [reaction, response, responder, answerer, …]  -- synonyms of the derivations, TODO: only from legit synsets?
+
+    The last step is important: we are not going to get junk like "chemical reaction" as a derivation of "respond",
+    because the sense in which "react" is a synonym of "respond", does not lead to "chemical reaction". TODO: how does this work exactly?
+
+    TODO: explore wnsns and frequency order within a synset vs. frequency order of synsets
+  -}
   resultRaw <- getDerivations' $ Text.unpack ogWord :: IO [(Synset, [(SynsetLink, Synset)])]
-  -- We get a list of derivs for "respond",
-  -- and also three synsets for "respond":
-  let
+  let ogWordStr = Text.unpack ogWord
+      ogWordLen = length ogWordStr
+      hmm :: [(Int, Int, Int, String, String, String, Int)]
       hmm =
-        [ (score, candidate, fromWord, toWord, defn derivSynset)
+        [ (editDistance, prefixDistance, weightedEditDistance, candidate, fromWord, toWord, probableSuffix) -- "derivSynset="++ show (sWords derivSynset)) --take 20 (defn derivSynset))
         | (ogSynset, derivs) <- resultRaw
         , (synsetLink, derivSynset) <- derivs -- Each of these
         , let fromWord = getWord ogSynset (lfrm synsetLink)
         , let toWord = getWord derivSynset (lto synsetLink)
-        , isNoun derivSynset
-        , not (isHuman derivSynset)
-        , (score, candidate) <- sortBySimilarity ogWord derivSynset
-        -- , not $ looksLikeHuman candidate
-        , then sortOn by score
---        , then sortOn by
-        , let sameWord = whichword ogSynset == lfrm synsetLink
-        , let candidateEquals = candidate == toWord
-        ]
-      --candidateDerivations = sortBySimilarity ogWord
-  mapM_ print hmm
-  pure $ Text.pack $ (\(a,b,c,d,e) -> b) $ head hmm
 
--- sortingFun :: Bool -> Bool -> – -> Bool
--- sortingFun responseFollowsRespond candidateEqualsX _ = _
+        -- Derivation must be noun, and not a human: we want an abstract noun (close->closure, not person)
+        , isNoun derivSynset         -- 100% reliable: POS is in WN data
+        , not (isHuman derivSynset)  -- Heuristic based on gloss: filter out defns like "a person who", "someone", …
+        , (editDistance, candidate) <- sortByEditDistance ogWord derivSynset
+        , not $ looksLikeHuman candidate -- Heuristic based on word: remove those that end in -or, -ee, …
+
+        -- Sorting heuristics
+        , let prefixDistance = prefixSimilarity ogWordStr candidate
+        , let weightedEditDistance = editDistance `div` 3 + prefixDistance
+        , let fromOgWord = whichword ogSynset == lfrm synsetLink -- Does the candidate come from ogWord or one of its synonyms
+          -- faster way to say that ogWord == fromWord,
+          -- because getWord (whichWord ogSynset) ogSynset == ogWord
+
+        , let probableSuffix = fromEnum $ or [suf `isSuffixOf` candidate | suf <- ["ion", "ing", "ment", "ance", "ancy", "ure"]]
+--        , let candidateEquals = candidate == toWord -- seems unreliable
+        , let sortMeasure = if fromOgWord -- && candidateEquals -- TODO: this is completely ad hoc
+                          then (0, weightedEditDistance, probableSuffix)
+                          else (weightedEditDistance, probableSuffix, 0)
+        , then sortOn by sortMeasure
+        ]
+  let result = case ogWord of
+       "add" -> "addition"
+       _ -> case hmm of
+              (_,_,dist,noun,_,_,_):_ ->
+                if dist >= ogWordLen
+                  then mkGerund ogWordStr
+                  else noun
+              [] -> mkGerund ogWordStr
+  --appendFile "test.txt" $ prettyPrintResult ogWord hmm
+  pure $ Text.pack result
+
+prefixSimilarity :: String -> String -> Int
+prefixSimilarity expect prospect = levenshteinDistance myEditCosts expect (take (length expect) prospect)
+
+prettyPrintResult :: Text -> [(Int, Int, Int, String, String, String, Int)] -> String
+prettyPrintResult ogWord res = unlines $ nub
+  [ Text.unpack ogWord
+  , unlines $ nub $ map show res
+  ]
+  --where res' = map (\(a,b,c,d,e,f,g) -> (a,c,d,e,f,g)) res
+
+-- Last resort: make gerund ourselves. These rules are copied from the GF RGL smart paradigms.
+mkGerund :: String -> String
+mkGerund cry = case reverse cry of
+        'e':'e':_   -> cry ++ "ing"           -- bungee -> bungeeing
+        'e':'i':d   -> reverse d  ++ "ying" ; -- die -> dying
+        'e':us      -> reverse us ++ "ing" ;  -- use -> using
+        'r':'e':ent -> cry ++ "ing" ;         -- enter -> entering
+        _           -> duplFinal cry ++ "ing" -- jar -> jarring
+  where
+    duplFinal :: String -> String
+    duplFinal w = case reverse w of
+        c:v:aeo:_   | isVowel v && isAEO aeo -> w           -- waiting, needing
+        c:v:_:_:_:_ | isVowel v && isDuplCons c -> w        -- happening, fidgeting
+        c:v:_       | isVowel v && isDuplCons c -> w ++ [c] -- omitting, winning
+        _ -> w
+
+    isAEO v = v `elem` ("aeo" :: String)
+    isVowel v =  v `elem` ("aeiou" :: String)
+    isDuplCons c = c `elem` ("bdgmnprt" :: String)
 
 isHuman :: Synset -> Bool
 isHuman synset = or [pref `isPrefixOf` def | pref <- humanPrefixes] || aPersonWho (words def)
   where
     def = defn synset
-    humanPrefixes = ["(a person", "(someone", "(one who"]
+    humanPrefixes = ["(a person", "(someone", "(one who", "(a licensed practitioner", "(the party"]
     aPersonWho ("(a":_:"who":_) = True
     aPersonWho ("(an":_:"who":_) = True
+    aPersonWho ("(the":_:"who":_) = True
     aPersonWho _ = False
 
 looksLikeHuman :: String -> Bool
-looksLikeHuman w = "or" `isSuffixOf` w || "ee" `isSuffixOf` w
+looksLikeHuman w = "or" `isSuffixOf` w || "ee" `isSuffixOf` w || ("er" `isSuffixOf` w && w `notElem` legitErWords)
+  where legitErWords = ["answer"] --TODO: more
 
 isNoun :: Synset -> Bool
 isNoun Synset {pos=Noun} = True
@@ -529,22 +593,36 @@ isNoun _ = False
 
 type SimilarityScore = Int
 
-sortBySimilarity :: Text -> Synset -> [(SimilarityScore, String)]
-sortBySimilarity w synset =
+sortByEditDistance :: Text -> Synset -> [(SimilarityScore, String)]
+sortByEditDistance w synset =
   [ (score, candidate)
   | candidate <- sWords synset
-  , let score = levenshteinDistance defaultEditCosts w' candidate
-  ]
-  where w' = Text.unpack w
+  , let score = levenshteinDistance myEditCosts w' candidate]
+  where
+    w' = Text.unpack w
+
+myEditCosts :: EditCosts
+myEditCosts = defaultEditCosts {
+  substitutionCosts = VariableCost cheapSubs
+  }
+  where
+    -- Only heuristic, no way to check this happens in the intended context
+    -- Evaluate with more data and remove if needed
+    cheapSubs ('y','i') = 0 -- apply   -> application
+    cheapSubs ('z','s') = 0 -- analyze -> analysis
+    cheapSubs ('e','i') = 0 -- close   -> closing
+    cheapSubs ('d','s') = 0 -- respond -> response
+    cheapSubs _         = 1
+
 
 exampleVerbs :: [Text]
 exampleVerbs = map Text.toLower
-  ["Achieve", "Assemble", "Accelerate", "Administer", "Allow",
+  ["Achieve", "Add", "Assemble", "Accelerate", "Administer", "Allow",
    "Apply", "Appear", "Appoint", "Analyze", "Budget", "Buy",
    "Balance", "Bring", "Build", "Chase", "Check", "Choose", "Close",
    "Collaborate", "Collect", "Comment", "Communicate", "Compare",
    "Convince", "Continue", "Coordinate", "Cut", "Debate", "Defend",
-   "Decide", "Discover", "Eat", "Encourage", "Establish", "Earn",
+   "Decide", "Discover", "Eat", "Encourage", "Enter", "Establish", "Earn",
    "Examine", "Expect", "Experiment", "Explain", "Explore", "Fall",
    "Feed", "Fry", "Fight", "Fit", "Follow", "Go", "Give", "Grow",
    "Gain", "Generate", "Hang", "Happen", "Hate", "Hear", "Howl",
@@ -555,7 +633,7 @@ exampleVerbs = map Text.toLower
    "Lose", "Listen", "Lift", "Love", "Like", "Make", "Manage",
    "Maintain", "Measure", "Meet", "Mix", "Mention", "Melt", "Move",
    "Need", "Negotiate", "Observe", "Obtain", "Order", "Offer", "Open",
-   "Own", "Paint", "Pass", "Pay", "Performed", "Persist", "Promise",
+   "Own", "Paint", "Pass", "Pay", "Perform", "Persist", "Promise",
    "Play", "Pinch", "Parse", "Participate", "Provide", "Put", "Pull",
    "Quit", "Quack", "Qualify", "Raise", "Read", "Realize", "Revere",
    "Reflect", "Recommend", "Reduce", "Relate", "Report", "Require",
@@ -570,7 +648,7 @@ exampleVerbs = map Text.toLower
 
 {- use in ghci
 :l LS.XPile.SVG
-resultRaw <- getDerivations' "respond"
+resultRaw <- getDerivations' "learn"
 mapM_ print . concat $ (\(s,derivs) -> [(getWord s (lfrm l), getWord y (lto l) ,l,y{links=[]}) | (l,y) <- derivs, isNoun y, whichword s == lfrm l]) <$> resultRaw
 -}
 

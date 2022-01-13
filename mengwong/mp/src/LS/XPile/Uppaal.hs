@@ -80,10 +80,10 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     breachLoc = Loc "Breach"
     timeConstraintSatisfiedLoc = Loc "TimeConstraintSatisfied"
     timeConstraintSatisfiedTransition = (simpleTransition ifBranchOkLoc timeConstraintSatisfiedLoc) {
-                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (mkCompar tcmp) time] Nothing
+                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (mkCompar tcmp) (fromMaybe 1 time)] Nothing
                                  }
     timeConstraintFailedTransition = (simpleTransition ifBranchOkLoc breachLoc) {
-                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (negateCompar $ mkCompar tcmp) time] Nothing
+                                 guardOfTransition = TransitionGuard [ClConstr ruleTimer (negateCompar $ mkCompar tcmp) (fromMaybe 1 time)] Nothing
                                  }
 ruleToTA r _ = error $ "Unexpected rule type: " ++ show r
 

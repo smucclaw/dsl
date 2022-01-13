@@ -562,9 +562,9 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
-    eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure 0 <*> pure ""
-    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |>| pNumber |>< pOtherVal
-    vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague 0 <$> pOtherVal
+    eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure (Just 0) <*> pure ""
+    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |*| ((.?|) pNumber) |>< pOtherVal
+    vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague (Just 0) <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
 pPreamble :: [MyToken] -> Parser Preamble

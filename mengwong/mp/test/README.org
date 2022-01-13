@@ -2104,3 +2104,26 @@ The "IF" line has to go below.
 
 
 
+* intro examples
+
+** you may park
+:PROPERTIES:
+:TABLE_EXPORT_FILE: intro-park.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | Person                |     |      |
+| MAY   | park                  | for | free |
+| UNTIL | midnight              |     |      |
+| WHEN  | it is an Off-Peak Day |     |      |
+
+** off-peak day
+:PROPERTIES:
+:TABLE_EXPORT_FILE: intro-offpeak.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IT IS | an Off-Peak Day        |
+| IF    | it is a weekend        |
+| OR    | it is a public holiday |
+

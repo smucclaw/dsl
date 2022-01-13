@@ -283,7 +283,7 @@ data ParamType = TOne | TOptional | TList0 | TList1
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
                           deriving (Eq, Show, Generic, ToJSON)
 
-data TemporalConstraint a = TemporalConstraint TComparison Integer a
+data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
                           deriving (Eq, Show, Generic, ToJSON)
 type RuleName   = MultiTerm
 type EntityType = Text.Text
@@ -354,19 +354,19 @@ mkTComp On         = Just TOn
 mkTComp Eventually = Nothing
 mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ show x ++ " -- this should be handled by a Vaguely"
 
-mkTC :: MyToken -> Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
-mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> pure tt <*> pure unit
+mkTC :: MyToken -> Maybe Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
+mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure unit
 -- TODO: Consider supporting non-integer time constraints
 
 data NatLang = NLen
 
 tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
 tc2nl NLen Nothing = "eventually"
-tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", Text.pack (show n), t ]
-tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     Text.pack (show n), t ]
-tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  Text.pack (show n), t ]
-tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     Text.pack (show n), t ]
-tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", Text.pack (show n), t ]
+tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", (maybe "" (Text.pack . show) n), t ]
+tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     (maybe "" (Text.pack . show) n), t ]
+tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  (maybe "" (Text.pack . show) n), t ]
+tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     (maybe "" (Text.pack . show) n), t ]
+tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", (maybe "" (Text.pack . show) n), t ]
 
 
 data RunConfig = RC { debug     :: Bool
@@ -437,6 +437,7 @@ toToken "MAY" =    pure May
 toToken "SHANT" =  pure Shant
 
 -- temporals
+toToken "UNTIL"  = pure Before  -- <
 toToken "BEFORE" = pure Before  -- <
 toToken "WITHIN" = pure Before  -- <=
 toToken "AFTER"  = pure After   -- >

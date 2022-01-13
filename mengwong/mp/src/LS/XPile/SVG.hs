@@ -462,9 +462,8 @@ r2fgl rs defRL r@Regulative{..} = do
   -- Return the first node
   pure $ Just whoN
   where
-    vp2np "assess" = "assessment"
-    vp2np "respond" = "response"
-    vp2np x = x
+    vp2np :: Text -> Text
+    vp2np = unsafePerformIO . wnNounDerivations
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive"]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]
@@ -479,9 +478,8 @@ r2fgl rs defRL r@Regulative{..} = do
 r2fgl rs defRL r = pure Nothing
 
 
--- TODO: make all this work so vp2np will use wordnet to generate the NPs
-helper :: Text -> IO Text
-helper ogWord = do
+wnNounDerivations :: Text -> IO Text
+wnNounDerivations ogWord = do
   {- Suppose that ogWord is "respond". The word "respond" belongs to three synsets:
       1) sWords=[react, respond],         defn=show a response or a reaction to something
       2) sWords=[answer, reply, respond], defn=react verbally
@@ -504,8 +502,7 @@ helper ogWord = do
   resultRaw <- getDerivations' $ Text.unpack ogWord :: IO [(Synset, [(SynsetLink, Synset)])]
   let ogWordStr = Text.unpack ogWord
       ogWordLen = length ogWordStr
-      hmm :: [(Int, Int, Int, String, String, String, Int)]
-      hmm =
+      candidates =
         [ (editDistance, prefixDistance, weightedEditDistance, candidate, fromWord, toWord, probableSuffix) -- "derivSynset="++ show (sWords derivSynset)) --take 20 (defn derivSynset))
         | (ogSynset, derivs) <- resultRaw
         , (synsetLink, derivSynset) <- derivs -- Each of these
@@ -519,39 +516,40 @@ helper ogWord = do
         , not $ looksLikeHuman candidate -- Heuristic based on word: remove those that end in -or, -ee, …
 
         -- Sorting heuristics
+        , let weight = 3 -- completely arbitrary number here
         , let prefixDistance = prefixSimilarity ogWordStr candidate
-        , let weightedEditDistance = editDistance `div` 3 + prefixDistance
+        , let weightedEditDistance = editDistance `div` weight + prefixDistance
         , let fromOgWord = whichword ogSynset == lfrm synsetLink -- Does the candidate come from ogWord or one of its synonyms
           -- faster way to say that ogWord == fromWord,
           -- because getWord (whichWord ogSynset) ogSynset == ogWord
 
-        , let probableSuffix = fromEnum $ or [suf `isSuffixOf` candidate | suf <- ["ion", "ing", "ment", "ance", "ancy", "ure"]]
+        -- Not so promising heuristics
+       , let probableSuffix = fromEnum $ not $ or [suf `isSuffixOf` candidate | suf <- ["ion", "ing", "ment", "ance", "ancy", "ure"]]
 --        , let candidateEquals = candidate == toWord -- seems unreliable
         , let sortMeasure = if fromOgWord -- && candidateEquals -- TODO: this is completely ad hoc
-                          then (0, weightedEditDistance, probableSuffix)
-                          else (weightedEditDistance, probableSuffix, 0)
+                              then (0, weightedEditDistance, probableSuffix)
+                              else (weightedEditDistance, probableSuffix, 0)
         , then sortOn by sortMeasure
         ]
-  let result = case ogWord of
-       "add" -> "addition"
-       _ -> case hmm of
-              (_,_,dist,noun,_,_,_):_ ->
+  let result =
+        case candidates of
+              (_,_,dist,noun,_,_,_):_ ->  -- Check 1: is
                 if dist >= ogWordLen
                   then mkGerund ogWordStr
                   else noun
               [] -> mkGerund ogWordStr
-  --appendFile "test.txt" $ prettyPrintResult ogWord hmm
+  appendFile "test.txt" $ prettyPrintResult ogWord candidates
   pure $ Text.pack result
 
 prefixSimilarity :: String -> String -> Int
 prefixSimilarity expect prospect = levenshteinDistance myEditCosts expect (take (length expect) prospect)
 
+-- For debugging/testing heuristics
 prettyPrintResult :: Text -> [(Int, Int, Int, String, String, String, Int)] -> String
 prettyPrintResult ogWord res = unlines $ nub
   [ Text.unpack ogWord
   , unlines $ nub $ map show res
   ]
-  --where res' = map (\(a,b,c,d,e,f,g) -> (a,c,d,e,f,g)) res
 
 -- Last resort: make gerund ourselves. These rules are copied from the GF RGL smart paradigms.
 mkGerund :: String -> String
@@ -613,44 +611,6 @@ myEditCosts = defaultEditCosts {
     cheapSubs ('e','i') = 0 -- close   -> closing
     cheapSubs ('d','s') = 0 -- respond -> response
     cheapSubs _         = 1
-
-
-exampleVerbs :: [Text]
-exampleVerbs = map Text.toLower
-  ["Achieve", "Add", "Assemble", "Accelerate", "Administer", "Allow",
-   "Apply", "Appear", "Appoint", "Analyze", "Budget", "Buy",
-   "Balance", "Bring", "Build", "Chase", "Check", "Choose", "Close",
-   "Collaborate", "Collect", "Comment", "Communicate", "Compare",
-   "Convince", "Continue", "Coordinate", "Cut", "Debate", "Defend",
-   "Decide", "Discover", "Eat", "Encourage", "Enter", "Establish", "Earn",
-   "Examine", "Expect", "Experiment", "Explain", "Explore", "Fall",
-   "Feed", "Fry", "Fight", "Fit", "Follow", "Go", "Give", "Grow",
-   "Gain", "Generate", "Hang", "Happen", "Hate", "Hear", "Howl",
-   "Hop", "Hug", "Help", "Hold", "Hurt", "Hide", "Identify", "Ignore",
-   "Imply", "Illustrate", "Inform", "Include", "Introduce", "Invest",
-   "Irritate", "Jog", "Joke", "Jump", "Judge", "Keep", "Knock",
-   "Kick", "Kill", "Laugh", "Learn", "Lay", "Leave", "Lie", "Live",
-   "Lose", "Listen", "Lift", "Love", "Like", "Make", "Manage",
-   "Maintain", "Measure", "Meet", "Mix", "Mention", "Melt", "Move",
-   "Need", "Negotiate", "Observe", "Obtain", "Order", "Offer", "Open",
-   "Own", "Paint", "Pass", "Pay", "Perform", "Persist", "Promise",
-   "Play", "Pinch", "Parse", "Participate", "Provide", "Put", "Pull",
-   "Quit", "Quack", "Qualify", "Raise", "Read", "Realize", "Revere",
-   "Reflect", "Recommend", "Reduce", "Relate", "Report", "Require",
-   "Reset", "Renew", "Retire", "Resist", "Reach", "Roar", "Ride",
-   "Roast", "Run", "Say", "Sing", "Sit", "Send", "Shake", "Shower",
-   "Show", "Shame", "Shock", "Shrink", "Speak", "Solve", "Specify",
-   "Steal", "Serve", "Stop", "Stretch", "Stick", "Submit", "Suggest",
-   "Strike", "Study", "Snuggle", "Surprise", "Swim", "Take", "Talk",
-   "Taste", "Tear", "Trap", "Tell", "Tend", "Teach", "Think", "Throw",
-   "Understand", "Value", "Volunteer", "Wait", "Walk", "Warn", "Warm",
-   "Want", "Win", "Wish", "Write", "Watch", "Wave", "Wear", "Yearn"]
-
-{- use in ghci
-:l LS.XPile.SVG
-resultRaw <- getDerivations' "learn"
-mapM_ print . concat $ (\(s,derivs) -> [(getWord s (lfrm l), getWord y (lto l) ,l,y{links=[]}) | (l,y) <- derivs, isNoun y, whichword s == lfrm l]) <$> resultRaw
--}
 
 c2n :: Context a b -> Node
 c2n (_, n, nl, _) = n

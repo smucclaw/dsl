@@ -14,7 +14,7 @@ import LS.XPile.CoreL4
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog
 import LS.XPile.SVG
-import LS.NLG (nlg)
+import LS.NLP.NLG (nlg)
 import qualified Data.Text.Lazy as Text
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)

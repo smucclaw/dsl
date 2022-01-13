@@ -29,14 +29,15 @@ library
       LS.BasicTypes
       LS.Error
       LS.Lib
-      LS.NLG
+      LS.NLP.NLG
+      LS.NLP.ToPredicate
+      LS.NLP.UDExt
+      LS.NLP.WordNet
       LS.ParamText
       LS.Parser
       LS.RelationalPredicates
       LS.Tokens
-      LS.ToPredicate
       LS.Types
-      LS.UDExt
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle

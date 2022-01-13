@@ -2,9 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs #-}
 
-module LS.NLG where
+module LS.NLP.NLG where
 
-import LS.UDExt
+import LS.NLP.UDExt
 import LS.Types ( Deontic(..),
       EntityType,
       TemporalConstraint (..), TComparison(..),
@@ -39,7 +39,7 @@ import Control.Monad (join)
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 
-gfPath x = "../../inari/ud/grammars/modular/" ++ x
+gfPath x = "../../../inari/ud/grammars/modular/" ++ x
 
 unpacked :: L8.ByteString -> String
 unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll

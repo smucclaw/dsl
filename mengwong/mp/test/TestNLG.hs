@@ -4,8 +4,8 @@ module TestNLG where
 
 import PGF
 import Test.Hspec
-import LS.ToPredicate
-import LS.NLG
+import LS.NLP.ToPredicate
+import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
 

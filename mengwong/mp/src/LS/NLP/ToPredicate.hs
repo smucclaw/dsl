@@ -4,14 +4,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
-module LS.ToPredicate where
+module LS.NLP.ToPredicate where
 
 
-import LS.UDExt
+import LS.NLP.UDExt
 import PGF hiding (Tree)
 import Data.List.Split (splitOn)
 import Data.Char (toUpper)
-import LS.NLG (AnnotatedRule(..))
+import LS.NLP.NLG (AnnotatedRule(..))
 import Data.List (intercalate)
 import Data.Bifunctor (first)
 import Data.Maybe (mapMaybe)

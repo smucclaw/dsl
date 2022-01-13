@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances #-}
-module LS.UDExt where
+module LS.NLP.UDExt where
 
 import Control.Monad.Identity
 import Data.Monoid

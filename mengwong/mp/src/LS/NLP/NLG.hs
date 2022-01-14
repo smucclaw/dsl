@@ -15,7 +15,9 @@ import LS.Types ( Deontic(..),
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
--- import Data.Char (toLower)
+import           Data.Text.Lazy         (Text)
+import Data.Char (toLower)
+import Data.List.Split (splitOn)
 import Data.Void (Void)
 -- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
@@ -28,6 +30,7 @@ import Text.Megaparsec
     ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
 import Text.Megaparsec.Char (char)
 import Data.Either (rights)
+import Debug.Trace (trace)
 
 -- typeprocess to run a python
 import System.IO ()
@@ -39,44 +42,62 @@ import Control.Monad (join)
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 
-gfPath x = "../../../inari/ud/grammars/modular/" ++ x
+gfPath x = "../../inari/ud/grammars/modular/" ++ x
 
-unpacked :: L8.ByteString -> String
-unpacked x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
-    where conll = filter (not . (`elem` ("\n" :: String))) $ L8.unpack x
-
-patterns :: (Char, Char) -> Parsec Void String String
-patterns (a,b) = do
-  char a
-  join <$> manyTill
-          ((fst <$> match (patterns (a,b))) <|> (pure <$> anySingle))
-          (char b)
-
-grabStrings :: (Char, Char) -> String -> [String]
-grabStrings (a,b) txt =
-  rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
-
-getString :: String -> String
-getString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'') l | l <- grabStrings ('[',']') txt ]
+-- Parsing text with udpipe via external Python process
+udParse :: Text.Text -> IO String
+udParse txt = do
+  let str = Text.unpack txt
+  conllRaw <- getPy str :: IO L8.ByteString
+  return $ mkConlluString $ unpack conllRaw
 
 getPy :: Control.Monad.IO.Class.MonadIO m => String -> m L8.ByteString
 getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])
 
-parseCoNLLU :: UDEnv -> String -> [[Expr]]
-parseCoNLLU = getExprs []
+unpack :: L8.ByteString -> String
+unpack x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
+  where conll = filter (not . (`elem` ("\n" :: String))) $ L8.unpack x
+
+mkConlluString :: String -> String
+mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'') l | l <- grabStrings ('[',']') txt ]
+  where
+    patterns :: (Char, Char) -> Parsec Void String String
+    patterns (a,b) = do
+      char a
+      join <$> manyTill
+              ((fst <$> match (patterns (a,b))) <|> (pure <$> anySingle))
+              (char b)
+
+    grabStrings :: (Char, Char) -> String -> [String]
+    grabStrings (a,b) txt =
+      rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
+
+
+parseConllu :: UDEnv -> String -> Maybe Expr
+parseConllu env str = trace ("\nconllu:\n" ++ str) $
+  case getExprs [] env str of
+    (x : _xs) : _xss -> Just x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
+    _ -> Nothing
+
 
 parseOut :: UDEnv -> Text.Text -> IO Expr
 parseOut env txt = do
-  let str = Text.unpack txt
-  getConll <- getPy str
-  let conll = getString $ unpacked getConll
-  let exprs = parseCoNLLU env conll -- env -> str -> [[expr]]
-      expr = case exprs of
-        (x : _xs) : _xss -> x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
-        _ -> mkApp (mkCId "dummy_N") [] -- dummy expr
-  mapM_ (mapM_ $ putStrLn . showExpr []) exprs
-  putStrLn conll
+  conll <- udParse txt -- Initial parse
+  let expr = case parseConllu env conll of -- env -> str -> [[expr]]
+               Just e -> e
+               Nothing -> case parseConllu env (lowerConlluStr conll) of
+                            Just e' -> e'
+                            Nothing -> mkApp (mkCId "dummy_N") [] -- dummy expr
+  putStrLn $ showExpr [] expr
   return expr
+
+-- Manipulates a CoNLLU format string that is all in one string
+lowerConlluStr :: String -> String
+lowerConlluStr str = unlines $ map (intercalate "\t" . lower) lns
+  where
+    lns = map (splitOn "\t") (lines str)
+    lower (i:wf:lm:rest) = i:map toLower wf:map toLower lm:rest
+    lower x              = x
 
 peel :: Expr -> Expr
 peel subj = gf $ fromJust $ fromGUDS (fg subj)
@@ -94,13 +115,16 @@ nlg rl = do
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- readPGF (gfPath "UDExt.pgf")
-   let lang = head $ languages gr
-       subjectRaw = subjA annotatedRule
-       actionRaw = actionA annotatedRule
-       finalTree = mkApp (mkCId "subjAction") [peel subjectRaw, actionRaw]
-       linText = linearize gr lang finalTree
-       linTree = showExpr [] finalTree
-   return (Text.pack (linText ++ "\n" ++ linTree))
+   case annotatedRule of
+      RegulativeA {} -> do
+        let lang = head $ languages gr
+            subjectRaw = subjA annotatedRule
+            actionRaw = actionA annotatedRule
+            finalTree = mkApp (mkCId "subjAction") [peel subjectRaw, actionRaw]
+            linText = linearize gr lang finalTree
+            linTree = showExpr [] finalTree
+        return (Text.pack (linText ++ "\n" ++ linTree))
+      _ -> return "()"
 
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
@@ -108,7 +132,7 @@ parseFields env rl = case rl of
   Regulative {} -> do
     subjA'  <- parseBool env (subj rl)
     whoA'   <- mapM (parseBSR env) (who rl)
-    condA'   <- return Nothing --if
+    condA'  <- mapM (parseBSR env) (cond rl)
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
@@ -143,6 +167,11 @@ parseFields env rl = case rl of
     -- lsource  :: Maybe Text.Text
     -- srcref   :: Maybe SrcRef
     -- orig     :: [(Preamble, BoolStructP)]
+  DefNameAlias {
+    name = [nm]
+  , detail = [det]
+  } -> return $ Alias nm det
+
   _ -> error "parseFields: rule type not supported yet"
   where
     parseGiven :: UDEnv -> ParamText -> IO Expr
@@ -224,4 +253,5 @@ data AnnotatedRule = RegulativeA
                 -- , srcref    :: Maybe SrcRef
                 -- , orig      :: [(Preamble, BoolStructP)]
                 }
+            | Alias Text Text -- TODO: where to use this info?
           deriving (Eq, Show)

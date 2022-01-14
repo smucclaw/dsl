@@ -3,6 +3,7 @@
 module LS.NLP.WordNet where
 
 import Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
+import Data.List.Split
 import Text.EditDistance
 import qualified Data.Text.Lazy     as Text
 import           Data.Text.Lazy              (Text)
@@ -82,26 +83,6 @@ prettyPrintResult ogWord res = unlines $ nub
   , unlines $ nub $ map show res
   ]
 
--- Last resort: make gerund ourselves. These rules are copied from the GF RGL smart paradigms.
-mkGerund :: String -> String
-mkGerund cry = case reverse cry of
-        'e':'e':_   -> cry ++ "ing"           -- bungee -> bungeeing
-        'e':'i':d   -> reverse d  ++ "ying" ; -- die -> dying
-        'e':us      -> reverse us ++ "ing" ;  -- use -> using
-        'r':'e':ent -> cry ++ "ing" ;         -- enter -> entering
-        _           -> duplFinal cry ++ "ing" -- jar -> jarring
-  where
-    duplFinal :: String -> String
-    duplFinal w = case reverse w of
-        c:v:aeo:_   | isVowel v && isAEO aeo -> w           -- waiting, needing
-        c:v:_:_:_:_ | isVowel v && isDuplCons c -> w        -- happening, fidgeting
-        c:v:_       | isVowel v && isDuplCons c -> w ++ [c] -- omitting, winning
-        _ -> w
-
-    isAEO v = v `elem` ("aeo" :: String)
-    isVowel v =  v `elem` ("aeiou" :: String)
-    isDuplCons c = c `elem` ("bdgmnprt" :: String)
-
 isHuman :: Synset -> Bool
 isHuman synset = or [pref `isPrefixOf` def | pref <- humanPrefixes] || aPersonWho (words def)
   where
@@ -142,3 +123,50 @@ myEditCosts = defaultEditCosts {
     cheapSubs ('e','i') = 0 -- close   -> closing
     cheapSubs ('d','s') = 0 -- respond -> response
     cheapSubs _         = 1
+
+
+-- GF style morphology opers
+-- Last resort: make gerund ourselves. These rules are copied from the GF RGL smart paradigms.
+mkGerund :: String -> String
+mkGerund cry = case reverse cry of
+        'e':'e':_  -> cry ++ "ing"           -- bungee -> bungeeing
+        'e':'i':d  -> reverse d  ++ "ying" ; -- die -> dying
+        'e':us     -> reverse us ++ "ing" ;  -- use -> using
+        'r':'e':_  -> cry ++ "ing" ;         -- enter -> entering
+        _          -> duplFinal cry ++ "ing" -- jar -> jarring
+
+-- Trying a more GF-like style, no reverse.
+gfmkGerund :: String -> String
+gfmkGerund cry
+  | matchSuf ["ee", "er"] = cry ++ "ing"  -- bungee -> bungeeing ; enter -> entering
+  | otherwise =
+      case match "ie" of
+        Just (d,"ie")     -> d ++ "ying"  -- die -> dying
+        _ ->
+          case match "e" of
+            Just (us,"e") -> us ++ "ing"  -- use -> using
+            _  -> duplFinal cry ++ "ing"  -- jar -> jarring
+  where
+    matchSuf = any (`isSuffixOf` cry) -- only check that suffix matches
+    match = gfStyleSplit cry          -- match suffix, also return prefix
+
+duplFinal :: String -> String
+duplFinal w = case reverse w of
+    _:v:aeo:_   | isVowel v && isAEO aeo -> w           -- waiting, needing
+    c:v:_:_:_:_ | isVowel v && isDuplCons c -> w        -- happening, fidgeting
+    c:v:_       | isVowel v && isDuplCons c -> w ++ [c] -- omitting, winning
+    _ -> w
+  where
+    isAEO v = v `elem` ("aeo" :: String)
+    isVowel v =  v `elem` ("aeiou" :: String)
+    isDuplCons c = c `elem` ("bdgmnprt" :: String)
+
+gfStyleSplit :: String -> String -> Maybe (String, String)
+gfStyleSplit enter er =
+    if er `isSuffixOf` enter
+    then
+        case split (dropFinalBlank $ onSublist er) enter of
+        [ent,er'] -> Just (ent,er')  -- Exactly 1 instance of suffix: return as is
+        enterer  -> Just (concat $ init enterer, last enterer) -- More instances of suffix: only match the last suffix, to mimic GF behaviour
+    else
+        Nothing

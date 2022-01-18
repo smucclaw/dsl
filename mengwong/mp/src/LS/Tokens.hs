@@ -242,6 +242,8 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    But this doesn't work, because the pMultiTerm is implemented using a `someDeep` which expects to tidy up its UnDeepers at the end:
      (f(o(o))) IS (b(a(r)))
 
+   (Let's pretend that ~foo~ is itself a subexpression spread across multiple columns, so "f,o,o" in the CSV.)
+
    If the sub-expressions were broken across multiple lines that would be fine --
    the foo and the baz would be at the same indentation level because after bar we would get a bunch of UnDeepers.
      (f(o(o)))
@@ -251,7 +253,20 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    But when we're dealing with expressions that are on the same line, what we need instead is to be able to match
      (fo(o(o(  IS (b(a(r)))))))
 
-   ... pending all the UnDeepers to the end! So we introduce a family of combinators to support the above.
+   ... pending all the UnDeepers to the end!
+
+   (BTW in the above we use '(' as a shorthand for GoDeeper, and ')' as a shorthand for UnDeeper.)
+
+   A naive pSomething parser naturally wants to be tidy and close all the parens it had opened:
+   it will try to match UnDeepers at the end of its parsing.
+
+   But we need to be able to override that: we want to tell these base parsers "don't worry about closing the parens,
+   don't try to match UnDeepers. Just keep track of how many UnDeepers need to be matched, and tell us, and we will
+   promise to match them for you when we get to the end of the outer compound expression."
+
+   So we introduce a family of combinators to support the above. Instead of a ~Parser a~ we deal with a ~Parser (a, Int)~
+   where the Int keeps track of how many open parens (GoDeepers) we have encountered, and therefore how many close
+   parens (UnDeepers) we will need to close when we get to the end of the line
 
    The way to solve this using the sameline combinator is something like
       RPConstraint

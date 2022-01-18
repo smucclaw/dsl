@@ -454,11 +454,11 @@ infixl 4 $>>
 (|>>) p = debugName "|>>" $ do
   try recurse <|> base
   where
-    base = debugName "$>>/base" $ do
+    base = debugName "|>>/base" $ do
       (out,n) <- p
-      debugPrint $ "$>>/base got " ++ show out
+      debugPrint $ "|>>/base got " ++ show out
       return (out,n)
-    recurse = debugName "$>>/recurse" $ do
+    recurse = debugName "|>>/recurse" $ do
       _ <- pToken GoDeeper
       (out, m) <- (|>>) p
       return (out, m+1)

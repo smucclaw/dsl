@@ -499,6 +499,7 @@ data Tree :: * -> * where
   GRelSlash :: GRP -> GClSlash -> Tree GRCl_
   GRelVP :: GRP -> GVP -> Tree GRCl_
   GFunRP :: GPrep -> GNP -> GRP -> Tree GRP_
+  GGenRP :: GNum -> GCN -> Tree GRP_
   GIdRP :: Tree GRP_
   Gthat_RP :: Tree GRP_
   Gwho_RP :: Tree GRP_
@@ -1010,6 +1011,7 @@ instance Eq (Tree a) where
     (GRelSlash x1 x2,GRelSlash y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelVP x1 x2,GRelVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GFunRP x1 x2 x3,GFunRP y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GGenRP x1 x2,GGenRP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GIdRP,GIdRP) -> and [ ]
     (Gthat_RP,Gthat_RP) -> and [ ]
     (Gwho_RP,Gwho_RP) -> and [ ]
@@ -2065,6 +2067,7 @@ instance Gf GRCl where
 
 instance Gf GRP where
   gf (GFunRP x1 x2 x3) = mkApp (mkCId "FunRP") [gf x1, gf x2, gf x3]
+  gf (GGenRP x1 x2) = mkApp (mkCId "GenRP") [gf x1, gf x2]
   gf GIdRP = mkApp (mkCId "IdRP") []
   gf Gthat_RP = mkApp (mkCId "that_RP") []
   gf Gwho_RP = mkApp (mkCId "who_RP") []
@@ -2072,6 +2075,7 @@ instance Gf GRP where
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "FunRP" -> GFunRP (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2]) | i == mkCId "GenRP" -> GGenRP (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "IdRP" -> GIdRP
       Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP
       Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP
@@ -3638,6 +3642,7 @@ instance Compos Tree where
     GRelSlash x1 x2 -> r GRelSlash `a` f x1 `a` f x2
     GRelVP x1 x2 -> r GRelVP `a` f x1 `a` f x2
     GFunRP x1 x2 x3 -> r GFunRP `a` f x1 `a` f x2 `a` f x3
+    GGenRP x1 x2 -> r GGenRP `a` f x1 `a` f x2
     GConjRS x1 x2 -> r GConjRS `a` f x1 `a` f x2
     GUseRCl x1 x2 x3 -> r GUseRCl `a` f x1 `a` f x2 `a` f x3
     GAdvS x1 x2 -> r GAdvS `a` f x1 `a` f x2

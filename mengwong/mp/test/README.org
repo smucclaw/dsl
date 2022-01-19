@@ -1615,7 +1615,73 @@ In the spreadsheet we allow a prefix on each line that shows the source of the l
 
 To handle this we may need to augment our types so that each bit of logic can be annotated with a source Text.Text.
 
+** very simple primitives
 
+*** just a single pOtherVal
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-pOtherVal.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| this is a string |
+
+*** just a single pOtherVal indented a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-pOtherVal-indented.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |   | this is a string |   |   |
+
+*** just a simple number
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-pNumber.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| 42 |
+
+** less complex primitives
+
+*** number followed by a string, over multiple lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-number-string-multi.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|  42 |
+| boo |
+*** number followed by a string, on the same line
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-number-string-single.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| 42 | boo |
+
+*** number followed by a string, on the same line, 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-number-string-single-indented-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| 42 |   | boo |
+
+*** number followed by a string, on the same line, 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-number-string-single-indented-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | 42 |   | boo |
+
+*** number followed by a string, on the same line, 3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: primitive-number-string-single-indented-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | 42 |   |   | boo |
 
 * Ontology
 :PROPERTIES:

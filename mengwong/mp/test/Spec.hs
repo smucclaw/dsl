@@ -94,6 +94,7 @@ defaultHorn = Hornlike
   }
 
 filetest :: (ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+
 filetest testfile desc parseFunc expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
@@ -944,6 +945,15 @@ main = do
       filetest "pdpadbno-7" "notification to users"
         (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
 
+{- primitives -}
+      it "primitive-pNumber" $ do
+        testcsv <- BS.readFile ("test/" <> "primitive-pNumber" <> ".csv")
+        parseOther pNumber "primitive-pNumber" `traverse` exampleStreams testcsv
+          `shouldParse` [ ( 42, [] ) ]
+
+      filetest "primitive-pNumber" "primitive number"
+        (parseOther pNumber) (42, []) 
+    
 {-
     describe "Prolog" $ do
 

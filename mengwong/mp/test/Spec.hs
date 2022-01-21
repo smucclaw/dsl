@@ -946,14 +946,78 @@ main = do
         (parseR pToplevel) [ Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Just (All Nothing [Leaf (RPMT ["the set of individuals affected by the NDB"]),Not (Leaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (Leaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (Leaf (RPMT ["the individuals on","the LEA Exclusion List"]))])}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 9, version = Nothing})}]}]
 
 {- primitives -}
-      it "primitive-pNumber" $ do
-        testcsv <- BS.readFile ("test/" <> "primitive-pNumber" <> ".csv")
-        parseOther pNumber "primitive-pNumber" `traverse` exampleStreams testcsv
-          `shouldParse` [ ( 42, [] ) ]
-
       filetest "primitive-pNumber" "primitive number"
-        (parseOther pNumber) (42, []) 
-    
+        (parseOther pNumber) (42, [])
+
+      filetest "primitive-number-string-multi" "primitive number"
+        (parseOther ( (,) <$> pNumber <*> pOtherVal )) ( (42,"boo"), [])
+
+
+{- verbose version for reference
+      filetest "primitive-number-string-single" "primitive number"
+        (parseOther ( (,,,)
+                      <$> pNumber
+                      <*> pToken GoDeeper
+                      <*> pOtherVal
+                      <*> pToken UnDeeper  ))
+        ( (42,GoDeeper,"boo", UnDeeper ), [])
+-}
+
+      filetest "primitive-number-string-single" "primitive number"
+        (parseOther ( (,)
+                      <$> pNumber
+                      <*> someIndentation pOtherVal
+                      ))
+        ( (42,"boo"), [])
+
+      filetest "primitive-number-string-single-indented-1" "primitive number boo indented"
+        (parseOther ( (,)
+                      <$> pNumber
+                      <*> someIndentation pOtherVal
+                      ))
+        ( (42,"boo"), [])
+
+      filetest "primitive-number-string-single-indented-1" "primitive number boo indented"
+        (parseOther ( (,)
+                      $>| pNumber
+                      |>< pOtherVal
+                    ))
+        ( (42,"boo"), [])
+
+      filetest "primitive-number-string-single-indented-2" "primitive number boo indented"
+        (parseOther ( (,)
+                      $*| ($>>) pNumber
+                      |>< pOtherVal
+                    ))
+        ( (42,"boo"), [])
+
+      filetest "primitive-number-string-single-indented-3" "primitive number boo indented"
+        (parseOther ( (,)
+                      $*| ($>>) pNumber
+                      |>< pOtherVal
+                    ))
+        ( (42,"boo"), [])
+
+      filetest "primitive-pOtherVal" "primitive number"
+        (parseOther pOtherVal) ("this is a string", [])
+      
+      filetest "primitive-pOtherVal-indented" "primitive number"
+        (parseOther ( id
+                      $*| ($>>) pOtherVal
+                      |<< undeepers
+                    ))
+        ( "this is a string", [])
+
+      filetest "primitive-pOtherVal-indented" "primitive number"
+        (parseOther ( id
+                      >>| pOtherVal -- consumes GoDeepers, then returns a plain parser upgraded to fancy
+                      |<< undeepers
+                    ))
+        ( "this is a string", [])
+
+      filetest "primitive-pOtherVal-indented" "primitive number"
+        (parseOther ( >>< pOtherVal )) -- consumes GoDeepers, then runs the plain parser, and runs undeepers
+        ( "this is a string", [])
 {-
     describe "Prolog" $ do
 

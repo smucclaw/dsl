@@ -1774,6 +1774,39 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 |   | 42 |   |   | boo |
 
+*** compount expressions
+**** a pair of numbers one after the other, unindented
+:PROPERTIES:
+:TABLE_EXPORT_FILE: compound-pairOfNumbers-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| 42 | 43 |
+**** a pair of numbers one after the other, indented
+:PROPERTIES:
+:TABLE_EXPORT_FILE: compound-pairOfNumbers-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |   | 42 | 43 |
+
+
+**** a pair of numbers one after the other, indented annoyingly
+:PROPERTIES:
+:TABLE_EXPORT_FILE: compound-pairOfNumbers-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |   | 42 |   |   | 43 |
+
+**** a pair of numbers one after the other, indented annoyingly, followed by an otherval
+:PROPERTIES:
+:TABLE_EXPORT_FILE: compound-pairOfNumbers-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |   | 42 |   |   | 43 |   | my string |
+
 ** Ontology
 :PROPERTIES:
 :TABLE_EXPORT_FILE: define-1.csv

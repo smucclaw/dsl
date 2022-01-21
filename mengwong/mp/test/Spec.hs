@@ -1018,6 +1018,35 @@ main = do
       filetest "primitive-pOtherVal-indented" "primitive number"
         (parseOther ( (>><) pOtherVal )) -- consumes GoDeepers, then runs the plain parser, and runs undeepers
         ( "this is a string", [])
+
+      filetest "compound-pairOfNumbers-1" "primitive number"
+        (parseOther ( (,)
+                      <$> pNumber
+                      <*> someIndentation pNumber
+                      ))
+        ( (42, 43), [])
+
+      filetest "compound-pairOfNumbers-2" "compound-pair"
+        (parseOther ( (,)
+                      $*| ($>>) pNumber
+                      |>< pNumber
+                    ))
+        ( (42,43), [])
+
+      filetest "compound-pairOfNumbers-3" "compound-pair"
+        (parseOther ( (,)
+                      $*| ($>>) pNumber
+                      |>< pNumber
+                    ))
+        ( (42,43), [])
+
+      filetest "compound-pairOfNumbers-4" "compound-pair"
+        (parseOther ( (,,)
+                      $*| ($>>) pNumber
+                      |>| pNumber
+                      |>< pOtherVal
+                    ))
+        ( (42,43,"my string"), [])
 {-
     describe "Prolog" $ do
 

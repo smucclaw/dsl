@@ -1016,7 +1016,7 @@ main = do
         ( "this is a string", [])
 
       filetest "primitive-pOtherVal-indented" "primitive number"
-        (parseOther ( >>< pOtherVal )) -- consumes GoDeepers, then runs the plain parser, and runs undeepers
+        (parseOther ( (>><) pOtherVal )) -- consumes GoDeepers, then runs the plain parser, and runs undeepers
         ( "this is a string", [])
 {-
     describe "Prolog" $ do

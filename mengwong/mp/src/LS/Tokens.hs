@@ -308,7 +308,9 @@ type SLParser a = Parser (a, Int)
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
 ($>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
 ($*|)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
+
 (>>|)  :: Show a =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- same as $>| but optionally indented
+(>*|)  :: Show a =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- same as $*| but optionally indented
 
 (|>|)  :: Show a => Parser (a -> b, Int) -> Parser  a        -> Parser  (b,Int)  -- continue    fancy plain
 (|*|)  :: Show a => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser  (b,Int)  -- continue    fancy fancy
@@ -318,7 +320,7 @@ type SLParser a = Parser (a, Int)
 (|<<)  ::           Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
 
 (>><)  :: Show a => Parser       a                           -> Parser   a       -- consume, parse, undeeper
-(>><) = someIndentation
+(>><) = manyIndentation
 
 ($>>)  :: Show a => Parser  a            ->                     Parser ( a,Int)   -- consume any GoDeepers, then parse
 (|>>)  :: Show a => Parser (a,      Int) ->                     Parser ( a,Int)   -- consume any GoDeepers, then parse
@@ -411,6 +413,9 @@ f $*| p2 = do
   (r,n) <- debugName "$*|" p2
   return (f r,n)
 infixl 4 $*|
+
+f >*| p2 = f $*| (|>>) p2
+infixl 4 >*|
 
 p1 |>| p2 = do
   (l,n) <- p1

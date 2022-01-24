@@ -1,0 +1,11 @@
+EVERY,person,,,,
+WHO,walks,,,,
+AND,eats,,,,
+MUST,,,,,
+IF,the King wishes,,,,
+->,sing,,,,
+HENCE,PARTY,King,,,
+,MAY,pay,,,
+,AFTER,20,min,,
+LEST,Singer,MUST,BEFORE,1,supper
+,,->,pay,,

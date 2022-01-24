@@ -1,0 +1,259 @@
+#!/usr/bin/perl -l
+
+use strict;
+use YAML;
+
+my @input;
+for (<>) {
+  chomp;
+  push @input, $_ if /start petri dsl/ ... /end petri dsl/;
+}
+
+my $lastLineno = @input;
+
+my $global = {};
+
+# a parse tree is represented by nested lists
+
+my $lineno = 0;
+my $initialDepth = numLeadingSpaces($lineno);
+my $root = parse($lineno, $initialDepth);
+
+my $nodeIndex = 1;
+
+my $drawFactors = 0;
+
+# warn YAML::Dump($root);
+ast2dot($root);
+
+sub parse {
+  my ($currentLine, $depth) = @_; # return a node rooted at the current depth
+  # construct current node as the current line plus parsed children
+  # 1. if the current line is too shallow, return nothing
+  # 2. if the current line is just right, parse it and make it a new root for the children
+  #    - handle current line based on the specific syntax that is appearing here
+  # 3. identify children as those lines within the current section whose depth is two in from the current depth; recurse
+
+  my $currentDepth = numLeadingSpaces($currentLine);
+  local $_ = $input[$currentLine];
+  # warn "<<< $currentLine ($currentDepth) $_\n";
+
+  # takeWhile (numLeadingSpaces($_) < $currentDepth) ($currentLine .. $lastLineno)
+  my @childlines = childlines($currentLine+1, $currentDepth);
+
+  # warn "determined childlines are:\n";
+  # warn ("     < $input[$_]\n") for @childlines;
+  my @childheads = grep { numLeadingSpaces($_) == $currentDepth+2 } @childlines;
+  # warn "childheads are @childheads\n";
+  
+  my $currentNode = (/start petri dsl \"(.+)\"/           ? { type => "digraph", str => "digraph \"$1\" { graph [compound=true]; ", endStr => "}" } :
+                     /^\s*(\||&)\s*(\(.*\))?\s+(.*)?\s*$/ ? { type => "factor", prefix=>$1, legalSrc=>$2, value=>$3, indx=>newNodeIndex() } :
+                     /^\s*\((.*)\)\s*(\[.*\])?\s*$/       ? mkNode("state",      $1, $2) :
+                     /^\s*\[(.*?)\]\s*(\[.*\])?\s*$/      ? mkNode("transition", $1, $2) :
+                     /^\s*\<(.*)\>\s*(\[.*\])?\s*$/       ? mkNode("decision",    $1, $2) :
+                     do {
+                       warn "  ! mkpetrinet parser got something unexpected: $_\n";
+                       return {str => $_}
+                     });
+                     
+  my ($nextIndentLevel) = sort (map { numLeadingSpaces($_) } @childheads);
+  
+  my @children = map { parse($_, $nextIndentLevel) } @childheads;
+  $currentNode->{children} = \@children;
+  # warn "$currentLine returning $currentNode\n";
+  # warn YAML::Dump($currentNode);
+  return $currentNode;
+}
+
+sub mkNode { {type => shift, name => shift, label => shift, indx => newNodeIndex()} }
+
+sub ast2dot {
+  my $node = shift;
+  if ($node->{type} eq "digraph") {
+    print $node->{str};
+
+    # --------------------------------------------------
+    print <<EOPREFIX;
+  subgraph states {
+    node [shape=circle];
+    // force BREACH to be left of FULFILLED
+    { rank = same; BREACH -> FULFILLED [style="invis"] }
+
+EOPREFIX
+    ast2dot($_) for uniq( grep { $_->{type} =~ /state|decision/ } descendants($node) );
+    print "  }";
+    
+    # --------------------------------------------------
+    print <<EOPREFIX;
+  subgraph transitions {
+    node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+EOPREFIX
+    # group transitions that are children of the same parent state
+    for my $node (uniq( grep { $_->{type} =~ /state|decision/ } descendants($node))) {
+      my @childTransitions = uniq( grep { $_->{type} eq "transition" } @{$node->{children}});
+      next if not @childTransitions;
+      print "    { rank = same;";
+      ast2dot($_) for @childTransitions;
+      print "    }";
+    }
+    print "  }";
+
+    # --------------------------------------------------
+    print "  // state-to-transition edges";
+    drawTransitionChildren($_) for uniq( grep { $_->{type} =~ /state|decision/ } descendants($node) );
+
+    # --------------------------------------------------
+    # factors that go into decisions
+    if ($drawFactors) {
+      factorCluster($_) for (uniq( grep { $_->{type} =~ /state|decision|factor/ } descendants($node)));
+
+    # --------------------------------------------------
+    print "";
+    print "  // (state/decision)-to-factor clusters";
+    drawFactorChildren($_) for uniq( grep { $_->{type} =~ /state|decision|factor/ } descendants($node) );
+    }
+   
+    # --------------------------------------------------
+    print "";
+    print "  // transition-to-state edges";
+    drawStateChildren($_) for uniq( grep { $_->{type} eq "transition" } descendants($node) );
+   
+   
+  }
+  elsif ($node->{type} eq "state")       { dumpState($node) }
+  elsif ($node->{type} eq "transition")  { dumpTransition($node) }
+  elsif ($node->{type} eq "decision")    { $node->{shape} = "diamond"; dumpState($node) }
+  print $node->{endStr} if $node->{endStr};
+}
+
+sub factorCluster {
+  my $parent = shift;
+  my $nodename = nodename($parent);
+  my @factors = uniq( grep { $_->{type} eq "factor" } @{$parent->{children}}); return if not @factors;
+  my $nodeindex = $parent->{indx};
+  my @toreturn = ();
+  my @childrenreturn = ();
+  print "  subgraph cluster_$nodeindex { ";
+  print "    graph [shape=rect,color=lightgrey,rankdir=TB];";
+  print "    node  [shape=rect,style=filled,fillcolor=lightgrey,color=none];";
+  foreach my $n (0 .. $#factors) {
+    my $factor = $factors[$n];
+    my $factorName = nodename($factor);
+    print "    $factorName\t[label=\"" . $factor->{value} . "\"];";
+    if ($n < $#factors) {
+      my $nextFactor = $factors[$n+1];
+      my $nextname = nodename($nextFactor);
+      print "    $factorName -> $nextname [style=dashed];";
+    }
+  }
+  print "  }";
+}
+
+sub newNodeIndex { return $nodeIndex++ }
+
+sub dumpState      { dumpSorT(shift, "state") }
+sub dumpTransition { dumpSorT(shift, "transition") }
+sub dumpSorT {
+  my ($node, $dumpStyle) = @_;
+  my $name = nodename($node);
+  my $label = $node->{label};
+  $label =~ s/^\[|\]\s*$//g;
+  my @label = split(/,\s*/, $label);
+  
+  if (my $shape = $node->{shape}) {
+    push @label, "shape=$shape";
+  }
+  if ($dumpStyle eq "state") {
+    if ($node->{name} eq "FULFILLED") { push @label, "color=green" }
+    if ($node->{name} eq "BREACH")    { push @label, "color=brown" }
+  }
+  print ("      $name\t" . (@label ? "[".join(",",@label)."]" : ""));
+
+}
+sub nodename {
+  my $node = shift;
+  my $name = $node->{name} || $node->{indx};
+  $name = qq("$name") if $name =~ /\s/;
+  return $name;
+}
+
+sub drawTransitionChildren { drawSomeChildren(shift, "transition") }
+sub drawStateChildren      { drawSomeChildren(shift, qr/state|decision/) }
+sub drawSomeChildren {
+  my ($node, $ofType) = @_;
+  foreach my $c (uniq( grep { $_->{type} =~ /$ofType/ } @{$node->{children}} )) {
+    
+    # decide the headport and tailports of the edge.
+    # if we're a state->transition edge,
+    #    if the transition contains the string "not done" then we use the sad label
+    #                                              "done" then we use the happy label
+    #    if the transition is the first child we use the happy label
+    #    if the transition is not the first child we use the sad label
+    
+    my @label = ();
+    my @rightlabel = ("headport=n", "tailport=se");
+    my @leftlabel  = ("headport=n", "tailport=sw");
+    my @happyLabel = (@rightlabel, "color=green");
+    my @sadLabel   = (@leftlabel, "color=brown");
+
+    if ($ofType eq "transition") {
+      if ($node->{type} eq "decision") {
+        if (not isFirstBranch($node, $c)) { @label = @leftlabel; }
+        else                              { @label = @rightlabel }
+      }
+      elsif ($c->{name} =~ /not done/ or not isFirstBranch($node, $c)) { @label = @sadLabel }
+      else                                                             { @label = @happyLabel }
+    }
+    # every edge that points to FULFILLED gets colored green; to BREACH, brown
+    if ($ofType =~ /state/) {
+      if ($c->{name} eq "FULFILLED") { @label = "color=green"; }
+      if ($c->{name} eq "BREACH"   ) { @label = "color=brown"; }
+    }
+
+    my $label = @label ? "[" . join(",", @label) . "]" : "";
+    print "  " . nodename($node) . " -> " . nodename($c) . ($label ? "\t\t$label" : "");
+  }
+}
+
+sub drawFactorChildren {
+  my $node = shift;
+  my ($nodename,$nodeindex) = (nodename($node), $node->{indx});
+  my @factors = grep { $_->{type} eq "factor" } @{$node->{children}};
+  return if not @factors;
+  
+  print "  { rank=same; $nodename -> " . nodename($factors[0]) . " [lhead=cluster_$nodeindex,arrowhead=none,style=dotted,headport=w,tailport=e]; }";
+  foreach my $factor (@factors) {
+    my $fname = nodename($factor);
+#    print "  $nodename -> $fname\t[headport=w,tailport=e]";
+  }
+}
+
+sub isFirstBranch {
+  my ($parent, $child) = @_;
+  my @nonfactors = grep { not $_->{type} eq "factor" } @{$parent->{children}};
+  return ($child->{name} eq $nonfactors[0]->{name});
+}
+    
+
+sub descendants {
+  my $node = shift;
+  return ($node, map { descendants($_) } @{$node->{children}});
+}
+
+sub numLeadingSpaces {
+  my $lineno = shift;
+  return length (($input[$lineno] =~ /^( +)/)[0]);
+}
+
+sub childlines {
+  my ($cLine, $cDepth) = @_;
+  if ($cLine > $lastLineno) { warn "EOF\n"; return () }
+  if ($input[$cLine] =~ /\S/ and numLeadingSpaces($cLine) <= $cDepth) { return () }
+  return ($cLine, childlines($cLine+1, $cDepth));
+}
+
+# if we wanted to merge label attributes, we would do it here
+sub uniq {
+  my %seen;
+  return grep { !$seen{nodename($_)}++ } @_;
+}

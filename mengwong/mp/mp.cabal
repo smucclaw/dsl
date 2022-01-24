@@ -1,0 +1,175 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           mp
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/mengwong/mp#readme>
+homepage:       https://github.com/mengwong/mp#readme
+bug-reports:    https://github.com/mengwong/mp/issues
+author:         Wong Meng Weng
+maintainer:     mwwong@smu.edu.sg
+copyright:      2020
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/mengwong/mp
+
+library
+  exposed-modules:
+      LS
+      LS.BasicTypes
+      LS.Error
+      LS.Lib
+      LS.NLP.NLG
+      LS.NLP.ToPredicate
+      LS.NLP.UDExt
+      LS.NLP.WordNet
+      LS.ParamText
+      LS.Parser
+      LS.RelationalPredicates
+      LS.Tokens
+      LS.Types
+      LS.XPile.CoreL4
+      LS.XPile.CSV
+      LS.XPile.Odoyle
+      LS.XPile.Petri
+      LS.XPile.Prolog
+      LS.XPile.SVG
+      LS.XPile.Uppaal
+      LS.XPile.VueJSON
+  other-modules:
+      Paths_mp
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4-core
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , edit-distance
+    , fgl
+    , generic-data
+    , gf
+    , gf-ud
+    , graphviz
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mtl
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , prolog
+    , replace-megaparsec
+    , split
+    , stm
+    , text
+    , typed-process
+    , utf8-string
+    , vector
+    , wordnet
+  default-language: Haskell2010
+
+executable mp-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_mp
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4-core
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , edit-distance
+    , fgl
+    , generic-data
+    , gf
+    , gf-ud
+    , graphviz
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mp
+    , mtl
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , prolog
+    , replace-megaparsec
+    , split
+    , stm
+    , text
+    , typed-process
+    , utf8-string
+    , vector
+    , wordnet
+  default-language: Haskell2010
+
+test-suite mp-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      TestNLG
+      Paths_mp
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4-core
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , edit-distance
+    , fgl
+    , generic-data
+    , gf
+    , gf-ud
+    , graphviz
+    , hspec
+    , hspec-megaparsec
+    , megaparsec
+    , mp
+    , mtl
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , prolog
+    , replace-megaparsec
+    , split
+    , stm
+    , text
+    , typed-process
+    , utf8-string
+    , vector
+    , wordnet
+  default-language: Haskell2010

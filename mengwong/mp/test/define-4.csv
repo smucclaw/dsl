@@ -1,0 +1,3 @@
+GIVEN,Player1,,,Player2,::,Player
+DEEM,Player1,defeats,,Player2,,
+WHEN,Player1.choice,beats,,Player2.choice,,

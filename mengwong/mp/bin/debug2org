@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+
+# usage: stack test |& bin/debug2org > debug.org
+# then open debug.org in emacs org-mode
+
+use strict;
+
+my @input = <>;
+chomp @input;
+
+my ($pipe_line) = grep { /\| \| \|/ } @input;
+my ($prefix_length) = length (($pipe_line =~ /^([^|]+)\|/)[0]);
+# print $prefix_length;
+
+print <<EOPROPERTIES;
+* preface
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+
+EOPROPERTIES
+    
+my $inzone = 0; my $donework = 0;
+
+for (@input) {
+  # stop at first blank line encountered after the main zone
+  if ($donework and $inzone and (length == 0 or /^\[ / or /^\d+:\d+:/)) {
+    $inzone = 0;
+    print <<EOPROPERTIES;
+* final
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+
+EOPROPERTIES
+  }
+
+  my $prefix = substr($_, 0, $prefix_length);
+  my $rhs = substr($_, $prefix_length);
+  
+#  print $prefix, "\n";
+#  print $rhs, "\n";
+  if (not $inzone and not $donework and substr($rhs, 0, 1) =~ /[|\/\\]/) { $inzone = 1 }
+  if (not $inzone) { print "$_\n"; next }
+
+  my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/]?) (.*)/;
+#  print $pipes, "\n";
+#  print $slash, "\n";
+  my $numpipes = length($pipes) / 2 + 1 + 1;
+  if (not $slash and not $pipes) { print $_, "\n"; next; }
+  if (not length $slash) { $slash = " " }
+  
+  if ($numpipes == 2 and not $donework) {
+    $donework = 1; $inzone = 1;
+    print <<EOPROPERTIES;
+* main
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
+EOPROPERTIES
+  }
+
+  my ($row,$col) = $prefix =~ /^(\d+)_(\d+)/;
+
+  my $indent = ($col - 1) * 2 + ($prefix =~ /GoDeeper/ ? -1 :
+                                 $prefix =~ /UnDeeper/ ? 1
+                                 : 0);
+  
+  my $outlhs = "*" x $numpipes . " $slash " . $text;
+  my $spacing = 120 - length($outlhs) - $numpipes + $indent;
+     $prefix =~ s/ +$//;
+  my $out = $outlhs . " " x $spacing . " :$prefix:";
+  print $out, "\n";
+  
+}
+
+
+

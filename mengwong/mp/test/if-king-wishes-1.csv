@@ -1,0 +1,6 @@
+EVERY,person,,
+WHO,walks,,
+AND,eats,,
+MUST,,,
+IF,the King wishes,//,scope quantification slightly different vs 4
+->,sing,//,suggests that the King is consulted for each person

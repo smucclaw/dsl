@@ -1,0 +1,238 @@
+#+TITLE: About Reasoning
+
+What questions do we need to ask the end user?
+
+How do we automatically build various transpilation targets?
+
+* Outputting to a State Graph
+
+See draft state graph at top right of the [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit?pli=1#gid=0][PDPA DBNO tab]]. 
+
+Our output will be a timed automaton or Petri Net.
+
+Transitions can be
+- deadlines :: BEFORE 30 days
+- actions :: PDPC demands explanation
+
+To navigate the path, we need to know what happend, and when; that "trace" gives us enough information to navigate to the current state(s).
+
+What facts do we need to gather?
+
+| State1 | Transition | State2 | We must ask          | Then we know                          |
+|--------+------------+--------+----------------------+---------------------------------------|
+| X      | Deadline   | Y      | did X state hold?    | If deadline was met, go R.            |
+|        |            |        | if so, on what date? | If deadline was not, go L.            |
+|        |            |        | did Y state hold?    | If deadline is in the future, stay X. |
+|        |            |        | if so, on what date? |                                       |
+|--------+------------+--------+----------------------+---------------------------------------|
+| X      | Action     | Y      | did X state hold?    | Do we stay in X?                      |
+|        |            |        | if so, on what date? | Or proceed to state X, Y, or ~Y?      |
+|        |            |        | did action occur?    |                                       |
+|        |            |        | if so, on what date? |                                       |
+
+Once these questions are answered we have enough information to proceed to the next state, or remain in the current state.
+
+After all enabled transitions have been evaluated we are left with a residual state graph, or a current marking of a Petri Net, that tells us what the current state of the world is.
+
+From this current state of the world we can:
+- deduce current obligations
+- start to abductively plan for a desired outcome state
+
+* What children follow from a parent state?
+
+| Parent state has deontic | then children are | connector | default   |
+|--------------------------+-------------------+-----------+-----------|
+| MUST,                    | R: happy path     | HENCE     | FULFILLED |
+| SHANT                    | L: unhappy path   | LEST      | BREACH    |
+|--------------------------+-------------------+-----------+-----------|
+| MAY                      | R: happy path     | HENCE     | FULFILLED |
+|                          | L: neutral path   | LEST      | FULFILLED |
+
+A MUST always has two output paths: the happy path goes to the right, and is connected via ~HENCE~. The unhappy path goes to the left, and is connected via ~LEST~. If they are not explicitly given, then by default, the unhappy path is BREACH; the happy path is FULFILLED.
+
+A MAY without an explicit neutral path (where the permitted action is not taken) will, by default, have an implicit neutral to FULFILLED.
+
+* Simple Example
+
+See the test/README.org for pdpadbno-1
+
+* PDPA Notification Example
+
+** Reasoned by Hand
+
+- Given a Data Breach which has previously been determined to be Notifiable,
+- what facts would allow the Organisation to not be obligated to send a notification?
+
+This could be considered an exercise in Default Logic because, by default, the Org must send notification.
+
+What exceptions could allow that default to be overridden?
+
+*** Answers                                                                             :spoilers:
+
+**** the data breach occurred only within an organisation                            :act:26_B_4:
+
+This factor is technically part of the determination that the DB is Notifiable; however, because the rule is stated with an UNLESS, people may commonly consider that a DB{N=True} applies due to all the "IF" reasons; and then consider the "UNLESS" reasons as overriding them at a higher level.
+
+In other words, people might say, "Oh, yes, it is a Notifiable Data Breach because of all the positive reasons. But we don't need to actually notify because it also matched the negative reason -- that it was only within an organisation."
+
+So we include this answer here for completeness.
+
+**** you are a Public Agency                                                          :act:4_1_c:
+
+**** the organisation has taken any action to render it unlikely that the notifiable data breach will result in significant harm to the individual :act:26_D_5_a:
+
+
+**** the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual :act:26_D_5_b:
+
+**** the PDPC has directed the Organisation not to notify an affected individual   :act:26_D_6_b:
+
+**** any Law Enforcement Agency has advised against notifying affected individuals :act:26_D_6_a:
+
+**** the PDPC waives the requirement in response to written application              :act:26_D_7:
+
+** Visual Representation
+
+Syntax for my little Petri DSL:
+
+First word
+
+- (state) :: round parentheses represent a state
+- [transition] :: square brackets represent a transition
+- <decision:value> :: angle brackets represent some "nondeterminism" -- multiple possible transitions emerge from a state, with the given value. The happy path is given above the unhappy path.
+- <decision> :: without angle brackets is a shorthand for <decision:*>. This is used in the context of a linking arrow
+- |   or term
+- &   and term
+
+Subsequent words are ~[ dot attributes in square brackets ]~.
+
+Connectors:
+
+- explicit syntax :: (state) -> [transition] -> (state)
+- layout syntax :: "child indentation" is equivalent to an arrow between parent and child
+
+Future extension: Maybe use ((initial)) to represent a start state
+
+#+begin_src text
+  // start petri dsl "pdpadbno-1" -- see mp/bin/mkpetrinet
+    <INITIAL>                                        [label="Every Organisation which"]
+      [pa - is not]                              [label="is not a Public Agency"]
+        (upon)
+          [become aware]                                           [ label = "becoming aware\na data breach may\nhave occurred" ]
+            (is aware)                                             [ label = "must assess\n(within 30 days)\nif the data breach\nis Notifiable" ]
+              [assessment - done]                                  [ label = "done" ]
+                <is it notifiable?>
+                  | see NDB Qualification
+                  [is notifiable - yes]                              [label="yes"]
+                    (must notify PDPC)                        [label="must notify PDPC\n(within 3 days)"]
+                      [notify PDPC - done]                           [label = "done"]
+                        (FULFILLED)
+                      [notify PDPC - not done]                       [label="not done"]
+                        (BREACH)
+                    <are there exceptions?>
+                      |     (Act §26D.5)    it is unlikely that the NDB will result in significant harm to the individual
+                        |   (Act §26D.5.a)  the organisation has taken any action to render it unlikely that the NDB will result in significant harm to the individual
+                        |   (Act §26D.5.b)  the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual
+                      |     (Act §4.1.c)    you are a Public Agency
+                      |     (Act §26D.6.a)  the PDPC has directed the Organisation not to notify an affected individual
+                      |     (Act §26D.6.b)  a prescribed Law Enforcement Agency has advised against notifying affected individuals
+                      |     (Act §26D.7)    the PDPC has waived the requirement in response to written application
+                      [exceptions - no]                          [label="no exceptions"]
+                        (must notify users)                      [label="must notify users\n(within 3 days)"]
+                          [notify users - done]                  [label = "done"]
+                            (FULFILLED)
+                          [notify users - not done]              [label="not done"]
+                            (BREACH)
+                      [exceptions - yes]                         [label="exceptions"]
+                        (FULFILLED)
+                  [is notifiable - no]                               [label="no"]
+                    (FULFILLED)
+
+              [assessment - not done]                              [label="not done"]
+                (BREACH)
+      [pa - is]                                  [label="is a Public Agency"]
+        (FULFILLED)
+  // end petri dsl
+#+end_src
+
+#+begin_src dot
+  digraph "pdpadbno-1" {
+    subgraph states {
+      graph [shape=circle,color=gray];
+      node [shape=circle];
+      // force BREACH to be left of FULFILLED
+      { rank = same; BREACH -> FULFILLED [style="invis"] }
+
+
+        INITIAL   [label="Every Organisation which",shape=diamond]
+        upon
+        "is aware"        [ label = "must assess\nif the data breach\nis Notifiable" ]
+        "is it notifiable?"       [shape=diamond]
+        "must notify PDPC"
+        FULFILLED [color=green]
+        BREACH    [color=brown]
+        "are there exceptions?"   [shape=diamond]
+        "must notify users"
+    }
+    subgraph transitions {
+      node [shape=rect,height=0.2,style=filled,fillcolor=black,fontcolor=white,fontname=Monaco];
+
+      { rank = same;
+        "pa - is not"     [label="is not a Public Agency"]
+        "pa - is" [label="is a Public Agency"]
+      }
+      { rank = same;
+        "become aware"    [ label = "becoming aware\na data breach may\nhave occurred" ]
+      }
+      { rank = same;
+        "assessment - done"       [ label = "done (within 30 days)" ]
+        "assessment - not done"   [label="not done"]
+      }
+      { rank = same;
+        "is notifiable - yes"     [label="yes"]
+        "is notifiable - no"      [label="no"]
+      }
+      { rank = same;
+        "notify PDPC - done"      [label = "done (within 3 days)"]
+        "notify PDPC - not done"  [label="not done"]
+      }
+      { rank = same;
+        "exceptions - no" [label="no exceptions"]
+        "exceptions - yes"        [label="exceptions"]
+      }
+      { rank = same;
+        "notify users - done"     [label = "done (within 3 days)"]
+        "notify users - not done" [label="not done"]
+      }
+    }
+    // state-to-transition edges
+    INITIAL -> "pa - is not"              [headport=n,tailport=se]
+    INITIAL -> "pa - is"          [headport=n,tailport=sw]
+    upon -> "become aware"                [headport=n,tailport=se,color=green]
+    "is aware" -> "assessment - done"             [headport=n,tailport=se,color=green]
+    "is aware" -> "assessment - not done"         [headport=n,tailport=sw,color=brown]
+    "is it notifiable?" -> "is notifiable - yes"          [headport=n,tailport=se]
+    "is it notifiable?" -> "is notifiable - no"           [headport=n,tailport=sw]
+    "must notify PDPC" -> "notify PDPC - done"            [headport=n,tailport=se,color=green]
+    "must notify PDPC" -> "notify PDPC - not done"                [headport=n,tailport=sw,color=brown]
+    "are there exceptions?" -> "exceptions - no"          [headport=n,tailport=se]
+    "are there exceptions?" -> "exceptions - yes"         [headport=n,tailport=sw]
+    "must notify users" -> "notify users - done"          [headport=n,tailport=se,color=green]
+    "must notify users" -> "notify users - not done"              [headport=n,tailport=sw,color=brown]
+
+    // transition-to-state edges
+    "pa - is not" -> upon
+    "become aware" -> "is aware"
+    "assessment - done" -> "is it notifiable?"
+    "is notifiable - yes" -> "must notify PDPC"
+    "is notifiable - yes" -> "are there exceptions?"
+    "notify PDPC - done" -> FULFILLED             [color=green]
+    "notify PDPC - not done" -> BREACH            [color=brown]
+    "exceptions - no" -> "must notify users"
+    "notify users - done" -> FULFILLED            [color=green]
+    "notify users - not done" -> BREACH           [color=brown]
+    "exceptions - yes" -> FULFILLED               [color=green]
+    "is notifiable - no" -> FULFILLED             [color=green]
+    "assessment - not done" -> BREACH             [color=brown]
+    "pa - is" -> FULFILLED                [color=green]
+  }
+#+end_src

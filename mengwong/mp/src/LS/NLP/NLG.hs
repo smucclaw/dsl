@@ -76,28 +76,22 @@ mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'
 parseConllu :: UDEnv -> String -> Maybe Expr
 parseConllu env str = trace ("\nconllu:\n" ++ str) $
   case getExprs [] env str of
-    (x : _xs) : _xss -> Just x  -- TODO: add code that tries to parse with the words in lowercase, if at first it doesn't succeed
+    (x : _xs) : _xss -> Just x
     _ -> Nothing
 
 
 parseOut :: UDEnv -> Text.Text -> IO Expr
 parseOut env txt = do
   conll <- udParse txt -- Initial parse
+  lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
   let expr = case parseConllu env conll of -- env -> str -> [[expr]]
                Just e -> e
-               Nothing -> case parseConllu env (lowerConlluStr conll) of
+               Nothing -> case parseConllu env lowerConll of
                             Just e' -> e'
                             Nothing -> mkApp (mkCId "dummy_N") [] -- dummy expr
   putStrLn $ showExpr [] expr
   return expr
 
--- Manipulates a CoNLLU format string that is all in one string
-lowerConlluStr :: String -> String
-lowerConlluStr str = unlines $ map (intercalate "\t" . lower) lns
-  where
-    lns = map (splitOn "\t") (lines str)
-    lower (i:wf:lm:rest) = i:map toLower wf:map toLower lm:rest
-    lower x              = x
 
 peel :: Expr -> Expr
 peel subj = gf $ fromJust $ fromGUDS (fg subj)

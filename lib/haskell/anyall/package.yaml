@@ -1,10 +1,10 @@
 name:                anyall
 version:             0.1.0.0
-github:              "githubuser/anyall"
+github:              "smucclaw/anyall"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2021 Author name here"
+author:              "Wong Meng Weng"
+maintainer:          "mwwong@smu.edu.sg"
+copyright:           "2021 Singapore Management University"
 
 extra-source-files:
 - README.org

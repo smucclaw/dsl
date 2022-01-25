@@ -4,14 +4,14 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           mp
+name:           natural4
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/mengwong/mp#readme>
-homepage:       https://github.com/mengwong/mp#readme
-bug-reports:    https://github.com/mengwong/mp/issues
+description:    Please see the README on GitHub at <https://github.com/smucclaw/dsl/lib/haskell/natural4>
+homepage:       https://github.com/smucclaw/dsl#readme
+bug-reports:    https://github.com/smucclaw/dsl/issues
 author:         Wong Meng Weng
 maintainer:     mwwong@smu.edu.sg
-copyright:      2020
+copyright:      2022
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/mengwong/mp
+  location: https://github.com/smucclaw/dsl
 
 library
   exposed-modules:
@@ -47,7 +47,7 @@ library
       LS.XPile.Uppaal
       LS.XPile.VueJSON
   other-modules:
-      Paths_mp
+      Paths_natural4
   hs-source-dirs:
       src
   ghc-options: -Wall
@@ -86,10 +86,10 @@ library
     , wordnet
   default-language: Haskell2010
 
-executable mp-exe
+executable natural4-exe
   main-is: Main.hs
   other-modules:
-      Paths_mp
+      Paths_natural4
   hs-source-dirs:
       app
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
@@ -112,8 +112,8 @@ executable mp-exe
     , hspec
     , hspec-megaparsec
     , megaparsec
-    , mp
     , mtl
+    , natural4
     , optparse-generic
     , parser-combinators
     , parsers
@@ -129,12 +129,12 @@ executable mp-exe
     , wordnet
   default-language: Haskell2010
 
-test-suite mp-test
+test-suite natural4-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
       TestNLG
-      Paths_mp
+      Paths_natural4
   hs-source-dirs:
       test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
@@ -157,8 +157,8 @@ test-suite mp-test
     , hspec
     , hspec-megaparsec
     , megaparsec
-    , mp
     , mtl
+    , natural4
     , optparse-generic
     , parser-combinators
     , parsers

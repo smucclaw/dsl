@@ -1774,7 +1774,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 |   | 42 |   |   | boo |
 
-*** compount expressions
+*** compound expressions
 **** a pair of numbers one after the other, unindented
 :PROPERTIES:
 :TABLE_EXPORT_FILE: compound-pairOfNumbers-1.csv

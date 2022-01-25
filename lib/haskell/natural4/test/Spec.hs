@@ -1028,25 +1028,26 @@ main = do
 
       filetest "compound-pairOfNumbers-2" "compound-pair"
         (parseOther ( (,)
-                      $*| ($>>) pNumber
+                      >>| pNumber
                       |>< pNumber
                     ))
         ( (42,43), [])
 
+      let slPairNum = (,)
+                      >>| pNumber
+                      |>| pNumber
+
       filetest "compound-pairOfNumbers-3" "compound-pair"
-        (parseOther ( (,)
-                      $*| ($>>) pNumber
-                      |>< pNumber
-                    ))
+        (parseOther ( slPairNum |<< undeepers ))
         ( (42,43), [])
 
       filetest "compound-pairOfNumbers-4" "compound-pair"
-        (parseOther ( (,,)
-                      $*| ($>>) pNumber
-                      |>| pNumber
+        (parseOther ( (,)
+                      $*| slPairNum
                       |>< pOtherVal
                     ))
-        ( (42,43,"my string"), [])
+        ( (  (42,43)
+          , "my string"), [])
 {-
     describe "Prolog" $ do
 

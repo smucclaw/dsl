@@ -888,6 +888,11 @@ defined terms are T-shaped rules
 | MEANS | eats       |
 | OR    | drinks     |
 
+#+begin_src prolog
+  degustates(X) :- eats(X).
+  degustates(X) :- drinks(X).
+#+end_src
+
 *** simple constitutive rule (with checkboxes)
 :PROPERTIES:
 :TABLE_EXPORT_FILE: simple-constitutive-1-checkboxes.csv
@@ -1867,11 +1872,19 @@ permute
   required Deem ParamText
   optional BoolStruct [If,When]
 
-|   |       |               |       |    |      |
-|   | GIVEN | x             | y     | :: | Sign |
-|   | DEEM  | x             | beats | y  |      |
-|   | WHEN  | x == Rock     |       |    |      |
-|   | AND   | y == Scissors |       |    |      |
+|   |        |               |       |    |      |
+|   | GIVEN  | x             | y     | :: | Sign |
+|   | DECIDE | x             | beats | y  |      |
+|   | WHEN   | x == Rock     |       |    |      |
+|   | AND    | y == Scissors |       |    |      |
+
+#+begin_src prolog
+  % direct awkward translation
+  beats(X,Y) :- X IS rock, Y IS scissors.
+
+  % idiomatically
+  beats(rock,scissors).
+#+end_src
 
 creates a Constitutive Rule; the "assig" (assignment) is "deem".
 

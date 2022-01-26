@@ -14,6 +14,8 @@ import AnyAll hiding (asJSON)
 import LS.Types
 import LS.Error
 import TestNLG
+import Test.QuickCheck
+import LS.NLP.WordNet
 
 import LS.XPile.Prolog
 import LS.XPile.Petri
@@ -28,6 +30,7 @@ import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
 import Control.Monad (when)
 import Data.Either (fromRight)
+import Data.Char
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -100,7 +103,12 @@ filetest testfile desc parseFunc expected =
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
-  
+
+preprocess :: String -> String
+preprocess text = filter (not . (`elem` ['!', '.'])) text
+
+prop_gerundcheck :: String -> Bool
+prop_gerundcheck string = gfmkGerund preprocess(toLower string) == mkGerund preprocess(toLower string)
 
 main :: IO ()
 main = do
@@ -127,7 +135,7 @@ main = do
   let parseR1 x y s     =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
   let parseOther x y s  = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
   let parseOther1 x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
-
+  verboseCheck prop_gerundcheck
   hspec $ do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
@@ -182,10 +190,10 @@ main = do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` (srccol2 <$> srcrow2 <$> imbibeRule)
 
-      filetest "indented-1" "parse indented-1.csv (inline boolean expression)" 
+      filetest "indented-1" "parse indented-1.csv (inline boolean expression)"
         (parseR pRules) (srcrow2 <$> imbibeRule)
 
-      filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)" 
+      filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)"
         (parseR pRules) (srcrow2 <$> imbibeRule)
 
       let degustates = defaultHorn
@@ -199,11 +207,11 @@ main = do
                                                       ,Leaf (RPMT ["drinks"])])
                           , hBody = Nothing } ]
             }
-        
-      filetest "simple-constitutive-1" "should parse a simple constitutive rule" 
+
+      filetest "simple-constitutive-1" "should parse a simple constitutive rule"
         (parseR pRules) [srcrow2 degustates]
 
-      filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes" 
+      filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
         (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
@@ -237,11 +245,11 @@ main = do
                         , rlabel = Nothing
                         , lsource = Nothing
                         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 5, version = Nothing})}
-            ]              
+            ]
 
       -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
       -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
-      
+
 --      filetest "indented-2" "inline constitutive rule" (parseR pRules) $ imbibeRule2 4 3
 
 --      filetest "indented-3" "defined names in natural positions" (parseR pRules) $ imbibeRule3 3 3
@@ -269,10 +277,10 @@ main = do
                             )
                           }
                       ]
-      
-      filetest "mustsing-1" "mustsing-1: should handle the most basic form of Matt Wadd's rule" 
+
+      filetest "mustsing-1" "mustsing-1: should handle the most basic form of Matt Wadd's rule"
         (parseR pRules) mustsing1
-        
+
       let if_king_wishes = [ defaultReg
                           { who = Just $ All Nothing
                                   [ mkLeafR "walks"
@@ -314,34 +322,34 @@ main = do
                          , srcref = Nothing
                          } ]
 
-      filetest "if-king-wishes-1" "should parse kingly permutations 1" 
+      filetest "if-king-wishes-1" "should parse kingly permutations 1"
         (parseR pRules) if_king_wishes
 
-      filetest "if-king-wishes-2" "should parse kingly permutations 2" 
+      filetest "if-king-wishes-2" "should parse kingly permutations 2"
         (parseR pRules) if_king_wishes
 
-      filetest "if-king-wishes-3" "should parse kingly permutations 3" 
+      filetest "if-king-wishes-3" "should parse kingly permutations 3"
         (parseR pRules) if_king_wishes
 
-      filetest "chained-regulatives-part1" "should parse chained-regulatives part 1" 
+      filetest "chained-regulatives-part1" "should parse chained-regulatives part 1"
         (parseR pRules) [king_pays_singer]
 
-      filetest "chained-regulatives-part2" "should parse chained-regulatives part 2" 
+      filetest "chained-regulatives-part2" "should parse chained-regulatives part 2"
         (parseR pRules) [singer_must_pay]
 
-      filetest "chained-regulatives" "should parse chained-regulatives.csv" 
+      filetest "chained-regulatives" "should parse chained-regulatives.csv"
         (parseR pRules) (srcrow1' <$> srcrow_ <$> singer_chain)
 
-      filetest "chained-regulatives-part1-alternative-1" "should parse alternative deadline/action arrangement 1" 
+      filetest "chained-regulatives-part1-alternative-1" "should parse alternative deadline/action arrangement 1"
         (parseR pRules) [king_pays_singer]
 
-      filetest "chained-regulatives-part1-alternative-2" "should parse alternative deadline/action arrangement 2" 
+      filetest "chained-regulatives-part1-alternative-2" "should parse alternative deadline/action arrangement 2"
         (parseR pRules) [king_pays_singer]
 
-      filetest "chained-regulatives-part1-alternative-3" "should parse alternative deadline/action arrangement 3" 
+      filetest "chained-regulatives-part1-alternative-3" "should parse alternative deadline/action arrangement 3"
         (parseR pRules) [king_pays_singer]
 
-      filetest "chained-regulatives-part1-alternative-4" "should parse alternative arrangement 4, no deadline at all" 
+      filetest "chained-regulatives-part1-alternative-4" "should parse alternative arrangement 4, no deadline at all"
         (parseR pRules) [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
@@ -356,10 +364,10 @@ main = do
             [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
-      filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names" 
+      filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names"
         (parseR pRules) if_king_wishes_singer
 
-      filetest "nl-aliases-2" "should parse natural language aliases (\"NL Aliases\") on the next line" 
+      filetest "nl-aliases-2" "should parse natural language aliases (\"NL Aliases\") on the next line"
         (parseR pRules) if_king_wishes_singer_nextline
 
       let singer_must_pay_params =
@@ -367,10 +375,10 @@ main = do
                                              :| [("to"     :| ["the King"], Nothing)
                                                 ,("amount" :| ["$20"]     , Nothing)]) }
 
-      filetest "action-params-singer" "should parse action params" 
+      filetest "action-params-singer" "should parse action params"
         (parseR pRules) [singer_must_pay_params]
 
---      filetest "blank-lines" "should parse despite interrupting newlines" 
+--      filetest "blank-lines" "should parse despite interrupting newlines"
 --        (parseR pRules) if_king_wishes_singer_2
 
     describe "megaparsing MEANS" $ do
@@ -390,18 +398,18 @@ main = do
         (parseR pRules) [srcrow2 bobUncle1]
 
       let bobUncle2 = bobUncle1
-            { clauses = 
+            { clauses =
               [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (Leaf (RPMT ["Bob is estranged"]))
                                                                                   ,Leaf (RPMT ["Bob is dead"])])
                    , hBody = Nothing } ] }
-      
+
       filetest "bob-head-2" "handle less indentation"
           (parseR pRules) [srcrow2 bobUncle2]
 
       filetest "bob-head-3" "should handle outdentation"
         (parseR pRules) [srcrow2 bobUncle2]
-                      
-      filetest "bob-tail-1" "should work for constitutive rules" 
+
+      filetest "bob-tail-1" "should work for constitutive rules"
         (parseR pRules) [ defaultHorn
                           { name = ["Bob's your uncle"]
                           , keyword = Means
@@ -419,7 +427,7 @@ main = do
 
     describe "megaparsing UNLESS semantics" $ do
 
-      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ] 
+      let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ]
 
       let observanceMandatory = [ defaultReg { cond = Just
                                                ( Not
@@ -437,22 +445,22 @@ main = do
       let silenceKing = [ defaultReg { cond = Just ( All Nothing [ mkLeafR "the king wishes"
                                                                  , Not ( mkLeafR "day of silence" )
                                                                  ] ) } ]
-            
-      filetest "unless-regulative-1" "read EVERY MUST UNLESS" 
+
+      filetest "unless-regulative-1" "read EVERY MUST UNLESS"
         (parseR pRules) dayOfSilence
-                      
-      filetest "unless-regulative-2" "read EVERY MUST UNLESS IF" 
+
+      filetest "unless-regulative-2" "read EVERY MUST UNLESS IF"
         (parseR pRules) silenceKing
-                      
-      filetest "unless-regulative-3" "read EVERY MUST IF UNLESS" 
+
+      filetest "unless-regulative-3" "read EVERY MUST IF UNLESS"
         (parseR pRules) silenceKing
-                      
-      filetest "unless-regulative-4" "read EVERY UNLESS MUST IF" 
+
+      filetest "unless-regulative-4" "read EVERY UNLESS MUST IF"
         (parseR pRules) silenceKing
-                      
-      filetest "unless-regulative-5" "read EVERY IF MUST UNLESS" 
+
+      filetest "unless-regulative-5" "read EVERY IF MUST UNLESS"
         (parseR pRules) silenceKing
-                      
+
       let silenceMourning = [
             defaultReg { cond = Just ( All Nothing [
                                          mkLeafR "the king wishes"
@@ -464,7 +472,7 @@ main = do
                                            )
                                          ] ) } ]
 
-      filetest "unless-regulative-6" "should read EVERY MUST IF UNLESS OR" 
+      filetest "unless-regulative-6" "should read EVERY MUST IF UNLESS OR"
         (parseR pRules) silenceMourning
 
       let mourningForbids = [
@@ -476,20 +484,20 @@ main = do
                                              , mkLeafR "mourning forbids singing"
                                              ]
                                            ) ] ) } ]
-                                         
-      filetest "unless-regulative-7" "should read EVERY MUST IF UNLESS AND" 
+
+      filetest "unless-regulative-7" "should read EVERY MUST IF UNLESS AND"
         (parseR pRules) mourningForbids
-                      
-      filetest "ifnot-1-joined" "should read IF NOT when joined" 
-        (parseR pRules) dayOfSilence
-                      
-      filetest "ifnot-2-separate" "should read IF-NOT when separate" 
+
+      filetest "ifnot-1-joined" "should read IF NOT when joined"
         (parseR pRules) dayOfSilence
 
-      filetest "ifnot-4-indentation-explicit" "should handle NOT ... AND indented" 
+      filetest "ifnot-2-separate" "should read IF-NOT when separate"
+        (parseR pRules) dayOfSilence
+
+      filetest "ifnot-4-indentation-explicit" "should handle NOT ... AND indented"
         (parseR pRules) observanceMandatory
-                      
-      filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way" 
+
+      filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way"
         (parseR pRules) dayOfSong
 
       it "pilcrows-1" $ do
@@ -499,7 +507,7 @@ main = do
 
         -- forM_ (exampleStreams testcsv) $ \stream ->
         --   parseR pRules testfile stream
-        --     `shouldParse` [ defaultCon 
+        --     `shouldParse` [ defaultCon
         --                   ]
     nlgTests
 
@@ -508,7 +516,7 @@ main = do
   -- defNameAlias should absorb the WHO limb
 
     describe "megaparsing scenarios" $ do
-      filetest "scenario-1" "should handle labeled given/expect" 
+      filetest "scenario-1" "should handle labeled given/expect"
         (parseR pRules)
           [ Scenario
             { scgiven =
@@ -554,7 +562,7 @@ main = do
             , srcref = srcref defaultReg
             }
           ]
-          
+
     -- describe "megaparsing DECIDE layouts" $ do
     --   it "should handle multiline" $ do
     --     let testfile = "test/financialadvisor-decide-1.csv"
@@ -599,7 +607,7 @@ main = do
                   } ]
               }
             ]
-      
+
       filetest "horn-0-1" "should parse X IS Y"
         (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
 
@@ -614,10 +622,10 @@ main = do
       -- filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
 
       filetest "horn-2" "should parse horn clauses 2"
-        (parseR pToplevel) simpleHorn 
-             
+        (parseR pToplevel) simpleHorn
+
       -- syntax unsupported at this time; we need continuation passing style
-      -- filetest "horn-3" "should parse horn clauses 3" (parseR pToplevel) simpleHorn 
+      -- filetest "horn-3" "should parse horn clauses 3" (parseR pToplevel) simpleHorn
 
     describe "our new parser" $ do
       let myand = LS.Types.And
@@ -638,15 +646,15 @@ main = do
                         ,MyAny[MyLeaf (text2pt "b")
                               ,MyLeaf (text2pt "c")
                               ,MyNot (MyLeaf (text2pt "d"))]],[])
-          
+
       filetest "indent-2-a" "should handle indent-2-a"
         (parseOther exprP) abcd
-        
-      filetest "indent-2-b" "should handle indent-2-b"
-        (parseOther exprP) abcd 
 
       filetest "indent-2-b" "should handle indent-2-b"
-        (parseOther exprP) abcd 
+        (parseOther exprP) abcd
+
+      filetest "indent-2-b" "should handle indent-2-b"
+        (parseOther exprP) abcd
 
       let ablcd = (MyAny [MyLeaf (text2pt "top1")
                         , MyLeaf (text2pt "top2")
@@ -655,9 +663,9 @@ main = do
                         ],[])
 
       -- of the three layouts below, only 2-c-3 works.
---      filetest "indent-2-c" "label samecol" (parseOther exprP) ablcd 
---      filetest "indent-2-c-2" "label right" (parseOther exprP) ablcd 
-      filetest "indent-2-c-3" "label left"  (parseOther exprP) ablcd 
+--      filetest "indent-2-c" "label samecol" (parseOther exprP) ablcd
+--      filetest "indent-2-c-2" "label right" (parseOther exprP) ablcd
+      filetest "indent-2-c-3" "label left"  (parseOther exprP) ablcd
 
       filetest "indent-2-d" "should handle indent-2-d which goes out, in, out"
         (parseOther exprP)
@@ -680,19 +688,19 @@ main = do
 
       filetest "paramtext-1" "paramtext-1 a single-token untyped ParamText"
         (parseOther pParamText) (ptFragment1,[])
-        
+
       filetest "paramtext-2" "a single-token ParamText typed with IS | A"
         (parseOther pParamText) (ptFragment2,[])
-        
+
       filetest "paramtext-2-a" "a single-token ParamText typed with IS A"
         (parseOther pParamText) (ptFragment2,[])
-        
+
       filetest "paramtext-2-b" "a single-token ParamText typed with ::"
         (parseOther pParamText) (ptFragment2,[])
-        
+
       filetest "paramtext-3" "a multi-token ParamText, untyped"
         (parseOther pParamText) (ptFragment3,[])
-        
+
       filetest "paramtext-3-b" "a multi-token ParamText, typed String"
         (parseOther pParamText) (ptFragment3b,[])
 
@@ -710,7 +718,7 @@ main = do
         (parseOther pDoAction) (Leaf $ ("win" :| ["gloriously"]
                                                  , Nothing):|[]
                                ,[])
-      
+
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
       let whoStructR_1 = defaultReg
@@ -718,21 +726,21 @@ main = do
 
           whoStructR_2 = defaultReg
                          { who = Just ( Leaf ( RPMT ["eats", "rudely"] ) ) }
-          
+
           whoStructR_3 = defaultReg
                          { who = Just ( Leaf ( RPMT ["eats", "without", "manners"] ) ) }
-          
+
           whoStructR_4 = defaultReg
                          { who = Just ( Leaf ( RPMT ["eats", "sans", "decorum"] )) }
-          
+
       filetest "who-1" "should handle a simple RPMT"
-        (parseR pToplevel) [ whoStructR_1 ] 
-          
+        (parseR pToplevel) [ whoStructR_1 ]
+
       filetest "who-2" "should handle a simple RPMT"
-        (parseR pToplevel) [ whoStructR_2 ] 
-          
+        (parseR pToplevel) [ whoStructR_2 ]
+
       filetest "who-3" "should handle a simple RPMT"
-        (parseR pToplevel) [ whoStructR_3 ] 
+        (parseR pToplevel) [ whoStructR_3 ]
 
       it "sameline fourIs float" $ do
         parseOther _fourIs "" (exampleStream "A,IS,IS,IS\n")
@@ -742,10 +750,10 @@ main = do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
 
-    describe "PDPA" $ do          
+    describe "PDPA" $ do
 
       filetest "pdpadbno-1" "must assess"
-        (parseR pToplevel) 
+        (parseR pToplevel)
         [ defaultReg
         { subj = Leaf
             (
@@ -866,7 +874,7 @@ main = do
         (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 10, srccol = 12, version = Nothing})}]
 
       filetest "pdpadbno-6" "exemption: unlikely"
-        (parseR pToplevel) 
+        (parseR pToplevel)
         [ Hornlike
           { name =
             [ "it is"
@@ -1000,7 +1008,7 @@ main = do
 
       filetest "primitive-pOtherVal" "primitive number"
         (parseOther pOtherVal) ("this is a string", [])
-      
+
       filetest "primitive-pOtherVal-indented" "primitive number"
         (parseOther ( id
                       $*| ($>>) pOtherVal
@@ -1048,6 +1056,8 @@ main = do
                     ))
         ( (  (42,43)
           , "my string"), [])
+
+
 {-
     describe "Prolog" $ do
 

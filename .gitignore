@@ -3,4 +3,4 @@ Fibs100.hs
 *~
 *.o
 *.hi
-
+*.gfo

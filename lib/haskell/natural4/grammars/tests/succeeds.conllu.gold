@@ -1,0 +1,87 @@
+root_nsubjPass_aux_auxPass (rootV_ (PassV notify_V)) (nsubjPass_ (RelNP (UsePron everyone_Pron) (UseRCl (TTAnt TPres ASimul) PPos (RelVP who_RP (AdvVP (PassV affect_V) (PrepNP by8agent_Prep (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN data_N breach_N))))))))) should_aux be_auxPass
+
+LIN: everyone , who is affected by the data breach , should be notified
+
+root_nsubj (rootV_ (ComplV cover_V (MassNP (AdjCN (PastPartAP (AdvVP (UseV store_V) (PrepNP in_Prep (DetCN aPl_Det (AdjCN (ConjAP and_Conj (BaseAP (PositA electronic_A) (StrAP "non-electronic"))) (UseN format_N)))))) (AdjCN (PositA personal_A) (UseN data_N)))))) (nsubj_ (DetCN (DetQuant DefArt NumSg) (UseN PDPA_N)))
+
+LIN: the PDPA covers personal data stored in electronic and non-electronic formats
+
+root_nsubj_cop (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PresPartAP (ComplV affect_V (DetCN (DetQuant IndefArt (NumCard (AdNum (AdnCAdv more_CAdv) (StrCard "500")))) (UseN people_N)))) (UseN (CompoundN data_N breach_N))))) be_cop
+
+LIN: a data breach affecting more than 500 people is a notifiable data breach
+
+root_nsubj_cop_aclRelcl (rootN_ (DetNP (DetQuant IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))))) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N intermediary_N)))) be_cop (aclRelclRS_ (UseRCl (TTAnt TPres ASimul) PPos (RelVP that_RP (ProgrVP (AdvVP (ComplV process_V (MassNP (AdjCN (PositA personal_A) (UseN data_N)))) (PrepNP for_Prep (DetCN (DetQuant another_Quant NumSg) (UseN organization_N))))))))
+
+LIN: a data intermediary is one , that is processing personal data for another organization
+
+root_nsubj_obl (rootV_ (UseV occur_V)) (nsubj_ (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN data_N breach_N)))) (obl_ (PrepNP after_Prep (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN date_N)) (PrepNP of_Prep (MassNP (UseN commencement_N))))))
+
+LIN: the data breach occurs after the date of commencement
+
+root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj_aux_aux (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N)))) may_aux have_aux))
+
+LIN: becomes aware that a data breach may have occurred
+
+root_advcl (rootV_ (UseV assess_V)) (advclUDS_ (root_mark_nsubj_cop (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (mark_ if_Subj) (nsubj_ (DetNP (DetQuant DefArt NumSg))) be_cop))
+
+LIN: assesses if it is a notifiable data breach
+
+root_cop_advmod (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod
+
+LIN: isn't a public agency
+
+root_aclRelcl (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN person_N))) (aclRelclRS_ (UseRCl (TTAnt TPres ASimul) PPos (RelVP (GenRP NumSg (UseN dog_N)) (ProgrVP (UseV sleep_V)))))
+
+LIN: is the person , whose dog is sleeping
+
+root_aclRelcl (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN person_N))) (aclRelclRS_ (UseRCl (TTAnt TPres ASimul) PPos (RelVP (GenRP NumPl (UseN dog_N)) (ProgrVP (UseV sleep_V)))))
+
+LIN: is the person , whose dogs are sleeping
+
+root_only (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN (StrN "PDPC"))))
+
+LIN: is the PDPC
+
+root_acl (rootN_ (DetCN (DetQuant IndefArt NumSg) (UseN message_N))) (aclUDSgerund_ (root_obj (rootV_ (UseV obey_V)) (obj_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA certain_A) (UseN format_N))))))
+
+LIN: is a message that obeys a certain format
+
+root_only (rootN_ (DetCN (DetQuant (GenNP (DetCN (DetQuant DefArt NumSg) (UseN individual_N))) NumSg) (UseN account_N)))
+
+LIN: is the individual's account
+
+root_only (rootN_ (DetCN (DetQuant (GenNP (DetCN (DetQuant DefArt NumSg) (UseN individual_N))) NumSg) (UseN (CompoundN account_N identifier_N))))
+
+LIN: is the individual's account identifier
+
+root_acl (rootN_ (DetCN (DetQuant IndefArt NumSg) (UseN individual_N))) (aclUDSpastpart_ (root_obl (rootV_ (UseV affect_V)) (obl_ (PrepNP by8agent_Prep (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))))))
+
+LIN: is an individual affected by a notifiable data breach
+
+root_aclRelcl (rootN_ (DetCN anySg_Det (UseN manner_N))) (aclRelclUDS_ (root_nsubj_cop_obl (rootA_ (PositA reasonable_A)) (nsubj_ (DetNP (DetQuant that_Quant NumSg))) be_cop (obl_ (PrepNP in_Prep (DetCN (DetQuant DefArt NumSg) (UseN circumstance_N))))))
+
+LIN: is any manner , that is reasonable in the circumstance
+
+root_aclRelcl (rootN_ (DetCN anySg_Det (AdjCN (PositA personal_A) (UseN data_N)))) (aclRelclUDS_ (root_nsubj_cop_advmod (rootA_ (PositA available_A)) (nsubj_ (DetNP (DetQuant that_Quant NumSg))) be_cop (advmod_ (PositAdvAdj public_A))))
+
+LIN: is any personal data , that is available publicly
+
+root_advmod (rootN_ (DetCN anySg_Det (UseN officer_N))) (advmod_ (ConjAdv or_Conj (BaseAdv (PositAdvAdj general_A) (PositAdvAdj special_A))))
+
+LIN: is any officer generally or specially
+
+root_only (rootQuant_ (GenNP (DetCN (DetQuant DefArt NumSg) (UseN individual_N))))
+
+LIN: is the individual's
+
+root_nmod (rootN_ (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV prescribe_V)) (UseN number_N)))) (nmod_ of_Prep (DetCN aPl_Det (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))
+
+LIN: is the prescribed number of affected individuals
+
+root_nmod (rootN_ (ConjNP and_Conj (BaseNP (DetCN (DetQuant DefArt NumSg) (UseN donation_N)) (MassNP (UseN removal_N))))) (nmod_ of_Prep (DetCN anySg_Det (UseN data_N)))
+
+LIN: is the donation and removal of any data
+
+root_nmod (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN set_N))) (nmod_ of_Prep (DetCN aPl_Det (AdjCN (PastPartAP (AdvVP (UseV affect_V) (PrepNP by8agent_Prep (ThePN (StrPN "NDB"))))) (UseN individual_N))))
+
+LIN: is the set of individuals affected by the NDB

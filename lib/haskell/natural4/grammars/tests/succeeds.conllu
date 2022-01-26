@@ -1,0 +1,182 @@
+1	everyone	everyone	PRON	NN	Number=Sing	11	nsubj:pass	_	FUN=PRONNN
+2	who	who	PRON	WP	PronType=Rel	4	nsubj:pass	_	FUN=PRONWP
+3	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	4	aux:pass	_	FUN=UseComp
+4	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part|Voice=Pass	1	acl:relcl	_	FUN=affectVBN
+5	by	by	ADP	IN	_	8	case	_	_
+6	the	the	DET	Quant	FORM=0	8	det	_	FUN=DefArt
+7	data	data	NOUN	NN	Number=Sing	8	compound	_	FUN=data_N
+8	breach	breach	NOUN	NN	Number=Sing	4	obl	_	FUN=breach_N
+9	should	should	AUX	MD	VerbForm=Fin	11	aux	_	_
+10	be	be	AUX	VB	VerbForm=Inf	11	aux:pass	_	FUN=UseComp
+11	notified	notify	VERB	VBN	Tense=Past|VerbForm=Part|Voice=Pass	0	root	_	FUN=notifyVBN
+
+1	The	the	DET	DT	Definite=Def|PronType=Art	2	det	_	FUN=DefArt
+2	PDPA	PDPA	NOUN	NN	Number=Sing	3	nsubj	_	FUN=PDPA_N
+3	covers	cover	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	_	FUN=coverVBZ
+4	personal	personal	ADJ	JJ	Degree=Pos	5	amod	_	FUN=personal_A
+5	data	data	NOUN	NN	Number=Sing	3	obj	_	FUN=data_N
+6	stored	store	VERB	VBN	Tense=Past|VerbForm=Part	5	acl	_	FUN=storeVBN
+7	in	in	ADP	IN	_	11	case	_	_
+8	electronic	electronic	ADJ	JJ	Degree=Pos	11	amod	_	FUN=electronic_A
+9	and	and	CCONJ	CC	_	10	cc	_	FUN=and_Conj
+10	non-electronic	non-electronic	ADJ	JJ	Degree=Pos	8	conj	_	FUN=non-electronic_A
+11	formats	format	NOUN	NNS	Number=Plur	6	obl	_	FUN=format_N
+12	.	.	PUNCT	.	_	3	punct	_	_
+
+1	a	a	DET	DT	Definite=Ind|PronType=Art	3	det	_	FUN=a_Det
+2	data	data	NOUN	NN	Number=Sing	3	compound	_	FUN=data_N
+3	breach	breach	NOUN	NN	Number=Sing	13	nsubj	_	FUN=breach_N
+4	affecting	affect	VERB	VBG	VerbForm=Ger	3	acl	_	FUN=affectVBG
+5	more	more	ADJ	JJR	Degree=Cmp	7	advmod	_	FUN=more_A
+6	than	than	ADP	IN	_	5	fixed	_	_
+7	500	500	NUM	CD	NumType=Card	8	nummod	_	_
+8	people	people	NOUN	NNS	Number=Plur	4	obj	_	FUN=people_N
+9	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	13	cop	_	FUN=UseComp
+10	a	a	DET	DT	Definite=Ind|PronType=Art	13	det	_	FUN=a_Det
+11	notifiable	notifiable	ADJ	JJ	Degree=Pos	13	amod	_	FUN=notifiable_A
+12	data	data	NOUN	NN	Number=Sing	13	compound	_	FUN=data_N
+13	breach	breach	NOUN	NN	Number=Sing	0	root	_	FUN=breach_N
+
+1	a	a	DET	DT	Definite=Ind|PronType=Art	3	det	_	FUN=a_Det
+2	data	data	NOUN	NN	Number=Sing	3	compound	_	FUN=data_N
+3	intermediary	intermediary	NOUN	NN	Number=Sing	5	nsubj	_	FUN=intermediary_N
+4	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	cop	_	FUN=UseComp
+5	one	one	NUM	CD	NumType=Card	0	root	_	_
+6	that	that	PRON	WDT	PronType=Rel	8	nsubj	_	FUN=PRONWDT
+7	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	aux	_	FUN=UseComp
+8	processing	process	VERB	VBG	Tense=Pres|VerbForm=Part	5	acl:relcl	_	FUN=processeVBG
+9	personal	personal	ADJ	JJ	Degree=Pos	10	amod	_	FUN=personal_A
+10	data	data	NOUN	NN	Number=Sing	8	obj	_	FUN=data_N
+11	for	for	ADP	IN	_	13	case	_	_
+12	another	another	DET	DT	_	13	det	_	FUN=another_Det
+13	organisation	organisation	NOUN	NN	Number=Sing	8	obl	_	FUN=organisation_N
+
+1	the	the	DET	Quant	FORM=0	3	det	_	FUN=DefArt
+2	data	data	NOUN	NN	Number=Sing	3	compound	_	FUN=data_N
+3	breach	breach	NOUN	NN	Number=Sing	4	nsubj	_	FUN=breach_N
+4	occurred	occur	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	_	FUN=occurVBD
+5	after	after	ADP	IN	_	7	case	_	_
+6	the	the	DET	Quant	FORM=0	7	det	_	FUN=DefArt
+7	date	date	NOUN	NN	Number=Sing	4	obl	_	FUN=date_N
+8	of	of	ADP	IN	_	9	case	_	_
+9	commencement	commencement	NOUN	NN	Number=Sing	7	nmod	_	FUN=commencement_N
+
+1	becoming	become	VERB	VBG	VerbForm=Ger	0	root	_	FUN=becomeVBG
+2	aware	aware	ADJ	JJ	Degree=Pos	1	xcomp	_	FUN=aware_A
+3	that	that	SCONJ	IN	_	9	mark	_	_
+4	a	a	DET	DT	Definite=Ind|PronType=Art	6	det	_	FUN=a_Det
+5	data	data	NOUN	NN	Number=Sing	6	compound	_	FUN=data_N
+6	breach	breach	NOUN	NN	Number=Sing	9	nsubj	_	FUN=breach_N
+7	may	may	AUX	MD	VerbForm=Fin	9	aux	_	_
+8	have	have	AUX	VB	VerbForm=Inf	9	aux	_	_
+9	occurred	occur	VERB	VBN	Tense=Past|VerbForm=Part	1	ccomp	_	FUN=occurVBN
+
+1	assess	assess	VERB	VB	Mood=Imp|VerbForm=Fin	0	root	_	FUN=assessVB
+2	if	if	SCONJ	IN	_	8	mark	_	_
+3	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	8	nsubj	_	FUN=PRONPRP
+4	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	cop	_	FUN=UseComp
+5	a	a	DET	DT	Definite=Ind|PronType=Art	8	det	_	FUN=a_Det
+6	notifiable	notifiable	ADJ	JJ	Degree=Pos	8	amod	_	FUN=notifiable_A
+7	data	data	NOUN	NN	Number=Sing	8	compound	_	FUN=data_N
+8	breach	breach	NOUN	NN	Number=Sing	1	advcl	_	FUN=breach_N
+
+1	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	cop	_	FUN=UseComp
+2	not	not	PART	RB	_	5	advmod	_	_
+3	a	a	DET	DT	Definite=Ind|PronType=Art	5	det	_	FUN=a_Det
+4	public	public	ADJ	JJ	Degree=Pos	5	amod	_	FUN=public_A
+5	agency	agency	NOUN	NN	Number=Sing	0	root	_	FUN=agency_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	person	person	NOUN	NN	Number=Sing	0	root	_	FUN=person_N
+3	whose	whose	PRON	WP$	Poss=Yes|PronType=Int	4	nmod:poss	_	FUN=PRONWP$
+4	dog	dog	NOUN	NN	Number=Sing	6	nsubj	_	FUN=dog_N
+5	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	6	aux	_	FUN=UseComp
+6	sleeping	sleep	VERB	VBG	Tense=Pres|VerbForm=Part	2	acl:relcl	_	_
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	person	person	NOUN	NN	Number=Sing	0	root	_	FUN=person_N
+3	whose	whose	PRON	WP$	Poss=Yes|PronType=Int	4	nmod:poss	_	FUN=PRONWP$
+4	dogs	dog	NOUN	NN	Number=Plur	6	nsubj	_	FUN=dog_N
+5	are	be	AUX	VBZ	Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin	6	aux	_	FUN=UseComp
+6	sleeping	sleep	VERB	VBG	Tense=Pres|VerbForm=Part	2	acl:relcl	_	_
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	PDPC	Pdpc	NOUN	NN	Number=Sing	0	root	_	FUN=Pdpc_N
+
+1	a	a	DET	DT	Definite=Ind|PronType=Art	2	det	_	FUN=a_Det
+2	message	message	NOUN	NN	Number=Sing	0	root	_	FUN=message_N
+3	obeying	obey	VERB	VBG	VerbForm=Ger	2	acl	_	FUN=obeyVBG
+4	a	a	DET	DT	Definite=Ind|PronType=Art	6	det	_	FUN=a_Det
+5	certain	certain	ADJ	JJ	Degree=Pos	6	amod	_	FUN=certain_A
+6	format	format	NOUN	NN	Number=Sing	3	obj	_	FUN=format_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	individual	individual	NOUN	NN	Number=Sing	4	nmod:poss	_	FUN=individual_N
+3	’s	's	PART	POS	_	2	case	_	_
+4	account	account	NOUN	NN	Number=Sing	0	root	_	FUN=account_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	individual	individual	NOUN	NN	Number=Sing	5	nmod:poss	_	FUN=individual_N
+3	’s	's	PART	POS	_	2	case	_	_
+4	account	account	NOUN	NN	Number=Sing	5	compound	_	FUN=account_N
+5	identifier	identifier	NOUN	NN	Number=Sing	0	root	_	FUN=identifier_N
+
+1	an	a	DET	DT	Definite=Ind|PronType=Art	2	det	_	FUN=a_Det
+2	individual	individual	NOUN	JJ	Degree=Pos	0	root	_	FUN=individual_A
+3	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part	2	acl	_	FUN=affectVBN
+4	by	by	ADP	IN	_	8	case	_	_
+5	a	a	DET	DT	Definite=Ind|PronType=Art	8	det	_	FUN=a_Det
+6	notifiable	notifiable	ADJ	JJ	Degree=Pos	8	amod	_	FUN=notifiable_A
+7	data	data	NOUN	NN	Number=Sing	8	compound	_	FUN=data_N
+8	breach	breach	NOUN	NN	Number=Sing	3	obl	_	FUN=breach_N
+
+1	any	any	DET	DT	_	2	det	_	_
+2	manner	manner	NOUN	NN	Number=Sing	0	root	_	_
+3	that	that	PRON	WDT	PronType=Rel	5	nsubj	_	_
+4	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	cop	_	_
+5	reasonable	reasonable	ADJ	JJ	Degree=Pos	2	acl:relcl	_	_
+6	in	in	ADP	IN	_	8	case	_	_
+7	the	the	DET	Quant	FORM=0	8	det	_	_
+8	circumstances	circumstance	NOUN	NNS	Number=Plur	5	obl	_	_
+
+1	any	any	DET	DT	_	3	det	_	FUN=any_Det
+2	personal	personal	ADJ	JJ	Degree=Pos	3	amod	_	FUN=personal_A
+3	data	data	NOUN	NN	Number=Sing	0	root	_	FUN=data_N
+4	that	that	PRON	WDT	PronType=Rel	7	nsubj	_	FUN=PRONWDT
+5	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	7	cop	_	FUN=UseComp
+6	publicly	publicly	ADV	RB	_	7	advmod	_	_
+7	available	available	ADJ	JJ	Degree=Pos	3	acl:relcl	_	FUN=available_A
+
+1	any	any	DET	DT	_	2	det	_	FUN=any_Det
+2	officer	officer	NOUN	NN	Number=Sing	0	root	_	FUN=officer_N
+3	generally	generally	ADV	RB	_	2	advmod	_	_
+4	or	or	CCONJ	CC	_	5	cc	_	FUN=or_Conj
+5	specially	specially	ADV	RB	_	3	conj	_	_
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	individual	individual	NOUN	NN	Number=Sing	0	root	_	FUN=individual_N
+3	's	's	PART	POS	_	2	case	_	_
+
+1	the	the	DET	Quant	FORM=0	3	det	_	FUN=DefArt
+2	prescribed	prescribe	VERB	VBN	Tense=Past|VerbForm=Part	3	amod	_	FUN=prescribeVBN
+3	number	number	NOUN	NN	Number=Sing	0	root	_	FUN=number_N
+4	of	of	ADP	IN	_	6	case	_	_
+5	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part	6	amod	_	FUN=affectVBN
+6	individuals	individual	NOUN	NNS	Number=Plur	3	nmod	_	FUN=individual_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	donation	donation	NOUN	NN	Number=Sing	0	root	_	FUN=donation_N
+3	and	and	CCONJ	CC	_	4	cc	_	FUN=and_Conj
+4	removal	removal	NOUN	NN	Number=Sing	2	conj	_	FUN=removal_N
+5	of	of	ADP	IN	_	7	case	_	_
+6	any	any	DET	DT	_	7	det	_	FUN=any_Det
+7	data	data	NOUN	NN	Number=Sing	2	nmod	_	FUN=data_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	set	set	NOUN	NN	Number=Sing	0	root	_	FUN=set_N
+3	of	of	ADP	IN	_	4	case	_	_
+4	individuals	individual	NOUN	NNS	Number=Plur	2	nmod	_	FUN=individual_N
+5	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part	4	acl	_	FUN=affectVBN
+6	by	by	ADP	IN	_	8	case	_	_
+7	the	the	DET	Quant	FORM=0	8	det	_	FUN=DefArt
+8	NDB	NDB	PROPN	NNP	Number=Sing	5	obl	_	_

@@ -184,8 +184,6 @@ type Gaux = Tree Gaux_
 data Gaux_
 type GauxPass = Tree GauxPass_
 data GauxPass_
-type Gcase_ = Tree Gcase__
-data Gcase__
 type Gcc = Tree Gcc_
 data Gcc_
 type GccPreconj = Tree GccPreconj_
@@ -338,6 +336,8 @@ type GVoc = Tree GVoc_
 data GVoc_
 type GX = Tree GX_
 data GX_
+type Gcase_ = Tree Gcase__
+data Gcase__
 type GString = Tree GString_
 data GString_
 type GInt = Tree GInt_
@@ -460,6 +460,7 @@ data Tree :: * -> * where
   GMassNP :: GCN -> Tree GNP_
   GPredetNP :: GPredet -> GNP -> Tree GNP_
   GRelNP :: GNP -> GRS -> Tree GNP_
+  GThePN :: GPN -> Tree GNP_
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
   Geuropean_NP :: Tree GNP_
@@ -530,14 +531,11 @@ data Tree :: * -> * where
   GTFut :: Tree GTense_
   GTPast :: Tree GTense_
   GTPres :: Tree GTense_
-  GAfter :: GUDS -> Tree GUDFragment_
-  GBefore :: GUDS -> Tree GUDFragment_
-  GBy :: GUDS -> Tree GUDFragment_
-  GOn :: GUDS -> Tree GUDFragment_
   GUpon :: GUDS -> Tree GUDFragment_
-  GVaguely :: GUDS -> Tree GUDFragment_
   GsubjAction :: GNP -> GUDS -> Tree GUDFragment_
   Groot_acl :: Groot -> Gacl -> Tree GUDS_
+  Groot_aclRelcl :: Groot -> GaclRelcl -> Tree GUDS_
+  Groot_aclRelcl_nmod :: Groot -> GaclRelcl -> Gnmod -> Tree GUDS_
   Groot_acl_nmod :: Groot -> Gacl -> Gnmod -> Tree GUDS_
   Groot_advcl :: Groot -> Gadvcl -> Tree GUDS_
   Groot_advcl_det_compound_amod_advcl :: Groot -> Gadvcl -> Gdet -> Gcompound -> Gamod -> Gadvcl -> Tree GUDS_
@@ -605,27 +603,6 @@ data Tree :: * -> * where
   Groot_cop_det_nmod :: Groot -> Gcop -> Gdet -> Gnmod -> Tree GUDS_
   Groot_csubj :: Groot -> Gcsubj -> Tree GUDS_
   Groot_csubj_aux_aux :: Groot -> Gcsubj -> Gaux -> Gaux -> Tree GUDS_
-  Groot_det :: Groot -> Gdet -> Tree GUDS_
-  Groot_det_acl :: Groot -> Gdet -> Gacl -> Tree GUDS_
-  Groot_det_aclRelcl :: Groot -> Gdet -> GaclRelcl -> Tree GUDS_
-  Groot_det_aclRelcl_nmod :: Groot -> Gdet -> GaclRelcl -> Gnmod -> Tree GUDS_
-  Groot_det_advmod :: Groot -> Gdet -> Gadvmod -> Tree GUDS_
-  Groot_det_amod :: Groot -> Gdet -> Gamod -> Tree GUDS_
-  Groot_det_amod_aclRelcl :: Groot -> Gdet -> Gamod -> GaclRelcl -> Tree GUDS_
-  Groot_det_amod_aclRelcl_nmod :: Groot -> Gdet -> Gamod -> GaclRelcl -> Gnmod -> Tree GUDS_
-  Groot_det_amod_amod_acl_nmod :: Groot -> Gdet -> Gamod -> Gamod -> Gacl -> Gnmod -> Tree GUDS_
-  Groot_det_amod_nmod :: Groot -> Gdet -> Gamod -> Gnmod -> Tree GUDS_
-  Groot_det_amod_obl :: Groot -> Gdet -> Gamod -> Gobl -> Tree GUDS_
-  Groot_det_case :: Groot -> Gdet -> Gcase_ -> Tree GUDS_
-  Groot_det_compound :: Groot -> Gdet -> Gcompound -> Tree GUDS_
-  Groot_det_compound_compound :: Groot -> Gdet -> Gcompound -> Gcompound -> Tree GUDS_
-  Groot_det_compound_compound_nmod_appos :: Groot -> Gdet -> Gcompound -> Gcompound -> Gnmod -> Gappos -> Tree GUDS_
-  Groot_det_conj_acl :: Groot -> Gdet -> Gconj -> Gacl -> Tree GUDS_
-  Groot_det_conj_nmod :: Groot -> Gdet -> Gconj -> Gnmod -> Tree GUDS_
-  Groot_det_conj_obj :: Groot -> Gdet -> Gconj -> Gobj -> Tree GUDS_
-  Groot_det_nmod :: Groot -> Gdet -> Gnmod -> Tree GUDS_
-  Groot_det_nmodPoss :: Groot -> Gdet -> GnmodPoss -> Tree GUDS_
-  Groot_det_nmodPoss_compound :: Groot -> Gdet -> GnmodPoss -> Gcompound -> Tree GUDS_
   Groot_discourse :: Groot -> Gdiscourse -> Tree GUDS_
   Groot_fixed :: Groot -> Gfixed -> Tree GUDS_
   Groot_goeswith :: Groot -> Ggoeswith -> Tree GUDS_
@@ -755,6 +732,8 @@ data Tree :: * -> * where
   GProgrVP :: GVP -> Tree GVP_
   GUseV :: GV -> Tree GVP_
   GaclUDS_ :: GUDS -> Tree Gacl_
+  GaclUDSgerund_ :: GUDS -> Tree Gacl_
+  GaclUDSpastpart_ :: GUDS -> Tree Gacl_
   Gacl_ :: GX -> Tree Gacl_
   GaclRelclRS_ :: GRS -> Tree GaclRelcl_
   GaclRelclUDS_ :: GUDS -> Tree GaclRelcl_
@@ -776,7 +755,6 @@ data Tree :: * -> * where
   Gshould_aux :: Tree Gaux_
   Gwill_aux :: Tree Gaux_
   Gbe_auxPass :: Tree GauxPass_
-  Gcase__ :: GX -> Tree Gcase__
   Gcc_ :: GConj -> Tree Gcc_
   GccPreconj_ :: GX -> Tree GccPreconj_
   Gccomp_ :: GUDS -> Tree Gccomp_
@@ -834,7 +812,9 @@ data Tree :: * -> * where
   Greparandum_ :: GX -> Tree Greparandum_
   GrootA_ :: GAP -> Tree Groot_
   GrootAdv_ :: GAdv -> Tree Groot_
+  GrootDet_ :: GDet -> Tree Groot_
   GrootN_ :: GNP -> Tree Groot_
+  GrootQuant_ :: GQuant -> Tree Groot_
   GrootV_ :: GVP -> Tree Groot_
   Gvocative_ :: GNP -> Tree Gvocative_
   GxcompA_ :: GAP -> Tree Gxcomp_
@@ -972,6 +952,7 @@ instance Eq (Tree a) where
     (GMassNP x1,GMassNP y1) -> and [ x1 == y1 ]
     (GPredetNP x1 x2,GPredetNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GThePN x1,GThePN y1) -> and [ x1 == y1 ]
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
     (Geuropean_NP,Geuropean_NP) -> and [ ]
@@ -1042,14 +1023,11 @@ instance Eq (Tree a) where
     (GTFut,GTFut) -> and [ ]
     (GTPast,GTPast) -> and [ ]
     (GTPres,GTPres) -> and [ ]
-    (GAfter x1,GAfter y1) -> and [ x1 == y1 ]
-    (GBefore x1,GBefore y1) -> and [ x1 == y1 ]
-    (GBy x1,GBy y1) -> and [ x1 == y1 ]
-    (GOn x1,GOn y1) -> and [ x1 == y1 ]
     (GUpon x1,GUpon y1) -> and [ x1 == y1 ]
-    (GVaguely x1,GVaguely y1) -> and [ x1 == y1 ]
     (GsubjAction x1 x2,GsubjAction y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_acl x1 x2,Groot_acl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Groot_aclRelcl x1 x2,Groot_aclRelcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Groot_aclRelcl_nmod x1 x2 x3,Groot_aclRelcl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_acl_nmod x1 x2 x3,Groot_acl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_advcl x1 x2,Groot_advcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_advcl_det_compound_amod_advcl x1 x2 x3 x4 x5 x6,Groot_advcl_det_compound_amod_advcl y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
@@ -1117,27 +1095,6 @@ instance Eq (Tree a) where
     (Groot_cop_det_nmod x1 x2 x3 x4,Groot_cop_det_nmod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_csubj x1 x2,Groot_csubj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_csubj_aux_aux x1 x2 x3 x4,Groot_csubj_aux_aux y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det x1 x2,Groot_det y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_det_acl x1 x2 x3,Groot_det_acl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_aclRelcl x1 x2 x3,Groot_det_aclRelcl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_aclRelcl_nmod x1 x2 x3 x4,Groot_det_aclRelcl_nmod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_advmod x1 x2 x3,Groot_det_advmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_amod x1 x2 x3,Groot_det_amod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_amod_aclRelcl x1 x2 x3 x4,Groot_det_amod_aclRelcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_amod_aclRelcl_nmod x1 x2 x3 x4 x5,Groot_det_amod_aclRelcl_nmod y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_det_amod_amod_acl_nmod x1 x2 x3 x4 x5 x6,Groot_det_amod_amod_acl_nmod y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
-    (Groot_det_amod_nmod x1 x2 x3 x4,Groot_det_amod_nmod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_amod_obl x1 x2 x3 x4,Groot_det_amod_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_case x1 x2 x3,Groot_det_case y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_compound x1 x2 x3,Groot_det_compound y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_compound_compound x1 x2 x3 x4,Groot_det_compound_compound y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_compound_compound_nmod_appos x1 x2 x3 x4 x5 x6,Groot_det_compound_compound_nmod_appos y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
-    (Groot_det_conj_acl x1 x2 x3 x4,Groot_det_conj_acl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_conj_nmod x1 x2 x3 x4,Groot_det_conj_nmod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_conj_obj x1 x2 x3 x4,Groot_det_conj_obj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_det_nmod x1 x2 x3,Groot_det_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_nmodPoss x1 x2 x3,Groot_det_nmodPoss y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_det_nmodPoss_compound x1 x2 x3 x4,Groot_det_nmodPoss_compound y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_discourse x1 x2,Groot_discourse y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_fixed x1 x2,Groot_fixed y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_goeswith x1 x2,Groot_goeswith y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1267,6 +1224,8 @@ instance Eq (Tree a) where
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
     (GaclUDS_ x1,GaclUDS_ y1) -> and [ x1 == y1 ]
+    (GaclUDSgerund_ x1,GaclUDSgerund_ y1) -> and [ x1 == y1 ]
+    (GaclUDSpastpart_ x1,GaclUDSpastpart_ y1) -> and [ x1 == y1 ]
     (Gacl_ x1,Gacl_ y1) -> and [ x1 == y1 ]
     (GaclRelclRS_ x1,GaclRelclRS_ y1) -> and [ x1 == y1 ]
     (GaclRelclUDS_ x1,GaclRelclUDS_ y1) -> and [ x1 == y1 ]
@@ -1288,7 +1247,6 @@ instance Eq (Tree a) where
     (Gshould_aux,Gshould_aux) -> and [ ]
     (Gwill_aux,Gwill_aux) -> and [ ]
     (Gbe_auxPass,Gbe_auxPass) -> and [ ]
-    (Gcase__ x1,Gcase__ y1) -> and [ x1 == y1 ]
     (Gcc_ x1,Gcc_ y1) -> and [ x1 == y1 ]
     (GccPreconj_ x1,GccPreconj_ y1) -> and [ x1 == y1 ]
     (Gccomp_ x1,Gccomp_ y1) -> and [ x1 == y1 ]
@@ -1346,7 +1304,9 @@ instance Eq (Tree a) where
     (Greparandum_ x1,Greparandum_ y1) -> and [ x1 == y1 ]
     (GrootA_ x1,GrootA_ y1) -> and [ x1 == y1 ]
     (GrootAdv_ x1,GrootAdv_ y1) -> and [ x1 == y1 ]
+    (GrootDet_ x1,GrootDet_ y1) -> and [ x1 == y1 ]
     (GrootN_ x1,GrootN_ y1) -> and [ x1 == y1 ]
+    (GrootQuant_ x1,GrootQuant_ y1) -> and [ x1 == y1 ]
     (GrootV_ x1,GrootV_ y1) -> and [ x1 == y1 ]
     (Gvocative_ x1,Gvocative_ y1) -> and [ x1 == y1 ]
     (GxcompA_ x1,GxcompA_ y1) -> and [ x1 == y1 ]
@@ -1874,6 +1834,7 @@ instance Gf GNP where
   gf (GMassNP x1) = mkApp (mkCId "MassNP") [gf x1]
   gf (GPredetNP x1 x2) = mkApp (mkCId "PredetNP") [gf x1, gf x2]
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
+  gf (GThePN x1) = mkApp (mkCId "ThePN") [gf x1]
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
   gf Geuropean_NP = mkApp (mkCId "european_NP") []
@@ -1890,6 +1851,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "MassNP" -> GMassNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredetNP" -> GPredetNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "ThePN" -> GThePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
       Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP
@@ -2209,22 +2171,12 @@ instance Gf GTense where
       _ -> error ("no Tense " ++ show t)
 
 instance Gf GUDFragment where
-  gf (GAfter x1) = mkApp (mkCId "After") [gf x1]
-  gf (GBefore x1) = mkApp (mkCId "Before") [gf x1]
-  gf (GBy x1) = mkApp (mkCId "By") [gf x1]
-  gf (GOn x1) = mkApp (mkCId "On") [gf x1]
   gf (GUpon x1) = mkApp (mkCId "Upon") [gf x1]
-  gf (GVaguely x1) = mkApp (mkCId "Vaguely") [gf x1]
   gf (GsubjAction x1 x2) = mkApp (mkCId "subjAction") [gf x1, gf x2]
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "After" -> GAfter (fg x1)
-      Just (i,[x1]) | i == mkCId "Before" -> GBefore (fg x1)
-      Just (i,[x1]) | i == mkCId "By" -> GBy (fg x1)
-      Just (i,[x1]) | i == mkCId "On" -> GOn (fg x1)
       Just (i,[x1]) | i == mkCId "Upon" -> GUpon (fg x1)
-      Just (i,[x1]) | i == mkCId "Vaguely" -> GVaguely (fg x1)
       Just (i,[x1,x2]) | i == mkCId "subjAction" -> GsubjAction (fg x1) (fg x2)
 
 
@@ -2232,6 +2184,8 @@ instance Gf GUDFragment where
 
 instance Gf GUDS where
   gf (Groot_acl x1 x2) = mkApp (mkCId "root_acl") [gf x1, gf x2]
+  gf (Groot_aclRelcl x1 x2) = mkApp (mkCId "root_aclRelcl") [gf x1, gf x2]
+  gf (Groot_aclRelcl_nmod x1 x2 x3) = mkApp (mkCId "root_aclRelcl_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_acl_nmod x1 x2 x3) = mkApp (mkCId "root_acl_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_advcl x1 x2) = mkApp (mkCId "root_advcl") [gf x1, gf x2]
   gf (Groot_advcl_det_compound_amod_advcl x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_advcl_det_compound_amod_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
@@ -2299,27 +2253,6 @@ instance Gf GUDS where
   gf (Groot_cop_det_nmod x1 x2 x3 x4) = mkApp (mkCId "root_cop_det_nmod") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_csubj x1 x2) = mkApp (mkCId "root_csubj") [gf x1, gf x2]
   gf (Groot_csubj_aux_aux x1 x2 x3 x4) = mkApp (mkCId "root_csubj_aux_aux") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det x1 x2) = mkApp (mkCId "root_det") [gf x1, gf x2]
-  gf (Groot_det_acl x1 x2 x3) = mkApp (mkCId "root_det_acl") [gf x1, gf x2, gf x3]
-  gf (Groot_det_aclRelcl x1 x2 x3) = mkApp (mkCId "root_det_aclRelcl") [gf x1, gf x2, gf x3]
-  gf (Groot_det_aclRelcl_nmod x1 x2 x3 x4) = mkApp (mkCId "root_det_aclRelcl_nmod") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_advmod x1 x2 x3) = mkApp (mkCId "root_det_advmod") [gf x1, gf x2, gf x3]
-  gf (Groot_det_amod x1 x2 x3) = mkApp (mkCId "root_det_amod") [gf x1, gf x2, gf x3]
-  gf (Groot_det_amod_aclRelcl x1 x2 x3 x4) = mkApp (mkCId "root_det_amod_aclRelcl") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_amod_aclRelcl_nmod x1 x2 x3 x4 x5) = mkApp (mkCId "root_det_amod_aclRelcl_nmod") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_det_amod_amod_acl_nmod x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_det_amod_amod_acl_nmod") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
-  gf (Groot_det_amod_nmod x1 x2 x3 x4) = mkApp (mkCId "root_det_amod_nmod") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_amod_obl x1 x2 x3 x4) = mkApp (mkCId "root_det_amod_obl") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_case x1 x2 x3) = mkApp (mkCId "root_det_case") [gf x1, gf x2, gf x3]
-  gf (Groot_det_compound x1 x2 x3) = mkApp (mkCId "root_det_compound") [gf x1, gf x2, gf x3]
-  gf (Groot_det_compound_compound x1 x2 x3 x4) = mkApp (mkCId "root_det_compound_compound") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_compound_compound_nmod_appos x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_det_compound_compound_nmod_appos") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
-  gf (Groot_det_conj_acl x1 x2 x3 x4) = mkApp (mkCId "root_det_conj_acl") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_conj_nmod x1 x2 x3 x4) = mkApp (mkCId "root_det_conj_nmod") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_conj_obj x1 x2 x3 x4) = mkApp (mkCId "root_det_conj_obj") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_det_nmod x1 x2 x3) = mkApp (mkCId "root_det_nmod") [gf x1, gf x2, gf x3]
-  gf (Groot_det_nmodPoss x1 x2 x3) = mkApp (mkCId "root_det_nmodPoss") [gf x1, gf x2, gf x3]
-  gf (Groot_det_nmodPoss_compound x1 x2 x3 x4) = mkApp (mkCId "root_det_nmodPoss_compound") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_discourse x1 x2) = mkApp (mkCId "root_discourse") [gf x1, gf x2]
   gf (Groot_fixed x1 x2) = mkApp (mkCId "root_fixed") [gf x1, gf x2]
   gf (Groot_goeswith x1 x2) = mkApp (mkCId "root_goeswith") [gf x1, gf x2]
@@ -2444,6 +2377,8 @@ instance Gf GUDS where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "root_acl" -> Groot_acl (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "root_aclRelcl" -> Groot_aclRelcl (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_aclRelcl_nmod" -> Groot_aclRelcl_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_acl_nmod" -> Groot_acl_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_advcl" -> Groot_advcl (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_advcl_det_compound_amod_advcl" -> Groot_advcl_det_compound_amod_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
@@ -2511,27 +2446,6 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_cop_det_nmod" -> Groot_cop_det_nmod (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_csubj" -> Groot_csubj (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_csubj_aux_aux" -> Groot_csubj_aux_aux (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2]) | i == mkCId "root_det" -> Groot_det (fg x1) (fg x2)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_acl" -> Groot_det_acl (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_aclRelcl" -> Groot_det_aclRelcl (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_aclRelcl_nmod" -> Groot_det_aclRelcl_nmod (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_advmod" -> Groot_det_advmod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_amod" -> Groot_det_amod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_amod_aclRelcl" -> Groot_det_amod_aclRelcl (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_det_amod_aclRelcl_nmod" -> Groot_det_amod_aclRelcl_nmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_det_amod_amod_acl_nmod" -> Groot_det_amod_amod_acl_nmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_amod_nmod" -> Groot_det_amod_nmod (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_amod_obl" -> Groot_det_amod_obl (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_case" -> Groot_det_case (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_compound" -> Groot_det_compound (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_compound_compound" -> Groot_det_compound_compound (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_det_compound_compound_nmod_appos" -> Groot_det_compound_compound_nmod_appos (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_conj_acl" -> Groot_det_conj_acl (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_conj_nmod" -> Groot_det_conj_nmod (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_conj_obj" -> Groot_det_conj_obj (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_nmod" -> Groot_det_nmod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_det_nmodPoss" -> Groot_det_nmodPoss (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_det_nmodPoss_compound" -> Groot_det_nmodPoss_compound (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_discourse" -> Groot_discourse (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_fixed" -> Groot_fixed (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_goeswith" -> Groot_goeswith (fg x1) (fg x2)
@@ -2689,11 +2603,15 @@ instance Gf GVP where
 
 instance Gf Gacl where
   gf (GaclUDS_ x1) = mkApp (mkCId "aclUDS_") [gf x1]
+  gf (GaclUDSgerund_ x1) = mkApp (mkCId "aclUDSgerund_") [gf x1]
+  gf (GaclUDSpastpart_ x1) = mkApp (mkCId "aclUDSpastpart_") [gf x1]
   gf (Gacl_ x1) = mkApp (mkCId "acl_") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "aclUDS_" -> GaclUDS_ (fg x1)
+      Just (i,[x1]) | i == mkCId "aclUDSgerund_" -> GaclUDSgerund_ (fg x1)
+      Just (i,[x1]) | i == mkCId "aclUDSpastpart_" -> GaclUDSpastpart_ (fg x1)
       Just (i,[x1]) | i == mkCId "acl_" -> Gacl_ (fg x1)
 
 
@@ -2810,16 +2728,6 @@ instance Gf GauxPass where
 
 
       _ -> error ("no auxPass " ++ show t)
-
-instance Gf Gcase_ where
-  gf (Gcase__ x1) = mkApp (mkCId "case__") [gf x1]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1]) | i == mkCId "case__" -> Gcase__ (fg x1)
-
-
-      _ -> error ("no case_ " ++ show t)
 
 instance Gf Gcc where
   gf (Gcc_ x1) = mkApp (mkCId "cc_") [gf x1]
@@ -3326,14 +3234,18 @@ instance Gf Greparandum where
 instance Gf Groot where
   gf (GrootA_ x1) = mkApp (mkCId "rootA_") [gf x1]
   gf (GrootAdv_ x1) = mkApp (mkCId "rootAdv_") [gf x1]
+  gf (GrootDet_ x1) = mkApp (mkCId "rootDet_") [gf x1]
   gf (GrootN_ x1) = mkApp (mkCId "rootN_") [gf x1]
+  gf (GrootQuant_ x1) = mkApp (mkCId "rootQuant_") [gf x1]
   gf (GrootV_ x1) = mkApp (mkCId "rootV_") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "rootA_" -> GrootA_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootAdv_" -> GrootAdv_ (fg x1)
+      Just (i,[x1]) | i == mkCId "rootDet_" -> GrootDet_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootN_" -> GrootN_ (fg x1)
+      Just (i,[x1]) | i == mkCId "rootQuant_" -> GrootQuant_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootV_" -> GrootV_ (fg x1)
 
 
@@ -3555,6 +3467,14 @@ instance Gf GX where
 
 
 
+instance Show Gcase_
+
+instance Gf Gcase_ where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
 
 instance Compos Tree where
   compos r a f t = case t of
@@ -3617,6 +3537,7 @@ instance Compos Tree where
     GMassNP x1 -> r GMassNP `a` f x1
     GPredetNP x1 x2 -> r GPredetNP `a` f x1 `a` f x2
     GRelNP x1 x2 -> r GRelNP `a` f x1 `a` f x2
+    GThePN x1 -> r GThePN `a` f x1
     GUsePN x1 -> r GUsePN `a` f x1
     GUsePron x1 -> r GUsePron `a` f x1
     GNumCard x1 -> r GNumCard `a` f x1
@@ -3662,14 +3583,11 @@ instance Compos Tree where
     Gpot3 x1 -> r Gpot3 `a` f x1
     Gpot3plus x1 x2 -> r Gpot3plus `a` f x1 `a` f x2
     GTTAnt x1 x2 -> r GTTAnt `a` f x1 `a` f x2
-    GAfter x1 -> r GAfter `a` f x1
-    GBefore x1 -> r GBefore `a` f x1
-    GBy x1 -> r GBy `a` f x1
-    GOn x1 -> r GOn `a` f x1
     GUpon x1 -> r GUpon `a` f x1
-    GVaguely x1 -> r GVaguely `a` f x1
     GsubjAction x1 x2 -> r GsubjAction `a` f x1 `a` f x2
     Groot_acl x1 x2 -> r Groot_acl `a` f x1 `a` f x2
+    Groot_aclRelcl x1 x2 -> r Groot_aclRelcl `a` f x1 `a` f x2
+    Groot_aclRelcl_nmod x1 x2 x3 -> r Groot_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_acl_nmod x1 x2 x3 -> r Groot_acl_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_advcl x1 x2 -> r Groot_advcl `a` f x1 `a` f x2
     Groot_advcl_det_compound_amod_advcl x1 x2 x3 x4 x5 x6 -> r Groot_advcl_det_compound_amod_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
@@ -3737,27 +3655,6 @@ instance Compos Tree where
     Groot_cop_det_nmod x1 x2 x3 x4 -> r Groot_cop_det_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_csubj x1 x2 -> r Groot_csubj `a` f x1 `a` f x2
     Groot_csubj_aux_aux x1 x2 x3 x4 -> r Groot_csubj_aux_aux `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det x1 x2 -> r Groot_det `a` f x1 `a` f x2
-    Groot_det_acl x1 x2 x3 -> r Groot_det_acl `a` f x1 `a` f x2 `a` f x3
-    Groot_det_aclRelcl x1 x2 x3 -> r Groot_det_aclRelcl `a` f x1 `a` f x2 `a` f x3
-    Groot_det_aclRelcl_nmod x1 x2 x3 x4 -> r Groot_det_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_advmod x1 x2 x3 -> r Groot_det_advmod `a` f x1 `a` f x2 `a` f x3
-    Groot_det_amod x1 x2 x3 -> r Groot_det_amod `a` f x1 `a` f x2 `a` f x3
-    Groot_det_amod_aclRelcl x1 x2 x3 x4 -> r Groot_det_amod_aclRelcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_amod_aclRelcl_nmod x1 x2 x3 x4 x5 -> r Groot_det_amod_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_det_amod_amod_acl_nmod x1 x2 x3 x4 x5 x6 -> r Groot_det_amod_amod_acl_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
-    Groot_det_amod_nmod x1 x2 x3 x4 -> r Groot_det_amod_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_amod_obl x1 x2 x3 x4 -> r Groot_det_amod_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_case x1 x2 x3 -> r Groot_det_case `a` f x1 `a` f x2 `a` f x3
-    Groot_det_compound x1 x2 x3 -> r Groot_det_compound `a` f x1 `a` f x2 `a` f x3
-    Groot_det_compound_compound x1 x2 x3 x4 -> r Groot_det_compound_compound `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_compound_compound_nmod_appos x1 x2 x3 x4 x5 x6 -> r Groot_det_compound_compound_nmod_appos `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
-    Groot_det_conj_acl x1 x2 x3 x4 -> r Groot_det_conj_acl `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_conj_nmod x1 x2 x3 x4 -> r Groot_det_conj_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_conj_obj x1 x2 x3 x4 -> r Groot_det_conj_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_det_nmod x1 x2 x3 -> r Groot_det_nmod `a` f x1 `a` f x2 `a` f x3
-    Groot_det_nmodPoss x1 x2 x3 -> r Groot_det_nmodPoss `a` f x1 `a` f x2 `a` f x3
-    Groot_det_nmodPoss_compound x1 x2 x3 x4 -> r Groot_det_nmodPoss_compound `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_discourse x1 x2 -> r Groot_discourse `a` f x1 `a` f x2
     Groot_fixed x1 x2 -> r Groot_fixed `a` f x1 `a` f x2
     Groot_goeswith x1 x2 -> r Groot_goeswith `a` f x1 `a` f x2
@@ -3886,6 +3783,8 @@ instance Compos Tree where
     GProgrVP x1 -> r GProgrVP `a` f x1
     GUseV x1 -> r GUseV `a` f x1
     GaclUDS_ x1 -> r GaclUDS_ `a` f x1
+    GaclUDSgerund_ x1 -> r GaclUDSgerund_ `a` f x1
+    GaclUDSpastpart_ x1 -> r GaclUDSpastpart_ `a` f x1
     Gacl_ x1 -> r Gacl_ `a` f x1
     GaclRelclRS_ x1 -> r GaclRelclRS_ `a` f x1
     GaclRelclUDS_ x1 -> r GaclRelclUDS_ `a` f x1
@@ -3898,7 +3797,6 @@ instance Compos Tree where
     Gamod_ x1 -> r Gamod_ `a` f x1
     Gappos_ x1 -> r Gappos_ `a` f x1
     Gaux_ x1 -> r Gaux_ `a` f x1
-    Gcase__ x1 -> r Gcase__ `a` f x1
     Gcc_ x1 -> r Gcc_ `a` f x1
     GccPreconj_ x1 -> r GccPreconj_ `a` f x1
     Gccomp_ x1 -> r Gccomp_ `a` f x1
@@ -3953,7 +3851,9 @@ instance Compos Tree where
     Greparandum_ x1 -> r Greparandum_ `a` f x1
     GrootA_ x1 -> r GrootA_ `a` f x1
     GrootAdv_ x1 -> r GrootAdv_ `a` f x1
+    GrootDet_ x1 -> r GrootDet_ `a` f x1
     GrootN_ x1 -> r GrootN_ `a` f x1
+    GrootQuant_ x1 -> r GrootQuant_ `a` f x1
     GrootV_ x1 -> r GrootV_ `a` f x1
     Gvocative_ x1 -> r Gvocative_ `a` f x1
     GxcompA_ x1 -> r GxcompA_ `a` f x1

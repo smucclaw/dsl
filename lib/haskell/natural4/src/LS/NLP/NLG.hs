@@ -42,7 +42,7 @@ import Control.Monad (join)
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 
-gfPath x = "../../inari/ud/grammars/modular/" ++ x
+gfPath x = "grammars/" ++ x
 
 -- Parsing text with udpipe via external Python process
 udParse :: Text.Text -> IO String

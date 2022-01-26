@@ -65,16 +65,16 @@ packages:
   original:
     hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
 - completed:
-    size: 1350910
-    url: https://github.com/anka-213/gf-ud/archive/260ded190dd2c9bda869421b9611a50ed9ac1f0e.tar.gz
+    size: 1351076
+    url: https://github.com/anka-213/gf-ud/archive/d078668f179f9fa6afeb7d7d001a7f6b13d2adbd.tar.gz
     name: gf-ud
     version: 0.1.0.0
-    sha256: b7e85ca9e70a3ba7cac06de7c828aad159a9988f06d0f3766ef8b1385a5f3fae
+    sha256: 254ec50f0453e6c62deb11499cb8aa92bdb6f2e171b263c2888ef23b4775f1db
     pantry-tree:
       size: 6417
-      sha256: 7903a46aedcd130f8a69056c4dc5a250ed9735c08625a9e786b11c4be1603a6f
+      sha256: 5ad7f4599d469f5a9a75a805720cf8339fb4130a7316f16187f35d060833d2df
   original:
-    url: https://github.com/anka-213/gf-ud/archive/260ded190dd2c9bda869421b9611a50ed9ac1f0e.tar.gz
+    url: https://github.com/anka-213/gf-ud/archive/d078668f179f9fa6afeb7d7d001a7f6b13d2adbd.tar.gz
 - completed:
     size: 16398419
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz

@@ -55,7 +55,7 @@ extra-deps:
 - gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
 - network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
 - github: anka-213/gf-ud
-  commit: 260ded190dd2c9bda869421b9611a50ed9ac1f0e
+  commit: d078668f179f9fa6afeb7d7d001a7f6b13d2adbd
 
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646

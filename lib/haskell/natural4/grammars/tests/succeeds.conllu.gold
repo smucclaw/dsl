@@ -85,3 +85,11 @@ LIN: is the donation and removal of any data
 root_nmod (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN set_N))) (nmod_ of_Prep (DetCN aPl_Det (AdjCN (PastPartAP (AdvVP (UseV affect_V) (PrepNP by8agent_Prep (ThePN (StrPN "NDB"))))) (UseN individual_N))))
 
 LIN: is the set of individuals affected by the NDB
+
+root_only (rootN_ (DetCN anySg_Det (AdjCN (PositA significant_A) (UseN (CompoundN data_N breach_N)))))
+
+LIN: is any significant data breach
+
+root_only (rootN_ (ConjNP or_Conj (BaseNP (DetCN (DetQuant DefArt NumSg) (UseN suicide_N)) (MassNP (AdjCN (PastPartAP (UseV attempt_V)) (UseN suicide_N))))))
+
+LIN: is the suicide or attempted suicide

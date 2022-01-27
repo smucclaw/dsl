@@ -65,6 +65,21 @@
 #auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det head[Number=Plur]
 #disable the_Det thePl_Det
 
+-- Allow determiners with words that are erroneously parsed as PN
+#auxfun DetPN_ the pn : Det -> PN -> NP = ThePN pn ; det[LEMMA=the] head
+#disable ThePN
+
+#auxfun DetCN_anySg det cn : Det -> CN -> NP = DetCN anySg_Det cn ; det[LEMMA=any] head[Number=Sing]
+#auxfun DetCN_anyPl det cn : Det -> CN -> NP = DetCN anyPl_Det cn ; det[LEMMA=any] head[Number=Plur]
+#disable anyPl_Det anySg_Det
+
+#auxfun DetCN_someSg det cn : Det -> CN -> NP = DetCN someSg_Det cn ; det[LEMMA=some] head[Number=Sing]
+#auxfun DetCN_somePl det cn : Det -> CN -> NP = DetCN somePl_Det cn ; det[LEMMA=some] head[Number=Plur]
+#disable somePl_Det someSg_Det
+
+-- #auxfun PrepNP_theSg prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN the_Det cn) ; case det head[Number=Sing]
+-- #auxfun PrepNP_thePl prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN thePl_Det cn) ; case det head[Number=Plur]
+
 -- ** don't use ImpVP if there's no [Mood=Imp] **
 #auxfun UttImpSg_Pos vp : VP -> Utt = UttImpSg PPos (ImpVP vp) ; head[Mood=Imp]
 #auxfun UttImpSg_Neg do neg vp : Do -> Neg -> VP -> Utt = UttImpSg PNeg (ImpVP vp) ; aux[VerbForm=Inf] advmod head[VerbForm=Inf]

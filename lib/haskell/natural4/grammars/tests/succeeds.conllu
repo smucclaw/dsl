@@ -180,3 +180,15 @@
 6	by	by	ADP	IN	_	8	case	_	_
 7	the	the	DET	Quant	FORM=0	8	det	_	FUN=DefArt
 8	NDB	NDB	PROPN	NNP	Number=Sing	5	obl	_	_
+
+1	any	any	DET	DT	_	4	det	_	FUN=any_Det
+2	significant	significant	ADJ	JJ	Degree=Pos	4	amod	_	FUN=significant_A
+3	data	data	NOUN	NN	Number=Sing	4	compound	_	FUN=data_N
+4	breach	breach	NOUN	NN	Number=Sing	0	root	_	FUN=breach_N
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	suicide	suicide	NOUN	NN	Number=Sing	0	root	_	FUN=suicide_N
+3	or	or	CCONJ	CC	_	5	cc	_	FUN=or_Conj
+4	attempted	attempt	VERB	VBD	Tense=Past|VerbForm=Part	5	amod	_	FUN=attemptVBD
+5	suicide	suicide	NOUN	NN	Number=Sing	2	conj	_	FUN=suicide_N
+

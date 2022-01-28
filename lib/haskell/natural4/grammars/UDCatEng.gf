@@ -1,7 +1,7 @@
 
 
-concrete UDCatEng of UDCat = BareRGEng - [Deontic,may_Deontic,must_Deontic,should_Deontic,shall_Deontic,shant_Deontic] **
-  open SyntaxEng, Prelude, (P=ParadigmsEng), (E=ExtraEng), ResEng, ExtendEng, (N=NounEng) in {
+concrete UDCatEng of UDCat = BareRGEng **
+  open SyntaxEng, Prelude, (P=ParadigmsEng), (E=ExtraEng), ResEng, ExtendEng, (N=NounEng), SymbolicEng in {
 
   lincat
     UDS = LinUDS ;
@@ -28,6 +28,7 @@ concrete UDCatEng of UDCat = BareRGEng - [Deontic,may_Deontic,must_Deontic,shoul
     expl = Pron ;
     amod = AP ;
     mark = Subj ;
+    X = Symb ;
 
   linref
     UDS = linUDS ;
@@ -71,6 +72,7 @@ concrete UDCatEng of UDCat = BareRGEng - [Deontic,may_Deontic,must_Deontic,shoul
     obl_ = id Adv ;
     advmod_ adv = {adv = adv ; isNot = False} ;
     oblPrep_ to = mkAdv to emptyNP ;
+    oblRP_ for which = mkAdv for (rp2np which) ;
 
     rootV_ vp = mkRoot vp ;
     rootA_ ap = mkRoot ap ;
@@ -163,6 +165,16 @@ concrete UDCatEng of UDCat = BareRGEng - [Deontic,may_Deontic,must_Deontic,shoul
         } ;
       p = [] ;
       typ = VVAux
+    } ;
+
+    rp2np : RP -> NP = \rp -> rp ** {
+      s = \\c => rp.s ! RC Neutr c ;
+      a = ragr2agr rp.a
+      } ;
+
+    ragr2agr : ResEng.RAgr -> ResEng.Agr = \ra -> case ra of {
+      ResEng.RAg a => a ;
+      ResEng.RNoAg => agrP3 Sg
     } ;
 
     -- copied this from ParseExtendEng, easier to duplicate code than to introduce new dependency?

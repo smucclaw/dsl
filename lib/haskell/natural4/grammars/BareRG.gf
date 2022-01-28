@@ -62,6 +62,11 @@ abstract BareRG =
   ],
 
   Structural [Prep, possess_Prep, by8agent_Prep],
+  Symbol [
+      Symb
+    , SymbPN
+    -- , MkSymb
+    ],
   Conjunction,
   Relative,
   Question,
@@ -77,6 +82,11 @@ abstract BareRG =
     aSg_Det,
     aPl_Det : Det ;
 
+    at_least_AdN : AdN ;
+    more_than_Quant : Quant ;
+    anySg_Det, anyPl_Det : Det ;
+    someSg_Det, somePl_Det : Det ;
+
     everyone_Pron : Pron ;
     who_RP, that_RP : RP ;
 
@@ -91,20 +101,10 @@ abstract BareRG =
 
     ComplV : V -> NP -> VP ; -- JustWordsWordNet has no V2 etc
 
-  -- Domain-specifics: we care about some specific modals and want special cats and funs for them
   cat
-    Deontic ;
-  fun
-    may_Deontic,
-    must_Deontic,
-    shall_Deontic,
-    shant_Deontic,
-    should_Deontic : Deontic ;
+    [Prep]{2} ;
 
-    PDPA_N : N ;
-    '500_Digit' : Digit ;
-    at_least_AdN : AdN ;
-    more_than_Quant : Quant ;
-    anySg_Det, anyPl_Det : Det ;
-    someSg_Det, somePl_Det : Det ;
+  fun
+    ConjPrep : Conj -> [Prep] -> Prep ;
+
   }

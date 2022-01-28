@@ -2,7 +2,7 @@
 
 concrete UDAppEng of UDApp =
   UDCatEng, JustWordsWordNetEng - [some_Quant, some_Det, any_Det] **
-  open Prelude, SyntaxEng, IrregEng, ExtendEng, SymbolicEng,
+  open Prelude, SyntaxEng, IrregEng, ExtendEng, SymbolicEng, (SyE=SymbolEng),
     (PE=ParseExtendEng), -- from WordNet
     (N=NounEng), (P=ParadigmsEng) in {
 
@@ -14,8 +14,12 @@ lin
   StrAP str = <mkAP (P.mkA "dummy") : AP> ** {s = \\_ => str.s};
 	StrCard str = symb (mkSymb str.s) ;
 	StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
+  StrSymb = SyE.MkSymb ; -- String -> Symb
+--  SymbNP x = symb x ;
 
-  ThePN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
+  DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
+  IndefPN pn = N.PredetNP (lin Predet {s= "a"}) (N.UsePN pn) ;
+
 -- The concrete syntax is sketchy on purpose.
 -- One could say that it doesn't even have to bother to linearise properly,
 -- but we do it for the sake of ud2gf: checking linearisations against the original.
@@ -125,6 +129,8 @@ lin
    -- : root -> UDS ;  -- sing ;
     root_only rt = onlyPred rt.vp ;
 
+   -- : root -> amod -> UDS ; -- significant breach
+   root_amod rt ap = root_nsubj rt (ExtendEng.AdjAsNP ap) ; -- TODO: currently prints out "significant is a breach"
 -- Variations on root_obj_*
 
 		-- : root -> obj -> UDS ;

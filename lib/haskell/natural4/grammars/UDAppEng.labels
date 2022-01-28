@@ -66,8 +66,9 @@
 #disable the_Det thePl_Det
 
 -- Allow determiners with words that are erroneously parsed as PN
-#auxfun DetPN_ the pn : Det -> PN -> NP = ThePN pn ; det[LEMMA=the] head
-#disable ThePN
+#auxfun DefPN_ the pn : Det -> PN -> NP = DefPN pn ; det[LEMMA=the] head
+#auxfun IndefPN_ the pn : Det -> PN -> NP = IndefPN pn ; det[LEMMA=a] head
+#disable DefPN IndefPN
 
 #auxfun DetCN_anySg det cn : Det -> CN -> NP = DetCN anySg_Det cn ; det[LEMMA=any] head[Number=Sing]
 #auxfun DetCN_anyPl det cn : Det -> CN -> NP = DetCN anyPl_Det cn ; det[LEMMA=any] head[Number=Plur]
@@ -285,3 +286,37 @@
 
 #auxfun AdvCompleteList_ catHorse capybara and_dog : PrefixAdv -> AdvComma -> Pair_Conj_Adv -> Adv = UsePair_ (AdvCompleteList_helper_ catHorse capybara) and_dog ; head conj conj
 #auxfun AdvCompleteList_helper_ catHorse capybara and dog : PrefixAdv -> AdvComma -> Conj -> Adv -> Adv = ConjAdv and (catHorse (BaseAdv capybara dog)) ; head dummy dummy dummy
+
+-- ** CN **
+#auxfun CommaCN_ cn comma : CN -> Comma -> CNComma = cn ; head punct
+
+#auxfun AndCNPair_ and dog : Conj -> CN -> Pair_Conj_CN = MkPair_ and dog ; cc head
+
+#auxfun CN2_ cat andDog : CN -> Pair_Conj_CN -> CN = UsePair_ (CN2_helper_ cat) andDog ; head conj
+#auxfun CN2_helper_ cat and dog :  CN -> Conj -> CN -> CN = ConjCN and (BaseCN cat dog) ; head dummy nonexistent
+
+-- type PrefixCN = ListCN -> ListCN
+
+#auxfun CNListHead_ cat : CN -> PrefixCN = ConsCN cat ; head
+
+#auxfun CNAddComma_ cat horse : PrefixCN -> CNComma -> PrefixCN = Compose_ cat (ConsCN horse) ; head conj
+
+#auxfun CNCompleteList_ catHorse capybara and_dog : PrefixCN -> CNComma -> Pair_Conj_CN -> CN = UsePair_ (CNCompleteList_helper_ catHorse capybara) and_dog ; head conj conj
+#auxfun CNCompleteList_helper_ catHorse capybara and dog : PrefixCN -> CNComma -> Conj -> CN -> CN = ConjCN and (catHorse (BaseCN capybara dog)) ; head dummy dummy dummy
+
+-- ** Prep **
+#auxfun CommaPrep_ prep comma : Prep -> Comma -> PrepComma = prep ; head punct
+
+#auxfun AndPrepPair_ and dog : Conj -> Prep -> Pair_Conj_Prep = MkPair_ and dog ; cc head
+
+#auxfun Prep2_ cat andDog : Prep -> Pair_Conj_Prep -> Prep = UsePair_ (Prep2_helper_ cat) andDog ; head conj
+#auxfun Prep2_helper_ cat and dog :  Prep -> Conj -> Prep -> Prep = ConjPrep and (BasePrep cat dog) ; head dummy nonexistent
+
+-- type PrefixPrep = ListPrep -> ListPrep
+
+#auxfun PrepListHead_ cat : Prep -> PrefixPrep = ConsPrep cat ; head
+
+#auxfun PrepAddComma_ cat horse : PrefixPrep -> PrepComma -> PrefixPrep = Compose_ cat (ConsPrep horse) ; head conj
+
+#auxfun PrepCompleteList_ catHorse capybara and_dog : PrefixPrep -> PrepComma -> Pair_Conj_Prep -> Prep = UsePair_ (PrepCompleteList_helper_ catHorse capybara) and_dog ; head conj conj
+#auxfun PrepCompleteList_helper_ catHorse capybara and dog : PrefixPrep -> PrepComma -> Conj -> Prep -> Prep = ConjPrep and (catHorse (BasePrep capybara dog)) ; head dummy dummy dummy

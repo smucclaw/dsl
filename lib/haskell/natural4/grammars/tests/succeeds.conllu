@@ -192,3 +192,34 @@
 4	attempted	attempt	VERB	VBD	Tense=Past|VerbForm=Part	5	amod	_	FUN=attemptVBD
 5	suicide	suicide	NOUN	NN	Number=Sing	2	conj	_	FUN=suicide_N
 
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	form	form	NOUN	NN	Number=Sing	0	root	_	FUN=form_N
+3	and	and	CCONJ	CC	_	4	cc	_	FUN=and_Conj
+4	manner	manner	NOUN	NN	Number=Sing	2	conj	_	FUN=manner_N
+5	specified	specify	VERB	VBN	Tense=Past|VerbForm=Part	2	acl	_	FUN=specifyVBN
+6	at	at	ADP	IN	_	7	case	_	_
+7	www.pdpc.gov.sg	www.pdpc.gov.sg	X	ADD	_	5	obl	_	_
+
+1	the	the	DET	Quant	FORM=0	3	det	_	FUN=DefArt
+2	data	data	NOUN	NN	Number=Sing	3	compound	_	FUN=data_N
+3	breach	breach	NOUN	NN	Number=Sing	4	nsubj	_	FUN=breach_N
+4	occurs	occur	VERB	NNS	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	_	FUN=occur_V
+5	on	on	ADP	IN	_	9	case	_	_
+6	or	or	CCONJ	CC	_	7	cc	_	FUN=or_Conj
+7	after	after	ADP	IN	_	5	conj	_	_
+8	the	the	DET	Quant	FORM=0	9	det	_	FUN=DefArt
+9	date	date	NOUN	NN	Number=Sing	4	obl	_	FUN=date_N
+10	of	of	ADP	IN	_	11	case	_	_
+11	commencement	commencement	NOUN	NN	Number=Sing	9	nmod	_	FUN=commencement_N
+12	of	of	ADP	IN	_	13	case	_	_
+13	PDPA_2020_13	PDPA_2020_13	PROPN	NNP	Number=Sing	11	nmod	_	_
+
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	Organisation	organisation	NOUN	NN	Number=Sing	0	root	_	FUN=organisation_N
+3	for	for	ADP	IN	_	4	case	_	_
+4	which	which	PRON	WDT	PronType=Rel	6	obl	_	FUN=PRONWDT
+5	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	6	nsubj	_	FUN=PRONPRP
+6	act	act	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	2	acl:relcl	_	FUN=actVBP
+7	as	as	ADP	IN	_	9	case	_	_
+8	a	a	DET	DT	Definite=Ind|PronType=Art	9	det	_	FUN=a_Det
+9	DI	DI	PROPN	NNP	Number=Sing	6	obl	_	_

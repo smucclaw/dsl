@@ -37,6 +37,7 @@
 #fun root_nsubj_cop_obl head nsubj cop obl
 
 #fun passRelcl_ head nsubj:pass cop                -- root -> nsubj:pass -> cop -> acl:relcl ;
+#fun oblRP_ case head
 
 -- Labels for the core RGL functions, copied from the original gf-rgl/Lang.labels and gf-ud/grammars/Parse.labels
 
@@ -247,6 +248,7 @@
 #cat Sub1000000 NUM
 #cat Sub1000000000 NUM
 #cat Subj SCONJ
+#cat Symb X
 #cat Temp X
 #cat Tense X
 #cat Text X
@@ -264,7 +266,6 @@
 #cat VQ VERB
 #cat VS VERB
 #cat VV VERB
-
 
 
 --- From the corpus of fragments

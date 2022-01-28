@@ -58,12 +58,16 @@ concrete BareRGEng of BareRG =
   ],
 
   StructuralEng [Prep, possess_Prep, by8agent_Prep],
-
+  SymbolEng [
+      Symb
+    , SymbPN
+--    , MkSymb
+    ],
   ConjunctionEng,
   RelativeEng,
   QuestionEng,
   NumeralEng,
-  TenseX - [CAdv,Pol, PPos, PNeg] ** open Prelude, (G=GrammarEng), MorphoEng, ExtraEng, (P=ParadigmsEng), (E=ExtendEng), ResEng in {
+  TenseX - [CAdv,Pol, PPos, PNeg] ** open Prelude, (G=GrammarEng), MorphoEng, ExtraEng, (P=ParadigmsEng), (E=ExtendEng), (Co=Coordination), ResEng in {
 
   lin
     PPos = G.PPos ;
@@ -102,6 +106,14 @@ concrete BareRGEng of BareRG =
     -- : VP -> AP ;      -- stored in electronic formats (Extend.PastPartAP takes a VPSlash)
     PastPartAP vp = E.PastPartAP (slashV vp) ;
 
+  lincat
+    [Prep] = Co.ListX ;
+
+  lin
+    BasePrep = Co.twoSS ;
+    ConsPrep = Co.consrSS Co.comma ;
+    ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
+
   oper
     slashV : VP -> VPSlash = \vp -> vp ** {
       c2 = [] ;
@@ -109,27 +121,5 @@ concrete BareRGEng of BareRG =
       missingAdv = False
       } ;
 
-  -- Application-specific additions to RGL
-  lincat
-    Deontic = VV ;
-  lin
-    may_Deontic = ExtraEng.may_VV ;
-    must_Deontic = G.must_VV ;
-    shall_Deontic = ExtraEng.shall_VV ;
---    shant_Deontic,
-    should_Deontic = lin VV {
-      s = table {
-        VVF VInf => ["be obliged to"] ;
-        VVF VPres => "should" ;
-        VVF VPPart => ["been obliged to"] ;
-        VVF VPresPart => ["being obliged to"] ;
-        VVF VPast => "shall" ;
-        VVPastNeg => "shall not" ;
-        VVPresNeg => "shouldn't"
-        } ;
-      p = [] ;
-      typ = VVAux
-    } ;
 
-   PDPA_N = P.mkN "PDPA" ;
 }

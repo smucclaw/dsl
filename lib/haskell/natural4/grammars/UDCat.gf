@@ -1,6 +1,6 @@
 
 
-abstract UDCat = BareRG - [Deontic,may_Deontic,must_Deontic,should_Deontic,shall_Deontic,shant_Deontic] ** {
+abstract UDCat = BareRG ** {
 	cat
         UDS ;
         acl ;
@@ -182,6 +182,9 @@ abstract UDCat = BareRG - [Deontic,may_Deontic,must_Deontic,should_Deontic,shall
 
         obl_    : Adv -> obl ;
 	    oblPrep_ : Prep -> obl ; -- sometimes empty preps are analysed as obl, e.g. "subject to"
+	    oblRP_ : Prep -> RP -> obl ; -- for which (the org does stuff)
+        -- oblX_   : Prep -> X -> obl ;
+
         advmod_ : Adv -> advmod ;
         nmod_ : Prep -> NP -> nmod ; -- UD-specific version of PrepNP
         nsubjPass_ : NP -> nsubjPass ;

@@ -7,18 +7,20 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 	fun
 
-
 	StrPN : String -> PN ;
 	StrN : String -> N ;
 	StrA : String -> A ;
 	StrAP : String -> AP ;
 	StrCard : String -> Card ;
 	StrNum : String -> Num ;
+--	StrSymb : String -> Symb ; -- e.g. URLs
+--	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
 
+ -- for e.g. abbreviations/defined terms that are erroneously parsed as PNs; "the NDB", "a DI"
+	DefPN : PN -> NP ;
+	IndefPN : PN -> NP ;
 
-	ThePN : PN -> NP ; -- for e.g. abbreviations/defined terms that are erroneously parsed as PNs; "the NDB"
 	-- from the first test corpus, full sentences
-
 	root_cop_advmod          : root -> cop -> advmod -> UDS ; -- is not a breach
 	passRelcl_               : root -> RP -> auxPass -> aclRelcl ; -- [whose data]:RP is affected
 	root_nsubj_cop_advmod    : root -> nsubj -> cop -> advmod -> UDS ;
@@ -55,8 +57,12 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_advmod_nsubj_cop_obl : root -> advmod -> nsubj -> cop -> obl -> UDS ;
 	--"[once]:advmod an [organisation]:nsubj is [aware]:root of a data [breach]:obl ;
 
-		root_amod : root -> amod -> UDS ;
-	--green(potato) ;
+	-- 	root_amod : root -> amod -> UDS ;
+	-- --green potato ;
+	-- For linearisation, it's easier if we parse a NP like "green potato" as root_only (AdjCN green_AP potato_CN),
+	-- instead of splitting the AP and the CN in separate RGL trees, root_amod (rootN_ potato_CN) (amod_ green_AP).
+	-- But if we want to split them for some other application, e.g. to easier produce "potato is green", then root_amod makes that easier.
+
 
 		root_amod_nmod : root -> amod -> nmod -> UDS ;
 	--significant harm to an affected individual" ;
@@ -470,6 +476,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubj_obl : root -> nsubj -> obl -> UDS ;
 	--significant harm refers to data breach of any prescribed personal data or class of personal data of the individual ;
+
+		root_nsubj_obl_obl : root -> nsubj -> obl -> obl -> UDS ;
+	--you act as DI for org
 
 		root_nsubj_xcomp : root -> nsubj -> xcomp -> UDS ;
 	--the data breach relates to ;

@@ -13,8 +13,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	StrAP : String -> AP ;
 	StrCard : String -> Card ;
 	StrNum : String -> Num ;
---	StrSymb : String -> Symb ; -- e.g. URLs
---	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
+ 	StrSymb : String -> Symb ; -- e.g. URLs
+-- 	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
 
  -- for e.g. abbreviations/defined terms that are erroneously parsed as PNs; "the NDB", "a DI"
 	DefPN : PN -> NP ;
@@ -30,6 +30,7 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
     root_nsubj_aux_aclRelcl_obl : root -> nsubj -> aux -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [will]:aux disappear in the breach
     root_nsubj_cop_aclRelcl_obl : root -> nsubj -> cop -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [is]:cop affected by the breach
     root_nsubjPass_aux_auxPass : root -> nsubjPass -> aux -> auxPass -> UDS ; -- everyone should be notified
+	root_nsubjPass_aux_auxPass_obl :  root -> nsubjPass -> aux -> auxPass -> obl -> UDS ; -- everyone should be notified in accordance with Section 10
 
 	-- from the text fragments in Legal Spreadsheets PDPA mockup
 

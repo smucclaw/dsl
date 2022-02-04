@@ -377,6 +377,7 @@
 #fun root_nsubjPass_auxPass_advmod_xcomp head nsubj:pass aux:pass advmod xcomp
 #fun root_nsubjPass_auxPass_xcomp head nsubj:pass aux:pass xcomp
 #fun root_nsubjPass_aux_auxPass head nsubj:pass aux aux:pass
+#fun root_nsubjPass_aux_auxPass_obl head nsubj:pass aux aux:pass obl
 #fun root_nsubjPass_aux_auxPass_obl_advmod head nsubj:pass aux aux:pass obl advmod
 #fun root_nsubjPass_aux_auxPass_obl_conj head nsubj:pass aux aux:pass obl conj
 #fun root_nsubjPass_aux_auxPass_obl_obl_advcl head nsubj:pass aux aux:pass obl obl advcl

@@ -15,7 +15,7 @@ lin
 	StrCard str = symb (mkSymb str.s) ;
 	StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
   StrSymb = SyE.MkSymb ; -- String -> Symb
---  SymbNP x = symb x ;
+  SymbNP x = symb x ;
 
   DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
   IndefPN pn = N.PredetNP (lin Predet {s= "a"}) (N.UsePN pn) ;
@@ -174,6 +174,12 @@ lin
     root_nsubjPass_aux_auxPass notified pdpa should auxpass = {
       subj = pdpa ;
       pred = applyAux should notified.vp -- TODO: has PassVP already been applied?
+    } ;
+
+    -- : root -> nsubjPass -> aux -> auxPass -> obl -> UDS ;
+    root_nsubjPass_aux_auxPass_obl notified pdpa should auxpass inAccWithSec10 = {
+      subj = pdpa ;
+      pred = applyAux should (mkVP notified.vp inAccWithSec10) -- TODO: has PassVP already been applied?
     } ;
 
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;

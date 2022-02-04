@@ -106,6 +106,8 @@ concrete BareRGEng of BareRG =
     -- : VP -> AP ;      -- stored in electronic formats (Extend.PastPartAP takes a VPSlash)
     PastPartAP vp = E.PastPartAP (slashV vp) ;
 
+    CompoundCN = CompoundN ;
+
   lincat
     [Prep] = Co.ListX ;
 

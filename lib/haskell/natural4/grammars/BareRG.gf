@@ -90,6 +90,8 @@ abstract BareRG =
     everyone_Pron : Pron ;
     who_RP, that_RP : RP ;
 
+    CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
+
   -- passives
     PassV : V -> VP ;             -- affected
     PassVAgent : V -> NP -> VP ; -- affected by the breach

@@ -136,6 +136,7 @@
 #fun BaseS 	head conj
 #fun ConsS 	head conj
 #fun CompoundN 	compound head
+#fun CompoundCN 	compound head
 #fun ComplN3 	nmod head
 #fun AdvNP 	head nmod              -- not sure
 #fun ConjNP 	cc head

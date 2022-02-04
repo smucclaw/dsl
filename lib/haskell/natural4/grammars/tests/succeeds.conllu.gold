@@ -96,6 +96,8 @@ LIN: is the suicide or attempted suicide
 
 root_acl (rootN_ (ConjNP and_Conj (BaseNP (DetCN (DetQuant DefArt NumSg) (UseN form_N)) (MassNP (UseN manner_N))))) (aclUDSpastpart_ (root_obl (rootV_ (UseV specify_V)) (obl_ (PrepNP at_Prep (UsePN (SymbPN (StrSymb "www.pdpc.gov.sg")))))))
 
+LIN: is the form and manner specified at www.pdpc.gov.sg
+
 root_nsubj_obl (rootV_ (UseV occur_V)) (nsubj_ (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN data_N breach_N)))) (obl_ (PrepNP (ConjPrep or_Conj (BasePrep on_Prep after_Prep)) (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN date_N)) (PrepNP of_Prep (MassNP (AdvCN (UseN commencement_N) (PrepNP of_Prep (UsePN (StrPN "PDPA_2020_13")))))))))
 
 LIN: the data breach occurs on or after the date of commencement of PDPA_2020_13
@@ -103,3 +105,7 @@ LIN: the data breach occurs on or after the date of commencement of PDPA_2020_13
 root_aclRelcl (rootN_ (DetCN (DetQuant DefArt NumSg) (UseN organization_N))) (aclRelclUDS_ (root_nsubj_obl (rootV_ (AdvVP (UseV act_V) (PrepNP as_Prep (IndefPN (StrPN "DI"))))) (nsubj_ (UsePron you_Pron)) (oblRP_ for_Prep IdRP)))
 
 LIN: is the organization , you act as a DI for that
+
+root_nsubjPass_aux_auxPass_obl (rootV_ (PassV design_V)) (nsubjPass_ (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN height_N)) (PrepNP of_Prep (DetCN aPl_Det (UseN (CompoundN area_N building_N)))))) should_aux be_auxPass (obl_ (PrepNP in_Prep (DetCN (DetQuant IndefArt (NumCard (StrCard "10"))) (UseN section_N))))
+
+LIN: the height of area buildings should be designed in 10 sections

@@ -223,3 +223,18 @@
 7	as	as	ADP	IN	_	9	case	_	_
 8	a	a	DET	DT	Definite=Ind|PronType=Art	9	det	_	FUN=a_Det
 9	DI	DI	PROPN	NNP	Number=Sing	6	obl	_	_
+
+1	The	the	DET	DEF	Definite=Def|PronType=Art	2	det	_	_
+2	height	height	NOUN	SG-NOM	Number=Sing	9	nsubj:pass	_	_
+3	of	of	ADP	_	_	6	case	_	_
+4	unlimited	unlimited	ADJ	PASS	Degree=Pos	5	amod	_	_
+5	area	area	NOUN	SG-NOM	Number=Sing	6	compound	_	_
+6	buildings	building	NOUN	PL-NOM	Number=Plur	2	nmod	_	_
+7	shall	shall	AUX	PRES-AUX	VerbForm=Fin	9	aux	_	_
+8	be	be	AUX	INF	VerbForm=Inf	9	aux:pass	_	_
+9	designed	design	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	0	root	_	_
+10	in	in	ADP	_	_	13	case	_	_
+11	accordance	accordance	NOUN	SG-NOM	Number=Sing	10	fixed	_	_
+12	with	with	ADP	_	_	10	fixed	_	_
+13	Section	section	NOUN	SG-NOM	Number=Sing	9	obl	_	_
+14	10	10	NUM	CARD-PL	NumType=Card	13	nummod	_	_

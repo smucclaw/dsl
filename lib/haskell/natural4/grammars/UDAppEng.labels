@@ -111,8 +111,9 @@
 
 -- ** at least **
 #auxcat At ADV
-#auxfun AtLeast_ at least : At -> AdA -> AdN = at_least_AdN ; case head[Degree=Sup] -- will likely match other things — need to match with words!
-#auxfun AtLeastAdv_ at least : Adv -> AdA -> AdN = at_least_AdN ; case head[Degree=Sup] -- if At is recognised as at_Adv. still as overaccepting as the above version
+#auxfun AtLeast_ at least : At -> AdA -> AdN = at_least_AdN ; case[LEMMA=at] head[LEMMA=least] -- will likely match other things — need to match with words!
+#auxfun AtLeastAdv_ at least : Adv -> AdA -> AdN = at_least_AdN ; case[LEMMA=at] head[LEMMA=least] -- if At is recognised as at_Adv. still as overaccepting as the above version
+#auxfun InAccordanceWith_ in accordance with : Prep -> N -> Prep -> Prep = in_accordance_with_Prep ; head[LEMMA=in] fixed[LEMMA=accordance] fixed[LEMMA=with]
 
 -- ** 5 people **
 #auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
@@ -153,6 +154,12 @@
 #auxfun GenRP_Pl_ dog whose : CN -> RP -> RP = GenRP NumPl dog ; head[Number=Plur] nmod:poss[Poss=Yes]
 
 #disable GenRP
+
+-- only allow CompoundCN for stuff like "unlimited area buildings"
+#auxfun FakeCN_ unlimited area : AP -> CN -> FakeCN = AdjCN unlimited area ; amod head
+#auxfun CompoundCN_ unlimarea buildings : FakeCN -> N -> N = CompoundCN unlimarea buildings ; compound head
+
+#disable CompoundCN
 
 -- This version is used only if the grammar doesn't have a RP with the string "whose"
 -- Of course, labels files are per grammar, and for UDApp there is such an RP, but if someone copies this later for other grammar, and that grammar doesn't have who_RP, then you can use this

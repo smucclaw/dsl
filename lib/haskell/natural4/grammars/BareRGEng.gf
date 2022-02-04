@@ -81,6 +81,8 @@ concrete BareRGEng of BareRG =
     someSg_Det = mkDeterminerSpec P.singular "some" (variants {"someone"; "somebody"}) "something" False ;
     somePl_Det = mkDeterminerSpec P.plural "some" (variants {"someone"; "somebody"}) "something" False ;
 
+    in_accordance_with_Prep = P.mkPrep "in accordance with" ;
+
     at_least_AdN = ss "at least" ;
     anySg_Det = mkDeterminerSpec P.singular "any" (variants {"anyone"; "anybody"}) "anything" False ;
     anyPl_Det = mkDeterminerSpec P.plural "any" (variants {"anyone"; "anybody"}) "anything" False ;

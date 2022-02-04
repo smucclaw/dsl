@@ -87,6 +87,8 @@ abstract BareRG =
     anySg_Det, anyPl_Det : Det ;
     someSg_Det, somePl_Det : Det ;
 
+    in_accordance_with_Prep : Prep ;
+
     everyone_Pron : Pron ;
     who_RP, that_RP : RP ;
 

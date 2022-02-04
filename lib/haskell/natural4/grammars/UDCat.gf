@@ -106,10 +106,10 @@ abstract UDCat = BareRG ** {
         nmodTmod_ : X -> nmodTmod ;
         nummod_ : X -> nummod ;
         nummodGov_ : X -> nummodGov ;
-        oblAgent_ : X -> oblAgent ;
-        oblArg_ : X -> oblArg ;
-        oblLmod_ : X -> oblLmod ;
-        oblTmod_ : X -> oblTmod ;
+        oblAgent_ : Adv -> oblAgent ;
+        oblArg_ : Adv -> oblArg ;
+        oblLmod_ : Adv -> oblLmod ;
+        oblTmod_ : Adv -> oblTmod ;
         orphan_ : X -> orphan ;
         parataxis_ : X -> parataxis ;
         punct_ : X -> punct ;

@@ -98,7 +98,7 @@
 -- Inari's additions --
 -----------------------
 
-#disable StrN StrPN StrA StrAP StrCard StrNum
+#disable StrN StrPN StrA StrAP StrCard StrNum StrSymb
 
 #disable pot1 pot2 pot3 pot4 pot1to19
 

@@ -161,6 +161,77 @@ can be thought of as inline type annotations
 [([ "sender", "postcode" ], string)]
 
 
+**** boolstructp-1: very simple boolstructp
+:PROPERTIES:
+:TABLE_EXPORT_FILE: boolstructp-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |     | thing1 |
+|   | OR  | thing2 |
+|   | AND | thing3 |
+
+paramtext OR paramtext AND paramtext
+
+
+**** boolstructp-2: very simple boolstructp
+:PROPERTIES:
+:TABLE_EXPORT_FILE: boolstructp-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   |    | thing1 |        |
+|   | OR |        | thing2 |
+|   |    | AND    | thing3 |
+
+paramtext OR ( paramtext AND paramtext )
+
+**** inline-1: inline conjunctive lists
+
+***** inline-1-a
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word |    | thing1 |
+|          | OR | thing  |
+
+***** inline-1-b
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| one word |    | thing1 |
+|          | OR | thing  | 
+
+
+***** inline-1-c
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+challenge: use a combination of parsers to read this stuff into some kind of structure
+
+| IS | any | unauthorised     |   |    | access       |
+|    |     |                  |   | OR | use          |
+|    |     |                  |   | OR | disclosure   |
+|    |     |                  |   | OR | copying      |
+|    |     |                  |   | OR | modification |
+|    |     |                  |   | OR | disposal     |
+|    |     | of personal data |   |    |              |
+
+#+begin_example
+  $<| pToken Is
+  |>| pOtherVal -- to capture the any
+  |>| pOtherVal -- to capture the "unauthorised"
+  |>| pBoolStructPT
+
+#+end_example
+
 *** About the src/Parser.hs
 
 **** At the same depth, NOT binds tighter than OR binds tigher than AND.

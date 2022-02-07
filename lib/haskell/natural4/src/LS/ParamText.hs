@@ -7,6 +7,7 @@ import Control.Monad.Writer.Lazy
 import qualified Data.Text.Lazy as Text
 
 import LS.Types
+import LS.Parser
 import LS.Tokens
 -- import LS.Parser
 import Data.List.NonEmpty
@@ -30,6 +31,10 @@ import Data.List.NonEmpty
 --- the initial implementation of SFL4 will process only the flat style; so the Legal Spreadsheets MUST all be phrased flat;
 --- but in the future we will want to add support for the tree style.
 --- the tree style corresponds more naturally to the idea of, e.g., a JSON object that has multi-level objects nested.
+
+-- let's use the Parser library to do this stuff
+pBoolStructPT :: Parser BoolStructP
+pBoolStructPT = toBoolStruct <$> expr pParamText
 
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $

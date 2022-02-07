@@ -31,6 +31,7 @@ import Data.Maybe (isJust)
 import Control.Monad (when)
 import Data.Either (fromRight)
 import Data.Char
+import LS.ParamText
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -1098,6 +1099,27 @@ main = do
       -- graph transformation eliminates if (a) { ... if (a) ... }
       -- -- we see this in the rule for Notify Individuals
 
+      filetest "boolstructp-1" "basic boolstruct of text"
+        (parseOther pBoolStruct )
+        ( All Nothing [Any Nothing [Leaf "thing1"
+                                   ,Leaf "thing2"]
+                      ,Leaf "thing3"], [] )
+
+
+      filetest "boolstructp-2" "basic boolstruct of text"
+        (parseOther pBoolStruct )
+        ( Any Nothing [Leaf "thing1"
+                      ,All Nothing [Leaf "thing2"
+                                   ,Leaf "thing3"]], [] )
+
+      filetest "boolstructp-2" "basic boolstruct of paramtext"
+        (parseOther pBoolStructPT )
+        ( Any Nothing [Leaf (("thing1" :| [],Nothing) :| [])
+                      ,All Nothing [Leaf (("thing2" :| [],Nothing) :| [])
+                                   ,Leaf (("thing3" :| [],Nothing) :| [])]]  , [] )
+  
+
+
 
 -- bits of infrastructure
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
@@ -1108,3 +1130,6 @@ srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
 srccol1     = srccol' 1
 srccol2     = srccol' 2
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
+
+
+

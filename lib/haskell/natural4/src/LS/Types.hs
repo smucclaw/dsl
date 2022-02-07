@@ -381,6 +381,8 @@ data RunConfig = RC { debug     :: Bool
                     , toUppaal  :: Bool
                     , saveAKA   :: Bool
                     , wantNotRules :: Bool
+                    , toGrounds :: Bool
+                    , toVue     :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

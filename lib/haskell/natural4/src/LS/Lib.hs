@@ -56,9 +56,10 @@ import Data.Either (rights)
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds"
                    , dbug :: w ::: Bool <!> "False"
                    , file :: w ::: NoLabel [String] <?> "filename..."
+                   , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
@@ -86,9 +87,11 @@ getConfig o = do
         , sourceURL = "STDIN"
         , asJSON = maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
-        , toBabyL4 = only o == "babyl4" || only o == "corel4"
-        , toProlog = only o == "prolog"
-        , toUppaal = only o == "uppaal"
+        , toBabyL4  = only o == "babyl4" || only o == "corel4"
+        , toProlog  = only o == "prolog"
+        , toUppaal  = only o == "uppaal"
+        , toGrounds = only o == "grounds"
+        , toVue     = only o == "vue"
         , saveAKA = False
         , wantNotRules = False
         }

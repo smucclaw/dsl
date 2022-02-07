@@ -129,6 +129,8 @@ main = do
         , toUppaal = False
         , saveAKA = False
         , wantNotRules = False
+        , toGrounds = False
+        , toVue = False
         }
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }

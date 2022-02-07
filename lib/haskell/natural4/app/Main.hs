@@ -14,6 +14,7 @@ import LS.XPile.CoreL4
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog
 import LS.XPile.SVG
+import LS.XPile.VueJSON
 import LS.NLP.NLG (nlg)
 import qualified Data.Text.Lazy as Text
 import Data.ByteString.Lazy.UTF8 (toString)
@@ -38,6 +39,9 @@ main = do
   when (SFL4.toUppaal rc) $ do
     pPrint $ Uppaal.toL4TA rules
     putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
+
+  when (SFL4.toGrounds rc) $ do
+    pPrint $ grounds opts rules
 
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules

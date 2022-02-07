@@ -139,7 +139,8 @@ test-suite natural4-test
       test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core

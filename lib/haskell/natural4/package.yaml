@@ -79,3 +79,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - natural4
+    - QuickCheck

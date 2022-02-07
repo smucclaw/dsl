@@ -108,7 +108,9 @@ preprocess :: String -> String
 preprocess text = filter (not . (`elem` ['!', '.'])) text
 
 prop_gerundcheck :: String -> Bool
-prop_gerundcheck string = gfmkGerund preprocess(toLower string) == mkGerund preprocess(toLower string)
+prop_gerundcheck string =
+  gfmkGerund (preprocess (map toLower string)) ==
+    mkGerund (preprocess (map toLower string))
 
 main :: IO ()
 main = do

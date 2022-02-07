@@ -209,15 +209,6 @@
 #cat Imp VERB
 #cat Int NUM
 #cat Interj INTJ
-#cat ListAP X
-#cat ListAdV X
-#cat ListAdv X
-#cat ListCN X
-#cat ListDAP X
-#cat ListIAdv X
-#cat ListNP X
-#cat ListRS X
-#cat ListS X
 #cat N NOUN primary
 #cat N2 NOUN
 #cat N3 NOUN

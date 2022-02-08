@@ -94,6 +94,7 @@ getConfig o = do
         , toVue     = only o == "vue"
         , saveAKA = False
         , wantNotRules = False
+        , extendedGrounds = extd o
         }
 
 

@@ -193,6 +193,11 @@ data Rule = Regulative
             , nlhint :: Maybe Text.Text   -- "lang=en number=singular"
             , srcref :: Maybe SrcRef
             }
+          | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
+            , srcref :: Maybe SrcRef
+            }
           | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
           | RuleGroup { rlabel :: Maybe RuleLabel
                       , srcref :: Maybe SrcRef }  -- § NextStep
@@ -400,6 +405,7 @@ data RunConfig = RC { debug     :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
                     , toVue     :: Bool
+                    , extendedGrounds :: Bool
                     }
 
 nestLevel :: RunConfig -> Int
@@ -513,6 +519,7 @@ toToken "LIST0"     = pure List0
 toToken "LIST1"     = pure List1
 
 toToken "AKA"       = pure Aka
+toToken "TYPICALLY" = pure Typically
 
 toToken "-§"        = pure $ RuleMarker (-1) "§"
 toToken "SECTION"   = pure $ RuleMarker   1  "§"

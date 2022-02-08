@@ -1131,6 +1131,22 @@ main = do
                                    ,Leaf (("thing3" :| [],Nothing) :| [])]]  , [] )
   
 
+      filetest "boolstructp-3" "boolstruct including typically"
+        (parseR pRules )
+        [ defaultReg
+          { subj = Leaf (("person" :| [],Nothing) :| [])
+          , keyword = Every
+          , who = Just (Any Nothing [Leaf (RPMT ["is immortal"])
+                                    ,Leaf (RPMT ["has health insurance"])])
+          , deontic = DMay
+          , action = Leaf (("sharpen knives" :| [],Nothing) :| [])
+          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+          }
+        , DefTypically
+          { name = ["is immortal"]
+          , defaults = [RPConstraint ["is immortal"] RPis ["false"]]
+          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing})}
+        ]
 
 
 -- bits of infrastructure

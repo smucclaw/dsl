@@ -104,10 +104,18 @@ slParamText = debugName "slParamText" $ do
 
 slTypedMulti :: SLParser KVsPair
 slTypedMulti = debugName "slTypedMulti" $ do
-  ((l,ts),n) <- (,)
+  ((l,ts,typicalval),n) <- (,,)
     $*| slMultiTerm
     |*| (|?|) slTypeSig
+    |*| (|?|) typically
+  writeTypically l typicalval
   return ((fromList l, ts),n)
+
+writeTypically :: MultiTerm -> Maybe MultiTerm -> Parser ()
+writeTypically somekey someval = do
+  srcref' <- getSrcRef
+  tell $ maybe mempty (\t -> singeltonDL (DefTypically somekey [RPConstraint somekey RPis t] (Just srcref'))) someval
+  return ()
 
 slTypeSig :: SLParser TypeSig
 slTypeSig = debugName "slTypeSig" $ do
@@ -145,6 +153,14 @@ slKeyValues = debugName "slKeyValues" $ do
                                    |*| (|?|) slTypeSig
              return ((fromList lhs, typesig),n)
 
+getSrcRef :: Parser SrcRef
+getSrcRef = do
+  leftY  <- lookAhead pYLocation
+  leftX  <- lookAhead pXLocation
+  srcurl <- asks sourceURL
+  return $ SrcRef srcurl srcurl leftX leftY Nothing
+
+
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
@@ -152,20 +168,19 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugName "slAKA" $ do
-  ((base, entityalias),n) <- (,)
+  ((base, entityalias, typicalval),n) <- (,,)
                          $*| debugName "slAKA base" baseParser
-                         |*| debugName "slAKA optional akapart" ((|?|) akapart)
+                         |*| debugName "slAKA optional akapart"   ((|?|) akapart)
+                         |*| debugName "slAKA optional typically" ((|?|) typically)
 
   debugPrint "slAKA: proceeding after base and entityalias are retrieved ..."
   let detail' = toMultiTerm base
 
-  leftY       <- lookAhead pYLocation
-  leftX       <- lookAhead pXLocation
   debugPrint $ "pAKA: entityalias = " ++ show entityalias
-  srcurl <- asks sourceURL
-  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
+  srcref' <- getSrcRef
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
   tell defalias
+  writeTypically detail' typicalval
   return (base,n)
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,
 -- being an AnyAll tree of RelationalPredicates.
@@ -177,3 +192,10 @@ slAKA baseParser toMultiTerm = debugName "slAKA" $ do
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| (.:|) pOtherVal
       return (akaval,n)
+
+typically :: SLParser MultiTerm
+typically = debugName "typically" $ do
+  ((_typically, someterm),n) <- (,)
+                                $>| pToken Typically
+                                |*| slMultiTerm
+  return (someterm, n)

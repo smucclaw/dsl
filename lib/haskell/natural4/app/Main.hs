@@ -41,7 +41,7 @@ main = do
     putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
 
   when (SFL4.toGrounds rc) $ do
-    pPrint $ grounds opts rules
+    pPrint $ groundrules opts rules
 
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules

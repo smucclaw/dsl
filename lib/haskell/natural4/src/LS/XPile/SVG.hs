@@ -264,15 +264,6 @@ expandRule rules r@Hornlike{..} =
 expandRule _ _ = []
 
 
-aaLeaves :: AA.Item RelationalPredicate -> [MultiTerm]
-aaLeaves (AA.Leaf (RPMT mt) )       = [mt]
-aaLeaves (AA.Leaf (RPParamText pt)) = [pt2multiterm pt]
-aaLeaves (AA.Leaf (RPConstraint _mt1 _rpr mt2)) = [mt2]
-aaLeaves (AA.Leaf (RPBoolStructR _mt1 _rpr bsr)) = aaLeaves bsr
-aaLeaves (AA.All _ xs) = concatMap aaLeaves xs
-aaLeaves (AA.Any _ xs) = concatMap aaLeaves xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
-aaLeaves (AA.Not _) = error "unable to handle a Not definition in expanding aaLeaves for expandRule"
-
 showNode :: PNodeD -> Text
 showNode (PN _ txt attrs deets) = txt <> " / " <> Text.unwords ((Text.pack . show <$> attrs) <>
                                                                 (Text.pack . show <$> deets) )

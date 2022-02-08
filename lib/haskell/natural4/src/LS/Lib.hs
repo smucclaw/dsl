@@ -434,6 +434,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
     { scgiven = givens
     , expect  = expects
     , rlabel = rlabel, lsource = Nothing, srcref = Nothing
+    , defaults = [], symtab   = []
     }
 
 pExpect :: Parser HornClause2
@@ -501,6 +502,8 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
                  , wwhere   = rbwhere rulebody
+                 , defaults = []
+                 , symtab   = []
                  }
   myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
@@ -544,6 +547,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
                  , having   = rbhaving rulebody
                  , wwhere   = rbwhere rulebody
+                 , defaults = []
+                 , symtab   = []
                  }
   myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
   myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond

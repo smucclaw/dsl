@@ -138,6 +138,8 @@ data Rule = Regulative
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , wwhere   :: [Rule]
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Constitutive
             { name     :: RuleName   -- the thing we are defining
@@ -148,6 +150,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Hornlike
             { name     :: RuleName           -- colour
@@ -158,6 +162,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | TypeDecl
             { name     :: RuleName  --      DEFINE Sign
@@ -169,6 +175,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Scenario
             { scgiven  :: [RelationalPredicate]
@@ -176,6 +184,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   :: RuleName  -- "Thing" -- the thing usually said as ("Thing")
@@ -261,6 +271,13 @@ pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
 -- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text
 rpFirstWord = head . rp2texts
+
+-- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
+rpHead :: RelationalPredicate -> MultiTerm
+rpHead (RPParamText    pt)            = pt2multiterm pt
+rpHead (RPMT           mt)            = mt
+rpHead (RPConstraint   mt1 _rel _mt2) = mt1
+rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
 
 data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)

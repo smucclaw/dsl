@@ -7,11 +7,11 @@ cabal-version: 1.12
 name:           anyall
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/anyall#readme>
-homepage:       https://github.com/githubuser/anyall#readme
-bug-reports:    https://github.com/githubuser/anyall/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2021 Author name here
+homepage:       https://github.com/smucclaw/anyall#readme
+bug-reports:    https://github.com/smucclaw/anyall/issues
+author:         Wong Meng Weng
+maintainer:     mwwong@smu.edu.sg
+copyright:      2021 Singapore Management University
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/anyall
+  location: https://github.com/smucclaw/anyall
 
 library
   exposed-modules:

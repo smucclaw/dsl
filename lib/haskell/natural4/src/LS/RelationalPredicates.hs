@@ -52,6 +52,19 @@ rpLeafVal = debugName "rpLeafVal" $ do
   myTraceM $ "rpLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
 
+aaLeaves :: AA.Item RelationalPredicate -> [MultiTerm]
+aaLeaves = aaLeavesFilter (const True)
+
+aaLeavesFilter :: (RelationalPredicate -> Bool) -> AA.Item RelationalPredicate -> [MultiTerm]
+aaLeavesFilter f (AA.All _ xs) = concatMap (aaLeavesFilter f) xs
+aaLeavesFilter f (AA.Any _ xs) = concatMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
+aaLeavesFilter f (AA.Not x) = aaLeavesFilter f x
+aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
+  where
+    rp2mt (RPMT mt)                     = [mt]
+    rp2mt (RPParamText    pt)           = [pt2multiterm pt]
+    rp2mt (RPConstraint  _mt1 _rpr mt2) = [mt2]
+    rp2mt (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
 
   
 -- this is probably going to need cleanup
@@ -68,10 +81,10 @@ mergePBRS [x] = Just x
 mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
 
 c2hornlike :: Rule -> Rule
-c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref } =
+c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
   let clauses = pure $ HC2 (RPBoolStructR name RPis letbind) cond
       upon = Nothing
-  in Hornlike { name, keyword, given, upon, clauses, rlabel, lsource, srcref   }
+  in Hornlike { name, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
 c2hornlike r = r
 
 pConstitutiveRule :: Parser Rule
@@ -97,6 +110,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
     , rlabel = maybeLabel
     , lsource = noLSource
     , srcref = Just srcref'
+    , defaults = mempty, symtab = mempty
     }
 
 -- bob's your uncle
@@ -175,7 +189,9 @@ pHornlike = debugName "pHornlike" $ do
                     , given
                     , clauses = addWhen topwhen clauses
                     , upon, rlabel, srcref
-                    , lsource = noLSource }
+                    , lsource = noLSource
+                    , defaults = mempty, symtab = mempty
+                    }
   where
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ hc2 { hBody = hBody hc2 <> mbsr }

@@ -27,7 +27,7 @@ rulegrounds opts globalrules r = [ ]
 ignoreTypicalRP :: Opts Unwrapped -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP opts globalrules r =
   if not $ extd opts
-  then (\rp -> hasDefaultValue r rp || defaultInGlobals globalrules rp)
+  then (\rp -> not (hasDefaultValue r rp || defaultInGlobals globalrules rp))
   else const True
 
 -- is the "head-like" key of a relationalpredicate found in the list of defaults associated with the rule?
@@ -35,4 +35,4 @@ hasDefaultValue :: Rule -> RelationalPredicate -> Bool
 hasDefaultValue r rp = rpHead rp `elem` (rpHead <$> defaults r)
 
 defaultInGlobals :: [Rule] -> RelationalPredicate -> Bool
-defaultInGlobals rs rp = any (\r -> hasDefaultValue r rp) rs
+defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs

@@ -13,11 +13,14 @@ import qualified Data.Text.Lazy as Text
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> [MultiTerm]
-groundrules rc rs = groundToChecklist <$> (nub $ concatMap (rulegrounds rc globalrules) rs)
+groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
                   | r@DefTypically{..} <- rs ]
+
+checklist :: RunConfig -> [Rule] -> [MultiTerm]
+checklist rc rs = groundToChecklist <$> groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
 rulegrounds rc globalrules r@Regulative{..} =

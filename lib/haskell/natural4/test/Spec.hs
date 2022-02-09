@@ -146,6 +146,7 @@ main = do
         , toGrounds = False
         , toVue = False
         , extendedGrounds = False
+        , toChecklist = False
         }
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
@@ -1161,12 +1162,18 @@ main = do
       -- let's see if the groundrules function outputs the right things
       let grNormal = groundrules runConfig_
           grExtend = groundrules runConfig_ { extendedGrounds = True }
-
+          asCList  = fmap groundToChecklist
+      
       filetest "boolstructp-3" "groundrules, non-extended"
-        (parseWith grNormal pRules) [["person","has health insurance"]]
+        (parseWith grNormal pRules) [["the person","has health insurance"]]
 
       filetest "boolstructp-3" "groundrules, extended"
-        (parseWith grExtend pRules) [["person","is immortal"], ["person","has health insurance"]]
+        (parseWith grExtend pRules) [ ["the person","is immortal"]
+                                    , ["the person","has health insurance"]]
+
+      filetest "boolstructp-3" "as checklist, extended"
+        (parseWith (asCList . grExtend) pRules) [ ["the person is immortal"]
+                                                , ["the person has health insurance"]]
 
 -- bits of infrastructure
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

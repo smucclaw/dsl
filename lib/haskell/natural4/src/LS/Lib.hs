@@ -91,6 +91,7 @@ getConfig o = do
         , toProlog  = only o == "prolog"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"
+        , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
         , saveAKA = False
         , wantNotRules = False

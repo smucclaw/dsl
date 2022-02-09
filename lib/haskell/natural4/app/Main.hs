@@ -43,6 +43,9 @@ main = do
   when (SFL4.toGrounds rc) $ do
     pPrint $ groundrules rc rules
 
+  when (SFL4.toChecklist rc) $ do
+    pPrint $ groundrules rc rules
+
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules
 

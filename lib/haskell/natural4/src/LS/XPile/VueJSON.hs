@@ -24,7 +24,7 @@ checklist rc rs = groundToChecklist <$> groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
 rulegrounds rc globalrules r@Regulative{..} =
-  let whoGrounds  = ("the " <> bsp2text subj :) <$> bsr2grounds who
+  let whoGrounds  = (bsp2text subj :) <$> bsr2grounds who
       condGrounds =                       bsr2grounds cond
   in concat [whoGrounds, condGrounds]
   where bsr2grounds = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
@@ -52,5 +52,14 @@ defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 -- As a starting point, we begin with hard-coded conversion functions.
 
 groundToChecklist :: MultiTerm -> [Text.Text]
-groundToChecklist mts =
-  pure $ Text.unwords mts
+groundToChecklist (subj : "is" : "not" : y) = groundToChecklist $ subj : "is" : y
+groundToChecklist (subj : "is not" : y)     = groundToChecklist $ subj : "is" : y
+groundToChecklist (subj : "is"     : y)     = groundToChecklist $ "Is" : "the" : subj : quaero y -- ++ ["or not?"]
+groundToChecklist (subj : "has"    : y)     = groundToChecklist $ "Does" : "the" : subj : "have" : quaero y -- ++ ["or not?"]
+groundToChecklist ("the" : something1 : something2 : "occurs" : blahblah) = groundToChecklist $ "Did the" : something1 : something2 : "occur" : quaero blahblah
+groundToChecklist mts
+  | length mts == 1 = groundToChecklist $ concatMap Text.words mts
+  | otherwise = pure $ Text.unwords mts
+
+quaero :: [Text.Text] -> [Text.Text]
+quaero xs = init xs ++ [last xs <> "?"]

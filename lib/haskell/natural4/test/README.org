@@ -191,10 +191,10 @@ paramtext OR ( paramtext AND paramtext )
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| EVERY | person         |                      |           |       |   |
-| WHO   |                | is immortal          | TYPICALLY | false |   |
-|       | OR             | has health insurance |           |       |   |
-| MAY   | sharpen knives |                      |           |       |   |
+| EVERY | person         |     |                  |           |       |   |
+| WHO   |                | is  | immortal         | TYPICALLY | false |   |
+|       | OR             | has | health insurance |           |       |   |
+| MAY   | sharpen knives |     |                  |           |       |   |
 
 when we run `stack run -- --only grounds test/boolstructp-3.csv` we should see one ground
 

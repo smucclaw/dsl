@@ -44,7 +44,7 @@ main = do
     pPrint $ groundrules rc rules
 
   when (SFL4.toChecklist rc) $ do
-    pPrint $ groundrules rc rules
+    pPrint $ checklist rc rules
 
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules

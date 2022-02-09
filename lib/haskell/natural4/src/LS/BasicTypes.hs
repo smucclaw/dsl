@@ -43,6 +43,7 @@ data MyToken = Every | Party | TokAll
              | Do
              | Checkbox
              | Aka -- also known as, for AKA Receiving Party
+             | Typically -- to provide default values
              | Empty | EOL
              | RuleMarker Int Text.Text
              | Expect

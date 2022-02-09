@@ -138,6 +138,8 @@ data Rule = Regulative
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , wwhere   :: [Rule]
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Constitutive
             { name     :: RuleName   -- the thing we are defining
@@ -148,6 +150,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Hornlike
             { name     :: RuleName           -- colour
@@ -158,6 +162,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | TypeDecl
             { name     :: RuleName  --      DEFINE Sign
@@ -169,6 +175,8 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Scenario
             { scgiven  :: [RelationalPredicate]
@@ -176,11 +184,18 @@ data Rule = Regulative
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   :: RuleName  -- "Thing" -- the thing usually said as ("Thing")
             , detail :: RuleName  -- ["some", "thing"]
             , nlhint :: Maybe Text.Text   -- "lang=en number=singular"
+            , srcref :: Maybe SrcRef
+            }
+          | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
             , srcref :: Maybe SrcRef
             }
           | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
@@ -261,6 +276,13 @@ pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
 -- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text
 rpFirstWord = head . rp2texts
+
+-- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
+rpHead :: RelationalPredicate -> MultiTerm
+rpHead (RPParamText    pt)            = pt2multiterm pt
+rpHead (RPMT           mt)            = mt
+rpHead (RPConstraint   mt1 _rel _mt2) = mt1
+rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
 
 data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)
@@ -381,6 +403,9 @@ data RunConfig = RC { debug     :: Bool
                     , toUppaal  :: Bool
                     , saveAKA   :: Bool
                     , wantNotRules :: Bool
+                    , toGrounds :: Bool
+                    , toVue     :: Bool
+                    , extendedGrounds :: Bool
                     }
 
 nestLevel :: RunConfig -> Int
@@ -494,6 +519,7 @@ toToken "LIST0"     = pure List0
 toToken "LIST1"     = pure List1
 
 toToken "AKA"       = pure Aka
+toToken "TYPICALLY" = pure Typically
 
 toToken "-§"        = pure $ RuleMarker (-1) "§"
 toToken "SECTION"   = pure $ RuleMarker   1  "§"

@@ -186,6 +186,21 @@ paramtext OR paramtext AND paramtext
 
 paramtext OR ( paramtext AND paramtext )
 
+**** boolstructp-3: with typically
+:PROPERTIES:
+:TABLE_EXPORT_FILE: boolstructp-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| EVERY | person         |                      |           |       |   |
+| WHO   |                | is immortal          | TYPICALLY | false |   |
+|       | OR             | has health insurance |           |       |   |
+| MAY   | sharpen knives |                      |           |       |   |
+
+when we run `stack run -- --only grounds test/boolstructp-3.csv` we should see one ground
+
+when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we should see two grounds
+
 **** inline-1: inline conjunctive lists
 
 ***** inline-1-a

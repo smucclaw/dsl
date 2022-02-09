@@ -10,23 +10,23 @@ import Options.Generic
 import Data.Maybe (maybeToList)
 
 -- https://en.wikipedia.org/wiki/Ground_expression
-groundrules :: Opts Unwrapped -> [Rule] -> [MultiTerm]
-groundrules opts rs = concatMap (rulegrounds opts globalrules) rs
+groundrules :: RunConfig -> [Rule] -> [MultiTerm]
+groundrules rc rs = concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
                   | r@DefTypically{..} <- rs ]
 
-rulegrounds :: Opts Unwrapped -> [Rule] -> Rule -> [MultiTerm]
-rulegrounds opts globalrules r@Regulative{..} = concat . concat $
-  [ maybeToList (aaLeavesFilter (ignoreTypicalRP opts globalrules r) <$> who)
+rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
+rulegrounds rc globalrules r@Regulative{..} = concat . concat $
+  [ maybeToList (aaLeavesFilter (ignoreTypicalRP rc globalrules r) <$> who)
   ]
 
-rulegrounds opts globalrules r = [ ]
+rulegrounds rc globalrules r = [ ]
 
-ignoreTypicalRP :: Opts Unwrapped -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
-ignoreTypicalRP opts globalrules r =
-  if not $ extd opts
+ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
+ignoreTypicalRP rc globalrules r =
+  if not $ extendedGrounds rc
   then (\rp -> not (hasDefaultValue r rp || defaultInGlobals globalrules rp))
   else const True
 

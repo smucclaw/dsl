@@ -67,7 +67,17 @@ concrete BareRGEng of BareRG =
   RelativeEng,
   QuestionEng,
   NumeralEng,
-  TenseX - [CAdv,Pol, PPos, PNeg] ** open Prelude, (G=GrammarEng), MorphoEng, ExtraEng, (P=ParadigmsEng), (E=ExtendEng), (Co=Coordination), ResEng in {
+  TenseX - [CAdv,Pol, PPos, PNeg] ** open
+    Prelude,
+    (G=GrammarEng),
+    MorphoEng,
+    ExtraEng,
+    SyntaxEng,
+    (P=ParadigmsEng),
+    (E=ExtendEng),
+    (Co=Coordination),
+    ResEng
+    in {
 
   lin
     PPos = G.PPos ;
@@ -109,6 +119,14 @@ concrete BareRGEng of BareRG =
     PastPartAP vp = E.PastPartAP (slashV vp) ;
 
     CompoundCN = CompoundN ;
+
+    --  : Card -> Det ; -- one/two/… or more
+    XorMore card =
+    let baseDet : Det = mkDet card
+     in baseDet ** {
+      s = baseDet.s ++ "or more" ;
+      n = ResEng.Pl ;
+    } ;
 
   lincat
     [Prep] = Co.ListX ;

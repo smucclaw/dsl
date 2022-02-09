@@ -92,6 +92,8 @@ abstract BareRG =
     everyone_Pron : Pron ;
     who_RP, that_RP : RP ;
 
+    XorMore : Card -> Det ; -- one/two/… or more
+
     CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
 
   -- passives

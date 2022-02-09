@@ -106,8 +106,11 @@
 -- ** more than **
 #auxcat More ADJ
 #auxcat Than ADP
-#auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[Degree=Cmp] fixed
+#auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
 #disable than_Prep
+
+#auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[LEMMA=more]
+#disable XorMore
 
 -- ** at least **
 #auxcat At ADV

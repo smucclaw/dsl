@@ -185,7 +185,6 @@ paramtext OR paramtext AND paramtext
 |   |    | AND    | thing3 |
 
 paramtext OR ( paramtext AND paramtext )
-
 **** boolstructp-3: with typically
 :PROPERTIES:
 :TABLE_EXPORT_FILE: boolstructp-3.csv

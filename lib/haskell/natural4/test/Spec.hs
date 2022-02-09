@@ -1128,7 +1128,7 @@ main = do
         (parseOther pBoolStructPT )
         ( Any Nothing [Leaf (("thing1" :| [],Nothing) :| [])
                       ,All Nothing [Leaf (("thing2" :| [],Nothing) :| [])
-                                   ,Leaf (("thing3" :| [],Nothing) :| [])]]  , [] )  
+                                   ,Leaf (("thing3" :| [],Nothing) :| [])]]  , [] )
   
       filetest "boolstructp-3" "boolstruct including typically"
         (parseR pRules )

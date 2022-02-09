@@ -8,10 +8,11 @@ import AnyAll.Types
 
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
+import Data.List (nub)
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> [MultiTerm]
-groundrules rc rs = concatMap (rulegrounds rc globalrules) rs
+groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r

@@ -137,6 +137,7 @@ abstract UDCat = BareRG ** {
         will_aux,
         can_aux,
         must_aux,
+        shall_aux,
         should_aux : aux ;
 
         be_auxPass : auxPass ;

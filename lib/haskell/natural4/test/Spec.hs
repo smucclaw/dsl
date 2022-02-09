@@ -1163,10 +1163,10 @@ main = do
           grExtend = groundrules runConfig_ { extendedGrounds = True }
 
       filetest "boolstructp-3" "groundrules, non-extended"
-        (parseWith grNormal pRules) [["has health insurance"]]
+        (parseWith grNormal pRules) [["person","has health insurance"]]
 
       filetest "boolstructp-3" "groundrules, extended"
-        (parseWith grExtend pRules) [["is immortal"], ["has health insurance"]]
+        (parseWith grExtend pRules) [["person","is immortal"], ["person","has health insurance"]]
 
 -- bits of infrastructure
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

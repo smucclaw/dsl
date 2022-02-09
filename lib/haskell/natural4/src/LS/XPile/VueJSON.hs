@@ -18,8 +18,11 @@ groundrules rc rs = concatMap (rulegrounds rc globalrules) rs
                   | r@DefTypically{..} <- rs ]
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
-rulegrounds rc globalrules r@Regulative{..} = 
-  concat ( catMaybes (fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r)) <$> [who, cond]) )
+rulegrounds rc globalrules r@Regulative{..} =
+  let whoGrounds  = (bsp2text subj :) <$> bsr2grounds who
+      condGrounds =                       bsr2grounds cond
+  in concat [whoGrounds, condGrounds]
+  where bsr2grounds = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
 
 rulegrounds rc globalrules r = [ ]
 

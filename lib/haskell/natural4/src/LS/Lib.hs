@@ -56,10 +56,10 @@ import Data.Either (rights)
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist"
                    , dbug :: w ::: Bool <!> "False"
-                   , file :: w ::: NoLabel [String] <?> "filename..."
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
+                   , file :: w ::: NoLabel [String] <?> "filename..."
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)

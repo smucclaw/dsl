@@ -1162,7 +1162,7 @@ main = do
       -- let's see if the groundrules function outputs the right things
       let grNormal = groundrules runConfig_
           grExtend = groundrules runConfig_ { extendedGrounds = True }
-          asCList  = fmap groundToChecklist
+          asCList  = checklist   runConfig_ { extendedGrounds = True }
       
       filetest "boolstructp-3" "groundrules, non-extended"
         (parseWith grNormal pRules) [["the person","has health insurance"]]
@@ -1172,7 +1172,7 @@ main = do
                                     , ["the person","has health insurance"]]
 
       filetest "boolstructp-3" "as checklist, extended"
-        (parseWith (asCList . grExtend) pRules) [ ["the person is immortal"]
+        (parseWith asCList pRules) [ ["the person is immortal"]
                                                 , ["the person has health insurance"]]
 
 -- bits of infrastructure

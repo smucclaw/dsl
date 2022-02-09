@@ -7,7 +7,7 @@ import LS
 import AnyAll.Types
 
 import Options.Generic
-import Data.Maybe (maybeToList)
+import Data.Maybe (maybeToList, catMaybes)
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> [MultiTerm]
@@ -18,9 +18,8 @@ groundrules rc rs = concatMap (rulegrounds rc globalrules) rs
                   | r@DefTypically{..} <- rs ]
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
-rulegrounds rc globalrules r@Regulative{..} = concat . concat $
-  [ maybeToList (aaLeavesFilter (ignoreTypicalRP rc globalrules r) <$> who)
-  ]
+rulegrounds rc globalrules r@Regulative{..} = 
+  concat ( catMaybes (fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r)) <$> [who, cond]) )
 
 rulegrounds rc globalrules r = [ ]
 

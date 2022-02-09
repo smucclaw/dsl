@@ -125,7 +125,7 @@ L4List [ L4Leaf (["foo"], Notype)
        , L4Leaf (["bar"], Notype)
        , L4Leaf (["baz"], Notype)
        ]
-           
+
 **** and/or trees
 
 | all of: |     |
@@ -218,7 +218,7 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 :END:
 
 | one word |    | thing1 |
-|          | OR | thing  | 
+|          | OR | thing  |
 
 
 ***** inline-1-c
@@ -775,7 +775,7 @@ MultiText RelToken MultiText
 ****** contexts
 
 - part of a HornClause
-  
+
 ***** RelationalPredicate: N-ary Predicate
 
 ParamText list of words, untyped.
@@ -2019,7 +2019,7 @@ what if we say
 | GIVEN | Player1        |         |   | Player2        | :: | Player |
 | DEEM  | Player1        | defeats |   | Player2        |    |        |
 | WHEN  | Player1.choice | beats   |   | Player2.choice |    |        |
-        
+
 *** Pilcrows
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pilcrows-1.csv
@@ -2414,4 +2414,3 @@ The "IF" line has to go below.
 | IT IS | an Off-Peak Day        |
 | IF    | it is a weekend        |
 | OR    | it is a public holiday |
-

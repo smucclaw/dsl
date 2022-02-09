@@ -112,6 +112,13 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
+filetest2 testfile desc parseFunc expected =
+  it (testfile {- ++ ": " ++ desc -}) $ do
+  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  let parsed = parseFunc testfile `traverse` exampleStreams testcsv
+  return ()
+
+
 preprocess :: String -> String
 preprocess text = filter (not . (`elem` ['!', '.'])) text
 
@@ -138,15 +145,18 @@ main = do
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , extendedGrounds = False
         }
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
   let dumpStream s = traceM "* Tokens" >> traceShowM (tokenVal <$> unMyStream s)
-  let parseR x y s      = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-  let parseR1 x y s     =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-  let parseOther x y s  = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-  let parseOther1 x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
+  let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
+  let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
+  let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
+  let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
+  let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
+  let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
   verboseCheck prop_gerundcheck
   hspec $ do
     describe "Nothing Test" $ do
@@ -1146,6 +1156,16 @@ main = do
           , defaults = [RPConstraint ["is immortal"] RPis ["false"]]
           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing})}
         ]
+
+      -- let's see if the groundrules function outputs the right things
+      let grNormal = groundrules runConfig_
+          grExtend = groundrules runConfig_ { extendedGrounds = True }
+
+      filetest "boolstructp-3" "groundrules, non-extended"
+        (parseWith grNormal pRules) [["has health insurance"]]
+
+      filetest "boolstructp-3" "groundrules, extended"
+        (parseWith grExtend pRules) [["is immortal"], ["has health insurance"]]
 
 -- bits of infrastructure
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

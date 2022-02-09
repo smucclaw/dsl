@@ -54,7 +54,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     will_aux = mkAux "will" Will ;
     can_aux = mkAux "can" can_VV ;
     must_aux = mkAux "must" must_VV ;
-    should_aux = mkAux "should" should_VV ; --Deontic ;
+    should_aux = mkAux "should" should_VV ;
+    shall_aux = mkAux "shall" shall_VV ;
     be_cop,
     be_auxPass = ss "be" ;
     is_cop,
@@ -159,9 +160,23 @@ concrete UDCatEng of UDCat = BareRGEng **
         VVF VPres => "should" ;
         VVF VPPart => ["been obliged to"] ;
         VVF VPresPart => ["being obliged to"] ;
+        VVF VPast => "should" ;
+        VVPastNeg => "should not" ;
+        VVPresNeg => "shouldn't"
+        } ;
+      p = [] ;
+      typ = VVAux
+    } ;
+
+    shall_VV : VV = lin VV {
+      s = table {
+        VVF VInf => ["be obliged to"] ;
+        VVF VPres => "shall" ;
+        VVF VPPart => ["been obliged to"] ;
+        VVF VPresPart => ["being obliged to"] ;
         VVF VPast => "shall" ;
         VVPastNeg => "shall not" ;
-        VVPresNeg => "shouldn't"
+        VVPresNeg => "shan't"
         } ;
       p = [] ;
       typ = VVAux

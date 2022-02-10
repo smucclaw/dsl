@@ -314,11 +314,11 @@ type SLParser a = Parser (a, Int)
 
 -- continue
 (|>|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- continue    fancy plain
-(|<|)  :: (Show a, Show b) => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
 (|*|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- continue    fancy fancy
 ($>>)  :: Show a           => Parser  a            ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- plain 
 (|>>)  :: Show a           => Parser (a,      Int) ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- fancy
-(|&|)  :: (Show a, Show b) => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
+(|<|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
+(|&|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
 
 -- terminal
 (|*<)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
@@ -495,19 +495,19 @@ infixl 4 |>>
 -- consume zero or more undeepers then parse the thing on the right.
 -- performs backtracking to support multiple levels
 -- plain
-p1 |<| p2 = debugName "|<|" $ do p1 |&| (<>|) p2
+p1 |<| p2 = debugPrint "|<|" >> p1 |&| (<>|) p2
 infixl 4 |<|
 
 -- fancy
-p1 |&| p2 = debugName "|&|" $ do
+p1 |&| p2 = debugPrint "|&|" >> do
   (l, n) <- p1
   (r, m) <- try recurse <|> base
   return (l r, n + m)
   where
-    base = debugName "|&|/base" $ do
+    base = debugPrint "|&|/base" >> do
       (out,n) <- p2
       return (out,n)
-    recurse = debugName "|&|/recurse" $ do
+    recurse = debugPrint "|&|/recurse" >> do
       _ <- pToken UnDeeper
       (out, m) <- p2
       debugPrint $ "|&|/base got " ++ show out

@@ -1084,7 +1084,7 @@ main = do
       filetest "inline-1-a" "line crossing"
         (parseOther ( (,,,)
                       >*| slMultiTerm
-                      |>| pToken Means -- why does everything break when i switch this to |<| ?
+                      |<| pToken Means -- why does everything break when i switch this to |<| ?
                       |*| slMultiTerm
                       |*| rpMT
                       |<< undeepers

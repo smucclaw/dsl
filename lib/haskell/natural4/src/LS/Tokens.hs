@@ -316,10 +316,22 @@ type SLParser a = Parser (a, Int)
 -- continue
 (|>|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- continue    fancy plain
 (|*|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- continue    fancy fancy
+(|-|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- continue    fancy plain without consuming any GoDeepers
+(|=|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- continue    fancy fancy without consuming any GoDeepers
 ($>>)  :: Show a           => Parser  a            ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- plain 
 (|>>)  :: Show a           => Parser (a,      Int) ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- fancy
 (|<|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
 (|&|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
+(|<>)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse, then consume GoDeepers
+
+(+?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- force the LHS to be nongreedy before matching the right.
+(*?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- plain nongreedy kleene star
+(|+?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene plus
+(|*?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene star
+
+($+/)  :: (Show a, Show b) =>          (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args to the initial constructor
+(/+/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args as part of the chain
+(|>/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- same as /+/ but consume godeepers first
 
 -- terminal
 (|*<)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
@@ -441,6 +453,63 @@ p1 |*| p2 = do
   return (l r, n + m)
 infixl 4 |*|
 
+p1 |-| p2 = p1 |=| (<>|) p2
+infixl 4 |-|, |=|
+
+p1 |=| p2 = do
+  (l,n) <- p1
+  (r,m) <- p2
+  return (l r, n + m)
+
+-- one or more of the LHS but as nongreedy as possible, giving the rhs priority.
+-- (p1)+?(p2)
+p1 +?| p2 = do
+  l         <- p1 <* pToken GoDeeper
+  ((r,x),m) <- p1 *?| p2
+  return ((l:r,x), 1 + m)
+
+-- positive lookahead
+p1 +?= p2 = do
+  l         <- p1 <* pToken GoDeeper
+  ((r,x),m) <- p1 *?= p2
+  return ((l:r,x), 1 + m)
+
+p1 *?= p2 = try (do
+                    (x',m')   <- try (lookAhead p2)
+                    return (([],x'),0))
+             <|> (p1 +?= p2)
+
+infixl 5 +?|, *?|, |+?, |*? , +?=, *?=
+p1 *?| p2 =  try (do
+                     (x',m')   <- p2
+                     return (([],x'),m'))
+             <|> (p1 +?| p2)
+  
+p1 |+? p2 = do
+  (l,n)     <- p1 <* pToken GoDeeper
+  ((r,x),m) <- p1 |*? p2
+  return ((l:r,x), n + m)
+
+p1 |*? p2 = try (do
+                    (x',m')   <- p2
+                    return (([],x'),m'))
+            <|> (p1 |+? p2)
+  
+f $+/ p = do
+  ((x,y),n) <- p
+  return (f x y, n)
+infixl 4 $+/
+  
+p1 /+/ p2 = do
+  (l,n)     <- p1
+  ((x,y),m) <- p2
+  debugPrint $ "/+/ pending " ++ show (n+m) ++ " UnDeepers"
+  return (l x y, n + m)
+infixl 4 /+/
+
+p1 |>/ p2 = debugPrint "|>/" >> p1 /+/ (|>>) p2
+infixl 4 |>/
+  
 p1 |>< p2 = p1 |>| p2 |<< undeepers
 infixl 4 |><
   
@@ -463,6 +532,11 @@ undeepers n = debugName "undeepers" $ do
   replicateM_ n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 
+godeeper :: Int -> SLParser ()
+godeeper n = debugName ("godeeper " ++ show n) $ do
+  replicateM_ n (pToken GoDeeper)
+  debugPrint "matched!"
+  return ((),n)
 
 manyUndeepers :: SLParser ()
 manyUndeepers = debugName "manyUndeepers" $ do
@@ -504,23 +578,25 @@ infixl 4 |>>
 p1 |<| p2 = debugPrint "|<|" >> p1 |&| (<>|) p2
 infixl 4 |<|
 
+p1 |<> p2 = debugPrint "|<>" >> p1 |&| ($>>) p2
+infixl 4 |<>
+  
 -- fancy
-p1 |&| p2 = debugPrint "|&|" >> do
+p1 |&| p2 = debugPrint "|&| starting" >> do
   (l, n) <- p1
   (r, m) <- try recurse <|> base
+  debugPrint $ "|&|/parent returning "++ show r ++ " with " ++ show (n + m) ++ " UnDeepers pending"
   return (l r, n + m)
   where
-    base = debugPrint "|&|/base" >> do
+    base = debugName "|&|/base" $ do
       (out,n) <- p2
       return (out,n)
     recurse = debugPrint "|&|/recurse" >> do
       _ <- pToken UnDeeper
       (out, m) <- p2
-      debugPrint $ "|&|/base got " ++ show out
+      debugPrint $ "|&|/recurse got " ++ show out ++ " with " ++ show (m-1) ++ " UnDeepers pending"
       return (out, m-1)
 infixl 4 |&|
-
-
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a

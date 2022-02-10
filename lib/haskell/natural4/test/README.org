@@ -224,11 +224,13 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 | MEANS | yummy | nightshades |   |
 |       |       | potato      |   |
 |       | OR    | tomato      |   |
-***** inline-1-a2
+***** inline-1-a2 -- not supposed to pass
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-a2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+labels are allowed to be a single word, but cannot be MultiTerm. So this won't work.
 
 |       | Food  |             |      |        |
 | MEANS | yummy | nightshades | with | spices |
@@ -311,16 +313,11 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 
 challenge: use a combination of parsers to read this stuff into some kind of structure
 
-
-
-|       | Bad |                  |   |    |              |
-| MEANS | any | unauthorised     |   |    | access       |
-|       |     |                  |   | OR | use          |
-|       |     |                  |   | OR | disclosure   |
-|       |     |                  |   | OR | copying      |
-|       |     |                  |   | OR | modification |
-|       |     |                  |   | OR | disposal     |
-|       |     | of personal data |   |    |              |
+|       | Bad |              |               |    |            |   |
+| MEANS | any | unauthorised |               |    | access     |   |
+|       |     |              |               | OR | use        |   |
+|       |     |              |               | OR | disclosure |   |
+|       |     | of           | personal data |    |            |   |
 
 #+begin_example
   $<| pToken Is

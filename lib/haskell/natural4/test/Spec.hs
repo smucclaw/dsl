@@ -1110,6 +1110,29 @@ main = do
       --     ), []
       --   )
 
+      filetest "inline-1-c" "line crossing"
+        (parseOther ( (,,,,,)
+                      >*| slMultiTerm
+                      |<| pToken Means
+                      |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                      |-| pBSR
+                      |&| slMultiTerm
+                      |<< undeepers
+                    ))
+        ( ( ["Bad"]
+          , Means
+          , ["any","unauthorised"]
+          , ()
+          , Any Nothing [ Leaf (RPMT ["access"])
+                        , Leaf (RPMT ["use"])
+                        , Leaf (RPMT ["disclosure"])
+                        ]
+          , ["of","personal data"]
+          ), []
+        )
+
+
+
 {-
     describe "Prolog" $ do
 

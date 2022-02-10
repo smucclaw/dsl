@@ -109,7 +109,7 @@
 #auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
 #disable than_Prep
 
-#auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[LEMMA=more]
+#auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[FORM=more]
 #disable XorMore
 
 -- ** at least **
@@ -120,6 +120,13 @@
 
 -- ** 5 people **
 #auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
+
+-- Word order stuff
+-- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
+#auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
+#auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
+
+-- recognise "Section 10" as an apposition
 
 -- Label variants of various
 -- This relation is nmod head, and default AdNum is advmod head

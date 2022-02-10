@@ -607,4 +607,14 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	fun root_nsubj_cop_obl_parataxis : root -> nsubj -> cop -> obl -> parataxis -> UDS ;
 	fun root_nsubj_obj_advcl : root -> nsubj -> obj -> advcl -> UDS ;
 
+	-- Maryam's annotations
+	fun root_advcl_nsubjPass_aux_auxPass_xcomp : root -> advcl -> nsubjPass -> aux -> auxPass -> xcomp -> UDS ;
+	fun root_nmod_aclRelcl : root -> nmod -> aclRelcl -> UDS ;
+	fun root_nsubjPass_aux_auxPass_advcl_advcl : root -> nsubjPass -> aux -> auxPass -> advcl -> advcl -> UDS ;
+	fun root_nsubjPass_aux_auxPass_advmod : root -> nsubjPass -> aux -> auxPass -> advmod -> UDS ;
+	fun root_nsubjPass_aux_auxPass_obl : root -> nsubjPass -> aux -> auxPass -> obl -> UDS ;
+	fun root_nsubjPass_aux_auxPass_xcomp : root -> nsubjPass -> aux -> auxPass -> xcomp -> UDS ;
+	fun root_nsubj_aux_cop_nmod : root -> nsubj -> aux -> cop -> nmod -> UDS ;
+	fun root_nsubj_nsubj_aux_advmod_obj : root -> nsubj -> nsubj -> aux -> advmod -> obj -> UDS ;
+
 }

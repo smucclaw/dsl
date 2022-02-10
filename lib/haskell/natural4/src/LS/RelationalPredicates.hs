@@ -162,7 +162,7 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- manyIndentation pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
 

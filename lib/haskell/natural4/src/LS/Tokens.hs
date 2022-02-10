@@ -464,8 +464,13 @@ undeepers n = debugName "undeepers" $ do
   debugPrint "sameLine: success!"
 
 
+manyUndeepers :: SLParser ()
+manyUndeepers = debugName "manyUndeepers" $ do
+  (pToken UnDeeper >> (fmap (subtract 1) <$> manyUndeepers)) <|> return ((),0)
 
-
+someUndeepers :: SLParser ()
+someUndeepers = debugName "someUndeepers" $ do
+  pToken UnDeeper >> (fmap (subtract 1) <$> manyUndeepers)
 
 ($>>) p = debugName "$>>" $ do
   try recurse <|> base

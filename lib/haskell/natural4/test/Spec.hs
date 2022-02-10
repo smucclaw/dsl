@@ -1095,6 +1095,21 @@ main = do
           ), []
         )
 
+-- this test will fail; we can try uncommenting the `term p/c` stanza within Parser.hs/term but that will break action parameters.
+      -- filetest "inline-1-a2" "line crossing"
+      --   (parseOther ( (,,)
+      --                 >*| slMultiTerm
+      --                 |<| pToken Means
+      --                 |>| pBSR
+      --                 |<< undeepers
+      --               ))
+      --   ( ( ["Food"]
+      --     , Means
+      --     , Any (Just $ Pre "yummy nightshades with spices") [ Leaf (RPMT ["potato","with","salt"])
+      --                                                        , Leaf (RPMT ["tomato","with","pepper"])]
+      --     ), []
+      --   )
+
 {-
     describe "Prolog" $ do
 

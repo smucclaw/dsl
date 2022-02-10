@@ -419,6 +419,7 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , rlabel  = noLabel
         , lsource = noLSource
         , srcref  = noSrcRef
+        , defaults = mempty, symtab = mempty
         }
 
     givenLimb = debugName "pHornlike/givenLimb" $ Just <$> preambleParamText [Given]
@@ -715,8 +716,12 @@ exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do
   raw <- expr pParamText
   -- rewrite the raw returned from expr pParamText
-  -- expr pParamText has returned MyLabel "pay" (MyLeaf (("to" :| ["the King"],Nothing) :| [("amount" :| ["$20"],Nothing)]))
-  -- to MyLeaf (("pay" :| [], Nothing) :| [("to" :| ["the King"], Nothing) ...
+  -- expr pParamText has returned MyLabel "pay" (MyLeaf (     ("to"     :| ["the King"],Nothing)
+  --                                                      :| [("amount" :| ["$20"]     ,Nothing)]))
+  -- to MyLeaf (("pay" :| [], Nothing)
+  --            :| [("to"     :| ["the King"], Nothing)
+  --               ,("amount" :| ["$20"]     , Nothing)[))
+
   return $ case raw of
     MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
     x -> x

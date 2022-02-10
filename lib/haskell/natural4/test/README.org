@@ -185,6 +185,18 @@ paramtext OR paramtext AND paramtext
 |   |    | AND    | thing3 |
 
 paramtext OR ( paramtext AND paramtext )
+
+**** labeled elements in an anyall list
+
+| EVERY | person |             |              |          |
+| MUST  | fart   | loudly      |              |          |
+|       | AND    | make amends |              |          |
+|       |        |             | run          | away     |
+|       |        | OR          | apologize    |          |
+|       |        |             | apologyLevel | profuse  |
+|       |        |             | posture      | kneeling |
+
+
 **** boolstructp-3: with typically
 :PROPERTIES:
 :TABLE_EXPORT_FILE: boolstructp-3.csv
@@ -208,8 +220,10 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| one word |    | thing1 |
-|          | OR | thing  |
+|       | Food  |             |   |
+| MEANS | yummy | nightshades |   |
+|       |       | potato      |   |
+|       | OR    | tomato      |   |
 
 ***** inline-1-b
 :PROPERTIES:
@@ -217,9 +231,18 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| one word |    | thing1 |
-|          | OR | thing  |
-
+| any of the prescribed personal data or classes of personal data relating to the individual |    |   |     |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      |    |   |   1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         |    |   |   2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         |    |   |   3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         |    |   |   4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | 5  |   |     | Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —                                                                                                                    |
+|                                                                                            |    |   | 5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR |   | 5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR |   | 5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR |   | 5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR |   | 5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR |   | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
 
 ***** inline-1-c
 :PROPERTIES:
@@ -230,13 +253,16 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 
 challenge: use a combination of parsers to read this stuff into some kind of structure
 
-| IS | any | unauthorised     |   |    | access       |
-|    |     |                  |   | OR | use          |
-|    |     |                  |   | OR | disclosure   |
-|    |     |                  |   | OR | copying      |
-|    |     |                  |   | OR | modification |
-|    |     |                  |   | OR | disposal     |
-|    |     | of personal data |   |    |              |
+
+
+|       | Bad |                  |   |    |              |
+| MEANS | any | unauthorised     |   |    | access       |
+|       |     |                  |   | OR | use          |
+|       |     |                  |   | OR | disclosure   |
+|       |     |                  |   | OR | copying      |
+|       |     |                  |   | OR | modification |
+|       |     |                  |   | OR | disposal     |
+|       |     | of personal data |   |    |              |
 
 #+begin_example
   $<| pToken Is
@@ -2190,7 +2216,7 @@ what if we say
 
 | §§    | Assess                                                                          |                                   |                 |                   |        |                                  |               |   |
 | EVERY | Organisation                                                                    |                                   |                 | AKA               | You    |                                  |               |   |
-| WHO   | is                                                                              | not                               | a Public Agency |                   |        |                                  |               |   |
+| WHO   | is                                                                              | not                               | a Public Agency | TYPICALLY         | not    |                                  |               |   |
 | MUST  | WITHIN                                                                          | 30                                | days            |                   |        |                                  |               |   |
 | UPON  | becoming aware a data breach may have occurred                                  |                                   |                 |                   |        |                                  |               |   |
 | WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                 |                   |        |                                  |               |   |

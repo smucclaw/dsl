@@ -7,6 +7,7 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import Debug.Trace
+import qualified Data.Text.Lazy as Text
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
@@ -95,7 +96,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    permutationsCon [Means,Includes] [When,If] [Unless] [Given]
+    permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
 
@@ -249,7 +250,27 @@ rpBoolStructR :: Parser (RelationalPredicate, Int)
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
-pBSR = debugName "pBSR" $ toBoolStruct <$> expr pRelPred
+pBSR = debugName "pBSR" $ do
+  try noPrePost <|> try withPrePost <|> withPreOnly
+  where
+    noPrePost = toBoolStruct <$> expr pRelPred
+    withPrePost = do
+      (pre, _, body, post) <- (,,,)
+                              $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                              |-| noPrePost
+                              |&| slMultiTerm
+                              |<< undeepers
+      return $ relabelpp body (Text.unwords pre) (Text.unwords post)
+    withPreOnly = do
+      (pre, _, body) <- (,,)
+                        $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                        |-| noPrePost
+                        |<< undeepers
+      return $ relabelp body (Text.unwords pre)
 
-
-
+    relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
+    relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
+    relabelpp x _ _ = error "RelationalPredicates: relabelpp failed"
+    relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
+    relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
+    relabelp  x _ = error "RelationalPredicates: relabelp failed"

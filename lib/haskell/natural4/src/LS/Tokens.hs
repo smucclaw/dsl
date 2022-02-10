@@ -328,9 +328,12 @@ type SLParser a = Parser (a, Int)
 (*?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- plain nongreedy kleene star
 (|+?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene plus
 (|*?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene star
+(+?=)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- lookahead
+(*?=)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- lookahead
 
 ($+/)  :: (Show a, Show b) =>          (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args to the initial constructor
 (/+/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args as part of the chain
+($>/)  :: (Show a, Show b) =>          (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- same as $+/ but consume godeepers first
 (|>/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- same as /+/ but consume godeepers first
 
 -- terminal
@@ -475,8 +478,8 @@ p1 +?= p2 = do
   return ((l:r,x), 1 + m)
 
 p1 *?= p2 = try (do
-                    (x',m')   <- try (lookAhead p2)
-                    return (([],x'),0))
+                    (x,_)   <- try (lookAhead p2)
+                    return (([],x),0))
              <|> (p1 +?= p2)
 
 infixl 5 +?|, *?|, |+?, |*? , +?=, *?=
@@ -507,8 +510,10 @@ p1 /+/ p2 = do
   return (l x y, n + m)
 infixl 4 /+/
 
+p1 $>/ p2 = debugPrint "$>/" >> p1 $+/ (|>>) p2
+  
 p1 |>/ p2 = debugPrint "|>/" >> p1 /+/ (|>>) p2
-infixl 4 |>/
+infixl 4 $>/, |>/
   
 p1 |>< p2 = p1 |>| p2 |<< undeepers
 infixl 4 |><

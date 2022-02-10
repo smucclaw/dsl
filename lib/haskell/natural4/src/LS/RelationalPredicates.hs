@@ -96,7 +96,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
+    manyIndentation $ permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
 
@@ -204,9 +204,18 @@ pHornlike = debugName "pHornlike" $ do
     -- DECIDE x IS y WHEN Z IS Q
 
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
-      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
+      (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
+      (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
+      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
+        <$?> (Nothing, try (pToken If     *> (Just <$> pBSR)))
+        <|?> (Nothing, try (pToken Unless *> (Just <$> pBSR)))
+        <|?> (Nothing, try (pToken And    *> (Just <$> pBSR)))
+        <|?> (Nothing, try (pToken Or     *> (Just <$> pBSR)))
+      let clauses = [HC2 (RPConstraint subject RPis object) (Just $ AA.Leaf $ RPMT ["always"])]
+      return (Just keyword, subject, clauses)
+
+--      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+--      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
@@ -226,6 +235,7 @@ relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
   (x,y) <- debugName "pRelPred optIndentedTuple whenCase" (pRelPred `optIndentedTuple` whenCase)
   return (x, join y)
+
 relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredSamelineWhen = debugName "relPredSamelineWhen" $ (,) $*| slRelPred |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $ optional whenCase))
 whenCase :: Parser (Maybe BoolStructR)

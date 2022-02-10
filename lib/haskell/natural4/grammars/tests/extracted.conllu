@@ -1,0 +1,647 @@
+# newdoc
+# newpar
+# sent_id = 1
+# text = “affected individual”
+1	“affected	“affect	ADJ	PASS	Case=Nom	2	amod	_	_
+2	individual”	individual”	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = individual to whom any personal data affected by a data breach relates
+1	individual	individual	ADJ	POS	Degree=Pos	6	amod	_	_
+2	to	to	ADP	_	_	3	case	_	_
+3	whom	who	PRON	WH-REL-ACC	PronType=Int	1	nmod	_	_
+4	any	any	DET	IND	_	6	det	_	_
+5	personal	personal	ADJ	POS	Degree=Pos	6	amod	_	_
+6	data	data	NOUN	PL-NOM	Number=Sing	0	root	_	_
+7	affected	affect	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	6	acl	_	_
+8	by	by	ADP	_	_	12	case	_	_
+9	a	a	DET	IND-SG	Definite=Ind|PronType=Art	12	det	_	_
+10	data	data	NOUN	PL-NOM	Number=Sing	11	compound	_	_
+11	breach	breach	NOUN	SG-NOM	Number=Sing	12	compound	_	_
+12	relates	relate	NOUN	PL-NOM	Number=Plur	7	obl	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = “data breach”
+1	“data	“data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach”	breach”	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = personal data
+1	personal	personal	ADJ	POS	Degree=Pos	2	amod	_	_
+2	data	data	NOUN	PL-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = the unauthorised access , collection , use , disclosure , copying , modification [ or ] disposal [ of ] personal data
+1	the	the	DET	DEF	Definite=Def|PronType=Art	3	det	_	_
+2	unauthorised	unauthorised	ADJ	POS	Degree=Pos	3	amod	_	_
+3	access	access	NOUN	SG-NOM	Number=Sing	0	root	_	_
+4	,	,	PUNCT	Comma	_	3	punct	_	_
+5	collection	collection	NOUN	SG-NOM	Number=Sing	3	conj	_	_
+6	,	,	PUNCT	Comma	_	5	punct	_	_
+7	use	use	NOUN	SG-NOM	Number=Sing	3	conj	_	_
+8	,	,	PUNCT	Comma	_	7	punct	_	_
+9	disclosure	disclosure	NOUN	SG-NOM	Number=Sing	3	conj	_	_
+10	,	,	PUNCT	Comma	_	11	punct	_	_
+11	copying	copy	VERB	ING	Tense=Pres|VerbForm=Part	3	acl	_	_
+12	,	,	PUNCT	Comma	_	13	punct	_	_
+13	modification	modification	NOUN	SG-NOM	Number=Sing	11	conj	_	_
+14	[	[	PUNCT	Period	_	17	punct	_	_
+15	or	or	CCONJ	_	_	17	cc	_	_
+16	]	]	PUNCT	Period	_	17	punct	_	_
+17	disposal	disposal	NOUN	SG-NOM	Number=Sing	11	conj	_	_
+18	[	[	PUNCT	Period	_	22	punct	_	_
+19	of	of	ADP	_	_	22	case	_	_
+20	]	]	PUNCT	Period	_	19	punct	_	_
+21	personal	personal	ADJ	POS	Degree=Pos	22	amod	_	_
+22	data	data	NOUN	PL-NOM	Number=Sing	11	conj	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = the loss of any storage medium or device on which personal data is stored in circumstances where the unauthorised access , collection , use , disclosure , copying , modification [ or ] disposal of the personal data is likely to occur
+1	the	the	DET	DEF	Definite=Def|PronType=Art	2	det	_	_
+2	loss	loss	NOUN	SG-NOM	Number=Sing	0	root	_	_
+3	of	of	ADP	_	_	6	case	_	_
+4	any	any	DET	IND	_	6	det	_	_
+5	storage	storage	NOUN	SG-NOM	Number=Sing	6	compound	_	_
+6	medium	medium	NOUN	SG-NOM	Number=Sing	2	nmod	_	_
+7	or	or	CCONJ	_	_	8	cc	_	_
+8	device	device	NOUN	SG-NOM	Number=Sing	6	conj	_	_
+9	on	on	ADP	_	_	10	case	_	_
+10	which	which	PRON	WH-REL	PronType=Int	14	obl	_	_
+11	personal	personal	ADJ	POS	Degree=Pos	12	amod	_	_
+12	data	data	NOUN	PL-NOM	Number=Sing	14	nsubj:pass	_	_
+13	is	be	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	14	aux:pass	_	_
+14	stored	store	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	8	acl:relcl	_	_
+15	in	in	ADP	_	_	16	case	_	_
+16	circumstances	circumstance	NOUN	PL-NOM	Number=Plur	14	obl	_	_
+17	where	where	ADV	WH-REL	PronType=Int	40	advmod	_	_
+18	the	the	DET	DEF	Definite=Def|PronType=Art	20	det	_	_
+19	unauthorised	unauthorised	ADJ	POS	Degree=Pos	20	amod	_	_
+20	access	access	NOUN	SG-NOM	Number=Sing	40	nsubj	_	_
+21	,	,	PUNCT	Comma	_	20	punct	_	_
+22	collection	collection	NOUN	SG-NOM	Number=Sing	20	conj	_	_
+23	,	,	PUNCT	Comma	_	22	punct	_	_
+24	use	use	NOUN	SG-NOM	Number=Sing	20	conj	_	_
+25	,	,	PUNCT	Comma	_	24	punct	_	_
+26	disclosure	disclosure	NOUN	SG-NOM	Number=Sing	20	conj	_	_
+27	,	,	PUNCT	Comma	_	28	punct	_	_
+28	copying	copy	VERB	ING	Tense=Pres|VerbForm=Part	20	conj	_	_
+29	,	,	PUNCT	Comma	_	28	punct	_	_
+30	modification	modification	NOUN	SG-NOM	Number=Sing	20	conj	_	_
+31	[	[	PUNCT	Period	_	34	punct	_	_
+32	or	or	CCONJ	_	_	34	cc	_	_
+33	]	]	PUNCT	Period	_	32	punct	_	_
+34	disposal	disposal	NOUN	SG-NOM	Number=Sing	20	conj	_	_
+35	of	of	ADP	_	_	38	case	_	_
+36	the	the	DET	DEF	Definite=Def|PronType=Art	38	det	_	_
+37	personal	personal	ADJ	POS	Degree=Pos	38	amod	_	_
+38	data	data	NOUN	PL-NOM	Number=Sing	20	nmod	_	_
+39	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	40	cop	_	_
+40	likely	like	ADJ	POS	Degree=Pos	16	acl:relcl	_	_
+41	to	to	PART	_	_	42	mark	_	_
+42	occur	occur	VERB	INF	VerbForm=Inf	40	acl	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data breach
+1	data	data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = notifiable data breach
+1	notifiable	notifiable	ADJ	POS	Degree=Pos	2	amod	_	_
+2	data	data	NOUN	PL-NOM	Number=Sing	3	compound	_	_
+3	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = the data breach
+1	the	the	DET	DEF	Definite=Def|PronType=Art	3	det	_	_
+2	data	data	NOUN	PL-NOM	Number=Sing	3	compound	_	_
+3	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = results in , [ or ] is likely to result in , significant harm to an affected individual
+1	results	result	NOUN	PL-NOM	Number=Plur	14	compound	_	_
+2	in	in	ADP	_	_	3	case	_	_
+3	,	,	PUNCT	Comma	_	8	punct	_	_
+4	[	[	PUNCT	Period	_	8	punct	_	_
+5	or	or	CCONJ	_	_	8	cc	_	_
+6	]	]	PUNCT	Period	_	5	punct	_	_
+7	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	cop	_	_
+8	likely	like	ADJ	POS	Degree=Pos	1	amod	_	_
+9	to	to	PART	_	_	10	mark	_	_
+10	result	result	VERB	INF	VerbForm=Inf	8	acl	_	_
+11	in	in	ADV	_	_	10	advmod	_	_
+12	,	,	PUNCT	Comma	_	8	punct	_	_
+13	significant	significant	ADJ	POS	Degree=Pos	14	amod	_	_
+14	harm	harm	NOUN	SG-NOM	Number=Sing	0	root	_	_
+15	to	to	ADP	_	_	18	case	_	_
+16	an	an	DET	IND-SG	Definite=Ind|PronType=Art	18	det	_	_
+17	affected	affect	ADJ	PASS	Degree=Pos	18	amod	_	_
+18	individual	individual	NOUN	SG-NOM	Number=Sing	14	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = is , [ or ] is likely to be , of a significant scale
+1	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	7	cop	_	_
+2	,	,	PUNCT	Comma	_	7	punct	_	_
+3	[	[	PUNCT	Period	_	7	punct	_	_
+4	or	or	CCONJ	_	_	7	cc	_	_
+5	]	]	PUNCT	Period	_	4	punct	_	_
+6	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	7	cop	_	_
+7	likely	like	ADJ	POS	Degree=Pos	0	root	_	_
+8	to	to	PART	_	_	9	mark	_	_
+9	be	be	VERB	INF	VerbForm=Inf	7	acl	_	_
+10	,	,	PUNCT	Comma	_	14	punct	_	_
+11	of	of	ADP	_	_	14	case	_	_
+12	a	a	DET	IND-SG	Definite=Ind|PronType=Art	14	det	_	_
+13	significant	significant	ADJ	POS	Degree=Pos	14	amod	_	_
+14	scale	scale	NOUN	SG-NOM	Number=Sing	9	obl	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data breach
+1	data	data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = result in significant harm to an individual
+1	result	result	NOUN	SG-NOM	Number=Sing	0	root	_	_
+2	in	in	ADP	_	_	4	case	_	_
+3	significant	significant	ADJ	POS	Degree=Pos	4	amod	_	_
+4	harm	harm	NOUN	SG-NOM	Number=Sing	1	nmod	_	_
+5	to	to	ADP	_	_	7	case	_	_
+6	an	an	DET	IND-SG	Definite=Ind|PronType=Art	7	det	_	_
+7	individual	individual	NOUN	SG-NOM	Number=Sing	4	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data breach
+1	data	data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = be of a significant scale
+1	be	be	AUX	INF	VerbForm=Inf	5	cop	_	_
+2	of	of	ADP	_	_	5	case	_	_
+3	a	a	DET	IND-SG	Definite=Ind|PronType=Art	5	det	_	_
+4	significant	significant	ADJ	POS	Degree=Pos	5	amod	_	_
+5	scale	scale	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data breach that relates to the unauthorised access , collection , use , disclosure , copying or modification of personal data only within an organisation
+1	data	data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	_
+3	that	that	PRON	REL	PronType=Rel	4	nsubj	_	_
+4	relates	relate	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	2	acl:relcl	_	_
+5	to	to	ADP	_	_	8	case	_	_
+6	the	the	DET	DEF	Definite=Def|PronType=Art	8	det	_	_
+7	unauthorised	unauthorised	ADJ	POS	Degree=Pos	8	amod	_	_
+8	access	access	NOUN	SG-NOM	Number=Sing	4	obl	_	_
+9	,	,	PUNCT	Comma	_	10	punct	_	_
+10	collection	collection	NOUN	SG-NOM	Number=Sing	8	conj	_	_
+11	,	,	PUNCT	Comma	_	10	punct	_	_
+12	use	use	NOUN	SG-NOM	Number=Sing	8	conj	_	_
+13	,	,	PUNCT	Comma	_	12	punct	_	_
+14	disclosure	disclosure	NOUN	SG-NOM	Number=Sing	8	conj	_	_
+15	,	,	PUNCT	Comma	_	16	punct	_	_
+16	copying	copy	VERB	ING	Case=Nom	2	advcl	_	_
+17	or	or	CCONJ	_	_	18	cc	_	_
+18	modification	modification	NOUN	SG-NOM	Number=Sing	16	conj	_	_
+19	of	of	ADP	_	_	21	case	_	_
+20	personal	personal	ADJ	POS	Degree=Pos	21	amod	_	_
+21	data	data	NOUN	PL-NOM	Number=Sing	18	nmod	_	_
+22	only	only	ADV	_	_	25	advmod	_	_
+23	within	within	ADP	_	_	25	case	_	_
+24	an	an	DET	IND-SG	Definite=Ind|PronType=Art	25	det	_	_
+25	organisation	organisation	NOUN	SG-NOM	Number=Sing	21	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = notifiable data breach
+1	notifiable	notifiable	ADJ	POS	Degree=Pos	2	amod	_	_
+2	data	data	NOUN	PL-NOM	Number=Sing	3	compound	_	_
+3	breach	breach	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data breach that occurs on or after 1 February 2021
+1	data	data	NOUN	PL-NOM	Number=Sing	2	compound	_	_
+2	breach	breach	NOUN	SG-NOM	Number=Sing	10	compound	_	_
+3	that	that	PRON	REL	PronType=Rel	4	nsubj	_	_
+4	occurs	occur	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	2	acl:relcl	_	_
+5	on	on	ADP	_	_	9	case	_	_
+6	or	or	CCONJ	_	_	9	cc	_	_
+7	after	after	ADP	_	_	9	case	_	_
+8	1	1	ADJ	ORD	Case=Nom	9	amod	_	_
+9	February	February	PROPN	SG-NOM	Number=Sing	4	obl	_	_
+10	2021	2021	NUM	CARD-PL	NumType=Card	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = data intermediary (other than a data intermediary mentioned in section 26E)
+1	data	data	NOUN	PL-NOM	Number=Sing	0	root	_	_
+2	intermediary	intermediary	ADJ	POS	Degree=Pos	1	amod	_	_
+3	(	(	PUNCT	LeftParenthesis	_	4	punct	_	SpaceAfter=No
+4	other	other	ADJ	POS	Degree=Pos	1	amod	_	_
+5	than	than	ADP	_	_	8	case	_	_
+6	a	a	DET	IND-SG	Definite=Ind|PronType=Art	8	det	_	_
+7	data	data	NOUN	PL-NOM	Number=Sing	8	compound	_	_
+8	intermediary	intermediary	NOUN	SG-NOM	Number=Sing	4	nmod	_	_
+9	mentioned	mention	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	8	acl	_	_
+10	in	in	ADP	_	_	11	case	_	_
+11	section	section	NOUN	SG-NOM	Number=Sing	9	obl	_	_
+12	26E	26E	PROPN	SG-NOM	Number=Sing	11	nmod	_	SpaceAfter=No
+13	)	)	PUNCT	RightParenthesis	_	1	punct	_	_
+
+# sent_id = 2
+# text = *VP has reason to believe that a data breach has occurred in relation to personal data that the data intermediary is processing on behalf of and for the purposes of [ another ] organisation
+1	*	*	PUNCT	Period	_	6	punct	_	SpaceAfter=No
+2	VP	VP	PROPN	SG-NOM	Number=Sing	6	nsubj	_	_
+3	has	have	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	6	aux	_	_
+4	reason	reason	NOUN	SG-NOM	Number=Sing	3	obj	_	_
+5	to	to	PART	_	_	6	mark	_	_
+6	believe	believe	VERB	INF	VerbForm=Inf	0	root	_	_
+7	that	that	SCONJ	_	_	12	mark	_	_
+8	a	a	DET	IND-SG	Definite=Ind|PronType=Art	10	det	_	_
+9	data	data	NOUN	PL-NOM	Number=Sing	10	compound	_	_
+10	breach	breach	NOUN	SG-NOM	Number=Sing	12	nsubj:pass	_	_
+11	has	have	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	12	aux:pass	_	_
+12	occurred	occur	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	6	ccomp	_	_
+13	in	in	ADP	_	_	14	case	_	_
+14	relation	relation	NOUN	SG-NOM	Number=Sing	12	obl	_	_
+15	to	to	ADP	_	_	17	case	_	_
+16	personal	personal	ADJ	POS	Degree=Pos	17	amod	_	_
+17	data	data	NOUN	PL-NOM	Number=Sing	14	nmod	_	_
+18	that	that	SCONJ	_	_	23	mark	_	_
+19	the	the	DET	DEF	Definite=Def|PronType=Art	21	det	_	_
+20	data	data	NOUN	PL-NOM	Number=Sing	21	compound	_	_
+21	intermediary	intermediary	NOUN	SG-NOM	Number=Sing	23	nsubj	_	_
+22	is	be	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	23	aux	_	_
+23	processing	process	VERB	ING	Tense=Pres|VerbForm=Part	17	acl	_	_
+24	on	on	ADP	_	_	25	case	_	_
+25	behalf	behalf	NOUN	SG-NOM	Number=Sing	23	obl	_	_
+26	of	of	ADP	_	_	27	case	_	_
+27	and	and	CCONJ	_	_	30	cc	_	_
+28	for	for	ADP	_	_	30	case	_	_
+29	the	the	DET	DEF	Definite=Def|PronType=Art	30	det	_	_
+30	purposes	purpose	NOUN	PL-NOM	Number=Plur	25	conj	_	_
+31	of	of	ADP	_	_	33	case	_	_
+32	[	[	PUNCT	Period	_	33	punct	_	_
+33	another	another	ADJ	ADJ-SG	_	30	amod	_	_
+34	]	]	PUNCT	Period	_	33	punct	_	_
+35	organisation	organisation	NOUN	SG-NOM	Number=Sing	6	obj	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = organisation *VP assesses , [ in accordance with ] section 26C , that a data breach is a notifiable data breach , the organisation must notify the Commission as soon as is practicable , but in any case no later than 3 calendar days [ after the ] day the organisation makes that assessment
+1	organisation	organisation	NOUN	SG-NOM	Number=Sing	27	obl	_	_
+2	*	*	PUNCT	Period	_	1	punct	_	SpaceAfter=No
+3	VP	Vp	ADJ	PASS	Degree=Pos	4	amod	_	_
+4	assesses	assess	NOUN	PL-NOM	Number=Plur	1	conj	_	_
+5	,	,	PUNCT	Comma	_	4	punct	_	_
+6	[	[	PUNCT	Period	_	1	punct	_	_
+7	in	in	ADP	_	_	8	case	_	_
+8	accordance	accordance	NOUN	SG-NOM	Number=Sing	1	nmod	_	_
+9	with	with	ADP	_	_	12	case	_	_
+10	]	]	PUNCT	Period	_	9	punct	_	_
+11	section	section	NOUN	SG-NOM	Number=Sing	12	compound	_	_
+12	26C	26c	PROPN	SG-NOM	Number=Sing	8	nmod	_	_
+13	,	,	PUNCT	Comma	_	1	punct	_	_
+14	that	that	SCONJ	_	_	22	mark	_	_
+15	a	a	DET	IND-SG	Definite=Ind|PronType=Art	17	det	_	_
+16	data	data	NOUN	PL-NOM	Number=Sing	17	compound	_	_
+17	breach	breach	NOUN	SG-NOM	Number=Sing	22	nsubj	_	_
+18	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	22	cop	_	_
+19	a	a	DET	IND-SG	Definite=Ind|PronType=Art	22	det	_	_
+20	notifiable	notifiable	ADJ	POS	Degree=Pos	21	amod	_	_
+21	data	data	NOUN	PL-NOM	Number=Sing	22	compound	_	_
+22	breach	breach	NOUN	SG-NOM	Number=Sing	1	conj	_	_
+23	,	,	PUNCT	Comma	_	1	punct	_	_
+24	the	the	DET	DEF	Definite=Def|PronType=Art	25	det	_	_
+25	organisation	organisation	NOUN	SG-NOM	Number=Sing	27	nsubj	_	_
+26	must	must	AUX	PRES-AUX	VerbForm=Fin	27	aux	_	_
+27	notify	notify	VERB	INF	VerbForm=Inf	0	root	_	_
+28	the	the	DET	DEF	Definite=Def|PronType=Art	29	det	_	_
+29	Commission	commission	NOUN	SG-NOM	Number=Sing	27	obj	_	_
+30	as	as	ADV	_	_	31	advmod	_	_
+31	soon	soon	ADV	_	Degree=Pos	34	advmod	_	_
+32	as	as	ADP	_	_	34	case	_	_
+33	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	34	cop	_	_
+34	practicable	practicable	ADJ	POS	Degree=Pos	27	advmod	_	_
+35	,	,	PUNCT	Comma	_	27	punct	_	_
+36	but	but	CCONJ	_	_	41	cc	_	_
+37	in	in	ADP	_	_	39	case	_	_
+38	any	any	DET	IND	_	39	det	_	_
+39	case	case	NOUN	SG-NOM	Number=Sing	41	obl	_	_
+40	no	no	DET	NEG	_	41	det	_	_
+41	later	late	ADV	CMP	_	27	advmod	_	_
+42	than	than	ADP	_	_	45	case	_	_
+43	3	3	NUM	ID	NumType=Card	44	nummod	_	_
+44	calendar	calendar	NOUN	SG-NOM	Number=Sing	45	compound	_	_
+45	days	day	NOUN	PL-NOM	Number=Plur	41	nmod	_	_
+46	[	[	PUNCT	Period	_	41	punct	_	_
+47	after	after	ADP	_	_	50	case	_	_
+48	the	the	DET	DEF	Definite=Def|PronType=Art	50	det	_	_
+49	]	]	PUNCT	Period	_	48	punct	_	_
+50	day	day	NOUN	SG-NOM	Number=Sing	27	obl	_	_
+51	the	the	DET	DEF	Definite=Def|PronType=Art	52	det	_	_
+52	organisation	organisation	NOUN	SG-NOM	Number=Sing	53	nsubj	_	_
+53	makes	make	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	27	advcl	_	_
+54	that	that	SCONJ	_	_	55	mark	_	_
+55	assessment	assessment	NOUN	SG-NOM	Number=Sing	53	obj	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = the organisation
+1	the	the	DET	DEF	Definite=Def|PronType=Art	2	det	_	_
+2	organisation	organisation	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = takes any action , in accordance with any prescribed requirements , that renders it unlikely that the notifiable data breach will result in significant harm to the affected individual
+1	takes	take	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	_	_
+2	any	any	DET	IND	_	3	det	_	_
+3	action	action	NOUN	SG-NOM	Number=Sing	1	obj	_	_
+4	,	,	PUNCT	Comma	_	3	punct	_	_
+5	in	in	ADP	_	_	6	case	_	_
+6	accordance	accordance	NOUN	SG-NOM	Number=Sing	1	obl	_	_
+7	with	with	ADP	_	_	10	case	_	_
+8	any	any	DET	IND	_	10	det	_	_
+9	prescribed	prescribe	NOUN	SG-NOM	Number=Sing	10	compound	_	_
+10	requirements	requirement	NOUN	PL-NOM	Number=Plur	1	obl	_	_
+11	,	,	PUNCT	Comma	_	10	punct	_	_
+12	that	that	PRON	REL	PronType=Rel	13	nsubj	_	_
+13	renders	render	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	10	acl:relcl	_	_
+14	it	it	PRON	PERS-SG	_	13	obj	_	_
+15	unlikely	unlikely	ADJ	POS	Degree=Pos	13	xcomp	_	_
+16	that	that	SCONJ	_	_	22	mark	_	_
+17	the	the	DET	DEF	Definite=Def|PronType=Art	20	det	_	_
+18	notifiable	notifiable	ADJ	POS	Degree=Pos	19	amod	_	_
+19	data	data	NOUN	PL-NOM	Number=Sing	20	compound	_	_
+20	breach	breach	NOUN	SG-NOM	Number=Sing	22	nsubj	_	_
+21	will	will	AUX	PRES-AUX	VerbForm=Fin	22	aux	_	_
+22	result	result	VERB	INF	VerbForm=Inf	15	acl	_	_
+23	in	in	ADP	_	_	25	case	_	_
+24	significant	significant	ADJ	POS	Degree=Pos	25	amod	_	_
+25	harm	harm	NOUN	SG-NOM	Number=Sing	22	obl	_	_
+26	to	to	ADP	_	_	29	case	_	_
+27	the	the	DET	DEF	Definite=Def|PronType=Art	29	det	_	_
+28	affected	affect	ADJ	PASS	Degree=Pos	29	amod	_	_
+29	individual	individual	NOUN	SG-NOM	Number=Sing	25	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = had implemented , [ prior to the occurrence of ] the notifiable data breach , any technological measure that renders it unlikely that the notifiable data breach will result in significant harm to the affected individual
+1	had	have	AUX	PAST-AUX	Mood=Ind|Tense=Past|VerbForm=Fin	2	aux	_	_
+2	implemented	implement	VERB	PERF	Tense=Past|VerbForm=Part	0	root	_	_
+3	,	,	PUNCT	Comma	_	2	punct	_	_
+4	[	[	PUNCT	Period	_	2	punct	_	_
+5	prior	prior	NOUN	SG-NOM	Number=Sing	2	conj	_	_
+6	to	to	ADP	_	_	8	case	_	_
+7	the	the	DET	DEF	Definite=Def|PronType=Art	8	det	_	_
+8	occurrence	occurrence	NOUN	SG-NOM	Number=Sing	5	nmod	_	_
+9	of	of	ADP	_	_	14	case	_	_
+10	]	]	PUNCT	Period	_	14	punct	_	_
+11	the	the	DET	DEF	Definite=Def|PronType=Art	14	det	_	_
+12	notifiable	notifiable	ADJ	POS	Degree=Pos	13	amod	_	_
+13	data	data	NOUN	PL-NOM	Number=Sing	14	compound	_	_
+14	breach	breach	NOUN	SG-NOM	Number=Sing	8	nmod	_	_
+15	,	,	PUNCT	Comma	_	5	punct	_	_
+16	any	any	DET	IND	_	18	det	_	_
+17	technological	technological	ADJ	POS	Degree=Pos	18	amod	_	_
+18	measure	measure	NOUN	SG-NOM	Number=Sing	2	conj	_	_
+19	that	that	PRON	REL	PronType=Rel	20	nsubj	_	_
+20	renders	render	VERB	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	18	acl:relcl	_	_
+21	it	it	PRON	PERS-SG	_	20	obj	_	_
+22	unlikely	unlikely	ADJ	POS	Degree=Pos	20	xcomp	_	_
+23	that	that	SCONJ	_	_	29	mark	_	_
+24	the	the	DET	DEF	Definite=Def|PronType=Art	27	det	_	_
+25	notifiable	notifiable	ADJ	POS	Degree=Pos	26	amod	_	_
+26	data	data	NOUN	PL-NOM	Number=Sing	27	compound	_	_
+27	breach	breach	NOUN	SG-NOM	Number=Sing	29	nsubj	_	_
+28	will	will	AUX	PRES-AUX	VerbForm=Fin	29	aux	_	_
+29	result	result	VERB	INF	VerbForm=Inf	22	acl	_	_
+30	in	in	ADP	_	_	32	case	_	_
+31	significant	significant	ADJ	POS	Degree=Pos	32	amod	_	_
+32	harm	harm	NOUN	SG-NOM	Number=Sing	29	obl	_	_
+33	to	to	ADP	_	_	36	case	_	_
+34	the	the	DET	DEF	Definite=Def|PronType=Art	36	det	_	_
+35	affected	affect	ADJ	PASS	Degree=Pos	36	amod	_	_
+36	individual	individual	NOUN	SG-NOM	Number=Sing	32	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = organisation
+1	organisation	organisation	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = notify any affected individual
+1	notify	notify	ADV	_	_	4	advmod	_	_
+2	any	any	DET	IND	_	4	det	_	_
+3	affected	affect	ADJ	PASS	Degree=Pos	4	amod	_	_
+4	individual	individual	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = organisation
+1	organisation	organisation	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = being in breach
+1	being	be	AUX	ING	Tense=Pres|VerbForm=Part	0	root	_	_
+2	in	in	ADP	_	_	3	case	_	_
+3	breach	breach	NOUN	SG-NOM	Number=Sing	1	obl	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = duty [ or ] obligation under any written law or rule of law , [ or ] any contract , as to secrecy [ or ] other restriction on the disclosure of information
+1	duty	duty	NOUN	SG-NOM	Number=Sing	0	root	_	_
+2	[	[	PUNCT	Period	_	5	punct	_	_
+3	or	or	CCONJ	_	_	5	cc	_	_
+4	]	]	PUNCT	Period	_	3	punct	_	_
+5	obligation	obligation	NOUN	SG-NOM	Number=Sing	1	conj	_	_
+6	under	under	ADP	_	_	9	case	_	_
+7	any	any	DET	IND	_	9	det	_	_
+8	written	write	ADJ	PASS	Case=Nom	9	amod	_	_
+9	law	law	NOUN	SG-NOM	Number=Sing	1	nmod	_	_
+10	or	or	CCONJ	_	_	11	cc	_	_
+11	rule	rule	NOUN	SG-NOM	Number=Sing	9	conj	_	_
+12	of	of	ADP	_	_	13	case	_	_
+13	law	law	NOUN	SG-NOM	Number=Sing	11	nmod	_	_
+14	,	,	PUNCT	Comma	_	15	punct	_	_
+15	[	[	PUNCT	Period	_	19	punct	_	_
+16	or	or	CCONJ	_	_	19	cc	_	_
+17	]	]	PUNCT	Period	_	19	punct	_	_
+18	any	any	DET	IND	_	19	det	_	_
+19	contract	contract	NOUN	SG-NOM	Number=Sing	13	conj	_	_
+20	,	,	PUNCT	Comma	_	23	punct	_	_
+21	as	as	SCONJ	_	_	23	mark	_	_
+22	to	to	PART	_	_	23	mark	_	_
+23	secrecy	secrecy	VERB	INF	VerbForm=Inf	19	acl	_	_
+24	[	[	PUNCT	Period	_	28	punct	_	_
+25	or	or	CCONJ	_	_	28	cc	_	_
+26	]	]	PUNCT	Period	_	25	punct	_	_
+27	other	other	ADJ	POS	Degree=Pos	28	amod	_	_
+28	restriction	restriction	NOUN	SG-NOM	Number=Sing	23	conj	_	_
+29	on	on	ADP	_	_	31	case	_	_
+30	the	the	DET	DEF	Definite=Def|PronType=Art	31	det	_	_
+31	disclosure	disclosure	NOUN	SG-NOM	Number=Sing	28	nmod	_	_
+32	of	of	ADP	_	_	33	case	_	_
+33	information	information	NOUN	SG-NOM	Number=Sing	31	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = rule of professional conduct applicable to [ the ] organisation
+1	rule	rule	NOUN	SG-NOM	Number=Sing	0	root	_	_
+2	of	of	ADP	_	_	4	case	_	_
+3	professional	professional	ADJ	POS	Degree=Pos	4	amod	_	_
+4	conduct	conduct	NOUN	SG-NOM	Number=Sing	1	nmod	_	_
+5	applicable	applicable	ADJ	POS	Degree=Pos	4	amod	_	_
+6	to	to	ADP	_	_	10	case	_	_
+7	[	[	PUNCT	Period	_	10	punct	_	_
+8	the	the	DET	DEF	Definite=Def|PronType=Art	10	det	_	_
+9	]	]	PUNCT	Period	_	8	punct	_	_
+10	organisation	organisation	NOUN	SG-NOM	Number=Sing	5	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = [ apply concurrently ] with any obligation of the organisation under any other written law to notify any other person ( including any public agency ) of the occurrence of a data breach , or to provide any information relating to a data breach
+1	[	[	PUNCT	Period	_	3	punct	_	_
+2	apply	app	ADV	_	_	3	advmod	_	_
+3	concurrently	concurrently	ADV	_	_	0	root	_	_
+4	]	]	PUNCT	Period	_	3	punct	_	_
+5	with	with	ADP	_	_	7	case	_	_
+6	any	any	DET	IND	_	7	det	_	_
+7	obligation	obligation	NOUN	SG-NOM	Number=Sing	3	nmod	_	_
+8	of	of	ADP	_	_	10	case	_	_
+9	the	the	DET	DEF	Definite=Def|PronType=Art	10	det	_	_
+10	organisation	organisation	NOUN	SG-NOM	Number=Sing	7	nmod	_	_
+11	under	under	ADP	_	_	15	case	_	_
+12	any	any	DET	IND	_	15	det	_	_
+13	other	other	ADJ	POS	Degree=Pos	15	amod	_	_
+14	written	write	ADJ	PASS	Case=Nom	15	amod	_	_
+15	law	law	NOUN	SG-NOM	Number=Sing	10	nmod	_	_
+16	to	to	PART	_	_	17	mark	_	_
+17	notify	notify	VERB	INF	VerbForm=Inf	15	acl	_	_
+18	any	any	DET	IND	_	20	det	_	_
+19	other	other	ADJ	POS	Degree=Pos	20	amod	_	_
+20	person	person	NOUN	SG-NOM	Number=Sing	17	obj	_	_
+21	(	(	PUNCT	LeftParenthesis	_	22	punct	_	_
+22	including	include	VERB	ING	Tense=Pres|VerbForm=Part	20	acl	_	_
+23	any	any	DET	IND	_	25	det	_	_
+24	public	public	ADJ	POS	Degree=Pos	25	amod	_	_
+25	agency	agency	NOUN	SG-NOM	Number=Sing	22	obj	_	_
+26	)	)	PUNCT	RightParenthesis	_	22	punct	_	_
+27	of	of	ADP	_	_	29	case	_	_
+28	the	the	DET	DEF	Definite=Def|PronType=Art	29	det	_	_
+29	occurrence	occurrence	NOUN	SG-NOM	Number=Sing	22	obl	_	_
+30	of	of	ADP	_	_	33	case	_	_
+31	a	a	DET	IND-SG	Definite=Ind|PronType=Art	33	det	_	_
+32	data	data	NOUN	PL-NOM	Number=Sing	33	compound	_	_
+33	breach	breach	NOUN	SG-NOM	Number=Sing	29	nmod	_	_
+34	,	,	PUNCT	Comma	_	22	punct	_	_
+35	or	or	CCONJ	_	_	37	cc	_	_
+36	to	to	PART	_	_	37	mark	_	_
+37	provide	provide	VERB	INF	VerbForm=Inf	22	conj	_	_
+38	any	any	DET	IND	_	39	det	_	_
+39	information	information	NOUN	SG-NOM	Number=Sing	37	obj	_	_
+40	relating	relate	VERB	ING	Tense=Pres|VerbForm=Part	37	advcl	_	_
+41	to	to	ADP	_	_	44	case	_	_
+42	a	a	DET	IND-SG	Definite=Ind|PronType=Art	44	det	_	_
+43	data	data	NOUN	PL-NOM	Number=Sing	44	compound	_	_
+44	breach	breach	NOUN	SG-NOM	Number=Sing	40	obl	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = organisation
+1	organisation	organisation	NOUN	SG-NOM	Number=Sing	0	root	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = is a data intermediary processing personal data on behalf of and for the purposes of a public agency
+1	is	be	AUX	PRES	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	4	cop	_	_
+2	a	a	DET	IND-SG	Definite=Ind|PronType=Art	4	det	_	_
+3	data	data	NOUN	PL-NOM	Number=Sing	4	compound	_	_
+4	intermediary	intermediary	NOUN	SG-NOM	Number=Sing	0	root	_	_
+5	processing	process	VERB	ING	Tense=Pres|VerbForm=Part	4	acl	_	_
+6	personal	personal	ADJ	POS	Degree=Pos	7	amod	_	_
+7	data	data	NOUN	PL-NOM	Number=Sing	5	obj	_	_
+8	on	on	ADP	_	_	9	case	_	_
+9	behalf	behalf	NOUN	SG-NOM	Number=Sing	5	obl	_	_
+10	of	of	ADP	_	_	11	case	_	_
+11	and	and	CCONJ	_	_	14	cc	_	_
+12	for	for	ADP	_	_	14	case	_	_
+13	the	the	DET	DEF	Definite=Def|PronType=Art	14	det	_	_
+14	purposes	purpose	NOUN	PL-NOM	Number=Plur	9	conj	_	_
+15	of	of	ADP	_	_	18	case	_	_
+16	a	a	DET	IND-SG	Definite=Ind|PronType=Art	18	det	_	_
+17	public	public	ADJ	POS	Degree=Pos	18	amod	_	_
+18	agency	agency	NOUN	SG-NOM	Number=Sing	14	nmod	_	SpacesAfter=\n
+
+# newdoc
+# newpar
+# sent_id = 1
+# text = has reason to believe that [ a ] data breach has occurred in relation to that personal data
+1	has	have	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	2	aux	_	_
+2	reason	reason	NOUN	SG-NOM	Number=Sing	0	root	_	_
+3	to	to	PART	_	_	4	mark	_	_
+4	believe	believe	VERB	INF	VerbForm=Inf	2	acl	_	_
+5	that	that	PRON	DEM-SG	Number=Sing|PronType=Dem	4	obj	_	_
+6	[	[	PUNCT	Period	_	12	punct	_	_
+7	a	a	DET	IND-SG	Definite=Ind|PronType=Art	12	det	_	_
+8	]	]	PUNCT	Period	_	12	punct	_	_
+9	data	data	NOUN	PL-NOM	Number=Sing	10	compound	_	_
+10	breach	breach	NOUN	SG-NOM	Number=Sing	12	nsubj:pass	_	_
+11	has	have	AUX	PRES-AUX	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	12	aux:pass	_	_
+12	occurred	occur	VERB	PASS	Tense=Past|VerbForm=Part|Voice=Pass	4	advcl	_	_
+13	in	in	ADP	_	_	14	case	_	_
+14	relation	relation	NOUN	SG-NOM	Number=Sing	12	obl	_	_
+15	to	to	ADP	_	_	18	case	_	_
+16	that	that	DET	DEM-SG	Number=Sing|PronType=Dem	18	det	_	_
+17	personal	personal	ADJ	POS	Degree=Pos	18	amod	_	_
+18	data	data	NOUN	PL-NOM	Number=Sing	12	obl	_	SpacesAfter=\n
+

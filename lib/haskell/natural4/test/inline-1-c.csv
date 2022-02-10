@@ -1,7 +1,7 @@
-IS,any,unauthorised,,,FALSE,access,
-,,,,OR,FALSE,use,
-,,,,OR,TRUE,disclosure,
-,,,,OR,FALSE,copying,
-,,,,OR,FALSE,modification,
-,,,,OR,TRUE,disposal,
-,,of personal data,,,,,
+IS,any,unauthorised,,,access
+,,,,OR,use
+,,,,OR,disclosure
+,,,,OR,copying
+,,,,OR,modification
+,,,,OR,disposal
+,,of personal data,,,

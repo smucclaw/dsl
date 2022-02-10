@@ -15,6 +15,7 @@
 #fun nmod_ case head          -- Prep -> NP -> nmod ;
 #fun nsubjPass_ head          -- NP -> nsubjPass
 #fun xcompA_ccomp_ head ccomp -- AP -> ccomp -> xcomp
+#fun xcompToBeN_ mark cop head -- mark -> cop -> NP -> xcomp
 #fun punct_ head
 
 #fun root_nsubj head nsubj                         -- root -> nsubj -> UDS ;               -- the cat sleeps
@@ -170,12 +171,14 @@
 #fun UseCl dep dep head
 #fun ComplV head obj
 #fun PassVAgent head obl
+#fun PastPartAgentAP head obl
 #fun GenModNP dep nmod:poss head
 
 #cat cop AUX
 #cat aux AUX
 #cat auxPass AUX
 #cat expl PRON
+#cat mark PART
 #cat auxPass AUX
 #cat advmod PART -- for negation particle "not"
 #cat A ADJ primary
@@ -456,3 +459,13 @@
 --#fun root_nsubj_cop_det_amod_conj_conj_conj_conj_conj_conj head nsubj  cop  det  amod  conj  conj  conj  conj  conj  conj
 #fun root_nsubj_cop_obl_parataxis head nsubj  cop  obl  parataxis
 #fun root_nsubj_obj_advcl head nsubj  obj  advcl
+
+-- Maryam's annotations
+#fun root_advcl_nsubjPass_aux_auxPass_xcomp head advcl nsubj:pass aux aux:pass xcomp
+#fun root_nmod_aclRelcl head nmod acl:relcl
+#fun root_nsubjPass_aux_auxPass_advcl_advcl head nsubj:pass aux aux:pass advcl advcl
+#fun root_nsubjPass_aux_auxPass_advmod head nsubj:pass aux aux:pass advmod
+#fun root_nsubjPass_aux_auxPass_obl head nsubj:pass aux aux:pass obl
+#fun root_nsubjPass_aux_auxPass_xcomp head nsubj:pass aux aux:pass xcomp
+#fun root_nsubj_aux_cop_nmod head nsubj aux cop nmod
+#fun root_nsubj_nsubj_aux_advmod_obj head nsubj nsubj aux advmod obj

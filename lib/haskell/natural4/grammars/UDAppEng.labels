@@ -109,7 +109,7 @@
 #auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
 #disable than_Prep
 
-#auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[LEMMA=more]
+#auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[FORM=more]
 #disable XorMore
 
 -- ** at least **
@@ -120,6 +120,13 @@
 
 -- ** 5 people **
 #auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
+
+-- Word order stuff
+-- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
+#auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
+#auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
+
+-- recognise "Section 10" as an apposition
 
 -- Label variants of various
 -- This relation is nmod head, and default AdNum is advmod head
@@ -145,8 +152,10 @@
 -- [qualified]:amod [person]:CN
 #auxfun PPartCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head amod[Tense=Past|VerbForm=Part]
 
-#disable PresPartAP PastPartAP
+-- [person]:CN [complying]:xcomp
+#auxfun PPresCN_xcomp_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head xcomp[Tense=Pres|VerbForm=Part]
 
+#disable PresPartAP PastPartAP
 
 -- The construction "whose X" in the RGL is done using Extend.GenRP
 
@@ -171,7 +180,7 @@
 #auxfun GenRP_Pl_auxcat_ dog whose : CN -> RelPron -> RP = GenRP NumPl dog ; head[Number=Plur] nmod:poss[Poss=Yes]
 
 -- the person [who is affected]:RS
-#auxfun PassRelPres_ affected who is : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres]
+--#auxfun PassRelPres_ affected who is : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres]
 
 -- … [who was affected]:RS
 #auxfun PassRelPast_ affected who was : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPast ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Past]
@@ -180,14 +189,28 @@
 #auxfun PassRelPart_ affected who has been : V -> RP -> aux -> auxPass -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part]
 
 -- the data [which is stored in electronic formats]:RS
-#auxfun PassRelOblPres_ stored which is in_formats : V -> RP -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux:pass obl
+--#auxfun PassRelOblPres_ stored which is in_formats : V -> RP -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux:pass obl
 
 -- [which has been stored in electronic formats]:RS
 #auxfun PassRelOblPart_ stored which has been in_formats : V -> RP -> aux -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part] obl
 
--- TODO: ideally would choose this, if we saw the preposition "by" attaching to the obl. But that doesn't seem to be possible? Allowing this rule changes "stored in formats" to "stored by formats"
--- the person [whose data is affected by the breach]:RCl
--- #auxfun PassRelClAgent_ affected whose_data is breach : V -> RP -> auxPass -> NP -> RCl = RelVP whose_data (PassVAgent affected breach) ; head[Voice=Pass] nsubj:pass aux:pass obl
+-- Agents handled with special functions
+
+-- Auxiliary category ByPP to store our agent: it's an obl introduced by a prep with form "by"
+#auxfun ByPP_ by breach : Prep -> NP -> ByPP = breach ; case[FORM=by] head
+
+-- [is affected by the breach]:VP
+#auxfun PassVAgent_ affected is breach : V -> auxPass -> ByPP -> VP = PassVAgent affected breach ; head[Voice=Pass] aux:pass obl -- TODO: don't throw away tense of auxPass
+
+-- the person [whose data is affected by the breach]:RS
+#auxfun PassRelClAgent_ affected whose_data is breach : V -> RP -> auxPass -> ByPP -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP whose_data (PassVAgent affected breach)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres] obl
+
+-- [is affected by the breach]:AP
+#auxfun PastPartAgentAP_ affected breach : VP -> ByPP -> AP = PastPartAgentAP affected breach ; head[Tense=Past|VerbForm=Part] obl
+
+-- disabled, because they can only fire with ByPP
+#disable PassVAgent PastPartAgentAP
+
 
 -- be notified -- TODO: is this rule used on its own?
 #auxfun PassV_ v : V -> VP = PassV v ; head[Voice=Pass]

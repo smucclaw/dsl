@@ -406,6 +406,7 @@ data RunConfig = RC { debug     :: Bool
                     , toGrounds :: Bool
                     , toVue     :: Bool
                     , extendedGrounds :: Bool
+                    , toChecklist :: Bool
                     }
 
 nestLevel :: RunConfig -> Int

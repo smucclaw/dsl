@@ -117,6 +117,8 @@ abstract UDCat = BareRG ** {
 
         --
         xcompAdv_ : Adv -> xcomp ;
+        xcompN_ : NP -> xcomp ; -- considered [a building]
+        xcompToBeN_ : mark -> cop -> NP -> xcomp ; -- considered [to be a building]
         xcompA_ : AP -> xcomp ; -- become [aware]:
         xcompA_ccomp_ : AP -> ccomp -> xcomp ; -- become [aware [that a data breach occurred]]
 
@@ -126,6 +128,7 @@ abstract UDCat = BareRG ** {
         det_ : Det -> det ;
         vocative_ : NP -> vocative ;
         mark_ : Subj -> mark ;
+        to_mark : mark ;
 
         --------
         -- Lexicon

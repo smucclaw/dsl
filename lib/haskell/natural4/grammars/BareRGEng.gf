@@ -109,14 +109,17 @@ concrete BareRGEng of BareRG =
 
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
 
-    -- : V -> VP ;       -- affected
+    -- : V -> VP ;       -- is affected (needs auxPass to trigger)
     PassV v = PassV2 (P.mkV2 v) ;
 
-    -- : V -> NP -> VP ; -- affected by the breach
+    -- : V -> NP -> VP ; -- is affected by the breach (needs auxPass to trigger)
     PassVAgent v ag = AdvVP (PassV v) (PrepNP by8agent_Prep ag) ;
 
-    -- : VP -> AP ;      -- stored in electronic formats (Extend.PastPartAP takes a VPSlash)
+    -- : VP -> AP ;      -- stored in electronic formats, no auxPass (Extend.PastPartAP takes a VPSlash)
     PastPartAP vp = E.PastPartAP (slashV vp) ;
+
+    -- : VP -> NP -> AP ; -- affected by breach, no auxPass (Extend.PastPartAP takes a VPSlash)
+    PastPartAgentAP vp = E.PastPartAgentAP (slashV vp) ;
 
     CompoundCN = CompoundN ;
 

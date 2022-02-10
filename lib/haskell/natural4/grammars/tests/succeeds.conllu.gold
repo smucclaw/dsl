@@ -1,5 +1,4 @@
-root_nsubjPass_aux_auxPass (rootV_ (PassV notify_V)) (nsubjPass_ (RelNP (UsePron everyone_Pron) (UseRCl (TTAnt TPres ASimul) PPos (RelVP who_RP (AdvVP (PassV affect_V) (PrepNP by8agent_Prep (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN data_N breach_N))))))))) should_aux be_auxPass
-
+root_nsubjPass_aux_auxPass (rootV_ (PassV notify_V)) (nsubjPass_ (RelNP (UsePron everyone_Pron) (UseRCl (TTAnt TPres ASimul) PPos (RelVP who_RP (PassVAgent affect_V (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN data_N breach_N)))))))) should_aux be_auxPass
 LIN: everyone , who is affected by the data breach , should be notified
 
 root_nsubj (rootV_ (ComplV cover_V (MassNP (AdjCN (PastPartAP (AdvVP (UseV store_V) (PrepNP in_Prep (DetCN aPl_Det (AdjCN (ConjAP and_Conj (BaseAP (PositA electronic_A) (StrAP "non-electronic"))) (UseN format_N)))))) (AdjCN (PositA personal_A) (UseN data_N)))))) (nsubj_ (DetCN (DetQuant DefArt NumSg) (UseN (StrN "PDPA"))))
@@ -109,3 +108,7 @@ LIN: is the organization , you act as a DI for that
 root_nsubjPass_aux_auxPass_obl (rootV_ (PassV design_V)) (nsubjPass_ (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN height_N)) (PrepNP of_Prep (DetCN aPl_Det (UseN (CompoundCN (AdjCN (PositA unlimited_A) (UseN area_N)) building_N)))))) shall_aux be_auxPass (obl_ (PrepNP in_accordance_with_Prep (DetCN (DetQuant IndefArt (NumCard (StrCard "10"))) (UseN section_N))))
 
 LIN: the height of unlimited area buildings shall be designed in accordance with 10 sections
+
+root_nsubjPass_aux_auxPass_xcomp (rootV_ (PassV consider_V)) (nsubjPass_ (DetCN each_Det (AdjCN (PastPartAP (AdvVP (UseV separate_V) (PrepNP by8agent_Prep (DetCN (XorMore (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01)))))) (AdjCN (PresPartAP (AdvVP (UseV comply_V) (PrepNP with_Prep (DetCN (DetQuant IndefArt (NumCard (StrCard "10"))) (UseN section_N))))) (UseN (CompoundN fire_N wall_N))))))) (AdvCN (UseN portion_N) (PrepNP of_Prep (DetCN (DetQuant IndefArt NumSg) (UseN building_N))))))) shall_aux be_auxPass (xcompToBeN_ to_mark be_cop (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA separate_A) (UseN building_N))))
+
+LIN: each portion of a building separated by one or more fire walls complying with 10 sections shall be considered to be a separate building

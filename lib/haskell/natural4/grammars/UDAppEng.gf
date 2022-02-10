@@ -176,6 +176,12 @@ lin
       pred = applyAux should notified.vp -- TODO: has PassVP already been applied?
     } ;
 
+    -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- garage should be considered a building
+    root_nsubjPass_aux_auxPass_xcomp considered garage should auxpass building = {
+      subj = garage ;
+      pred = applyAux should (mkVP considered.vp building) -- TODO: has PassVP already been applied?
+    } ;
+
     -- : root -> nsubjPass -> aux -> auxPass -> obl -> UDS ;
     root_nsubjPass_aux_auxPass_obl notified pdpa should auxpass inAccWithSec10 = {
       subj = pdpa ;

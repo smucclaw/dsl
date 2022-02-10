@@ -89,6 +89,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     ccomp_ uds = lin S {s = linUDS uds} ;
     xcompAdv_ adv = adv ;
     xcompA_ ap = lin Adv (mkUtt ap) ;
+    xcompN_ np = lin Adv (mkUtt np) ;
+    xcompToBeN_ to be np = lin Adv (cc3 to be (mkUtt np)) ;
     xcompA_ccomp_ ap cc = xcompA_ (mkAP ap cc) ;
     aclUDS_,
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
@@ -100,6 +102,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     vocative_ = id NP ;
     amod_ = id AP ;
     mark_ = id Subj ;
+    to_mark = ss "to" ;
 
     -- passives
     nsubjPass_ = id NP ;

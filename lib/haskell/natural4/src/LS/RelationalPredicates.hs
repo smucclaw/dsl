@@ -11,7 +11,7 @@ import qualified Data.Text.Lazy as Text
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, fromJust, maybeToList)
+import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
 
 import LS.Types
 import LS.Tokens
@@ -181,7 +181,7 @@ pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- pSrcRef
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> someStructure
+    <$$> (try someStructure <|> ambitious)
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
@@ -203,19 +203,21 @@ pHornlike = debugName "pHornlike" $ do
 
     -- DECIDE x IS y WHEN Z IS Q
 
-    someStructure = debugName "pHornlike/someStructure" $ do
+    ambitious = debugName "pHornlike/ambitious" $ do
       (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
       (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
       (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
-        <$?> (Nothing, try (pToken If     *> (Just <$> pBSR)))
-        <|?> (Nothing, try (pToken Unless *> (Just <$> pBSR)))
-        <|?> (Nothing, try (pToken And    *> (Just <$> pBSR)))
-        <|?> (Nothing, try (pToken Or     *> (Just <$> pBSR)))
-      let clauses = [HC2 (RPConstraint subject RPis object) (Just $ AA.Leaf $ RPMT ["always"])]
+        <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> pBSR))
+      let clauses = [HC2 (RPConstraint subject RPis object) (maybe (Just $ AA.Leaf $ RPMT ["always"]) (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
       return (Just keyword, subject, clauses)
 
---      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
---      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
+    someStructure = debugName "pHornlike/someStructure" $ do
+      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]

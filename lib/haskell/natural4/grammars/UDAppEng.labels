@@ -61,9 +61,9 @@
 #disable MassNP aPl_Det NumPl
 
 #auxcat The DET
-#auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN the_Det cn ; det head[Number=Sing]
-#auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det head[Number=Plur]
-#disable the_Det thePl_Det
+#auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN theSg_Det cn ; det[LEMMA=the] head[Number=Sing]
+#auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det[LEMMA=the] head[Number=Plur]
+#disable theSg_Det thePl_Det
 
 -- Allow determiners with words that are erroneously parsed as PN
 #auxfun DefPN_ the pn : Det -> PN -> NP = DefPN pn ; det[LEMMA=the] head

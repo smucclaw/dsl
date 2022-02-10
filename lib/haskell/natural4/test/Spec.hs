@@ -1087,6 +1087,13 @@ main = do
         ( ("one word", Any Nothing [Leaf "thing1"
                       ,Leaf "thing2"]), [] )
 
+      filetest "inline-1-b" "compound-pair"
+        (parseOther ( (,)
+                      $>| pOtherVal 
+                      |>< pBoolStruct ))
+        ( ("one word", Any Nothing [Leaf "thing1"
+                      ,Leaf "thing2"]), [] )
+
 {-
     describe "Prolog" $ do
 

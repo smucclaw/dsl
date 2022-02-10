@@ -136,8 +136,10 @@ pNumAsText = debugName "pNumAsText" $ do
 
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
-  (RuleMarker i sym) <- pTokenMatch isRuleMarker (RuleMarker 1 "§")
-  actualLabel  <- someIndentation pOtherVal
+  (RuleMarker i sym, actualLabel, _) <- (,,)
+                                     $>| pTokenMatch isRuleMarker (RuleMarker 1 "§")
+                                     |>| pOtherVal
+                                     |>< optional (pToken EOL)
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True

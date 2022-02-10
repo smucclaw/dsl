@@ -1082,17 +1082,16 @@ main = do
           , "my string"), [])
 
       filetest "inline-1-a" "line crossing"
-        (parseOther ( (,,,)
+        (parseOther ( (,,)
                       >*| slMultiTerm
-                      |<| pToken Means -- why does everything break when i switch this to |<| ?
-                      |*| slMultiTerm
-                      |*| rpMT
+                      |<| pToken Means
+                      |>| pBSR
                       |<< undeepers
                     ))
         ( ( ["Food"]
           , Means
-          , ["yummy","nightshades"]
-          , RPMT []
+          , Any (Just $ Pre "yummy nightshades") [ Leaf (RPMT ["potato"])
+                                                 , Leaf (RPMT ["tomato"])]
           ), []
         )
 

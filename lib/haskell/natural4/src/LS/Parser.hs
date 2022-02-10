@@ -45,13 +45,22 @@ toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 term p = debugName "term p" $ do
-  try (debugName "term p/1:label" $ do
-          lbl <- (.:.) pNumOrText <* debugName "matching EOL" dnl
-          debugPrint $ "got label then EOL: " ++ show lbl
-          inner <- expr p
-          debugPrint $ "got inner: " ++ show inner
-          return $ MyLabel lbl inner)
+  try (debugName "term p/1a:label directly above" $ do
+        (lbl, inner) <- (,)
+          $*| ((.:|) pNumOrText <* lookAhead pNumOrText)
+          |>< expr p
+        debugPrint $ "got label, then inner immediately below: " ++ show lbl
+        debugPrint $ "got inner: " <> show inner
+        return $ MyLabel lbl inner)
+    <|>
+    try (debugName "term p/b:label to the left, with EOL" $ do
+        lbl <- (.:.) pNumOrText <* debugName "matching EOL" dnl
+        debugPrint $ "got label then EOL: " ++ show lbl
+        inner <- expr p
+        debugPrint $ "got inner: " ++ show inner
+        return $ MyLabel lbl inner)
     <|> debugName "term p/notLabelTerm" (notLabelTerm p)
+
 
 notLabelTerm p =
   try (debugName "term p/2:myindented expr p" (myindented (expr p)))

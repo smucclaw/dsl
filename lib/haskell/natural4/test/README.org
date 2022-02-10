@@ -218,7 +218,7 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 :END:
 
 | one word |    | thing1 |
-|          | OR | thing  | 
+|          | OR | thing  |
 
 
 ***** inline-1-c
@@ -246,6 +246,141 @@ challenge: use a combination of parsers to read this stuff into some kind of str
 
 #+end_example
 
+***** we want to support the "post" line at any indentation level between the IS and the OR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any | unauthorised |   |                  | access       |
+|    |     |              |   | OR               | use          |
+|    |     |              |   | OR               | disclosure   |
+|    |     |              |   | OR               | copying      |
+|    |     |              |   | OR               | modification |
+|    |     |              |   | OR               | disposal     |
+|    |     |              |   | of personal data |              |
+
+***** inline +3 / -1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-e.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any | unauthorised |                  |    | access       |
+|    |     |              |                  | OR | use          |
+|    |     |              |                  | OR | disclosure   |
+|    |     |              |                  | OR | copying      |
+|    |     |              |                  | OR | modification |
+|    |     |              |                  | OR | disposal     |
+|    |     |              | of personal data |    |              |
+
+
+***** inline +3 / -2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-f.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any | unauthorised     |   |    | access       |
+|    |     |                  |   | OR | use          |
+|    |     |                  |   | OR | disclosure   |
+|    |     |                  |   | OR | copying      |
+|    |     |                  |   | OR | modification |
+|    |     |                  |   | OR | disposal     |
+|    |     | of personal data |   |    |              |
+
+***** inline +3 / -3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-g.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any              | unauthorised |   |    | access       |
+|    |                  |              |   | OR | use          |
+|    |                  |              |   | OR | disclosure   |
+|    |                  |              |   | OR | copying      |
+|    |                  |              |   | OR | modification |
+|    |                  |              |   | OR | disposal     |
+|    | of personal data |              |   |    |              |
+
+***** inline +2 / -3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-h.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any              | unauthorised |    | access       |
+|    |                  |              | OR | use          |
+|    |                  |              | OR | disclosure   |
+|    |                  |              | OR | copying      |
+|    |                  |              | OR | modification |
+|    |                  |              | OR | disposal     |
+|    | of personal data |              |    |              |
+***** inline +1 / -3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-i.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any              |   | unauthorised | access       |
+|    |                  |   | OR           | use          |
+|    |                  |   | OR           | disclosure   |
+|    |                  |   | OR           | copying      |
+|    |                  |   | OR           | modification |
+|    |                  |   | OR           | disposal     |
+|    | of personal data |   |              |              |
+***** inline +1 / -2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-i.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any |                  | unauthorised | access       |
+|    |     |                  | OR           | use          |
+|    |     |                  | OR           | disclosure   |
+|    |     |                  | OR           | copying      |
+|    |     |                  | OR           | modification |
+|    |     |                  | OR           | disposal     |
+|    |     | of personal data |              |              |
+***** inline +1 / +1 / -0
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-j.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any |   | unauthorised     | access       |
+|    |     |   | OR               | use          |
+|    |     |   | OR               | disclosure   |
+|    |     |   | OR               | copying      |
+|    |     |   | OR               | modification |
+|    |     |   | OR               | disposal     |
+|    |     |   | of personal data |              |
+***** inline +0 / +1 / -0
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-k.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any | unauthorised     | access       |
+|    |     | OR               | use          |
+|    |     | OR               | disclosure   |
+|    |     | OR               | copying      |
+|    |     | OR               | modification |
+|    |     | OR               | disposal     |
+|    |     | of personal data |              |
+***** inline +0 / +1 / -1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-l.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IS | any              | unauthorised | access       |
+|    |                  | OR           | use          |
+|    |                  | OR           | disclosure   |
+|    |                  | OR           | copying      |
+|    |                  | OR           | modification |
+|    |                  | OR           | disposal     |
+|    | of personal data |              |              |
 *** About the src/Parser.hs
 
 **** At the same depth, NOT binds tighter than OR binds tigher than AND.

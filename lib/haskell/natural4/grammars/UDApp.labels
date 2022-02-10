@@ -171,6 +171,7 @@
 #fun UseCl dep dep head
 #fun ComplV head obj
 #fun PassVAgent head obl
+#fun PastPartAgentAP head obl
 #fun GenModNP dep nmod:poss head
 
 #cat cop AUX

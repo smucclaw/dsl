@@ -249,7 +249,7 @@
 4	a	a	DET	IND-SG	Definite=Ind|PronType=Art	5	det	_	_
 5	building	building	NOUN	SG-NOM	Number=Sing	2	nmod	_	_
 6	separated	separate	VERB	PASS	Tense=Past|VerbForm=Part	2	acl	_	_
-7	by	by	ADP	_	_	8	case	_	_
+7	by	by	ADP	_	_	12	case	_	_
 8	one	one	NUM	CARD-PL	NumType=Card	12	nummod	_	_
 9	or	or	CCONJ	CARD-PL	_	8	fixed	_	_
 10	more	more	ADV	CARD-PL	_	8	fixed	_	_

@@ -97,10 +97,10 @@ abstract BareRG =
     CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
 
   -- passives
-    PassV : V -> VP ;             -- affected
-    PassVAgent : V -> NP -> VP ; -- affected by the breach
+    PassV : V -> VP ;             -- is:auxPass affected
+    PassVAgent : V -> NP -> VP ;  -- is:auxPass affected by the breach
     PastPartAP : VP -> AP ;       -- stored in electronic formats (Extend.PastPartAP takes a VPSlash)
-
+    PastPartAgentAP : VP -> NP -> AP ; -- affected by the breach
   -- TODO revisit
     -- PredetPrep : Predet -> Prep -> Prep ;               -- more than
     -- PredetPrepCard : Predet -> Prep -> Card -> Prep ;   -- more than 500/enough

@@ -13,6 +13,7 @@ import Data.List (intercalate)
 import LS.Types
 import Debug.Trace (traceM)
 import Control.Applicative (liftA2)
+import Control.Monad.Combinators
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -176,10 +177,10 @@ pNumOrText = pOtherVal <|> pNumAsText
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p = debugName "someDeep" $
-  manyIndentation ( (:)
-                    <$> debugName "someDeep first part calls base directly" p
-                    <*> debugName "someDeep second part calls manyDeep" (manyDeep p)
-                  )
+  ( (:)
+    <$> debugName "someDeep first part calls base directly" p
+    <*> ( debugName "someDeep second part recurses with someIndentation" (try $ someIndentation $ someDeep p)
+        <|> (debugPrint "someDeep no luck, returning []" >> return [])) )
 
 -- zero or more P, monotonically moving to the right, returned in a list
 manyDeep :: (Show a) => Parser a -> Parser [a]
@@ -187,7 +188,7 @@ manyDeep p =
   debugName "manyDeep" $
   (debugName "manyDeep calling someDeep" (try $ someDeep p)
     <|>
-    debugName "someDeep failed, manyDeep defaulting to retun []" (return [])
+    (debugPrint "someDeep failed, manyDeep defaulting to return []" >> return [])
   )
 
 someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
@@ -200,13 +201,13 @@ someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
 -- what if you want to match something like
 -- foo foo foo foo foo (bar)
 manyDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
-manyDeepThen p1 p2 = debugName "someDeepThen" $ do
-  p <- try (debugName "someDeepThen/initial" p1)
+manyDeepThen p1 p2 = debugName "manyDeepThen" $ do
+  p <- try (debugName "manyDeepThen/initial" p1)
   (lhs, rhs) <- donext
   return (p:lhs, rhs)
   where
-    donext = debugName "going inner" (try $ someIndentation $ manyDeepThen p1 p2)
-             <|> debugName "going rhs" base
+    donext = debugName "manyDeepThen/going inner" (try $ someIndentation $ manyDeepThen p1 p2)
+             <|> debugName "manyDeepThen/donext-rhs" base
     base = debugName "manyDeepThen/base" $ do
       rhs <- try (manyIndentation p2)
       return ([], rhs)

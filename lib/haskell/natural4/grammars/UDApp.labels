@@ -170,6 +170,8 @@
 #fun UseRCl dep dep head
 #fun UseCl dep dep head
 #fun ComplV head obj
+#fun ComplA2 head obl -- not used for now
+#fun AdvAP head obl
 #fun PassVAgent head obl
 #fun PastPartAgentAP head obl
 #fun GenModNP dep nmod:poss head

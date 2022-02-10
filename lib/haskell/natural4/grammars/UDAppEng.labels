@@ -125,7 +125,7 @@
 -- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
 #auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
 #auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
-
+#auxfun NmodAmod_ provision the ofThisCode applicable : CN -> Det -> Adv -> AP -> NP = DetCN the (AdjCN applicable (AdvCN provision ofThisCode)) ; head det nmod amod
 -- recognise "Section 10" as an apposition
 
 -- Label variants of various

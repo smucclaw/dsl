@@ -47,6 +47,8 @@ abstract BareRG =
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
+    ComplA2,
+    AdvAP,
     AdjOrd
   ],
 
@@ -105,7 +107,12 @@ abstract BareRG =
     -- PredetPrep : Predet -> Prep -> Prep ;               -- more than
     -- PredetPrepCard : Predet -> Prep -> Card -> Prep ;   -- more than 500/enough
 
-    ComplV : V -> NP -> VP ; -- JustWordsWordNet has no V2 etc
+    -- JustWordsWordNet has no V2 etc
+    ComplV : V -> NP -> VP ; -- eat pizza
+    -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
+    -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
+
+    MkA2 : A -> Prep -> A2 ;
 
   cat
     [Prep]{2} ;

@@ -29,14 +29,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "buyCabbage" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "ContractOfSale" ) )
                                     ] OptLangStrings1
@@ -48,7 +48,7 @@ Toplevel
                         [ WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "date" ) )
                                         ] OptLangStrings1
@@ -63,14 +63,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "jurisdiction" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "SG" ) )
                                         ] OptLangStrings1
@@ -80,14 +80,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "buyer" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "blackSwan" ) )
                                         ] OptLangStrings1
@@ -97,14 +97,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "seller" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "veggieBar" ) )
                                         ] OptLangStrings1
@@ -114,7 +114,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "buyer" ) )
                                         , UnifyElemObjAttrElem
@@ -130,7 +130,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "seller" ) )
                                         , UnifyElemObjAttrElem
@@ -141,13 +141,13 @@ Toplevel
                                 ( ListE
                                     ( ListComma
                                         [ ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "item1" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "item2" ) )
                                                 ] OptLangStrings1
@@ -169,14 +169,14 @@ Toplevel
                         [ WhereExp1 GivenLimb0
                             ( RelE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "item1" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BRel_Isa
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         ] OptLangStrings1
@@ -187,7 +187,7 @@ Toplevel
                                 [ WithInExp
                                     ( CompE
                                         ( ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "category" ) )
                                                 ] OptLangStrings1
@@ -198,7 +198,7 @@ Toplevel
                                 , WithInExp
                                     ( CompE
                                         ( ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "species" ) )
                                                 ] OptLangStrings1
@@ -209,7 +209,7 @@ Toplevel
                                 , WithInExp
                                     ( CompE
                                         ( ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "cultivar" ) )
                                                 ] OptLangStrings1

@@ -184,7 +184,7 @@ mkRule rulename = Rule (RID $ mkDots rulename) (RName OptLangStrings1) AsofNull 
 
 exp2rn :: Exp -> MyRuleName
 exp2rn (ObjME (OMArgs uelist args ols)) = uelist2rn uelist
-exp2rn (ObjME (OMNoAargs ueoaes ols)) = intercalate "." (showUEOAE <$> ueoaes)
+exp2rn (ObjME (OMNoArgs ueoaes ols)) = intercalate "." (showUEOAE <$> ueoaes)
 exp2rn other = error ("don't know how to convert expression to rulename: " ++ show other)
 
 uelist2rn :: [UnifyElem] -> MyRuleName

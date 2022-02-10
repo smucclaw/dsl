@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Is
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Quorate" ) )
                                     ] OptLangStrings1
@@ -38,7 +38,7 @@ Toplevel
                                     ( Args1
                                         [ CComma
                                             ( ObjME
-                                                ( OMNoAargs
+                                                ( OMNoArgs
                                                     [ UnifyElemObjAttrElem
                                                         ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
                                                     , UnifyElemObjAttrElem
@@ -62,7 +62,7 @@ Toplevel
                                         ( Args1
                                             [ CComma
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "company" ) )
                                                         , UnifyElemObjAttrElem
@@ -85,14 +85,14 @@ Toplevel
                         [ WhereExp1 GivenLimb0
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "company" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "OrdinaryMeeting" ) )
                                         , UnifyElemObjAttrElem

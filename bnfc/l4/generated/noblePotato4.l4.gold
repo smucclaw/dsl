@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Is
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "noble" ) )
                                     ] OptLangStrings1
@@ -33,7 +33,7 @@ Toplevel
                             ( QualExp
                                 ( MQuantMin ( IntV 2 ) OptOf )
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         , UnifyElemObjAttrElem
@@ -47,49 +47,49 @@ Toplevel
                                 ( ListE
                                     ( ListComma
                                         [ ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isKing" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isQueen" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isPrince" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isPrincess" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isDuke" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isDuchess" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isEarl" ) )
                                                 ] OptLangStrings1
                                             )
                                         , ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "isCountess" ) )
                                                 ] OptLangStrings1

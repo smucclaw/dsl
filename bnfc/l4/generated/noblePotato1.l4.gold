@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Is
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Noble" ) )
                                     ] OptLangStrings1
@@ -33,14 +33,14 @@ Toplevel
                             ( BBool_And
                                 ( RelE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                             ] OptLangStrings1
                                         )
                                     ) BRel_Isa
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Potato" ) )
                                             ] OptLangStrings1
@@ -49,7 +49,7 @@ Toplevel
                                 ) AND_AND
                                 ( RelE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                             , UnifyElemObjAttrElem
@@ -60,7 +60,7 @@ Toplevel
                                         )
                                     ) BRel_Is
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Noble" ) )
                                             ] OptLangStrings1
@@ -70,7 +70,7 @@ Toplevel
                             ) AND_AND
                             ( RelE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         , UnifyElemObjAttrElem
@@ -81,7 +81,7 @@ Toplevel
                                     )
                                 ) BRel_Is
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Noble" ) )
                                         ] OptLangStrings1

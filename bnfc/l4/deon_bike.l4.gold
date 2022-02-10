@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Person" ) )
                                     ] OptLangStrings1
@@ -28,14 +28,14 @@ Toplevel
                     , CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Seller" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Person" ) )
                                     ] OptLangStrings1
@@ -45,14 +45,14 @@ Toplevel
                     , CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "BikeSale" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "SalesEvent" ) )
                                     ] OptLangStrings1
@@ -101,14 +101,14 @@ Toplevel
                                         [ CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "from" ) )
                                                         ] OptLangStrings1
                                                     )
                                                 ) BCmp_Eq1
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemUIdent ( UIdent "Seller" ) )
                                                         ] OptLangStrings1
@@ -118,14 +118,14 @@ Toplevel
                                         , CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "item" ) )
                                                         ] OptLangStrings1
                                                     )
                                                 ) BCmp_Eq1
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemUIdent ( UIdent "BikeSale" ) )
                                                         ] OptLangStrings1
@@ -164,7 +164,7 @@ Toplevel
                     ( UponLimb2 Upon0
                         ( GivenExpr1
                             [ ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "delivery" ) )
                                     ] OptLangStrings1
@@ -184,7 +184,7 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "delivery" ) )
                                     ] OptLangStrings1
@@ -225,7 +225,7 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "internal_trans" ) )
                                     ] OptLangStrings1
@@ -239,7 +239,7 @@ Toplevel
                         ( BBool_And
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "delay" ) )
                                         ] OptLangStrings1
@@ -249,14 +249,14 @@ Toplevel
                             ) AND_AND
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "order_item" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq2
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "delivery_item" ) )
                                         ] OptLangStrings1
@@ -296,7 +296,7 @@ Toplevel
                     ( UponLimb2 Upon0
                         ( GivenExpr1
                             [ ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "order" ) )
                                     ] OptLangStrings1
@@ -316,7 +316,7 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "order" ) )
                                     ] OptLangStrings1
@@ -357,7 +357,7 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionSingle
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "delivery" ) )
                                     ] OptLangStrings1
@@ -370,7 +370,7 @@ Toplevel
                     ( WhenMatch
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "order_amount" ) )
                                     ] OptLangStrings1

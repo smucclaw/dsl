@@ -23,14 +23,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "veggieBar" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Business" ) )
                                     ] OptLangStrings1
@@ -42,7 +42,7 @@ Toplevel
                         [ WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "address" ) )
                                         ] OptLangStrings1
@@ -57,7 +57,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "id" ) )
                                         ] OptLangStrings1
@@ -68,7 +68,7 @@ Toplevel
                                         [ CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "idtype" ) )
                                                         ] OptLangStrings1
@@ -79,7 +79,7 @@ Toplevel
                                         , CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "idval" ) )
                                                         ] OptLangStrings1
@@ -94,7 +94,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "name" ) )
                                         ] OptLangStrings1

@@ -61,9 +61,9 @@
 #disable MassNP aPl_Det NumPl
 
 #auxcat The DET
-#auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN the_Det cn ; det head[Number=Sing]
-#auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det head[Number=Plur]
-#disable the_Det thePl_Det
+#auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN theSg_Det cn ; det[LEMMA=the] head[Number=Sing]
+#auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det[LEMMA=the] head[Number=Plur]
+#disable theSg_Det thePl_Det
 
 -- Allow determiners with words that are erroneously parsed as PN
 #auxfun DefPN_ the pn : Det -> PN -> NP = DefPN pn ; det[LEMMA=the] head
@@ -125,7 +125,7 @@
 -- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
 #auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
 #auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
-
+#auxfun NmodAmod_ provision the ofThisCode applicable : CN -> Det -> Adv -> AP -> NP = DetCN the (AdjCN applicable (AdvCN provision ofThisCode)) ; head det nmod amod
 -- recognise "Section 10" as an apposition
 
 -- Label variants of various

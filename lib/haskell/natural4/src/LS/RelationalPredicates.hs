@@ -7,10 +7,11 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import Debug.Trace
+import qualified Data.Text.Lazy as Text
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, fromJust, maybeToList)
+import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
 
 import LS.Types
 import LS.Tokens
@@ -95,7 +96,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
-    permutationsCon [Means,Includes] [When,If] [Unless] [Given]
+    manyIndentation $ permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
   let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
 
@@ -162,7 +163,7 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (try . pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
-  ands <- manyIndentation pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 
 
@@ -180,7 +181,7 @@ pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- pSrcRef
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> someStructure
+    <$$> (try someStructure <|> ambitious)
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
@@ -201,6 +202,17 @@ pHornlike = debugName "pHornlike" $ do
     -- assert(X :- (Y1, Y2)) :- body.
 
     -- DECIDE x IS y WHEN Z IS Q
+
+    ambitious = debugName "pHornlike/ambitious" $ do
+      (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
+      (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
+      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
+        <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> pBSR))
+      let clauses = [HC2 (RPConstraint subject RPis object) (maybe (Just $ AA.Leaf $ RPMT ["always"]) (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
+      return (Just keyword, subject, clauses)
 
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
@@ -225,6 +237,7 @@ relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
   (x,y) <- debugName "pRelPred optIndentedTuple whenCase" (pRelPred `optIndentedTuple` whenCase)
   return (x, join y)
+
 relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredSamelineWhen = debugName "relPredSamelineWhen" $ (,) $*| slRelPred |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $ optional whenCase))
 whenCase :: Parser (Maybe BoolStructR)
@@ -249,7 +262,27 @@ rpBoolStructR :: Parser (RelationalPredicate, Int)
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
-pBSR = debugName "pBSR" $ toBoolStruct <$> expr pRelPred
+pBSR = debugName "pBSR" $ do
+  try noPrePost <|> try withPrePost <|> withPreOnly
+  where
+    noPrePost = toBoolStruct <$> expr pRelPred
+    withPrePost = do
+      (pre, _, body, post) <- (,,,)
+                              $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                              |-| noPrePost
+                              |&| slMultiTerm
+                              |<< undeepers
+      return $ relabelpp body (Text.unwords pre) (Text.unwords post)
+    withPreOnly = do
+      (pre, _, body) <- (,,)
+                        $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                        |-| noPrePost
+                        |<< undeepers
+      return $ relabelp body (Text.unwords pre)
 
-
-
+    relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
+    relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
+    relabelpp x _ _ = error "RelationalPredicates: relabelpp failed"
+    relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
+    relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
+    relabelp  x _ = error "RelationalPredicates: relabelp failed"

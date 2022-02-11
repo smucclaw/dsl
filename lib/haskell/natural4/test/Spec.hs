@@ -1081,19 +1081,55 @@ main = do
         ( (  (42,43)
           , "my string"), [])
 
-      filetest "inline-1-a" "compound-pair"
-        (parseOther ( (,)
-                      $>| pOtherVal 
-                      |>< pBoolStruct ))
-        ( ("one word", Any Nothing [Leaf "thing1"
-                      ,Leaf "thing2"]), [] )
+      filetest "inline-1-a" "line crossing"
+        (parseOther ( (,,)
+                      >*| slMultiTerm
+                      |<| pToken Means
+                      |>| pBSR
+                      |<< undeepers
+                    ))
+        ( ( ["Food"]
+          , Means
+          , Any (Just $ Pre "yummy nightshades") [ Leaf (RPMT ["potato"])
+                                                 , Leaf (RPMT ["tomato"])]
+          ), []
+        )
 
-      filetest "inline-1-b" "compound-pair"
-        (parseOther ( (,)
-                      $>| pOtherVal 
-                      |>< pBoolStruct ))
-        ( ("one word", Any Nothing [Leaf "thing1"
-                      ,Leaf "thing2"]), [] )
+-- this test will fail; we can try uncommenting the `term p/c` stanza within Parser.hs/term but that will break action parameters.
+      -- filetest "inline-1-a2" "line crossing"
+      --   (parseOther ( (,,)
+      --                 >*| slMultiTerm
+      --                 |<| pToken Means
+      --                 |>| pBSR
+      --                 |<< undeepers
+      --               ))
+      --   ( ( ["Food"]
+      --     , Means
+      --     , Any (Just $ Pre "yummy nightshades with spices") [ Leaf (RPMT ["potato","with","salt"])
+      --                                                        , Leaf (RPMT ["tomato","with","pepper"])]
+      --     ), []
+      --   )
+
+      filetest "inline-1-c" "line crossing"
+        (parseOther ( (,,,,,)
+                      >*| slMultiTerm
+                      |<| pToken Means
+                      |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                      |-| pBSR
+                      |&| slMultiTerm
+                      |<< undeepers
+                    ))
+        ( ( ["Bad"]
+          , Means
+          , ["any","unauthorised"]
+          , ()
+          , Any Nothing [ Leaf (RPMT ["access"])
+                        , Leaf (RPMT ["use"])
+                        , Leaf (RPMT ["disclosure"])
+                        ]
+          , ["of","personal data"]
+          ), []
+        )
 
 {-
     describe "Prolog" $ do

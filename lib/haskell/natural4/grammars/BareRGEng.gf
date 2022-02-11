@@ -44,6 +44,8 @@ concrete BareRGEng of BareRG =
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
+    AdvAP,
+    ComplA2,
     AdjOrd
   ],
 
@@ -61,7 +63,6 @@ concrete BareRGEng of BareRG =
   SymbolEng [
       Symb
     , SymbPN
---    , MkSymb
     ],
   ConjunctionEng,
   RelativeEng,
@@ -108,6 +109,7 @@ concrete BareRGEng of BareRG =
       } ;
 
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
+    -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
 
     -- : V -> VP ;       -- is affected (needs auxPass to trigger)
     PassV v = PassV2 (P.mkV2 v) ;

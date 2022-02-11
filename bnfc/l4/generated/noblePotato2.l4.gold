@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Potato" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Is
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Noble" ) )
                                     ] OptLangStrings1
@@ -31,7 +31,7 @@ Toplevel
                     ( WhenMatch
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Potato" ) )
                                     , UnifyElemObjAttrElem

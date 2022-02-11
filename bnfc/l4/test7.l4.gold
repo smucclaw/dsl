@@ -11,14 +11,14 @@ Toplevel
                     [ CComma
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Buyer" ) )
                                     ] OptLangStrings1
                                 )
                             ) BCmp_Eq1
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "blackSwan" ) )
                                     ] OptLangStrings1
@@ -28,14 +28,14 @@ Toplevel
                     , CComma
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "veggieBar" ) )
                                     ] OptLangStrings1
                                 )
                             ) BCmp_Eq1
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Seller" ) )
                                     ] OptLangStrings1
@@ -45,7 +45,7 @@ Toplevel
                     , CComma
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "salePrice" ) )
                                     ] OptLangStrings1
@@ -56,7 +56,7 @@ Toplevel
                     , CComma
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "salePrice" ) )
                                     ] OptLangStrings1
@@ -67,7 +67,7 @@ Toplevel
                     , CComma
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "goods" ) )
                                     ] OptLangStrings1
@@ -82,7 +82,7 @@ Toplevel
                                         [ CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "quantity" ) )
                                                         ] OptLangStrings1
@@ -137,14 +137,14 @@ Toplevel
                                         [ CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "to" ) )
                                                         ] OptLangStrings1
                                                     )
                                                 ) BCmp_Eq1
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemUIdent ( UIdent "Seller" ) )
                                                         ] OptLangStrings1
@@ -154,14 +154,14 @@ Toplevel
                                         , CComma
                                             ( CompE
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "price" ) )
                                                         ] OptLangStrings1
                                                     )
                                                 ) BCmp_Eq1
                                                 ( ObjME
-                                                    ( OMNoAargs
+                                                    ( OMNoArgs
                                                         [ UnifyElemObjAttrElem
                                                             ( ObjAttrElemIdent ( Ident "salePrice" ) )
                                                         ] OptLangStrings1
@@ -207,7 +207,7 @@ Toplevel
                     ( DeonticLimb1 DEMust OptLangStrings1
                         ( ActionDirObj
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "deliver" ) )
                                     ] OptLangStrings1

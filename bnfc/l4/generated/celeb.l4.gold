@@ -11,7 +11,7 @@ Toplevel
                     ( GivenLimb1
                         ( GivenExpr2
                             [ ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Tabloid" ) )
                                     ] OptLangStrings1
@@ -20,7 +20,7 @@ Toplevel
                             ( HavingLimb1
                                 [ HavingBoolExpExp
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "ceaselessCoverage" ) )
                                             ] OptLangStrings1
@@ -35,14 +35,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemIdent ( Ident "celebXY" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Isa
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Couple" ) )
                                     ] OptLangStrings1
@@ -54,7 +54,7 @@ Toplevel
                         [ WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "xtime" ) )
                                         ] OptLangStrings1
@@ -69,14 +69,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "dating" ) )
                                         ] OptLangStrings1
@@ -86,7 +86,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "xtime" ) )
                                         ] OptLangStrings1
@@ -101,14 +101,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "married" ) )
                                         ] OptLangStrings1
@@ -118,7 +118,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "xtime" ) )
                                         ] OptLangStrings1
@@ -133,14 +133,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "married" ) )
                                         ] OptLangStrings1
@@ -150,7 +150,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "vtime" ) )
                                         ] OptLangStrings1
@@ -167,7 +167,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "xtime" ) )
                                         ] OptLangStrings1
@@ -182,14 +182,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "married" ) )
                                         ] OptLangStrings1
@@ -199,7 +199,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "vtime" ) )
                                         ] OptLangStrings1
@@ -221,7 +221,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "xtime" ) )
                                         ] OptLangStrings1
@@ -236,14 +236,14 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "maritalStatus" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BCmp_Eq1
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "divorced" ) )
                                         ] OptLangStrings1
@@ -253,7 +253,7 @@ Toplevel
                         , WithInExp
                             ( CompE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemIdent ( Ident "vtime" ) )
                                         ] OptLangStrings1

@@ -11,7 +11,7 @@ Toplevel
                         [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
                     )
                     ( ObjME
-                        ( OMNoAargs
+                        ( OMNoArgs
                             [ UnifyElemObjAttrElem
                                 ( ObjAttrElemIdent ( Ident "knew" ) )
                             ] OptLangStrings1
@@ -22,7 +22,7 @@ Toplevel
                             [ CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "pregnancy" ) )
                                             ] OptLangStrings1
@@ -49,14 +49,14 @@ Toplevel
                                 [ CComma
                                     ( CompE
                                         ( ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemIdent ( Ident "to" ) )
                                                 ] OptLangStrings1
                                             )
                                         ) BCmp_Eq1
                                         ( ObjME
-                                            ( OMNoAargs
+                                            ( OMNoArgs
                                                 [ UnifyElemObjAttrElem
                                                     ( ObjAttrElemUIdent ( UIdent "Bob" ) )
                                                 ] OptLangStrings1
@@ -72,14 +72,14 @@ Toplevel
                             [ CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "knownBy" ) )
                                             ] OptLangStrings1
                                         )
                                     ) BCmp_Eq1
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Alice" ) )
                                             ] OptLangStrings1
@@ -89,7 +89,7 @@ Toplevel
                             , CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "pregnancy" ) )
                                             ] OptLangStrings1
@@ -108,7 +108,7 @@ Toplevel
                         [ ObjAttrElemUIdent ( UIdent "Alice" ) ]
                     )
                     ( ObjME
-                        ( OMNoAargs
+                        ( OMNoArgs
                             [ UnifyElemObjAttrElem
                                 ( ObjAttrElemIdent ( Ident "knew" ) )
                             ] OptLangStrings1
@@ -119,14 +119,14 @@ Toplevel
                             [ CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "knownBy" ) )
                                             ] OptLangStrings1
                                         )
                                     ) BCmp_Eq1
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Bob" ) )
                                             ] OptLangStrings1
@@ -136,7 +136,7 @@ Toplevel
                             , CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "vtime" ) )
                                             ] OptLangStrings1
@@ -151,7 +151,7 @@ Toplevel
                             , CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "beliefs" ) )
                                             ] OptLangStrings1
@@ -162,14 +162,14 @@ Toplevel
                                             [ CComma
                                                 ( CompE
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemIdent ( Ident "knownBy" ) )
                                                             ] OptLangStrings1
                                                         )
                                                     ) BCmp_Eq1
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemUIdent ( UIdent "Alice" ) )
                                                             ] OptLangStrings1
@@ -179,7 +179,7 @@ Toplevel
                                             , CComma
                                                 ( CompE
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemIdent ( Ident "pregnancy" ) )
                                                             ] OptLangStrings1
@@ -202,7 +202,7 @@ Toplevel
                         [ ObjAttrElemUIdent ( UIdent "Bob" ) ]
                     )
                     ( ObjME
-                        ( OMNoAargs
+                        ( OMNoArgs
                             [ UnifyElemObjAttrElem
                                 ( ObjAttrElemIdent ( Ident "knew" ) )
                             ] OptLangStrings1
@@ -213,14 +213,14 @@ Toplevel
                             [ CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "knownBy" ) )
                                             ] OptLangStrings1
                                         )
                                     ) BCmp_Eq1
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemUIdent ( UIdent "Alice" ) )
                                             ] OptLangStrings1
@@ -230,7 +230,7 @@ Toplevel
                             , CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "beliefs" ) )
                                             ] OptLangStrings1
@@ -241,14 +241,14 @@ Toplevel
                                             [ CComma
                                                 ( CompE
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemIdent ( Ident "knownBy" ) )
                                                             ] OptLangStrings1
                                                         )
                                                     ) BCmp_Eq1
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemUIdent ( UIdent "Alice" ) )
                                                             ] OptLangStrings1
@@ -258,7 +258,7 @@ Toplevel
                                             , CComma
                                                 ( CompE
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemIdent ( Ident "pregnancy" ) )
                                                             ] OptLangStrings1
@@ -271,7 +271,7 @@ Toplevel
                                             , CComma
                                                 ( CompE
                                                     ( ObjME
-                                                        ( OMNoAargs
+                                                        ( OMNoArgs
                                                             [ UnifyElemObjAttrElem
                                                                 ( ObjAttrElemIdent ( Ident "vtime" ) )
                                                             ] OptLangStrings1
@@ -290,7 +290,7 @@ Toplevel
                             , CComma
                                 ( CompE
                                     ( ObjME
-                                        ( OMNoAargs
+                                        ( OMNoArgs
                                             [ UnifyElemObjAttrElem
                                                 ( ObjAttrElemIdent ( Ident "vtime" ) )
                                             ] OptLangStrings1

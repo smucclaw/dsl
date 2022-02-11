@@ -31,6 +31,9 @@ type MyBoolStruct = MyItem MultiTerm
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = toBoolStruct <$> expr pOtherVal
 
+-- TODO: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
+-- when we do that, we won't have to Text.unwords lab below.
+
 toBoolStruct :: Show a => MyBoolStruct a -> AA.Item a
 toBoolStruct (MyLeaf txt) = AA.Leaf txt
 toBoolStruct (MyLabel lab (MyAll xs)) = AA.All (Just (AA.Pre (Text.unwords lab))) (map toBoolStruct xs)
@@ -45,13 +48,29 @@ toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"
 term p = debugName "term p" $ do
-  try (debugName "term p/1:label" $ do
-          lbl <- someDeep pNumOrText <* debugName "matching EOL" dnl
-          debugPrint $ "got label then EOL: " ++ show lbl
-          inner <- expr p
-          debugPrint $ "got inner: " ++ show inner
-          return $ MyLabel lbl inner)
+  try (debugName "term p/1a:label directly above" $ do
+        (lbl, inner) <- (,)
+          $*| ((.:|) pNumOrText <* lookAhead pNumOrText)
+          |>< expr p
+        debugPrint $ "got label, then inner immediately below: " ++ show lbl
+        debugPrint $ "got inner: " <> show inner
+        return $ MyLabel lbl inner)
+    <|>
+    try (debugName "term p/b:label to the left of line below, with EOL" $ do
+        lbl <- (.:.) pNumOrText <* debugName "matching EOL" dnl
+        debugPrint $ "got label then EOL: " ++ show lbl
+        inner <- expr p
+        debugPrint $ "got inner: " ++ show inner
+        return $ MyLabel lbl inner)
+    -- <|>
+    -- try (debugName "term p/c:label to the right of line below, with manyUndeepers" $ do
+    --     (lbl, _, inner) <- (,,)
+    --       $*| ((.:|) pNumOrText <* lookAhead (pToken UnDeeper))
+    --       |*| someUndeepers
+    --       |>< expr p
+    --     return $ MyLabel lbl inner)
     <|> debugName "term p/notLabelTerm" (notLabelTerm p)
+
 
 notLabelTerm p =
   try (debugName "term p/2:myindented expr p" (myindented (expr p)))
@@ -69,6 +88,8 @@ table = [ [ prefix  MPNot  MyNot  ]
 -- SetLess is an And Not:   X LESS Y is X AND NOT Y
 
 {- see note in README.org under "About the src/Parser.hs" -}
+
+  -- ************** \ term p/notLabelTerm has returned MyLabel ["pay"] (MyLabel ["to","the King"] (MyLeaf (("amount" :| ["$20"],Nothing) :| []))) :4_4:UnDeeper:
 
 getAll :: MyItem lbl a -> [MyItem lbl a]
 getAll (MyAll xs) = xs

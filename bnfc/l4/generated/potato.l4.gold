@@ -11,7 +11,7 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                     ] OptLangStrings1
@@ -19,14 +19,14 @@ Toplevel
                             ) BRel_Is
                             ( BBool_And
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "EdiblePotato" ) )
                                         ] OptLangStrings1
                                     )
                                 ) AND_AND
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "TastyFood" ) )
                                         ] OptLangStrings1
@@ -41,14 +41,14 @@ Toplevel
                         ( BBool_And
                             ( RelE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BRel_Is
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Potato" ) )
                                         ] OptLangStrings1
@@ -57,14 +57,14 @@ Toplevel
                             ) AND_AND
                             ( RelE
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                         ] OptLangStrings1
                                     )
                                 ) BRel_Is
                                 ( ObjME
-                                    ( OMNoAargs
+                                    ( OMNoArgs
                                         [ UnifyElemObjAttrElem
                                             ( ObjAttrElemUIdent ( UIdent "Edible" ) )
                                         ] OptLangStrings1
@@ -88,14 +88,14 @@ Toplevel
                     [ CComma
                         ( RelE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                     ] OptLangStrings1
                                 )
                             ) BRel_Is
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Potato" ) )
                                     ] OptLangStrings1
@@ -108,7 +108,7 @@ Toplevel
                     ( WhenMatch
                         ( CompE
                             ( ObjME
-                                ( OMNoAargs
+                                ( OMNoArgs
                                     [ UnifyElemObjAttrElem
                                         ( ObjAttrElemUIdent ( UIdent "Item" ) )
                                     , UnifyElemObjAttrElem

@@ -323,7 +323,7 @@ type SLParser a = Parser (a, Int)
 ($>>)  :: Show a           => Parser  a            ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- plain 
 (|>>)  :: Show a           => Parser (a,      Int) ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- fancy
 (|<|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
-(|&|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
+(|<*)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
 (|<>)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse, then consume GoDeepers
 
 (+?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- force the LHS to be nongreedy before matching the right.
@@ -582,28 +582,28 @@ infixl 4 |>>
 -- consume zero or more undeepers then parse the thing on the right.
 -- performs backtracking to support multiple levels
 -- plain
-p1 |<| p2 = debugPrint "|<|" >> p1 |&| (<>|) p2
+p1 |<| p2 = debugPrint "|<|" >> p1 |<* (<>|) p2
 infixl 4 |<|
 
-p1 |<> p2 = debugPrint "|<>" >> p1 |&| ($>>) p2
+p1 |<> p2 = debugPrint "|<>" >> p1 |<* ($>>) p2
 infixl 4 |<>
   
 -- fancy
-p1 |&| p2 = debugPrint "|&| starting" >> do
+p1 |<* p2 = debugPrint "|<* starting" >> do
   (l, n) <- p1
   (r, m) <- try recurse <|> base
-  debugPrint $ "|&|/parent returning "++ show r ++ " with " ++ show (n + m) ++ " UnDeepers pending"
+  debugPrint $ "|<*/parent returning "++ show r ++ " with " ++ show (n + m) ++ " UnDeepers pending"
   return (l r, n + m)
   where
-    base = debugName "|&|/base" $ do
+    base = debugName "|<*/base" $ do
       (out,n) <- p2
       return (out,n)
-    recurse = debugPrint "|&|/recurse" >> do
+    recurse = debugPrint "|<*/recurse" >> do
       _ <- pToken UnDeeper
       (out, m) <- p2
-      debugPrint $ "|&|/recurse got " ++ show out ++ " with " ++ show (m-1) ++ " UnDeepers pending"
+      debugPrint $ "|<*/recurse got " ++ show out ++ " with " ++ show (m-1) ++ " UnDeepers pending"
       return (out, m-1)
-infixl 4 |&|
+infixl 4 |<*
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a

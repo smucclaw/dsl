@@ -272,7 +272,7 @@ pBSR = debugName "pBSR" $ do
       (pre, _, body, post) <- (,,,)
                               $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                               |-| noPrePost
-                              |&| slMultiTerm
+                              |<* slMultiTerm
                               |<$ undeepers
       return $ relabelpp body (Text.unwords pre) (Text.unwords post)
     withPreOnly = do

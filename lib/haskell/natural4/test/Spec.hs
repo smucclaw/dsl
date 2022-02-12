@@ -1116,7 +1116,7 @@ main = do
                       |<| pToken Means
                       |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                       |-| pBSR
-                      |&| slMultiTerm
+                      |<* slMultiTerm
                       |<$ undeepers
                     ))
         ( ( ["Bad"]

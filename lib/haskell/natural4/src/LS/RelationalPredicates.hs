@@ -268,7 +268,7 @@ pBSR = debugName "pBSR" $ do
   try noPrePost <|> try withPrePost <|> withPreOnly
   where
     noPrePost = toBoolStruct <$> expr pRelPred
-    withPrePost = do
+    withPrePost = debugName "withPrePost" $ do
       (pre, _, body, post) <- (,,,)
                               $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                               |-| noPrePost

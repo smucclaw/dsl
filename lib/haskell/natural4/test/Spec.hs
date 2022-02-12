@@ -1110,26 +1110,84 @@ main = do
       --     ), []
       --   )
 
-      filetest "inline-1-c" "line crossing"
-        (parseOther ( (,,,,,)
+      let inline_1 = ( ( ["Bad"]
+                       , Means
+                       , ["any","unauthorised"]
+                       , ()
+                       , Any Nothing [ Leaf (RPMT ["access"])
+                                     , Leaf (RPMT ["use"])
+                                     , Leaf (RPMT ["disclosure"])
+                                     , Leaf (RPMT ["copying"])
+                                     , Leaf (RPMT ["modification"])
+                                     , Leaf (RPMT ["disposal"])
+                                     ]
+                       , ["of personal data"]
+                       ), []
+                     )
+          pInline1 = parseOther ( (,,,,,)
                       >*| slMultiTerm
                       |<| pToken Means
                       |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                       |-| pBSR
                       |<* slMultiTerm
                       |<$ undeepers
-                    ))
-        ( ( ["Bad"]
-          , Means
-          , ["any","unauthorised"]
-          , ()
-          , Any Nothing [ Leaf (RPMT ["access"])
-                        , Leaf (RPMT ["use"])
-                        , Leaf (RPMT ["disclosure"])
-                        ]
-          , ["of","personal data"]
-          ), []
-        )
+                    )
+            
+      filetest "inline-1-c" "line crossing" pInline1 inline_1
+      filetest "inline-1-d" "line crossing" pInline1 inline_1
+      filetest "inline-1-e" "line crossing" pInline1 inline_1
+      filetest "inline-1-f" "line crossing" pInline1 inline_1
+      filetest "inline-1-g" "line crossing" pInline1 inline_1
+      filetest "inline-1-h" "line crossing" pInline1 inline_1
+      filetest "inline-1-i" "line crossing" pInline1 inline_1
+      filetest "inline-1-j" "line crossing" pInline1 inline_1
+      filetest "inline-1-k" "line crossing" pInline1 inline_1
+      filetest "inline-1-l" "line crossing" pInline1 inline_1
+
+-- [ Hornlike
+--     { name = [ "Bad" ]
+--     , keyword = Means
+--     , given = Nothing
+--     , upon = Nothing
+--     , clauses =
+--         [ HC2
+--             { hHead = RPBoolStructR [ "Bad" ] RPis
+--                 ( Any
+--                     ( Just
+--                         ( PrePost "any unauthorised" "of personal data" )
+--                     )
+--                     [ Leaf
+--                         ( RPMT [ "access" ] )
+--                     , Leaf
+--                         ( RPMT [ "use" ] )
+--                     , Leaf
+--                         ( RPMT [ "disclosure" ] )
+--                     , Leaf
+--                         ( RPMT [ "copying" ] )
+--                     , Leaf
+--                         ( RPMT [ "modification" ] )
+--                     , Leaf
+--                         ( RPMT [ "disposal" ] )
+--                     ]
+--                 )
+--             , hBody = Nothing
+--             }
+--         ]
+--     , rlabel = Nothing
+--     , lsource = Nothing
+--     , srcref = Just
+--         ( SrcRef
+--             { url = "test/inline-1-e.csv"
+--             , short = "test/inline-1-e.csv"
+--             , srcrow = 2
+--             , srccol = 1
+--             , version = Nothing
+--             }
+--         )
+--     , defaults = []
+--     , symtab = []
+--     }
+-- ]
 
 
 

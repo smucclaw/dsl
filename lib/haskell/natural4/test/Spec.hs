@@ -1036,14 +1036,14 @@ main = do
       filetest "primitive-pOtherVal-indented" "primitive number"
         (parseOther ( id
                       $*| ($>>) pOtherVal
-                      |<< undeepers
+                      |<$ undeepers
                     ))
         ( "this is a string", [])
 
       filetest "primitive-pOtherVal-indented" "primitive number"
         (parseOther ( id
                       >>| pOtherVal -- consumes GoDeepers, then returns a plain parser upgraded to fancy
-                      |<< undeepers
+                      |<$ undeepers
                     ))
         ( "this is a string", [])
 
@@ -1070,7 +1070,7 @@ main = do
                       |>| pNumber
 
       filetest "compound-pairOfNumbers-3" "compound-pair"
-        (parseOther ( slPairNum |<< undeepers ))
+        (parseOther ( slPairNum |<$ undeepers ))
         ( (42,43), [])
 
       filetest "compound-pairOfNumbers-4" "compound-pair"
@@ -1086,7 +1086,7 @@ main = do
                       >*| slMultiTerm
                       |<| pToken Means
                       |>| pBSR
-                      |<< undeepers
+                      |<$ undeepers
                     ))
         ( ( ["Food"]
           , Means
@@ -1101,7 +1101,7 @@ main = do
       --                 >*| slMultiTerm
       --                 |<| pToken Means
       --                 |>| pBSR
-      --                 |<< undeepers
+      --                 |<$ undeepers
       --               ))
       --   ( ( ["Food"]
       --     , Means
@@ -1117,7 +1117,7 @@ main = do
                       |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                       |-| pBSR
                       |&| slMultiTerm
-                      |<< undeepers
+                      |<$ undeepers
                     ))
         ( ( ["Bad"]
           , Means

@@ -288,7 +288,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    The more conventional way to build a parser chain is to use applicative style, and that's why we have combinators that
    - get the chain started  :: ($>|) and ($*|)
    - keep the chain running :: (|>|) and (|*|)
-   - end the chain          :: (|><) and (|*<) ... also |<< if you want to control that manually
+   - end the chain          :: (|><) and (|*<) ... also |<$ if you want to control that manually
    
    In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
 
@@ -341,7 +341,7 @@ type SLParser a = Parser (a, Int)
 -- terminal
 (|*<)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser   b       -- end         fancy fancy
 (|><)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser   b       -- end         fancy plain
-(|<<)  ::                     Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
+(|<$)  ::                     Parser (a,      Int) -> (Int->Parser ()) -> Parser   a       -- end         fancy plain manual undeeper -- undeepers
                            
 (>><)  :: Show a           => Parser       a                           -> Parser   a       -- consume, parse, undeeper
 (>><) = manyIndentation
@@ -386,7 +386,7 @@ _threeIs = debugName "threeIs" $
     $>| pT
     |*| pTT
     |>| pT
-    |<< undeepers
+    |<$ undeepers
   where pT  = debugName "Is" (pToken Is)
         pTT = debugName "(pT,pT)" $ (,) $>| pT |>| pT
         --- because the final sigil in the chain ends with a |, pTT is suitable for use with a * in the parent expression
@@ -405,8 +405,8 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
 (.:|) x = (|:|) $ (<>|) x            -- usage: (.:|) pOtherVal   is       some pOtherVal
 (.?|) p =         (<>|) (optional p) -- usage: (.?|) pOtherVal   is   optional pOtherval
 
-(.:.) x = (.:|) x |<< undeepers     -- some pOtherVal and then undeepers
-(...) x = (..|) x |<< undeepers     -- many pOtherVal and then undeepers
+(.:.) x = (.:|) x |<$ undeepers     -- some pOtherVal and then undeepers
+(...) x = (..|) x |<$ undeepers     -- many pOtherVal and then undeepers
 
 
 (<>|) p = do
@@ -517,17 +517,17 @@ p1 $>/ p2 = debugPrint "$>/" >> p1 $+/ (|>>) p2
 p1 |>/ p2 = debugPrint "|>/" >> p1 /+/ (|>>) p2
 infixl 4 $>/, |>/
   
-p1 |>< p2 = p1 |>| p2 |<< undeepers
+p1 |>< p2 = p1 |>| p2 |<$ undeepers
 infixl 4 |><
   
-p1 |*< p2 = p1 |*| p2 |<< undeepers
+p1 |*< p2 = p1 |*| p2 |<$ undeepers
 infixl 4 |*<
 
-p1 |<< p2 = do
+p1 |<$ p2 = do
   (result, n) <- p1
   p2 n
   return result
-infixl 4 |<<
+infixl 4 |<$
 
 
 -- consume all the UnDeepers that have been stacked off to the right

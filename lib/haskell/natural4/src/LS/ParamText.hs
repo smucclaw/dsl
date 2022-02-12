@@ -141,10 +141,10 @@ slOneOf = do
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<< undeepers
+pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<$ undeepers
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $ do slKeyValues |<< undeepers
+pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugName "slKeyValues" $ do
@@ -164,7 +164,7 @@ getSrcRef = do
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  slAKA baseParser toMultiTerm |<< undeepers
+  slAKA baseParser toMultiTerm |<$ undeepers
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugName "slAKA" $ do

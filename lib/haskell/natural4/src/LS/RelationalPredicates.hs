@@ -181,7 +181,7 @@ pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- pSrcRef
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> (try someStructure <|> ambitious)
+    <$$> (try ambitious <|> someStructure)
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
@@ -211,7 +211,9 @@ pHornlike = debugName "pHornlike" $ do
         <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> pBSR))
-      let clauses = [HC2 (RPConstraint subject RPis object) (maybe (Just $ AA.Leaf $ RPMT ["always"]) (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
+      let clauses = [HC2 (RPConstraint subject RPis object)
+                     (maybe (Just $ AA.Leaf $ RPMT ["always"])
+                      (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
       return (Just keyword, subject, clauses)
 
     someStructure = debugName "pHornlike/someStructure" $ do
@@ -231,7 +233,7 @@ pHornlike = debugName "pHornlike" $ do
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
-  slRelPred |<< undeepers
+  slRelPred |<$ undeepers
 
 relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
@@ -266,18 +268,18 @@ pBSR = debugName "pBSR" $ do
   try noPrePost <|> try withPrePost <|> withPreOnly
   where
     noPrePost = toBoolStruct <$> expr pRelPred
-    withPrePost = do
+    withPrePost = debugName "withPrePost" $ do
       (pre, _, body, post) <- (,,,)
                               $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                               |-| noPrePost
-                              |&| slMultiTerm
-                              |<< undeepers
+                              |<* slMultiTerm
+                              |<$ undeepers
       return $ relabelpp body (Text.unwords pre) (Text.unwords post)
     withPreOnly = do
       (pre, _, body) <- (,,)
                         $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
                         |-| noPrePost
-                        |<< undeepers
+                        |<$ undeepers
       return $ relabelp body (Text.unwords pre)
 
     relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs

@@ -2,6 +2,8 @@
 
 my @stacktest = qx(stack test);
 
+system qq(mkdir -p out);
+
 for (grep { /To rerun use/ } @stacktest) {
   my ($match, $filename) = /(--match .*\/(.*)\/")$/;
 

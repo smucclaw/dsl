@@ -308,7 +308,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 type SLParser a = Parser (a, Int)
 
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
-(+>|)  :: Show a           =>        (a -> b) -> Int -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
+(+>|)  :: Show a           =>        (a -> b) -> Int -> Parser  a        -> Parser  (b,Int)  -- start with an initial count of expected UnDeepers
 ($>|)  :: Show a           =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
 ($*|)  :: Show a           =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
                            
@@ -436,7 +436,7 @@ f $>| p2 = do
 infixl 4 $>|
 
 (+>|) f n p2 = do
-  r <- debugName "$+|" p2
+  r <- debugName "+>|" p2
   return (f r,n)
 infixl 4 +>|
   
@@ -477,16 +477,16 @@ p1 |=| p2 = do
 -- (p1)+?(p2)
 p1 +?| p2 = do
   l         <- optional p1
-  _         <- pToken GoDeeper
+  gd        <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
   ((r,x),m) <- p1 *?| p2
-  return ((maybe r (:r) l,x), 1 + m)
+  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
 
 -- (p1)+(?=p2) greedy lookahead, some
 p1 /+= p2 = do
   l         <- optional p1
-  _         <- pToken GoDeeper
+  gd          <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
   ((r,x),m) <- p1 /*= p2
-  return ((maybe r (:r) l,x), 1 + m)
+  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
 
 -- (p1)*(?=p2) positive greedy lookahead, many
 p1 /*= p2 = try (do
@@ -500,9 +500,9 @@ p1 /*= p2 = try (do
 -- (p1)+?(?=p2) nongreedy lookahead, some
 p1 /+?= p2 = do
   l           <- optional p1
-  _           <- pToken GoDeeper
+  gd          <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
   ((r,x),m)   <- p1 /*?= p2
-  return ((maybe r (:r) l,x), 1 + m)
+  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
 
 -- (p1)*?(?=p2) nongreedy lookahead, many
 p1 /*?= p2 = try (do
@@ -637,18 +637,18 @@ infixl 4 |<>
 -- fancy
 p1 |<* p2 = debugPrint "|<* starting" >> do
   (l, n) <- p1
-  (r, m) <- try recurse <|> base
+  (r, m) <- try goleft <|> base
   debugPrint $ "|<*/parent returning "++ show r ++ " with " ++ show (n + m) ++ " UnDeepers pending"
   return (l r, n + m)
   where
     base = debugName "|<*/base" $ do
       (out,n) <- p2
       return (out,n)
-    recurse = debugPrint "|<*/recurse" >> do
-      _ <- pToken UnDeeper
+    goleft = debugPrint "|<*/recurse" >> do
+      uds <- some $ pToken UnDeeper
       (out, m) <- p2
-      debugPrint $ "|<*/recurse got " ++ show out ++ " with " ++ show (m-1) ++ " UnDeepers pending"
-      return (out, m-1)
+      debugPrint $ "|<*/recurse matched " ++ show (length uds) ++ " UnDeepers, then got " ++ show out ++ " with " ++ show (m-length uds) ++ " UnDeepers pending"
+      return (out, m-length uds)
 infixl 4 |<*
 
 -- indent at least 1 tab from current location

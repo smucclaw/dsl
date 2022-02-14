@@ -1137,15 +1137,17 @@ main = do
 
       let aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
           aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
-            ((x,y),n) <- (,)
-                           $*| slMultiTerm
+            ((_,x,y),n) <- (,,)
+                           $*| return ((),0)
+                           ->| 1
+                           |*| slMultiTerm
                            |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
             return ((x,y),n)
             
           aNLK :: Int -> SLParser ([Text.Text],MyToken)
           aNLK maxDepth = do
             (toreturn, n) <- aboveNextLineKeyword
-            debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth
+            debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
             guard (n < maxDepth)
             return (toreturn, n)
 
@@ -1167,7 +1169,7 @@ main = do
 
       it "SLParser combinators 6 greedy star" $ do
         parseOther ((,,,)
-                     $*| (debugName "first outer pOtherVal" pOtherVal /*= aNLK 3)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
                      |<| debugName "looking for the Or" (pToken LS.Types.Or)
                      |>< debugName "looking for the Bar" pOtherVal
@@ -1180,18 +1182,14 @@ main = do
                         ,[])
 
       it "SLParser combinators 7 nongreedy star" $ do
-        parseOther ((,,,,,)
-                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 3)
-                     |>| debugName "looking for foo1"    pOtherVal
-                     |>| debugName "looking for foo2"    pOtherVal
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
                      |<| debugName "looking for the Or" (pToken LS.Types.Or)
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( [], ( ["foo1","foo2","foo3"],LS.Types.Or ) )
-                          , "foo1"
-                          , "foo2"
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -1199,7 +1197,7 @@ main = do
 
       it "SLParser combinators 8 greedy plus" $ do
         parseOther ((,,,)
-                     $*| (debugName "first outer pOtherVal" pOtherVal /+= aNLK 3)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /+= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
                      |<| debugName "looking for the Or" (pToken LS.Types.Or)
                      |>< debugName "looking for the Bar" pOtherVal
@@ -1212,16 +1210,14 @@ main = do
                         ,[])
 
       it "SLParser combinators 9 nongreedy plus" $ do
-        parseOther ((,,,,)
-                     $*| (debugName "first outer pOtherVal" pOtherVal /+?= aNLK 3)
-                     |>| debugName "looking for foo2"    pOtherVal
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /+?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
                      |<| debugName "looking for the Or" (pToken LS.Types.Or)
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( ["foo1"], ( ["foo2","foo3"],LS.Types.Or ) )
-                          , "foo2"
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -1230,7 +1226,7 @@ main = do
       -- this should serve for matching a pBSR
       it "SLParser combinators 10 maxdepth 0" $ do
         parseOther ((,,,)
-                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 0)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
                      |<| debugName "looking for the Or" (pToken LS.Types.Or)
                      |>< debugName "looking for the Bar" pOtherVal
@@ -1275,24 +1271,24 @@ main = do
               (,,)
               >*| debugName "first slMultiTerm" slMultiTerm
               |<| pToken Means
-              |*| debugName "second string" (pOtherVal /+= aboveNextLineKeyword) -- this places the "cursor" in the column above the OR.
+              |*| debugName "second string" (pOtherVal /+= aNLK 1) -- this places the "cursor" in the column above the OR, ideally prior to the GoDeeper.
             leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-            debugPrint $ "interlude: n is " ++ show n ++ "; leftX = " ++ show leftX
+            debugPrint $ "interlude: n UnDeepers expected is " ++ show n ++ "; column leftX = " ++ show leftX
             (bsr, postpart) <- (+>|) (,) n (debugName "made it to pBSR" pBSR)
                                |<* slMultiTerm
                                |<$ undeepers
             return (someTerm, means, prepart, bsr, postpart)
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-d" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-e" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-f" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-g" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-h" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-i" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-j" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-k" "line crossing" pInline1 inline_1
-      -- filetest "inline-1-l" "line crossing" pInline1 inline_1
+      filetest "inline-1-d" "line crossing" pInline1 inline_1
+      filetest "inline-1-e" "line crossing" pInline1 inline_1
+      filetest "inline-1-f" "line crossing" pInline1 inline_1
+      filetest "inline-1-g" "line crossing" pInline1 inline_1
+      filetest "inline-1-h" "line crossing" pInline1 inline_1
+      filetest "inline-1-i" "line crossing" pInline1 inline_1
+      filetest "inline-1-j" "line crossing" pInline1 inline_1
+      filetest "inline-1-k" "line crossing" pInline1 inline_1
+      filetest "inline-1-l" "line crossing" pInline1 inline_1
 
 -- [ Hornlike
 --     { name = [ "Bad" ]

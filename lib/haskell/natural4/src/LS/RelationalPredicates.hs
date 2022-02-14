@@ -270,14 +270,14 @@ pBSR = debugName "pBSR" $ do
     noPrePost = toBoolStruct <$> expr pRelPred
     withPrePost = debugName "withPrePost" $ do
       (pre, _, body, post) <- (,,,)
-                              $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                              $>/ pNumOrText /+= godeeper 2 -- skip a blank spot
                               |-| noPrePost
                               |<* slMultiTerm
                               |<$ undeepers
       return $ relabelpp body (Text.unwords pre) (Text.unwords post)
     withPreOnly = do
       (pre, _, body) <- (,,)
-                        $>/ pNumOrText +?= godeeper 2 -- skip a blank spot
+                        $>/ pNumOrText /+= godeeper 2 -- skip a blank spot
                         |-| noPrePost
                         |<$ undeepers
       return $ relabelp body (Text.unwords pre)

@@ -313,20 +313,37 @@ labels are allowed to be a single word, but cannot be MultiTerm. So this won't w
 
 challenge: use a combination of parsers to read this stuff into some kind of structure
 
-|       | Bad |                  |   |    |              |
-| MEANS | any | unauthorised     |   |    | access       |
-|       |     |                  |   | OR | use          |
-|       |     |                  |   | OR | disclosure   |
-|       |     |                  |   | OR | copying      |
-|       |     |                  |   | OR | modification |
-|       |     |                  |   | OR | disposal     |
-|       |     | of personal data |   |    |              |
+|       | Bad |                  |   |   |   |   |   |   |    |              |
+| MEANS | any | unauthorised     |   |   |   |   |   |   | .  | access       |
+|       |     |                  |   |   |   |   |   |   | OR | use          |
+|       |     |                  |   |   |   |   |   |   | OR | disclosure   |
+|       |     |                  |   |   |   |   |   |   | OR | copying      |
+|       |     |                  |   |   |   |   |   |   | OR | modification |
+|       |     |                  |   |   |   |   |   |   | OR | disposal     |
+|       |     |                  |   |   |   |   |   |   | .  |              |
+|       |     | of personal data |   |   |   |   |   |   |    |              |
 
 #+begin_example
-  $<| pToken Is
-  |>| pOtherVal -- to capture the any
-  |>| pOtherVal -- to capture the "unauthorised"
-  |>| pBoolStructPT
+1 match MEANS
+2 some GoDeeper
+3 match some (pNumAsText <* GoDeeper)   -- "any", "unauthorised"
+
+looking ahead,
+4 some GoDeeper                         -- | | |
+5 match some (pNumAsText <* GoDeeper)   -- "access" (TYPICALLY False)
+6 some UnDeeper                         -- | | to the left
+7 match OR | AND | UNLESS | NOT         -- and we are in the desired column
+
+then we want to place the cursor at the column of the OR | AND | UNLESS | NOT; we can compute that as the number of goDeepers found in 4 plus 5 minus 6
+
+we consume that number of GoDeepers
+and then we match pBSR
+and then we |<< to match "of personal data"
+
+for this to work, we need to be able to return the successful lookAhead match, and show how many GoDeepers and UnDeepers were involved in 4, 5, and 6.
+
+so, that would look something like
+
 
 #+end_example
 

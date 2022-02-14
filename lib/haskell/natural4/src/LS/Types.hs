@@ -407,8 +407,25 @@ data RunConfig = RC { debug     :: Bool
                     , toVue     :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
-                    }
-
+                    } deriving (Show, Eq)
+defaultRC = RC
+        { debug = False
+        , callDepth = 0
+        , oldDepth = 0
+        , parseCallStack = []
+        , sourceURL = "STDIN"
+        , asJSON = False
+        , toNLG = False
+        , toBabyL4 = False
+        , toProlog = False
+        , toUppaal = False
+        , saveAKA = False
+        , wantNotRules = False
+        , toGrounds = False
+        , toVue = False
+        , extendedGrounds = False
+        , toChecklist = False
+        }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack
 

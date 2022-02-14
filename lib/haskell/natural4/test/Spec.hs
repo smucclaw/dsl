@@ -11,6 +11,7 @@ import LS.RelationalPredicates
 import LS.ParamText
 import LS.Tokens
 import AnyAll hiding (asJSON)
+import LS.BasicTypes
 import LS.Types
 import LS.Error
 import TestNLG
@@ -29,10 +30,17 @@ import Debug.Trace (traceShowM, traceM)
 import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
-import Control.Monad (when)
+import Control.Monad (when, replicateM)
 import Data.Either (fromRight)
 import Data.Char
 import LS.ParamText
+
+-- if you just want to run a test in the repl, this might be enough:
+-- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
+-- Right (("foo","bar"),[])
+--
+-- λ: runMyParser id defaultRC ((,,,) $>| pOtherVal |>| pOtherVal |>| pOtherVal |>< pOtherVal) "" (exampleStream "foo,foo,foo,bar")
+-- Right (("foo","foo","foo","bar"),[])
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -1095,6 +1103,68 @@ main = do
           ), []
         )
 
+      it "SLParser combinators 1 /+=" $ do
+        parseOther ((,,)
+                     $*| ((.:|) (pToken (Other "foo")))
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (([Other "foo",Other "foo",Other "foo"],Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 2 /+=" $ do
+        parseOther ((,,)
+                     $*| pToken (Other "foo") /+= ((<>|) $ pToken (Other "bar"))
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` ((([Other "foo",Other "foo",Other "foo"],Other "bar"),Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 3 /+=" $ do
+        parseOther ((,,)
+                     $*| (pOtherVal) /+= ((,) >>| (pToken (Other "bar")) |>| pOtherVal)
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (((["foo","foo","foo"],(Other "bar", "qux")),Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 4 /+=" $ do
+        parseOther ((,,)
+                     $*| (pOtherVal) /+= ((,) >>| pOtherVal |>| pOtherVal)
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
+
+      let aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
+          aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
+            (,)
+              >*| slMultiTerm
+              |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+
+      it "SLParser combinators 5 aboveNextLineKeyword" $ do
+        parseOther ((,,)
+                    $>| pOtherVal
+                    |*| aboveNextLineKeyword
+                    |>< pOtherVal
+                   ) ""
+         (exampleStream "foo,foo,foo,\n,OR,bar")
+          `shouldParse` (("foo"                          -- pOtherVal
+                         ,(["foo","foo"],LS.Types.Or)    -- aboveNextLineKeyword
+                         ,"bar")                         -- pOtherVal
+                        ,[])
+
+      it "SLParser combinators 6 aboveNextLineKeyword /+=" $ do
+        parseOther ((,,)
+                     $*| (pOtherVal /+= aboveNextLineKeyword)
+                     >>| pToken LS.Types.Or
+                     |>< pOtherVal
+                   ) ""
+         (exampleStream "foo,foo,foo,\n,OR,bar")
+          `shouldParse` ( ( ( ["foo","foo"],LS.Types.Or )
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
 -- this test will fail; we can try uncommenting the `term p/c` stanza within Parser.hs/term but that will break action parameters.
       -- filetest "inline-1-a2" "line crossing"
       --   (parseOther ( (,,)
@@ -1113,7 +1183,6 @@ main = do
       let inline_1 = ( ( ["Bad"]
                        , Means
                        , ["any","unauthorised"]
-                       , ()
                        , Any Nothing [ Leaf (RPMT ["access"])
                                      , Leaf (RPMT ["use"])
                                      , Leaf (RPMT ["disclosure"])
@@ -1124,25 +1193,27 @@ main = do
                        , ["of personal data"]
                        ), []
                      )
-          pInline1 = parseOther ( (,,,,,)
-                      >*| slMultiTerm
-                      |<| pToken Means
-                      |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
-                      |-| pBSR
-                      |<* slMultiTerm
-                      |<$ undeepers
-                    )
+          pInline1 = parseOther $ do
+            ((someTerm, means, (prepart, numToCol)),n) <-
+              (,,)
+              >*| debugName "first slMultiTerm" slMultiTerm
+              |<| pToken Means
+              |*| debugName "second string" (pOtherVal /+= aboveNextLineKeyword) -- this places the "cursor" in the column above the OR.
+            (bsr, postpart) <- (+>|) (,) n (debugName "made it to pBSR" pBSR)
+                               |<* slMultiTerm
+                               |<$ undeepers
+            return (someTerm, means, prepart, bsr, postpart)
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1
-      filetest "inline-1-d" "line crossing" pInline1 inline_1
-      filetest "inline-1-e" "line crossing" pInline1 inline_1
-      filetest "inline-1-f" "line crossing" pInline1 inline_1
-      filetest "inline-1-g" "line crossing" pInline1 inline_1
-      filetest "inline-1-h" "line crossing" pInline1 inline_1
-      filetest "inline-1-i" "line crossing" pInline1 inline_1
-      filetest "inline-1-j" "line crossing" pInline1 inline_1
-      filetest "inline-1-k" "line crossing" pInline1 inline_1
-      filetest "inline-1-l" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-d" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-e" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-f" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-g" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-h" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-i" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-j" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-k" "line crossing" pInline1 inline_1
+      -- filetest "inline-1-l" "line crossing" pInline1 inline_1
 
 -- [ Hornlike
 --     { name = [ "Bad" ]

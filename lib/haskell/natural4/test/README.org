@@ -314,13 +314,13 @@ labels are allowed to be a single word, but cannot be MultiTerm. So this won't w
 challenge: use a combination of parsers to read this stuff into some kind of structure
 
 |       | Bad |                  |   |   |   |   |   |   |    |              |
-| MEANS | any | unauthorised     |   |   |   |   |   |   | .  | access       |
+| MEANS | any | unauthorised     |   |   |   |   |   |   |    | access       |
 |       |     |                  |   |   |   |   |   |   | OR | use          |
 |       |     |                  |   |   |   |   |   |   | OR | disclosure   |
 |       |     |                  |   |   |   |   |   |   | OR | copying      |
 |       |     |                  |   |   |   |   |   |   | OR | modification |
 |       |     |                  |   |   |   |   |   |   | OR | disposal     |
-|       |     |                  |   |   |   |   |   |   | .  |              |
+|       |     |                  |   |   |   |   |   |   |    |              |
 |       |     | of personal data |   |   |   |   |   |   |    |              |
 
 #+begin_example

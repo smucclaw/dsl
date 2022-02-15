@@ -1,0 +1,15 @@
+a data breach occurred,,,,,,
+MEANS,any,unauthorised,,,FALSE,access
+,,,,OR,FALSE,use
+,,,,OR,TRUE,disclosure
+,,,,OR,FALSE,copying
+,,,,OR,FALSE,modification
+,,,,OR,TRUE,disposal
+,,of personal data,,,,
+OR,loss of storage medium on which personal data is stored in circumstances where the unauthorised,,,,FALSE,access
+,,,,OR,FALSE,use
+,,,,OR,FALSE,disclosure
+,,,,OR,FALSE,copying
+,,,,OR,TRUE,modification
+,,,,OR,TRUE,disposal
+,,of the personal data is likely to occur,,,,

@@ -540,12 +540,37 @@ what if there is a blank column to the right of the OR? we need to match as many
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-a pHornlike should be able to read this
+a pHornlike should be able to read this.
 
-|       | a data breach occurred |   |    |      |   |
-| MEANS | poopoo                 |   |    |      |   |
-| OR    | the                    |   |    | honk |   |
-|       |                        |   | OR | ponk |   |
+this parses:
+
+|       | wonk |   |    |      |   |
+| MEANS | a    |   |    | honk |   |
+|       |      |   | OR | ponk |   |
+***** this parses:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-q.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | poowonk |   |   |      |
+| MEANS | poopoo  |   |   |      |
+| OR    | just a  |   |   | honk |
+***** this doesn't parse:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-r.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | multiwonk |   |    |      |   |
+| MEANS | poopoo    |   |    |      |   |
+| OR    | the       |   |    | honk |   |
+|       |           |   | OR | ponk |   |
+***** when everything works we should be able to parse this:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-s.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | a data breach occurred |                                                                                                 |                                         |   |    |       |              |
 | MEANS                  | any                                                                                             | unauthorised                            |   |    | FALSE | access       |
@@ -562,12 +587,6 @@ a pHornlike should be able to read this
 |                        |                                                                                                 |                                         |   | OR | TRUE  | modification |
 |                        |                                                                                                 |                                         |   | OR | TRUE  | disposal     |
 |                        |                                                                                                 | of the personal data is likely to occur |   |    |       |              |
-***** inline fragment of pdpadbno4
-:PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-q.csv
-:TABLE_EXPORT_FORMAT: orgtbl-to-csv
-:END:
-
 
 
 *** how do we deal with blanks in between things we care about?

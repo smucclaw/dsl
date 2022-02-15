@@ -73,7 +73,7 @@ term p = debugName "term p" $ do
 
 
 notLabelTerm p =
-  try (debugName "term p/2:myindented expr p" (myindented (expr p)))
+  try (debugName "term p/2:someIndentation expr p" (someIndentation (expr p)))
   <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
 
 table :: [[Operator Parser (MyBoolStruct a)]]

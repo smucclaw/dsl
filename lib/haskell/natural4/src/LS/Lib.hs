@@ -321,14 +321,14 @@ stanzaAsStream rs =
       | tokenVal a /= SOF &&
         aCol <  bCol &&
         aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
-                        a : a { tokenVal = EOL }         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
-                        : replicate (bCol - aCol) goDp   --- |     | bar | -> |     ( bar |
+                        a : a { tokenVal = EOL }            --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
+                        : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar |
 
-      | aCol <  bCol =  a                                --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
-                        : replicate (bCol - aCol) goDp
+      | aCol <  bCol =  a                                   --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
+                        : (goDp <$> [1 .. (bCol - aCol)])
 
-      | aCol >  bCol =  a                                --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
-                        : replicate (aCol - bCol) unDp   --- | bar |     | -> | foo ) bar |
+      | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
+                        : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
       | otherwise    = [a]                            
       where
@@ -336,8 +336,10 @@ stanzaAsStream rs =
         bCol = unPos . sourceColumn $ bPos
         aLin = unPos . sourceLine   $ aPos
         bLin = unPos . sourceLine   $ bPos
-        goDp = b { tokenVal = GoDeeper, startPos = bPos }
-        unDp = a { tokenVal = UnDeeper, endPos   = bPos }
+        goDp n = let newPos = aPos { sourceColumn = mkPos (aCol + n) }
+                 in b { tokenVal = GoDeeper, startPos = newPos, endPos = newPos }
+        unDp n = let newPos = bPos { sourceColumn = mkPos (bCol + n) }
+                 in a { tokenVal = UnDeeper, startPos = newPos, endPos = newPos }
 -- MyStream is the primary input for our Parsers below.
 --
 

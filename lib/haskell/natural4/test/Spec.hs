@@ -11,6 +11,7 @@ import LS.RelationalPredicates
 import LS.ParamText
 import LS.Tokens
 import AnyAll hiding (asJSON)
+import LS.BasicTypes
 import LS.Types
 import LS.Error
 import TestNLG
@@ -29,10 +30,17 @@ import Debug.Trace (traceShowM, traceM)
 import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
-import Control.Monad (when)
+import Control.Monad (when, replicateM, guard)
 import Data.Either (fromRight)
 import Data.Char
 import LS.ParamText
+
+-- if you just want to run a test in the repl, this might be enough:
+-- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
+-- Right (("foo","bar"),[])
+--
+-- λ: runMyParser id defaultRC ((,,,) $>| pOtherVal |>| pOtherVal |>| pOtherVal |>< pOtherVal) "" (exampleStream "foo,foo,foo,bar")
+-- Right (("foo","foo","foo","bar"),[])
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -179,15 +187,15 @@ main = do
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ srccol2 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
+          `shouldParse` [ srccol1 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse the null temporal EVENTUALLY" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
-          `shouldParse` [ srccol2 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
+          `shouldParse` [ srccol1 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ srccol2 <$> srcrow2 $ defaultReg {
+          `shouldParse` [ srccol1 <$> srcrow2 $ defaultReg {
                             who = Just (All Nothing
                                          [ mkLeafR "walks"
                                          , mkLeafR "runs"
@@ -211,7 +219,7 @@ main = do
 
       it "should parse indentedDummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` (srccol2 <$> srcrow2 <$> imbibeRule)
+          `shouldParse` (srccol1 <$> srcrow2 <$> imbibeRule)
 
       filetest "indented-1" "parse indented-1.csv (inline boolean expression)"
         (parseR pRules) (srcrow2 <$> imbibeRule)
@@ -235,7 +243,7 @@ main = do
         (parseR pRules) [srcrow2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -377,11 +385,11 @@ main = do
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
 
       let if_king_wishes_singer_nextline = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
@@ -729,7 +737,7 @@ main = do
         (parseOther pParamText) (ptFragment3b,[])
 
       filetest "paramtext-4-a" "a multi-line ParamText, typed String"
-        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 6, srccol = 1, version = Nothing})}])
+        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}])
 
 
       let actionFragment1 :: BoolStructP
@@ -880,8 +888,8 @@ main = do
             ( SrcRef
                 { url = "test/Spec"
                 , short = "test/Spec"
-                , srcrow = 6
-                , srccol = 2
+                , srcrow = 2
+                , srccol = 3
                 , version = Nothing
                 }
             )
@@ -889,13 +897,13 @@ main = do
         ]
 
       filetest "pdpadbno-2" "data intermediaries"
-        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}]
 
       filetest "pdpadbno-3" "data intermediaries"
-        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), keyword = Every, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}]
 
       filetest "pdpadbno-5" "notification to PDPC"
-        (parseR pToplevel) [defaultReg {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (defaultReg {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 10, srccol = 12, version = Nothing})}]
+        (parseR pToplevel) [defaultReg {subj = Leaf (("You" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (defaultReg {subj = Leaf (("the PDPC" :| [],Nothing) :| []), keyword = Party, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}]
 
       filetest "pdpadbno-6" "exemption: unlikely"
         (parseR pToplevel)
@@ -966,8 +974,8 @@ main = do
             ( SrcRef
               { url = "test/Spec"
               , short = "test/Spec"
-              , srcrow = 5
-              , srccol = 4
+              , srcrow = 2
+              , srccol = 5
               , version = Nothing
               }
             )
@@ -1095,6 +1103,141 @@ main = do
           ), []
         )
 
+      it "SLParser combinators 1 /+=" $ do
+        parseOther ((,,)
+                     $*| ((.:|) (pToken (Other "foo")))
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (([Other "foo",Other "foo",Other "foo"],Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 2 /+=" $ do
+        parseOther ((,,)
+                     $*| pToken (Other "foo") /+= ((<>|) $ pToken (Other "bar"))
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` ((([Other "foo",Other "foo",Other "foo"],Other "bar"),Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 3 /+=" $ do
+        parseOther ((,,)
+                     $*| (pOtherVal) /+= ((,) >>| (pToken (Other "bar")) |>| pOtherVal)
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (((["foo","foo","foo"],(Other "bar", "qux")),Other "bar",Other "qux"),[])
+
+      it "SLParser combinators 4 /+=" $ do
+        parseOther ((,,)
+                     $*| (pOtherVal) /+= ((,) >>| pOtherVal |>| pOtherVal)
+                     |>| pToken (Other "bar")
+                     |>< pToken (Other "qux")) ""
+         (exampleStream "foo,foo,foo,bar,qux")
+          `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
+
+      let aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
+          aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
+            ((_,x,y),n) <- (,,)
+                           $*| return ((),0)
+                           ->| 1
+                           |*| slMultiTerm
+                           |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+            return ((x,y),n)
+            
+          aNLK :: Int -> SLParser ([Text.Text],MyToken)
+          aNLK maxDepth = do
+            (toreturn, n) <- aboveNextLineKeyword
+            debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
+            guard (n < maxDepth)
+            return (toreturn, n)
+
+      -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
+      -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
+      -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
+      
+      it "SLParser combinators 5 aboveNextLineKeyword" $ do
+        parseOther ((,,)
+                    $>| pOtherVal
+                    |*| aboveNextLineKeyword
+                    |>< pOtherVal
+                   ) ""
+         (exampleStream "foo,foo,foo,\n,OR,bar")
+          `shouldParse` (("foo"                          -- pOtherVal
+                         ,(["foo","foo"],LS.Types.Or)    -- aboveNextLineKeyword
+                         ,"bar")                         -- pOtherVal
+                        ,[])
+
+      it "SLParser combinators 6 greedy star" $ do
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*= aNLK 1)
+                     |>| debugName "looking for foo3"    pOtherVal
+                     |<| debugName "looking for the Or" (pToken LS.Types.Or)
+                     |>< debugName "looking for the Bar" pOtherVal
+                   ) ""
+         (exampleStream "foo1,foo2,foo3,\n,OR,bar")
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+                          , "foo3"
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
+      it "SLParser combinators 7 nongreedy star" $ do
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
+                     |>| debugName "looking for foo3"    pOtherVal
+                     |<| debugName "looking for the Or" (pToken LS.Types.Or)
+                     |>< debugName "looking for the Bar" pOtherVal
+                   ) ""
+         (exampleStream "foo1,foo2,foo3,\n,OR,bar")
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+                          , "foo3"
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
+      it "SLParser combinators 8 greedy plus" $ do
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /+= aNLK 1)
+                     |>| debugName "looking for foo3"    pOtherVal
+                     |<| debugName "looking for the Or" (pToken LS.Types.Or)
+                     |>< debugName "looking for the Bar" pOtherVal
+                   ) ""
+         (exampleStream "foo1,foo2,foo3,\n,OR,bar")
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+                          , "foo3"
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
+      it "SLParser combinators 9 nongreedy plus" $ do
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /+?= aNLK 1)
+                     |>| debugName "looking for foo3"    pOtherVal
+                     |<| debugName "looking for the Or" (pToken LS.Types.Or)
+                     |>< debugName "looking for the Bar" pOtherVal
+                   ) ""
+         (exampleStream "foo1,foo2,foo3,\n,OR,bar")
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+                          , "foo3"
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
+      -- this should serve for matching a pBSR
+      it "SLParser combinators 10 maxdepth 0" $ do
+        parseOther ((,,,)
+                     $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
+                     |>| debugName "looking for foo3"    pOtherVal
+                     |<| debugName "looking for the Or" (pToken LS.Types.Or)
+                     |>< debugName "looking for the Bar" pOtherVal
+                   ) ""
+         (exampleStream "foo1,foo2,,,foo3,\n,,,OR,bar")
+          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+                          , "foo3"
+                          , LS.Types.Or
+                          , "bar" )
+                        ,[])
+
 -- this test will fail; we can try uncommenting the `term p/c` stanza within Parser.hs/term but that will break action parameters.
       -- filetest "inline-1-a2" "line crossing"
       --   (parseOther ( (,,)
@@ -1113,7 +1256,6 @@ main = do
       let inline_1 = ( ( ["Bad"]
                        , Means
                        , ["any","unauthorised"]
-                       , ()
                        , Any Nothing [ Leaf (RPMT ["access"])
                                      , Leaf (RPMT ["use"])
                                      , Leaf (RPMT ["disclosure"])
@@ -1124,14 +1266,18 @@ main = do
                        , ["of personal data"]
                        ), []
                      )
-          pInline1 = parseOther ( (,,,,,)
-                      >*| slMultiTerm
-                      |<| pToken Means
-                      |>/ pNumOrText +?= godeeper 2 -- skip a blank spot
-                      |-| pBSR
-                      |<* slMultiTerm
-                      |<$ undeepers
-                    )
+          pInline1 = parseOther $ do
+            ((someTerm, means, (prepart, numToCol)),n) <-
+              (,,)
+              >*| debugName "first slMultiTerm" slMultiTerm
+              |<| pToken Means
+              |*| debugName "second string" (pOtherVal /+= aNLK 1) -- this places the "cursor" in the column above the OR, ideally prior to the GoDeeper.
+            leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+            debugPrint $ "interlude: n UnDeepers expected is " ++ show n ++ "; column leftX = " ++ show leftX
+            (bsr, postpart) <- (+>|) (,) n (debugName "made it to pBSR" pBSR)
+                               |<* slMultiTerm
+                               |<$ undeepers
+            return (someTerm, means, prepart, bsr, postpart)
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1
       filetest "inline-1-d" "line crossing" pInline1 inline_1
@@ -1262,7 +1408,7 @@ main = do
         , DefTypically
           { name = ["is","immortal"]
           , defaults = [RPConstraint ["is","immortal"] RPis ["false"]]
-          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 6, srccol = 2, version = Nothing})}
+          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
         ]
 
       -- let's see if the groundrules function outputs the right things
@@ -1282,6 +1428,8 @@ main = do
                                    , ["Does the person have health insurance?"]]
 
 -- bits of infrastructure
+srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
+srcrow', srccol' :: Int -> Rule -> Rule
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
 srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
 srcrow1     = srcrow' 1

@@ -267,16 +267,27 @@ pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ do
   try noPrePost <|> try (withPrePost noPrePost) <|> (withPreOnly noPrePost)
   where
-    noPrePost = toBoolStruct <$> expr pRelPred
+    noPrePost = debugName "pBSR inner" $ toBoolStruct <$> expr pRelPred
+
+-- how many UnDeepers do we count between the end of this line and the start of the next (where, presumably, we get an OR)
+expectUnDeepers :: Parser Int
+expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
+  ignored <- manyTill (pNumOrText <|> "GD" <$ pToken GoDeeper) (lookAhead (pToken UnDeeper))
+  debugPrint $ "ignoring " ++ show ignored
+  udps <- some (pToken UnDeeper)
+  debugPrint $ "matched undeepers " ++ show udps
+  return $ length udps
 
 
 withPrePost :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
 withPrePost basep = debugName "withPrePost" $ do
+  undp_count <- expectUnDeepers
+  debugPrint $ "determined undp_count = " ++ show undp_count
   (pre, body, post) <- (,,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1))
-    |-| debugName "made it to inner parser" basep
+    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK undp_count))
+    |-| debugName "made it to inner base parser" basep
     |<* debugName "post part" slMultiTerm -- post part
     |<$ undeepers
   return $ relabelpp body (Text.unwords pre) (Text.unwords post)

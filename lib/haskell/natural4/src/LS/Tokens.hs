@@ -569,7 +569,7 @@ infixl 4 |<$
 l ->| n =  do
   debugPrint ("->| trying to consume " ++ show n ++ " GoDeepers")
   (f, m) <- l
-  replicateM_ n (pToken GoDeeper)
+  _ <- count n (pToken GoDeeper)
   debugPrint "->| success"
   return (f, m+n)
 
@@ -582,12 +582,12 @@ infixl 4 ->|
 undeepers :: Int -> Parser ()
 undeepers n = debugName "undeepers" $ do
   debugPrint $ "sameLine/undeepers: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
-  replicateM_ n (pToken UnDeeper)
+  _ <- count n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 
 godeeper :: Int -> SLParser ()
 godeeper n = debugName ("godeeper " ++ show n) $ do
-  replicateM_ n (pToken GoDeeper)
+  _ <- count n (pToken GoDeeper)
   debugPrint "matched!"
   return ((),n)
 

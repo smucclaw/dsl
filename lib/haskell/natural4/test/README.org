@@ -494,7 +494,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-what if there is a blank column to the right of the OR? the slMultiTerm doesn't discard blanks between GoDeepers, i think
+what if there is a blank column to the right of the OR? we need to match as many GoDeepers as are needed to hit the OR
 
 |       | Bad              |              |    |   |              |
 | MEANS | any              | unauthorised |    |   | access       |

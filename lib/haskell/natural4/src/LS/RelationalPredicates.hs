@@ -179,7 +179,7 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- pSrcRef
+  (rlabel, srcref) <- debugName "pSrcRef" pSrcRef
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
     <$$> (try ambitious <|> someStructure)
     <|?> (Nothing, fmap snd <$> optional givenLimb)
@@ -207,10 +207,14 @@ pHornlike = debugName "pHornlike" $ do
       (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
       (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
       (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
-        <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> pBSR))
+        <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> debugName "UNLESS pBSR" pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> debugName "AND pBSR"    pBSR))
+        <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> debugName "OR pBSR"     pBSR))
+      debugPrint $ "ambitious: got back ifLimb     " ++ show ifLimb
+      debugPrint $ "ambitious: got back unlessLimb " ++ show unlessLimb
+      debugPrint $ "ambitious: got back andLimb    " ++ show andLimb
+      debugPrint $ "ambitious: got back orLimb     " ++ show orLimb
       let clauses = [HC2 (RPConstraint subject RPis object)
                      (maybe (Just $ AA.Leaf $ RPMT ["always"])
                       (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
@@ -251,9 +255,33 @@ whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pTok
 
 slRelPred :: Parser (RelationalPredicate, Int)
 slRelPred = debugName "slRelPred" $ do
-  try       ( debugName "RPConstraint"  rpConstraint )
+  try       ( debugName "nested simpleHorn"  nestedHorn )
+    <|> try ( debugName "RPConstraint"  rpConstraint )
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
     <|> try ( debugName "RPMT"          rpMT )
+
+-- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad
+nestedHorn :: SLParser RelationalPredicate
+nestedHorn = do
+  srcref <- getSrcRef
+  ((subj, meansTok, bsr),n) <- (,,)
+                               $*| slMultiTerm
+                               |^| (<>|) (pToken Means)
+                               |-| pBSR
+  let simpleHorn = Hornlike { name = subj
+                            , keyword = meansTok
+                            , given = Nothing
+                            , upon = Nothing
+                            , clauses = [ HC2 (RPBoolStructR subj RPis bsr) Nothing ]
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Just srcref
+                            , defaults = []
+                            , symtab = [] }
+  debugPrint "constructed simpleHorn; running tellIdFirst"
+  _ <- tellIdFirst (return simpleHorn)
+  return (RPMT subj, n)
+
   
 rpMT :: Parser (RelationalPredicate, Int)
 rpMT          = RPMT          $*| slAKA slMultiTerm id
@@ -266,3 +294,5 @@ rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ prePostParse pRelPred
+
+

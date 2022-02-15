@@ -770,7 +770,7 @@ pAtomicElement = debugName "pAtomicElement" $ do
 
 pElement :: Parser BoolStructP
 pElement = debugName "pElement" $ do
-        try (hornlikeAsElement <$> tellIdFirst pHornlike)
+        try (hornlikeAsElement <$> tellIdFirst (debugName "nested pHornlike" pHornlike))
     <|> pAtomicElement
 
 -- Makes a leaf with just the name of a constitutive rule

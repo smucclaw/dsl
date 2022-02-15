@@ -132,7 +132,7 @@ plain p = MyLeaf <$> p
 
 
 
-
+ppp :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
 ppp base = -- local (\rc -> rc { debug = True }) $
   try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
   where

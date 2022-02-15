@@ -323,6 +323,7 @@ type SLParser a = Parser (a, Int)
 ($>>)  :: Show a           => Parser  a            ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- plain 
 (|>>)  :: Show a           => Parser (a,      Int) ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- fancy
 (|<|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
+(|^|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any GoDeepers or UnDeepers, then parse -- fancy
 (|<*)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
 (|<>)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse, then consume GoDeepers
 
@@ -639,6 +640,18 @@ infixl 4 |<|
 
 p1 |<> p2 = debugPrint "|<>" >> p1 |<* ($>>) p2
 infixl 4 |<>
+
+p1 |^| p2 = debugPrint "|^|" >> do
+  (l, n) <- p1
+  deeps  <- debugName "|^| deeps" $ some (pToken GoDeeper) <|> many (pToken UnDeeper)
+  (r, m) <- p2
+  let d = if length deeps > 0
+          then if head deeps == GoDeeper
+               then length deeps
+               else length deeps * (-1)
+          else 0
+  return (l r, n + m + d)
+infixl 4 |^|
   
 -- fancy
 p1 |<* p2 = debugPrint "|<* starting" >> do

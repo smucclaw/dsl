@@ -62,13 +62,6 @@ term p = debugName "term p" $ do
         inner <- expr p
         debugPrint $ "got inner: " ++ show inner
         return $ MyLabel lbl inner)
-    -- <|>
-    -- try (debugName "term p/c:label to the right of line below, with manyUndeepers" $ do
-    --     (lbl, _, inner) <- (,,)
-    --       $*| ((.:|) pNumOrText <* lookAhead (pToken UnDeeper))
-    --       |*| someUndeepers
-    --       |>< expr p
-    --     return $ MyLabel lbl inner)
     <|> debugName "term p/notLabelTerm" (notLabelTerm p)
 
 

@@ -263,6 +263,7 @@ rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 rpBoolStructR :: Parser (RelationalPredicate, Int)
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
+
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $
 --  local (\rc -> rc { debug = True }) $

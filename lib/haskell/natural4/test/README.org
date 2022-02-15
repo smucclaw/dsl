@@ -494,7 +494,6 @@ for this to work, we need to be able to return the successful lookAhead match, a
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-what if there is a blank column to the right of the OR? we need to match as many GoDeepers as are needed to hit the OR
 
 |       | Bad              |              |    |   |              |
 | MEANS | any              | unauthorised |    |   | access       |
@@ -505,7 +504,36 @@ what if there is a blank column to the right of the OR? we need to match as many
 |       |                  |              |    |   |              |
 |       |                  |              | OR |   | disposal     |
 |       | of personal data |              |    |   |              |
+***** inline no post
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-n.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
+what if there is a blank column to the right of the OR? we need to match as many GoDeepers as are needed to hit the OR
+
+|       | Bad |              |    |   |              |
+| MEANS | any | unauthorised |    |   | access       |
+|       |     |              | OR |   | use          |
+|       |     |              | OR |   | disclosure   |
+|       |     |              | OR |   | copying      |
+|       |     |              | OR |   | modification |
+|       |     |              |    |   |              |
+|       |     |              | OR |   | disposal     |
+
+***** inline no pre
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-1-o.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | Bad |   |    |        |              |
+| MEANS |     |   |    | access |              |
+|       |     |   | OR |        | use          |
+|       |     |   | OR |        | disclosure   |
+|       |     |   | OR |        | copying      |
+|       |     |   | OR |        | modification |
+|       |     |   | OR |        | disposal     |
 *** how do we deal with blanks in between things we care about?
 
 **** we can expect an slMultiTerm to parse this:
@@ -536,6 +564,7 @@ should we expect an slMultiterm to parse it? decision: yes, we should.
 |     |   | baz |
 
 does this (erroneously IMHO) return [foo bar baz]?
+no, the parser fails, which is correct.
 
 
 *** About the src/Parser.hs

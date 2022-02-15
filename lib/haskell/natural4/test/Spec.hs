@@ -1253,30 +1253,20 @@ main = do
       --     ), []
       --   )
 
-      let inline_1 = ( ( ["Bad"]
-                       , Means
-                       , inline_2
-                       ), []
-                     )
-          inline_2 = Any (Just $ PrePost
-                          "any unauthorised"
-                          "of personal data" )
-                         [ Leaf (RPMT ["access"])
-                         , Leaf (RPMT ["use"])
-                         , Leaf (RPMT ["disclosure"])
-                         , Leaf (RPMT ["copying"])
-                         , Leaf (RPMT ["modification"])
-                         , Leaf (RPMT ["disposal"])
-                         ]
+      let inline_1 = ( ( ["Bad"] , Means , inline_pp ), [] )
+          inline_2 = ( ( ["Bad"] , Means , inline_p  ), [] )
+          inline_3 = ( ( ["Bad"] , Means , inline_   ), [] )
+          inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
+          inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
+          inline_   = Any Nothing                                                 inline_xs
+          inline_xs = Leaf . RPMT . pure <$> Text.words "access use disclosure copying modification disposal"
 
           pInline1 = parseOther $ do
             let getLHS ((x,_),z) = (x,z)
             (,,)
               >*| debugName "subject slMultiTerm" slMultiTerm  -- "Bad"
               |<| pToken Means
---              |*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1)) -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals, and to the left of the first, topmost term in the boolstruct
               |-| debugName "made it to pBSR" pBSR
---              |<* slMultiTerm -- post part
               |<$ undeepers
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1
@@ -1295,6 +1285,8 @@ main = do
                                                     , srcrow = 3, srccol = 8, version = Nothing})}]
           <$> inline_1)
       filetest "inline-1-m" "line crossing" pInline1 inline_1
+      filetest "inline-1-n" "line crossing" pInline1 inline_2
+      filetest "inline-1-o" "line crossing" pInline1 inline_3
 
       filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])
       filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (["foo","bar","baz"],[])

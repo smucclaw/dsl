@@ -341,10 +341,6 @@ and then we match pBSR
 and then we |<< to match "of personal data"
 
 for this to work, we need to be able to return the successful lookAhead match, and show how many GoDeepers and UnDeepers were involved in 4, 5, and 6.
-
-so, that would look something like
-
-
 #+end_example
 
 ***** we want to support the "post" line at any indentation level between the IS and the OR
@@ -484,14 +480,14 @@ so, that would look something like
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|       | Bad              |              |              |
-| MEANS | any              | unauthorised | access       |
-|       |                  | OR           | use          |
-|       |                  | OR           | disclosure   |
-|       |                  | OR           | copying      |
-|       |                  | OR           | modification |
-|       |                  | OR           | disposal     |
-|       | of personal data |              |              |
+|       | Bad              |              |              |           |      |
+| MEANS | any              | unauthorised | access       |           |      |
+|       |                  | OR           | use          |           |      |
+|       |                  | OR           | disclosure   |           |      |
+|       |                  | OR           | copying      |           |      |
+|       |                  | OR           | modification |           |      |
+|       |                  | OR           | disposal     | TYPICALLY | True |
+|       | of personal data |              |              |           |      |
 *** About the src/Parser.hs
 
 **** At the same depth, NOT binds tighter than OR binds tigher than AND.

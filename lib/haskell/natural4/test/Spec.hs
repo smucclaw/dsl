@@ -1288,7 +1288,10 @@ main = do
       filetest "inline-1-i" "line crossing" pInline1 inline_1
       filetest "inline-1-j" "line crossing" pInline1 inline_1
       filetest "inline-1-k" "line crossing" pInline1 inline_1
-      filetest "inline-1-l" "line crossing" pInline1 inline_1
+      filetest "inline-1-l" "line crossing" pInline1 (const [DefTypically { name = ["disposal"]
+                                                                          , defaults = [RPConstraint ["disposal"] RPis ["True"]]
+                                                                          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 8, version = Nothing})}]
+                                                       <$> inline_1)
 
 -- [ Hornlike
 --     { name = [ "Bad" ]

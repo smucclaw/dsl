@@ -1,8 +1,8 @@
-,Bad,,
-MEANS,any,unauthorised,access
-,,OR,use
-,,OR,disclosure
-,,OR,copying
-,,OR,modification
-,,OR,disposal
-,of personal data,,
+,Bad,,,,
+MEANS,any,unauthorised,access,,
+,,OR,use,,
+,,OR,disclosure,,
+,,OR,copying,,
+,,OR,modification,,
+,,OR,disposal,TYPICALLY,True
+,of personal data,,,,

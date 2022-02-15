@@ -1255,25 +1255,28 @@ main = do
 
       let inline_1 = ( ( ["Bad"]
                        , Means
-                       , ["any","unauthorised"]
-                       , Any Nothing [ Leaf (RPMT ["access"])
-                                     , Leaf (RPMT ["use"])
-                                     , Leaf (RPMT ["disclosure"])
-                                     , Leaf (RPMT ["copying"])
-                                     , Leaf (RPMT ["modification"])
-                                     , Leaf (RPMT ["disposal"])
-                                     ]
-                       , ["of personal data"]
+                       , inline_2
                        ), []
                      )
+          inline_2 = Any (Just $ PrePost
+                          "any unauthorised"
+                          "of personal data" )
+                         [ Leaf (RPMT ["access"])
+                         , Leaf (RPMT ["use"])
+                         , Leaf (RPMT ["disclosure"])
+                         , Leaf (RPMT ["copying"])
+                         , Leaf (RPMT ["modification"])
+                         , Leaf (RPMT ["disposal"])
+                         ]
+
           pInline1 = parseOther $ do
             let getLHS ((x,_),z) = (x,z)
-            (,,,,)
-              >*| debugName "subject slMultiTerm" slMultiTerm
+            (,,)
+              >*| debugName "subject slMultiTerm" slMultiTerm  -- "Bad"
               |<| pToken Means
-              |*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1)) -- this places the "cursor" in the column above the OR, ideally prior to the GoDeeper.
+--              |*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1)) -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals, and to the left of the first, topmost term in the boolstruct
               |-| debugName "made it to pBSR" pBSR
-              |<* slMultiTerm -- post part
+--              |<* slMultiTerm -- post part
               |<$ undeepers
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1

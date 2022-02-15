@@ -265,26 +265,61 @@ rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ do
-  try noPrePost <|> try withPrePost <|> withPreOnly
+  try noPrePost <|> try (withPrePost noPrePost) <|> (withPreOnly noPrePost)
   where
     noPrePost = toBoolStruct <$> expr pRelPred
-    withPrePost = debugName "withPrePost" $ do
-      (pre, _, body, post) <- (,,,)
-                              $>/ pNumOrText /+= godeeper 2 -- skip a blank spot
-                              |-| noPrePost
-                              |<* slMultiTerm
-                              |<$ undeepers
-      return $ relabelpp body (Text.unwords pre) (Text.unwords post)
-    withPreOnly = do
-      (pre, _, body) <- (,,)
-                        $>/ pNumOrText /+= godeeper 2 -- skip a blank spot
-                        |-| noPrePost
-                        |<$ undeepers
-      return $ relabelp body (Text.unwords pre)
 
+
+withPrePost :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
+withPrePost basep = debugName "withPrePost" $ do
+  (pre, body, post) <- (,,)
+   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
+    -- and to the left of the first, topmost term in the boolstruct
+    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1))
+    |-| debugName "made it to inner parser" basep
+    |<* debugName "post part" slMultiTerm -- post part
+    |<$ undeepers
+  return $ relabelpp body (Text.unwords pre) (Text.unwords post)
+  where
+    getLHS ((x,_),z) = (x,z)
+    relabelpp :: AA.Item a -> Text.Text -> Text.Text -> AA.Item  a
     relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
     relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
-    relabelpp x _ _ = error "RelationalPredicates: relabelpp failed"
+    relabelpp _ _ _ = error "RelationalPredicates: relabelpp failed"
+
+withPreOnly basep = do
+  (pre, body) <- (,)
+   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
+    -- and to the left of the first, topmost term in the boolstruct
+    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1))
+    |-| debugName "made it to inner parser" basep
+    |<$ undeepers
+  return $ relabelp body (Text.unwords pre)
+  where
+    getLHS ((x,_),z) = (x,z)
+    relabelp :: AA.Item a -> Text.Text -> AA.Item  a
     relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
     relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
-    relabelp  x _ = error "RelationalPredicates: relabelp failed"
+    relabelp  _ _ = error "RelationalPredicates: relabelp failed"
+
+
+
+aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
+aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
+  ((_,x,y),n) <- (,,)
+                 $*| return ((),0) -- this just gets us from (,,) into the SLParser context
+                 ->| 1             -- we expect to be immediately above the column of OR / AND keywords; the next token should be the GoDeeper that separates our current location from the topmost element of the 
+                 |*| slMultiTerm
+                 |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+  return ((x,y),n)
+  
+aNLK :: Int -> SLParser ([Text.Text],MyToken)
+aNLK maxDepth = do
+  (toreturn, n) <- aboveNextLineKeyword
+  debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
+  guard (n < maxDepth)
+  return (toreturn, n)
+
+-- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
+-- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
+-- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0

@@ -168,7 +168,7 @@ pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
 
 slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = (.:|) pNumOrText
+slMultiTerm = debugName "slMultiTerm" $ (.:|) pNumOrText
 
 
 
@@ -361,7 +361,7 @@ type SLParser a = Parser (a, Int)
 (|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
 (|.|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- many
 (..|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- many
-(.:|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- some
+(.:|)  :: Show a => Parser  a            ->                   SLParser  [a]      -- some
 (.:.)  :: Show a => Parser  a            ->                     Parser  [a]      -- some plain
 (...)  :: Show a => Parser  a            ->                     Parser  [a]      -- some plain
 (.?|)  :: Show a => Parser  a            ->                Parser (Maybe a ,Int) -- optional
@@ -410,21 +410,21 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
 (.:.) x = (.:|) x |<$ undeepers     -- some pOtherVal and then undeepers
 (...) x = (..|) x |<$ undeepers     -- many pOtherVal and then undeepers
 
-
+-- lift a simple parser into the SLparser context
 (<>|) p = do
   p1 <- p
   return (p1, 0)
 
-(|:|) p = debugName "|:| someLike" $ do
-  (p1,n) <- p
+(|:|) p = debugName "|:| some" $ do
+  (p1,n) <- debugName "|:| base parser" p
   (ps,m) <- try deeper <|> nomore
   return (p1:ps, n+m)
   where
-    deeper = debugName "deeper" $ do
-      deepers <- debugName "some GoDeeper" $ some (pToken GoDeeper)
+    deeper = debugName "|:| deeper" $ do
+      deepers <- debugName "|:| some GoDeeper" $ some (pToken GoDeeper)
       (next,m) <- (|:|) p
       return (next, m + length deepers)
-    nomore = debugName "noMore" $ return ([],0)
+    nomore = debugName "|:| noMore" $ return ([],0)
 infixl 4 |:|, ..|, .:|
   
 (|.|) p = debugName "|.| manyLike" $ do

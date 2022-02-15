@@ -308,7 +308,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 type SLParser a = Parser (a, Int)
 
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
-(+>|)  :: Show a           =>        (a -> b) -> Int -> Parser  a        -> Parser  (b,Int)  -- start with an initial count of expected UnDeepers
+(+>|)  :: Show a           =>        (a -> b) -> Int                   -> Parser  (a -> b,Int)  -- start with an initial count of expected UnDeepers
 ($>|)  :: Show a           =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
 ($*|)  :: Show a           =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
                            
@@ -342,7 +342,8 @@ type SLParser a = Parser (a, Int)
 -- terminal
 (|*<)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  ->  Parser   b       -- end         fancy fancy
 (|><)  :: Show a           => Parser (a -> b, Int) -> Parser  a        ->  Parser   b       -- end         fancy plain
-(|<$)  ::                     Parser (a,      Int) -> (Int->Parser ()) ->  Parser   a       -- end         fancy plain manual undeeper -- undeepers
+(|<$)  ::                     Parser (a,      Int) -> (Int->Parser ()) ->  Parser   a       -- end         fancy plain manual undeeper -- used for undeepers
+(|--)  ::                     Parser (a,      Int) -> (Int->Parser ()) ->  Parser  (a, Int) -- end         tell a function (usually debugPrint) how deep we are
 (->|)  ::                     Parser (a -> b, Int) -> Int              ->  Parser  (a -> b,Int)  -- must consume at least this many GoDeepers before proceeding
 
 (>><)  :: Show a           => Parser       a                           ->  Parser   a       -- consume, parse, undeeper
@@ -435,9 +436,8 @@ f $>| p2 = do
   return (f r,0)
 infixl 4 $>|
 
-(+>|) f n p2 = do
-  r <- debugName "+>|" p2
-  return (f r,n)
+f +>| n = do
+  return (f, n)
 infixl 4 +>|
   
 f >>| p2 = do
@@ -566,7 +566,13 @@ p1 |<$ p2 = do
   return result
 infixl 4 |<$
 
-l ->| n =  do
+p1 |-- p2 = do
+  (result, n) <- p1
+  p2 n
+  return (result, n)
+infixl 4 |--
+
+l ->| n = do
   debugPrint ("->| trying to consume " ++ show n ++ " GoDeepers")
   (f, m) <- l
   _ <- count n (pToken GoDeeper)

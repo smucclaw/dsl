@@ -264,8 +264,10 @@ rpBoolStructR :: Parser (RelationalPredicate, Int)
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 pBSR :: Parser BoolStructR
-pBSR = debugName "pBSR" $ do
-  try noPrePost <|> try (withPrePost noPrePost) <|> (withPreOnly noPrePost)
+pBSR = debugName "pBSR" $
+--  local (\rc -> rc { debug = True }) $
+  do
+  try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
   where
     noPrePost = debugName "pBSR inner" $ toBoolStruct <$> expr pRelPred
 
@@ -279,14 +281,12 @@ expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
   return $ length udps
 
 
-withPrePost :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
+withPrePost, withPreOnly :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
 withPrePost basep = debugName "withPrePost" $ do
-  undp_count <- expectUnDeepers
-  debugPrint $ "determined undp_count = " ++ show undp_count
   (pre, body, post) <- (,,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK undp_count))
+    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aboveNextLineKeyword))
     |-| debugName "made it to inner base parser" basep
     |<* debugName "post part" slMultiTerm -- post part
     |<$ undeepers
@@ -298,11 +298,11 @@ withPrePost basep = debugName "withPrePost" $ do
     relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
     relabelpp _ _ _ = error "RelationalPredicates: relabelpp failed"
 
-withPreOnly basep = do
+withPreOnly basep = debugName "withPreOnly" $ do
   (pre, body) <- (,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1))
+    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aboveNextLineKeyword))
     |-| debugName "made it to inner parser" basep
     |<$ undeepers
   return $ relabelp body (Text.unwords pre)
@@ -317,19 +317,23 @@ withPreOnly basep = do
 
 aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
 aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
-  ((_,x,y),n) <- (,,)
+  undp_count <- expectUnDeepers
+  debugPrint $ "aNLK: determined undp_count = " ++ show undp_count
+  ((_,slmt),n) <- (,)
                  $*| return ((),0) -- this just gets us from (,,) into the SLParser context
-                 ->| 1             -- we expect to be immediately above the column of OR / AND keywords; the next token should be the GoDeeper that separates our current location from the topmost element of the 
+                 ->| 1
                  |*| slMultiTerm
-                 |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
-  return ((x,y),n)
+                 |-- (\d -> debugPrint $ "aNLK: current depth is " ++ show d)
+  (tok,m) <- id
+             +>| n
+             |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+
+  debugPrint $ "aNLK: slMultiTerm is " ++ show slmt
+
+  if n == undp_count
+    then return ((slmt, tok), m)
+    else fail $ "aNLK: expecting depth " ++ show undp_count ++ " but the cursor seems to be placed such that we have " ++ show n ++ "; a different backtrack will probably fare better"
   
-aNLK :: Int -> SLParser ([Text.Text],MyToken)
-aNLK maxDepth = do
-  (toreturn, n) <- aboveNextLineKeyword
-  debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
-  guard (n < maxDepth)
-  return (toreturn, n)
 
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)

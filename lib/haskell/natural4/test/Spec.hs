@@ -1291,7 +1291,21 @@ main = do
                             , srcref = Just (SrcRef { url = "test/Spec", short = "test/Spec"
                                                     , srcrow = 3, srccol = 8, version = Nothing})}]
           <$> inline_1)
+      filetest "inline-1-m" "line crossing" pInline1 inline_1
 
+      filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (["foo","bar","baz"],[])
+
+-- expected to fail
+--      filetest "multiterm-with-blanks-3" "p, with blank, next line"  (parseOther pMultiTerm) (["foo","bar","baz"],[])
+
+      filetest "multiterm-with-blanks-1" "sl, no blanks"             (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-2" "sl, with blanks"           (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
+
+-- expected to fail
+--      filetest "multiterm-with-blanks-3" "sl, with blank, next line" (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
+
+ 
 -- [ Hornlike
 --     { name = [ "Bad" ]
 --     , keyword = Means

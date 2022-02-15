@@ -1280,7 +1280,10 @@ main = do
       filetest "inline-1-m" "line crossing" pInline1 inline_1
       filetest "inline-1-n" "line crossing" pInline1 inline_2
       filetest "inline-1-o" "line crossing" pInline1 inline_3
-      filetest "inline-1-p" "line crossing" pInline1 inline_4
+      filetest "inline-1-p" "line crossing" pInline1 ((["wonk"],Means,Any (Just (Pre "a")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]),[])
+      filetest "inline-1-q" "line crossing" pInline1 ((["poowonk"],Means,Any Nothing [Leaf (RPMT ["poopoo"]),Leaf (RPMT ["just a","honk"])]),[])
+      filetest "inline-1-r" "line crossing" pInline1 inline_4
+      filetest "inline-1-s" "line crossing" pInline1 inline_4
 
       filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])
       filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (["foo","bar","baz"],[])

@@ -542,21 +542,26 @@ what if there is a blank column to the right of the OR? we need to match as many
 
 a pHornlike should be able to read this
 
-| a data breach |                                                                                                 |                                         | occurred |    |       |              |   |   |   |   |
-| MEANS         | any                                                                                             | unauthorised                            |          |    | FALSE | access       |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | use          |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | TRUE  | disclosure   |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | copying      |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | modification |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | TRUE  | disposal     |   |   |   |   |
-|               |                                                                                                 | of personal data                        |          |    |       |              |   |   |   |   |
-| OR            | loss of storage medium on which personal data is stored in circumstances where the unauthorised |                                         |          |    | FALSE | access       |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | use          |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | disclosure   |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | FALSE | copying      |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | TRUE  | modification |   |   |   |   |
-|               |                                                                                                 |                                         |          | OR | TRUE  | disposal     |   |   |   |   |
-|               |                                                                                                 | of the personal data is likely to occur |          |    |       |              |   |   |   |   |
+|       | a data breach occurred |   |    |      |   |
+| MEANS | poopoo                 |   |    |      |   |
+| OR    | the                    |   |    | honk |   |
+|       |                        |   | OR | ponk |   |
+
+| a data breach occurred |                                                                                                 |                                         |   |    |       |              |
+| MEANS                  | any                                                                                             | unauthorised                            |   |    | FALSE | access       |
+|                        |                                                                                                 |                                         |   | OR | FALSE | use          |
+|                        |                                                                                                 |                                         |   | OR | TRUE  | disclosure   |
+|                        |                                                                                                 |                                         |   | OR | FALSE | copying      |
+|                        |                                                                                                 |                                         |   | OR | FALSE | modification |
+|                        |                                                                                                 |                                         |   | OR | TRUE  | disposal     |
+|                        |                                                                                                 | of personal data                        |   |    |       |              |
+| OR                     | loss of storage medium on which personal data is stored in circumstances where the unauthorised |                                         |   |    | FALSE | access       |
+|                        |                                                                                                 |                                         |   | OR | FALSE | use          |
+|                        |                                                                                                 |                                         |   | OR | FALSE | disclosure   |
+|                        |                                                                                                 |                                         |   | OR | FALSE | copying      |
+|                        |                                                                                                 |                                         |   | OR | TRUE  | modification |
+|                        |                                                                                                 |                                         |   | OR | TRUE  | disposal     |
+|                        |                                                                                                 | of the personal data is likely to occur |   |    |       |              |
 ***** inline fragment of pdpadbno4
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-q.csv

@@ -34,7 +34,7 @@ import Data.List.NonEmpty
 
 -- let's use the Parser library to do this stuff
 pBoolStructPT :: Parser BoolStructP
-pBoolStructPT = toBoolStruct <$> expr pParamText
+pBoolStructPT = prePostParse pParamText
 
 pParamText :: Parser ParamText
 pParamText = debugName "pParamText" $

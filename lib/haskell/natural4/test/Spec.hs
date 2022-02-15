@@ -1267,17 +1267,14 @@ main = do
                        ), []
                      )
           pInline1 = parseOther $ do
-            ((someTerm, means, (prepart, numToCol)),n) <-
-              (,,)
-              >*| debugName "first slMultiTerm" slMultiTerm
+            let getLHS ((x,_),z) = (x,z)
+            (,,,,)
+              >*| debugName "subject slMultiTerm" slMultiTerm
               |<| pToken Means
-              |*| debugName "second string" (pOtherVal /+= aNLK 1) -- this places the "cursor" in the column above the OR, ideally prior to the GoDeeper.
-            leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-            debugPrint $ "interlude: n UnDeepers expected is " ++ show n ++ "; column leftX = " ++ show leftX
-            (bsr, postpart) <- (+>|) (,) n (debugName "made it to pBSR" pBSR)
-                               |<* slMultiTerm
-                               |<$ undeepers
-            return (someTerm, means, prepart, bsr, postpart)
+              |*| debugName "pre part" (getLHS <$> (pOtherVal /+= aNLK 1)) -- this places the "cursor" in the column above the OR, ideally prior to the GoDeeper.
+              |-| debugName "made it to pBSR" pBSR
+              |<* slMultiTerm -- post part
+              |<$ undeepers
             
       filetest "inline-1-c" "line crossing" pInline1 inline_1
       filetest "inline-1-d" "line crossing" pInline1 inline_1

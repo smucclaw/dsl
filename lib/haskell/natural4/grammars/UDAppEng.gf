@@ -279,7 +279,13 @@ lin
     pred = {fin = MkVPS (mkTemp presentTense simultaneousAnt) negativePol root.vp ;
             pp =
               let pp' : AP = BareRGEng.PastPartAP root.vp
-               in pp' ** {s = \\x => "not" ++ pp'.s ! x}
+               in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
+            presp =
+              let pp' : AP = BareRGEng.PresPartAP root.vp
+               in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
+            inf =
+              let inf' : VPI = MkVPI root.vp
+               in inf' ** {s = \\typ,agr => "not" ++ inf'.s ! typ ! agr}
            } ;
     } ;
 

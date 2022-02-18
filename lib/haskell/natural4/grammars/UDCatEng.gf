@@ -108,10 +108,10 @@ concrete UDCatEng of UDCat = BareRGEng **
     nsubjPass_ = id NP ;
 
   param
-    AclType = Finite | PastPart ;
+    AclType = Finite | PastPart | PresPart ;
 
   oper
-    UDSPred : Type = {fin : VPS ; pp : AP} ; -- because UDS can become an acl, either finite, gerund or past participle
+    UDSPred : Type = {fin : VPS ; pp, presp : AP ; inf : VPI} ; -- because UDS can become an acl, either finite, gerund or past participle
 
     LinUDS : Type = {subj : NP ; pred : UDSPred} ;
 
@@ -121,19 +121,25 @@ concrete UDCatEng of UDCat = BareRGEng **
     linUDS : LinUDS -> Str = linUDS' Finite ;
     linUDS' : AclType -> LinUDS -> Str = \at,uds -> case at of {
       Finite => (PredVPS uds.subj uds.pred.fin).s ;
+      PresPart => (cc2 (mkUtt uds.subj) (mkUtt uds.pred.presp)).s ;
       PastPart => (cc2 (mkUtt uds.subj) (mkUtt uds.pred.pp)).s } ;
 
     myVPS = overload {
       myVPS : VP -> UDSPred = \vp -> {
         fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp
-        } ;
+        pp = BareRGEng.PastPartAP vp ;
+        presp = BareRGEng.PresPartAP vp ;
+        inf = ExtendEng.MkVPI vp } ;
       myVPS : Tense -> VP -> UDSPred = \tns,vp -> {
         fin = MkVPS (mkTemp tns simultaneousAnt) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp } ;
+        pp = BareRGEng.PastPartAP vp ;
+        presp = BareRGEng.PresPartAP vp ;
+        inf = ExtendEng.MkVPI vp } ;
       myVPS : Ant -> VP -> UDSPred = \ant,vp -> {
         fin = MkVPS (mkTemp presentTense ant) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp }
+        pp = BareRGEng.PastPartAP vp ;
+        presp = BareRGEng.PresPartAP vp ;
+        inf = ExtendEng.MkVPI vp }
     } ;
     --Aux : Type = {v : V ; isCop : Bool} ;
 --   Root : Type = {vp : VP ; comp : Comp ; c2 : Str} ;
@@ -184,6 +190,7 @@ concrete UDCatEng of UDCat = BareRGEng **
       p = [] ;
       typ = VVAux
     } ;
+
 
     rp2np : RP -> NP = \rp -> rp ** {
       s = \\c => rp.s ! RC Neutr c ;

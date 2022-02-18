@@ -11,6 +11,9 @@ abstract UDExt = UDApp ** {
 
     Must, May, Shant : UDS -> UDS ;
 
+    Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
+    Every : NP -> NP ;
+
     subjAction : NP -> UDS -> UDFragment ;
 
   -- Aarne

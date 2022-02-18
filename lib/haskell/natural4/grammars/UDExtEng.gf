@@ -7,7 +7,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
   (Ex=ExtraEng) in {
 
   lin
-    -- : UDS -> UDF -> UDFragment ;
+    -- : UDS -> UDS -> UDFragment ;
     Upon upon action =
       let upon_Adv : Adv = SyntaxEng.mkAdv upon_Prep (AdjAsNP upon.pred.presp) ;
           action_S : S = lin S action ; --{s = linUDS action} ;
@@ -15,6 +15,13 @@ concrete UDExtEng of UDExt = UDAppEng ** open
 
     -- : NP -> UDS -> UDFragment ;
     subjAction subj uds = PredVPS subj uds.pred.fin ;
+
+    -- : UDS -> NP -> NP ; -- EVERY king WHO is a singer
+    Who is_singer king =
+      let who_is_singer_Adv : Adv = lin Adv (PredVPS who_NP is_singer.pred.fin) ;
+       in ExtAdvNP king who_is_singer_Adv ;
+
+    Every np = mkNP (lin Predet {s = "every"}) np ;
 
     May = applyDeontic ExtraEng.may_VV ;
     Must = applyDeontic must_VV ;
@@ -30,6 +37,8 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     shant_VV : VV = Ex.shall_VV ** { -- only used in (very limited) NLG, not parsing
       s = \\_ => "shan't" ;                -- so negation here should be fine
     } ;
+
+    who_NP : NP = mkNP (P.mkPN "who") ;
 
   lin
 -- Aarne

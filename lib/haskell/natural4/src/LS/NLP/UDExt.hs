@@ -471,6 +471,7 @@ data Tree :: * -> * where
   GDefPN :: GPN -> Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
   GDetNP :: GDet -> Tree GNP_
+  GEvery :: GNP -> Tree GNP_
   GExtAdvNP :: GNP -> GAdv -> Tree GNP_
   GGenModNP :: GNum -> GNP -> GCN -> Tree GNP_
   GIndefPN :: GPN -> Tree GNP_
@@ -483,6 +484,7 @@ data Tree :: * -> * where
   GRelNP :: GNP -> GRS -> Tree GNP_
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
+  GWho :: GUDS -> GNP -> Tree GNP_
   Geuropean_NP :: Tree GNP_
   Gwhoever_NP :: Tree GNP_
   GNumCard :: GCard -> Tree GNum_
@@ -879,7 +881,6 @@ data Tree :: * -> * where
   LexVA :: String -> Tree GVA_
   LexVS :: String -> Tree GVS_
   LexVV :: String -> Tree GVV_
-  Lexcase_ :: String -> Tree Gcase__
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
@@ -1007,6 +1008,7 @@ instance Eq (Tree a) where
     (GDefPN x1,GDefPN y1) -> and [ x1 == y1 ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDetNP x1,GDetNP y1) -> and [ x1 == y1 ]
+    (GEvery x1,GEvery y1) -> and [ x1 == y1 ]
     (GExtAdvNP x1 x2,GExtAdvNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGenModNP x1 x2 x3,GGenModNP y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GIndefPN x1,GIndefPN y1) -> and [ x1 == y1 ]
@@ -1019,6 +1021,7 @@ instance Eq (Tree a) where
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
+    (GWho x1 x2,GWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Geuropean_NP,Geuropean_NP) -> and [ ]
     (Gwhoever_NP,Gwhoever_NP) -> and [ ]
     (GNumCard x1,GNumCard y1) -> and [ x1 == y1 ]
@@ -1415,7 +1418,6 @@ instance Eq (Tree a) where
     (LexVA x,LexVA y) -> x == y
     (LexVS x,LexVS y) -> x == y
     (LexVV x,LexVV y) -> x == y
-    (Lexcase_ x,Lexcase_ y) -> x == y
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
     (GFloat x, GFloat y) -> x == y
@@ -1544,8 +1546,8 @@ instance Gf GAnt where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AAnter" -> GAAnter
-      Just (i,[]) | i == mkCId "ASimul" -> GASimul
+      Just (i,[]) | i == mkCId "AAnter" -> GAAnter 
+      Just (i,[]) | i == mkCId "ASimul" -> GASimul 
 
 
       _ -> error ("no Ant " ++ show t)
@@ -1587,10 +1589,10 @@ instance Gf GCN where
       Just (i,[x1,x2]) | i == mkCId "RelCN" -> GRelCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentCN" -> GSentCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseN" -> GUseN (fg x1)
-      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN
-      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN
-      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN
-      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN
+      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN 
+      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN 
+      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN 
+      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN 
 
 
       _ -> error ("no CN " ++ show t)
@@ -1664,16 +1666,16 @@ instance Gf GDig where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "D_0" -> GD_0
-      Just (i,[]) | i == mkCId "D_1" -> GD_1
-      Just (i,[]) | i == mkCId "D_2" -> GD_2
-      Just (i,[]) | i == mkCId "D_3" -> GD_3
-      Just (i,[]) | i == mkCId "D_4" -> GD_4
-      Just (i,[]) | i == mkCId "D_5" -> GD_5
-      Just (i,[]) | i == mkCId "D_6" -> GD_6
-      Just (i,[]) | i == mkCId "D_7" -> GD_7
-      Just (i,[]) | i == mkCId "D_8" -> GD_8
-      Just (i,[]) | i == mkCId "D_9" -> GD_9
+      Just (i,[]) | i == mkCId "D_0" -> GD_0 
+      Just (i,[]) | i == mkCId "D_1" -> GD_1 
+      Just (i,[]) | i == mkCId "D_2" -> GD_2 
+      Just (i,[]) | i == mkCId "D_3" -> GD_3 
+      Just (i,[]) | i == mkCId "D_4" -> GD_4 
+      Just (i,[]) | i == mkCId "D_5" -> GD_5 
+      Just (i,[]) | i == mkCId "D_6" -> GD_6 
+      Just (i,[]) | i == mkCId "D_7" -> GD_7 
+      Just (i,[]) | i == mkCId "D_8" -> GD_8 
+      Just (i,[]) | i == mkCId "D_9" -> GD_9 
 
 
       _ -> error ("no Dig " ++ show t)
@@ -1690,14 +1692,14 @@ instance Gf GDigit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "n2" -> Gn2
-      Just (i,[]) | i == mkCId "n3" -> Gn3
-      Just (i,[]) | i == mkCId "n4" -> Gn4
-      Just (i,[]) | i == mkCId "n5" -> Gn5
-      Just (i,[]) | i == mkCId "n6" -> Gn6
-      Just (i,[]) | i == mkCId "n7" -> Gn7
-      Just (i,[]) | i == mkCId "n8" -> Gn8
-      Just (i,[]) | i == mkCId "n9" -> Gn9
+      Just (i,[]) | i == mkCId "n2" -> Gn2 
+      Just (i,[]) | i == mkCId "n3" -> Gn3 
+      Just (i,[]) | i == mkCId "n4" -> Gn4 
+      Just (i,[]) | i == mkCId "n5" -> Gn5 
+      Just (i,[]) | i == mkCId "n6" -> Gn6 
+      Just (i,[]) | i == mkCId "n7" -> Gn7 
+      Just (i,[]) | i == mkCId "n8" -> Gn8 
+      Just (i,[]) | i == mkCId "n9" -> Gn9 
 
 
       _ -> error ("no Digit " ++ show t)
@@ -1729,11 +1731,11 @@ instance Gf GIAdv where
       Just (i,[x1,x2]) | i == mkCId "AdvIAdv" -> GAdvIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjIAdv" -> GConjIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepIP" -> GPrepIP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv
-      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv
-      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv
-      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv
-      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv
+      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv 
+      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv 
+      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv 
+      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv 
+      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv 
 
 
       _ -> error ("no IAdv " ++ show t)
@@ -1772,8 +1774,8 @@ instance Gf GIP where
       Just (i,[x1,x2]) | i == mkCId "AdvIP" -> GAdvIP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "IdetCN" -> GIdetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "IdetIP" -> GIdetIP (fg x1)
-      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP
-      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP
+      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP 
+      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP 
 
 
       _ -> error ("no IP " ++ show t)
@@ -1783,7 +1785,7 @@ instance Gf GIQuant where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant
+      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant 
 
 
       _ -> error ("no IQuant " ++ show t)
@@ -1961,6 +1963,7 @@ instance Gf GNP where
   gf (GDefPN x1) = mkApp (mkCId "DefPN") [gf x1]
   gf (GDetCN x1 x2) = mkApp (mkCId "DetCN") [gf x1, gf x2]
   gf (GDetNP x1) = mkApp (mkCId "DetNP") [gf x1]
+  gf (GEvery x1) = mkApp (mkCId "Every") [gf x1]
   gf (GExtAdvNP x1 x2) = mkApp (mkCId "ExtAdvNP") [gf x1, gf x2]
   gf (GGenModNP x1 x2 x3) = mkApp (mkCId "GenModNP") [gf x1, gf x2, gf x3]
   gf (GIndefPN x1) = mkApp (mkCId "IndefPN") [gf x1]
@@ -1973,6 +1976,7 @@ instance Gf GNP where
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
+  gf (GWho x1 x2) = mkApp (mkCId "Who") [gf x1, gf x2]
   gf Geuropean_NP = mkApp (mkCId "european_NP") []
   gf Gwhoever_NP = mkApp (mkCId "whoever_NP") []
 
@@ -1983,6 +1987,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "DefPN" -> GDefPN (fg x1)
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "DetNP" -> GDetNP (fg x1)
+      Just (i,[x1]) | i == mkCId "Every" -> GEvery (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ExtAdvNP" -> GExtAdvNP (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "GenModNP" -> GGenModNP (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "IndefPN" -> GIndefPN (fg x1)
@@ -1995,8 +2000,9 @@ instance Gf GNP where
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
-      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP
-      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP
+      Just (i,[x1,x2]) | i == mkCId "Who" -> GWho (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP 
+      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP 
 
 
       _ -> error ("no NP " ++ show t)
@@ -2010,8 +2016,8 @@ instance Gf GNum where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "NumCard" -> GNumCard (fg x1)
-      Just (i,[]) | i == mkCId "NumPl" -> GNumPl
-      Just (i,[]) | i == mkCId "NumSg" -> GNumSg
+      Just (i,[]) | i == mkCId "NumPl" -> GNumPl 
+      Just (i,[]) | i == mkCId "NumSg" -> GNumSg 
       Just (i,[x1]) | i == mkCId "StrNum" -> GStrNum (fg x1)
 
 
@@ -2050,9 +2056,9 @@ instance Gf GPConj where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj
-      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj
-      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj
+      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj 
+      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj 
+      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj 
 
 
       _ -> error ("no PConj " ++ show t)
@@ -2076,8 +2082,8 @@ instance Gf GPol where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "PNeg" -> GPNeg
-      Just (i,[]) | i == mkCId "PPos" -> GPPos
+      Just (i,[]) | i == mkCId "PNeg" -> GPNeg 
+      Just (i,[]) | i == mkCId "PPos" -> GPPos 
 
 
       _ -> error ("no Pol " ++ show t)
@@ -2183,9 +2189,9 @@ instance Gf GRP where
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "FunRP" -> GFunRP (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "GenRP" -> GGenRP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "IdRP" -> GIdRP
-      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP
-      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP
+      Just (i,[]) | i == mkCId "IdRP" -> GIdRP 
+      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP 
+      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP 
 
 
       _ -> error ("no RP " ++ show t)
@@ -2231,7 +2237,7 @@ instance Gf GSub10 where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0" -> Gpot0 (fg x1)
-      Just (i,[]) | i == mkCId "pot01" -> Gpot01
+      Just (i,[]) | i == mkCId "pot01" -> Gpot01 
 
 
       _ -> error ("no Sub10 " ++ show t)
@@ -2248,8 +2254,8 @@ instance Gf GSub100 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0as1" -> Gpot0as1 (fg x1)
       Just (i,[x1]) | i == mkCId "pot1" -> Gpot1 (fg x1)
-      Just (i,[]) | i == mkCId "pot110" -> Gpot110
-      Just (i,[]) | i == mkCId "pot111" -> Gpot111
+      Just (i,[]) | i == mkCId "pot110" -> Gpot110 
+      Just (i,[]) | i == mkCId "pot111" -> Gpot111 
       Just (i,[x1,x2]) | i == mkCId "pot1plus" -> Gpot1plus (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "pot1to19" -> Gpot1to19 (fg x1)
 
@@ -2321,10 +2327,10 @@ instance Gf GTense where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "TCond" -> GTCond
-      Just (i,[]) | i == mkCId "TFut" -> GTFut
-      Just (i,[]) | i == mkCId "TPast" -> GTPast
-      Just (i,[]) | i == mkCId "TPres" -> GTPres
+      Just (i,[]) | i == mkCId "TCond" -> GTCond 
+      Just (i,[]) | i == mkCId "TFut" -> GTFut 
+      Just (i,[]) | i == mkCId "TPast" -> GTPast 
+      Just (i,[]) | i == mkCId "TPres" -> GTPres 
 
 
       _ -> error ("no Tense " ++ show t)
@@ -2791,7 +2797,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "VP_may__SeqAdv__VP" -> GVP_may__SeqAdv__VP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "VP_must__SeqAdv__VP" -> GVP_must__SeqAdv__VP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "VP_notify_NP_of_NP" -> GVP_notify_NP_of_NP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "apply_concurrently_VP" -> Gapply_concurrently_VP
+      Just (i,[]) | i == mkCId "apply_concurrently_VP" -> Gapply_concurrently_VP 
 
 
       _ -> error ("no VP " ++ show t)
@@ -2845,7 +2851,7 @@ instance Gf Gadvmod where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "advmod_" -> Gadvmod_ (fg x1)
-      Just (i,[]) | i == mkCId "not_advmod" -> Gnot_advmod
+      Just (i,[]) | i == mkCId "not_advmod" -> Gnot_advmod 
 
 
       _ -> error ("no advmod " ++ show t)
@@ -2904,14 +2910,14 @@ instance Gf Gaux where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "aux_" -> Gaux_ (fg x1)
-      Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux
-      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux
-      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux
-      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux
-      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux
-      Just (i,[]) | i == mkCId "shall_aux" -> Gshall_aux
-      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux
-      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux
+      Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux 
+      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux 
+      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux 
+      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux 
+      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux 
+      Just (i,[]) | i == mkCId "shall_aux" -> Gshall_aux 
+      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux 
+      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux 
 
 
       _ -> error ("no aux " ++ show t)
@@ -2921,7 +2927,7 @@ instance Gf GauxPass where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "be_auxPass" -> Gbe_auxPass
+      Just (i,[]) | i == mkCId "be_auxPass" -> Gbe_auxPass 
 
 
       _ -> error ("no auxPass " ++ show t)
@@ -3038,8 +3044,8 @@ instance Gf Gcop where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop
-      Just (i,[]) | i == mkCId "is_cop" -> Gis_cop
+      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop 
+      Just (i,[]) | i == mkCId "is_cop" -> Gis_cop 
 
 
       _ -> error ("no cop " ++ show t)
@@ -3141,7 +3147,7 @@ instance Gf Gexpl where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "expl_" -> Gexpl_ (fg x1)
-      Just (i,[]) | i == mkCId "it_expl" -> Git_expl
+      Just (i,[]) | i == mkCId "it_expl" -> Git_expl 
 
 
       _ -> error ("no expl " ++ show t)
@@ -3253,7 +3259,7 @@ instance Gf Gmark where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "mark_" -> Gmark_ (fg x1)
-      Just (i,[]) | i == mkCId "to_mark" -> Gto_mark
+      Just (i,[]) | i == mkCId "to_mark" -> Gto_mark 
 
 
       _ -> error ("no mark " ++ show t)
@@ -3480,7 +3486,7 @@ instance Gf Gxcomp where
 
       _ -> error ("no xcomp " ++ show t)
 
-instance Show GCl
+
 
 instance Gf GCl where
   gf _ = undefined
@@ -3488,7 +3494,7 @@ instance Gf GCl where
 
 
 
-instance Show GClSlash
+
 
 instance Gf GClSlash where
   gf _ = undefined
@@ -3496,7 +3502,7 @@ instance Gf GClSlash where
 
 
 
-instance Show GComp
+
 
 instance Gf GComp where
   gf _ = undefined
@@ -3504,7 +3510,7 @@ instance Gf GComp where
 
 
 
-instance Show GN3
+
 
 instance Gf GN3 where
   gf _ = undefined
@@ -3512,7 +3518,7 @@ instance Gf GN3 where
 
 
 
-instance Show GPhr
+
 
 instance Gf GPhr where
   gf _ = undefined
@@ -3520,7 +3526,7 @@ instance Gf GPhr where
 
 
 
-instance Show GQS
+
 
 instance Gf GQS where
   gf _ = undefined
@@ -3528,7 +3534,7 @@ instance Gf GQS where
 
 
 
-instance Show GSC
+
 
 instance Gf GSC where
   gf _ = undefined
@@ -3536,7 +3542,7 @@ instance Gf GSC where
 
 
 
-instance Show GSSlash
+
 
 instance Gf GSSlash where
   gf _ = undefined
@@ -3544,7 +3550,7 @@ instance Gf GSSlash where
 
 
 
-instance Show GText
+
 
 instance Gf GText where
   gf _ = undefined
@@ -3552,7 +3558,7 @@ instance Gf GText where
 
 
 
-instance Show GUtt
+
 
 instance Gf GUtt where
   gf _ = undefined
@@ -3560,7 +3566,7 @@ instance Gf GUtt where
 
 
 
-instance Show GV2
+
 
 instance Gf GV2 where
   gf _ = undefined
@@ -3568,7 +3574,7 @@ instance Gf GV2 where
 
 
 
-instance Show GV2A
+
 
 instance Gf GV2A where
   gf _ = undefined
@@ -3576,7 +3582,7 @@ instance Gf GV2A where
 
 
 
-instance Show GV2Q
+
 
 instance Gf GV2Q where
   gf _ = undefined
@@ -3584,7 +3590,7 @@ instance Gf GV2Q where
 
 
 
-instance Show GV2S
+
 
 instance Gf GV2S where
   gf _ = undefined
@@ -3592,7 +3598,7 @@ instance Gf GV2S where
 
 
 
-instance Show GV2V
+
 
 instance Gf GV2V where
   gf _ = undefined
@@ -3600,7 +3606,7 @@ instance Gf GV2V where
 
 
 
-instance Show GV3
+
 
 instance Gf GV3 where
   gf _ = undefined
@@ -3608,7 +3614,7 @@ instance Gf GV3 where
 
 
 
-instance Show GVA
+
 
 instance Gf GVA where
   gf _ = undefined
@@ -3616,7 +3622,7 @@ instance Gf GVA where
 
 
 
-instance Show GVPSlash
+
 
 instance Gf GVPSlash where
   gf _ = undefined
@@ -3624,7 +3630,7 @@ instance Gf GVPSlash where
 
 
 
-instance Show GVQ
+
 
 instance Gf GVQ where
   gf _ = undefined
@@ -3632,7 +3638,7 @@ instance Gf GVQ where
 
 
 
-instance Show GVS
+
 
 instance Gf GVS where
   gf _ = undefined
@@ -3640,7 +3646,7 @@ instance Gf GVS where
 
 
 
-instance Show GVV
+
 
 instance Gf GVV where
   gf _ = undefined
@@ -3648,7 +3654,7 @@ instance Gf GVV where
 
 
 
-instance Show GVoc
+
 
 instance Gf GVoc where
   gf _ = undefined
@@ -3656,7 +3662,7 @@ instance Gf GVoc where
 
 
 
-instance Show GX
+
 
 instance Gf GX where
   gf _ = undefined
@@ -3664,7 +3670,7 @@ instance Gf GX where
 
 
 
-instance Show Gcase_
+
 
 instance Gf Gcase_ where
   gf _ = undefined
@@ -3740,6 +3746,7 @@ instance Compos Tree where
     GDefPN x1 -> r GDefPN `a` f x1
     GDetCN x1 x2 -> r GDetCN `a` f x1 `a` f x2
     GDetNP x1 -> r GDetNP `a` f x1
+    GEvery x1 -> r GEvery `a` f x1
     GExtAdvNP x1 x2 -> r GExtAdvNP `a` f x1 `a` f x2
     GGenModNP x1 x2 x3 -> r GGenModNP `a` f x1 `a` f x2 `a` f x3
     GIndefPN x1 -> r GIndefPN `a` f x1
@@ -3752,6 +3759,7 @@ instance Compos Tree where
     GRelNP x1 x2 -> r GRelNP `a` f x1 `a` f x2
     GUsePN x1 -> r GUsePN `a` f x1
     GUsePron x1 -> r GUsePron `a` f x1
+    GWho x1 x2 -> r GWho `a` f x1 `a` f x2
     GNumCard x1 -> r GNumCard `a` f x1
     GStrNum x1 -> r GStrNum `a` f x1
     Gnum x1 -> r Gnum `a` f x1

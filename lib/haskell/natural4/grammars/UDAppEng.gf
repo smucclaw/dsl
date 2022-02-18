@@ -206,8 +206,8 @@ lin
       pred = applyAux will (mkVP result.vp in_harm) };
 
   -- : root -> mark -> nsubj -> cop -> UDS ; -- if it is a breach
-  root_advmod_nsubj_cop,
-  root_mark_nsubj_cop = \breach,if,it,is ->
+  root_advmod_nsubj_cop breach if it is = root_mark_nsubj_cop breach if.adv it is ; -- TODO: check if advmod is negation
+  root_mark_nsubj_cop breach if it is =
     let if_Predet : Predet = lin Predet if ; -- hack
         if_it : NP = mkNP if_Predet it ;
      in root_nsubj_cop breach if_it is ;

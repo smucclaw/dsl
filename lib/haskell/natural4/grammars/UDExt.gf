@@ -11,6 +11,8 @@ abstract UDExt = UDApp ** {
 
     subjAction : NP -> UDS -> UDFragment ;
 
+  -- Aarne
+    Adv_no_later_than_Num_calendar_days_after_the_day_UDS : Numeral -> UDS -> UDFragment ;
 
 
 

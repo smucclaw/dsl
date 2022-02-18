@@ -291,7 +291,7 @@
 #fun root_case_nummod head case nummod
 #fun root_case_nummod_acl head case nummod acl
 #fun root_case_nummod_nummod head case nummod nummod
-#fun root_cc head cc
+--#fun root_cc head cc
 #fun root_cc_aux_cop_det_nmod head cc aux cop det nmod
 --#fun root_cc_conj head cc conj
 #fun root_cc_cop_xcomp head cc cop xcomp
@@ -471,3 +471,20 @@
 #fun root_nsubjPass_aux_auxPass_xcomp head nsubj:pass aux aux:pass xcomp
 #fun root_nsubj_aux_cop_nmod head nsubj aux cop nmod
 #fun root_nsubj_nsubj_aux_advmod_obj head nsubj nsubj aux advmod obj
+
+#fun MkA2 head case
+#fun Adv_Adv__but_in_any_case_Adv head TODO
+#fun Adv_at_the_time_NP_notifies_NP head dummy
+#fun Adv_no_later_than_Num_calendar_days_after_the_day_S dummy head
+#fun CN_CN_relating_to_NP head obl
+#fun CN_obligation_of_NP_to_VP dummy head
+#fun NP_all_the_CN_RS head acl:relcl
+#fun NP_the_loss_of_any_CN_RS head acl:relcl
+-- #fun NP_the_unauthorised_ConjN2_of_NP
+-- #fun NP_the_unauthorised_N2_of_NP
+-- #fun RS_that_NP_VP
+-- #fun RS_to_whom_NP_VP
+-- #fun VP_assesses__Adv__that_S
+-- #fun VP_may__SeqAdv__VP
+-- #fun VP_must__SeqAdv__VP
+-- #fun VP_notify_NP_of_NP

@@ -120,4 +120,27 @@ abstract BareRG =
   fun
     ConjPrep : Conj -> [Prep] -> Prep ;
 
+-- Aarne's additions
+fun
+  apply_concurrently_VP : VP ;
+  does_not_apply_to_V : V ;
+  on_or_after_Prep : Prep ;
+  prior_to_the_occurrence_of_Prep : Prep ;
+  that_other_Det : Det ;
+
+  CN_CN_relating_to_NP : CN -> NP -> CN ;
+  CN_obligation_of_NP_to_VP : NP -> VP -> CN ;
+  NP_all_the_CN_RS : CN -> RS -> NP ;
+  NP_the_loss_of_any_CN_RS : CN -> RS -> NP ;
+  NP_the_unauthorised_N2_of_NP : CN -> NP -> NP ;
+  NP_the_unauthorised_ConjN2_of_NP : [CN] -> NP -> NP ;
+  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
+  Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
+  RS_that_NP_VP : NP -> VP -> RS ;
+  RS_to_whom_NP_VP : NP -> VP -> RS ;
+  VP_assesses__Adv__that_S : Adv -> S -> VP ;
+  VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
+  VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
+  VP_notify_NP_of_NP : NP -> NP -> VP ;
+
   }

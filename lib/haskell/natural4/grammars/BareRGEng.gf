@@ -77,7 +77,8 @@ concrete BareRGEng of BareRG =
     (P=ParadigmsEng),
     (E=ExtendEng),
     (Co=Coordination),
-    ResEng
+    (R=ResEng),
+    JustWordsWordNetEng
     in {
 
   lin
@@ -98,14 +99,14 @@ concrete BareRGEng of BareRG =
     anySg_Det = mkDeterminerSpec P.singular "any" (variants {"anyone"; "anybody"}) "anything" False ;
     anyPl_Det = mkDeterminerSpec P.plural "any" (variants {"anyone"; "anybody"}) "anything" False ;
 
-    everyone_Pron = mkPron "everyone" "everyone" "everyone's" "everyone's" P.singular P3 P.human ;
+    everyone_Pron = mkPron "everyone" "everyone" "everyone's" "everyone's" P.singular R.P3 P.human ;
     who_RP = ExtraEng.who_RP ;
     that_RP = lin RP {
       s = table {
-        RC _ (NCase Gen) | RC _ NPNomPoss => "whose" ;
+        R.RC _ (R.NCase R.Gen) | R.RC _ R.NPNomPoss => "whose" ;
         _     => "that"
         } ;
-      a = RNoAg
+      a = R.RNoAg
       } ;
 
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
@@ -148,5 +149,47 @@ concrete BareRGEng of BareRG =
       missingAdv = False
       } ;
 
+-- Aarne's additions
+  lin
 
+    apply_concurrently_VP = mkVP (mkVP apply_V) concurrently_Adv ;
+    does_not_apply_to_V = P.mkV "do not apply to" "does not apply to" "did not apply to" "has not applied to" "is not applying to" ;
+    on_or_after_Prep = P.mkPrep "on or after" ;
+    prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
+    that_other_Det = mkDeterminer P.singular "that other" ;
+
+    -- : CN -> NP -> CN ;
+    CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
+
+    -- : NP -> VP -> CN ;
+    CN_obligation_of_NP_to_VP np vp = mkCN (mkCN (P.mkN2 obligation_N) np) vp ;
+
+    -- : CN -> RS -> NP ;
+    NP_all_the_CN_RS cn rs = mkNP all_Predet (mkNP thePl_Det (mkCN cn rs)) ;
+    NP_the_loss_of_any_CN_RS cn rs =
+      mkNP theSg_Det (
+        mkCN (P.mkN2 loss_N)
+          (mkNP anySg_Det (mkCN cn rs))
+        ) ;
+
+    -- : CN -> NP -> NP ;
+    NP_the_unauthorised_N2_of_NP cn np =
+      let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
+       in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
+
+    -- : [CN] -> NP -> NP ;
+    NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
+
+  {-  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
+    Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
+    RS_that_NP_VP : NP -> VP -> RS ;
+    RS_to_whom_NP_VP : NP -> VP -> RS ;
+    VP_assesses__Adv__that_S : Adv -> S -> VP ;
+    VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
+    VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
+    VP_notify_NP_of_NP : NP -> NP -> VP ;
+  --}
+    oper
+    relating_to_Prep : Prep = P.mkPrep "relating to" ;
+    concurrently_Adv : Adv = P.mkAdv "concurrently" ;
 }

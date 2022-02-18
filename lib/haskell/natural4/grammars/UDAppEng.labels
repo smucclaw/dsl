@@ -237,7 +237,11 @@
 
 #disable ProgrVP
 
-#auxfun aclGerund_   uds : UDS -> acl = aclUDSgerund_   uds ; head[VerbForm=Gerund]
+-- NB: we don't want this currently, because we add the gerund in UDExt.
+-- If UDExt changes, then uncomment this.
+-- #auxfun ProgrVP_ becoming : V -> VP = ProgrVP (UseV becoming) ; head[VerbForm=Ger]
+
+#auxfun aclGerund_   uds : UDS -> acl = aclUDSgerund_   uds ; head[VerbForm=Ger]
 #auxfun aclPastPart_ uds : UDS -> acl = aclUDSpastpart_ uds ; head[Tense=Past|VerbForm=Part]
 #auxfun aclFinite_   uds : UDS -> acl = aclUDS_         uds ; head[VerbForm=Fin]
 #disable aclUDSGerund_ aclUDS_ aclUDSpastpart_

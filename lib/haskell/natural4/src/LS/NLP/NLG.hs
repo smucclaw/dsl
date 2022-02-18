@@ -114,12 +114,18 @@ nlg rl = do
         let lang = head $ languages gr
             subjectRaw = subjA annotatedRule
             actionRaw = actionA annotatedRule
-            finalTree = mkApp (mkCId "subjAction") [peel subjectRaw, actionRaw]
+            deonticAction = mkApp (deonticA annotatedRule) [actionRaw]
+            king_may_sing = mkApp (mkCId "subjAction") [peel subjectRaw, deonticAction]
+            king_may_sing_upon = applyUpon (uponA annotatedRule) king_may_sing
+            finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr [] finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       _ -> return "()"
 
+applyUpon :: Maybe Expr -> Expr -> Expr
+applyUpon Nothing action = action
+applyUpon (Just upon) action = mkApp (mkCId "Upon") [upon, action]
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
@@ -186,9 +192,9 @@ parseFields env rl = case rl of
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
-        DMust  -> mkCId "must_Deontic"
-        DMay   -> mkCId "may_Deontic"
-        DShant -> mkCId "shant_Deontic"
+        DMust  -> mkCId "Must"
+        DMay   -> mkCId "May"
+        DShant -> mkCId "Shant"
 
     -- TODO: add GF funs for  ParseTemporal
     -- It will look like this:

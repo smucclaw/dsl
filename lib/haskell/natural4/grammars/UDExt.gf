@@ -5,16 +5,16 @@ abstract UDExt = UDApp ** {
   cat
     UDFragment ;
   fun
-    Upon : UDS -> UDFragment ; -- the UDS is like "become aware …", this becomes "upon becoming aware"
-    -- TODO: what if we already parsed "becoming aware"? can disable ProgrVP in UDAppEng.labels
-    -- so it never becomes "becoming aware"?
+    Upon : (becoming_aware : UDS) ->
+           (king_may_sing : UDFragment) ->
+           UDFragment ; -- Upon becoming aware, the king may sing
+
+    Must, May, Shant : UDS -> UDS ;
 
     subjAction : NP -> UDS -> UDFragment ;
 
   -- Aarne
     Adv_no_later_than_Num_calendar_days_after_the_day_UDS : Numeral -> UDS -> UDFragment ;
-
-
 
 }
 

@@ -117,3 +117,7 @@ LIN: each portion of a building separated by one or more fire walls complying wi
 root_nsubj_aux_obl (rootA_ (PositA applicable_A)) (nsubj_ (DetCN (DetQuant DefArt NumSg) (AdjCN (AdvAP (PositA applicable_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN (CompoundN aggregate_N building_N))))) (AdvCN (UseN provision_N) (PrepNP of_Prep (DetCN (DetQuant this_Quant NumSg) (UseN code_N))))))) shall_aux (obl_ (PrepNP to_Prep (DetCN each_Det (UseN building_N))))
 
 LIN: the provision of this code applicable to the aggregate building shall be applicable to each building
+
+root_acl (rootAdv_ (PrepNP at_Prep (DetCN (DetQuant DefArt NumSg) (UseN time_N)))) (aclUDS_ (root_nsubj (rootV_ (ComplV notify_V (ConjNP or_Conj (BaseNP (DetCN (DetQuant DefArt NumSg) (UseN commission_N)) (MassNP (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))))) (nsubj_ (DetNP (DetQuant DefArt NumSg)))))
+
+LIN: is at the time it notifies the commission or affected individual

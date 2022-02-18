@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, NamedFieldPuns #-}
 
 module LS.NLP.NLG where
 
@@ -12,7 +12,7 @@ import LS.Types ( Deontic(..),
       BoolStruct(..),
       RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import           Data.Text.Lazy         (Text)
@@ -88,7 +88,7 @@ parseOut env txt = do
                Just e -> e
                Nothing -> case parseConllu env lowerConll of
                             Just e' -> e'
-                            Nothing -> mkApp (mkCId "dummy_N") [] -- dummy expr
+                            Nothing -> fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
   putStrLn $ showExpr [] expr
   return expr
 
@@ -110,22 +110,48 @@ nlg rl = do
    -- TODO: here let's do some actual NLG
    gr <- readPGF (gfPath "UDExt.pgf")
    case annotatedRule of
-      RegulativeA {} -> do
+      RegulativeA {
+        subjA
+      , whoA
+      , condA
+      , deonticA
+      , actionA
+      , temporalA
+      , uponA
+      , givenA
+      } -> do
         let lang = head $ languages gr
-            subjectRaw = subjA annotatedRule
-            actionRaw = actionA annotatedRule
-            deonticAction = mkApp (deonticA annotatedRule) [actionRaw]
-            king_may_sing = mkApp (mkCId "subjAction") [peel subjectRaw, deonticAction]
-            king_may_sing_upon = applyUpon (uponA annotatedRule) king_may_sing
+            deonticAction = mkApp deonticA [actionA]
+            subjWho = applyMaybe "Who" whoA (peel subjA)
+            subj = mkApp (mkCId "Every") [subjWho]
+            king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
+            king_may_sing_upon = applyMaybe "Upon" uponA king_may_sing
+            -- mkApp2 "Who" <$> whoA
+            existingQualifiers = [(name,expr) |
+                                  (name,Just expr) <- [("Cond", condA),
+                                                       ("Temporal", temporalA),
+                                                       ("Upon", uponA),
+                                                       ("Given", givenA)]]
+--            finalTree = doNLG existingQualifiers king_may_sing
             finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr [] finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       _ -> return "()"
 
-applyUpon :: Maybe Expr -> Expr -> Expr
-applyUpon Nothing action = action
-applyUpon (Just upon) action = mkApp (mkCId "Upon") [upon, action]
+
+
+doNLG :: [(String,Expr)] -> Expr -> Expr
+doNLG = error "not implemented"
+
+applyMaybe :: String -> Maybe Expr -> Expr -> Expr
+applyMaybe _ Nothing action = action
+applyMaybe name (Just expr) action = mkApp (mkCId name) [expr, action]
+
+mkApp2 :: String -> Expr -> Expr -> Expr
+mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
+
+
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of

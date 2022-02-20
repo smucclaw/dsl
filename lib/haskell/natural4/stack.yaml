@@ -9,9 +9,9 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-18.25
+# resolver: lts-18.25
 
-# resolver: nightly-2022-02-19
+resolver: nightly-2022-02-19
 
 # resolver: nightly-2015-09-21
 # resolver: ghc-7.10.2
@@ -47,7 +47,7 @@ packages:
 #
 extra-deps:
 - github: smucclaw/dsl
-  commit: b05358d9d66b69a40a2364c12bec4d23df8124f9
+  commit: f02648af126d04d3f29285c92ec38a29c6776c41
   subdirs:
   - lib/haskell/anyall
 - github: smucclaw/baby-l4

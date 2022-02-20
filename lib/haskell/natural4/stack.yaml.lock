@@ -44,27 +44,6 @@ packages:
     subdir: baby-l4-core
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
 - completed:
-    hackage: svg-builder-0.1.1@sha256:22de54d326a6b6912e461e1302edb9108b02aac0b6a6368fcdc3c4a224d487fd,1440
-    pantry-tree:
-      size: 535
-      sha256: 677ee9598c5dedb3ef8959c26a6c65f29b3e1e3c5e83433921aef17d86a22d50
-  original:
-    hackage: svg-builder-0.1.1
-- completed:
-    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
-    pantry-tree:
-      size: 18807
-      sha256: e9012408d7b88cfb55f91c0c1d31aebc97cc8824b860c2e7cc5747b90a0bd190
-  original:
-    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
-- completed:
-    hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
-    pantry-tree:
-      size: 3971
-      sha256: 957e4dbb988f47164c821807297a6020c1108cd3265582ac2aa9292708cb62c9
-  original:
-    hackage: network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
-- completed:
     size: 1351076
     url: https://github.com/anka-213/gf-ud/archive/d078668f179f9fa6afeb7d7d001a7f6b13d2adbd.tar.gz
     name: gf-ud
@@ -87,19 +66,12 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
-    hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
+    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
     pantry-tree:
-      size: 5271
-      sha256: 6cd6a7213615d72a7db3234c7fcd4346ceb4889bc8fb14b302b5878768018fcd
+      size: 18807
+      sha256: e9012408d7b88cfb55f91c0c1d31aebc97cc8824b860c2e7cc5747b90a0bd190
   original:
-    hackage: MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
-- completed:
-    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
-    pantry-tree:
-      size: 253
-      sha256: ddbb8343712ef5d96480180f4df7113db80ecb41336ec3e02876ccdb6ff6b547
-  original:
-    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
+    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
 - completed:
     hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
     pantry-tree:
@@ -109,8 +81,7 @@ packages:
     hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 snapshots:
 - completed:
-    size: 586268
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/13.yaml
-    sha256: d9e658a22cfe8d87a64fdf219885f942fef5fe2bcb156a9800174911c5da2443
-  original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/13.yaml
+    size: 587393
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/25.yaml
+    sha256: 1b74fb5e970497b5aefae56703f1bd44aa648bd1a5ef95c1eb8c29775087e2bf
+  original: lts-18.25

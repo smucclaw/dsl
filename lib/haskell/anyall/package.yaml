@@ -1,10 +1,10 @@
 name:                anyall
-version:             0.1.0.0
+version:             0.1.0.1
 github:              "smucclaw/anyall"
 license:             BSD3
 author:              "Wong Meng Weng"
 maintainer:          "mwwong@smu.edu.sg"
-copyright:           "2021 Singapore Management University"
+copyright:           "2022 Singapore Management University"
 
 extra-source-files:
 - README.org

@@ -512,6 +512,11 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 what if there is a blank column to the right of the OR? we need to match as many GoDeepers as are needed to hit the OR
 
+                    pOtherval +?        pOtherVal (UnDeeper+) (AND | OR) GoDeeper+ pOtherVal
+
+we count the number of UnDeeper+ captured, and use that to limit the greediness of the
+initial ~pOtherval +?~ component.
+                    
 |       | Bad |              |    |   |              |
 | MEANS | any | unauthorised |    |   | access       |
 |       |     |              | OR |   | use          |
@@ -521,33 +526,36 @@ what if there is a blank column to the right of the OR? we need to match as many
 |       |     |              |    |   |              |
 |       |     |              | OR |   | disposal     |
 
-***** inline no pre
+***** o: inline no pre
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-o.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-|       | Bad |   |    |        |              |
-| MEANS |     |   |    | access |              |
-|       |     |   | OR |        | use          |
-|       |     |   | OR |        | disclosure   |
-|       |     |   | OR |        | copying      |
-|       |     |   | OR |        | modification |
-|       |     |   | OR |        | disposal     |
-***** inline fragment of pdpadbno4
+|       | Bad |   |    |            |          |              |
+| MEANS |     |   |    | access     |          |              |
+|       |     |   | OR |            | use      |              |
+|       |     |   | OR | disclosure |          |              |
+|       |     |   | OR |            | copying  |              |
+|       |     |   | OR |            |          | modification |
+|       |     |   | OR |            | disposal |              |
+
+***** p: this parses: inline fragment of pdpadbno4
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-p.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-a pHornlike should be able to read this.
-
-this parses:
-
 |       | wonk |   |    |      |   |
 | MEANS | a    |   |    | honk |   |
 |       |      |   | OR | ponk |   |
-***** this parses:
+
+wonk MEANS (a /    (    ( honk )
+                     OR ( ponk ) ) )
+
+AA.Any (Label Pre "a") / [Item honk, Item ponk]
+
+***** q: this parses:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-q.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -556,7 +564,10 @@ this parses:
 |       | poowonk |   |   |      |
 | MEANS | poopoo  |   |   |      |
 | OR    | just a  |   |   | honk |
-***** this doesn't parse:
+
+( poowonk ) MEANS ( poopoo ) OR ( just a ( ( honk ) ) )
+
+***** r: this doesn't parse:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-r.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -566,6 +577,9 @@ this parses:
 | MEANS | poopoo    |   |    |      |   |
 | OR    | the       |   |    | honk |   |
 |       |           |   | OR | ponk |   |
+
+( multiwonk ) MEANS ( poopoo ) OR (the ( ( ( honk ) OR ( ponk ) ) ) )
+
 ***** when everything works we should be able to parse this:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-s.csv

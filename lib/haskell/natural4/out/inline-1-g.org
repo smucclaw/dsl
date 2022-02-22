@@ -1,0 +1,1763 @@
+* preface
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+
+natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-g/)
+
+Passed:
+""
+
+Passed:
+"+"
+
+Passed:
+"\t"
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+"\ACK[N3i"
+
+Passed:
+"\FSH"
+
+Passed:
+"hvU\1065177 \1096157K"
+
+Passed:
+"\136084\SO"
+
+Passed:
+"xv\SI"
+
+Passed:
+"a8Y@Q@l\1080689hF"
+
+Passed:
+"_\57648\FS\DLE\FS\DC2f"
+
+Passed:
+"V\1014701\199774\GS\63480\a"
+
+Passed:
+"\141703\&2c\DLE"
+
+Passed:
+""
+
+Passed:
+"\DLEksV9\NAK\US.\EMH\DC3ynl"
+
+Passed:
+"\153014q\200856I\984187\153642\&4R\41745\96016"
+
+Passed:
+"FbT/+\20357\SYNy&\31366\CAN"
+
+Passed:
+"0\US=\1082753\\IfR\988193\ENQ\45847n\b"
+
+Passed:
+"\ETB\t7}\54338-"
+
+Passed:
+"\1090067m\1034669Kk\SOH\CAN{d"
+
+Passed:
+"/!Cui,\ENQ~\161862\DC3"
+
+Passed:
+"\182818\1009268\1065259qU"
+
+Passed:
+"(\168922\DC2C\DC1\US\"\SOH\FS\198188;\1078629vA\1014929"
+
+Passed:
+"\989567#\DC2\FS\1102512z\1070809\1058240x\6296\&6H\FSM\DC1%\96100s"
+
+Passed:
+"LmA\ah\SUB{\b\171911\139329\ACKS}\1014160\198423-\1111329"
+
+Passed:
+"^\180977\&7\1056861%h\FS\CAN\GS\52576\DC1\1102810\\,l4\155871Qb,\1092082]\93788"
+
+Passed:
+"\1054714\NAK\GSu7X\163687"
+
+Passed:
+"1|Aj10B"
+
+Passed:
+"\1060886\v\23611dF/\SI\DC4\ESCAm\988930\142692\bat!\140052z\148219+8\EMC"
+
+Passed:
+"\1063924\EOT\GS\v![G\GS\GS"
+
+Passed:
+"g\133566j;\EOT\NUL\ETX-\1007739V\DC1U*qI%\FS{L\40299\DC1\r~"
+
+Passed:
+"\1087072R.\t8\EM\ETB\44914\DC2\b\"j\1058333\DLE\ns\1008357\181755"
+
+Passed:
+"\52265R<\ENQ\1018951\26098N\1067670\US\178903"
+
+Passed:
+"x\1082788V\1020271w\ENQ\136745i`\EM\"\DLER'`#\1107669V=$\SOH#G\1068819HHq\FS\DC4\CAN"
+
+Passed:
+"u\DLE\1039950F\STXL\1042508\1012738Y\1007883\SOHkJ \r\14935F0>\nkP\n\CAN9y\1057430Tq\SUBR"
+
+Passed:
+"thh\GS\1002211\175416\SYN\DC1\71704\67266\1046406"
+
+Passed:
+"M\1102226\ESCnt4%1aoar\DEL=gemrX\1097313"
+
+Passed:
+";\96903e\DC4W\139379w<\1111133u\SYN\49223WoG>\1003060\njs\DEL[\ACKIhu\ACKg5E\180384"
+
+Passed:
+"\58519X\1110006\f\1083949e+\42363Dm\t>\175391\&4\RS{[#I\US\992603\1094836fe"
+
+Passed:
+"'\ETX\1017892\\\US.\n\ETB,r\GSi\1009548\DEL\ETX\SUBOIKnr,\134190TFU\166298"
+
+Passed:
+"\66640^\v:Q\990692\54510v\757~1\SYN&\rw>P\162416hjp"
+
+Passed:
+"\FS\ESC%%c\1021626\STX\US\182128\128359\DC2*\bF1L\SO~i\1058904kv\DC2\SUB3}.\SI\74575v3=~!\129292m\989324\SOH"
+
+Passed:
+"p*:\7945=*\1023203@\a\1021713\DEL)9\159988$\a*^)\SYNQZ>\DLE\DC1@zZk\100444\95983\\\74027\987899"
+
+Passed:
+"\1021623\SOH\31081e\1069841E=\1032411W#\ENQ\US\RS.:\1022324]\SYN.\96730V\54190"
+
+Passed:
+"\133595\182451.6\11376+,E\169948j\f\182549]\ACK\ACK\v"
+
+Passed:
+"sXD\DLE1N\197255T\1092764)5?9VN\SUB\67610({\1104153\1045998\&8k\DC3\RS1$\1061097YK\15226\1043101\1051232\NUL\1089830i&\DLE$\47257\98375\1001161\&8}^\53674"
+
+Passed:
+"e3\983564YzD.r\1099011HSl\STX%\NUL#Q\178992\1066067L~\1053813=\155000\45928\&8*\139234D\a\DC1\1045154\DC4B]\4605hn\STXyuf\EMl"
+
+Passed:
+"r/\988929=F&80J\1069920frm$V\f\t&\NULg\bi(\1022555B"
+
+Passed:
+"<\ETB\DC3"
+
+Passed:
+"\f\NUL2~t\DC2\66193\68492_"
+
+Passed:
+"j<bO\GS\983767\47536\1036464\991063!\EOTCx\185925\DC4F\DC3\8937\&9-b\DC2J\1094760\STX\178382\1047025F\ESC'!\183662t>\7833U\DC1\53893z\1072852(x\DELO\DLE"
+
+Passed:
+"te\n\1007992\&7jK \DEL"
+
+Passed:
+"\1048693Cj5Py\1034323\&0)\55185?SQ\71841\t>t8\aA(Q"
+
+Passed:
+"\1047989J\986445q\bO\153148\DLE\1049307V\SYNRe"
+
+Passed:
+"\NUL\133091\SYNJ\97625\DELW\1021290u\7867'fB\SI\SYNo\42488\NULZ`\69257V+\10765\&5E\990291\NAK\ETB\SOH.j=\ENQ'\45064\\TK\DC3-\rhv\156\1042414\1023089\vYwv\GS\1057095`\US"
+
+Passed:
+"h!q'\DLE\1061026\\R'h\29397_\197058\185772\131864MR\f=l\1013939+\18786\DEL.';|Ti~\ACK\74067:P\DC1\nk#\1090579he"
+
+Passed:
+"x6.7t\FSj\t\995316o.\EOT=\t,\48184(\GS:\154324Z\ETX\SI=n\128854$5\25029D]@\1059823\DELV"
+
+Passed:
+"\US8;!Qs\"\ESCg)7\ETBC\1110509@[2o#G:U\SO\993249\ESCW\1044821\&5\1041441\ETX\1068607\182647"
+
+Passed:
+"\998672\&0p\DC1%h\":7\1003329;bU:C\134644&\1052850,GjV'\ACK^\183900\1045150{(\a+\187471\1099407\1076524]\1103265J\DC1"
+
+Passed:
+"Y\159998kU{ U\NUL\USHeA8\STXu\1074692k\1094414KoS_\25916gC\198680\EMI\66868#B4\GSh\1024056W\157457qY\SO\ESC"
+
+Passed:
+"\DC3C \DC4g\FS}\992620\1090098\avY^5(Saj(\GS\DLE\145154\EOT\164685\1077729\157017\ENQ\52193\1056810bz\173782\1088206\1108772\1090106\&4<[*\170738\"\NUL\1018628<b_\152415AmD\1020018\\\1041386\21322\1018193D"
+
+Passed:
+"\1026859\1067656VY\17972"
+
+Passed:
+"}\ENQS\NAK\v\1083708\142724=\ENQ|K\197435\\\989879CybC;\NAKg\45113\16428!Q\25754\&1.jF_C\ACK\63557%\FS[\1077596E\DC2\EM\148026o/\SI\NAK)h"
+
+Passed:
+"\SOHB\985824\&6\EM`\DEL\149194\43909\SOt\72884\NUL!P)BI\RS.gXlbY\68919\&7\1086880Sf,NXmVZ\156701.\1024728?\aZ\DC1\991210\1006840cypJTL\1088140A"
+
+Passed:
+"d\20892Y\18093~\b\176523U<K}KC.\ESC<\162407\1108534!\b>/]8)K[\1101182\SO\GS\DC3W\nB"
+
+Passed:
+"dz \DC4\1060832A##_\ENQ8\26668~C5\74008fh\DC1>$\ENQ\25226%Q<\8544\&3L\DC1l<\rF\b\1080546\1084506\FSyk2a:_\917542J\"\9029-Aqh\SOwzp\r0Y"
+
+Passed:
+"^(~Z"
+
+Passed:
+"e\40467jtPG:YY&"
+
+Passed:
+"z\1015571[n\1056654\1014258*\FSI>F\40070\\\ENQ2"
+
+Passed:
+"\ENQD\b7\78375;2\1064524d]ncV\51677+\1026388\r4\1073217b\156247Pe/V\197989\&7\r+}\NULe\47162\30443\ACK\1022609"
+
+Passed:
+"HP\997518x\DEL!\ETX \83373gb7LP\65392fX:\SO\1101723\n\2065v?Pk\nZ\1072133\STX\174759jN\RSb\94292}l\1001441\71057\57930:\"`6BgLj6\NAK\CAN"
+
+Passed:
+"\\wz\1098148\4867Y\49797>Z\39577\fs\58452L,A\181076\&2P\1101348x\1015599\158569G/,\DC3\n_\1086447\&8F\167698zi\SYNK{>-@\SI\1064691?\t{5)xoo\nb\1029465 l\ETBbFdQ\97214;i\990056n\r\ETB"
+
+Passed:
+"\1004152#EJ\1094994\ETX A\1096079@\1031382\4723mR$\1103086\RS4\180399\"O\rU\GS\STX?\21459\v\1013016O%\EMnhHu^m"
+
+Passed:
+"dg\DC1S6~\51589\&1$\165872\118935\DLEx\1012892\181493E\ETBgeL\n\DC4\f?\1058529d\162059\v\"\179271\CAN&t/o\DC4\52362\1024802\&1"
+
+Passed:
+"\37763\119582\137571\RSJ\170921<\rQ\1014295@\147420*\STX"
+
+Passed:
+"'\SOH7yS~m\DLE\190062\n\ESC|tg\184176\&1;\38942\SOti;\78481M\129916\1070902P\1030987z\NUL\199982\&8i\14125b$_3\EOT\29079\161413\&0\DEL\b\ENQ\1024138l\NAK/O0\1052222XCG\141659\1045974hgoIY/\989308\a\1034564\SO\1042430_\146261"
+
+Passed:
+"Q\1019141\181261u\197480Bu\60784t\463Ye\46354\&48\19331UI"
+
+Passed:
+"+_LF 6\50182H\DC1\vi4\1087471oJM\b!k<\DC4%qwFo~\NULK\1014214\12504'1\EOT\1004029D\STX^]\DC3\1026547 z\990462/H\ACK \180622\ENQ4\DC4"
+
+Passed:
+"7"
+
+Passed:
+"V>\1030783LW\30009*?Us\NULK6;(Q\SOUi\RSs\1097914"
+
+Passed:
+"Cgf\DLE\161202|1\b\1027975\1042788\21940(''\DC2Q\197906C2l>\6360(\US\1022406\\\47445\&5\991716\99661K"
+
+Passed:
+"$\20534/AJ\f\7475SdZrU\1022786l\1089734\&9(KK;\SOX)`\1067732_\DC1\1058607w\1009162m|\985152\&1\CANi\996581\&5\rE#6\190748Fq"
+
+Passed:
+"\SOHuu\983064_~Ql\DC4E\74828Z\EMM\DC4\SUBn\47316\\H8\1014172\&7\5959\1059897TZ(\1063853k\r"
+
+Passed:
+"\SO\1096911\996307wM\NAKHe2Q\1064339\&8"
+
+Passed:
+"I\ENQJa\1041684\NULW\1113511\SI\a<\1015288\119986\1007858Zp\1013088eH(6\ap\ESC\n\DC2?j\1034456\SUB\DC3}L}\1090787Z^bq;`\SUB\SUB,\1043717\49701 \DC2\DC3\4326\1113864j#\DC4\1000813\182894r\bq\" _+3\1010276"
+
+Passed:
+"jJ\1095147\1047504\176715\ENQx\31688O%\1073028*\fQv2\f\26713{\1070287]8\f\1007289\149466\167522\r\98362P\62475I\EM^\1107481\992638-\v(\993939~W=f:J\1020557\34679a{aNLR*\EM\1024580\1064925"
+
+Passed:
+"\SI\23636o{g~\\\1068890\ESC\DC3"
+
+Passed:
+"\148663\5657\36458~\ENQ\1081062?c\DLE\SYNu\1107853\1046364m2\DLE:_\SOH\168476K1H\FSH%\100262\ETBf,F\ENQa\67202h\v\1065906\1014018>\SYN<+8{\58766\f\RS\SOH}M\ETXP\1091494\1054966\97694i\148398\nOp_N~W\1031714G\1052565\30536\NAK\SOH$9 [3\65733Om6qx\f\ENQ\1008336"
+
+Passed:
+"\v\ACK(M\DEL\1009282\152340b)\"\983866\54768Rz\SI\DC4\ENQ\144863\&6d\48418b,b`W#t(<V\996742\&0\180330L*\DC3"
+
+Passed:
+"i:!u\1070692%Z]w\143009\STXn\EOT\FSYo\1054569Nh\DELB\133718S\47327\147312Ld\53236\1055904<\988013a(fYTQl\EMn>\43959\ETX"
+
+Passed:
+"RQ%y;\f*\1008450\EOT,(sSa\RSo0R1\1016720S\35309y7\1061466y\1057754\DC47a\DC3 \11981j\STX>=e?\t8,\CAN\1001683r\US1\1000892\\"
+
+Passed:
+"$\994770Im\1111579G\174163t#CB\51891S\EOT\SYN\\n\989983\159512'-\144458\98561\1098207e\ENQ\134164\r<yl\57832\175876\&8LD\191169zM\15687!\137682"
+
+Passed:
+")d\DEL\b9@6-\NAK\SOGy]\96004\1014700\63331]\997828\FSCUIQ\ACK\SUB\148643`%o`\34694AOk,fM\1069220 \SOHi\1021214\r E\146956\1068435*L\170953\1081121_*\US\RS`\158742\DC4\ty*"
+
+Passed:
+"$:\1087429l\DC3&L\DC4gZTvA\1035915\ACK\SOHX[\47166"
+
+Passed:
+"7,/W\DLE\48042\25652\ENQDg\1111303\b\SOH9dB12\164312v\34775\1017644/\SI%\DC3\159216Q*hor\t!$Fu\1002627G\CAN\1108536\ENQ\ACK:*\DLE\NULF?\FSxFb"
+
+Passed:
+"\45905\&2"
+
+Passed:
+"`9\1013742\165112\SYNz\1053915k>\1109203\n\rk^l\179967=?-8I\EOT\SO{\n_2\74115\NULA?X\159633\DC2\138514d@zx{lm\DC1\139468\45167\18951N\1013494JIL$d\179788\v\SO\SOH\\Q,@e$\137111d\150605\1048546 \1008672\31065\999191)\SUBj\1104853[e\ACKg\34915r4[4\a"
+
+Passed:
+"\1108553\ETXeD[\GSg\1036948v4\68178me\SOHJ\63388\SYN\DLEV\11138:\993318>4\RS\137362\GS\SOH\SI;^c\69771\59640\&2`N\1336\DC1\DEL\EOTj\STX`k\RS_\1099100\EM\3630\DELdE*\US\"1\ETXnL\1027533z\1085060\1021639\RS\NAK\57529GR\131198\SOHC\24283\STXl\1085756+\161570\NUL|\151940Sq\f'.\1001348\1005880"
+
+Passed:
+"{\b}o}tj?{X\1110852O\9038k\1003415\143614\49134@"
+
++++ OK, passed 100 tests.
+* Tokens
+[GoDeeper,Other "Bad",UnDeeper,Means,GoDeeper,Other "any",GoDeeper,Other "unauthorised",GoDeeper,GoDeeper,GoDeeper,Other "access",UnDeeper,Or,GoDeeper,Other "use",UnDeeper,Or,GoDeeper,Other "disclosure",UnDeeper,Or,GoDeeper,Other "copying",UnDeeper,Or,GoDeeper,Other "modification",UnDeeper,Or,GoDeeper,Other "disposal",UnDeeper,UnDeeper,UnDeeper,UnDeeper,Other "of personal data",UnDeeper]
+* main
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
+** / |<|                                                                                                                :1_2:GoDeeper:
+** / |<* starting                                                                                                       :1_2:GoDeeper:
+** / $*|                                                                                                                :1_2:GoDeeper:
+*** / |>>                                                                                                              :1_2:GoDeeper:
+**** / |>>/recurse                                                                                                    :1_2:GoDeeper:
+***** / |>>                                                                                                           :1_2:Other "Bad":
+****** / |>>/recurse                                                                                                 :1_2:Other "Bad":
+****** / |>>/base                                                                                                    :1_2:Other "Bad":
+******* / subject slMultiTerm                                                                                       :1_2:Other "Bad":
+******** / slMultiTerm                                                                                             :1_2:Other "Bad":
+********* / |:| some                                                                                              :1_2:Other "Bad":
+********** / |:| base parser                                                                                     :1_2:Other "Bad":
+********** \ |:| base parser has returned ("Bad",0)                                                               :2_2:UnDeeper:
+********** / |:| deeper                                                                                           :2_2:UnDeeper:
+*********** / |:| some GoDeeper                                                                                  :2_2:UnDeeper:
+********** / |:| noMore                                                                                           :2_2:UnDeeper:
+********** \ |:| noMore has returned ([],0)                                                                       :2_2:UnDeeper:
+********* \ |:| some has returned (["Bad"],0)                                                                      :2_2:UnDeeper:
+******** \ slMultiTerm has returned (["Bad"],0)                                                                     :2_2:UnDeeper:
+******* \ subject slMultiTerm has returned (["Bad"],0)                                                               :2_2:UnDeeper:
+******* / |>>/base got ["Bad"]                                                                                       :2_2:UnDeeper:
+****** \ |>>/base has returned (["Bad"],0)                                                                            :2_2:UnDeeper:
+***** \ |>> has returned (["Bad"],0)                                                                                   :2_2:UnDeeper:
+**** \ |>>/recurse has returned (["Bad"],1)                                                                             :2_2:UnDeeper:
+*** \ |>> has returned (["Bad"],1)                                                                                       :2_2:UnDeeper:
+** \ $*| has returned (["Bad"],1)                                                                                         :2_2:UnDeeper:
+** / |<*/recurse                                                                                                          :2_2:UnDeeper:
+** / |<*/recurse matched 1 UnDeepers, then got Means with -1 UnDeepers pending                                          :2_2:GoDeeper:
+** / |<*/parent returning Means with 0 UnDeepers pending                                                                :2_2:GoDeeper:
+** / made it to pBSR                                                                                                    :2_2:GoDeeper:
+*** / pBSR                                                                                                             :2_2:GoDeeper:
+**** / pBSR inner                                                                                                     :2_2:GoDeeper:
+***** / term p                                                                                                       :2_2:GoDeeper:
+****** / term p/1a:label directly above                                                                             :2_2:GoDeeper:
+******* / $*|                                                                                                      :2_2:GoDeeper:
+******** / |:| some                                                                                               :2_2:GoDeeper:
+********* / |:| base parser                                                                                      :2_2:GoDeeper:
+********** / pNumAsText                                                                                         :2_2:GoDeeper:
+****** / term p/b:label to the left of line below, with EOL                                                         :2_2:GoDeeper:
+******* / |:| some                                                                                                 :2_2:GoDeeper:
+******** / |:| base parser                                                                                        :2_2:GoDeeper:
+********* / pNumAsText                                                                                           :2_2:GoDeeper:
+****** / term p/notLabelTerm                                                                                        :2_2:GoDeeper:
+******* / term p/2:someIndentation expr p                                                                          :2_2:GoDeeper:
+******** / someIndentation                                                                                        :2_2:GoDeeper:
+********* / myindented: consuming GoDeeper                                                                       :2_2:GoDeeper:
+********* \ myindented: consuming GoDeeper has returned GoDeeper                                                  :2_2:Other "any":
+********* / manyIndentation/leaf?                                                                                 :2_2:Other "any":
+********** / term p                                                                                              :2_2:Other "any":
+*********** / term p/1a:label directly above                                                                    :2_2:Other "any":
+************ / $*|                                                                                             :2_2:Other "any":
+************* / |:| some                                                                                      :2_2:Other "any":
+************** / |:| base parser                                                                             :2_2:Other "any":
+************** \ |:| base parser has returned ("any",0)                                                       :2_3:GoDeeper:
+************** / |:| deeper                                                                                   :2_3:GoDeeper:
+*************** / |:| some GoDeeper                                                                          :2_3:GoDeeper:
+*************** \ |:| some GoDeeper has returned [GoDeeper]                                                   :2_3:Other "unau:
+*************** / |:| some                                                                                    :2_3:Other "unau:
+**************** / |:| base parser                                                                           :2_3:Other "unau:
+**************** \ |:| base parser has returned ("unauthorised",0)                                            :2_4:GoDeeper:
+**************** / |:| deeper                                                                                 :2_4:GoDeeper:
+***************** / |:| some GoDeeper                                                                        :2_4:GoDeeper:
+***************** \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                                   :2_6:Other "acce:
+***************** / |:| some                                                                                      :2_6:Other "acce:
+****************** / |:| base parser                                                                             :2_6:Other "acce:
+****************** \ |:| base parser has returned ("access",0)                                                    :3_6:UnDeeper:
+****************** / |:| deeper                                                                                   :3_6:UnDeeper:
+******************* / |:| some GoDeeper                                                                          :3_6:UnDeeper:
+****************** / |:| noMore                                                                                   :3_6:UnDeeper:
+****************** \ |:| noMore has returned ([],0)                                                               :3_6:UnDeeper:
+***************** \ |:| some has returned (["access"],0)                                                           :3_6:UnDeeper:
+**************** \ |:| deeper has returned (["access"],3)                                                           :3_6:UnDeeper:
+*************** \ |:| some has returned (["unauthorised","access"],3)                                                :3_6:UnDeeper:
+************** \ |:| deeper has returned (["unauthorised","access"],4)                                                :3_6:UnDeeper:
+************* \ |:| some has returned (["any","unauthorised","access"],4)                                              :3_6:UnDeeper:
+************* / pNumAsText                                                                                             :3_6:UnDeeper:
+*********** / term p/b:label to the left of line below, with EOL                                                :2_2:Other "any":
+************ / |:| some                                                                                        :2_2:Other "any":
+************* / |:| base parser                                                                               :2_2:Other "any":
+************* \ |:| base parser has returned ("any",0)                                                         :2_3:GoDeeper:
+************* / |:| deeper                                                                                     :2_3:GoDeeper:
+************** / |:| some GoDeeper                                                                            :2_3:GoDeeper:
+************** \ |:| some GoDeeper has returned [GoDeeper]                                                     :2_3:Other "unau:
+************** / |:| some                                                                                      :2_3:Other "unau:
+*************** / |:| base parser                                                                             :2_3:Other "unau:
+*************** \ |:| base parser has returned ("unauthorised",0)                                              :2_4:GoDeeper:
+*************** / |:| deeper                                                                                   :2_4:GoDeeper:
+**************** / |:| some GoDeeper                                                                          :2_4:GoDeeper:
+**************** \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                                     :2_6:Other "acce:
+**************** / |:| some                                                                                        :2_6:Other "acce:
+***************** / |:| base parser                                                                               :2_6:Other "acce:
+***************** \ |:| base parser has returned ("access",0)                                                      :3_6:UnDeeper:
+***************** / |:| deeper                                                                                     :3_6:UnDeeper:
+****************** / |:| some GoDeeper                                                                            :3_6:UnDeeper:
+***************** / |:| noMore                                                                                     :3_6:UnDeeper:
+***************** \ |:| noMore has returned ([],0)                                                                 :3_6:UnDeeper:
+**************** \ |:| some has returned (["access"],0)                                                             :3_6:UnDeeper:
+*************** \ |:| deeper has returned (["access"],3)                                                             :3_6:UnDeeper:
+************** \ |:| some has returned (["unauthorised","access"],3)                                                  :3_6:UnDeeper:
+************* \ |:| deeper has returned (["unauthorised","access"],4)                                                  :3_6:UnDeeper:
+************ \ |:| some has returned (["any","unauthorised","access"],4)                                                :3_6:UnDeeper:
+************ / undeepers                                                                                                :3_6:UnDeeper:
+************* / sameLine/undeepers: reached end of line; now need to clear 4 UnDeepers                                 :3_6:UnDeeper:
+*********** / term p/notLabelTerm                                                                               :2_2:Other "any":
+************ / term p/2:someIndentation expr p                                                                 :2_2:Other "any":
+************* / someIndentation                                                                               :2_2:Other "any":
+************** / myindented: consuming GoDeeper                                                              :2_2:Other "any":
+************ / term p/3:plain p                                                                                :2_2:Other "any":
+************* / pRelPred                                                                                      :2_2:Other "any":
+************** / slRelPred                                                                                   :2_2:Other "any":
+*************** / RPConstraint                                                                              :2_2:Other "any":
+**************** / $*|                                                                                     :2_2:Other "any":
+***************** / slMultiTerm                                                                           :2_2:Other "any":
+****************** / |:| some                                                                            :2_2:Other "any":
+******************* / |:| base parser                                                                   :2_2:Other "any":
+******************* \ |:| base parser has returned ("any",0)                                             :2_3:GoDeeper:
+******************* / |:| deeper                                                                         :2_3:GoDeeper:
+******************** / |:| some GoDeeper                                                                :2_3:GoDeeper:
+******************** \ |:| some GoDeeper has returned [GoDeeper]                                         :2_3:Other "unau:
+******************** / |:| some                                                                          :2_3:Other "unau:
+********************* / |:| base parser                                                                 :2_3:Other "unau:
+********************* \ |:| base parser has returned ("unauthorised",0)                                  :2_4:GoDeeper:
+********************* / |:| deeper                                                                       :2_4:GoDeeper:
+********************** / |:| some GoDeeper                                                              :2_4:GoDeeper:
+********************** \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                         :2_6:Other "acce:
+********************** / |:| some                                                                            :2_6:Other "acce:
+*********************** / |:| base parser                                                                   :2_6:Other "acce:
+*********************** \ |:| base parser has returned ("access",0)                                          :3_6:UnDeeper:
+*********************** / |:| deeper                                                                         :3_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :3_6:UnDeeper:
+*********************** / |:| noMore                                                                         :3_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :3_6:UnDeeper:
+********************** \ |:| some has returned (["access"],0)                                                 :3_6:UnDeeper:
+********************* \ |:| deeper has returned (["access"],3)                                                 :3_6:UnDeeper:
+******************** \ |:| some has returned (["unauthorised","access"],3)                                      :3_6:UnDeeper:
+******************* \ |:| deeper has returned (["unauthorised","access"],4)                                      :3_6:UnDeeper:
+****************** \ |:| some has returned (["any","unauthorised","access"],4)                                    :3_6:UnDeeper:
+***************** \ slMultiTerm has returned (["any","unauthorised","access"],4)                                   :3_6:UnDeeper:
+**************** \ $*| has returned (["any","unauthorised","access"],4)                                             :3_6:UnDeeper:
+**************** / |>| calling $>>                                                                                  :3_6:UnDeeper:
+***************** / $>>                                                                                            :3_6:UnDeeper:
+****************** / $>>/recurse                                                                                  :3_6:UnDeeper:
+****************** / $>>/base                                                                                     :3_6:UnDeeper:
+*************** / RPBoolStructR                                                                             :2_2:Other "any":
+**************** / $*|                                                                                     :2_2:Other "any":
+***************** / slMultiTerm                                                                           :2_2:Other "any":
+****************** / |:| some                                                                            :2_2:Other "any":
+******************* / |:| base parser                                                                   :2_2:Other "any":
+******************* \ |:| base parser has returned ("any",0)                                             :2_3:GoDeeper:
+******************* / |:| deeper                                                                         :2_3:GoDeeper:
+******************** / |:| some GoDeeper                                                                :2_3:GoDeeper:
+******************** \ |:| some GoDeeper has returned [GoDeeper]                                         :2_3:Other "unau:
+******************** / |:| some                                                                          :2_3:Other "unau:
+********************* / |:| base parser                                                                 :2_3:Other "unau:
+********************* \ |:| base parser has returned ("unauthorised",0)                                  :2_4:GoDeeper:
+********************* / |:| deeper                                                                       :2_4:GoDeeper:
+********************** / |:| some GoDeeper                                                              :2_4:GoDeeper:
+********************** \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                         :2_6:Other "acce:
+********************** / |:| some                                                                            :2_6:Other "acce:
+*********************** / |:| base parser                                                                   :2_6:Other "acce:
+*********************** \ |:| base parser has returned ("access",0)                                          :3_6:UnDeeper:
+*********************** / |:| deeper                                                                         :3_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :3_6:UnDeeper:
+*********************** / |:| noMore                                                                         :3_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :3_6:UnDeeper:
+********************** \ |:| some has returned (["access"],0)                                                 :3_6:UnDeeper:
+********************* \ |:| deeper has returned (["access"],3)                                                 :3_6:UnDeeper:
+******************** \ |:| some has returned (["unauthorised","access"],3)                                      :3_6:UnDeeper:
+******************* \ |:| deeper has returned (["unauthorised","access"],4)                                      :3_6:UnDeeper:
+****************** \ |:| some has returned (["any","unauthorised","access"],4)                                    :3_6:UnDeeper:
+***************** \ slMultiTerm has returned (["any","unauthorised","access"],4)                                   :3_6:UnDeeper:
+**************** \ $*| has returned (["any","unauthorised","access"],4)                                             :3_6:UnDeeper:
+**************** / |>| calling $>>                                                                                  :3_6:UnDeeper:
+***************** / $>>                                                                                            :3_6:UnDeeper:
+****************** / $>>/recurse                                                                                  :3_6:UnDeeper:
+****************** / $>>/base                                                                                     :3_6:UnDeeper:
+*************** / RPMT                                                                                      :2_2:Other "any":
+**************** / $*|                                                                                     :2_2:Other "any":
+***************** / slAKA                                                                                 :2_2:Other "any":
+****************** / $*|                                                                                 :2_2:Other "any":
+******************* / slAKA base                                                                        :2_2:Other "any":
+******************** / slMultiTerm                                                                     :2_2:Other "any":
+********************* / |:| some                                                                      :2_2:Other "any":
+********************** / |:| base parser                                                             :2_2:Other "any":
+********************** \ |:| base parser has returned ("any",0)                                       :2_3:GoDeeper:
+********************** / |:| deeper                                                                   :2_3:GoDeeper:
+*********************** / |:| some GoDeeper                                                          :2_3:GoDeeper:
+*********************** \ |:| some GoDeeper has returned [GoDeeper]                                   :2_3:Other "unau:
+*********************** / |:| some                                                                    :2_3:Other "unau:
+************************ / |:| base parser                                                           :2_3:Other "unau:
+************************ \ |:| base parser has returned ("unauthorised",0)                            :2_4:GoDeeper:
+************************ / |:| deeper                                                                 :2_4:GoDeeper:
+************************* / |:| some GoDeeper                                                        :2_4:GoDeeper:
+************************* \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                   :2_6:Other "acce:
+************************* / |:| some                                                                      :2_6:Other "acce:
+************************** / |:| base parser                                                             :2_6:Other "acce:
+************************** \ |:| base parser has returned ("access",0)                                    :3_6:UnDeeper:
+************************** / |:| deeper                                                                   :3_6:UnDeeper:
+*************************** / |:| some GoDeeper                                                          :3_6:UnDeeper:
+************************** / |:| noMore                                                                   :3_6:UnDeeper:
+************************** \ |:| noMore has returned ([],0)                                               :3_6:UnDeeper:
+************************* \ |:| some has returned (["access"],0)                                           :3_6:UnDeeper:
+************************ \ |:| deeper has returned (["access"],3)                                           :3_6:UnDeeper:
+*********************** \ |:| some has returned (["unauthorised","access"],3)                                :3_6:UnDeeper:
+********************** \ |:| deeper has returned (["unauthorised","access"],4)                                :3_6:UnDeeper:
+********************* \ |:| some has returned (["any","unauthorised","access"],4)                              :3_6:UnDeeper:
+******************** \ slMultiTerm has returned (["any","unauthorised","access"],4)                             :3_6:UnDeeper:
+******************* \ slAKA base has returned (["any","unauthorised","access"],4)                                :3_6:UnDeeper:
+****************** \ $*| has returned (["any","unauthorised","access"],4)                                         :3_6:UnDeeper:
+****************** / |>>                                                                                          :3_6:UnDeeper:
+******************* / |>>/recurse                                                                                :3_6:UnDeeper:
+******************* / |>>/base                                                                                   :3_6:UnDeeper:
+******************** / slAKA optional akapart                                                                   :3_6:UnDeeper:
+********************* / |?| optional something                                                                 :3_6:UnDeeper:
+********************** / |>>                                                                                  :3_6:UnDeeper:
+*********************** / |>>/recurse                                                                        :3_6:UnDeeper:
+*********************** / |>>/base                                                                           :3_6:UnDeeper:
+************************ / PAKA/akapart                                                                     :3_6:UnDeeper:
+************************* / $>|                                                                            :3_6:UnDeeper:
+************************** / Aka Token                                                                    :3_6:UnDeeper:
+********************* \ |?| optional something has returned (Nothing,0)                                        :3_6:UnDeeper:
+******************** \ slAKA optional akapart has returned (Nothing,0)                                          :3_6:UnDeeper:
+******************** / |>>/base got Nothing                                                                     :3_6:UnDeeper:
+******************* \ |>>/base has returned (Nothing,0)                                                          :3_6:UnDeeper:
+****************** \ |>> has returned (Nothing,0)                                                                 :3_6:UnDeeper:
+****************** / |>>                                                                                          :3_6:UnDeeper:
+******************* / |>>/recurse                                                                                :3_6:UnDeeper:
+******************* / |>>/base                                                                                   :3_6:UnDeeper:
+******************** / slAKA optional typically                                                                 :3_6:UnDeeper:
+********************* / |?| optional something                                                                 :3_6:UnDeeper:
+********************** / |>>                                                                                  :3_6:UnDeeper:
+*********************** / |>>/recurse                                                                        :3_6:UnDeeper:
+*********************** / |>>/base                                                                           :3_6:UnDeeper:
+************************ / typically                                                                        :3_6:UnDeeper:
+************************* / $>|                                                                            :3_6:UnDeeper:
+********************* \ |?| optional something has returned (Nothing,0)                                        :3_6:UnDeeper:
+******************** \ slAKA optional typically has returned (Nothing,0)                                        :3_6:UnDeeper:
+******************** / |>>/base got Nothing                                                                     :3_6:UnDeeper:
+******************* \ |>>/base has returned (Nothing,0)                                                          :3_6:UnDeeper:
+****************** \ |>> has returned (Nothing,0)                                                                 :3_6:UnDeeper:
+****************** / slAKA: proceeding after base and entityalias are retrieved ...                               :3_6:UnDeeper:
+****************** / pAKA: entityalias = Nothing                                                                  :3_6:UnDeeper:
+***************** \ slAKA has returned (["any","unauthorised","access"],4)                                         :3_6:UnDeeper:
+**************** \ $*| has returned (["any","unauthorised","access"],4)                                             :3_6:UnDeeper:
+*************** \ RPMT has returned (RPMT ["any","unauthorised","access"],4)                                         :3_6:UnDeeper:
+************** \ slRelPred has returned (RPMT ["any","unauthorised","access"],4)                                      :3_6:UnDeeper:
+************** / undeepers                                                                                            :3_6:UnDeeper:
+*************** / sameLine/undeepers: reached end of line; now need to clear 4 UnDeepers                             :3_6:UnDeeper:
+********* / manyIndentation/deeper; calling someIndentation                                                       :2_2:Other "any":
+********** / someIndentation                                                                                     :2_2:Other "any":
+*********** / myindented: consuming GoDeeper                                                                    :2_2:Other "any":
+******* / term p/3:plain p                                                                                         :2_2:GoDeeper:
+******** / pRelPred                                                                                               :2_2:GoDeeper:
+********* / slRelPred                                                                                            :2_2:GoDeeper:
+********** / RPConstraint                                                                                       :2_2:GoDeeper:
+*********** / $*|                                                                                              :2_2:GoDeeper:
+************ / slMultiTerm                                                                                    :2_2:GoDeeper:
+************* / |:| some                                                                                     :2_2:GoDeeper:
+************** / |:| base parser                                                                            :2_2:GoDeeper:
+*************** / pNumAsText                                                                               :2_2:GoDeeper:
+********** / RPBoolStructR                                                                                      :2_2:GoDeeper:
+*********** / $*|                                                                                              :2_2:GoDeeper:
+************ / slMultiTerm                                                                                    :2_2:GoDeeper:
+************* / |:| some                                                                                     :2_2:GoDeeper:
+************** / |:| base parser                                                                            :2_2:GoDeeper:
+*************** / pNumAsText                                                                               :2_2:GoDeeper:
+********** / RPMT                                                                                               :2_2:GoDeeper:
+*********** / $*|                                                                                              :2_2:GoDeeper:
+************ / slAKA                                                                                          :2_2:GoDeeper:
+************* / $*|                                                                                          :2_2:GoDeeper:
+************** / slAKA base                                                                                 :2_2:GoDeeper:
+*************** / slMultiTerm                                                                              :2_2:GoDeeper:
+**************** / |:| some                                                                               :2_2:GoDeeper:
+***************** / |:| base parser                                                                      :2_2:GoDeeper:
+****************** / pNumAsText                                                                         :2_2:GoDeeper:
+**** / withPrePost                                                                                                    :2_2:GoDeeper:
+***** / expectUnDeepers                                                                                              :2_2:GoDeeper:
+****** / pNumAsText                                                                                                 :2_2:GoDeeper:
+****** / pNumAsText                                                                                                   :2_3:GoDeeper:
+****** / pNumAsText                                                                                                     :2_4:GoDeeper:
+****** / pNumAsText                                                                                                       :2_5:GoDeeper:
+****** / pNumAsText                                                                                                         :2_6:GoDeeper:
+****** / ignoring ["GD","any","GD","unauthorised","GD","GD","GD","access"]                                                 :3_5:Or:
+**** / $*|                                                                                                            :2_2:GoDeeper:
+***** / pre part                                                                                                     :2_2:GoDeeper:
+****** / aboveNextLineKeyword                                                                                        :2_2:Other "any":
+******* / |<|                                                                                                       :2_2:Other "any":
+******* / |<* starting                                                                                              :2_2:Other "any":
+******* / ->| trying to consume 1 GoDeepers                                                                         :2_2:Other "any":
+******* / $*|                                                                                                       :2_2:Other "any":
+******* \ $*| has returned ((),0)                                                                                   :2_2:Other "any":
+****** / /*= lookAhead failed, delegating to plain /+=                                                               :2_2:Other "any":
+****** / aboveNextLineKeyword                                                                                         :2_3:GoDeeper:
+******* / |<|                                                                                                        :2_3:GoDeeper:
+******* / |<* starting                                                                                               :2_3:GoDeeper:
+******* / ->| trying to consume 1 GoDeepers                                                                          :2_3:GoDeeper:
+******* / $*|                                                                                                        :2_3:GoDeeper:
+******* \ $*| has returned ((),0)                                                                                    :2_3:GoDeeper:
+******* / ->| success                                                                                                 :2_3:Other "unau:
+******* / |>>                                                                                                         :2_3:Other "unau:
+******** / |>>/recurse                                                                                               :2_3:Other "unau:
+******** / |>>/base                                                                                                  :2_3:Other "unau:
+********* / slMultiTerm                                                                                             :2_3:Other "unau:
+********** / |:| some                                                                                              :2_3:Other "unau:
+*********** / |:| base parser                                                                                     :2_3:Other "unau:
+*********** \ |:| base parser has returned ("unauthorised",0)                                                      :2_4:GoDeeper:
+*********** / |:| deeper                                                                                           :2_4:GoDeeper:
+************ / |:| some GoDeeper                                                                                  :2_4:GoDeeper:
+************ \ |:| some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                                             :2_6:Other "acce:
+************ / |:| some                                                                                                :2_6:Other "acce:
+************* / |:| base parser                                                                                       :2_6:Other "acce:
+************* \ |:| base parser has returned ("access",0)                                                              :3_6:UnDeeper:
+************* / |:| deeper                                                                                             :3_6:UnDeeper:
+************** / |:| some GoDeeper                                                                                    :3_6:UnDeeper:
+************* / |:| noMore                                                                                             :3_6:UnDeeper:
+************* \ |:| noMore has returned ([],0)                                                                         :3_6:UnDeeper:
+************ \ |:| some has returned (["access"],0)                                                                     :3_6:UnDeeper:
+*********** \ |:| deeper has returned (["access"],3)                                                                     :3_6:UnDeeper:
+********** \ |:| some has returned (["unauthorised","access"],3)                                                          :3_6:UnDeeper:
+********* \ slMultiTerm has returned (["unauthorised","access"],3)                                                         :3_6:UnDeeper:
+********* / |>>/base got ["unauthorised","access"]                                                                         :3_6:UnDeeper:
+******** \ |>>/base has returned (["unauthorised","access"],3)                                                              :3_6:UnDeeper:
+******* \ |>> has returned (["unauthorised","access"],3)                                                                     :3_6:UnDeeper:
+******* / |<*/recurse                                                                                                        :3_6:UnDeeper:
+******* / |<*/recurse matched 1 UnDeepers, then got Or with -1 UnDeepers pending                                           :3_6:GoDeeper:
+******* / |<*/parent returning Or with 3 UnDeepers pending                                                                 :3_6:GoDeeper:
+****** \ aboveNextLineKeyword has returned ((["unauthorised","access"],Or),3)                                               :3_6:GoDeeper:
+****** / got back toreturn=(["unauthorised","access"],Or) with n=3; maxDepth=1; guard is n < maxDepth = False               :3_6:GoDeeper:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                :2_3:GoDeeper:
+****** / aboveNextLineKeyword                                                                                          :2_3:Other "unau:
+******* / |<|                                                                                                         :2_3:Other "unau:
+******* / |<* starting                                                                                                :2_3:Other "unau:
+******* / ->| trying to consume 1 GoDeepers                                                                           :2_3:Other "unau:
+******* / $*|                                                                                                         :2_3:Other "unau:
+******* \ $*| has returned ((),0)                                                                                     :2_3:Other "unau:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                 :2_3:Other "unau:
+****** / aboveNextLineKeyword                                                                                           :2_4:GoDeeper:
+******* / |<|                                                                                                          :2_4:GoDeeper:
+******* / |<* starting                                                                                                 :2_4:GoDeeper:
+******* / ->| trying to consume 1 GoDeepers                                                                            :2_4:GoDeeper:
+******* / $*|                                                                                                          :2_4:GoDeeper:
+******* \ $*| has returned ((),0)                                                                                      :2_4:GoDeeper:
+******* / ->| success                                                                                                    :2_5:GoDeeper:
+******* / |>>                                                                                                            :2_5:GoDeeper:
+******** / |>>/recurse                                                                                                  :2_5:GoDeeper:
+********* / |>>                                                                                                          :2_6:GoDeeper:
+********** / |>>/recurse                                                                                                :2_6:GoDeeper:
+*********** / |>>                                                                                                       :2_6:Other "acce:
+************ / |>>/recurse                                                                                             :2_6:Other "acce:
+************ / |>>/base                                                                                                :2_6:Other "acce:
+************* / slMultiTerm                                                                                           :2_6:Other "acce:
+************** / |:| some                                                                                            :2_6:Other "acce:
+*************** / |:| base parser                                                                                   :2_6:Other "acce:
+*************** \ |:| base parser has returned ("access",0)                                                          :3_6:UnDeeper:
+*************** / |:| deeper                                                                                         :3_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :3_6:UnDeeper:
+*************** / |:| noMore                                                                                         :3_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :3_6:UnDeeper:
+************** \ |:| some has returned (["access"],0)                                                                 :3_6:UnDeeper:
+************* \ slMultiTerm has returned (["access"],0)                                                                :3_6:UnDeeper:
+************* / |>>/base got ["access"]                                                                                :3_6:UnDeeper:
+************ \ |>>/base has returned (["access"],0)                                                                     :3_6:UnDeeper:
+*********** \ |>> has returned (["access"],0)                                                                            :3_6:UnDeeper:
+********** \ |>>/recurse has returned (["access"],1)                                                                      :3_6:UnDeeper:
+********* \ |>> has returned (["access"],1)                                                                                :3_6:UnDeeper:
+******** \ |>>/recurse has returned (["access"],2)                                                                          :3_6:UnDeeper:
+******* \ |>> has returned (["access"],2)                                                                                    :3_6:UnDeeper:
+******* / |<*/recurse                                                                                                        :3_6:UnDeeper:
+******* / |<*/recurse matched 1 UnDeepers, then got Or with -1 UnDeepers pending                                           :3_6:GoDeeper:
+******* / |<*/parent returning Or with 2 UnDeepers pending                                                                 :3_6:GoDeeper:
+****** \ aboveNextLineKeyword has returned ((["access"],Or),2)                                                              :3_6:GoDeeper:
+****** / got back toreturn=(["access"],Or) with n=2; maxDepth=1; guard is n < maxDepth = False                              :3_6:GoDeeper:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                  :2_4:GoDeeper:
+****** / aboveNextLineKeyword                                                                                             :2_5:GoDeeper:
+******* / |<|                                                                                                            :2_5:GoDeeper:
+******* / |<* starting                                                                                                   :2_5:GoDeeper:
+******* / ->| trying to consume 1 GoDeepers                                                                              :2_5:GoDeeper:
+******* / $*|                                                                                                            :2_5:GoDeeper:
+******* \ $*| has returned ((),0)                                                                                        :2_5:GoDeeper:
+******* / ->| success                                                                                                      :2_6:GoDeeper:
+******* / |>>                                                                                                              :2_6:GoDeeper:
+******** / |>>/recurse                                                                                                    :2_6:GoDeeper:
+********* / |>>                                                                                                           :2_6:Other "acce:
+********** / |>>/recurse                                                                                                 :2_6:Other "acce:
+********** / |>>/base                                                                                                    :2_6:Other "acce:
+*********** / slMultiTerm                                                                                               :2_6:Other "acce:
+************ / |:| some                                                                                                :2_6:Other "acce:
+************* / |:| base parser                                                                                       :2_6:Other "acce:
+************* \ |:| base parser has returned ("access",0)                                                              :3_6:UnDeeper:
+************* / |:| deeper                                                                                             :3_6:UnDeeper:
+************** / |:| some GoDeeper                                                                                    :3_6:UnDeeper:
+************* / |:| noMore                                                                                             :3_6:UnDeeper:
+************* \ |:| noMore has returned ([],0)                                                                         :3_6:UnDeeper:
+************ \ |:| some has returned (["access"],0)                                                                     :3_6:UnDeeper:
+*********** \ slMultiTerm has returned (["access"],0)                                                                    :3_6:UnDeeper:
+*********** / |>>/base got ["access"]                                                                                    :3_6:UnDeeper:
+********** \ |>>/base has returned (["access"],0)                                                                         :3_6:UnDeeper:
+********* \ |>> has returned (["access"],0)                                                                                :3_6:UnDeeper:
+******** \ |>>/recurse has returned (["access"],1)                                                                          :3_6:UnDeeper:
+******* \ |>> has returned (["access"],1)                                                                                    :3_6:UnDeeper:
+******* / |<*/recurse                                                                                                        :3_6:UnDeeper:
+******* / |<*/recurse matched 1 UnDeepers, then got Or with -1 UnDeepers pending                                           :3_6:GoDeeper:
+******* / |<*/parent returning Or with 1 UnDeepers pending                                                                 :3_6:GoDeeper:
+****** \ aboveNextLineKeyword has returned ((["access"],Or),1)                                                              :3_6:GoDeeper:
+****** / got back toreturn=(["access"],Or) with n=1; maxDepth=1; guard is n < maxDepth = False                              :3_6:GoDeeper:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                    :2_5:GoDeeper:
+****** / aboveNextLineKeyword                                                                                               :2_6:GoDeeper:
+******* / |<|                                                                                                              :2_6:GoDeeper:
+******* / |<* starting                                                                                                     :2_6:GoDeeper:
+******* / ->| trying to consume 1 GoDeepers                                                                                :2_6:GoDeeper:
+******* / $*|                                                                                                              :2_6:GoDeeper:
+******* \ $*| has returned ((),0)                                                                                          :2_6:GoDeeper:
+******* / ->| success                                                                                                       :2_6:Other "acce:
+******* / |>>                                                                                                               :2_6:Other "acce:
+******** / |>>/recurse                                                                                                     :2_6:Other "acce:
+******** / |>>/base                                                                                                        :2_6:Other "acce:
+********* / slMultiTerm                                                                                                   :2_6:Other "acce:
+********** / |:| some                                                                                                    :2_6:Other "acce:
+*********** / |:| base parser                                                                                           :2_6:Other "acce:
+*********** \ |:| base parser has returned ("access",0)                                                                  :3_6:UnDeeper:
+*********** / |:| deeper                                                                                                 :3_6:UnDeeper:
+************ / |:| some GoDeeper                                                                                        :3_6:UnDeeper:
+*********** / |:| noMore                                                                                                 :3_6:UnDeeper:
+*********** \ |:| noMore has returned ([],0)                                                                             :3_6:UnDeeper:
+********** \ |:| some has returned (["access"],0)                                                                         :3_6:UnDeeper:
+********* \ slMultiTerm has returned (["access"],0)                                                                        :3_6:UnDeeper:
+********* / |>>/base got ["access"]                                                                                        :3_6:UnDeeper:
+******** \ |>>/base has returned (["access"],0)                                                                             :3_6:UnDeeper:
+******* \ |>> has returned (["access"],0)                                                                                    :3_6:UnDeeper:
+******* / |<*/recurse                                                                                                        :3_6:UnDeeper:
+******* / |<*/recurse matched 1 UnDeepers, then got Or with -1 UnDeepers pending                                           :3_6:GoDeeper:
+******* / |<*/parent returning Or with 0 UnDeepers pending                                                                 :3_6:GoDeeper:
+****** \ aboveNextLineKeyword has returned ((["access"],Or),0)                                                              :3_6:GoDeeper:
+****** / got back toreturn=(["access"],Or) with n=0; maxDepth=1; guard is n < maxDepth = True                               :3_6:GoDeeper:
+****** / /*= lookAhead succeeded, recursing greedily                                                                        :2_6:GoDeeper:
+****** / aboveNextLineKeyword                                                                                                :2_6:Other "acce:
+******* / |<|                                                                                                               :2_6:Other "acce:
+******* / |<* starting                                                                                                      :2_6:Other "acce:
+******* / ->| trying to consume 1 GoDeepers                                                                                 :2_6:Other "acce:
+******* / $*|                                                                                                               :2_6:Other "acce:
+******* \ $*| has returned ((),0)                                                                                           :2_6:Other "acce:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                       :2_6:Other "acce:
+****** / aboveNextLineKeyword                                                                                                 :3_6:UnDeeper:
+******* / |<|                                                                                                                :3_6:UnDeeper:
+******* / |<* starting                                                                                                       :3_6:UnDeeper:
+******* / ->| trying to consume 1 GoDeepers                                                                                  :3_6:UnDeeper:
+******* / $*|                                                                                                                :3_6:UnDeeper:
+******* \ $*| has returned ((),0)                                                                                            :3_6:UnDeeper:
+****** / /*= lookAhead failed, delegating to plain /+=                                                                        :3_6:UnDeeper:
+****** / /*= lookAhead succeeded, greedy recursion failed (no p1); returning p2.                                            :2_6:GoDeeper:
+***** \ pre part has returned (["any","unauthorised"],4)                                                                     :2_6:GoDeeper:
+**** \ $*| has returned (["any","unauthorised"],4)                                                                            :2_6:GoDeeper:
+**** / made it to inner parser                                                                                                :2_6:GoDeeper:
+***** / pBSR inner                                                                                                           :2_6:GoDeeper:
+****** / term p                                                                                                             :2_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :2_6:GoDeeper:
+******** / $*|                                                                                                            :2_6:GoDeeper:
+********* / |:| some                                                                                                     :2_6:GoDeeper:
+********** / |:| base parser                                                                                            :2_6:GoDeeper:
+*********** / pNumAsText                                                                                               :2_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :2_6:GoDeeper:
+******** / |:| some                                                                                                       :2_6:GoDeeper:
+********* / |:| base parser                                                                                              :2_6:GoDeeper:
+********** / pNumAsText                                                                                                 :2_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :2_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :2_6:GoDeeper:
+********* / someIndentation                                                                                              :2_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :2_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :2_6:Other "acce:
+********** / manyIndentation/leaf?                                                                                       :2_6:Other "acce:
+*********** / term p                                                                                                    :2_6:Other "acce:
+************ / term p/1a:label directly above                                                                          :2_6:Other "acce:
+************* / $*|                                                                                                   :2_6:Other "acce:
+************** / |:| some                                                                                            :2_6:Other "acce:
+*************** / |:| base parser                                                                                   :2_6:Other "acce:
+*************** \ |:| base parser has returned ("access",0)                                                          :3_6:UnDeeper:
+*************** / |:| deeper                                                                                         :3_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :3_6:UnDeeper:
+*************** / |:| noMore                                                                                         :3_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :3_6:UnDeeper:
+************** \ |:| some has returned (["access"],0)                                                                 :3_6:UnDeeper:
+************** / pNumAsText                                                                                           :3_6:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :2_6:Other "acce:
+************* / |:| some                                                                                              :2_6:Other "acce:
+************** / |:| base parser                                                                                     :2_6:Other "acce:
+************** \ |:| base parser has returned ("access",0)                                                            :3_6:UnDeeper:
+************** / |:| deeper                                                                                           :3_6:UnDeeper:
+*************** / |:| some GoDeeper                                                                                  :3_6:UnDeeper:
+************** / |:| noMore                                                                                           :3_6:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                       :3_6:UnDeeper:
+************* \ |:| some has returned (["access"],0)                                                                   :3_6:UnDeeper:
+************* / undeepers                                                                                              :3_6:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                               :3_6:UnDeeper:
+************** / sameLine: success!                                                                                   :3_6:UnDeeper:
+************* \ undeepers has returned ()                                                                              :3_6:UnDeeper:
+************* / matching EOL                                                                                           :3_6:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :2_6:Other "acce:
+************* / term p/2:someIndentation expr p                                                                       :2_6:Other "acce:
+************** / someIndentation                                                                                     :2_6:Other "acce:
+*************** / myindented: consuming GoDeeper                                                                    :2_6:Other "acce:
+************* / term p/3:plain p                                                                                      :2_6:Other "acce:
+************** / pRelPred                                                                                            :2_6:Other "acce:
+*************** / slRelPred                                                                                         :2_6:Other "acce:
+**************** / RPConstraint                                                                                    :2_6:Other "acce:
+***************** / $*|                                                                                           :2_6:Other "acce:
+****************** / slMultiTerm                                                                                 :2_6:Other "acce:
+******************* / |:| some                                                                                  :2_6:Other "acce:
+******************** / |:| base parser                                                                         :2_6:Other "acce:
+******************** \ |:| base parser has returned ("access",0)                                                :3_6:UnDeeper:
+******************** / |:| deeper                                                                               :3_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :3_6:UnDeeper:
+******************** / |:| noMore                                                                               :3_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :3_6:UnDeeper:
+******************* \ |:| some has returned (["access"],0)                                                       :3_6:UnDeeper:
+****************** \ slMultiTerm has returned (["access"],0)                                                      :3_6:UnDeeper:
+***************** \ $*| has returned (["access"],0)                                                                :3_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :3_6:UnDeeper:
+****************** / $>>                                                                                          :3_6:UnDeeper:
+******************* / $>>/recurse                                                                                :3_6:UnDeeper:
+******************* / $>>/base                                                                                   :3_6:UnDeeper:
+**************** / RPBoolStructR                                                                                   :2_6:Other "acce:
+***************** / $*|                                                                                           :2_6:Other "acce:
+****************** / slMultiTerm                                                                                 :2_6:Other "acce:
+******************* / |:| some                                                                                  :2_6:Other "acce:
+******************** / |:| base parser                                                                         :2_6:Other "acce:
+******************** \ |:| base parser has returned ("access",0)                                                :3_6:UnDeeper:
+******************** / |:| deeper                                                                               :3_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :3_6:UnDeeper:
+******************** / |:| noMore                                                                               :3_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :3_6:UnDeeper:
+******************* \ |:| some has returned (["access"],0)                                                       :3_6:UnDeeper:
+****************** \ slMultiTerm has returned (["access"],0)                                                      :3_6:UnDeeper:
+***************** \ $*| has returned (["access"],0)                                                                :3_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :3_6:UnDeeper:
+****************** / $>>                                                                                          :3_6:UnDeeper:
+******************* / $>>/recurse                                                                                :3_6:UnDeeper:
+******************* / $>>/base                                                                                   :3_6:UnDeeper:
+**************** / RPMT                                                                                            :2_6:Other "acce:
+***************** / $*|                                                                                           :2_6:Other "acce:
+****************** / slAKA                                                                                       :2_6:Other "acce:
+******************* / $*|                                                                                       :2_6:Other "acce:
+******************** / slAKA base                                                                              :2_6:Other "acce:
+********************* / slMultiTerm                                                                           :2_6:Other "acce:
+********************** / |:| some                                                                            :2_6:Other "acce:
+*********************** / |:| base parser                                                                   :2_6:Other "acce:
+*********************** \ |:| base parser has returned ("access",0)                                          :3_6:UnDeeper:
+*********************** / |:| deeper                                                                         :3_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :3_6:UnDeeper:
+*********************** / |:| noMore                                                                         :3_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :3_6:UnDeeper:
+********************** \ |:| some has returned (["access"],0)                                                 :3_6:UnDeeper:
+********************* \ slMultiTerm has returned (["access"],0)                                                :3_6:UnDeeper:
+******************** \ slAKA base has returned (["access"],0)                                                   :3_6:UnDeeper:
+******************* \ $*| has returned (["access"],0)                                                            :3_6:UnDeeper:
+******************* / |>>                                                                                        :3_6:UnDeeper:
+******************** / |>>/recurse                                                                              :3_6:UnDeeper:
+******************** / |>>/base                                                                                 :3_6:UnDeeper:
+********************* / slAKA optional akapart                                                                 :3_6:UnDeeper:
+********************** / |?| optional something                                                               :3_6:UnDeeper:
+*********************** / |>>                                                                                :3_6:UnDeeper:
+************************ / |>>/recurse                                                                      :3_6:UnDeeper:
+************************ / |>>/base                                                                         :3_6:UnDeeper:
+************************* / PAKA/akapart                                                                   :3_6:UnDeeper:
+************************** / $>|                                                                          :3_6:UnDeeper:
+*************************** / Aka Token                                                                  :3_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :3_6:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                        :3_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :3_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :3_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :3_6:UnDeeper:
+******************* / |>>                                                                                        :3_6:UnDeeper:
+******************** / |>>/recurse                                                                              :3_6:UnDeeper:
+******************** / |>>/base                                                                                 :3_6:UnDeeper:
+********************* / slAKA optional typically                                                               :3_6:UnDeeper:
+********************** / |?| optional something                                                               :3_6:UnDeeper:
+*********************** / |>>                                                                                :3_6:UnDeeper:
+************************ / |>>/recurse                                                                      :3_6:UnDeeper:
+************************ / |>>/base                                                                         :3_6:UnDeeper:
+************************* / typically                                                                      :3_6:UnDeeper:
+************************** / $>|                                                                          :3_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :3_6:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                      :3_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :3_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :3_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :3_6:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                             :3_6:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                                :3_6:UnDeeper:
+****************** \ slAKA has returned (["access"],0)                                                            :3_6:UnDeeper:
+***************** \ $*| has returned (["access"],0)                                                                :3_6:UnDeeper:
+**************** \ RPMT has returned (RPMT ["access"],0)                                                            :3_6:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["access"],0)                                                         :3_6:UnDeeper:
+*************** / undeepers                                                                                          :3_6:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                           :3_6:UnDeeper:
+**************** / sameLine: success!                                                                               :3_6:UnDeeper:
+*************** \ undeepers has returned ()                                                                          :3_6:UnDeeper:
+************** \ pRelPred has returned RPMT ["access"]                                                                :3_6:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["access"])                                                 :3_6:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["access"])                                                :3_6:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["access"])                                                               :3_6:UnDeeper:
+*********** / binary(Or)                                                                                                 :3_6:UnDeeper:
+*********** / binary(And)                                                                                                :3_6:UnDeeper:
+*********** / binary(SetLess)                                                                                            :3_6:UnDeeper:
+*********** / binary(SetPlus)                                                                                            :3_6:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["access"])                                                  :3_6:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                               :3_6:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                      :3_5:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["access"])                                                       :3_5:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["access"])                                         :3_5:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["access"])                                                       :3_5:Or:
+****** \ term p has returned MyLeaf (RPMT ["access"])                                                                      :3_5:Or:
+****** / binary(Or)                                                                                                        :3_5:Or:
+****** \ binary(Or) has returned Or                                                                                         :3_6:GoDeeper:
+****** / term p                                                                                                             :3_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :3_6:GoDeeper:
+******** / $*|                                                                                                            :3_6:GoDeeper:
+********* / |:| some                                                                                                     :3_6:GoDeeper:
+********** / |:| base parser                                                                                            :3_6:GoDeeper:
+*********** / pNumAsText                                                                                               :3_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :3_6:GoDeeper:
+******** / |:| some                                                                                                       :3_6:GoDeeper:
+********* / |:| base parser                                                                                              :3_6:GoDeeper:
+********** / pNumAsText                                                                                                 :3_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :3_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :3_6:GoDeeper:
+********* / someIndentation                                                                                              :3_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :3_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :3_6:Other "use":
+********** / manyIndentation/leaf?                                                                                       :3_6:Other "use":
+*********** / term p                                                                                                    :3_6:Other "use":
+************ / term p/1a:label directly above                                                                          :3_6:Other "use":
+************* / $*|                                                                                                   :3_6:Other "use":
+************** / |:| some                                                                                            :3_6:Other "use":
+*************** / |:| base parser                                                                                   :3_6:Other "use":
+*************** \ |:| base parser has returned ("use",0)                                                             :4_6:UnDeeper:
+*************** / |:| deeper                                                                                         :4_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :4_6:UnDeeper:
+*************** / |:| noMore                                                                                         :4_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :4_6:UnDeeper:
+************** \ |:| some has returned (["use"],0)                                                                    :4_6:UnDeeper:
+************** / pNumAsText                                                                                           :4_6:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :3_6:Other "use":
+************* / |:| some                                                                                              :3_6:Other "use":
+************** / |:| base parser                                                                                     :3_6:Other "use":
+************** \ |:| base parser has returned ("use",0)                                                               :4_6:UnDeeper:
+************** / |:| deeper                                                                                           :4_6:UnDeeper:
+*************** / |:| some GoDeeper                                                                                  :4_6:UnDeeper:
+************** / |:| noMore                                                                                           :4_6:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                       :4_6:UnDeeper:
+************* \ |:| some has returned (["use"],0)                                                                      :4_6:UnDeeper:
+************* / undeepers                                                                                              :4_6:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                               :4_6:UnDeeper:
+************** / sameLine: success!                                                                                   :4_6:UnDeeper:
+************* \ undeepers has returned ()                                                                              :4_6:UnDeeper:
+************* / matching EOL                                                                                           :4_6:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :3_6:Other "use":
+************* / term p/2:someIndentation expr p                                                                       :3_6:Other "use":
+************** / someIndentation                                                                                     :3_6:Other "use":
+*************** / myindented: consuming GoDeeper                                                                    :3_6:Other "use":
+************* / term p/3:plain p                                                                                      :3_6:Other "use":
+************** / pRelPred                                                                                            :3_6:Other "use":
+*************** / slRelPred                                                                                         :3_6:Other "use":
+**************** / RPConstraint                                                                                    :3_6:Other "use":
+***************** / $*|                                                                                           :3_6:Other "use":
+****************** / slMultiTerm                                                                                 :3_6:Other "use":
+******************* / |:| some                                                                                  :3_6:Other "use":
+******************** / |:| base parser                                                                         :3_6:Other "use":
+******************** \ |:| base parser has returned ("use",0)                                                   :4_6:UnDeeper:
+******************** / |:| deeper                                                                               :4_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :4_6:UnDeeper:
+******************** / |:| noMore                                                                               :4_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :4_6:UnDeeper:
+******************* \ |:| some has returned (["use"],0)                                                          :4_6:UnDeeper:
+****************** \ slMultiTerm has returned (["use"],0)                                                         :4_6:UnDeeper:
+***************** \ $*| has returned (["use"],0)                                                                   :4_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :4_6:UnDeeper:
+****************** / $>>                                                                                          :4_6:UnDeeper:
+******************* / $>>/recurse                                                                                :4_6:UnDeeper:
+******************* / $>>/base                                                                                   :4_6:UnDeeper:
+**************** / RPBoolStructR                                                                                   :3_6:Other "use":
+***************** / $*|                                                                                           :3_6:Other "use":
+****************** / slMultiTerm                                                                                 :3_6:Other "use":
+******************* / |:| some                                                                                  :3_6:Other "use":
+******************** / |:| base parser                                                                         :3_6:Other "use":
+******************** \ |:| base parser has returned ("use",0)                                                   :4_6:UnDeeper:
+******************** / |:| deeper                                                                               :4_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :4_6:UnDeeper:
+******************** / |:| noMore                                                                               :4_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :4_6:UnDeeper:
+******************* \ |:| some has returned (["use"],0)                                                          :4_6:UnDeeper:
+****************** \ slMultiTerm has returned (["use"],0)                                                         :4_6:UnDeeper:
+***************** \ $*| has returned (["use"],0)                                                                   :4_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :4_6:UnDeeper:
+****************** / $>>                                                                                          :4_6:UnDeeper:
+******************* / $>>/recurse                                                                                :4_6:UnDeeper:
+******************* / $>>/base                                                                                   :4_6:UnDeeper:
+**************** / RPMT                                                                                            :3_6:Other "use":
+***************** / $*|                                                                                           :3_6:Other "use":
+****************** / slAKA                                                                                       :3_6:Other "use":
+******************* / $*|                                                                                       :3_6:Other "use":
+******************** / slAKA base                                                                              :3_6:Other "use":
+********************* / slMultiTerm                                                                           :3_6:Other "use":
+********************** / |:| some                                                                            :3_6:Other "use":
+*********************** / |:| base parser                                                                   :3_6:Other "use":
+*********************** \ |:| base parser has returned ("use",0)                                             :4_6:UnDeeper:
+*********************** / |:| deeper                                                                         :4_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :4_6:UnDeeper:
+*********************** / |:| noMore                                                                         :4_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :4_6:UnDeeper:
+********************** \ |:| some has returned (["use"],0)                                                    :4_6:UnDeeper:
+********************* \ slMultiTerm has returned (["use"],0)                                                   :4_6:UnDeeper:
+******************** \ slAKA base has returned (["use"],0)                                                      :4_6:UnDeeper:
+******************* \ $*| has returned (["use"],0)                                                               :4_6:UnDeeper:
+******************* / |>>                                                                                        :4_6:UnDeeper:
+******************** / |>>/recurse                                                                              :4_6:UnDeeper:
+******************** / |>>/base                                                                                 :4_6:UnDeeper:
+********************* / slAKA optional akapart                                                                 :4_6:UnDeeper:
+********************** / |?| optional something                                                               :4_6:UnDeeper:
+*********************** / |>>                                                                                :4_6:UnDeeper:
+************************ / |>>/recurse                                                                      :4_6:UnDeeper:
+************************ / |>>/base                                                                         :4_6:UnDeeper:
+************************* / PAKA/akapart                                                                   :4_6:UnDeeper:
+************************** / $>|                                                                          :4_6:UnDeeper:
+*************************** / Aka Token                                                                  :4_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :4_6:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                        :4_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :4_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :4_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :4_6:UnDeeper:
+******************* / |>>                                                                                        :4_6:UnDeeper:
+******************** / |>>/recurse                                                                              :4_6:UnDeeper:
+******************** / |>>/base                                                                                 :4_6:UnDeeper:
+********************* / slAKA optional typically                                                               :4_6:UnDeeper:
+********************** / |?| optional something                                                               :4_6:UnDeeper:
+*********************** / |>>                                                                                :4_6:UnDeeper:
+************************ / |>>/recurse                                                                      :4_6:UnDeeper:
+************************ / |>>/base                                                                         :4_6:UnDeeper:
+************************* / typically                                                                      :4_6:UnDeeper:
+************************** / $>|                                                                          :4_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :4_6:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                      :4_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :4_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :4_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :4_6:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                             :4_6:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                                :4_6:UnDeeper:
+****************** \ slAKA has returned (["use"],0)                                                               :4_6:UnDeeper:
+***************** \ $*| has returned (["use"],0)                                                                   :4_6:UnDeeper:
+**************** \ RPMT has returned (RPMT ["use"],0)                                                               :4_6:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["use"],0)                                                            :4_6:UnDeeper:
+*************** / undeepers                                                                                          :4_6:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                           :4_6:UnDeeper:
+**************** / sameLine: success!                                                                               :4_6:UnDeeper:
+*************** \ undeepers has returned ()                                                                          :4_6:UnDeeper:
+************** \ pRelPred has returned RPMT ["use"]                                                                   :4_6:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["use"])                                                    :4_6:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["use"])                                                   :4_6:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["use"])                                                                  :4_6:UnDeeper:
+*********** / binary(Or)                                                                                                 :4_6:UnDeeper:
+*********** / binary(And)                                                                                                :4_6:UnDeeper:
+*********** / binary(SetLess)                                                                                            :4_6:UnDeeper:
+*********** / binary(SetPlus)                                                                                            :4_6:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["use"])                                                     :4_6:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                               :4_6:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                      :4_5:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["use"])                                                          :4_5:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["use"])                                            :4_5:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["use"])                                                          :4_5:Or:
+****** \ term p has returned MyLeaf (RPMT ["use"])                                                                         :4_5:Or:
+****** / binary(Or)                                                                                                        :4_5:Or:
+****** \ binary(Or) has returned Or                                                                                         :4_6:GoDeeper:
+****** / term p                                                                                                             :4_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :4_6:GoDeeper:
+******** / $*|                                                                                                            :4_6:GoDeeper:
+********* / |:| some                                                                                                     :4_6:GoDeeper:
+********** / |:| base parser                                                                                            :4_6:GoDeeper:
+*********** / pNumAsText                                                                                               :4_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :4_6:GoDeeper:
+******** / |:| some                                                                                                       :4_6:GoDeeper:
+********* / |:| base parser                                                                                              :4_6:GoDeeper:
+********** / pNumAsText                                                                                                 :4_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :4_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :4_6:GoDeeper:
+********* / someIndentation                                                                                              :4_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :4_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :4_6:Other "disc:
+********** / manyIndentation/leaf?                                                                                       :4_6:Other "disc:
+*********** / term p                                                                                                    :4_6:Other "disc:
+************ / term p/1a:label directly above                                                                          :4_6:Other "disc:
+************* / $*|                                                                                                   :4_6:Other "disc:
+************** / |:| some                                                                                            :4_6:Other "disc:
+*************** / |:| base parser                                                                                   :4_6:Other "disc:
+*************** \ |:| base parser has returned ("disclosure",0)                                                      :5_6:UnDeeper:
+*************** / |:| deeper                                                                                         :5_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :5_6:UnDeeper:
+*************** / |:| noMore                                                                                         :5_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :5_6:UnDeeper:
+************** \ |:| some has returned (["disclosure"],0)                                                             :5_6:UnDeeper:
+************** / pNumAsText                                                                                           :5_6:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :4_6:Other "disc:
+************* / |:| some                                                                                              :4_6:Other "disc:
+************** / |:| base parser                                                                                     :4_6:Other "disc:
+************** \ |:| base parser has returned ("disclosure",0)                                                        :5_6:UnDeeper:
+************** / |:| deeper                                                                                           :5_6:UnDeeper:
+*************** / |:| some GoDeeper                                                                                  :5_6:UnDeeper:
+************** / |:| noMore                                                                                           :5_6:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                       :5_6:UnDeeper:
+************* \ |:| some has returned (["disclosure"],0)                                                               :5_6:UnDeeper:
+************* / undeepers                                                                                              :5_6:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                               :5_6:UnDeeper:
+************** / sameLine: success!                                                                                   :5_6:UnDeeper:
+************* \ undeepers has returned ()                                                                              :5_6:UnDeeper:
+************* / matching EOL                                                                                           :5_6:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :4_6:Other "disc:
+************* / term p/2:someIndentation expr p                                                                       :4_6:Other "disc:
+************** / someIndentation                                                                                     :4_6:Other "disc:
+*************** / myindented: consuming GoDeeper                                                                    :4_6:Other "disc:
+************* / term p/3:plain p                                                                                      :4_6:Other "disc:
+************** / pRelPred                                                                                            :4_6:Other "disc:
+*************** / slRelPred                                                                                         :4_6:Other "disc:
+**************** / RPConstraint                                                                                    :4_6:Other "disc:
+***************** / $*|                                                                                           :4_6:Other "disc:
+****************** / slMultiTerm                                                                                 :4_6:Other "disc:
+******************* / |:| some                                                                                  :4_6:Other "disc:
+******************** / |:| base parser                                                                         :4_6:Other "disc:
+******************** \ |:| base parser has returned ("disclosure",0)                                            :5_6:UnDeeper:
+******************** / |:| deeper                                                                               :5_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :5_6:UnDeeper:
+******************** / |:| noMore                                                                               :5_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :5_6:UnDeeper:
+******************* \ |:| some has returned (["disclosure"],0)                                                   :5_6:UnDeeper:
+****************** \ slMultiTerm has returned (["disclosure"],0)                                                  :5_6:UnDeeper:
+***************** \ $*| has returned (["disclosure"],0)                                                            :5_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :5_6:UnDeeper:
+****************** / $>>                                                                                          :5_6:UnDeeper:
+******************* / $>>/recurse                                                                                :5_6:UnDeeper:
+******************* / $>>/base                                                                                   :5_6:UnDeeper:
+**************** / RPBoolStructR                                                                                   :4_6:Other "disc:
+***************** / $*|                                                                                           :4_6:Other "disc:
+****************** / slMultiTerm                                                                                 :4_6:Other "disc:
+******************* / |:| some                                                                                  :4_6:Other "disc:
+******************** / |:| base parser                                                                         :4_6:Other "disc:
+******************** \ |:| base parser has returned ("disclosure",0)                                            :5_6:UnDeeper:
+******************** / |:| deeper                                                                               :5_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :5_6:UnDeeper:
+******************** / |:| noMore                                                                               :5_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :5_6:UnDeeper:
+******************* \ |:| some has returned (["disclosure"],0)                                                   :5_6:UnDeeper:
+****************** \ slMultiTerm has returned (["disclosure"],0)                                                  :5_6:UnDeeper:
+***************** \ $*| has returned (["disclosure"],0)                                                            :5_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :5_6:UnDeeper:
+****************** / $>>                                                                                          :5_6:UnDeeper:
+******************* / $>>/recurse                                                                                :5_6:UnDeeper:
+******************* / $>>/base                                                                                   :5_6:UnDeeper:
+**************** / RPMT                                                                                            :4_6:Other "disc:
+***************** / $*|                                                                                           :4_6:Other "disc:
+****************** / slAKA                                                                                       :4_6:Other "disc:
+******************* / $*|                                                                                       :4_6:Other "disc:
+******************** / slAKA base                                                                              :4_6:Other "disc:
+********************* / slMultiTerm                                                                           :4_6:Other "disc:
+********************** / |:| some                                                                            :4_6:Other "disc:
+*********************** / |:| base parser                                                                   :4_6:Other "disc:
+*********************** \ |:| base parser has returned ("disclosure",0)                                      :5_6:UnDeeper:
+*********************** / |:| deeper                                                                         :5_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :5_6:UnDeeper:
+*********************** / |:| noMore                                                                         :5_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :5_6:UnDeeper:
+********************** \ |:| some has returned (["disclosure"],0)                                             :5_6:UnDeeper:
+********************* \ slMultiTerm has returned (["disclosure"],0)                                            :5_6:UnDeeper:
+******************** \ slAKA base has returned (["disclosure"],0)                                               :5_6:UnDeeper:
+******************* \ $*| has returned (["disclosure"],0)                                                        :5_6:UnDeeper:
+******************* / |>>                                                                                        :5_6:UnDeeper:
+******************** / |>>/recurse                                                                              :5_6:UnDeeper:
+******************** / |>>/base                                                                                 :5_6:UnDeeper:
+********************* / slAKA optional akapart                                                                 :5_6:UnDeeper:
+********************** / |?| optional something                                                               :5_6:UnDeeper:
+*********************** / |>>                                                                                :5_6:UnDeeper:
+************************ / |>>/recurse                                                                      :5_6:UnDeeper:
+************************ / |>>/base                                                                         :5_6:UnDeeper:
+************************* / PAKA/akapart                                                                   :5_6:UnDeeper:
+************************** / $>|                                                                          :5_6:UnDeeper:
+*************************** / Aka Token                                                                  :5_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :5_6:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                        :5_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :5_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :5_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :5_6:UnDeeper:
+******************* / |>>                                                                                        :5_6:UnDeeper:
+******************** / |>>/recurse                                                                              :5_6:UnDeeper:
+******************** / |>>/base                                                                                 :5_6:UnDeeper:
+********************* / slAKA optional typically                                                               :5_6:UnDeeper:
+********************** / |?| optional something                                                               :5_6:UnDeeper:
+*********************** / |>>                                                                                :5_6:UnDeeper:
+************************ / |>>/recurse                                                                      :5_6:UnDeeper:
+************************ / |>>/base                                                                         :5_6:UnDeeper:
+************************* / typically                                                                      :5_6:UnDeeper:
+************************** / $>|                                                                          :5_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :5_6:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                      :5_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :5_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :5_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :5_6:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                             :5_6:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                                :5_6:UnDeeper:
+****************** \ slAKA has returned (["disclosure"],0)                                                        :5_6:UnDeeper:
+***************** \ $*| has returned (["disclosure"],0)                                                            :5_6:UnDeeper:
+**************** \ RPMT has returned (RPMT ["disclosure"],0)                                                        :5_6:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["disclosure"],0)                                                     :5_6:UnDeeper:
+*************** / undeepers                                                                                          :5_6:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                           :5_6:UnDeeper:
+**************** / sameLine: success!                                                                               :5_6:UnDeeper:
+*************** \ undeepers has returned ()                                                                          :5_6:UnDeeper:
+************** \ pRelPred has returned RPMT ["disclosure"]                                                            :5_6:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["disclosure"])                                             :5_6:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["disclosure"])                                            :5_6:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["disclosure"])                                                           :5_6:UnDeeper:
+*********** / binary(Or)                                                                                                 :5_6:UnDeeper:
+*********** / binary(And)                                                                                                :5_6:UnDeeper:
+*********** / binary(SetLess)                                                                                            :5_6:UnDeeper:
+*********** / binary(SetPlus)                                                                                            :5_6:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["disclosure"])                                              :5_6:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                               :5_6:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                      :5_5:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["disclosure"])                                                   :5_5:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["disclosure"])                                     :5_5:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["disclosure"])                                                   :5_5:Or:
+****** \ term p has returned MyLeaf (RPMT ["disclosure"])                                                                  :5_5:Or:
+****** / binary(Or)                                                                                                        :5_5:Or:
+****** \ binary(Or) has returned Or                                                                                         :5_6:GoDeeper:
+****** / term p                                                                                                             :5_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :5_6:GoDeeper:
+******** / $*|                                                                                                            :5_6:GoDeeper:
+********* / |:| some                                                                                                     :5_6:GoDeeper:
+********** / |:| base parser                                                                                            :5_6:GoDeeper:
+*********** / pNumAsText                                                                                               :5_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :5_6:GoDeeper:
+******** / |:| some                                                                                                       :5_6:GoDeeper:
+********* / |:| base parser                                                                                              :5_6:GoDeeper:
+********** / pNumAsText                                                                                                 :5_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :5_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :5_6:GoDeeper:
+********* / someIndentation                                                                                              :5_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :5_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :5_6:Other "copy:
+********** / manyIndentation/leaf?                                                                                       :5_6:Other "copy:
+*********** / term p                                                                                                    :5_6:Other "copy:
+************ / term p/1a:label directly above                                                                          :5_6:Other "copy:
+************* / $*|                                                                                                   :5_6:Other "copy:
+************** / |:| some                                                                                            :5_6:Other "copy:
+*************** / |:| base parser                                                                                   :5_6:Other "copy:
+*************** \ |:| base parser has returned ("copying",0)                                                         :6_6:UnDeeper:
+*************** / |:| deeper                                                                                         :6_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :6_6:UnDeeper:
+*************** / |:| noMore                                                                                         :6_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :6_6:UnDeeper:
+************** \ |:| some has returned (["copying"],0)                                                                :6_6:UnDeeper:
+************** / pNumAsText                                                                                           :6_6:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :5_6:Other "copy:
+************* / |:| some                                                                                              :5_6:Other "copy:
+************** / |:| base parser                                                                                     :5_6:Other "copy:
+************** \ |:| base parser has returned ("copying",0)                                                           :6_6:UnDeeper:
+************** / |:| deeper                                                                                           :6_6:UnDeeper:
+*************** / |:| some GoDeeper                                                                                  :6_6:UnDeeper:
+************** / |:| noMore                                                                                           :6_6:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                       :6_6:UnDeeper:
+************* \ |:| some has returned (["copying"],0)                                                                  :6_6:UnDeeper:
+************* / undeepers                                                                                              :6_6:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                               :6_6:UnDeeper:
+************** / sameLine: success!                                                                                   :6_6:UnDeeper:
+************* \ undeepers has returned ()                                                                              :6_6:UnDeeper:
+************* / matching EOL                                                                                           :6_6:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :5_6:Other "copy:
+************* / term p/2:someIndentation expr p                                                                       :5_6:Other "copy:
+************** / someIndentation                                                                                     :5_6:Other "copy:
+*************** / myindented: consuming GoDeeper                                                                    :5_6:Other "copy:
+************* / term p/3:plain p                                                                                      :5_6:Other "copy:
+************** / pRelPred                                                                                            :5_6:Other "copy:
+*************** / slRelPred                                                                                         :5_6:Other "copy:
+**************** / RPConstraint                                                                                    :5_6:Other "copy:
+***************** / $*|                                                                                           :5_6:Other "copy:
+****************** / slMultiTerm                                                                                 :5_6:Other "copy:
+******************* / |:| some                                                                                  :5_6:Other "copy:
+******************** / |:| base parser                                                                         :5_6:Other "copy:
+******************** \ |:| base parser has returned ("copying",0)                                               :6_6:UnDeeper:
+******************** / |:| deeper                                                                               :6_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :6_6:UnDeeper:
+******************** / |:| noMore                                                                               :6_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :6_6:UnDeeper:
+******************* \ |:| some has returned (["copying"],0)                                                      :6_6:UnDeeper:
+****************** \ slMultiTerm has returned (["copying"],0)                                                     :6_6:UnDeeper:
+***************** \ $*| has returned (["copying"],0)                                                               :6_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :6_6:UnDeeper:
+****************** / $>>                                                                                          :6_6:UnDeeper:
+******************* / $>>/recurse                                                                                :6_6:UnDeeper:
+******************* / $>>/base                                                                                   :6_6:UnDeeper:
+**************** / RPBoolStructR                                                                                   :5_6:Other "copy:
+***************** / $*|                                                                                           :5_6:Other "copy:
+****************** / slMultiTerm                                                                                 :5_6:Other "copy:
+******************* / |:| some                                                                                  :5_6:Other "copy:
+******************** / |:| base parser                                                                         :5_6:Other "copy:
+******************** \ |:| base parser has returned ("copying",0)                                               :6_6:UnDeeper:
+******************** / |:| deeper                                                                               :6_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :6_6:UnDeeper:
+******************** / |:| noMore                                                                               :6_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :6_6:UnDeeper:
+******************* \ |:| some has returned (["copying"],0)                                                      :6_6:UnDeeper:
+****************** \ slMultiTerm has returned (["copying"],0)                                                     :6_6:UnDeeper:
+***************** \ $*| has returned (["copying"],0)                                                               :6_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :6_6:UnDeeper:
+****************** / $>>                                                                                          :6_6:UnDeeper:
+******************* / $>>/recurse                                                                                :6_6:UnDeeper:
+******************* / $>>/base                                                                                   :6_6:UnDeeper:
+**************** / RPMT                                                                                            :5_6:Other "copy:
+***************** / $*|                                                                                           :5_6:Other "copy:
+****************** / slAKA                                                                                       :5_6:Other "copy:
+******************* / $*|                                                                                       :5_6:Other "copy:
+******************** / slAKA base                                                                              :5_6:Other "copy:
+********************* / slMultiTerm                                                                           :5_6:Other "copy:
+********************** / |:| some                                                                            :5_6:Other "copy:
+*********************** / |:| base parser                                                                   :5_6:Other "copy:
+*********************** \ |:| base parser has returned ("copying",0)                                         :6_6:UnDeeper:
+*********************** / |:| deeper                                                                         :6_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :6_6:UnDeeper:
+*********************** / |:| noMore                                                                         :6_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :6_6:UnDeeper:
+********************** \ |:| some has returned (["copying"],0)                                                :6_6:UnDeeper:
+********************* \ slMultiTerm has returned (["copying"],0)                                               :6_6:UnDeeper:
+******************** \ slAKA base has returned (["copying"],0)                                                  :6_6:UnDeeper:
+******************* \ $*| has returned (["copying"],0)                                                           :6_6:UnDeeper:
+******************* / |>>                                                                                        :6_6:UnDeeper:
+******************** / |>>/recurse                                                                              :6_6:UnDeeper:
+******************** / |>>/base                                                                                 :6_6:UnDeeper:
+********************* / slAKA optional akapart                                                                 :6_6:UnDeeper:
+********************** / |?| optional something                                                               :6_6:UnDeeper:
+*********************** / |>>                                                                                :6_6:UnDeeper:
+************************ / |>>/recurse                                                                      :6_6:UnDeeper:
+************************ / |>>/base                                                                         :6_6:UnDeeper:
+************************* / PAKA/akapart                                                                   :6_6:UnDeeper:
+************************** / $>|                                                                          :6_6:UnDeeper:
+*************************** / Aka Token                                                                  :6_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :6_6:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                        :6_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :6_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :6_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :6_6:UnDeeper:
+******************* / |>>                                                                                        :6_6:UnDeeper:
+******************** / |>>/recurse                                                                              :6_6:UnDeeper:
+******************** / |>>/base                                                                                 :6_6:UnDeeper:
+********************* / slAKA optional typically                                                               :6_6:UnDeeper:
+********************** / |?| optional something                                                               :6_6:UnDeeper:
+*********************** / |>>                                                                                :6_6:UnDeeper:
+************************ / |>>/recurse                                                                      :6_6:UnDeeper:
+************************ / |>>/base                                                                         :6_6:UnDeeper:
+************************* / typically                                                                      :6_6:UnDeeper:
+************************** / $>|                                                                          :6_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :6_6:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                      :6_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :6_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :6_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :6_6:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                             :6_6:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                                :6_6:UnDeeper:
+****************** \ slAKA has returned (["copying"],0)                                                           :6_6:UnDeeper:
+***************** \ $*| has returned (["copying"],0)                                                               :6_6:UnDeeper:
+**************** \ RPMT has returned (RPMT ["copying"],0)                                                           :6_6:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["copying"],0)                                                        :6_6:UnDeeper:
+*************** / undeepers                                                                                          :6_6:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                           :6_6:UnDeeper:
+**************** / sameLine: success!                                                                               :6_6:UnDeeper:
+*************** \ undeepers has returned ()                                                                          :6_6:UnDeeper:
+************** \ pRelPred has returned RPMT ["copying"]                                                               :6_6:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["copying"])                                                :6_6:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["copying"])                                               :6_6:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["copying"])                                                              :6_6:UnDeeper:
+*********** / binary(Or)                                                                                                 :6_6:UnDeeper:
+*********** / binary(And)                                                                                                :6_6:UnDeeper:
+*********** / binary(SetLess)                                                                                            :6_6:UnDeeper:
+*********** / binary(SetPlus)                                                                                            :6_6:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["copying"])                                                 :6_6:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                               :6_6:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                      :6_5:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["copying"])                                                      :6_5:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["copying"])                                        :6_5:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["copying"])                                                      :6_5:Or:
+****** \ term p has returned MyLeaf (RPMT ["copying"])                                                                     :6_5:Or:
+****** / binary(Or)                                                                                                        :6_5:Or:
+****** \ binary(Or) has returned Or                                                                                         :6_6:GoDeeper:
+****** / term p                                                                                                             :6_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :6_6:GoDeeper:
+******** / $*|                                                                                                            :6_6:GoDeeper:
+********* / |:| some                                                                                                     :6_6:GoDeeper:
+********** / |:| base parser                                                                                            :6_6:GoDeeper:
+*********** / pNumAsText                                                                                               :6_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :6_6:GoDeeper:
+******** / |:| some                                                                                                       :6_6:GoDeeper:
+********* / |:| base parser                                                                                              :6_6:GoDeeper:
+********** / pNumAsText                                                                                                 :6_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :6_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :6_6:GoDeeper:
+********* / someIndentation                                                                                              :6_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :6_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :6_6:Other "modi:
+********** / manyIndentation/leaf?                                                                                       :6_6:Other "modi:
+*********** / term p                                                                                                    :6_6:Other "modi:
+************ / term p/1a:label directly above                                                                          :6_6:Other "modi:
+************* / $*|                                                                                                   :6_6:Other "modi:
+************** / |:| some                                                                                            :6_6:Other "modi:
+*************** / |:| base parser                                                                                   :6_6:Other "modi:
+*************** \ |:| base parser has returned ("modification",0)                                                    :7_6:UnDeeper:
+*************** / |:| deeper                                                                                         :7_6:UnDeeper:
+**************** / |:| some GoDeeper                                                                                :7_6:UnDeeper:
+*************** / |:| noMore                                                                                         :7_6:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                                     :7_6:UnDeeper:
+************** \ |:| some has returned (["modification"],0)                                                           :7_6:UnDeeper:
+************** / pNumAsText                                                                                           :7_6:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :6_6:Other "modi:
+************* / |:| some                                                                                              :6_6:Other "modi:
+************** / |:| base parser                                                                                     :6_6:Other "modi:
+************** \ |:| base parser has returned ("modification",0)                                                      :7_6:UnDeeper:
+************** / |:| deeper                                                                                           :7_6:UnDeeper:
+*************** / |:| some GoDeeper                                                                                  :7_6:UnDeeper:
+************** / |:| noMore                                                                                           :7_6:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                       :7_6:UnDeeper:
+************* \ |:| some has returned (["modification"],0)                                                             :7_6:UnDeeper:
+************* / undeepers                                                                                              :7_6:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                               :7_6:UnDeeper:
+************** / sameLine: success!                                                                                   :7_6:UnDeeper:
+************* \ undeepers has returned ()                                                                              :7_6:UnDeeper:
+************* / matching EOL                                                                                           :7_6:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :6_6:Other "modi:
+************* / term p/2:someIndentation expr p                                                                       :6_6:Other "modi:
+************** / someIndentation                                                                                     :6_6:Other "modi:
+*************** / myindented: consuming GoDeeper                                                                    :6_6:Other "modi:
+************* / term p/3:plain p                                                                                      :6_6:Other "modi:
+************** / pRelPred                                                                                            :6_6:Other "modi:
+*************** / slRelPred                                                                                         :6_6:Other "modi:
+**************** / RPConstraint                                                                                    :6_6:Other "modi:
+***************** / $*|                                                                                           :6_6:Other "modi:
+****************** / slMultiTerm                                                                                 :6_6:Other "modi:
+******************* / |:| some                                                                                  :6_6:Other "modi:
+******************** / |:| base parser                                                                         :6_6:Other "modi:
+******************** \ |:| base parser has returned ("modification",0)                                          :7_6:UnDeeper:
+******************** / |:| deeper                                                                               :7_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :7_6:UnDeeper:
+******************** / |:| noMore                                                                               :7_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :7_6:UnDeeper:
+******************* \ |:| some has returned (["modification"],0)                                                 :7_6:UnDeeper:
+****************** \ slMultiTerm has returned (["modification"],0)                                                :7_6:UnDeeper:
+***************** \ $*| has returned (["modification"],0)                                                          :7_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :7_6:UnDeeper:
+****************** / $>>                                                                                          :7_6:UnDeeper:
+******************* / $>>/recurse                                                                                :7_6:UnDeeper:
+******************* / $>>/base                                                                                   :7_6:UnDeeper:
+**************** / RPBoolStructR                                                                                   :6_6:Other "modi:
+***************** / $*|                                                                                           :6_6:Other "modi:
+****************** / slMultiTerm                                                                                 :6_6:Other "modi:
+******************* / |:| some                                                                                  :6_6:Other "modi:
+******************** / |:| base parser                                                                         :6_6:Other "modi:
+******************** \ |:| base parser has returned ("modification",0)                                          :7_6:UnDeeper:
+******************** / |:| deeper                                                                               :7_6:UnDeeper:
+********************* / |:| some GoDeeper                                                                      :7_6:UnDeeper:
+******************** / |:| noMore                                                                               :7_6:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                           :7_6:UnDeeper:
+******************* \ |:| some has returned (["modification"],0)                                                 :7_6:UnDeeper:
+****************** \ slMultiTerm has returned (["modification"],0)                                                :7_6:UnDeeper:
+***************** \ $*| has returned (["modification"],0)                                                          :7_6:UnDeeper:
+***************** / |>| calling $>>                                                                                :7_6:UnDeeper:
+****************** / $>>                                                                                          :7_6:UnDeeper:
+******************* / $>>/recurse                                                                                :7_6:UnDeeper:
+******************* / $>>/base                                                                                   :7_6:UnDeeper:
+**************** / RPMT                                                                                            :6_6:Other "modi:
+***************** / $*|                                                                                           :6_6:Other "modi:
+****************** / slAKA                                                                                       :6_6:Other "modi:
+******************* / $*|                                                                                       :6_6:Other "modi:
+******************** / slAKA base                                                                              :6_6:Other "modi:
+********************* / slMultiTerm                                                                           :6_6:Other "modi:
+********************** / |:| some                                                                            :6_6:Other "modi:
+*********************** / |:| base parser                                                                   :6_6:Other "modi:
+*********************** \ |:| base parser has returned ("modification",0)                                    :7_6:UnDeeper:
+*********************** / |:| deeper                                                                         :7_6:UnDeeper:
+************************ / |:| some GoDeeper                                                                :7_6:UnDeeper:
+*********************** / |:| noMore                                                                         :7_6:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                                     :7_6:UnDeeper:
+********************** \ |:| some has returned (["modification"],0)                                           :7_6:UnDeeper:
+********************* \ slMultiTerm has returned (["modification"],0)                                          :7_6:UnDeeper:
+******************** \ slAKA base has returned (["modification"],0)                                             :7_6:UnDeeper:
+******************* \ $*| has returned (["modification"],0)                                                      :7_6:UnDeeper:
+******************* / |>>                                                                                        :7_6:UnDeeper:
+******************** / |>>/recurse                                                                              :7_6:UnDeeper:
+******************** / |>>/base                                                                                 :7_6:UnDeeper:
+********************* / slAKA optional akapart                                                                 :7_6:UnDeeper:
+********************** / |?| optional something                                                               :7_6:UnDeeper:
+*********************** / |>>                                                                                :7_6:UnDeeper:
+************************ / |>>/recurse                                                                      :7_6:UnDeeper:
+************************ / |>>/base                                                                         :7_6:UnDeeper:
+************************* / PAKA/akapart                                                                   :7_6:UnDeeper:
+************************** / $>|                                                                          :7_6:UnDeeper:
+*************************** / Aka Token                                                                  :7_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :7_6:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                        :7_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :7_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :7_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :7_6:UnDeeper:
+******************* / |>>                                                                                        :7_6:UnDeeper:
+******************** / |>>/recurse                                                                              :7_6:UnDeeper:
+******************** / |>>/base                                                                                 :7_6:UnDeeper:
+********************* / slAKA optional typically                                                               :7_6:UnDeeper:
+********************** / |?| optional something                                                               :7_6:UnDeeper:
+*********************** / |>>                                                                                :7_6:UnDeeper:
+************************ / |>>/recurse                                                                      :7_6:UnDeeper:
+************************ / |>>/base                                                                         :7_6:UnDeeper:
+************************* / typically                                                                      :7_6:UnDeeper:
+************************** / $>|                                                                          :7_6:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                      :7_6:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                      :7_6:UnDeeper:
+********************* / |>>/base got Nothing                                                                   :7_6:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                        :7_6:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                               :7_6:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                             :7_6:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                                :7_6:UnDeeper:
+****************** \ slAKA has returned (["modification"],0)                                                      :7_6:UnDeeper:
+***************** \ $*| has returned (["modification"],0)                                                          :7_6:UnDeeper:
+**************** \ RPMT has returned (RPMT ["modification"],0)                                                      :7_6:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["modification"],0)                                                   :7_6:UnDeeper:
+*************** / undeepers                                                                                          :7_6:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                           :7_6:UnDeeper:
+**************** / sameLine: success!                                                                               :7_6:UnDeeper:
+*************** \ undeepers has returned ()                                                                          :7_6:UnDeeper:
+************** \ pRelPred has returned RPMT ["modification"]                                                          :7_6:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["modification"])                                           :7_6:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["modification"])                                          :7_6:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["modification"])                                                         :7_6:UnDeeper:
+*********** / binary(Or)                                                                                                 :7_6:UnDeeper:
+*********** / binary(And)                                                                                                :7_6:UnDeeper:
+*********** / binary(SetLess)                                                                                            :7_6:UnDeeper:
+*********** / binary(SetPlus)                                                                                            :7_6:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["modification"])                                            :7_6:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                               :7_6:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                      :7_5:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["modification"])                                                 :7_5:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["modification"])                                   :7_5:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["modification"])                                                 :7_5:Or:
+****** \ term p has returned MyLeaf (RPMT ["modification"])                                                                :7_5:Or:
+****** / binary(Or)                                                                                                        :7_5:Or:
+****** \ binary(Or) has returned Or                                                                                         :7_6:GoDeeper:
+****** / term p                                                                                                             :7_6:GoDeeper:
+******* / term p/1a:label directly above                                                                                   :7_6:GoDeeper:
+******** / $*|                                                                                                            :7_6:GoDeeper:
+********* / |:| some                                                                                                     :7_6:GoDeeper:
+********** / |:| base parser                                                                                            :7_6:GoDeeper:
+*********** / pNumAsText                                                                                               :7_6:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                               :7_6:GoDeeper:
+******** / |:| some                                                                                                       :7_6:GoDeeper:
+********* / |:| base parser                                                                                              :7_6:GoDeeper:
+********** / pNumAsText                                                                                                 :7_6:GoDeeper:
+******* / term p/notLabelTerm                                                                                              :7_6:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                                :7_6:GoDeeper:
+********* / someIndentation                                                                                              :7_6:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                             :7_6:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                        :7_6:Other "disp:
+********** / manyIndentation/leaf?                                                                                       :7_6:Other "disp:
+*********** / term p                                                                                                    :7_6:Other "disp:
+************ / term p/1a:label directly above                                                                          :7_6:Other "disp:
+************* / $*|                                                                                                   :7_6:Other "disp:
+************** / |:| some                                                                                            :7_6:Other "disp:
+*************** / |:| base parser                                                                                   :7_6:Other "disp:
+*************** \ |:| base parser has returned ("disposal",0)                                                  :8_3:UnDeeper:
+*************** / |:| deeper                                                                                   :8_3:UnDeeper:
+**************** / |:| some GoDeeper                                                                          :8_3:UnDeeper:
+*************** / |:| noMore                                                                                   :8_3:UnDeeper:
+*************** \ |:| noMore has returned ([],0)                                                               :8_3:UnDeeper:
+************** \ |:| some has returned (["disposal"],0)                                                         :8_3:UnDeeper:
+************** / pNumAsText                                                                                     :8_3:UnDeeper:
+************ / term p/b:label to the left of line below, with EOL                                                      :7_6:Other "disp:
+************* / |:| some                                                                                              :7_6:Other "disp:
+************** / |:| base parser                                                                                     :7_6:Other "disp:
+************** \ |:| base parser has returned ("disposal",0)                                                    :8_3:UnDeeper:
+************** / |:| deeper                                                                                     :8_3:UnDeeper:
+*************** / |:| some GoDeeper                                                                            :8_3:UnDeeper:
+************** / |:| noMore                                                                                     :8_3:UnDeeper:
+************** \ |:| noMore has returned ([],0)                                                                 :8_3:UnDeeper:
+************* \ |:| some has returned (["disposal"],0)                                                           :8_3:UnDeeper:
+************* / undeepers                                                                                        :8_3:UnDeeper:
+************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                         :8_3:UnDeeper:
+************** / sameLine: success!                                                                             :8_3:UnDeeper:
+************* \ undeepers has returned ()                                                                        :8_3:UnDeeper:
+************* / matching EOL                                                                                     :8_3:UnDeeper:
+************ / term p/notLabelTerm                                                                                     :7_6:Other "disp:
+************* / term p/2:someIndentation expr p                                                                       :7_6:Other "disp:
+************** / someIndentation                                                                                     :7_6:Other "disp:
+*************** / myindented: consuming GoDeeper                                                                    :7_6:Other "disp:
+************* / term p/3:plain p                                                                                      :7_6:Other "disp:
+************** / pRelPred                                                                                            :7_6:Other "disp:
+*************** / slRelPred                                                                                         :7_6:Other "disp:
+**************** / RPConstraint                                                                                    :7_6:Other "disp:
+***************** / $*|                                                                                           :7_6:Other "disp:
+****************** / slMultiTerm                                                                                 :7_6:Other "disp:
+******************* / |:| some                                                                                  :7_6:Other "disp:
+******************** / |:| base parser                                                                         :7_6:Other "disp:
+******************** \ |:| base parser has returned ("disposal",0)                                        :8_3:UnDeeper:
+******************** / |:| deeper                                                                         :8_3:UnDeeper:
+********************* / |:| some GoDeeper                                                                :8_3:UnDeeper:
+******************** / |:| noMore                                                                         :8_3:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                     :8_3:UnDeeper:
+******************* \ |:| some has returned (["disposal"],0)                                               :8_3:UnDeeper:
+****************** \ slMultiTerm has returned (["disposal"],0)                                              :8_3:UnDeeper:
+***************** \ $*| has returned (["disposal"],0)                                                        :8_3:UnDeeper:
+***************** / |>| calling $>>                                                                          :8_3:UnDeeper:
+****************** / $>>                                                                                    :8_3:UnDeeper:
+******************* / $>>/recurse                                                                          :8_3:UnDeeper:
+******************* / $>>/base                                                                             :8_3:UnDeeper:
+**************** / RPBoolStructR                                                                                   :7_6:Other "disp:
+***************** / $*|                                                                                           :7_6:Other "disp:
+****************** / slMultiTerm                                                                                 :7_6:Other "disp:
+******************* / |:| some                                                                                  :7_6:Other "disp:
+******************** / |:| base parser                                                                         :7_6:Other "disp:
+******************** \ |:| base parser has returned ("disposal",0)                                        :8_3:UnDeeper:
+******************** / |:| deeper                                                                         :8_3:UnDeeper:
+********************* / |:| some GoDeeper                                                                :8_3:UnDeeper:
+******************** / |:| noMore                                                                         :8_3:UnDeeper:
+******************** \ |:| noMore has returned ([],0)                                                     :8_3:UnDeeper:
+******************* \ |:| some has returned (["disposal"],0)                                               :8_3:UnDeeper:
+****************** \ slMultiTerm has returned (["disposal"],0)                                              :8_3:UnDeeper:
+***************** \ $*| has returned (["disposal"],0)                                                        :8_3:UnDeeper:
+***************** / |>| calling $>>                                                                          :8_3:UnDeeper:
+****************** / $>>                                                                                    :8_3:UnDeeper:
+******************* / $>>/recurse                                                                          :8_3:UnDeeper:
+******************* / $>>/base                                                                             :8_3:UnDeeper:
+**************** / RPMT                                                                                            :7_6:Other "disp:
+***************** / $*|                                                                                           :7_6:Other "disp:
+****************** / slAKA                                                                                       :7_6:Other "disp:
+******************* / $*|                                                                                       :7_6:Other "disp:
+******************** / slAKA base                                                                              :7_6:Other "disp:
+********************* / slMultiTerm                                                                           :7_6:Other "disp:
+********************** / |:| some                                                                            :7_6:Other "disp:
+*********************** / |:| base parser                                                                   :7_6:Other "disp:
+*********************** \ |:| base parser has returned ("disposal",0)                                  :8_3:UnDeeper:
+*********************** / |:| deeper                                                                   :8_3:UnDeeper:
+************************ / |:| some GoDeeper                                                          :8_3:UnDeeper:
+*********************** / |:| noMore                                                                   :8_3:UnDeeper:
+*********************** \ |:| noMore has returned ([],0)                                               :8_3:UnDeeper:
+********************** \ |:| some has returned (["disposal"],0)                                         :8_3:UnDeeper:
+********************* \ slMultiTerm has returned (["disposal"],0)                                        :8_3:UnDeeper:
+******************** \ slAKA base has returned (["disposal"],0)                                           :8_3:UnDeeper:
+******************* \ $*| has returned (["disposal"],0)                                                    :8_3:UnDeeper:
+******************* / |>>                                                                                  :8_3:UnDeeper:
+******************** / |>>/recurse                                                                        :8_3:UnDeeper:
+******************** / |>>/base                                                                           :8_3:UnDeeper:
+********************* / slAKA optional akapart                                                           :8_3:UnDeeper:
+********************** / |?| optional something                                                         :8_3:UnDeeper:
+*********************** / |>>                                                                          :8_3:UnDeeper:
+************************ / |>>/recurse                                                                :8_3:UnDeeper:
+************************ / |>>/base                                                                   :8_3:UnDeeper:
+************************* / PAKA/akapart                                                             :8_3:UnDeeper:
+************************** / $>|                                                                    :8_3:UnDeeper:
+*************************** / Aka Token                                                            :8_3:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                :8_3:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                  :8_3:UnDeeper:
+********************* / |>>/base got Nothing                                                             :8_3:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                  :8_3:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                         :8_3:UnDeeper:
+******************* / |>>                                                                                  :8_3:UnDeeper:
+******************** / |>>/recurse                                                                        :8_3:UnDeeper:
+******************** / |>>/base                                                                           :8_3:UnDeeper:
+********************* / slAKA optional typically                                                         :8_3:UnDeeper:
+********************** / |?| optional something                                                         :8_3:UnDeeper:
+*********************** / |>>                                                                          :8_3:UnDeeper:
+************************ / |>>/recurse                                                                :8_3:UnDeeper:
+************************ / |>>/base                                                                   :8_3:UnDeeper:
+************************* / typically                                                                :8_3:UnDeeper:
+************************** / $>|                                                                    :8_3:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                                :8_3:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                                :8_3:UnDeeper:
+********************* / |>>/base got Nothing                                                             :8_3:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                  :8_3:UnDeeper:
+******************* \ |>> has returned (Nothing,0)                                                         :8_3:UnDeeper:
+******************* / slAKA: proceeding after base and entityalias are retrieved ...                       :8_3:UnDeeper:
+******************* / pAKA: entityalias = Nothing                                                          :8_3:UnDeeper:
+****************** \ slAKA has returned (["disposal"],0)                                                    :8_3:UnDeeper:
+***************** \ $*| has returned (["disposal"],0)                                                        :8_3:UnDeeper:
+**************** \ RPMT has returned (RPMT ["disposal"],0)                                                    :8_3:UnDeeper:
+*************** \ slRelPred has returned (RPMT ["disposal"],0)                                                 :8_3:UnDeeper:
+*************** / undeepers                                                                                    :8_3:UnDeeper:
+**************** / sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                     :8_3:UnDeeper:
+**************** / sameLine: success!                                                                         :8_3:UnDeeper:
+*************** \ undeepers has returned ()                                                                    :8_3:UnDeeper:
+************** \ pRelPred has returned RPMT ["disposal"]                                                        :8_3:UnDeeper:
+************* \ term p/3:plain p has returned MyLeaf (RPMT ["disposal"])                                         :8_3:UnDeeper:
+************ \ term p/notLabelTerm has returned MyLeaf (RPMT ["disposal"])                                        :8_3:UnDeeper:
+*********** \ term p has returned MyLeaf (RPMT ["disposal"])                                                       :8_3:UnDeeper:
+*********** / binary(Or)                                                                                           :8_3:UnDeeper:
+*********** / binary(And)                                                                                          :8_3:UnDeeper:
+*********** / binary(SetLess)                                                                                      :8_3:UnDeeper:
+*********** / binary(SetPlus)                                                                                      :8_3:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["disposal"])                                          :8_3:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                         :8_3:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                                     :8_4:UnDeeper:
+********* \ someIndentation has returned MyLeaf (RPMT ["disposal"])                                                    :8_4:UnDeeper:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["disposal"])                                      :8_4:UnDeeper:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["disposal"])                                                    :8_4:UnDeeper:
+****** \ term p has returned MyLeaf (RPMT ["disposal"])                                                                   :8_4:UnDeeper:
+****** / binary(Or)                                                                                                       :8_4:UnDeeper:
+****** / binary(And)                                                                                                      :8_4:UnDeeper:
+****** / binary(SetLess)                                                                                                  :8_4:UnDeeper:
+****** / binary(SetPlus)                                                                                                  :8_4:UnDeeper:
+***** \ pBSR inner has returned Any Nothing [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])] :8_4:UnDeeper:
+**** \ made it to inner parser has returned Any Nothing [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])] :8_4:UnDeeper:
+**** / undeepers                                                                                                            :8_4:UnDeeper:
+***** / sameLine/undeepers: reached end of line; now need to clear 4 UnDeepers                                             :8_4:UnDeeper:
+* final
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+
+
+PDPA
+  inline-1-g FAILED [1]
+
+Failures:
+
+  test/Spec.hs:120:3: 
+  1) PDPA inline-1-g
+       expected: [((["Bad"],Means,Any (Just (PrePost "any unauthorised" "of personal data")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])]),[])]
+       but parsing failed with error:
+       8:2:
+       unexpected Other "of personal data"
+       expecting UnDeeper
+                          Bad                                                                                           
+       MEANS              any                unauthorised                                             access            
+                                                                                   OR                 use               
+                                                                                   OR                 disclosure        
+                                                                                   OR                 copying           
+                                                                                   OR                 modification      
+                                                                                   OR                 disposal          
+                          ✳ of personal data                                                                            
+       
+
+  To rerun use: --match "/PDPA/inline-1-g/"
+
+Randomized with seed 138379423
+
+Finished in 0.0131 seconds
+1 example, 1 failure
+
+natural4> Test suite natural4-test failed
+Test suite failure for package natural4-0.1.0.0
+    natural4-test:  exited with: ExitFailure 1
+Logs printed to console
+

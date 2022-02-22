@@ -5,18 +5,18 @@
 
 packages:
 - completed:
-    size: 9033627
+    size: 2951222
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/f02648af126d04d3f29285c92ec38a29c6776c41.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/9f52fe526a469164d57f843cd008125fd25a69a2.tar.gz
     name: anyall
-    version: 0.1.1.0
-    sha256: 75939d933be83c76977d95584ae5dc37c4a7bc2916ee4ca3ca3709298898d2bc
+    version: 0.1.0.0
+    sha256: 723abc5d1464392040e4001f4ef34781bf707861071e82f1bd689732e5be5c3d
     pantry-tree:
       size: 1268
-      sha256: edc0cc5a30e170632555d53e4b73ce79dbcb8b6fee023517808ec2fb7dbc402f
+      sha256: e2a406da7d8ff668af43b93bf5e1cf5a0c7d4f425e9913976bb560839dc4e653
   original:
     subdir: lib/haskell/anyall
-    url: https://github.com/smucclaw/dsl/archive/f02648af126d04d3f29285c92ec38a29c6776c41.tar.gz
+    url: https://github.com/smucclaw/dsl/archive/9f52fe526a469164d57f843cd008125fd25a69a2.tar.gz
 - completed:
     size: 3154513
     subdir: .
@@ -66,12 +66,16 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
-    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
+    size: 3490407
+    url: https://github.com/mengwong/gf-core/archive/38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86.tar.gz
+    name: gf
+    version: 3.11.0
+    sha256: d4a91f7d8fa1d4f73cbaedfae10319c45baedcc775d1ae8d18dd889cc0a07b28
     pantry-tree:
-      size: 18807
-      sha256: e9012408d7b88cfb55f91c0c1d31aebc97cc8824b860c2e7cc5747b90a0bd190
+      size: 67662
+      sha256: 86c7062b4cf0d8db394c7fd2fabc73cad8d77f5f152dc4fb856c2f4f11e1a9c6
   original:
-    hackage: gf-3.11@sha256:759747f8644a3bb133e7e6d343b2454d81400e92acc2e9678d091ce50af827ac,9009
+    url: https://github.com/mengwong/gf-core/archive/38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86.tar.gz
 - completed:
     hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
     pantry-tree:
@@ -88,7 +92,7 @@ packages:
     hackage: svg-builder-0.1.1
 snapshots:
 - completed:
-    size: 609309
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2022/2/19.yaml
-    sha256: d661d997c564c9dfd7391721335e0f8f1355a196d7f60037ae7c762d5bf127ed
-  original: nightly-2022-02-19
+    size: 587393
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/25.yaml
+    sha256: 1b74fb5e970497b5aefae56703f1bd44aa648bd1a5ef95c1eb8c29775087e2bf
+  original: lts-18.25

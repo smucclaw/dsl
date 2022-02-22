@@ -1,0 +1,579 @@
+* preface
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+
+natural4-0.1.0.0: unregistering (local file changes: src/LS/Tokens.hs)
+natural4> build (lib + exe + test)
+Preprocessing library for natural4-0.1.0.0..
+Building library for natural4-0.1.0.0..
+[14 of 22] Compiling LS.Tokens
+[15 of 22] Compiling LS.Parser [LS.Tokens changed]
+[16 of 22] Compiling LS.ParamText [LS.Tokens changed]
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/ParamText.hs:7:1: warning: [-Wunused-imports]
+    The qualified import of ‘Data.Text.Lazy’ is redundant
+      except perhaps to import instances from ‘Data.Text.Lazy’
+    To import instances alone, use: import Data.Text.Lazy()
+  |
+7 | import qualified Data.Text.Lazy as Text
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[17 of 22] Compiling LS.RelationalPredicates [LS.Tokens changed]
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/RelationalPredicates.hs:9:1: warning: [-Wunused-imports]
+    The import of ‘Debug.Trace’ is redundant
+      except perhaps to import instances from ‘Debug.Trace’
+    To import instances alone, use: import Debug.Trace()
+  |
+9 | import Debug.Trace
+  | ^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/RelationalPredicates.hs:13:1: warning: [-Wunused-imports]
+    The import of ‘:|, NonEmpty’
+    from module ‘Data.List.NonEmpty’ is redundant
+   |
+13 | import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/RelationalPredicates.hs:14:1: warning: [-Wunused-imports]
+    The import of ‘fromJust, maybeToList’
+    from module ‘Data.Maybe’ is redundant
+   |
+14 | import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/RelationalPredicates.hs:208:8: warning: [-Wunused-matches]
+    Defined but not used: ‘iswhen’
+    |
+208 |       (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
+    |        ^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/src/LS/RelationalPredicates.hs:290:1: warning: [-Wmissing-signatures]
+    Top-level binding with no type signature:
+      withPreOnly :: Show a =>
+****   Parser (AA.Item a) -> WriterT (DList Rule) PlainParser (AA.Item a)                                         ::
+    |
+290 | withPreOnly basep = do
+    | ^^^^^^^^^^^
+[18 of 22] Compiling LS.Lib [LS.Tokens changed]
+[19 of 22] Compiling LS [LS.RelationalPredicates changed]
+Preprocessing test suite 'natural4-test' for natural4-0.1.0.0..
+Building test suite 'natural4-test' for natural4-0.1.0.0..
+[3 of 3] Compiling Main [LS.Parser changed]
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:21:1: warning: [-Wunused-imports]
+    The import of ‘LS.XPile.Prolog’ is redundant
+      except perhaps to import instances from ‘LS.XPile.Prolog’
+    To import instances alone, use: import LS.XPile.Prolog()
+   |
+21 | import LS.XPile.Prolog
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:22:1: warning: [-Wunused-imports]
+    The import of ‘LS.XPile.Petri’ is redundant
+      except perhaps to import instances from ‘LS.XPile.Petri’
+    To import instances alone, use: import LS.XPile.Petri()
+   |
+22 | import LS.XPile.Petri
+   | ^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:23:1: warning: [-Wunused-imports]
+    The import of ‘LS.XPile.SVG’ is redundant
+      except perhaps to import instances from ‘LS.XPile.SVG’
+    To import instances alone, use: import LS.XPile.SVG()
+   |
+23 | import LS.XPile.SVG
+   | ^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:28:1: warning: [-Wunused-imports]
+    The import of ‘fromList’
+    from module ‘Data.List.NonEmpty’ is redundant
+   |
+28 | import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:33:1: warning: [-Wunused-imports]
+    The import of ‘replicateM’ from module ‘Control.Monad’ is redundant
+   |
+33 | import Control.Monad (when, replicateM, guard)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:34:1: warning: [-Wunused-imports]
+    The import of ‘Data.Either’ is redundant
+      except perhaps to import instances from ‘Data.Either’
+    To import instances alone, use: import Data.Either()
+   |
+34 | import Data.Either (fromRight)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:36:1: warning: [-Wunused-imports]
+    The import of ‘LS.ParamText’ is redundant
+      except perhaps to import instances from ‘LS.ParamText’
+    To import instances alone, use: import LS.ParamText()
+   |
+36 | import LS.ParamText
+   | ^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:117:19: warning: [-Wunused-matches]
+    Defined but not used: ‘desc’
+    |
+117 | filetest testfile desc parseFunc expected =
+******   ^^^^                                                                                                    :    |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:123:1: warning: [-Wmissing-signatures]
+    Top-level binding with no type signature:
+      filetest2 :: Applicative f =>
+***   String -> p1 -> (String -> MyStream -> f b) -> p2 -> SpecWith ()                                             ::
+    |
+123 | filetest2 testfile desc parseFunc expected =
+    | ^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:123:20: warning: [-Wunused-matches]
+    Defined but not used: ‘desc’
+    |
+123 | filetest2 testfile desc parseFunc expected =
+******   ^^^^                                                                                                   :    |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:123:35: warning: [-Wunused-matches]
+    Defined but not used: ‘expected’
+    |
+123 | filetest2 testfile desc parseFunc expected =
+**************   ^^^^^^^^                                                                                :    |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:126:7: warning: [-Wunused-local-binds]
+    Defined but not used: ‘parsed’
+    |
+126 |   let parsed = parseFunc testfile `traverse` exampleStreams testcsv
+    |       ^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:164:7: warning: [-Wunused-local-binds]
+    Defined but not used: ‘parseWith1’
+    |
+164 |   let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
+    |       ^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:166:7: warning: [-Wunused-local-binds]
+    Defined but not used: ‘parseR1’
+    |
+166 |   let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
+    |       ^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:168:7: warning: [-Wunused-local-binds]
+    Defined but not used: ‘parseOther1’
+    |
+168 |   let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
+    |       ^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:248:23: warning: [-Wname-shadowing]
+    This binding for ‘srcrow’ shadows the existing binding
+      imported from ‘LS.Types’ at test/Spec.hs:15:1-15
+    |
+248 |       let imbibeRule2 srcrow srccol = [
+********   ^^^^^^                                                                                              :    |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:248:30: warning: [-Wname-shadowing]
+    This binding for ‘srccol’ shadows the existing binding
+      imported from ‘LS.Types’ at test/Spec.hs:15:1-15
+    |
+248 |       let imbibeRule2 srcrow srccol = [
+***********   ^^^^^^                                                                                       :    |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:267:11: warning: [-Wunused-local-binds]
+    Defined but not used: ‘imbibeRule3’
+    |
+267 |       let imbibeRule3 sr2 sc2 = imbibeRule2 sr2 sc2 ++ [
+    |           ^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:394:11: warning: [-Wunused-local-binds]
+    Defined but not used: ‘if_king_wishes_singer_2’
+    |
+394 |       let if_king_wishes_singer_2 = if_king_wishes ++
+    |           ^^^^^^^^^^^^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:620:11: warning: [-Wunused-local-binds]
+    Defined but not used: ‘simpleHorn10’
+    |
+620 |       let simpleHorn10 = [ defaultHorn
+    |           ^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:765:11: warning: [-Wunused-local-binds]
+    Defined but not used: ‘whoStructR_4’
+    |
+765 |           whoStructR_4 = defaultReg
+    |           ^^^^^^^^^^^^
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:1139:11: warning: [-Wname-shadowing]
+    This binding for ‘aboveNextLineKeyword’ shadows the existing binding
+      imported from ‘LS.RelationalPredicates’ at test/Spec.hs:10:1-30
+     |
+**   aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do                                                   :1139 |:
+**   ^^^^^^^^^^^^^^^^^^^^                                                                                           :     |:
+
+/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/Spec.hs:1148:11: warning: [-Wname-shadowing]
+    This binding for ‘aNLK’ shadows the existing binding
+      imported from ‘LS.RelationalPredicates’ at test/Spec.hs:10:1-30
+     |
+**   aNLK maxDepth = do                                                                                             :1148 |:
+**   ^^^^                                                                                                           :     |:
+Linking .stack-work/dist/x86_64-osx/Cabal-3.2.1.0/build/natural4-test/natural4-test ...
+Preprocessing executable 'natural4-exe' for natural4-0.1.0.0..
+Building executable 'natural4-exe' for natural4-0.1.0.0..
+Linking .stack-work/dist/x86_64-osx/Cabal-3.2.1.0/build/natural4-exe/natural4-exe ...
+natural4> copy/register
+Installing library in /Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/.stack-work/install/x86_64-osx/aa24c8ca7646297a692b785b0a377da57d32d7f1f92db2e93dab9777c00bb570/8.10.7/lib/x86_64-osx-ghc-8.10.7/natural4-0.1.0.0-2LAQaIydZmK6hpUoVTUvPg
+Installing executable natural4-exe in /Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/.stack-work/install/x86_64-osx/aa24c8ca7646297a692b785b0a377da57d32d7f1f92db2e93dab9777c00bb570/8.10.7/bin
+Registering library for natural4-0.1.0.0..
+natural4> test (suite: natural4-test, args: --match /PDPA/multiterm-with-blanks-2/)
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+"\1063959j"
+
+Passed:
+"9\""
+
+Passed:
+"\1080484Vn"
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+"l\1000225wb\SI~R"
+
+Passed:
+"3b\67250bMWl"
+
+Passed:
+"{h\1063181#\14791{>T3\20143"
+
+Passed:
+"\ETX !\1027998\175356\ETXF`N"
+
+Passed:
+"m\1013092v"
+
+Passed:
+"9iz8\1051504\184450\ENQ\1049131bu,V2"
+
+Passed:
+"/l\DC1\1051159\1026121\NUL(\1060094"
+
+Passed:
+"A"
+
+Passed:
+"b|B\DC4\1022235\1042978#i}\\a\SOH0DI\1058724`"
+
+Passed:
+"9XXm\DEL<t\US\v~<"
+
+Passed:
+"8j+)(K\94362\1083878\988527!f+"
+
+Passed:
+"uQ\1007534\DC3Hu^60'Z\8118\9749\tW\989807"
+
+Passed:
+"\DEL5\1028210\1043226\NUL\t7\1058209b#\aH\DC1\138367g\SYN?"
+
+Passed:
+"\US\1112320\25186\72797k\SUB\1084409\CAN\STXd\26222\r\162061G\159604Hx\48967lD\176645\1022272"
+
+Passed:
+"r`\SYN"
+
+Passed:
+"\CAN1AA?\180070\1043795W1wJL"
+
+Passed:
+"\SUBm\1097540o\983823XA\1018993\1041940!\170006.4D\ESC?:\STX\a"
+
+Passed:
+"h\1095477\138654\63815s\989989q|p&P\f\1063798\DC4\146856q B\178154"
+
+Passed:
+"y`\111354Xc\1085199\&6Z\"2\1011053\1100255I6\ESC"
+
+Passed:
+"g\70336\NAKZ"
+
+Passed:
+"VGw&\74195\ETBT&J\STXbk4C\1111532\SO\1105891"
+
+Passed:
+"G\1109642\DLES\1093715J\987161"
+
+Passed:
+"f\125238KR\DC2i9\ETBK-)\SYN"
+
+Passed:
+"\989306\190685L\b\178213P\1080533"
+
+Passed:
+"\987072O\RS\\l"
+
+Passed:
+"\EM\DELK#\ETXka\ESCo{0\t\98171F\v\1083075\181427"
+
+Passed:
+",[,\42406e\f\ETXeI\180724W\EOT\100250wM\a\163784\1066710\143127\EM]?\DELh|\3169^:k\1026104\FS\1025913\DC2"
+
+Passed:
+"@\1008154"
+
+Passed:
+"8y"
+
+Passed:
+"54\1059814\DC1\NUL\1086062\178591"
+
+Passed:
+"\"\1067860r\24810\51608^r\1088857\71940\DLE+\SI\NAK\nS"
+
+Passed:
+"\DC4\STXS\NAKc=\ENQT\988839\988325\&3\NUL\ESCA)\SOH'\n%\1051892\98185\&3\1098914\RS<n\1106207{\SO\ESC"
+
+Passed:
+""
+
+Passed:
+"\DC3su\ESC\144397v2^4U\17906\62403\47278n>k\1019980'\1008871?{\US'\1025174\&4\NUL%Y5\38795,N\vk}A\51419h\US"
+
+Passed:
+"}|D\171463An\1028726\201536/E_U\1008303l\bx\DC4.f\af\67085AX\SUBF\SYN)\1028469"
+
+Passed:
+"L\SOH\bfA\1044475\STX{\EOT\184540\EOT\SUBUiIq\DC2z\RSw.\ENQ\1104939\1078156Ndu\95934c\18915\tB"
+
+Passed:
+"9\DEL:\160028AZ\1057245`qd\1053560C\b\1056354\STX>\t\997480\1090010cFPM\SO\148965h\NUL\a7\1020706\1093296I\37499\ENQ\1030307\50796\&0g\b0\53943\1041207\1073"
+
+Passed:
+"mX\1010761"
+
+Passed:
+"e|\FS"
+
+Passed:
+"h@\1015638\178697\990476E'`\NAKRt@A\RS\93963\1068484,\RS w\"'dx\CAN\1033711BBD`\1012619\1083236%\SUBE"
+
+Passed:
+"rU\64749^\1073539\1104107sR\CAN\137425\162399\a >\40444\189616O}\1062740\nT0pa\99713\194953V\163350\9058|"
+
+Passed:
+"\1016899\RS\fB\ACKV\1047245kP\DEL\DC2^\1055525%`\24039U\\oc=E9\154395MX6Q"
+
+Passed:
+"d0x\154636\1013009'\2504"
+
+Passed:
+"cd\v;O[\1084157K\CANNFW\SYN`wg'5\164218\1047767\1021464ZE\24530l\ETX\185719\\\STXI>\10386#Q2F|&yphp\94817\1019172\128719"
+
+Passed:
+"{y\92444\&7P\1089352\158025\SO\18341Ue\100386\USZ\b\SUB\a<\179636\994635\74480\1024379\&7t%Y]r'\1072997~n#tQy\CAN\1112701\63802\FS\147514D\30121H\EOT\1063444c\ETB\110812\148229fVD"
+
+Passed:
+"NS\156828\DC1\142787\DC2j\1068560\DC1\ENQ\97920$UE\71458\DC2\1062170\&1\ETXJ\SYN\DC1\989432\&8NmbuOH\138217\DLE\1070152Al"
+
+Passed:
+"\fp\994881Hr\t\1082316\DC3iL\1043304\r\v"
+
+Passed:
+"Q\1024551D\1034269qmf\41378\rkw\50418gLME\120877k"
+
+Passed:
+"e\n\ty\42368\146048bf\1095234^k0L\44077e\1093098q(P\1018331Y\r/\ETX\120044\1040444A<\ENQbK\154751];eJv\DC4\1107816y\1072411zrk\36937bo\NAK\"n6\53917*"
+
+Passed:
+"\NUL\GSM<?\1034249\12814\t\RS\198538f\177693"
+
+Passed:
+"[jz\92190\141295B\STX\182881\1032974\&4T\NUL\DC4@~Mh\n?\ENQ\1074604}\39116\&7g?\EM\1061147\f8\1037127\24015F\96772VP"
+
+Passed:
+"\r\NUL\38800\&0\ak;-\SO\ACK\SOH\ESC:\183712bR%\v\nX>\1109155\65826\SOHg>~fd\34300\152167r\US\36010}I;"
+
+Passed:
+"k\22603A\SUB\DC2=[\126617 \t]H\ETB\58777dO\1068950\SUB<Z\984218\1091978\187888/\1103122\rUb\n\STX\DLEDY\EOTs5\8004`mh\\\138163"
+
+Passed:
+">;\14161\1001857\1100888\NUL3,p\1359G\1071421\ETX<dn\1113097"
+
+Passed:
+"\180341\47723W\1052644n\986844\f}\36552\&8\1007623\GS\1106174\41599jz\ACKW\174388z>\EOT\ax\54213 \120152c\\%\198999\SIj\986844C"
+
+Passed:
+"\ACK)\989498\SUBZx\66840\EM\1079317\169261v\n,{\1040639\181604\54560`s17\a\1073688xejz\t\1048315OFt}\12586\1024770E\DC2\1072472\1020638"
+
+Passed:
+"\983058\&2L\DEL:\SI\ESCg"
+
+Passed:
+"u\ETX\154360Wc\NUL\14066\31918\EMd\991734^t\1016386\23131 u?x\1111190L\r\\\1030102V\98941\1101075J[cK\52730\f\ETX\GS\168903\r\1110898:/tcf#\ETX\ETX@A\ETX.\1073665\STX|p\a\46781\150637"
+
+Passed:
+"0q:a\34529O\24777\DC3-\179951_A\f-/\1096160o\19114\RS\63887"
+
+Passed:
+"0\189040aw\1074308I dK\1102654\1019312$^\f\1071746/V\NUL4\177180E$"
+
+Passed:
+"ra]\165494U\188105\126249\bE\199284U\DC2\v\r}\v\SYNDc\67278\&6j_\1082127l\CAN_\RS\51033\\\DC4\58606\SOH\EOTd\f\1078690\155141q\DC4\DC3\RS#JdO\GS5V\991901\1037165.\a"
+
+Passed:
+"'\34383/'\ACK&Y\1059888\129565q\1107827`mNO\1030851?\120811<6f7C\"\51781I\STX2!\SO\SOH\NUL\178985f\125118\\n3\1114059\172630\&2\159590I\12288\&7<\96450U\66424\50471\22255\14112\25445\1058179\998519+4\168594\n\1099359"
+
+Passed:
+"\13115\1108840="
+
+Passed:
+"S\v7D$*\STX~T.=FoL\990025\RS\67133\&9allC\RSJ\46101\SOH\1088403( \1003851:7J\"0\nVJ,Z21BY\136711\ETX\46343YT\"4mP+V!F;\t\1015777\b&\1022036Jn\STX9\38939g"
+
+Passed:
+"|\v+\62381\31608\ETB/H\RS\1066677<,\STX\1024173\190617\fGk\by\48472E4\1024396@\\BK%\1062473A\FSI\adW\1023478\FS\6439$.rJtD/gp"
+
+Passed:
+"!.G\987557\182326"
+
+Passed:
+"\EOTJ\SO\SUBBo^\FSaY\1050616d\NULf]\989201ESz\1041636$|_O\ESCYe\1027515F<\GS\GS\ENQ\US;\35125\DLE+~\135792\NUL{"
+
+Passed:
+"r\1100128\57710r\\Q\176162&\70117m\RS\40635\1112906v\66818`!\51650\141735\1099415\&8\1020555\a<zub_?f+{\SO2%0#\ESC~ w.@t\r&\1094055fO\DC4i\65677^\171612$\ETXTl,3Y\23810JS\\5\aL_"
+
+Passed:
+"\DC1\993089\DC2\ETX)q{\\\ETBX\8954Z\DC2S]MGR\1062030l\61668 M0\1033380\EMx\199143\52630\SOHL\DC3\140569"
+
+Passed:
+"\DC11\147550&\DC4NXK:K\1040102=\1060361\DC1\NAK\36312:\n\DLE\1056577@\f"
+
+Passed:
+"\r"
+
+Passed:
+")In\NAK\37065\8109\1070158<\1110464\1101284\bc7\166922\178324KD\f\ETB}'xdTe\1111844\1015623x'4%D\EM\SI\DC4\66177g\SOdr\ENQ@\188579:b\ACKv(\93844%nN\143343=r\ty\36240\46155\72346"
+
+Passed:
+"\DC2i1\1000079mr\SOH\41575\&4>6n?ht\1006906knS\71881#m\1019330bd\\-[<\n\STXi\143242T\GSj\1038567k\r|_\r\1035179\156016}j\8316Sl\1037970Q\n\bj_\DC4j}"
+
+Passed:
+"5Z2\1077277+\SIi)GW@\US\113763*e\t2a\1059628\1071343c\186196\GS{^\994612\RSS%\6809\30545\161019o\EOTEZ\ETX\34690a\vM.J$V\96776XyY.9\1001328"
+
+Passed:
+"a\26262t\v9\21868=\DC1G8\a\52552?\v;D\NUL\95994jW/n\96367\25571?\12537\&2\120455&gb\1013158l$\1026517Y,'g\46202i\1025750\32234yoG;\ETB=\1021485\1000440O0\ENQ'\154685\ENQ\DC1e\1035288\63118?z\23687XL6a\178295@H#z\157637\1081380\1030880\US\EMiyY'"
+
+Passed:
+"-N\96938\DLE\r\150412\1088351A\SOjXGD\STX*\1066501\1105266?>G\995975\"\144782B\SUB\1011911h=(\1014440{\62789A\1112097s\GS\f\DC4[]j\57836d\RSKx\ACK\US0P$\1058767V\ACK\1106098C\171806\1031764|C\67328\37081&2\1073904oa\1053770Z\180197S\DC2\163285\&8xBY3\1046443\ENQ5"
+
+Passed:
+"{\1020697G\1091458!\1095016\&6\1002578\21927\1071303\SUBX{\v\SOS^`?\99706E#6R\DC1\"\bQV\1025072\184087\SUB\RS\128624u!\SYN*\ACKReX\SO\69621\1044911X\FSIr\GS\GS/\1069374ca\ACK&`\DC29 "
+
+Passed:
+"qz\1071629\"\1092144&D/rN\1064160\52616\GS\"\DC3\1051449l\159694N\SYN\39286N}_\1083673F\187394\152628o$\\yLE,Zy\DEL\1002175+\101227`8FeW\GSu\FSC\t\b/\"\ACK\1077876\1009090\SUBY|$\992383\51409\996671o\1096218'\CANDn\ENQ"
+
+Passed:
+"N\STX4\rx\1031782\189224E\n4}\30807\NUL,\\c`n+\NUL\1010518_\1061759C"
+
+Passed:
+"g|\1015748$\USy~%s\1094522\165416\1083728-m[8\\\1063829\141370q\132395x\1022303\1017333\bfw\146678\&3\186895D9\1088987\"9.{\DC2AX\1095865\1009752d\DC3c\FSL\1113474s5\aXF\983744E&TMQ80~\NAK\DC1;\DC3i \1108345@?"
+
+Passed:
+"\DC2\DC31.yr\24462\GSP@"
+
+Passed:
+"P\ETXq [yn\37902\NAK\SOHPxD)\DC3G\1019964Ea\n,\nk\v?1Y\171165#TC\19753\121024\1006567\13028\DC4\993219\1023831K\1106186\r}/t\ESC\500I\ENQUj3Gwj!\1025793:$~\150633g\1051793\ETX\RS\\Z!\985150(x\SOH"
+
+Passed:
+"w\f"
+
+Passed:
+"\34942\60627uJ\999576\1032742\1062564\ag\129346)R?Ue(Eg\1051055\1020587\DC2\ACKs\991050\66442\&7\DEL\41274L\SYN\ETX=c\NUL\GS>s\181988@+\159075\&5yx?\\\1105484)(\RS\1048051\US\6565\146427\172764\DEL[n+\197605\CAN2Is\DC2/\1096039\151363U\1108876"
+
+Passed:
+"--m\40813bV\v&\150983 `\1046100n\132956\1026301\DC4\v\158992,\DC4\1073970\1050841IRS?r\30930\44394,C>\1097177^{L.\ACK\SOHB \996134\1009745P\ENQ;"
+
+Passed:
+"\1005757\DC1\DC3Oi.\134711)$5a\131979E\v\2931\1013558w\146994q5;\"\DC3m|?[~BBD\SOjz\FS\158450\1898&\153430\1086191\r\FS\"\DLE\NAKs_\100624pb\990763Q\1057439\138174\GS"
+
+Passed:
+"JF\DLE'\1088880Y:\1096060U+A\509\FS;:?\987036\ETXLZ\151926\150417i\DC2T&\1082759N4+\1017940\55019\DC2mH*\1084218\1063811\131465\GSi\ENQhH\US;"
+
+Passed:
+"\1092359\35764\156462\EM\DLE\FSdx \NAK)\nN\169534\RS\179218'\137170^\1098375\SYN\43789\22893 `\45953\b\1017324\"\1107421\STX\v:\162516\1063527\33217lM'$zv~\1100739\f\82992\US\1064214\FSU\53582(DLk)#\1048717\ACKGn@\988936\1059660Ham\152733Vrm-4U??s\SO\SUB\DC3\1104155\1027771E\SOH\1070534&&\1010746\159534\1000708\t+\9829\t\\9"
+
+Passed:
+"H[.\41286\f*T\984200\145778KLao\1054275R5L\44986/._\DC1\60168p\CANqPL=\1098086\41564vY\183507\STX,\1033979\99653\26836\DELk15{\63407J\DEL\49254\1092832\1022432\DC1(\1086919\1064000\&3"
+
+Passed:
+"yV\1020500\DC1|x\187079\993371\96077mj;\196931\DC3\DC4@9\36330"
+
+Passed:
+"\1084828\NAK\FS3:l2"
+
++++ OK, passed 100 tests.
+* Tokens
+[Other "foo",GoDeeper,GoDeeper,Other "bar",GoDeeper,GoDeeper,GoDeeper,Other "baz",UnDeeper,UnDeeper,UnDeeper,UnDeeper,UnDeeper]
+* main
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
+** / slMultiTerm                                                                                                       :1_1:Other "foo":
+*** / |:| some                                                                                                        :1_1:Other "foo":
+**** / |:| base parser                                                                                               :1_1:Other "foo":
+**** \ |:| base parser has returned ("foo",0)                                                                         :1_2:GoDeeper:
+**** / |:| deeper                                                                                                     :1_2:GoDeeper:
+***** / some GoDeeper                                                                                                :1_2:GoDeeper:
+***** \ some GoDeeper has returned [GoDeeper,GoDeeper]                                                                  :1_3:Other "bar":
+***** / |:| some                                                                                                        :1_3:Other "bar":
+****** / |:| base parser                                                                                               :1_3:Other "bar":
+****** \ |:| base parser has returned ("bar",0)                                                                         :1_4:GoDeeper:
+****** / |:| deeper                                                                                                     :1_4:GoDeeper:
+******* / some GoDeeper                                                                                                :1_4:GoDeeper:
+******* \ some GoDeeper has returned [GoDeeper,GoDeeper,GoDeeper]                                                           :1_6:Other "baz":
+******* / |:| some                                                                                                          :1_6:Other "baz":
+******** / |:| base parser                                                                                                 :1_6:Other "baz":
+******** \ |:| base parser has returned ("baz",0)                                                                   :1_2:UnDeeper:
+******** / |:| deeper                                                                                               :1_2:UnDeeper:
+********* / some GoDeeper                                                                                          :1_2:UnDeeper:
+******** / |:| noMore                                                                                               :1_2:UnDeeper:
+******** \ |:| noMore has returned ([],0)                                                                           :1_2:UnDeeper:
+******* \ |:| some has returned (["baz"],0)                                                                          :1_2:UnDeeper:
+****** \ |:| deeper has returned (["baz"],3)                                                                          :1_2:UnDeeper:
+***** \ |:| some has returned (["bar","baz"],3)                                                                        :1_2:UnDeeper:
+**** \ |:| deeper has returned (["bar","baz"],5)                                                                        :1_2:UnDeeper:
+*** \ |:| some has returned (["foo","bar","baz"],5)                                                                      :1_2:UnDeeper:
+** \ slMultiTerm has returned (["foo","bar","baz"],5)                                                                     :1_2:UnDeeper:
+** / undeepers                                                                                                            :1_2:UnDeeper:
+*** / sameLine/undeepers: reached end of line; now need to clear 5 UnDeepers                                             :1_2:UnDeeper:
+*** / sameLine: success!                                                                                            :EOF:
+** \ undeepers has returned ()                                                                                       :EOF:
+* final
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+
+
+PDPA
+  multiterm-with-blanks-2
+
+Finished in 0.0008 seconds
+1 example, 0 failures
+
+natural4> Test suite natural4-test passed
+Completed 2 action(s).

@@ -1,0 +1,411 @@
+* preface
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+
+natural4> test (suite: natural4-test, args: --match /PDPA/multiterm-with-blanks-3/)
+
+Passed:
+""
+
+Passed:
+""
+
+Passed:
+"\983692"
+
+Passed:
+""
+
+Passed:
+"\38497L@\f"
+
+Passed:
+"F"
+
+Passed:
+"\r\992659~\1000443\ACK\180479"
+
+Passed:
+"L\988352_"
+
+Passed:
+"\111232\1069855\DC2{\SI\DLE"
+
+Passed:
+"^\b~L\ENQ\1073012bJ"
+
+Passed:
+"R\DEL%\EOT}\1032055\r"
+
+Passed:
+"^u\1001710\EOT'\\EMy~"
+
+Passed:
+"k"
+
+Passed:
+"B"
+
+Passed:
+"D;"
+
+Passed:
+"-\145511\144668?\184774=\STX\ENQc_\986106"
+
+Passed:
+"\SI, \DC4\178511\&7\SYN2\70505]f\1055072\ENQ"
+
+Passed:
+"U\78202.,_fU} \990627"
+
+Passed:
+"~9$Z"
+
+Passed:
+"\996608\&3e>A\ag~\ESC\1067184\24900\SI\r\45770\r"
+
+Passed:
+"\1028308[\159204\\/\EOT\STX\1018560&\1000462o\119624\&5\39328"
+
+Passed:
+"\SUB\153216\v\1078193F\DELgr:QI\997547x\120943-\DELe\DC1N\NUL#"
+
+Passed:
+"\29770mn"
+
+Passed:
+"\145499n\NULDB]Kw"
+
+Passed:
+"\1047637\DC2\1021318\CAN<E\10377\v/H"
+
+Passed:
+"=\176730\179111i\48642\RS\187476V4TE!\1079911\42381\ENQ;"
+
+Passed:
+"\140078\188383\1034464\SUB\176398NP4{\31605\r\31884\1079443O\1019627(NQ(\SO"
+
+Passed:
+"z60G#\ENQ(C\1014808\DLE \1031997:CTXT c\1048894\ACK\fy\ETB"
+
+Passed:
+"Ex:t]"
+
+Passed:
+"W\DC4O\SOH\183012\&9X\f\1012199\&4LkiD\154521"
+
+Passed:
+"[\ESCih7P"
+
+Passed:
+"20{mfD:GPe\131894"
+
+Passed:
+"\1112053v\173337\NUL\161004'c\1065984<\1019251\1010190Q\1067445\DC2'"
+
+Passed:
+"\1088633"
+
+Passed:
+""
+
+Passed:
+"\42149\b_\NAK-p\996708X\72316\50402`D^\68008E"
+
+Passed:
+"\DC4f\ENQWq\RS5\CANy\":\NUL\1048694\98245~\1063189\t\155989G\1070029]2w\59834b"
+
+Passed:
+"\1063425k\991719\DC3?+\1085902V^ \RS_iS"
+
+Passed:
+"\RS"
+
+Passed:
+"H"
+
+Passed:
+"\1053913\1074944~5'z\EM\141026\172926\DC1\n\ENQ#ZZp)\1114076CT\78786"
+
+Passed:
+"@-\"\DC3@\1056129[\DLE_6\49307K\18475u<\159575tw<\"\68751"
+
+Passed:
+"9\1053847x[\138002x\EM`1IC5"
+
+Passed:
+""
+
+Passed:
+"\6193[\999079g\\\DC1\DC4\143248a@?1\DC3%\\}Xl<99,3\1090312\1040710L\tx\1070662\NUL\1098951\69390\1078311RNcDf\1104070\1039073\&9\23301\\"
+
+Passed:
+"\18408.C"
+
+Passed:
+"Iu\40869s9\1053710\1072190#-L`\ENQ\1077499g\SI\aaBE~p7\1041157s\RS\a\RSC!\NUL\994866\n\1036687\1074912\1088040\EOTh5Y"
+
+Passed:
+"\92520\ETX(\RS+~\f\177699*u;5|\bd\1289\CANi\1009199\33121B\t\986504dH\194776`\1016067\FS\6131!\1062323\v\12301\153912p\130033j\101055"
+
+Passed:
+"%[\SIMzB\RS~n\100755*W r\STX\135505J2.\64670\NAKWkC!e\NAK\teV\1014224r;\148303-\RS"
+
+Passed:
+"eHJ\1020820\RS>\SI\ENQ\ETX'\13724*$\162239\t"
+
+Passed:
+"b\ETB\169133\EOT\31782\3349\1045671\1096118\RSl\am\46655\7210@_|\CAN#x3-Q\"|Yq\NUL\74585&\173677\986608\&5v(C\US"
+
+Passed:
+"zux\150084v\EOTYW\48586X7p\53701Y\EM(`ps\1008804\ENQ\52647d\99810\SUB\94410*1\1011063$t\985500\162080R\NAK"
+
+Passed:
+">\"\STX\nh\EOT\1097676\1060695Nx\SO\45617_oJX\140662\151617&\RS\23480\GSh\1103607\GS/\FS/|$T*"
+
+Passed:
+"?\51612+\1031781\&1\128851\DC3to\157611\1084557;\DC1j\1078942\SYN;\r\ETB\DC3\47384*\EM\ETB\1071148#EI\5509kH\1013245\63320\1091051-D-q2j\23880\SI\996533E\1005500qB"
+
+Passed:
+">\GSey-=:0v\189138:YLS#R%7\ACK@\50220j\DC4`E\vU\1087301p\"\nd\1050157%$p\CAN\STX>\1087012j\v"
+
+Passed:
+""
+
+Passed:
+"|]\1011815\SI\fM4\1039879E9\1083173Oao\162596&\161098\aA\121145\&5oG\1024757N\7266_\39922\\\SOHRf\\.q\127541\1073969\&8+8$\b/\"5 Mx\\\38270\SOH\1064411"
+
+Passed:
+"\DEL"
+
+Passed:
+"\95066b\FS\1022367N1a\59978:cgrS:\1075345\t\95733h#c\23592\1042743\&4C\SYN"
+
+Passed:
+"P\1057478\ACK4z\SUB\ACK\1057263\RS\144020\26844X&\ENQ3.\1089791\FSV&\1056754&\1081393=\127300"
+
+Passed:
+"\52841~g\ETX"
+
+Passed:
+"\157831\NUL\1010765z\1070376X%o1\71912\DLE\EOT\1004544\5098/v\1058098R\157522Q*\DC1\44400\185936&V\138318$\EM@'n\ACK\100071{p|u\182781"
+
+Passed:
+"\GSz\129974M\DC4n\173146|z^\997237#\1092531\aM\50215ai1]\165841Xl\a"
+
+Passed:
+"\1042966\1051800\1006407\&5K\"2E\998781\ESC\"?\SUBls(C\186285\&7\CAN;q_\156825w\EOT[H2=\vcK\v\38362\1054696\96170\189536)\1083999YA\1005336)/U\n)\1082996O \NAKQ\136847\&1A\30216\1004174dP["
+
+Passed:
+"<\r\20757S\DLE]\198752"
+
+Passed:
+"5\1101732J)\994323==)\1018237p;\1103056!\198877!\127011~{?i8k5\1070544X\DC2A\62687&!\1012150\&3\ENQ\1055018\bpBp\NUL\vQL7\NAKw"
+
+Passed:
+"\151058t9\NAK\1039674Q"
+
+Passed:
+";\CANa\n\149398x\48216"
+
+Passed:
+"=(X),\1092895\38196*\156786vw"
+
+Passed:
+"@$"
+
+Passed:
+"wz\97649q\189843.\20058&6:R\DC4\133780\r(\50345\SOmu\58320l\54578_2"
+
+Passed:
+"\33440\ACK\1019097Cg\67299L G\DC4q\5086\NULm\43933\DLE,\9406lI\1066373w\ACK*\27155:iU\148272Aa\155144\b\NUL\1017182\1078498\DC3\EMB\1098772\DC2YC\989670?\160592\ESCstb'\DC4\59502<bw\999567`\153650"
+
+Passed:
+"&?\92331\DC1?\1001949rV\1098160%_-\151615/\144311\135784\US\1043250\989575\1068746\SI\ESC\f\ETBZh+R,r#d\ETBo\tI\1037403c\t'9|\SOH\1094935"
+
+Passed:
+"\1106901\21723m\RSt\r\22303\DLE\ETBV%;\SIxz\DC35\1100493\1030258\RS!,XJ|4\984864^8\7974\157447\SUB\SYN\54392f\EOT%Pym\1029699\1002582a\ETXuc#\30661i\1077294m\EOT\STX\CANeA?\169254\NULsW"
+
+Passed:
+".\r k7}:\36962a\200650k\DELMiU\174812\172578aD\1094028+\24140]]0E\ETBxXbw\1064235\EOT\f\aV\45657N\99751\1011962\173323Z\1043363?LUr\10461\b6\1038711"
+
+Passed:
+"S*7\158022Y\994828~[\1065192\1084077U$\1008992[\DELei\v*\v\992007\DC4\173931#K\\\1079337\&1-T\1082307@Y\EM\168522\153379\1018723i-&\NAK\NAKA\ENQ\58589\&9X\STX\rg_\1077422e\1064781"
+
+Passed:
+"w"
+
+Passed:
+"\1013973\24858nqO:\1078935mdG\1049633\57877\17727\a?\ESC5\ETXh\SUB\1045209\DELI\97169\ETB{ Z\994997"
+
+Passed:
+"B\136899\97471\984057$\NUL\r&\\Q85\EM'(t]\986691\&3Fpc\1068493@\153707%\SO\ACK\SYNC\135738Ul\71304 \EM)6`mf1g%\161729\1015441\997832"
+
+Passed:
+"6)/rg%^\NAK)\157873r\1043397\ACK"
+
+Passed:
+"0\DLE\993204\1012019a#\1012482%\63987/&`\866/\SUB^\DELI\1029340\DLE\"\US2\"i\1065491_\v:qm7\186357\1027502\vT\1112032EW+\1060766\1066207F.\100141s\NAKf\1034313 vm5Q\1056866*\DELOm\tI}\181049O>\r\121384>\"%\96721^\DC406^J\61678l@"
+
+Passed:
+"y5*\1096182\&2mM\ENQc\t\r\1000550\DC4\"F\995825\166848\&3 \95057"
+
+Passed:
+"G\SO\188393T1.Z9\ACK_HlJ\1017126\NULp\DC4\NAK\NAKx0L\1072520\"\\l\CAN#[\189828iCk\DC1\78766\1010806\986354lkA\172319}\33916\ETX\124971\&5\\\DEL{I\US7\npS#~2lF\11361\156627<"
+
+Passed:
+"\SO\FS=\ESCc\132745\1104547\1113827\1029164"
+
+Passed:
+"\ESC\1042580\\\DC3lu\48737\DC2WFJQc\ENQC}\165830=%\\<;.UwY`i\EMR\96448=\60994.E\1043656sEP/\NAK@%N\USd:G\SYN\50815\1012270\ETB\1012354"
+
+Passed:
+"\DLE\DC1\144932\NAKW'@XF\1111756Y=c"
+
+Passed:
+"*Q\19404}\1104212mheOcF\ETB;.Gf\138821#\997753@\32588\156117\&4\NAK\174740Qe\EM\DLE)\DC2\ETXz+>\NAK_:H\184326\NUL\324\v(\f<:\r\RSf2\1031697\&0]ldz@&[Zk\ENQ(;KA"
+
+Passed:
+"Ihn8\100566)\1068653Z\DC3\185717:\RS\1085880\CAN\1055794\EM\1112903.\CAN_Nse\SO\RS\ETB\f\DLEE\n\1081465\b\1096714!\29420\149616Q\1069234@dMM.Pq\f\36527n\1009695\1087847tu\992057;&+.m\991600 q\25908\101045"
+
+Passed:
+""
+
+Passed:
+"KWcT\1046566\f\127063q\SIMS=1_b\t\1101323\&0\CAN\1111331j\CAN\a\1001372dY,\1055361p\b\20427\EMq6\1053279\132700XG`1\ENQX\133968$\1099361\ESC\v\CAN\1060316\983473NG\100593\SI\DC3?>\985365\CAN\ETBW1o6\rH\t\1037609\tr\62339\DLE\996143&e\25677\1004881wN"
+
+Passed:
+"y\21204,^\SI1\155102\1092914]]wkR\fl\68661;!\162301U\170756Q\ETX@K^\1084904}\1034292n\1058381WB@X\1109250\1024530_\vuQ\1070156_\1003914\&8\46773Mzw\147844=\62999f\\*n#A\EM\150002\"\6202,\n4@\988826;\1109363~\1043490\26895\1060227\1046269"
+
+Passed:
+"}O\1010586\"\2311t\156817(zK\EOTmA~N86\39763AUE\RS,\SYN\SOH\1007105,\3093\EOTU8;I3G\DC4\996235d\1034810_'\63970\1027930\180905\r\fa[pufg@\988856::\13148b{\74265\990873n@\67308\1011021NZ~\27763C\DLEf\157092\DEL\21296"
+
+Passed:
+"*Tg\1025053\157745E50\1030563*=K\GSu!\GS"
+
+Passed:
+"kM%\ETX\161818\ESCX{M\1034368u[\1073760\n\f\1054098t\1026559"
+
+Passed:
+"*\ETX\EM\51226\983198xD\1004572\24270hN\EM"
+
+Passed:
+"\US\ENQb\EOT\1033619\1099263^\170432\21721r%lOT\1064100\ETX)Y|\SUB/~\1101001\\e\b}\6149"
+
+Passed:
+"\SO\SOH\1014070\1084845\&5@a\1052954\917905t\1108421\1014483E}\STX.u\1041576\&8nZp@@\135007_d-\DLE$'\95175\"o\SOH7Z\DLEg\127309\&6[v-\985755\SO\n\ETB~.\1040253\995481j\bb\n\1027662\SI8CY\1091740k}j\1088870\EOTk\1020988^%\157214\69702`O\1026015\1024180\GS\DC22\99769\177389\1029570\SI \59832\DC3\1075871:\1063417\16076"
+
+Passed:
+"\1100468W\1089994\r\31446!\SO\1028128\127798y9<N\NUL*w"
+
+Passed:
+"4"
+
+Passed:
+""
+
++++ OK, passed 100 tests.
+* Tokens
+[Other "foo",GoDeeper,GoDeeper
+,Other "bar"
+,Other "baz"
+,UnDeeper,UnDeeper]
+* main
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
+** / pMultiTerm calling someDeep choice                                                                                :1_1:Other "foo":
+*** / someDeep                                                                                                        :1_1:Other "foo":
+**** / someDeep first part calls base directly                                                                       :1_1:Other "foo":
+**** \ someDeep first part calls base directly has returned "foo"                                                     :1_2:GoDeeper:
+**** / someDeep second part recurses with someIndentation                                                             :1_2:GoDeeper:
+***** / someIndentation                                                                                              :1_2:GoDeeper:
+****** / myindented: consuming GoDeeper                                                                             :1_2:GoDeeper:
+****** \ myindented: consuming GoDeeper has returned GoDeeper                                                         :1_3:GoDeeper:
+****** / manyIndentation/leaf?                                                                                        :1_3:GoDeeper:
+******* / someDeep                                                                                                   :1_3:GoDeeper:
+******** / someDeep first part calls base directly                                                                  :1_3:GoDeeper:
+********* / pNumAsText                                                                                             :1_3:GoDeeper:
+****** / manyIndentation/deeper; calling someIndentation                                                              :1_3:GoDeeper:
+******* / someIndentation                                                                                            :1_3:GoDeeper:
+******** / myindented: consuming GoDeeper                                                                           :1_3:GoDeeper:
+******** \ myindented: consuming GoDeeper has returned GoDeeper                                                      :1_3:Other "bar":
+******** / manyIndentation/leaf?                                                                                     :1_3:Other "bar":
+********* / someDeep                                                                                                :1_3:Other "bar":
+********** / someDeep first part calls base directly                                                               :1_3:Other "bar":
+********** \ someDeep first part calls base directly has returned "bar"                                            :2_3:Other "baz":
+********** / someDeep second part recurses with someIndentation                                                    :2_3:Other "baz":
+*********** / someIndentation                                                                                     :2_3:Other "baz":
+************ / myindented: consuming GoDeeper                                                                    :2_3:Other "baz":
+********** / someDeep no luck, returning []                                                                        :2_3:Other "baz":
+********* \ someDeep has returned ["bar"]                                                                           :2_3:Other "baz":
+******** \ manyIndentation/leaf? has returned ["bar"]                                                                :2_3:Other "baz":
+******** / myindented: consuming UnDeeper                                                                            :2_3:Other "baz":
+**** / someDeep no luck, returning []                                                                                 :1_2:GoDeeper:
+*** \ someDeep has returned ["foo"]                                                                                    :1_2:GoDeeper:
+** \ pMultiTerm calling someDeep choice has returned ["foo"]                                                            :1_2:GoDeeper:
+[Other "foo",GoDeeper,GoDeeper,Other "bar",Other "baz",UnDeeper,UnDeeper]
+** / |:| some                                                                                                          :1_1:Other "foo":
+*** / deeper                                                                                                           :1_2:GoDeeper:
+**** / some GoDeeper                                                                                                  :1_2:GoDeeper:
+**** \ some GoDeeper has returned [GoDeeper,GoDeeper]                                                                    :1_3:Other "bar":
+**** / |:| some                                                                                                          :1_3:Other "bar":
+***** / deeper                                                                                                          :2_3:Other "baz":
+****** / some GoDeeper                                                                                                 :2_3:Other "baz":
+***** / noMore                                                                                                          :2_3:Other "baz":
+***** \ noMore has returned ([],0)                                                                                      :2_3:Other "baz":
+**** \ |:| some has returned (["bar"],0)                                                                                 :2_3:Other "baz":
+*** \ deeper has returned (["bar"],2)                                                                                     :2_3:Other "baz":
+** \ |:| some has returned (["foo","bar"],2)                                                                               :2_3:Other "baz":
+** / undeepers                                                                                                             :2_3:Other "baz":
+*** / sameLine/undeepers: reached end of line; now need to clear 2 UnDeepers                                              :2_3:Other "baz":
+* final
+:PROPERTIES:
+:VISIBILITY: all
+:END:
+
+
+PDPA
+  multiterm-with-blanks-3 FAILED [1]
+  multiterm-with-blanks-3 FAILED [2]
+
+Failures:
+
+  test/Spec.hs:120:3: 
+  1) PDPA multiterm-with-blanks-3
+       expected: [(["foo","bar","baz"],[])]
+       but parsing failed with error:
+       1:2:
+       unexpected GoDeeper
+       expecting end of input
+       foo ✳   bar
+               baz
+       
+
+  To rerun use: --match "/PDPA/multiterm-with-blanks-3/"
+
+  test/Spec.hs:120:3: 
+  2) PDPA multiterm-with-blanks-3
+       expected: [(["foo","bar","ba"],[])]
+       but parsing failed with error:
+       2:3:
+       unexpected Other "baz"
+       expecting GoDeeper or UnDeeper
+       foo         bar  
+                   ✳ baz
+       
+
+  To rerun use: --match "/PDPA/multiterm-with-blanks-3/"
+
+Randomized with seed 603312071
+
+Finished in 0.0016 seconds
+2 examples, 2 failures
+
+natural4> Test suite natural4-test failed
+Test suite failure for package natural4-0.1.0.0
+    natural4-test:  exited with: ExitFailure 1
+Logs printed to console
+

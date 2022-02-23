@@ -24,7 +24,7 @@ import Data.ByteString.Lazy (ByteString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pPrint, pPrintString)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
@@ -123,7 +123,7 @@ parseRules o = do
           putStrLn $ "* error while parsing " ++ filename
           putStr (errorBundlePrettyCustom bundle)
           putStrLn "** stream"
-          printStream stream
+          renderStream stream
           return (Left bundle)
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
@@ -137,6 +137,9 @@ dumpRules opts = concat . rights <$> parseRules opts
 
 printStream :: MonadIO m => MyStream -> m ()
 printStream stream = pPrint (tokenVal <$> unMyStream stream)
+
+renderStream :: MonadIO m => MyStream -> m ()
+renderStream stream = pPrintString . unwords $ renderToken . tokenVal <$> unMyStream stream 
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of

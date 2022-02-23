@@ -151,6 +151,7 @@ test-suite natural4-test
     , containers
     , edit-distance
     , fgl
+    , generic-arbitrary
     , generic-data
     , gf
     , gf-ud

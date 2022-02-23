@@ -34,6 +34,10 @@ import Control.Monad (when, replicateM, guard)
 import Data.Either (fromRight)
 import Data.Char
 import LS.ParamText
+import qualified Data.Text.Lazy as T
+import Test.QuickCheck.Arbitrary.Generic
+import LS.Types (MyToken(Distinct, GoDeeper, UnDeeper, TypeSeparator, RuleMarker))
+-- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
 -- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
@@ -130,10 +134,32 @@ filetest2 testfile desc parseFunc expected =
 preprocess :: String -> String
 preprocess text = filter (not . (`elem` ['!', '.'])) text
 
-prop_gerundcheck :: String -> Bool
-prop_gerundcheck string =
-  gfmkGerund (preprocess (map toLower string)) ==
-    mkGerund (preprocess (map toLower string))
+prop_gerundcheck :: T.Text -> Bool
+prop_gerundcheck string = let str = T.unpack string in
+  gfmkGerund str == mkGerund str
+
+instance Arbitrary T.Text where
+  arbitrary = T.pack <$> listOf (elements ['a' .. 'z'])
+  shrink = map T.pack . shrink . T.unpack
+
+instance Arbitrary MyToken where
+  arbitrary = genericArbitrary
+  shrink = genericShrink
+
+notOther :: MyToken -> Bool
+notOther (Other _) = False
+notOther (RuleMarker _ _) = False
+notOther _ = True
+
+prop_rendertoken :: MyToken -> Property
+prop_rendertoken token = 
+  token `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther token ==>
+  toToken (T.pack $ renderToken token) === [token]
+
+
+
+
+
 
 main :: IO ()
 main = do
@@ -166,8 +192,15 @@ main = do
   let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
   let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
   let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
-  verboseCheck prop_gerundcheck
+  -- verboseCheck prop_gerundcheck
+  -- quickCheck prop_rendertoken
   hspec $ do
+    describe "mkGerund" $ do
+      it "behaves like gfmkGerund" $ do
+        property prop_gerundcheck
+    describe "renderToken" $ do
+      it "is the inverse of toToken" $ do
+        property prop_rendertoken
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())

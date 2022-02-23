@@ -222,30 +222,17 @@ parseFields env rl = case rl of
         DMay   -> mkCId "May"
         DShant -> mkCId "Shant"
 
-    -- TODO: add GF funs for  ParseTemporal
-    -- It will look like this:
-    {- parseUpon env bs = do
-        rawExpr <- parseOut env event
-        let gfFun = getGFFun (TAfter/TWhatever/…) -- should we move on to the Haskell version of the abstract syntax?
-        return $ <gfFun applied to rawExpr>  -- either use PGF.mkApp, or with Haskell version of abstract syntax
-      -}
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env tc = case tc of
-      TemporalConstraint TAfter  n tunit -> parseOut env $ "after "   <> Text.pack (show n) <> " " <> tunit
-      TemporalConstraint TBefore n tunit -> parseOut env $ "before "  <> Text.pack (show n) <> " " <> tunit
-      TemporalConstraint TBy     n tunit -> parseOut env $ "by "      <> Text.pack (show n) <> " " <> tunit
-      TemporalConstraint TOn     n tunit -> parseOut env $ "on "      <> Text.pack (show n) <> " " <> tunit
-      TemporalConstraint TVague  n tunit -> parseOut env $ "vaguely " <> Text.pack (show n) <> " " <> tunit
-
-    {- TODO: do we want to give this more structure in the GF grammar as well?
-      so that the GF tree looks like
-         Upon (GerundVP some_VP)
-      instead of
-         PrepNP upon_Prep (GerundVP some_VP)
-      in the latter case, the fact that this is an "upon" sentence is hidden in a lexical function upon_Prep
-      in the former, we know from the first constructor that this is an "upon" sentence
-    -}
-
+    parseTemporal env (TemporalConstraint keyword time tunit) =
+      parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
+      where
+        kw2txt tcomp = Text.pack $ case tcomp of
+          TBefore -> "before "
+          TAfter -> "after "
+          TBy -> "by "
+          TOn -> "on "
+          TVague -> "vaguely "
+        time2txt t = Text.pack $ maybe "" show t
 
 
 ------------------------------------------------------------
@@ -254,11 +241,11 @@ parseFields env rl = case rl of
 
 data AnnotatedRule = RegulativeA
             { subjA     :: Expr                      -- man AND woman AND child
-            , whoA      :: Maybe Expr                -- who walks and (eats or drinks) (RS)
-            , condA     :: Maybe Expr                -- if it is a saturday (Adv)
-            , deonticA  :: CId                       -- must (CId -- a hack, will change later)
-            , actionA   :: Expr                      -- sing / pay the king $20 (VP)
-            , temporalA :: Maybe Expr                -- before midnight (Adv)
+            , whoA      :: Maybe Expr                -- who walks and (eats or drinks)
+            , condA     :: Maybe Expr                -- if it is a saturday
+            , deonticA  :: CId                       -- must, may
+            , actionA   :: Expr                      -- sing / pay the king $20
+            , temporalA :: Maybe Expr                -- before midnight
             , uponA     :: Maybe Expr                -- UPON entering the club (event prereq trigger)
             , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
             -- TODO later

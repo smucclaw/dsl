@@ -309,51 +309,51 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 type SLParser a = Parser (a, Int)
 
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
-(+>|)  :: Show a           =>        (a -> b) -> Int                   -> Parser  (a -> b,Int)  -- start with an initial count of expected UnDeepers
-($>|)  :: Show a           =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- start using plain plain
-($*|)  :: Show a           =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- start using plain fancy
+(+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- start with an initial count of expected UnDeepers
+($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- start using plain plain
+($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- start using plain fancy
                            
-(>>|)  :: Show a           =>        (a -> b)      -> Parser  a        -> Parser  (b,Int)  -- same as $>| but optionally indented
-(>*|)  :: Show a           =>        (a -> b)      -> Parser (a, Int)  -> Parser  (b,Int)  -- same as $*| but optionally indented
+(>>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- same as $>| but optionally indented
+(>*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- same as $*| but optionally indented
 
 -- continue
-(|>|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- continue    fancy plain
-(|*|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- continue    fancy fancy
-(|-|)  ::                     Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- continue    fancy plain without consuming any GoDeepers
-(|=|)  ::                     Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- continue    fancy fancy without consuming any GoDeepers
-($>>)  :: Show a           => Parser  a            ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- plain 
-(|>>)  :: Show a           => Parser (a,      Int) ->                     Parser ( a,Int)  -- consume any GoDeepers, then parse -- fancy
-(|<|)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- plain
-(|^|)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any GoDeepers or UnDeepers, then parse -- fancy
-(|<*)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  -> Parser ( b,Int)  -- consume any UnDeepers, then parse -- fancy
-(|<>)  :: Show a           => Parser (a -> b, Int) -> Parser  a        -> Parser ( b,Int)  -- consume any UnDeepers, then parse, then consume GoDeepers
+(|>|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- continue    fancy plain
+(|*|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- continue    fancy fancy
+(|-|)  ::                     SLParser (a -> b) ->   Parser a  -> SLParser b  -- continue    fancy plain without consuming any GoDeepers
+(|=|)  ::                     SLParser (a -> b) -> SLParser a  -> SLParser b  -- continue    fancy fancy without consuming any GoDeepers
+($>>)  :: Show a           =>   Parser  a       ->                SLParser a  -- consume any GoDeepers, then parse -- plain 
+(|>>)  :: Show a           => SLParser  a       ->                SLParser a  -- consume any GoDeepers, then parse -- fancy
+(|<|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- consume any UnDeepers, then parse -- plain
+(|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- consume any GoDeepers or UnDeepers, then parse -- fancy
+(|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- consume any UnDeepers, then parse -- fancy
+(|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- consume any UnDeepers, then parse, then consume GoDeepers
 
 -- greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
-(+?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- force the LHS to be nongreedy before matching the right.
-(*?|)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- plain nongreedy kleene star
-(|+?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene plus
-(|*?)  :: Show a           => Parser (a,      Int) -> Parser (b, Int) -> Parser (([a],b),Int)  -- fancy nongreedy kleene star
-(/+=),(/+?=)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- lookahead, greedy and nongreedy
-(/*=),(/*?=)  :: Show a           => Parser  a            -> Parser (b, Int) -> Parser (([a],b),Int)  -- lookahead, greedy and nongreedy
+(+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.
+(*?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- plain nongreedy kleene star
+(|+?)  :: Show a           => SLParser a        -> SLParser b  -> SLParser ([a],b)  -- fancy nongreedy kleene plus
+(|*?)  :: Show a           => SLParser a        -> SLParser b  -> SLParser ([a],b)  -- fancy nongreedy kleene star
+(/+=),(/+?=)  :: Show a    =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- lookahead, greedy and nongreedy
+(/*=),(/*?=)  :: Show a    =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- lookahead, greedy and nongreedy
 
-($+/)  :: (Show a, Show b) =>          (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args to the initial constructor
-(/+/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- uncurry two args as part of the chain
-($>/)  :: (Show a, Show b) =>          (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- same as $+/ but consume godeepers first
-(|>/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> Parser ((a, b), Int)  -> Parser (c,Int)  -- same as /+/ but consume godeepers first
+($+/)  :: (Show a, Show b) =>          (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- uncurry two args to the initial constructor
+(/+/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- uncurry two args as part of the chain
+($>/)  :: (Show a, Show b) =>          (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- same as $+/ but consume godeepers first
+(|>/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- same as /+/ but consume godeepers first
 
 -- terminal
-(|*<)  :: Show a           => Parser (a -> b, Int) -> Parser (a, Int)  ->  Parser   b       -- end         fancy fancy
-(|><)  :: Show a           => Parser (a -> b, Int) -> Parser  a        ->  Parser   b       -- end         fancy plain
-(|<$)  ::                     Parser (a,      Int) -> (Int->Parser ()) ->  Parser   a       -- end         fancy plain manual undeeper -- used for undeepers
-(|--)  ::                     Parser (a,      Int) -> (Int->Parser ()) ->  Parser  (a, Int) -- end         tell a function (usually debugPrint) how deep we are
-(->|)  ::                     Parser (a -> b, Int) -> Int              ->  Parser  (a -> b,Int)  -- must consume at least this many GoDeepers before proceeding
+(|*<)  :: Show a           => SLParser (a -> b) -> SLParser a       ->    Parser b       -- end         fancy fancy
+(|><)  :: Show a           => SLParser (a -> b) ->   Parser a       ->    Parser b       -- end         fancy plain
+(|<$)  ::                     SLParser  a       -> (Int->Parser ()) ->    Parser a       -- end         fancy plain manual undeeper -- used for undeepers
+(|--)  ::                     SLParser  a       -> (Int->Parser ()) ->  SLParser a       -- end         tell a function (usually debugPrint) how deep we are
+(->|)  ::                     SLParser (a -> b) -> Int              ->  SLParser (a -> b)  -- must consume at least this many GoDeepers before proceeding
 
-(>><)  :: Show a           => Parser       a                           ->  Parser   a       -- consume, parse, undeeper
+(>><)  :: Show a           =>   Parser       a                      ->    Parser a       -- consume, parse, undeeper
 (>><) = manyIndentation
 
 
 -- 
-(|?|)  :: Show a => Parser (a,      Int) ->                Parser (Maybe a, Int) -- optional for an SLParser
+(|?|)  :: Show a => SLParser a ->          SLParser (Maybe a) -- optional for an SLParser
 (|?|) p = debugName "|?| optional something" $ do
   try (do
           (out,n) <- (|>>) p
@@ -361,16 +361,16 @@ type SLParser a = Parser (a, Int)
     <|> return (Nothing, 0)
 
 -- we have convenience combinators for some, many, and optional.
-(|:|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- some
-(|.|)  :: Show a => Parser (a     , Int) ->                     Parser ([a],Int) -- many
-(..|)  :: Show a => Parser  a            ->                     Parser ([a],Int) -- many
-(.:|)  :: Show a => Parser  a            ->                   SLParser  [a]      -- some
-(.:.)  :: Show a => Parser  a            ->                     Parser  [a]      -- some plain
-(...)  :: Show a => Parser  a            ->                     Parser  [a]      -- some plain
-(.?|)  :: Show a => Parser  a            ->                Parser (Maybe a ,Int) -- optional
+(|:|)  :: Show a => SLParser a ->                SLParser [a] -- some
+(|.|)  :: Show a => SLParser a ->                SLParser [a] -- many
+(..|)  :: Show a =>   Parser a ->                SLParser [a] -- many
+(.:|)  :: Show a =>   Parser a ->                SLParser [a] -- some
+(.:.)  :: Show a =>   Parser a ->                  Parser [a] -- some plain
+(...)  :: Show a =>   Parser a ->                  Parser [a] -- some plain
+(.?|)  :: Show a =>   Parser a ->          SLParser (Maybe a) -- optional
 
 -- and a simple lifter
-(<>|)  ::           Parser  a            ->                     Parser ( a ,Int) -- lift
+(<>|)  ::             Parser a ->                SLParser  a  -- lift
 
 {- so, how do these things work in action? here are some examples: -}
 

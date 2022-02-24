@@ -1158,16 +1158,16 @@ main = do
 
       let aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
           aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
-            ((_,x,y),n) <- (,,)
+            (_,x,y) <- (,,)
                            $*| return ((),0)
                            ->| 1
                            |*| slMultiTerm
                            |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
-            return ((x,y),n)
+            return (x,y)
             
           aNLK :: Int -> SLParser ([Text.Text],MyToken)
-          aNLK maxDepth = do
-            (toreturn, n) <- aboveNextLineKeyword
+          aNLK maxDepth = mkSL $ do
+            (toreturn, n) <- runSL aboveNextLineKeyword
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
             guard (n < maxDepth)
             return (toreturn, n)

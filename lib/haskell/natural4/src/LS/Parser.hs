@@ -53,7 +53,7 @@ expr p = makeExprParser (term p) table <?> "expression"
 term p = debugName "term p" $ do
   try (debugName "term p/1a:label directly above" $ do
         (lbl, inner) <- (,)
-          $*| ((.:|) pNumOrText <* lookAhead pNumOrText)
+          $*| ((.:|) pNumOrText <* liftSL (lookAhead pNumOrText))
           |>< expr p
         debugPrint $ "got label, then inner immediately below: " ++ show lbl
         debugPrint $ "got inner: " <> show inner
@@ -153,13 +153,12 @@ withPrePost basep = debugName "withPrePost" $ do
   (pre, body, post) <- (,,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aboveNextLineKeyword))
+    $*| debugName "pre part" (fst <$> (pOtherVal /+= aboveNextLineKeyword))
     |-| debugName "made it to inner base parser" basep
     |<* debugName "post part" slMultiTerm -- post part
     |<$ undeepers
   return $ relabelpp body (Text.unwords pre) (Text.unwords post)
   where
-    getLHS ((x,_),z) = (x,z)
     relabelpp :: AA.Item a -> Text.Text -> Text.Text -> AA.Item  a
     relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
     relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
@@ -169,12 +168,11 @@ withPreOnly basep = debugName "withPreOnly" $ do
   (pre, body) <- (,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (getLHS <$> (pOtherVal /+= aboveNextLineKeyword))
+    $*| debugName "pre part" (fst <$> (pOtherVal /+= aboveNextLineKeyword))
     |-| debugName "made it to inner parser" basep
     |<$ undeepers
   return $ relabelp body (Text.unwords pre)
   where
-    getLHS ((x,_),z) = (x,z)
     relabelp :: AA.Item a -> Text.Text -> AA.Item  a
     relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
     relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
@@ -183,15 +181,15 @@ withPreOnly basep = debugName "withPreOnly" $ do
 
 
 aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
-aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
+aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
   undp_count <- expectUnDeepers
   debugPrint $ "aNLK: determined undp_count = " ++ show undp_count
-  ((_,slmt),n) <- (,)
+  ((_,slmt),n) <- runSL $ (,)
                  $*| return ((),0) -- this just gets us from (,,) into the SLParser context
                  ->| 1
                  |*| slMultiTerm
                  |-- (\d -> debugPrint $ "aNLK: current depth is " ++ show d)
-  (tok,m) <- id
+  (tok,m) <- runSL $ id
              +>| n
              |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
 

@@ -98,18 +98,16 @@ pSingleTerm :: Parser KVsPair
 pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple` pTypeSig
 
 slParamText :: SLParser ParamText
-slParamText = debugName "slParamText" $ do
-  (kvspair,n) <- slTypedMulti
-  return (pure kvspair,n)
+slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
 slTypedMulti :: SLParser KVsPair
-slTypedMulti = debugName "slTypedMulti" $ do
-  ((l,ts,typicalval),n) <- (,,)
+slTypedMulti = debugNameSL "slTypedMulti" $ do
+  (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
     |*| (|?|) slTypeSig
     |*| (|?|) typically
-  writeTypically l typicalval
-  return ((fromList l, ts),n)
+  liftSL $ writeTypically l typicalval
+  return (fromList l, ts)
 
 writeTypically :: MultiTerm -> Maybe MultiTerm -> Parser ()
 writeTypically somekey someval = do
@@ -118,11 +116,11 @@ writeTypically somekey someval = do
   return ()
 
 slTypeSig :: SLParser TypeSig
-slTypeSig = debugName "slTypeSig" $ do
-  ((_typesep, typesig),n) <- (,)
+slTypeSig = debugNameSL "slTypeSig" $ do
+  (_typesep, typesig) <- (,)
        $>| (pToken TypeSeparator <|> pToken Is)
        |*| (simpletype <|> inlineenum)
-  return (typesig,n)
+  return typesig
   where
     simpletype = SimpleType
                  $>| choice [ TOne      <$ pToken One
@@ -147,11 +145,11 @@ pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
 slKeyValues :: SLParser KVsPair
-slKeyValues = debugName "slKeyValues" $ do
-             ((lhs, typesig),n) <- (,)
-                                   $*| (.:|) pNumOrText
-                                   |*| (|?|) slTypeSig
-             return ((fromList lhs, typesig),n)
+slKeyValues = debugNameSL "slKeyValues" $ do
+             (lhs, typesig)   <- (,)
+                                 $*| (.:|) pNumOrText
+                                 |*| (|?|) slTypeSig
+             return (fromList lhs, typesig)
 
 getSrcRef :: Parser SrcRef
 getSrcRef = do
@@ -167,8 +165,8 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   slAKA baseParser toMultiTerm |<$ undeepers
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
-slAKA baseParser toMultiTerm = debugName "slAKA" $ do
-  ((base, entityalias, typicalval),n) <- (,,)
+slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
+  (base, entityalias, typicalval) <- (,,)
                          $*| debugName "slAKA base" baseParser
                          |*| debugName "slAKA optional akapart"   ((|?|) akapart)
                          |*| debugName "slAKA optional typically" ((|?|) typically)
@@ -177,25 +175,25 @@ slAKA baseParser toMultiTerm = debugName "slAKA" $ do
   let detail' = toMultiTerm base
 
   debugPrint $ "pAKA: entityalias = " ++ show entityalias
-  srcref' <- getSrcRef
+  srcref' <- liftSL getSrcRef
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
-  tell defalias
-  writeTypically detail' typicalval
-  return (base,n)
+  liftSL $ tell defalias
+  liftSL $ writeTypically detail' typicalval
+  return base
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,
 -- being an AnyAll tree of RelationalPredicates.
 
   where
     akapart :: SLParser RuleName
     akapart = debugName "PAKA/akapart" $ do
-      ((_akatoken, akaval),n) <- (,)
+      (_akatoken, akaval) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| (.:|) pOtherVal
-      return (akaval,n)
+      return akaval
 
 typically :: SLParser MultiTerm
 typically = debugName "typically" $ do
-  ((_typically, someterm),n) <- (,)
+  (_typically, someterm) <- (,)
                                 $>| pToken Typically
                                 |*| slMultiTerm
-  return (someterm, n)
+  return someterm

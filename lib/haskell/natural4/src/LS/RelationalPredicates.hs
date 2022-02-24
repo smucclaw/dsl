@@ -253,7 +253,7 @@ whenCase = debugName "whenCase" $ do
 whenMeansIf :: Parser MyToken
 whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If ]
 
-slRelPred :: Parser (RelationalPredicate, Int)
+slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
   try       ( debugName "nested simpleHorn"  nestedHorn )
     <|> try ( debugName "RPConstraint"  rpConstraint )
@@ -263,8 +263,8 @@ slRelPred = debugName "slRelPred" $ do
 -- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad
 nestedHorn :: SLParser RelationalPredicate
 nestedHorn = do
-  srcref <- getSrcRef
-  ((subj, meansTok, bsr),n) <- (,,)
+  srcref <- liftSL getSrcRef
+  (subj, meansTok, bsr) <- (,,)
                                $*| slMultiTerm
                                |^| (<>|) (pToken Means)
                                |-| pBSR
@@ -279,16 +279,16 @@ nestedHorn = do
                             , defaults = []
                             , symtab = [] }
   debugPrint "constructed simpleHorn; running tellIdFirst"
-  _ <- tellIdFirst (return simpleHorn)
-  return (RPMT subj, n)
+  _ <- liftSL $ tellIdFirst (return simpleHorn)
+  return (RPMT subj)
 
   
-rpMT :: Parser (RelationalPredicate, Int)
+rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
-rpConstraint :: Parser (RelationalPredicate, Int)
+rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 
-rpBoolStructR :: Parser (RelationalPredicate, Int)
+rpBoolStructR :: SLParser RelationalPredicate
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 

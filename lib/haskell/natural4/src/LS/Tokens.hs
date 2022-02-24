@@ -327,6 +327,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    where the p* Parsers tend to wrap the sl* SLParsers.
 -}
 
+-- | A parser that has some pending GoDeepers to be consumed at the end.
 newtype SLParser a = SLParser {runSLParser_ :: WriterT (Sum Int) Parser a}
   deriving (Functor, Applicative, Alternative, Monad, MonadPlus, MonadParsec Void MyStream)
   -- deriving (Functor, Applicative, Alternative, Monad, MonadPlus, MonadWriter (Sum Int))
@@ -337,6 +338,7 @@ runSL = fmap (fmap getSum) . runWriterT . runSLParser_
 mkSL :: Parser (a, Int) -> SLParser a
 mkSL = SLParser . WriterT . fmap (fmap Sum)
 
+-- | Lift a plain parser to an SLParser with no pending godeepers.
 liftSL :: Parser a -> SLParser a
 liftSL = SLParser . lift
 
@@ -350,27 +352,27 @@ slUnDeeper = mkSL $ ((), -1) <$ pToken UnDeeper
 censorSL :: (Int -> Int) -> SLParser a -> SLParser a
 censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 
--- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
-(+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- start with an initial count of expected UnDeepers
-($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- start using plain plain
-($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- start using plain fancy
+-- * the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
+(+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- ^ start with an initial count of expected UnDeepers
+($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ start using plain plain
+($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ start using plain fancy
 
-(>>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- same as $>| but optionally indented
-(>*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- same as $*| but optionally indented
+(>>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ same as $>| but optionally indented
+(>*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ same as $*| but optionally indented
 
--- continue
-(|>|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- continue    fancy plain
-(|*|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- continue    fancy fancy
-(|-|)  ::                     SLParser (a -> b) ->   Parser a  -> SLParser b  -- continue    fancy plain without consuming any GoDeepers
-(|=|)  ::                     SLParser (a -> b) -> SLParser a  -> SLParser b  -- continue    fancy fancy without consuming any GoDeepers
-($>>)  :: Show a           =>   Parser  a       ->                SLParser a  -- consume any GoDeepers, then parse -- plain 
-(|>>)  :: Show a           => SLParser  a       ->                SLParser a  -- consume any GoDeepers, then parse -- fancy
-(|<|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- consume any UnDeepers, then parse -- plain
-(|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- consume any GoDeepers or UnDeepers, then parse -- fancy
-(|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- consume any UnDeepers, then parse -- fancy
-(|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- consume any UnDeepers, then parse, then consume GoDeepers
+-- * continue
+(|>|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ continue    fancy plain
+(|*|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ continue    fancy fancy
+(|-|)  ::                     SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ continue    fancy plain without consuming any GoDeepers
+(|=|)  ::                     SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ continue    fancy fancy without consuming any GoDeepers
+($>>)  :: Show a           =>   Parser  a       ->                SLParser a  -- ^ consume any GoDeepers, then parse -- plain 
+(|>>)  :: Show a           => SLParser  a       ->                SLParser a  -- ^ consume any GoDeepers, then parse -- fancy
+(|<|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- plain
+(|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any GoDeepers or UnDeepers, then parse -- fancy
+(|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- fancy
+(|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse, then consume GoDeepers
 
--- greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
+-- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
 (+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.
 (*?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- plain nongreedy kleene star
 (|+?)  :: Show a           => SLParser a        -> SLParser b  -> SLParser ([a],b)  -- fancy nongreedy kleene plus
@@ -383,7 +385,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 ($>/)  :: (Show a, Show b) =>          (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- same as $+/ but consume godeepers first
 (|>/)  :: (Show a, Show b) => SLParser (a -> b -> c) -> SLParser (a, b) -> SLParser c  -- same as /+/ but consume godeepers first
 
--- terminal
+-- * terminal
 (|*<)  :: Show a           => SLParser (a -> b) -> SLParser a       ->    Parser b       -- end         fancy fancy
 (|><)  :: Show a           => SLParser (a -> b) ->   Parser a       ->    Parser b       -- end         fancy plain
 (|<$)  ::                     SLParser  a       -> (Int->Parser ()) ->    Parser a       -- end         fancy plain manual undeeper -- used for undeepers
@@ -455,11 +457,13 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
 (.:.) x = (.:|) x |<$ undeepers     -- some pOtherVal and then undeepers
 (...) x = (..|) x |<$ undeepers     -- many pOtherVal and then undeepers
 
--- lift a simple parser into the SLparser context
-(<>|) p = mkSL $ do
-  p1 <- p
-  return (p1, 0)
+-- | lift a simple parser into the SLparser context
+(<>|) = liftSL
 
+-- | sl version of `some`, which consumes some deepers between each step
+
+-- Not quite the same:
+-- (|:|) p = debugNameSL "|:| some" $ sepBy1 p (try $ some slDeeper)
 (|:|) p = debugNameSL "|:| some" $ do
   p1 <- debugNameSL "|:| base parser" p
   ps <- try deeper <|> nomore
@@ -512,7 +516,7 @@ infixl 4 |-|, |=|
 
 p1 |=| p2 = p1 <*> p2
 
--- one or more of the LHS as needed to also match RHS; similar to manyTill
+-- | one or more of the LHS as needed to also match RHS; similar to manyTill
 -- (p1)+?(p2)
 p1 +?| p2 = do
   l     <- liftSL $ optional p1
@@ -520,14 +524,14 @@ p1 +?| p2 = do
   (r,x) <- p1 *?| p2
   return (maybe r (:r) l,x)
 
--- (p1)+(?=p2) greedy lookahead, some
+-- | (p1)+(?=p2) greedy lookahead, some
 p1 /+= p2 = do
   l     <- liftSL $ optional p1
   when (isNothing l) slDeeper
   (r,x) <- p1 /*= p2
   return (maybe r (:r) l, x)
 
--- (p1)*(?=p2) positive greedy lookahead, many
+-- | (p1)*(?=p2) positive greedy lookahead, many
 p1 /*= p2 = try (do
                     x   <- censorSL (const 0) $ try (lookAhead p2)
                     (debugPrint "/*= lookAhead succeeded, recursing greedily" >> try (p1 /+= p2))
@@ -536,14 +540,14 @@ p1 /*= p2 = try (do
                 )
              <|> (debugPrint "/*= lookAhead failed, delegating to plain /+=" >> try (p1 /+= p2))
 
--- (p1)+?(?=p2) nongreedy lookahead, some
+-- | (p1)+?(?=p2) nongreedy lookahead, some
 p1 /+?= p2 = do
   l      <- liftSL $ optional p1
   when (isNothing l) slDeeper
   (r,x)  <- p1 /*?= p2
   return (maybe r (:r) l, x)
 
--- (p1)*?(?=p2) nongreedy lookahead, many
+-- | (p1)*?(?=p2) nongreedy lookahead, many
 p1 /*?= p2 = try (do
                     x   <- censorSL (const 0) $ try (lookAhead p2)
                     debugPrint "/*?= lookAhead succeeded, nongreedy, so returning p2." >> return ([],x)

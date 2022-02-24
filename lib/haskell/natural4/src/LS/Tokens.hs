@@ -146,16 +146,17 @@ pRuleLabel = debugName "pRuleLabel" $ do
 
 debugName :: Show a => String -> Parser a -> Parser a
 debugName dname p = do
-  debugPrint dname
+  -- debugPrint dname
+  myTraceM $ "/ " <> dname
   res <- local (increaseNestLevel dname) p
   myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
 
 debugPrint :: String -> Parser ()
-debugPrint str = whenDebug $ do
+debugPrint str = -- whenDebug $ do
 --  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
 --  leftX     <- lookAhead pXLocation
-  myTraceM $ "/ " <> str
+  myTraceM $ "> " <> str
     -- <> "; currently at " ++ show leftX
     -- <> "; looking at: " <> show lookingAt
 
@@ -606,7 +607,7 @@ someUndeepers :: SLParser ()
 someUndeepers = debugName "someUndeepers" $ do
   pToken UnDeeper >> (fmap (subtract 1) <$> manyUndeepers)
 
-($>>) p = debugName "$>>" $ do
+($>>) p = do
   try recurse <|> base
   where
     base = debugName "$>>/base" $ do
@@ -619,7 +620,7 @@ someUndeepers = debugName "someUndeepers" $ do
       return (out, m+1)
 infixl 4 $>>
 
-(|>>) p = debugName "|>>" $ do
+(|>>) p = do
   try recurse <|> base
   where
     base = debugName "|>>/base" $ do

@@ -43,7 +43,7 @@ EOPROPERTIES
   if (not $inzone and not $donework and substr($rhs, 0, 1) =~ /[|\/\\]/) { $inzone = 1 }
   if (not $inzone) { print "$_\n"; next }
 
-  my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/]?) (.*)/;
+  my ($pipes, $slash, $text) = $rhs =~ /^([| ]*)([\\\/>]?) (.*)/;
 #  print $pipes, "\n";
 #  print $slash, "\n";
   my $numpipes = length($pipes) / 2 + 1 + 1;

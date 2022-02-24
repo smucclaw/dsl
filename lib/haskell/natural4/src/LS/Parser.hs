@@ -53,14 +53,14 @@ expr p = makeExprParser (term p) table <?> "expression"
 term p = debugName "term p" $ do
   try (debugName "term p/1a:label directly above" $ do
         (lbl, inner) <- (,)
-          $*| ((.:|) pNumOrText <* liftSL (lookAhead pNumOrText))
+          $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
           |>< expr p
         debugPrint $ "got label, then inner immediately below: " ++ show lbl
         debugPrint $ "got inner: " <> show inner
         return $ MyLabel lbl inner)
     <|>
     try (debugName "term p/b:label to the left of line below, with EOL" $ do
-        lbl <- (.:.) pNumOrText <* debugName "matching EOL" dnl
+        lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
         debugPrint $ "got label then EOL: " ++ show lbl
         inner <- expr p
         debugPrint $ "got inner: " ++ show inner

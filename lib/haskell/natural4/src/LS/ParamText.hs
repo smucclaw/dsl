@@ -147,7 +147,7 @@ pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
              (lhs, typesig)   <- (,)
-                                 $*| (.:|) pNumOrText
+                                 $*| someLiftSL pNumOrText
                                  |*| (|?|) slTypeSig
              return (fromList lhs, typesig)
 
@@ -188,7 +188,7 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
     akapart = debugName "PAKA/akapart" $ do
       (_akatoken, akaval) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
-                                |*| (.:|) pOtherVal
+                                |*| someLiftSL pOtherVal
       return akaval
 
 typically :: SLParser MultiTerm

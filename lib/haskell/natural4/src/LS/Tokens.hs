@@ -190,7 +190,7 @@ pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
 
 slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = debugNameSL "slMultiTerm" $ (.:|) pNumOrText
+slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 
 
@@ -297,14 +297,14 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
         $*| dMultiTerm
         |>| tok2rel
         |*< dMultiTerm
-      where dMultiTerm = (.:|) pNumOrText, which lifts a plain parser into the fancy combinator, slapping a "some" alongside.
+      where dMultiTerm = someLiftSL pNumOrText, which lifts a plain parser into the fancy combinator, slapping a "some" alongside.
 
    We lift a Parser a into a Parser (a, Int) where the Int records the number of UnDeepers needed to be consumed at the end.
 
    At the end, the combinators (|*<) and (|$<) are responsible for consuming, or "undeepering", those UnDeepers.
    The idea of "UnDeeper" corresponds with "moving to the left", which is why we see the character '<' at the right of the sigil.
 
-   To get parsers into the combinator, we can lift by using a fish operator (<>|) -- but this is usually only used in helper functions.
+   To get parsers into the combinator, we can lift by using a fish operator liftSL -- but this is usually only used in helper functions.
 
    The more conventional way to build a parser chain is to use applicative style, and that's why we have combinators that
    - get the chain started  :: ($>|) and ($*|)
@@ -338,6 +338,7 @@ runSL = fmap (fmap getSum) . runWriterT . runSLParser_
 mkSL :: Parser (a, Int) -> SLParser a
 mkSL = SLParser . WriterT . fmap (fmap Sum)
 
+-- lift a simple parser into the SLparser context
 -- | Lift a plain parser to an SLParser with no pending godeepers.
 liftSL :: Parser a -> SLParser a
 liftSL = SLParser . lift
@@ -405,16 +406,13 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
     <|> return Nothing
 
 -- we have convenience combinators for some, many, and optional.
-(|:|)  :: Show a => SLParser a ->                SLParser [a] -- some
-(|.|)  :: Show a => SLParser a ->                SLParser [a] -- many
-(..|)  :: Show a =>   Parser a ->                SLParser [a] -- many
-(.:|)  :: Show a =>   Parser a ->                SLParser [a] -- some
-(.:.)  :: Show a =>   Parser a ->                  Parser [a] -- some plain
-(...)  :: Show a =>   Parser a ->                  Parser [a] -- some plain
-(.?|)  :: Show a =>   Parser a ->          SLParser (Maybe a) -- optional
-
--- and a simple lifter
-(<>|)  ::             Parser a ->                SLParser  a  -- lift
+someSL          :: Show a => SLParser a ->       SLParser [a] -- some
+manySL          :: Show a => SLParser a ->       SLParser [a] -- many
+manyLiftSL      :: Show a =>   Parser a ->       SLParser [a] -- many
+someLiftSL      :: Show a =>   Parser a ->       SLParser [a] -- some
+someSLPlain     :: Show a =>   Parser a ->         Parser [a] -- some plain
+manySLPlain     :: Show a =>   Parser a ->         Parser [a] -- some plain
+liftSLOptional  :: Show a =>   Parser a -> SLParser (Maybe a) -- optional
 
 {- so, how do these things work in action? here are some examples: -}
 
@@ -446,37 +444,35 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
     $*| pT
     |*| pAn
     |*< pT
-  where pT  = (<>|) (pToken Is)
-        pAn = (.:|) (pToken A_An)
+  where pT  = liftSL (pToken Is)
+        pAn = someLiftSL (pToken A_An)
 
 -- implementation of the combinators
-(..|) x = (|.|) $ (<>|) x            -- usage: (..|) pOtherVal   is       many pOtherVal
-(.:|) x = (|:|) $ (<>|) x            -- usage: (.:|) pOtherVal   is       some pOtherVal
-(.?|) p =         (<>|) (optional p) -- usage: (.?|) pOtherVal   is   optional pOtherval
+manyLiftSL x    = manySL $ liftSL x            -- usage: manyLiftSL pOtherVal   is       many pOtherVal
+someLiftSL x    = someSL $ liftSL x            -- usage: someLiftSL pOtherVal   is       some pOtherVal
+liftSLOptional p =         liftSL (optional p) -- usage: liftSLOptional pOtherVal   is   optional pOtherval
 
-(.:.) x = (.:|) x |<$ undeepers     -- some pOtherVal and then undeepers
-(...) x = (..|) x |<$ undeepers     -- many pOtherVal and then undeepers
+someSLPlain x = someLiftSL x |<$ undeepers     -- some pOtherVal and then undeepers
+manySLPlain x = manyLiftSL x |<$ undeepers     -- many pOtherVal and then undeepers
 
--- | lift a simple parser into the SLparser context
-(<>|) = liftSL
 
 -- | sl version of `some`, which consumes some deepers between each step
+someSL p = debugNameSL "someSL" $ (:) <$> p <*> many (try $ some slDeeper *> p)
+-- someSL p = debugNameSL "|:| some" $ do
+--   p1 <- debugNameSL "|:| base parser" p
+--   ps <- try deeper <|> nomore
+--   return (p1:ps)
+--   where
+--     deeper = debugName "|:| deeper" $ do
+--       _ <- debugName "|:| some GoDeeper" $ some slDeeper
+--       someSL p
+--     nomore = debugName "|:| noMore" $ return []
+-- infixl 4 |:|
 
--- Not quite the same:
--- (|:|) p = debugNameSL "|:| some" $ sepBy1 p (try $ some slDeeper)
-(|:|) p = debugNameSL "|:| some" $ do
-  p1 <- debugNameSL "|:| base parser" p
-  ps <- try deeper <|> nomore
-  return (p1:ps)
-  where
-    deeper = debugName "|:| deeper" $ do
-      _ <- debugName "|:| some GoDeeper" $ some slDeeper
-      (|:|) p
-    nomore = debugName "|:| noMore" $ return []
-infixl 4 |:|, ..|, .:|
-
-(|.|) p = debugNameSL "|.| manyLike" $ do
-  try ((|:|) p) <|> pure []
+-- manySL :: Show a => SLParser a -> SLParser [a]
+-- | sl version of `many`, which consumes some deepers between each step
+manySL p = debugNameSL "|.| manyLike" $ do
+  try (someSL p) <|> pure []
 
 f $>| p2 = do
   r <- liftSL $ debugName "$>|" p2
@@ -511,7 +507,7 @@ p1 |*| p2 = do
   return (l r)
 infixl 4 |*|
 
-p1 |-| p2 = p1 |=| (<>|) p2
+p1 |-| p2 = p1 |=| liftSL p2
 infixl 4 |-|, |=|
 
 p1 |=| p2 = p1 <*> p2
@@ -670,7 +666,7 @@ infixl 4 |>>
 -- consume zero or more undeepers then parse the thing on the right.
 -- performs backtracking to support multiple levels
 -- plain
-p1 |<| p2 = debugPrintSL "|<|" >> p1 |<* (<>|) p2
+p1 |<| p2 = debugPrintSL "|<|" >> p1 |<* liftSL p2
 infixl 4 |<|
 
 p1 |<> p2 = debugPrintSL "|<>" >> p1 |<* ($>>) p2

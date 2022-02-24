@@ -266,7 +266,7 @@ nestedHorn = do
   srcref <- liftSL getSrcRef
   (subj, meansTok, bsr) <- (,,)
                                $*| slMultiTerm
-                               |^| (<>|) (pToken Means)
+                               |^| liftSL (pToken Means)
                                |-| pBSR
   let simpleHorn = Hornlike { name = subj
                             , keyword = meansTok

@@ -1126,7 +1126,7 @@ main = do
 
       it "SLParser combinators 1 /+=" $ do
         parseOther ((,,)
-                     $*| ((.:|) (pToken (Other "foo")))
+                     $*| (someLiftSL (pToken (Other "foo")))
                      |>| pToken (Other "bar")
                      |>< pToken (Other "qux")) ""
          (exampleStream "foo,foo,foo,bar,qux")
@@ -1134,7 +1134,7 @@ main = do
 
       it "SLParser combinators 2 /+=" $ do
         parseOther ((,,)
-                     $*| pToken (Other "foo") /+= ((<>|) $ pToken (Other "bar"))
+                     $*| pToken (Other "foo") /+= (liftSL $ pToken (Other "bar"))
                      |>| pToken (Other "bar")
                      |>< pToken (Other "qux")) ""
          (exampleStream "foo,foo,foo,bar,qux")

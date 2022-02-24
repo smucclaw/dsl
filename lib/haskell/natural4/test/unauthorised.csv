@@ -1,5 +1,4 @@
-§,NDB Qualification,,,,,,,,,,,,,,,,,,,
-DEFINE,a Data Breach,,,,,,,,,,,,,,,,,,,
+,a Data Breach,,,,,,,,,,,,,,,,,,,
 MEANS,TRUE,a Notifiable Data Breach,,,,AKA,NDB,,,,,,,,,,,,,
 IF,TRUE,a data breach,,,occurred,,,,,,,,,,,,,,,
 ,,MEANS,any,unauthorised,,,FALSE,access,,,"// maybe the label also needs to be a paramtext!? [""any"",""unauthorised""]",,,,,,,,,

@@ -179,6 +179,13 @@ withPreOnly basep = debugName "withPreOnly" $ do
     relabelp  _ _ = error "RelationalPredicates: relabelp failed"
 
 
+--  suppose the input is: | MEANS | each of the following | elements |       |  | apple   |
+--                        |       |                       |          |   OR  |  | banana  |
+--                        |       |                       |          |   OR  |  | cabbage |
+--                        |       | qualifies             |          |       |  |         |
+--  the calling function (withPrePost or withPreOnly) calls us as a (pOtherVal /+= aboveNextLineKeyword)
+--  the aboveNextLineKeyword matches exactly a GoDeeper, GoDeeper, apple, UnDeeper, UnDeeper, OR as a lookAhead.
+--  it does this by counting the number of UnDeepers seen before the OR, and it matches the same number of GoDeepers.
 
 aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
 aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do

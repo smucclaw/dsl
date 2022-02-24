@@ -325,7 +325,7 @@ stanzaAsStream rs =
         aCol <  bCol &&
         aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
                         a : a { tokenVal = EOL }            --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
-                        : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar |
+                        : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
       | aCol <  bCol =  a                                   --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
                         : (goDp <$> [1 .. (bCol - aCol)])

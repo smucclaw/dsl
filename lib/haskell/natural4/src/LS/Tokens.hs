@@ -17,6 +17,7 @@ import LS.Types
 import Debug.Trace (traceM)
 import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
+import Data.Maybe (isNothing)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -336,6 +337,19 @@ runSL = fmap (fmap getSum) . runWriterT . runSLParser_
 mkSL :: Parser (a, Int) -> SLParser a
 mkSL = SLParser . WriterT . fmap (fmap Sum)
 
+liftSL :: Parser a -> SLParser a
+liftSL = SLParser . lift
+
+slDeeper :: SLParser ()
+slDeeper = mkSL $ ((), 1) <$ pToken GoDeeper
+-- slDeeper = SLParser $ lift (pToken GoDeeper) >> tell (Sum 1)
+
+slUnDeeper :: SLParser ()
+slUnDeeper = mkSL $ ((), -1) <$ pToken UnDeeper
+
+censorSL :: (Int -> Int) -> SLParser a -> SLParser a
+censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
+
 -- the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
 (+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- start with an initial count of expected UnDeepers
 ($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- start using plain plain
@@ -446,24 +460,23 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
   p1 <- p
   return (p1, 0)
 
-(|:|) p = debugNameSL "|:| some" $ mkSL $ do
-  (p1,n) <- runSL $ debugNameSL "|:| base parser" p
-  (ps,m) <- try deeper <|> nomore
-  return (p1:ps, n+m)
+(|:|) p = debugNameSL "|:| some" $ do
+  p1 <- debugNameSL "|:| base parser" p
+  ps <- try deeper <|> nomore
+  return (p1:ps)
   where
     deeper = debugName "|:| deeper" $ do
-      deepers <- debugName "|:| some GoDeeper" $ some (pToken GoDeeper)
-      (next,m) <- runSL $ (|:|) p
-      return (next, m + length deepers)
-    nomore = debugName "|:| noMore" $ return ([],0)
+      _ <- debugName "|:| some GoDeeper" $ some slDeeper
+      (|:|) p
+    nomore = debugName "|:| noMore" $ return []
 infixl 4 |:|, ..|, .:|
 
 (|.|) p = debugNameSL "|.| manyLike" $ do
   try ((|:|) p) <|> pure []
 
-f $>| p2 = mkSL $ do
-  r <- debugName "$>|" p2
-  return (f r,0)
+f $>| p2 = do
+  r <- liftSL $ debugName "$>|" p2
+  return (f r)
 infixl 4 $>|
 
 f +>| n = do
@@ -476,8 +489,7 @@ f >>| p2 = do
 infixl 4 >>|
 
 f $*| p2 = do
-  r <- debugNameSL "$*|" p2
-  return (f r)
+  f <$>  debugNameSL "$*|" p2
 infixl 4 $*|
 
 f >*| p2 = f $*| (|>>) p2
@@ -502,41 +514,41 @@ p1 |=| p2 = p1 <*> p2
 
 -- one or more of the LHS as needed to also match RHS; similar to manyTill
 -- (p1)+?(p2)
-p1 +?| p2 = mkSL $ do
-  l         <- optional p1
-  gd        <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
-  ((r,x),m) <- runSL $ p1 *?| p2
-  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
+p1 +?| p2 = do
+  l     <- liftSL $ optional p1
+  when (isNothing l) slDeeper
+  (r,x) <- p1 *?| p2
+  return (maybe r (:r) l,x)
 
 -- (p1)+(?=p2) greedy lookahead, some
-p1 /+= p2 = mkSL $ do
-  l         <- optional p1
-  gd          <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
-  ((r,x),m) <- runSL $ p1 /*= p2
-  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
+p1 /+= p2 = do
+  l     <- liftSL $ optional p1
+  when (isNothing l) slDeeper
+  (r,x) <- p1 /*= p2
+  return (maybe r (:r) l, x)
 
 -- (p1)*(?=p2) positive greedy lookahead, many
-p1 /*= p2 = mkSL $ try (do
-                    (x,_)   <- runSL $ try (lookAhead p2)
-                    (debugPrint "/*= lookAhead succeeded, recursing greedily" >> (runSL . try $ p1 /+= p2))
+p1 /*= p2 = try (do
+                    x   <- censorSL (const 0) $ try (lookAhead p2)
+                    (debugPrint "/*= lookAhead succeeded, recursing greedily" >> try (p1 /+= p2))
                       <|>
-                      (debugPrint "/*= lookAhead succeeded, greedy recursion failed (no p1); returning p2." >> return (([],x),0))
+                      (debugPrint "/*= lookAhead succeeded, greedy recursion failed (no p1); returning p2." >> return ([],x))
                 )
-             <|> (debugPrint "/*= lookAhead failed, delegating to plain /+=" >> runSL (try (p1 /+= p2)))
+             <|> (debugPrint "/*= lookAhead failed, delegating to plain /+=" >> try (p1 /+= p2))
 
 -- (p1)+?(?=p2) nongreedy lookahead, some
-p1 /+?= p2 = mkSL $ do
-  l           <- optional p1
-  gd          <- maybe (Just <$> pToken GoDeeper) (const $ return Nothing) l
-  ((r,x),m)   <- runSL $ p1 /*?= p2
-  return ((maybe r (:r) l,x), maybe 0 (const 1) gd + m)
+p1 /+?= p2 = do
+  l      <- liftSL $ optional p1
+  when (isNothing l) slDeeper
+  (r,x)  <- p1 /*?= p2
+  return (maybe r (:r) l, x)
 
 -- (p1)*?(?=p2) nongreedy lookahead, many
-p1 /*?= p2 = mkSL $ try (do
-                    (x,_)   <- runSL $ try (lookAhead p2)
-                    debugPrint "/*?= lookAhead succeeded, nongreedy, so returning p2." >> return (([],x),0)
+p1 /*?= p2 = try (do
+                    x   <- censorSL (const 0) $ try (lookAhead p2)
+                    debugPrint "/*?= lookAhead succeeded, nongreedy, so returning p2." >> return ([],x)
                  )
-             <|> (debugPrint "/*= lookAhead failed, delegating to plain /+?=" >> runSL (try (p1 /+?= p2)))
+             <|> (debugPrint "/*= lookAhead failed, delegating to plain /+?=" >> try (p1 /+?= p2))
 
 infixl 5 +?|, *?|, |+?, |*? , /+=, /*=, /+?=, /*?=
 p1 *?| p2 =  try (do
@@ -554,26 +566,22 @@ p1 *?| p2 =  try (do
 --     • In a stmt of an interactive GHCi command: print it
 -- Right ["b","b","b","b","b"]
 
-p1 |+? p2 = mkSL $ do
-  (l,n)     <- runSL p1 <* pToken GoDeeper
-  ((r,x),m) <- runSL $ p1 |*? p2
-  return ((l:r,x), n + m)
+p1 |+? p2 = do
+  l     <- p1 <* slDeeper
+  (r,x) <- p1 |*? p2
+  return (l:r,x)
 
 p1 |*? p2 = try (do
                     x'   <- p2
                     return ([],x'))
             <|> (p1 |+? p2)
 
-f $+/ p = do
-  (x,y) <- p
-  return (f x y)
+f $+/ p = uncurry f <$> p
 infixl 4 $+/
 
-p1 /+/ p2 = mkSL $ do
-  (l,n)     <- runSL p1
-  ((x,y),m) <- runSL p2
-  debugPrint $ "/+/ pending " ++ show (n+m) ++ " UnDeepers"
-  return (l x y, n + m)
+p1 /+/ p2 = do
+  (uncurry <$> p1 <*> p2)
+    |-- (\n -> debugPrint $ "/+/ pending " ++ show n ++ " UnDeepers")
 infixl 4 /+/
 
 p1 $>/ p2 = debugPrintSL "$>/" >> p1 $+/ (|>>) p2
@@ -624,44 +632,35 @@ godeeper n = mkSL $ debugName ("godeeper " ++ show n) $ do
   debugPrint "matched!"
   return ((),n)
 
-liftSL :: Parser a -> SLParser a
-liftSL = SLParser . lift
-
 manyUndeepers :: SLParser ()
 manyUndeepers = debugNameSL "manyUndeepers" $ do
-  (liftSL (pToken UnDeeper) >> censorSL (subtract 1) manyUndeepers) <|> return ()
-
-censorSL :: (Int -> Int) -> SLParser (a) -> SLParser (a)
-censorSL = error "not implemented"
+  (slUnDeeper >> manyUndeepers) <|> return ()
 
 someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" $ do
-  liftSL (pToken UnDeeper) >> censorSL (subtract 1)  manyUndeepers
+  slUnDeeper >> manyUndeepers
 
-($>>) p = mkSL $ do
+($>>) p = do
   try recurse <|> base
   where
     base = debugName "$>>/base" $ do
-      out <- p
+      out <- liftSL p
       debugPrint $ "$>>/base got " ++ show out
-      return (out,0)
+      return out
     recurse = debugName "$>>/recurse" $ do
-      _ <- pToken GoDeeper
-      (out, m) <- runSL $ ($>>) p
-      return (out, m+1)
+      _ <- slDeeper
+      ($>>) p
 infixl 4 $>>
 
-(|>>) p = mkSL $ do
+(|>>) p = do
   try recurse <|> base
   where
     base = debugName "|>>/base" $ do
-      (out,n) <- runSL p
+      out <- p
       debugPrint $ "|>>/base got " ++ show out
-      return (out,n)
+      return out
     recurse = debugName "|>>/recurse" $ do
-      _ <- pToken GoDeeper
-      (out, m) <- runSL $ (|>>) p
-      return (out, m+1)
+      slDeeper >> (|>>) p
 infixl 4 |>>
 
 -- consume zero or more undeepers then parse the thing on the right.
@@ -673,33 +672,24 @@ infixl 4 |<|
 p1 |<> p2 = debugPrintSL "|<>" >> p1 |<* ($>>) p2
 infixl 4 |<>
 
-p1 |^| p2 = mkSL $ debugPrint "|^|" >> do
-  (l, n) <- runSL p1
-  deeps  <- debugName "|^| deeps" $ some (pToken GoDeeper) <|> many (pToken UnDeeper)
-  (r, m) <- runSL p2
-  let d = if length deeps > 0
-          then if head deeps == GoDeeper
-               then length deeps
-               else length deeps * (-1)
-          else 0
-  return (l r, n + m + d)
+p1 |^| p2 = debugPrintSL "|^|" >> do
+  l <- p1
+  _  <- debugName "|^| deeps" $ some slDeeper <|> many slUnDeeper
+  l <$> p2
 infixl 4 |^|
 
 -- fancy
-p1 |<* p2 = mkSL $ debugPrint "|<* starting" >> do
-  (l, n) <- runSL p1
-  (r, m) <- try goleft <|> base
-  debugPrint $ "|<*/parent returning "++ show r ++ " with " ++ show (n + m) ++ " UnDeepers pending"
-  return (l r, n + m)
+p1 |<* p2 = debugPrint "|<* starting" >> do
+  l <- p1
+  r <- debugName "|<*/parent" $ try goleft <|> base
+  return $ l r
   where
-    base = debugName "|<*/base" $ do
-      (out,n) <- runSL p2
-      return (out,n)
+    base = debugName "|<*/base" p2
     goleft = debugPrint "|<*/recurse" >> do
-      uds <- some $ pToken UnDeeper
-      (out, m) <- runSL p2
-      debugPrint $ "|<*/recurse matched " ++ show (length uds) ++ " UnDeepers, then got " ++ show out ++ " with " ++ show (m-length uds) ++ " UnDeepers pending"
-      return (out, m-length uds)
+      uds <- some slUnDeeper
+      out <- p2
+      debugPrint $ "|<*/recurse matched " ++ show (length uds) ++ " UnDeepers"
+      return out
 infixl 4 |<*
 
 -- indent at least 1 tab from current location
@@ -719,9 +709,9 @@ manyIndentation p =
 
 manyIndentation' :: Parser a -> Parser a
 manyIndentation' p =
-  (try p)
+  try p
   <|>
-  (try $ someIndentation' p)
+  try (someIndentation' p)
 
 myindented :: (Show a) => Parser a -> Parser a
 myindented = between

@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances #-}
+{-# OPTIONS_GHC -Wno-all #-}
 module LS.NLP.UDExt where
 
 import Control.Monad.Identity

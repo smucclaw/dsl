@@ -47,7 +47,11 @@ packages:
 #
 extra-deps:
 - github: smucclaw/dsl
+<<<<<<< HEAD
   commit: 9f52fe526a469164d57f843cd008125fd25a69a2
+=======
+  commit: b05358d9d66b69a40a2364c12bec4d23df8124f9
+>>>>>>> parent of 6d938e3 (switch to ghc 9 and aeson2 (dependency of anyall))
   subdirs:
   - lib/haskell/anyall
 - github: smucclaw/baby-l4

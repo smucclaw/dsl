@@ -1,5 +1,5 @@
 name:                anyall
-version:             0.1.1.0
+version:             0.1.0.1
 github:              "smucclaw/anyall"
 license:             BSD3
 author:              "Wong Meng Weng"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/smucclaw/dsl/lib/haskell/anyall>
+description:         Please see the README on GitHub at <https://github.com/githubuser/anyall#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -26,7 +26,7 @@ dependencies:
 - svg-builder
 - hspec
 - prettyprinter
-- aeson >= 2.0
+- aeson
 - bytestring
 - optparse-generic
 - vector

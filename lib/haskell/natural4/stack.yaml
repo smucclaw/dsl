@@ -76,6 +76,10 @@ extra-deps:
 
 allow-newer: true
 
+# Make weeder work
+ghc-options:
+  "$locals": -fwrite-ide-info
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

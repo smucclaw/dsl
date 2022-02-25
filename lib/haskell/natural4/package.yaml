@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/smucclaw/dsl/lib/haskell/natural4>
+description:         natural4 parses a Legal Spreadsheet's CSV and transpiles to multiple output formats. For more details, please see <https://github.com/smucclaw/dsl/lib/haskell/natural4>
 
 dependencies:
 - base >= 4.7 && < 5

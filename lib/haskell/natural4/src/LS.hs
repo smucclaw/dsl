@@ -1,3 +1,5 @@
+-- | This is the importable interface to the Legal Spreadsheets parser.
+
 module LS (module LS.Lib
           ,module LS.Types
           ,module LS.RelationalPredicates

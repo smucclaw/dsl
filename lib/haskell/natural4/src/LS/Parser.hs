@@ -85,7 +85,7 @@ table = [ [ prefix  MPNot  MyNot  ]
 
 {- see note in README.org under "About the src/Parser.hs" -}
 
-  -- ************** \ term p/notLabelTerm has returned MyLabel ["pay"] (MyLabel ["to","the King"] (MyLeaf (("amount" :| ["$20"],Nothing) :| []))) :4_4:UnDeeper:
+  -- term p/notLabelTerm has returned MyLabel ["pay"] (MyLabel ["to","the King"] (MyLeaf (("amount" :| ["$20"],Nothing) :| []))) :4_4:UnDeeper:
 
 getAll :: MyItem lbl a -> [MyItem lbl a]
 getAll (MyAll xs) = xs
@@ -179,7 +179,9 @@ withPreOnly basep = debugName "withPreOnly" $ do
     relabelp  _ _ = error "RelationalPredicates: relabelp failed"
 
 
--- | suppose the input is:
+-- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct
+-- 
+-- suppose the input is:
 -- > | MEANS | each of the following | elements |       |  | apple   |
 -- > |       |                       |          |   OR  |  | banana  |
 -- > |       |                       |          |   OR  |  | cabbage |
@@ -187,7 +189,8 @@ withPreOnly basep = debugName "withPreOnly" $ do
 --
 -- the calling function (withPrePost or withPreOnly) calls us as a (pOtherVal /+= aboveNextLineKeyword)
 -- the aboveNextLineKeyword matches exactly a GoDeeper, GoDeeper, apple, UnDeeper, UnDeeper, OR as a lookAhead.
--- it does this by counting the number of UnDeepers seen before the OR, and it matches the same number of GoDeepers.
+-- it does this by counting the number of UnDeepers seen before the OR, and it matches the same number of GoDeepers;
+-- it fails on any other number of GoDeepers encountered, so the caling /+= can break on the correct location between LHS,RHS
 
 aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
 aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do

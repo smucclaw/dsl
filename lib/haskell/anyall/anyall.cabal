@@ -5,8 +5,8 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           anyall
-version:        0.1.1.0
-description:    Please see the README on GitHub at <https://github.com/smucclaw/dsl/lib/haskell/anyall>
+version:        0.1.0.1
+description:    Please see the README on GitHub at <https://github.com/githubuser/anyall#readme>
 homepage:       https://github.com/smucclaw/anyall#readme
 bug-reports:    https://github.com/smucclaw/anyall/issues
 author:         Wong Meng Weng
@@ -36,7 +36,7 @@ library
       src
   ghc-options: -Wincomplete-patterns
   build-depends:
-      aeson >=2.0
+      aeson
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -56,7 +56,7 @@ executable anyall-exe
       app
   ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson >=2.0
+      aeson
     , anyall
     , base >=4.7 && <5
     , bytestring
@@ -78,7 +78,7 @@ test-suite anyall-test
       test
   ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson >=2.0
+      aeson
     , anyall
     , base >=4.7 && <5
     , bytestring

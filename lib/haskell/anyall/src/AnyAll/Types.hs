@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module AnyAll.Types where
@@ -11,21 +12,13 @@ import Data.String (IsString)
 import qualified Data.Map.Strict      as Map
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Lazy       as TL
+import qualified Data.Text.Internal   as DTI
 import qualified Data.Vector          as V
 
 import Data.Aeson
-import qualified Data.Aeson.Key as Key
 import Data.Aeson.Types (parseMaybe)
 import GHC.Generics
 import GHC.Exts (toList)
-
-
-toKey :: TL.Text -> Key.Key
-toKey = Key.fromString . TL.unpack
-
-fromKey :: Key.Key -> TL.Text
-fromKey = TL.pack . Key.toString
-
 
 data Label a =
     Pre a
@@ -137,7 +130,7 @@ parseMarking = withObject "marking" $ \o -> do
     let asList = toList o
     return $ Marking $ Map.fromList $ mapMaybe (\(k,v) ->
                                                   case parseMaybe parseJSON v :: Maybe (Default Bool) of
-                                                    Just ma -> Just (fromKey k, ma)
+                                                    Just ma -> Just (TL.fromStrict k, ma)
                                                     Nothing -> Nothing) asList
 
 

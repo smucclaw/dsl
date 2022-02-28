@@ -27,6 +27,11 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     Must = applyDeontic must_VV ;
     Shant = applyDeontic shant_VV ;
 
+    -- : AP -> Conj -> [CN] -> NP -> CN ; -- unauthorised access or copying of personal data
+    CN_AP_Conj_CNs_of_NP ap conj cns np =
+      let conjCN : CN = ConjCN conj cns ;
+       in mkCN ap (mkCN conjCN (mkAdv possess_Prep np)) ;
+
   oper
     applyDeontic : VV -> LinUDS -> LinUDS = \may,king_sing ->
       let may_sing : VP = ComplVPIVV may king_sing.pred.inf ;

@@ -16,6 +16,9 @@ abstract UDExt = UDApp ** {
 
     subjAction : NP -> UDS -> UDFragment ;
 
+  -- AnyAll library in GF
+    CN_AP_Conj_CNs_of_NP : AP -> Conj -> [CN] -> NP -> CN ; -- unauthorised access or copying of personal data
+
   -- Aarne
     Adv_no_later_than_Num_calendar_days_after_the_day_UDS : Numeral -> UDS -> UDFragment ;
 

@@ -386,6 +386,7 @@ data Tree :: * -> * where
   LexCAdv :: String -> Tree GCAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GAdvCN :: GCN -> GAdv -> Tree GCN_
+  GCN_AP_Conj_CNs_of_NP :: GAP -> GConj -> GListCN -> GNP -> Tree GCN_
   GCN_CN_relating_to_NP :: GCN -> GNP -> Tree GCN_
   GCN_obligation_of_NP_to_VP :: GNP -> GVP -> Tree GCN_
   GComplN2 :: GN2 -> GNP -> Tree GCN_
@@ -923,6 +924,7 @@ instance Eq (Tree a) where
     (LexCAdv x,LexCAdv y) -> x == y
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvCN x1 x2,GAdvCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4,GCN_AP_Conj_CNs_of_NP y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GCN_CN_relating_to_NP x1 x2,GCN_CN_relating_to_NP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCN_obligation_of_NP_to_VP x1 x2,GCN_obligation_of_NP_to_VP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplN2 x1 x2,GComplN2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1565,6 +1567,7 @@ instance Gf GCAdv where
 instance Gf GCN where
   gf (GAdjCN x1 x2) = mkApp (mkCId "AdjCN") [gf x1, gf x2]
   gf (GAdvCN x1 x2) = mkApp (mkCId "AdvCN") [gf x1, gf x2]
+  gf (GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4) = mkApp (mkCId "CN_AP_Conj_CNs_of_NP") [gf x1, gf x2, gf x3, gf x4]
   gf (GCN_CN_relating_to_NP x1 x2) = mkApp (mkCId "CN_CN_relating_to_NP") [gf x1, gf x2]
   gf (GCN_obligation_of_NP_to_VP x1 x2) = mkApp (mkCId "CN_obligation_of_NP_to_VP") [gf x1, gf x2]
   gf (GComplN2 x1 x2) = mkApp (mkCId "ComplN2") [gf x1, gf x2]
@@ -1582,6 +1585,7 @@ instance Gf GCN where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdjCN" -> GAdjCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "AdvCN" -> GAdvCN (fg x1) (fg x2)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "CN_AP_Conj_CNs_of_NP" -> GCN_AP_Conj_CNs_of_NP (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "CN_CN_relating_to_NP" -> GCN_CN_relating_to_NP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "CN_obligation_of_NP_to_VP" -> GCN_obligation_of_NP_to_VP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplN2" -> GComplN2 (fg x1) (fg x2)
@@ -3707,6 +3711,7 @@ instance Compos Tree where
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GAdvCN x1 x2 -> r GAdvCN `a` f x1 `a` f x2
+    GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4 -> r GCN_AP_Conj_CNs_of_NP `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GCN_CN_relating_to_NP x1 x2 -> r GCN_CN_relating_to_NP `a` f x1 `a` f x2
     GCN_obligation_of_NP_to_VP x1 x2 -> r GCN_obligation_of_NP_to_VP `a` f x1 `a` f x2
     GComplN2 x1 x2 -> r GComplN2 `a` f x1 `a` f x2

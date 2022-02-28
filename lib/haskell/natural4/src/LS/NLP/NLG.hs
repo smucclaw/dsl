@@ -11,7 +11,7 @@ import LS.Types ( Deontic(..),
       ParamText,
       BoolStruct(..),
       RuleName,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text )
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate (RPBoolStructR), HornClause2 (hHead) )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -21,9 +21,9 @@ import Data.List.Split (splitOn)
 import Data.Void (Void)
 -- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
--- import AnyAll (Item(..))
--- import qualified AnyAll as AA
-import Data.Maybe ( fromJust, fromMaybe )
+import AnyAll (Item(..))
+import qualified AnyAll as AA
+import Data.Maybe ( fromJust, fromMaybe, catMaybes, mapMaybe )
 import Data.List ( elemIndex, intercalate )
 import Replace.Megaparsec ( sepCap )
 import Text.Megaparsec
@@ -42,6 +42,10 @@ import Control.Monad (join)
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 
+dummyExpr :: PGF.Expr
+dummyExpr = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
+
+gfPath :: String -> String
 gfPath x = "grammars/" ++ x
 
 -- Parsing text with udpipe via external Python process
@@ -88,20 +92,10 @@ parseOut env txt = do
                Just e -> e
                Nothing -> case parseConllu env lowerConll of
                             Just e' -> e'
-                            Nothing -> fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
+                            Nothing -> dummyExpr
   putStrLn $ showExpr [] expr
   return expr
-
-
-peel :: Expr -> Expr
-peel subj = gf $ fromJust $ fromGUDS (fg subj)
-
-fromGUDS :: GUDS -> Maybe GNP
-fromGUDS x = case x of
-  Groot_only (GrootN_ someNP) -> Just someNP
-  _ -> Nothing
---  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
-
+-----------------------------------------------------------------------------
 
 nlg :: Rule -> IO Text.Text
 nlg rl = do
@@ -109,6 +103,7 @@ nlg rl = do
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- readPGF (gfPath "UDExt.pgf")
+   let lang = head $ languages gr
    case annotatedRule of
       RegulativeA {
         subjA
@@ -120,9 +115,8 @@ nlg rl = do
       , uponA
       , givenA
       } -> do
-        let lang = head $ languages gr
-            deonticAction = mkApp deonticA [actionA]
-            subjWho = applyMaybe "Who" whoA (peel subjA)
+        let deonticAction = mkApp deonticA [actionA]
+            subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
             subj = mkApp (mkCId "Every") [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             king_may_sing_upon = applyMaybe "Upon" uponA king_may_sing
@@ -132,14 +126,22 @@ nlg rl = do
                                                        ("Temporal", temporalA),
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
---            finalTree = doNLG existingQualifiers king_may_sing
+--            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
             finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr [] finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
+      HornlikeA {
+        clausesA
+      } -> do
+        let linTrees_exprs = Text.unlines [
+              Text.pack (linText ++ "\n" ++ linTree)
+              | tree <- clausesA
+              , let linText = linearize gr lang tree
+              , let linTree = showExpr [] tree ]
+
+        return linTrees_exprs
       _ -> return "()"
-
-
 
 doNLG :: [(String,Expr)] -> Expr -> Expr
 doNLG = error "not implemented"
@@ -151,8 +153,6 @@ applyMaybe name (Just expr) action = mkApp (mkCId name) [expr, action]
 mkApp2 :: String -> Expr -> Expr -> Expr
 mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 
-
-
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {} -> do
@@ -162,8 +162,8 @@ parseFields env rl = case rl of
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
-    uponA' <- parseUpon env (upon rl)
-    givenA' <- mapM (parseGiven env) (given rl)
+    uponA' <- mapM (parseParamText env) (upon rl)
+    givenA' <- mapM (parseParamText env) (given rl)
     return RegulativeA {
       subjA = subjA',
       whoA = whoA',
@@ -175,7 +175,7 @@ parseFields env rl = case rl of
       givenA = givenA'
     }
   Constitutive {} -> do
-    givenA' <- mapM (parseGiven env) (given rl)
+    givenA' <- mapM (parseParamText env) (given rl)
     nameA' <- parseName env (name rl)
     condA'   <- mapM (parseBSR env) (cond rl) -- when/if/unless
     return ConstitutiveA {
@@ -197,12 +197,16 @@ parseFields env rl = case rl of
     name = [nm]
   , detail = [det]
   } -> return $ Alias nm det
+  Hornlike {
+    clauses = cls:_
+  } -> case hHead cls of
+        RPBoolStructR _ _ bsr -> do
+          expr <- bsr2gf env bsr
+          return $ HornlikeA {clausesA = [expr]}
+        _ -> error "parseFields: doesn't support Hornlike yet"
 
   _ -> error "parseFields: rule type not supported yet"
   where
-    parseGiven :: UDEnv -> ParamText -> IO Expr
-    parseGiven env pt = parseOut env $ pt2text pt
-
     -- ConstitutiveName is [Text.Text]
     parseName :: UDEnv -> [Text.Text] -> IO Expr
     parseName env txt = parseOut env (Text.unwords txt)
@@ -213,8 +217,8 @@ parseFields env rl = case rl of
     parseBSR :: UDEnv -> BoolStructR -> IO Expr
     parseBSR env bsr = parseOut env (bsr2text bsr)
 
-    parseUpon :: UDEnv -> Maybe ParamText -> IO (Maybe Expr)
-    parseUpon env mpt = sequence $ parseOut env . pt2text <$> mpt
+    parseParamText :: UDEnv -> ParamText -> IO Expr
+    parseParamText env pt = parseOut env $ pt2text pt
 
     parseDeontic :: Deontic -> CId
     parseDeontic d = case d of
@@ -234,8 +238,81 @@ parseFields env rl = case rl of
           TVague -> "vaguely "
         time2txt t = Text.pack $ maybe "" show t
 
-
 ------------------------------------------------------------
+-- Let's try to parse a BoolStructR into a GF list
+-- First use case: "any unauthorised [access,use,…]  of personal data"
+
+bsr2gf :: UDEnv -> BoolStructR -> IO PGF.Expr
+bsr2gf env bsr = case bsr of
+  AA.Leaf rp -> do
+    let access = rp2text rp
+    parseOut env access -- returns a UDS -- TODO: parse single words in a lexicon and only larger phrases with UD!
+  AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
+    cnsUDS <- mapM (bsr2gf env) access_use_copying
+    let listcn = GListCN $ mapMaybe (cnFromUDS . fg) cnsUDS -- TODO: generalise to things that are not nouns
+    amodUDS <- parseOut env any_unauthorised
+    let amod = peelAP amodUDS
+    advUDS <- parseOut env of_personal_data
+    let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+    return (gf $
+      GCN_AP_Conj_CNs_of_NP amod (LexConj "or_Conj") listcn nmod)
+  _ -> return dummyExpr
+
+
+-----------------------------------------------------------------------------
+-- Manipulating GF trees
+
+dummyNP :: GNP
+dummyNP = Gwhoever_NP
+
+dummyAP :: GAP
+dummyAP = GStrAP (GString [])
+
+dummyAdv :: GAdv
+dummyAdv = LexAdv "now_Adv"
+
+peelNP :: Expr -> GNP
+peelNP np = fromMaybe dummyNP (npFromUDS $ fg np)
+
+peelAP :: Expr -> GAP
+peelAP ap = fromMaybe dummyAP (apFromUDS $ fg ap)
+
+peelAdv :: Expr -> GAdv
+peelAdv adv = fromMaybe dummyAdv (advFromUDS $ fg adv)
+
+npFromUDS :: GUDS -> Maybe GNP
+npFromUDS x = case x of
+  Groot_only (GrootN_ someNP) -> Just someNP
+  Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
+  _ -> Nothing
+--  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
+
+cnFromUDS :: GUDS -> Maybe GCN
+cnFromUDS x | Just np <- npFromUDS x = np2cn np
+            | otherwise              = Nothing
+  where
+    np2cn :: GNP -> Maybe GCN
+    np2cn np = case np of
+      GMassNP   cn          -> Just cn
+      GDetCN    _det cn     -> Just cn
+      GGenModNP _num _np cn -> Just cn
+      GExtAdvNP np   _adv   -> np2cn np
+      GAdvNP    np   _adv   -> np2cn np
+      GRelNP    np  _rs     -> np2cn np
+      GPredetNP _pre np     -> np2cn np
+      _                     -> Nothing
+
+apFromUDS :: GUDS -> Maybe GAP
+apFromUDS x = case x of
+  Groot_only (GrootA_ someAP) -> Just someAP
+  _ -> Nothing
+
+advFromUDS :: GUDS -> Maybe GAdv
+advFromUDS x = case x of
+  Groot_only (GrootAdv_ someAdv) -> Just someAdv
+  _ -> Nothing
+
+-----------------------------------------------------------------------------
 -- Ignore everything below for now
 
 
@@ -267,4 +344,5 @@ data AnnotatedRule = RegulativeA
                 -- , orig      :: [(Preamble, BoolStructP)]
                 }
             | Alias Text Text -- TODO: where to use this info?
+            | HornlikeA {clausesA :: [Expr]}
           deriving (Eq, Show)

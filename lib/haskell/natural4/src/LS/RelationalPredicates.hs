@@ -35,7 +35,7 @@ tok2rel = choice
     ]
 
 
--- TODO: FIXME: this is a hack, because we don't have a good way to parse the thing
+-- [TODO]: [FIXME]: this is a hack, because we don't have a good way to parse the thing
 unLeaf :: BoolStructR -> RelationalPredicate
 unLeaf (AA.Leaf x) = x
 unLeaf _ = error "unLeaf: not a leaf"

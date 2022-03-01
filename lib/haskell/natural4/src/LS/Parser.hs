@@ -34,7 +34,7 @@ pBoolStruct = prePostParse pOtherVal
 prePostParse :: Show a => Parser a -> Parser (AA.Item a)
 prePostParse base = ppp $ toBoolStruct <$> expr base
 
--- TODO: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
+-- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
 toBoolStruct :: Show a => MyBoolStruct a -> AA.Item a
@@ -211,7 +211,6 @@ aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
     then return ((slmt, tok), m)
     else fail $ "aNLK: expecting depth " ++ show undp_count ++ " but the cursor seems to be placed such that we have " ++ show n ++ "; a different backtrack will probably fare better"
   
-
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
 -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0

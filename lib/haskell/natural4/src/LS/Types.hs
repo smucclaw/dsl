@@ -96,7 +96,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbpbrneg   :: [(Preamble, BoolStructR)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
-                         , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- [TODO], figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
@@ -121,7 +121,7 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 data KW a = KW { dictK :: MyToken
                , dictV :: a }
 
--- TODO: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
+-- [TODO]: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
@@ -195,7 +195,7 @@ data Rule = Regulative
             , srcref :: Maybe SrcRef
             }
           | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
-            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. [FIXME]
             , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
             , srcref :: Maybe SrcRef
             }
@@ -379,7 +379,7 @@ mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ s
 
 mkTC :: MyToken -> Maybe Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure unit
--- TODO: Consider supporting non-integer time constraints
+-- [TODO]: Consider supporting non-integer time constraints
 
 data NatLang = NLen
 

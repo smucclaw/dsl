@@ -202,7 +202,7 @@ asCSV s =
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
--- TODO: left trim all blank columns
+-- [TODO]: left trim all blank columns
 
 rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt
@@ -712,7 +712,7 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 
 
--- TODO: Actually parse ParamTexts and not just single cells
+-- [TODO]: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP calling exprP" $ do
   toBoolStruct <$> exprP
@@ -769,7 +769,7 @@ pAtomicElement = debugName "pAtomicElement" $ do
     <|> pNotElement
     <|> pLeafVal
 
--- TODO: switch all this over the the Expr parser
+-- [TODO]: switch all this over the the Expr parser
 
 pElement :: Parser BoolStructP
 pElement = debugName "pElement" $ do
@@ -795,7 +795,7 @@ pLeafVal = debugName "pLeafVal" $ do
   myTraceM $ "pLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
 
--- TODO: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
+-- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 
 pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" $ do

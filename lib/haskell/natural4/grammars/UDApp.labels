@@ -6,6 +6,9 @@
 #fun rootV_ head              -- VP -> root
 #fun rootA_ head              -- AP -> root
 #fun rootN_ head              -- NP -> root
+#fun rootQuant_ head          -- Quant -> root
+#fun rootDet_ head            -- Det -> root
+#fun rootDetA_ det head       -- Det -> AP -> root
 #fun conjA_ head              -- AP -> conj ;
 #fun conjN_ head              -- NP -> conj ;
 #fun conjAdv_ head            -- Adv -> conj ;

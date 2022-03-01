@@ -80,6 +80,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     rootN_ np = mkRoot np ;
     rootAdv_ adv = mkRoot (mkVP adv) ;
     rootDet_ det = mkRoot (N.DetNP det) ;
+    rootDetA_ det ap = mkRoot (N.DetCN det (AdjAsCN ap)) ;
     rootQuant_ det = mkRoot (N.DetNP (N.DetQuant det N.NumSg)) ;
     nmod_ = PrepNP ;
 

@@ -862,6 +862,7 @@ data Tree :: * -> * where
   Greparandum_ :: GX -> Tree Greparandum_
   GrootA_ :: GAP -> Tree Groot_
   GrootAdv_ :: GAdv -> Tree Groot_
+  GrootDetA_ :: GDet -> GAP -> Tree Groot_
   GrootDet_ :: GDet -> Tree Groot_
   GrootN_ :: GNP -> Tree Groot_
   GrootQuant_ :: GQuant -> Tree Groot_
@@ -1400,6 +1401,7 @@ instance Eq (Tree a) where
     (Greparandum_ x1,Greparandum_ y1) -> and [ x1 == y1 ]
     (GrootA_ x1,GrootA_ y1) -> and [ x1 == y1 ]
     (GrootAdv_ x1,GrootAdv_ y1) -> and [ x1 == y1 ]
+    (GrootDetA_ x1 x2,GrootDetA_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GrootDet_ x1,GrootDet_ y1) -> and [ x1 == y1 ]
     (GrootN_ x1,GrootN_ y1) -> and [ x1 == y1 ]
     (GrootQuant_ x1,GrootQuant_ y1) -> and [ x1 == y1 ]
@@ -3446,6 +3448,7 @@ instance Gf Greparandum where
 instance Gf Groot where
   gf (GrootA_ x1) = mkApp (mkCId "rootA_") [gf x1]
   gf (GrootAdv_ x1) = mkApp (mkCId "rootAdv_") [gf x1]
+  gf (GrootDetA_ x1 x2) = mkApp (mkCId "rootDetA_") [gf x1, gf x2]
   gf (GrootDet_ x1) = mkApp (mkCId "rootDet_") [gf x1]
   gf (GrootN_ x1) = mkApp (mkCId "rootN_") [gf x1]
   gf (GrootQuant_ x1) = mkApp (mkCId "rootQuant_") [gf x1]
@@ -3455,6 +3458,7 @@ instance Gf Groot where
     case unApp t of
       Just (i,[x1]) | i == mkCId "rootA_" -> GrootA_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootAdv_" -> GrootAdv_ (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "rootDetA_" -> GrootDetA_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "rootDet_" -> GrootDet_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootN_" -> GrootN_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootQuant_" -> GrootQuant_ (fg x1)
@@ -4100,6 +4104,7 @@ instance Compos Tree where
     Greparandum_ x1 -> r Greparandum_ `a` f x1
     GrootA_ x1 -> r GrootA_ `a` f x1
     GrootAdv_ x1 -> r GrootAdv_ `a` f x1
+    GrootDetA_ x1 x2 -> r GrootDetA_ `a` f x1 `a` f x2
     GrootDet_ x1 -> r GrootDet_ `a` f x1
     GrootN_ x1 -> r GrootN_ `a` f x1
     GrootQuant_ x1 -> r GrootQuant_ `a` f x1

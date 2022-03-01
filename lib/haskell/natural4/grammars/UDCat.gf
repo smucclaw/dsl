@@ -155,6 +155,7 @@ abstract UDCat = BareRG ** {
         rootN_ : NP -> root ;
         rootAdv_ : Adv -> root ; -- within 30 days
         rootDet_ : Det -> root ; -- some
+        rootDetA_ : Det -> AP -> root ; -- fragments like "any unauthorised"
         rootQuant_ : Quant -> root ; -- the customer's
 
     -- GF NPs can have many UD labels

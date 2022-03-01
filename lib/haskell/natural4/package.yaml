@@ -52,6 +52,9 @@ dependencies:
 - graphviz
 - wordnet
 - edit-distance
+- lens
+- QuickCheck
+- generic-arbitrary
 
 ghc-options: -Wall
 
@@ -79,5 +82,3 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - natural4
-    - QuickCheck
-    - generic-arbitrary

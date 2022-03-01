@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Classy
       LS
       LS.BasicTypes
       LS.Error
@@ -52,7 +53,8 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core
@@ -63,12 +65,14 @@ library
     , containers
     , edit-distance
     , fgl
+    , generic-arbitrary
     , generic-data
     , gf
     , gf-ud
     , graphviz
     , hspec
     , hspec-megaparsec
+    , lens
     , megaparsec
     , mtl
     , optparse-generic
@@ -94,7 +98,8 @@ executable natural4-exe
       app
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core
@@ -105,12 +110,14 @@ executable natural4-exe
     , containers
     , edit-distance
     , fgl
+    , generic-arbitrary
     , generic-data
     , gf
     , gf-ud
     , graphviz
     , hspec
     , hspec-megaparsec
+    , lens
     , megaparsec
     , mtl
     , natural4
@@ -158,6 +165,7 @@ test-suite natural4-test
     , graphviz
     , hspec
     , hspec-megaparsec
+    , lens
     , megaparsec
     , mtl
     , natural4

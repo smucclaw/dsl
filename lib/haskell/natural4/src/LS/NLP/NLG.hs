@@ -250,13 +250,34 @@ bsr2gf env bsr = case bsr of
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     cnsUDS <- mapM (bsr2gf env) access_use_copying
     let listcn = GListCN $ mapMaybe (cnFromUDS . fg) cnsUDS -- TODO: generalise to things that are not nouns
-    amodUDS <- parseOut env any_unauthorised
-    let amod = peelAP amodUDS
     advUDS <- parseOut env of_personal_data
     let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
-    return (gf $
-      GCN_AP_Conj_CNs_of_NP amod (LexConj "or_Conj") listcn nmod)
+    qualUDS <- parseOut env any_unauthorised
+    let tree = constructTree listcn (LexConj "or_Conj") nmod (fg qualUDS)
+    return tree
+
   _ -> return dummyExpr
+
+constructTree :: GListCN -> GConj -> GNP -> GUDS -> Expr
+constructTree cns conj nmod qualUDS = finalTree
+  where
+    amod = case getRoot qualUDS of
+      [] -> dummyAP
+      x:_ -> case x of
+        (GrootA_ am) -> am
+        (GrootDetA_ _det am) -> am
+        _ -> dummyAP
+    cn = GCN_AP_Conj_CNs_of_NP amod conj cns nmod
+    maybedet = case getRoot qualUDS of
+      [] -> Nothing
+      x:_ -> case x of
+        (GrootDetA_ d _) -> Just d
+        (GrootDet_ d) -> Just d
+        (GrootQuant_ q) -> Just $ GDetQuant q GNumSg
+        _ -> Nothing
+    finalTree = gf $ case maybedet of
+      Nothing -> GMassNP cn
+      Just det -> GDetCN det cn
 
 
 -----------------------------------------------------------------------------
@@ -312,6 +333,14 @@ advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
   _ -> Nothing
 
+getRoot :: Tree a -> [Groot]
+getRoot rt@(GrootA_ _) = [rt]
+getRoot rt@(GrootN_ _) = [rt]
+getRoot rt@(GrootV_ _) = [rt]
+getRoot rt@(GrootDet_ _) = [rt]
+getRoot rt@(GrootDetA_ _ _) = [rt]
+getRoot rt@(GrootQuant_ _) = [rt]
+getRoot x = composOpMonoid getRoot x
 -----------------------------------------------------------------------------
 -- Ignore everything below for now
 

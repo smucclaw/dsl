@@ -451,7 +451,7 @@ r2fgl rs defRL r@Regulative{..} = do
   pure $ Just whoN
   where
     vp2np :: Text -> Text
-    vp2np = unsafePerformIO . wnNounDerivations
+    vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive"]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]

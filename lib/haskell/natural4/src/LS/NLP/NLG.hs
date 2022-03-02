@@ -12,7 +12,7 @@ import LS.Types ( Deontic(..),
       BoolStruct(..),
       RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate (RPBoolStructR), HornClause2 (hHead) )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import           Data.Text.Lazy         (Text)
@@ -242,13 +242,65 @@ parseFields env rl = case rl of
 -- Let's try to parse a BoolStructR into a GF list
 -- First use case: "any unauthorised [access,use,…]  of personal data"
 
+-- buildMorpho :: PGF -> Language -> Morpho
+makeMorpho :: UDEnv -> Morpho
+makeMorpho env =
+  buildMorpho (pgfGrammar env) (actLanguage env)
+
+-- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
+-- mkApp :: CId -> [Expr] -> Expr
+parseLex :: UDEnv -> String -> [Expr]
+parseLex env str =
+  [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
+
+findType :: [PGF.Expr] -> String
+findType ls
+  | length ls == 1 = tail (head ls)
+  | otherwise = findType ls
+findType [] = []
+-- disclosure_N -> (N)
+
+disambiguate :: String -> [PGF.Expr] -> PGF.Expr
+disambiguate str (l:ls)
+  | str `elem` l = l
+  | otherwise = disambiguate str ls
+
+bsr2gfAmb :: UDEnv -> BoolStructR -> [PGF.Expr]
+bsr2gfAmb env bsr = case bsr of
+  AA.Leaf rp -> do
+    let access = rp2text rp
+    let checkWords = length $ Text.words access
+    print "morpho"
+    print $ lookupMorpho (makeMorpho env) (Text.unpack access)
+    print "---"
+    print $ map (showExpr []) (parseLex env (Text.unpack access))
+    print "***"
+    case checkWords of
+      1 -> parseLex env (Text.unpack access)
+      _ -> parseOut env access
+
 bsr2gf :: UDEnv -> BoolStructR -> IO PGF.Expr
 bsr2gf env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
-    parseOut env access -- returns a UDS -- TODO: parse single words in a lexicon and only larger phrases with UD!
+    let checkWords = length $ Text.words access
+    -- let checkWords = length rp
+    print "morpho"
+    print $ lookupMorpho (makeMorpho env) (Text.unpack access)
+    print "---"
+    print $ map (showExpr []) (parseLex env (Text.unpack access))
+    print "***"
+    case checkWords of
+      1 -> return $ head $ parseLex env (Text.unpack access) -- TODO not only head
+      _ -> parseOut env access  -- returns a UDS
+  -- parseOut env access -- returns a UDS -- TODO: parse single words in a lexicon and only larger phrases with UD!
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
-    cnsUDS <- mapM (bsr2gf env) access_use_copying
+
+    -- TODO: different GF cats depending on whether they came from parseLex or parseOut
+    -- parseLex returns a list, we need larger context to decide whether the whole list is nouns verbs adjs etc.
+    cnsUDSamb <- mapM (bsr2gfAmb env) access_use_copying
+    let ending = findType cnsUDSamb
+    let cnsUDS = disambiguate ending cnsUDSamb
     let listcn = GListCN $ mapMaybe (cnFromUDS . fg) cnsUDS -- TODO: generalise to things that are not nouns
     advUDS <- parseOut env of_personal_data
     let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GADTs, NamedFieldPuns #-}
+{-# LANGUAGE GADTs, NamedFieldPuns, FlexibleContexts #-}
 
 module LS.NLP.NLG where
 
@@ -253,19 +253,35 @@ parseLex :: UDEnv -> String -> [Expr]
 parseLex env str =
   [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
 
-findType :: [PGF.Expr] -> String
-findType ls
-  | length ls == 1 = tail (head ls)
-  | otherwise = findType ls
-findType [] = []
+-- Example: expr=(EApp foo_N [])
+-- convert the expr into string with showExpr [],
+-- and return the last character
 -- disclosure_N -> (N)
+findType :: PGF.Expr -> String
+findType x = [last $ showExpr [] x]
 
-disambiguate :: String -> [PGF.Expr] -> PGF.Expr
-disambiguate str (l:ls)
-  | str `elem` l = l
-  | otherwise = disambiguate str ls
+-- Given a list of ambiguous words like
+-- [[access_V, access_N], [use_V, use_N], [copying_N, copy_V], [disclosure_N]]
+-- return a disambiguated list: [access_N, use_N, copying_N, disclosure_N]
+disambiguateList :: [[PGF.Expr]] -> [PGF.Expr]
+disambiguateList access_use_copying =
+  if all isSingleton access_use_copying
+    then concat access_use_copying
+    else [ w | ws <- access_use_copying
+         , w <- ws
+         , findType w == unambiguousType ]
+  where
+    unambiguousType :: String
+    unambiguousType = "N" -- TODO: actually implement this branch
+      -- | not (any isSingleton access_use_copying) = undefined -- all wordlists are either empty or >1: default to something
+      -- | otherwise = undefined -- At least one list has exactly 1 element.
 
-bsr2gfAmb :: UDEnv -> BoolStructR -> [PGF.Expr]
+    isSingleton [_] = True
+    isSingleton _ = False
+
+-- Meant to be called from inside an Any or All
+-- If we encounter another Any or All, fall back to bsr2gf
+bsr2gfAmb :: UDEnv -> BoolStructR -> IO [PGF.Expr]
 bsr2gfAmb env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
@@ -276,32 +292,25 @@ bsr2gfAmb env bsr = case bsr of
     print $ map (showExpr []) (parseLex env (Text.unpack access))
     print "***"
     case checkWords of
-      1 -> parseLex env (Text.unpack access)
-      _ -> parseOut env access
+      1 -> return $ parseLex env (Text.unpack access)
+      _ -> singletonList $ parseOut env access
+  -- In any other case, call the full bsr2gf
+  _ -> singletonList $ bsr2gf env bsr
+  where
+    singletonList x = (:[]) `fmap` x
 
 bsr2gf :: UDEnv -> BoolStructR -> IO PGF.Expr
 bsr2gf env bsr = case bsr of
+  -- This happens only if the full BoolStructR is just a single Leaf
+  -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
   AA.Leaf rp -> do
     let access = rp2text rp
-    let checkWords = length $ Text.words access
-    -- let checkWords = length rp
-    print "morpho"
-    print $ lookupMorpho (makeMorpho env) (Text.unpack access)
-    print "---"
-    print $ map (showExpr []) (parseLex env (Text.unpack access))
-    print "***"
-    case checkWords of
-      1 -> return $ head $ parseLex env (Text.unpack access) -- TODO not only head
-      _ -> parseOut env access  -- returns a UDS
-  -- parseOut env access -- returns a UDS -- TODO: parse single words in a lexicon and only larger phrases with UD!
+    parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
-
-    -- TODO: different GF cats depending on whether they came from parseLex or parseOut
-    -- parseLex returns a list, we need larger context to decide whether the whole list is nouns verbs adjs etc.
-    cnsUDSamb <- mapM (bsr2gfAmb env) access_use_copying
-    let ending = findType cnsUDSamb
-    let cnsUDS = disambiguate ending cnsUDSamb
-    let listcn = GListCN $ mapMaybe (cnFromUDS . fg) cnsUDS -- TODO: generalise to things that are not nouns
+    contentsAmb <- mapM (bsr2gfAmb env) access_use_copying
+    let contents = disambiguateList contentsAmb
+        contentsUDS = map toUDS contents        -- contents may come from UD parsing or lexicon, force them to be same type
+        listcn = GListCN $ mapMaybe cnFromUDS contentsUDS -- TODO: generalise to things that are not nouns
     advUDS <- parseOut env of_personal_data
     let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
     qualUDS <- parseOut env any_unauthorised
@@ -309,6 +318,32 @@ bsr2gf env bsr = case bsr of
     return tree
 
   _ -> return dummyExpr
+
+
+toUDS :: Expr -> GUDS
+toUDS e = case take 5 $ showExpr [] e of
+  "Groot" -> fg e -- it's already a UDS
+  _ -> case findType e of
+    "N" -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
+    "A" -> Groot_only (GrootA_ (GPositA (fg e)))
+    "V" -> Groot_only (GrootV_ (GUseV (fg e)))
+    _ -> fg dummyExpr
+--  _ -> toUDS' $ SomeGf $ fg e
+
+{-
+Why doesn't this work?
+
+data SomeGf f = forall a. Gf (f a) => SomeGf (f a)
+
+toUDS' :: SomeGf Tree -> GUDS
+toUDS' (SomeGf e) = case e of
+  LexA _ -> Groot_only (GrootA_ (GPositA e))
+  LexN _ -> Groot_only (GrootN_ (GMassNP (GUseN e)))
+  LexV _ -> Groot_only (GrootV_ (GUseV e))
+  LexAdv _ -> Groot_only (GrootAdv_  e)
+  Groot_only _ -> e
+  _ -> fg dummyExpr
+-}
 
 constructTree :: GListCN -> GConj -> GNP -> GUDS -> Expr
 constructTree cns conj nmod qualUDS = finalTree

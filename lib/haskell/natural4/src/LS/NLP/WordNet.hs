@@ -65,12 +65,12 @@ wnNounDerivations ogWord = do
         ]
   let result =
         case candidates of
-              (_,_,dist,noun,_,_,_):_ ->  -- Check 1: is
-                if dist >= ogWordLen
+              (_,_,dist,noun,_,_,_):_ ->  -- Check 1: are there candidates?
+                if dist >= ogWordLen      -- Check 2: is the edit distance more than the word length?
                   then mkGerund ogWordStr
                   else noun
               [] -> mkGerund ogWordStr
-  appendFile "test.txt" $ prettyPrintResult ogWord candidates
+  -- appendFile "test.txt" $ prettyPrintResult ogWord candidates -- for testing
   pure $ Text.pack result
 
 prefixSimilarity :: String -> String -> Int

@@ -12,7 +12,8 @@ import LS.Types ( Deontic(..),
       BoolStruct(..),
       RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate (RPBoolStructR), HornClause2 (hHead) )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import qualified PGF as PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import           Data.Text.Lazy         (Text)
@@ -24,7 +25,8 @@ import UD2GF (getExprs)
 import AnyAll (Item(..))
 import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe, catMaybes, mapMaybe )
-import Data.List ( elemIndex, intercalate )
+import Data.List ( elemIndex, intercalate, group, sort, sortOn )
+import Data.List.Extra (maximumOn)
 import Replace.Megaparsec ( sepCap )
 import Text.Megaparsec
     ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
@@ -39,6 +41,8 @@ import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
+
+showExpr = PGF.showExpr []
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
@@ -94,7 +98,7 @@ parseOut env txt = do
                Nothing -> case parseConllu env lowerConll of
                             Just e' -> e'
                             Nothing -> dummyExpr
-  putStrLn $ showExpr [] expr
+  putStrLn $ showExpr expr
   return expr
 -----------------------------------------------------------------------------
 
@@ -117,7 +121,7 @@ nlg rl = do
       , givenA
       } -> do
         let deonticAction = mkApp deonticA [actionA]
-            subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
+            subjWho = applyMaybe "Who" whoA (gf dummyNP) --(gf $ peelNP subjA)
             subj = mkApp (mkCId "Every") [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             king_may_sing_upon = applyMaybe "Upon" uponA king_may_sing
@@ -130,7 +134,7 @@ nlg rl = do
 --            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
             finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
-            linTree = showExpr [] finalTree
+            linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       HornlikeA {
         clausesA
@@ -139,7 +143,7 @@ nlg rl = do
               Text.pack (linText ++ "\n" ++ linTree)
               | tree <- clausesA
               , let linText = linearize gr lang tree
-              , let linTree = showExpr [] tree ]
+              , let linTree = showExpr tree ]
 
         return linTrees_exprs
       _ -> return "()"
@@ -255,27 +259,32 @@ parseLex env str =
   [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
 
 -- Example: expr=(EApp foo_N [])
--- convert the expr into string with showExpr [],
+-- convert the expr into string with showExpr,
 -- and return the last character
 -- disclosure_N -> (N)
-findType :: PGF.Expr -> String
-findType x = [last $ showExpr [] x]
+findType :: PGF -> PGF.Expr -> String
+findType pgf e = case inferExpr pgf e of
+  Left te -> error $ GfPretty.render $ ppTcError te -- gives string of error
+  Right (_, typ) -> showType [] typ -- string of type
 
 -- Given a list of ambiguous words like
 -- [[access_V, access_N], [use_V, use_N], [copying_N, copy_V], [disclosure_N]]
 -- return a disambiguated list: [access_N, use_N, copying_N, disclosure_N]
-disambiguateList :: [[PGF.Expr]] -> [PGF.Expr]
-disambiguateList access_use_copying =
+disambiguateList :: PGF -> [[PGF.Expr]] -> [PGF.Expr]
+disambiguateList pgf access_use_copying =
   if all isSingleton access_use_copying
     then concat access_use_copying
     else [ w | ws <- access_use_copying
          , w <- ws
-         , findType w == unambiguousType ]
+         , findType pgf w == unambiguousType (map (map (findType pgf)) access_use_copying)
+    ]
   where
-    unambiguousType :: String
-    unambiguousType = "N" -- TODO: actually implement this branch
-      -- | not (any isSingleton access_use_copying) = undefined -- all wordlists are either empty or >1: default to something
-      -- | otherwise = undefined -- At least one list has exactly 1 element.
+    unambiguousType :: [[String]]-> String
+    unambiguousType access_use_copying
+      | not (any isSingleton access_use_copying) =
+          head $ maximumOn length $ Data.List.group $ Data.List.sort $ concat access_use_copying
+        -- all wordlists are either empty or >1: default to something
+      | otherwise = head $ head $ sortOn length access_use_copying -- At least one list has exactly 1 element.
 
     isSingleton [_] = True
     isSingleton _ = False
@@ -290,7 +299,7 @@ bsr2gfAmb env bsr = case bsr of
     print "morpho"
     print $ lookupMorpho (makeMorpho env) (Text.unpack access)
     print "---"
-    print $ map (showExpr []) (parseLex env (Text.unpack access))
+    print $ map (showExpr) (parseLex env (Text.unpack access))
     print "***"
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
@@ -309,9 +318,11 @@ bsr2gf env bsr = case bsr of
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     contentsAmb <- mapM (bsr2gfAmb env) access_use_copying
-    let contents = disambiguateList contentsAmb :: [Expr]
+    let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
         contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
         listcn = GListCN $ mapMaybe cnFromUDS contentsUDS -- TODO: generalise to things that are not nouns
+    print "contentsUDS"
+    print $ map (showExpr . gf) contentsUDS
     advUDS <- parseOut env of_personal_data
     let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
     qualUDS <- parseOut env any_unauthorised
@@ -322,18 +333,19 @@ bsr2gf env bsr = case bsr of
 
 
 toUDS :: PGF -> Expr -> GUDS
-toUDS pgf e = case inferExpr pgf e of
-  Left te -> error $ GfPretty.render $ ppTcError te
-  Right (_, typ) -> case showType [] typ of
-    "UDS" -> fg e -- it's already a UDS
-    "NP" -> Groot_only (GrootN_                 (fg e))
-    "CN" -> Groot_only (GrootN_ (GMassNP        (fg e)))
-    "N"  -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
-    "AP" -> Groot_only (GrootA_          (fg e))
-    "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
-    "VP" -> Groot_only (GrootV_        (fg e))
-    "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
-    _ -> fg dummyExpr
+toUDS pgf e = case findType pgf e of
+  "UDS" -> fg e -- it's already a UDS
+  "NP" -> Groot_only (GrootN_                 (fg e))
+  "CN" -> Groot_only (GrootN_ (GMassNP        (fg e)))
+  "N"  -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
+  "AP" -> Groot_only (GrootA_          (fg e))
+  "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
+  "VP" -> Groot_only (GrootV_        (fg e))
+  "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
+  "Adv"-> Groot_only (GrootAdv_ (fg e))
+  "Det"-> Groot_only (GrootDet_ (fg e))
+  "Quant"-> Groot_only (GrootQuant_ (fg e))
+  _ -> fg dummyExpr
 
 constructTree :: GListCN -> GConj -> GNP -> GUDS -> Expr
 constructTree cns conj nmod qualUDS = finalTree

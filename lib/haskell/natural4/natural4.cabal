@@ -62,6 +62,7 @@ library
     , cassava
     , containers
     , edit-distance
+    , extra
     , fgl
     , generic-data
     , gf
@@ -104,6 +105,7 @@ executable natural4-exe
     , cassava
     , containers
     , edit-distance
+    , extra
     , fgl
     , generic-data
     , gf
@@ -150,6 +152,7 @@ test-suite natural4-test
     , cassava
     , containers
     , edit-distance
+    , extra
     , fgl
     , generic-arbitrary
     , generic-data

@@ -12,7 +12,7 @@ import LS.Types ( Deontic(..),
       BoolStruct(..),
       RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate (RPBoolStructR), HornClause2 (hHead) )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, showExpr, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import           Data.Text.Lazy         (Text)
@@ -38,6 +38,7 @@ import System.Process.Typed ( proc, readProcessStdout_ )
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Control.Monad.IO.Class
 import Control.Monad (join)
+import qualified GF.Text.Pretty as GfPretty
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
@@ -308,8 +309,8 @@ bsr2gf env bsr = case bsr of
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     contentsAmb <- mapM (bsr2gfAmb env) access_use_copying
-    let contents = disambiguateList contentsAmb
-        contentsUDS = map toUDS contents        -- contents may come from UD parsing or lexicon, force them to be same type
+    let contents = disambiguateList contentsAmb :: [Expr]
+        contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
         listcn = GListCN $ mapMaybe cnFromUDS contentsUDS -- TODO: generalise to things that are not nouns
     advUDS <- parseOut env of_personal_data
     let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
@@ -320,30 +321,19 @@ bsr2gf env bsr = case bsr of
   _ -> return dummyExpr
 
 
-toUDS :: Expr -> GUDS
-toUDS e = case take 5 $ showExpr [] e of
-  "Groot" -> fg e -- it's already a UDS
-  _ -> case findType e of
-    "N" -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
-    "A" -> Groot_only (GrootA_ (GPositA (fg e)))
-    "V" -> Groot_only (GrootV_ (GUseV (fg e)))
+toUDS :: PGF -> Expr -> GUDS
+toUDS pgf e = case inferExpr pgf e of
+  Left te -> error $ GfPretty.render $ ppTcError te
+  Right (_, typ) -> case showType [] typ of
+    "UDS" -> fg e -- it's already a UDS
+    "NP" -> Groot_only (GrootN_                 (fg e))
+    "CN" -> Groot_only (GrootN_ (GMassNP        (fg e)))
+    "N"  -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
+    "AP" -> Groot_only (GrootA_          (fg e))
+    "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
+    "VP" -> Groot_only (GrootV_        (fg e))
+    "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
     _ -> fg dummyExpr
---  _ -> toUDS' $ SomeGf $ fg e
-
-{-
-Why doesn't this work?
-
-data SomeGf f = forall a. Gf (f a) => SomeGf (f a)
-
-toUDS' :: SomeGf Tree -> GUDS
-toUDS' (SomeGf e) = case e of
-  LexA _ -> Groot_only (GrootA_ (GPositA e))
-  LexN _ -> Groot_only (GrootN_ (GMassNP (GUseN e)))
-  LexV _ -> Groot_only (GrootV_ (GUseV e))
-  LexAdv _ -> Groot_only (GrootAdv_  e)
-  Groot_only _ -> e
-  _ -> fg dummyExpr
--}
 
 constructTree :: GListCN -> GConj -> GNP -> GUDS -> Expr
 constructTree cns conj nmod qualUDS = finalTree

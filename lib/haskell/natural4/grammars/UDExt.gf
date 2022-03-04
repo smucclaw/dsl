@@ -8,16 +8,18 @@ abstract UDExt = UDApp ** {
 
     -- Compositional,
     -- Add a UDS as an adverbial
-    Cond,
-    Temporal,
-    Given,
+    Cond : UDS -> UDFragment -> UDFragment ; -- the king must sing if the prime minister is happy
+    Temporal : Adv -> UDFragment -> UDFragment ; -- the king must sing after noon
+    Given : UDS -> UDFragment -> UDFragment ; -- the king must sing given that the prime minister is happy
     Upon : (becoming_aware : UDS) ->
            (king_may_sing : UDFragment) ->
            UDFragment ; -- Upon becoming aware, the king may sing
 
     -- Standalone sentence of each field
     CondStandalone,
-      TemporalStandalone : UDS -> UDFragment ;
+      TemporalStandalone,
+      GivenStandalone,
+      UponStandalone : UDS -> UDFragment ;
 
     -- Templates
     CondTemporal : (cond, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ; -- if the prime minister is happy, [the king must sing] by noon.
@@ -26,8 +28,20 @@ abstract UDExt = UDApp ** {
     -- * PM is happy
     -- * queen had a nice breakfast
 
-    CondGivenTemporal : (cond, given, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ;
+    CondUpon : (cond, upon : UDS) -> (king_must_sing: UDFragment) -> UDFragment ;
+    -- if the prime minister is happy, upon opening the door, [the king must sing] .
 
+    CondGiven : (cond, given : UDS) -> (king_must_sing: UDFragment) -> UDFragment ;
+    -- [the king must sing], if the following conditions hold:
+      -- * the prime minister is happy,  upon opening the door.
+
+    -- CondGivenTemporal : (cond, given, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ;
+
+    -- CondTemporalUpon : (cond, temp, upon : UDS) -> (king_must_sing : UDFragment)  -> UDFragment ;
+    -- -- if the prime minister is happy, [the king must sing] after lunch upon opening the door
+
+    -- CondGivenUpon : (cond, given, upon : UDS) -> (king_must_sing : UDFragment)  -> UDFragment ;
+    -- -- if the prime minister is happy, and the queen had a nice breakfast, [the king must sing] upon opening the door
 
     -- stuff
 

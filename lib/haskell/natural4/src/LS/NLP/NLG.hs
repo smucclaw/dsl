@@ -131,8 +131,8 @@ nlg rl = do
                                                        ("Temporal", temporalA),
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
---            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            finalTree = king_may_sing_upon
+            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
+            -- finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
@@ -149,7 +149,10 @@ nlg rl = do
       _ -> return "()"
 
 doNLG :: [(String,Expr)] -> Expr -> Expr
-doNLG = error "not implemented"
+doNLG [("Cond", condA), ("Temporal", temporalA)] king = mkApp (mkCId "CondTemporal") [condA, temporalA, king]
+doNLG [("Cond", condA), ("Upon", uponA)] king = mkApp (mkCId "CondUpon") [condA, uponA, king]
+doNLG [("Cond", condA), ("Given", givenA)] king = mkApp (mkCId "CondGiven") [condA, givenA, king]
+
 
 applyMaybe :: String -> Maybe Expr -> Expr -> Expr
 applyMaybe _ Nothing action = action
@@ -232,15 +235,17 @@ parseFields env rl = case rl of
         DShant -> mkCId "Shant"
 
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env (TemporalConstraint keyword time tunit) =
-      parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
+    parseTemporal env (TemporalConstraint keyword time tunit) = do
+      uds <- parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
+      let adv = peelAdv uds
+      return $ gf adv
       where
         kw2txt tcomp = Text.pack $ case tcomp of
           TBefore -> "before "
           TAfter -> "after "
           TBy -> "by "
           TOn -> "on "
-          TVague -> "vaguely "
+          TVague -> "around "
         time2txt t = Text.pack $ maybe "" show t
 
 ------------------------------------------------------------

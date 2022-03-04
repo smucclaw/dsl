@@ -6,12 +6,25 @@ concrete UDExtEng of UDExt = UDAppEng ** open
   (Se=SentenceEng),
   (Ex=ExtraEng) in {
 
+
+  lincat
+    UDFragment = S ;
   lin
-    -- : UDS -> UDS -> UDFragment ;
+    -- : UDS -> UDFragment -> UDFragment ;
     Upon upon action =
       let upon_Adv : Adv = SyntaxEng.mkAdv upon_Prep (AdjAsNP upon.pred.presp) ;
-          action_S : S = lin S action ; --{s = linUDS action} ;
-       in Se.ExtAdvS upon_Adv action_S ;
+       in Se.ExtAdvS upon_Adv action ;
+
+    Cond cond action =
+      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+       in Se.AdvS action cond_Adv;
+
+    Temporal temp action = Se.AdvS action temp;
+
+    Given given action =
+      let given_Subj : Subj = lin Subj (ss "given that") ;
+          given_Adv : Adv = SyntaxEng.mkAdv given_Subj (udsToS given);
+       in Se.AdvS action given_Adv ;
 
     -- : NP -> UDS -> UDFragment ;
     subjAction subj uds = PredVPS subj uds.pred.fin ;
@@ -26,6 +39,21 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     May = applyDeontic ExtraEng.may_VV ;
     Must = applyDeontic must_VV ;
     Shant = applyDeontic shant_VV ;
+
+    CondStandalone uds = ss (linUDS uds) ;
+    TemporalStandalone uds = ss (linUDS uds) ;
+    GivenStandalone uds = ss (linUDS uds) ;
+    UponStandalone uds = ss (linUDS uds) ;
+
+    -- : UDS -> UDS -> UDFragment -> UDFragment
+
+    CondUpon cond upon king =
+      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+       in Se.ExtAdvS cond_Adv (Upon upon king) ;
+
+    CondGiven cond given king =
+      let cond_Adv : Adv = SyntaxEng.mkAdv
+       in Se.AdvS (conditionsHold king)
 
     -- : AP -> Conj -> [CN] -> NP -> CN ; -- unauthorised access or copying of personal data
     CN_AP_Conj_CNs_of_NP ap conj cns np =
@@ -45,14 +73,20 @@ concrete UDExtEng of UDExt = UDAppEng ** open
 
     who_NP : NP = mkNP (P.mkPN "who") ;
 
+    udsToS : LinUDS -> S = \given ->
+      PredVPS given.subj given.pred.fin ;
+
+    conditionsHold : UDFragment -> UDFragment = \king ->
+      king + "if the following conditions hold:"
+
   lin
 -- Aarne
     -- : Numeral -> UDS -> UDFragment ;
-    Adv_no_later_than_Num_calendar_days_after_the_day_UDS num uds =
+    Adv_no_later_than_Num_calendar_days_after_the_day_UDS num uds = lin S(
       SyntaxEng.mkAdv
         (P.mkPrep "no later than")
         (mkNP (mkNP num (P.mkN "calendar day"))
-              (lin Adv {s = "after the day" ++ linUDS uds})) ;
+              (lin Adv {s = "after the day" ++ linUDS uds}))) ;
 
 
 

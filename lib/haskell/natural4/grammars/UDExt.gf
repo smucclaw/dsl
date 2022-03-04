@@ -5,15 +5,36 @@ abstract UDExt = UDApp ** {
   cat
     UDFragment ;
   fun
+
+    -- Compositional,
+    -- Add a UDS as an adverbial
+    Cond,
+    Temporal,
+    Given,
     Upon : (becoming_aware : UDS) ->
            (king_may_sing : UDFragment) ->
            UDFragment ; -- Upon becoming aware, the king may sing
+
+    -- Standalone sentence of each field
+    CondStandalone,
+      TemporalStandalone : UDS -> UDFragment ;
+
+    -- Templates
+    CondTemporal : (cond, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ; -- if the prime minister is happy, [the king must sing] by noon.
+
+    -- the king must sing by noon, if the following conditions hold:
+    -- * PM is happy
+    -- * queen had a nice breakfast
+
+    CondGivenTemporal : (cond, given, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ;
+
+
+    -- stuff
 
     Must, May, Shant : UDS -> UDS ;
 
     Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
     Every : NP -> NP ;
-
     subjAction : NP -> UDS -> UDFragment ;
 
   -- AnyAll library in GF

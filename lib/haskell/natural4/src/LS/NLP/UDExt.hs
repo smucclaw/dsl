@@ -109,6 +109,8 @@ type GListRS = Tree GListRS_
 data GListRS_
 type GListS = Tree GListS_
 data GListS_
+type GListUDFragment = Tree GListUDFragment_
+data GListUDFragment_
 type GListUDS = Tree GListUDS_
 data GListUDS_
 type GN = Tree GN_
@@ -463,6 +465,7 @@ data Tree :: * -> * where
   GListPrep :: [GPrep] -> Tree GListPrep_
   GListRS :: [GRS] -> Tree GListRS_
   GListS :: [GS] -> Tree GListS_
+  GListUDFragment :: [GUDFragment] -> Tree GListUDFragment_
   GListUDS :: [GUDS] -> Tree GListUDS_
   GCompoundCN :: GCN -> GN -> Tree GN_
   GCompoundN :: GN -> GN -> Tree GN_
@@ -567,7 +570,7 @@ data Tree :: * -> * where
   GCond :: GUDS -> GUDFragment -> Tree GUDFragment_
   GCondGiven :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
   GCondStandalone :: GUDS -> Tree GUDFragment_
-  GCondTemporal :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
+  GCondTemporal :: GUDS -> GAdv -> GUDFragment -> Tree GUDFragment_
   GCondUpon :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
   GGiven :: GUDS -> GUDFragment -> Tree GUDFragment_
   GGivenStandalone :: GUDS -> Tree GUDFragment_
@@ -1013,6 +1016,7 @@ instance Eq (Tree a) where
     (GListPrep x1,GListPrep y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListRS x1,GListRS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListS x1,GListS y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListUDFragment x1,GListUDFragment y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListUDS x1,GListUDS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GCompoundCN x1 x2,GCompoundCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCompoundN x1 x2,GCompoundN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1959,6 +1963,18 @@ instance Gf GListS where
 
 
       _ -> error ("no ListS " ++ show t)
+
+instance Gf GListUDFragment where
+  gf (GListUDFragment [x1,x2]) = mkApp (mkCId "BaseUDFragment") [gf x1, gf x2]
+  gf (GListUDFragment (x:xs)) = mkApp (mkCId "ConsUDFragment") [gf x, gf (GListUDFragment xs)]
+  fg t =
+    GListUDFragment (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseUDFragment" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsUDFragment" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListUDFragment " ++ show t)
 
 instance Gf GListUDS where
   gf (GListUDS [x1,x2]) = mkApp (mkCId "BaseUDS") [gf x1, gf x2]
@@ -4191,6 +4207,7 @@ instance Compos Tree where
     GListPrep x1 -> r GListPrep `a` foldr (a . a (r (:)) . f) (r []) x1
     GListRS x1 -> r GListRS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListS x1 -> r GListS `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListUDFragment x1 -> r GListUDFragment `a` foldr (a . a (r (:)) . f) (r []) x1
     GListUDS x1 -> r GListUDS `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
 

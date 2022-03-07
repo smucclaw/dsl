@@ -53,6 +53,11 @@ concrete UDExtEng of UDExt = UDAppEng ** open
       let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
        in Se.ExtAdvS cond_Adv (Upon upon king) ;
 
+    CondTemporal cond temporal king =
+      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+       in Se.ExtAdvS cond_Adv (Se.AdvS king temporal) ;
+
+
     CondGiven cond given king =
       Se.AdvS (conditionsHold king) (makeList cond given);
 

@@ -24,7 +24,7 @@ abstract UDExt = UDApp ** {
       UponStandalone : UDS -> UDFragment ;
 
     -- Templates
-    CondTemporal : (cond, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ; -- if the prime minister is happy, [the king must sing] by noon.
+    CondTemporal : (cond : UDS) -> (temp : Adv) -> (king_must_sing : UDFragment) -> UDFragment ; -- if the prime minister is happy, [the king must sing] by noon.
 
     -- the king must sing by noon, if the following conditions hold:
     -- * PM is happy

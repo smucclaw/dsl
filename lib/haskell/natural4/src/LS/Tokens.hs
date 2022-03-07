@@ -501,10 +501,7 @@ p1 |>| p2 = do
   return (l r)
 infixl 4 |>|
 
-p1 |*| p2 = do
-  l <- p1
-  r <- (|>>) p2
-  return (l r)
+p1 |*| p2 = p1 <*> (|>>) p2
 infixl 4 |*|
 
 p1 |-| p2 = p1 |=| liftSL p2
@@ -640,18 +637,11 @@ someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" $ do
   slUnDeeper >> manyUndeepers
 
-($>>) p = do
-  try recurse <|> base
-  where
-    base = debugName "$>>/base" $ do
-      out <- liftSL p
-      debugPrint $ "$>>/base got " ++ show out
-      return out
-    recurse = debugName "$>>/recurse" $ do
-      _ <- slDeeper
-      ($>>) p
+-- | consume any GoDeepers, then parse -- plain 
+($>>) p = (|>>) (liftSL p)
 infixl 4 $>>
 
+-- | consume any GoDeepers, then parse -- fancy
 (|>>) p = do
   try recurse <|> base
   where

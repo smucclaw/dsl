@@ -3,7 +3,7 @@
 :VISIBILITY: folded
 :END:
 
-natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-r/)
+natural4> test (suite: natural4-test, args: --match /inline-1-r/)
 
 * Tokens
 [GoDeeper,Other "multiwonk",UnDeeper,Means,GoDeeper,Other "poopoo",UnDeeper,Or,GoDeeper,Other "the",GoDeeper,GoDeeper,GoDeeper,Other "honk",UnDeeper,Or,GoDeeper,Other "ponk",UnDeeper,UnDeeper,UnDeeper,UnDeeper]
@@ -35,317 +35,496 @@ natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-r/)
 ** / made it to pBSR                                                                                                    :2_2:GoDeeper:
 *** / pBSR                                                                                                             :2_2:GoDeeper:
 **** / ppp inner                                                                                                      :2_2:GoDeeper:
-***** / term p                                                                                                       :2_2:GoDeeper:
-****** / term p/1a:label directly above                                                                             :2_2:GoDeeper:
-******* / $*|                                                                                                      :2_2:GoDeeper:
+***** / expression                                                                                                   :2_2:GoDeeper:
+****** / labelPrefix                                                                                                :2_2:GoDeeper:
+****** / term p                                                                                                     :2_2:GoDeeper:
+******* / term p/1a:label directly above                                                                           :2_2:GoDeeper:
+******** / $*|                                                                                                    :2_2:GoDeeper:
+********* / someSL                                                                                               :2_2:GoDeeper:
+********** / pNumAsText                                                                                         :2_2:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                       :2_2:GoDeeper:
 ******** / someSL                                                                                                 :2_2:GoDeeper:
 ********* / pNumAsText                                                                                           :2_2:GoDeeper:
-****** / term p/b:label to the left of line below, with EOL                                                         :2_2:GoDeeper:
-******* / someSL                                                                                                   :2_2:GoDeeper:
-******** / pNumAsText                                                                                             :2_2:GoDeeper:
-****** / term p/notLabelTerm                                                                                        :2_2:GoDeeper:
-******* / term p/2:someIndentation expr p                                                                          :2_2:GoDeeper:
-******** / someIndentation                                                                                        :2_2:GoDeeper:
-********* / myindented: consuming GoDeeper                                                                       :2_2:GoDeeper:
-********* \ myindented: consuming GoDeeper has returned GoDeeper                                                  :2_2:Other "poop:
-********* / manyIndentation/leaf?                                                                                 :2_2:Other "poop:
-********** / term p                                                                                              :2_2:Other "poop:
-*********** / term p/1a:label directly above                                                                    :2_2:Other "poop:
-************ / $*|                                                                                             :2_2:Other "poop:
-************* / someSL                                                                                        :2_2:Other "poop:
-************* \ someSL has returned (["poopoo"],0)                                                             :3_2:UnDeeper:
-************* / pNumAsText                                                                                     :3_2:UnDeeper:
-*********** / term p/b:label to the left of line below, with EOL                                                :2_2:Other "poop:
-************ / someSL                                                                                          :2_2:Other "poop:
-************ \ someSL has returned (["poopoo"],0)                                                               :3_2:UnDeeper:
-************ / undeepers                                                                                        :3_2:UnDeeper:
-************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                         :3_2:UnDeeper:
-************* > sameLine: success!                                                                             :3_2:UnDeeper:
-************ \ undeepers has returned ()                                                                        :3_2:UnDeeper:
-************ / matching EOL                                                                                     :3_2:UnDeeper:
-*********** / term p/notLabelTerm                                                                               :2_2:Other "poop:
-************ / term p/2:someIndentation expr p                                                                 :2_2:Other "poop:
-************* / someIndentation                                                                               :2_2:Other "poop:
-************** / myindented: consuming GoDeeper                                                              :2_2:Other "poop:
-************ / term p/3:plain p                                                                                :2_2:Other "poop:
-************* / pRelPred                                                                                      :2_2:Other "poop:
-************** / slRelPred                                                                                   :2_2:Other "poop:
-*************** / nested simpleHorn                                                                         :2_2:Other "poop:
-**************** > |^|                                                                                     :2_2:Other "poop:
-**************** / $*|                                                                                     :2_2:Other "poop:
-***************** / slMultiTerm                                                                           :2_2:Other "poop:
-****************** / someSL                                                                              :2_2:Other "poop:
-****************** \ someSL has returned (["poopoo"],0)                                                   :3_2:UnDeeper:
-***************** \ slMultiTerm has returned (["poopoo"],0)                                                :3_2:UnDeeper:
-**************** \ $*| has returned (["poopoo"],0)                                                          :3_2:UnDeeper:
-**************** / |^| deeps                                                                                :3_2:UnDeeper:
-**************** \ |^| deeps has returned ([()],-1)                                                      :3_1:Or:
-*************** / RPConstraint                                                                              :2_2:Other "poop:
-**************** / $*|                                                                                     :2_2:Other "poop:
-***************** / slMultiTerm                                                                           :2_2:Other "poop:
-****************** / someSL                                                                              :2_2:Other "poop:
-****************** \ someSL has returned (["poopoo"],0)                                                   :3_2:UnDeeper:
-***************** \ slMultiTerm has returned (["poopoo"],0)                                                :3_2:UnDeeper:
-**************** \ $*| has returned (["poopoo"],0)                                                          :3_2:UnDeeper:
-**************** / |>| calling $>>                                                                          :3_2:UnDeeper:
-***************** / |>>/recurse                                                                            :3_2:UnDeeper:
-***************** / |>>/base                                                                               :3_2:UnDeeper:
-*************** / RPBoolStructR                                                                             :2_2:Other "poop:
-**************** / $*|                                                                                     :2_2:Other "poop:
-***************** / slMultiTerm                                                                           :2_2:Other "poop:
-****************** / someSL                                                                              :2_2:Other "poop:
-****************** \ someSL has returned (["poopoo"],0)                                                   :3_2:UnDeeper:
-***************** \ slMultiTerm has returned (["poopoo"],0)                                                :3_2:UnDeeper:
-**************** \ $*| has returned (["poopoo"],0)                                                          :3_2:UnDeeper:
-**************** / |>| calling $>>                                                                          :3_2:UnDeeper:
-***************** / |>>/recurse                                                                            :3_2:UnDeeper:
-***************** / |>>/base                                                                               :3_2:UnDeeper:
-*************** / RPMT                                                                                      :2_2:Other "poop:
-**************** / $*|                                                                                     :2_2:Other "poop:
-***************** / slAKA                                                                                 :2_2:Other "poop:
-****************** / $*|                                                                                 :2_2:Other "poop:
-******************* / slAKA base                                                                        :2_2:Other "poop:
-******************** / slMultiTerm                                                                     :2_2:Other "poop:
-********************* / someSL                                                                        :2_2:Other "poop:
-********************* \ someSL has returned (["poopoo"],0)                                             :3_2:UnDeeper:
-******************** \ slMultiTerm has returned (["poopoo"],0)                                          :3_2:UnDeeper:
-******************* \ slAKA base has returned (["poopoo"],0)                                             :3_2:UnDeeper:
-****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
-****************** / |>>/recurse                                                                          :3_2:UnDeeper:
-****************** / |>>/base                                                                             :3_2:UnDeeper:
-******************* / slAKA optional akapart                                                             :3_2:UnDeeper:
-******************** / |?| optional something                                                           :3_2:UnDeeper:
-********************* / |>>/recurse                                                                    :3_2:UnDeeper:
-********************* / |>>/base                                                                       :3_2:UnDeeper:
-********************** / PAKA/akapart                                                                 :3_2:UnDeeper:
-*********************** / $>|                                                                        :3_2:UnDeeper:
-************************ / Aka Token                                                                :3_2:UnDeeper:
-******************** \ |?| optional something has returned (Nothing,0)                                  :3_2:UnDeeper:
-******************* \ slAKA optional akapart has returned (Nothing,0)                                    :3_2:UnDeeper:
-******************* > |>>/base got Nothing                                                               :3_2:UnDeeper:
-****************** \ |>>/base has returned (Nothing,0)                                                    :3_2:UnDeeper:
-****************** / |>>/recurse                                                                          :3_2:UnDeeper:
-****************** / |>>/base                                                                             :3_2:UnDeeper:
-******************* / slAKA optional typically                                                           :3_2:UnDeeper:
-******************** / |?| optional something                                                           :3_2:UnDeeper:
-********************* / |>>/recurse                                                                    :3_2:UnDeeper:
-********************* / |>>/base                                                                       :3_2:UnDeeper:
-********************** / typically                                                                    :3_2:UnDeeper:
-*********************** / $>|                                                                        :3_2:UnDeeper:
-******************** \ |?| optional something has returned (Nothing,0)                                  :3_2:UnDeeper:
-******************* \ slAKA optional typically has returned (Nothing,0)                                  :3_2:UnDeeper:
-******************* > |>>/base got Nothing                                                               :3_2:UnDeeper:
-****************** \ |>>/base has returned (Nothing,0)                                                    :3_2:UnDeeper:
-****************** > slAKA: proceeding after base and entityalias are retrieved ...                       :3_2:UnDeeper:
-****************** > pAKA: entityalias = Nothing                                                          :3_2:UnDeeper:
-***************** \ slAKA has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
-**************** \ $*| has returned (["poopoo"],0)                                                          :3_2:UnDeeper:
-*************** \ RPMT has returned (RPMT ["poopoo"],0)                                                      :3_2:UnDeeper:
-************** \ slRelPred has returned (RPMT ["poopoo"],0)                                                   :3_2:UnDeeper:
+******* / term p/notLabelTerm                                                                                      :2_2:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                        :2_2:GoDeeper:
+********* / someIndentation                                                                                      :2_2:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                     :2_2:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                :2_2:Other "poop:
+********** / manyIndentation/leaf?                                                                               :2_2:Other "poop:
+*********** / expression                                                                                        :2_2:Other "poop:
+************ / labelPrefix                                                                                     :2_2:Other "poop:
+************ / term p                                                                                          :2_2:Other "poop:
+************* / term p/1a:label directly above                                                                :2_2:Other "poop:
+************** / $*|                                                                                         :2_2:Other "poop:
+*************** / someSL                                                                                    :2_2:Other "poop:
+*************** \ someSL has returned (["poopoo"],0)                                                         :3_2:UnDeeper:
+*************** / pNumAsText                                                                                 :3_2:UnDeeper:
+************* / term p/b:label to the left of line below, with EOL                                            :2_2:Other "poop:
+************** / someSL                                                                                      :2_2:Other "poop:
+************** \ someSL has returned (["poopoo"],0)                                                           :3_2:UnDeeper:
 ************** / undeepers                                                                                    :3_2:UnDeeper:
 *************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                     :3_2:UnDeeper:
 *************** > sameLine: success!                                                                         :3_2:UnDeeper:
 ************** \ undeepers has returned ()                                                                    :3_2:UnDeeper:
-************* \ pRelPred has returned RPMT ["poopoo"]                                                          :3_2:UnDeeper:
-************ \ term p/3:plain p has returned MyLeaf (RPMT ["poopoo"])                                           :3_2:UnDeeper:
-*********** \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                          :3_2:UnDeeper:
-********** \ term p has returned MyLeaf (RPMT ["poopoo"])                                                         :3_2:UnDeeper:
-********** / binary(Or)                                                                                           :3_2:UnDeeper:
-********** / binary(And)                                                                                          :3_2:UnDeeper:
-********** / binary(SetLess)                                                                                      :3_2:UnDeeper:
-********** / binary(SetPlus)                                                                                      :3_2:UnDeeper:
-********* \ manyIndentation/leaf? has returned MyLeaf (RPMT ["poopoo"])                                            :3_2:UnDeeper:
-********* / myindented: consuming UnDeeper                                                                         :3_2:UnDeeper:
-********* \ myindented: consuming UnDeeper has returned UnDeeper                                                :3_1:Or:
-******** \ someIndentation has returned MyLeaf (RPMT ["poopoo"])                                                 :3_1:Or:
-******* \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["poopoo"])                                   :3_1:Or:
-****** \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                                 :3_1:Or:
-***** \ term p has returned MyLeaf (RPMT ["poopoo"])                                                                :3_1:Or:
-***** / binary(Or)                                                                                                  :3_1:Or:
-***** \ binary(Or) has returned Or                                                                                   :3_2:GoDeeper:
-***** / term p                                                                                                       :3_2:GoDeeper:
-****** / term p/1a:label directly above                                                                             :3_2:GoDeeper:
-******* / $*|                                                                                                      :3_2:GoDeeper:
+************** / matching EOL                                                                                 :3_2:UnDeeper:
+************* / term p/notLabelTerm                                                                           :2_2:Other "poop:
+************** / term p/2:someIndentation expr p                                                             :2_2:Other "poop:
+*************** / someIndentation                                                                           :2_2:Other "poop:
+**************** / myindented: consuming GoDeeper                                                          :2_2:Other "poop:
+************** / term p/3:plain p                                                                            :2_2:Other "poop:
+*************** / pRelPred                                                                                  :2_2:Other "poop:
+**************** / slRelPred                                                                               :2_2:Other "poop:
+***************** / nested simpleHorn                                                                     :2_2:Other "poop:
+****************** > |^|                                                                                 :2_2:Other "poop:
+****************** / $*|                                                                                 :2_2:Other "poop:
+******************* / slMultiTerm                                                                       :2_2:Other "poop:
+******************** / someSL                                                                          :2_2:Other "poop:
+******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
+****************** / |^| deeps                                                                            :3_2:UnDeeper:
+****************** \ |^| deeps has returned ([()],-1)                                                  :3_1:Or:
+***************** / RPConstraint                                                                          :2_2:Other "poop:
+****************** / $*|                                                                                 :2_2:Other "poop:
+******************* / slMultiTerm                                                                       :2_2:Other "poop:
+******************** / someSL                                                                          :2_2:Other "poop:
+******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
+****************** / |>| calling $>>                                                                      :3_2:UnDeeper:
+******************* / |>>/recurse                                                                        :3_2:UnDeeper:
+******************* / |>>/base                                                                           :3_2:UnDeeper:
+***************** / RPBoolStructR                                                                         :2_2:Other "poop:
+****************** / $*|                                                                                 :2_2:Other "poop:
+******************* / slMultiTerm                                                                       :2_2:Other "poop:
+******************** / someSL                                                                          :2_2:Other "poop:
+******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
+****************** / |>| calling $>>                                                                      :3_2:UnDeeper:
+******************* / |>>/recurse                                                                        :3_2:UnDeeper:
+******************* / |>>/base                                                                           :3_2:UnDeeper:
+***************** / RPMT                                                                                  :2_2:Other "poop:
+****************** / $*|                                                                                 :2_2:Other "poop:
+******************* / slAKA                                                                             :2_2:Other "poop:
+******************** / $*|                                                                             :2_2:Other "poop:
+********************* / slAKA base                                                                    :2_2:Other "poop:
+********************** / slMultiTerm                                                                 :2_2:Other "poop:
+*********************** / someSL                                                                    :2_2:Other "poop:
+*********************** \ someSL has returned (["poopoo"],0)                                         :3_2:UnDeeper:
+********************** \ slMultiTerm has returned (["poopoo"],0)                                      :3_2:UnDeeper:
+********************* \ slAKA base has returned (["poopoo"],0)                                         :3_2:UnDeeper:
+******************** \ $*| has returned (["poopoo"],0)                                                  :3_2:UnDeeper:
+******************** / |>>/recurse                                                                      :3_2:UnDeeper:
+******************** / |>>/base                                                                         :3_2:UnDeeper:
+********************* / slAKA optional akapart                                                         :3_2:UnDeeper:
+********************** / |?| optional something                                                       :3_2:UnDeeper:
+*********************** / |>>/recurse                                                                :3_2:UnDeeper:
+*********************** / |>>/base                                                                   :3_2:UnDeeper:
+************************ / PAKA/akapart                                                             :3_2:UnDeeper:
+************************* / $>|                                                                    :3_2:UnDeeper:
+************************** / Aka Token                                                            :3_2:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                              :3_2:UnDeeper:
+********************* \ slAKA optional akapart has returned (Nothing,0)                                :3_2:UnDeeper:
+********************* > |>>/base got Nothing                                                           :3_2:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                :3_2:UnDeeper:
+******************** / |>>/recurse                                                                      :3_2:UnDeeper:
+******************** / |>>/base                                                                         :3_2:UnDeeper:
+********************* / slAKA optional typically                                                       :3_2:UnDeeper:
+********************** / |?| optional something                                                       :3_2:UnDeeper:
+*********************** / |>>/recurse                                                                :3_2:UnDeeper:
+*********************** / |>>/base                                                                   :3_2:UnDeeper:
+************************ / typically                                                                :3_2:UnDeeper:
+************************* / $>|                                                                    :3_2:UnDeeper:
+********************** \ |?| optional something has returned (Nothing,0)                              :3_2:UnDeeper:
+********************* \ slAKA optional typically has returned (Nothing,0)                              :3_2:UnDeeper:
+********************* > |>>/base got Nothing                                                           :3_2:UnDeeper:
+******************** \ |>>/base has returned (Nothing,0)                                                :3_2:UnDeeper:
+******************** > slAKA: proceeding after base and entityalias are retrieved ...                   :3_2:UnDeeper:
+******************** > pAKA: entityalias = Nothing                                                      :3_2:UnDeeper:
+******************* \ slAKA has returned (["poopoo"],0)                                                  :3_2:UnDeeper:
+****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
+***************** \ RPMT has returned (RPMT ["poopoo"],0)                                                  :3_2:UnDeeper:
+**************** \ slRelPred has returned (RPMT ["poopoo"],0)                                               :3_2:UnDeeper:
+**************** / undeepers                                                                                :3_2:UnDeeper:
+***************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                 :3_2:UnDeeper:
+***************** > sameLine: success!                                                                     :3_2:UnDeeper:
+**************** \ undeepers has returned ()                                                                :3_2:UnDeeper:
+*************** \ pRelPred has returned RPMT ["poopoo"]                                                      :3_2:UnDeeper:
+************** \ term p/3:plain p has returned MyLeaf (RPMT ["poopoo"])                                       :3_2:UnDeeper:
+************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                      :3_2:UnDeeper:
+************ \ term p has returned MyLeaf (RPMT ["poopoo"])                                                     :3_2:UnDeeper:
+************ / binary(Or)                                                                                       :3_2:UnDeeper:
+************ / binary(And)                                                                                      :3_2:UnDeeper:
+************ / binary(SetLess)                                                                                  :3_2:UnDeeper:
+************ / binary(SetPlus)                                                                                  :3_2:UnDeeper:
+*********** \ expression has returned MyLeaf (RPMT ["poopoo"])                                                   :3_2:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["poopoo"])                                          :3_2:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                       :3_2:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                              :3_1:Or:
+********* \ someIndentation has returned MyLeaf (RPMT ["poopoo"])                                               :3_1:Or:
+******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["poopoo"])                                 :3_1:Or:
+******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                               :3_1:Or:
+****** \ term p has returned MyLeaf (RPMT ["poopoo"])                                                              :3_1:Or:
+****** / binary(Or)                                                                                                :3_1:Or:
+****** \ binary(Or) has returned Or                                                                                 :3_2:GoDeeper:
+****** / term p                                                                                                     :3_2:GoDeeper:
+******* / term p/1a:label directly above                                                                           :3_2:GoDeeper:
+******** / $*|                                                                                                    :3_2:GoDeeper:
+********* / someSL                                                                                               :3_2:GoDeeper:
+********** / pNumAsText                                                                                         :3_2:GoDeeper:
+******* / term p/b:label to the left of line below, with EOL                                                       :3_2:GoDeeper:
 ******** / someSL                                                                                                 :3_2:GoDeeper:
 ********* / pNumAsText                                                                                           :3_2:GoDeeper:
-****** / term p/b:label to the left of line below, with EOL                                                         :3_2:GoDeeper:
-******* / someSL                                                                                                   :3_2:GoDeeper:
-******** / pNumAsText                                                                                             :3_2:GoDeeper:
-****** / term p/notLabelTerm                                                                                        :3_2:GoDeeper:
-******* / term p/2:someIndentation expr p                                                                          :3_2:GoDeeper:
-******** / someIndentation                                                                                        :3_2:GoDeeper:
-********* / myindented: consuming GoDeeper                                                                       :3_2:GoDeeper:
-********* \ myindented: consuming GoDeeper has returned GoDeeper                                                  :3_2:Other "the":
-********* / manyIndentation/leaf?                                                                                 :3_2:Other "the":
-********** / term p                                                                                              :3_2:Other "the":
-*********** / term p/1a:label directly above                                                                    :3_2:Other "the":
-************ / $*|                                                                                             :3_2:Other "the":
-************* / someSL                                                                                        :3_2:Other "the":
-************* \ someSL has returned (["the","honk"],3)                                                               :4_5:UnDeeper:
-************* / pNumAsText                                                                                           :4_5:UnDeeper:
-*********** / term p/b:label to the left of line below, with EOL                                                :3_2:Other "the":
-************ / someSL                                                                                          :3_2:Other "the":
-************ \ someSL has returned (["the","honk"],3)                                                                 :4_5:UnDeeper:
-************ / undeepers                                                                                              :4_5:UnDeeper:
-************* > sameLine/undeepers: reached end of line; now need to clear 3 UnDeepers                               :4_5:UnDeeper:
-*********** / term p/notLabelTerm                                                                               :3_2:Other "the":
-************ / term p/2:someIndentation expr p                                                                 :3_2:Other "the":
-************* / someIndentation                                                                               :3_2:Other "the":
-************** / myindented: consuming GoDeeper                                                              :3_2:Other "the":
-************ / term p/3:plain p                                                                                :3_2:Other "the":
-************* / pRelPred                                                                                      :3_2:Other "the":
-************** / slRelPred                                                                                   :3_2:Other "the":
-*************** / nested simpleHorn                                                                         :3_2:Other "the":
-**************** > |^|                                                                                     :3_2:Other "the":
-**************** / $*|                                                                                     :3_2:Other "the":
-***************** / slMultiTerm                                                                           :3_2:Other "the":
-****************** / someSL                                                                              :3_2:Other "the":
-****************** \ someSL has returned (["the","honk"],3)                                                     :4_5:UnDeeper:
-***************** \ slMultiTerm has returned (["the","honk"],3)                                                  :4_5:UnDeeper:
-**************** \ $*| has returned (["the","honk"],3)                                                            :4_5:UnDeeper:
-**************** / |^| deeps                                                                                      :4_5:UnDeeper:
-**************** \ |^| deeps has returned ([()],-1)                                                            :4_4:Or:
-*************** / RPConstraint                                                                              :3_2:Other "the":
-**************** / $*|                                                                                     :3_2:Other "the":
-***************** / slMultiTerm                                                                           :3_2:Other "the":
-****************** / someSL                                                                              :3_2:Other "the":
-****************** \ someSL has returned (["the","honk"],3)                                                     :4_5:UnDeeper:
-***************** \ slMultiTerm has returned (["the","honk"],3)                                                  :4_5:UnDeeper:
-**************** \ $*| has returned (["the","honk"],3)                                                            :4_5:UnDeeper:
-**************** / |>| calling $>>                                                                                :4_5:UnDeeper:
-***************** / |>>/recurse                                                                                  :4_5:UnDeeper:
-***************** / |>>/base                                                                                     :4_5:UnDeeper:
-*************** / RPBoolStructR                                                                             :3_2:Other "the":
-**************** / $*|                                                                                     :3_2:Other "the":
-***************** / slMultiTerm                                                                           :3_2:Other "the":
-****************** / someSL                                                                              :3_2:Other "the":
-****************** \ someSL has returned (["the","honk"],3)                                                     :4_5:UnDeeper:
-***************** \ slMultiTerm has returned (["the","honk"],3)                                                  :4_5:UnDeeper:
-**************** \ $*| has returned (["the","honk"],3)                                                            :4_5:UnDeeper:
-**************** / |>| calling $>>                                                                                :4_5:UnDeeper:
-***************** / |>>/recurse                                                                                  :4_5:UnDeeper:
-***************** / |>>/base                                                                                     :4_5:UnDeeper:
-*************** / RPMT                                                                                      :3_2:Other "the":
-**************** / $*|                                                                                     :3_2:Other "the":
-***************** / slAKA                                                                                 :3_2:Other "the":
-****************** / $*|                                                                                 :3_2:Other "the":
-******************* / slAKA base                                                                        :3_2:Other "the":
-******************** / slMultiTerm                                                                     :3_2:Other "the":
-********************* / someSL                                                                        :3_2:Other "the":
-********************* \ someSL has returned (["the","honk"],3)                                               :4_5:UnDeeper:
-******************** \ slMultiTerm has returned (["the","honk"],3)                                            :4_5:UnDeeper:
-******************* \ slAKA base has returned (["the","honk"],3)                                               :4_5:UnDeeper:
-****************** \ $*| has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
-****************** / |>>/recurse                                                                                :4_5:UnDeeper:
-****************** / |>>/base                                                                                   :4_5:UnDeeper:
-******************* / slAKA optional akapart                                                                   :4_5:UnDeeper:
-******************** / |?| optional something                                                                 :4_5:UnDeeper:
-********************* / |>>/recurse                                                                          :4_5:UnDeeper:
-********************* / |>>/base                                                                             :4_5:UnDeeper:
-********************** / PAKA/akapart                                                                       :4_5:UnDeeper:
-*********************** / $>|                                                                              :4_5:UnDeeper:
-************************ / Aka Token                                                                      :4_5:UnDeeper:
-******************** \ |?| optional something has returned (Nothing,0)                                        :4_5:UnDeeper:
-******************* \ slAKA optional akapart has returned (Nothing,0)                                          :4_5:UnDeeper:
-******************* > |>>/base got Nothing                                                                     :4_5:UnDeeper:
-****************** \ |>>/base has returned (Nothing,0)                                                          :4_5:UnDeeper:
-****************** / |>>/recurse                                                                                :4_5:UnDeeper:
-****************** / |>>/base                                                                                   :4_5:UnDeeper:
-******************* / slAKA optional typically                                                                 :4_5:UnDeeper:
-******************** / |?| optional something                                                                 :4_5:UnDeeper:
-********************* / |>>/recurse                                                                          :4_5:UnDeeper:
-********************* / |>>/base                                                                             :4_5:UnDeeper:
-********************** / typically                                                                          :4_5:UnDeeper:
-*********************** / $>|                                                                              :4_5:UnDeeper:
-******************** \ |?| optional something has returned (Nothing,0)                                        :4_5:UnDeeper:
-******************* \ slAKA optional typically has returned (Nothing,0)                                        :4_5:UnDeeper:
-******************* > |>>/base got Nothing                                                                     :4_5:UnDeeper:
-****************** \ |>>/base has returned (Nothing,0)                                                          :4_5:UnDeeper:
-****************** > slAKA: proceeding after base and entityalias are retrieved ...                             :4_5:UnDeeper:
-****************** > pAKA: entityalias = Nothing                                                                :4_5:UnDeeper:
-***************** \ slAKA has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
-**************** \ $*| has returned (["the","honk"],3)                                                            :4_5:UnDeeper:
-*************** \ RPMT has returned (RPMT ["the","honk"],3)                                                        :4_5:UnDeeper:
-************** \ slRelPred has returned (RPMT ["the","honk"],3)                                                     :4_5:UnDeeper:
-************** / undeepers                                                                                          :4_5:UnDeeper:
-*************** > sameLine/undeepers: reached end of line; now need to clear 3 UnDeepers                           :4_5:UnDeeper:
-********* / manyIndentation/deeper; calling someIndentation                                                       :3_2:Other "the":
-********** / someIndentation                                                                                     :3_2:Other "the":
-*********** / myindented: consuming GoDeeper                                                                    :3_2:Other "the":
-******* / term p/3:plain p                                                                                         :3_2:GoDeeper:
-******** / pRelPred                                                                                               :3_2:GoDeeper:
-********* / slRelPred                                                                                            :3_2:GoDeeper:
-********** / nested simpleHorn                                                                                  :3_2:GoDeeper:
-*********** > |^|                                                                                              :3_2:GoDeeper:
-*********** / $*|                                                                                              :3_2:GoDeeper:
-************ / slMultiTerm                                                                                    :3_2:GoDeeper:
-************* / someSL                                                                                       :3_2:GoDeeper:
-************** / pNumAsText                                                                                 :3_2:GoDeeper:
-********** / RPConstraint                                                                                       :3_2:GoDeeper:
-*********** / $*|                                                                                              :3_2:GoDeeper:
-************ / slMultiTerm                                                                                    :3_2:GoDeeper:
-************* / someSL                                                                                       :3_2:GoDeeper:
-************** / pNumAsText                                                                                 :3_2:GoDeeper:
-********** / RPBoolStructR                                                                                      :3_2:GoDeeper:
-*********** / $*|                                                                                              :3_2:GoDeeper:
-************ / slMultiTerm                                                                                    :3_2:GoDeeper:
-************* / someSL                                                                                       :3_2:GoDeeper:
-************** / pNumAsText                                                                                 :3_2:GoDeeper:
-********** / RPMT                                                                                               :3_2:GoDeeper:
-*********** / $*|                                                                                              :3_2:GoDeeper:
-************ / slAKA                                                                                          :3_2:GoDeeper:
-************* / $*|                                                                                          :3_2:GoDeeper:
-************** / slAKA base                                                                                 :3_2:GoDeeper:
-*************** / slMultiTerm                                                                              :3_2:GoDeeper:
-**************** / someSL                                                                                 :3_2:GoDeeper:
-***************** / pNumAsText                                                                           :3_2:GoDeeper:
-**** / withPrePost                                                                                                    :2_2:GoDeeper:
-***** > |<* starting                                                                                                 :2_2:GoDeeper:
-***** / $*|                                                                                                          :2_2:GoDeeper:
-****** / pre part                                                                                                   :2_2:GoDeeper:
-******* / aboveNextLineKeyword                                                                                      :2_2:Other "poop:
-******** / expectUnDeepers                                                                                         :2_2:Other "poop:
-********* > ignoring ["poopoo"]                                                                                    :3_2:UnDeeper:
-********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
-******** \ expectUnDeepers has returned 1                                                                          :2_2:Other "poop:
-******** > aNLK: determined undp_count = 1                                                                         :2_2:Other "poop:
-******** > ->| trying to consume 1 GoDeepers                                                                       :2_2:Other "poop:
-******** / $*|                                                                                                     :2_2:Other "poop:
-******** \ $*| has returned ((),0)                                                                                 :2_2:Other "poop:
-******* > /*= lookAhead failed, delegating to plain /+=                                                             :2_2:Other "poop:
-******* / aboveNextLineKeyword                                                                                       :3_2:UnDeeper:
-******** / expectUnDeepers                                                                                          :3_2:UnDeeper:
-********* > ignoring []                                                                                            :3_2:UnDeeper:
-********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
-******** \ expectUnDeepers has returned 1                                                                           :3_2:UnDeeper:
-******** > aNLK: determined undp_count = 1                                                                          :3_2:UnDeeper:
-******** > ->| trying to consume 1 GoDeepers                                                                        :3_2:UnDeeper:
-******** / $*|                                                                                                      :3_2:UnDeeper:
-******** \ $*| has returned ((),0)                                                                                  :3_2:UnDeeper:
-******* > /*= lookAhead failed, delegating to plain /+=                                                              :3_2:UnDeeper:
-**** / withPreOnly                                                                                                    :2_2:GoDeeper:
-***** / $*|                                                                                                          :2_2:GoDeeper:
-****** / pre part                                                                                                   :2_2:GoDeeper:
-******* / aboveNextLineKeyword                                                                                      :2_2:Other "poop:
-******** / expectUnDeepers                                                                                         :2_2:Other "poop:
-********* > ignoring ["poopoo"]                                                                                    :3_2:UnDeeper:
-********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
-******** \ expectUnDeepers has returned 1                                                                          :2_2:Other "poop:
-******** > aNLK: determined undp_count = 1                                                                         :2_2:Other "poop:
-******** > ->| trying to consume 1 GoDeepers                                                                       :2_2:Other "poop:
-******** / $*|                                                                                                     :2_2:Other "poop:
-******** \ $*| has returned ((),0)                                                                                 :2_2:Other "poop:
-******* > /*= lookAhead failed, delegating to plain /+=                                                             :2_2:Other "poop:
-******* / aboveNextLineKeyword                                                                                       :3_2:UnDeeper:
-******** / expectUnDeepers                                                                                          :3_2:UnDeeper:
-********* > ignoring []                                                                                            :3_2:UnDeeper:
-********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
-******** \ expectUnDeepers has returned 1                                                                           :3_2:UnDeeper:
-******** > aNLK: determined undp_count = 1                                                                          :3_2:UnDeeper:
-******** > ->| trying to consume 1 GoDeepers                                                                        :3_2:UnDeeper:
-******** / $*|                                                                                                      :3_2:UnDeeper:
-******** \ $*| has returned ((),0)                                                                                  :3_2:UnDeeper:
-******* > /*= lookAhead failed, delegating to plain /+=                                                              :3_2:UnDeeper:
+******* / term p/notLabelTerm                                                                                      :3_2:GoDeeper:
+******** / term p/2:someIndentation expr p                                                                        :3_2:GoDeeper:
+********* / someIndentation                                                                                      :3_2:GoDeeper:
+********** / myindented: consuming GoDeeper                                                                     :3_2:GoDeeper:
+********** \ myindented: consuming GoDeeper has returned GoDeeper                                                :3_2:Other "the":
+********** / manyIndentation/leaf?                                                                               :3_2:Other "the":
+*********** / expression                                                                                        :3_2:Other "the":
+************ / labelPrefix                                                                                     :3_2:Other "the":
+************ \ labelPrefix has returned "the"                                                                   :3_3:GoDeeper:
+************ / term p                                                                                           :3_3:GoDeeper:
+************* / term p/1a:label directly above                                                                 :3_3:GoDeeper:
+************** / $*|                                                                                          :3_3:GoDeeper:
+*************** / someSL                                                                                     :3_3:GoDeeper:
+**************** / pNumAsText                                                                               :3_3:GoDeeper:
+************* / term p/b:label to the left of line below, with EOL                                             :3_3:GoDeeper:
+************** / someSL                                                                                       :3_3:GoDeeper:
+*************** / pNumAsText                                                                                 :3_3:GoDeeper:
+************* / term p/notLabelTerm                                                                            :3_3:GoDeeper:
+************** / term p/2:someIndentation expr p                                                              :3_3:GoDeeper:
+*************** / someIndentation                                                                            :3_3:GoDeeper:
+**************** / myindented: consuming GoDeeper                                                           :3_3:GoDeeper:
+**************** \ myindented: consuming GoDeeper has returned GoDeeper                                       :3_4:GoDeeper:
+**************** / manyIndentation/leaf?                                                                      :3_4:GoDeeper:
+***************** / expression                                                                               :3_4:GoDeeper:
+****************** / labelPrefix                                                                            :3_4:GoDeeper:
+****************** / term p                                                                                 :3_4:GoDeeper:
+******************* / term p/1a:label directly above                                                       :3_4:GoDeeper:
+******************** / $*|                                                                                :3_4:GoDeeper:
+********************* / someSL                                                                           :3_4:GoDeeper:
+********************** / pNumAsText                                                                     :3_4:GoDeeper:
+******************* / term p/b:label to the left of line below, with EOL                                   :3_4:GoDeeper:
+******************** / someSL                                                                             :3_4:GoDeeper:
+********************* / pNumAsText                                                                       :3_4:GoDeeper:
+******************* / term p/notLabelTerm                                                                  :3_4:GoDeeper:
+******************** / term p/2:someIndentation expr p                                                    :3_4:GoDeeper:
+********************* / someIndentation                                                                  :3_4:GoDeeper:
+********************** / myindented: consuming GoDeeper                                                 :3_4:GoDeeper:
+********************** \ myindented: consuming GoDeeper has returned GoDeeper                             :3_5:GoDeeper:
+********************** / manyIndentation/leaf?                                                            :3_5:GoDeeper:
+*********************** / expression                                                                     :3_5:GoDeeper:
+************************ / labelPrefix                                                                  :3_5:GoDeeper:
+************************ / term p                                                                       :3_5:GoDeeper:
+************************* / term p/1a:label directly above                                             :3_5:GoDeeper:
+************************** / $*|                                                                      :3_5:GoDeeper:
+*************************** / someSL                                                                 :3_5:GoDeeper:
+**************************** / pNumAsText                                                           :3_5:GoDeeper:
+************************* / term p/b:label to the left of line below, with EOL                         :3_5:GoDeeper:
+************************** / someSL                                                                   :3_5:GoDeeper:
+*************************** / pNumAsText                                                             :3_5:GoDeeper:
+************************* / term p/notLabelTerm                                                        :3_5:GoDeeper:
+************************** / term p/2:someIndentation expr p                                          :3_5:GoDeeper:
+*************************** / someIndentation                                                        :3_5:GoDeeper:
+**************************** / myindented: consuming GoDeeper                                       :3_5:GoDeeper:
+**************************** \ myindented: consuming GoDeeper has returned GoDeeper                  :3_5:Other "honk:
+**************************** / manyIndentation/leaf?                                                 :3_5:Other "honk:
+***************************** / expression                                                          :3_5:Other "honk:
+****************************** / labelPrefix                                                       :3_5:Other "honk:
+****************************** / term p                                                            :3_5:Other "honk:
+******************************* / term p/1a:label directly above                                  :3_5:Other "honk:
+******************************** / $*|                                                           :3_5:Other "honk:
+********************************* / someSL                                                      :3_5:Other "honk:
+********************************* \ someSL has returned (["honk"],0)                             :4_5:UnDeeper:
+********************************* / pNumAsText                                                   :4_5:UnDeeper:
+******************************* / term p/b:label to the left of line below, with EOL              :3_5:Other "honk:
+******************************** / someSL                                                        :3_5:Other "honk:
+******************************** \ someSL has returned (["honk"],0)                               :4_5:UnDeeper:
+******************************** / undeepers                                                      :4_5:UnDeeper:
+********************************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :4_5:UnDeeper:
+********************************* > sameLine: success!                                           :4_5:UnDeeper:
+******************************** \ undeepers has returned ()                                      :4_5:UnDeeper:
+******************************** / matching EOL                                                   :4_5:UnDeeper:
+******************************* / term p/notLabelTerm                                             :3_5:Other "honk:
+******************************** / term p/2:someIndentation expr p                               :3_5:Other "honk:
+********************************* / someIndentation                                             :3_5:Other "honk:
+********************************** / myindented: consuming GoDeeper                            :3_5:Other "honk:
+******************************** / term p/3:plain p                                              :3_5:Other "honk:
+********************************* / pRelPred                                                    :3_5:Other "honk:
+********************************** / slRelPred                                                 :3_5:Other "honk:
+*********************************** / nested simpleHorn                                       :3_5:Other "honk:
+************************************ > |^|                                                   :3_5:Other "honk:
+************************************ / $*|                                                   :3_5:Other "honk:
+************************************* / slMultiTerm                                         :3_5:Other "honk:
+************************************** / someSL                                            :3_5:Other "honk:
+************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
+************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
+************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
+************************************ / |^| deeps                                              :4_5:UnDeeper:
+************************************ \ |^| deeps has returned ([()],-1)                    :4_4:Or:
+*********************************** / RPConstraint                                            :3_5:Other "honk:
+************************************ / $*|                                                   :3_5:Other "honk:
+************************************* / slMultiTerm                                         :3_5:Other "honk:
+************************************** / someSL                                            :3_5:Other "honk:
+************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
+************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
+************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
+************************************ / |>| calling $>>                                        :4_5:UnDeeper:
+************************************* / |>>/recurse                                          :4_5:UnDeeper:
+************************************* / |>>/base                                             :4_5:UnDeeper:
+*********************************** / RPBoolStructR                                           :3_5:Other "honk:
+************************************ / $*|                                                   :3_5:Other "honk:
+************************************* / slMultiTerm                                         :3_5:Other "honk:
+************************************** / someSL                                            :3_5:Other "honk:
+************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
+************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
+************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
+************************************ / |>| calling $>>                                        :4_5:UnDeeper:
+************************************* / |>>/recurse                                          :4_5:UnDeeper:
+************************************* / |>>/base                                             :4_5:UnDeeper:
+*********************************** / RPMT                                                    :3_5:Other "honk:
+************************************ / $*|                                                   :3_5:Other "honk:
+************************************* / slAKA                                               :3_5:Other "honk:
+************************************** / $*|                                               :3_5:Other "honk:
+*************************************** / slAKA base                                      :3_5:Other "honk:
+**************************************** / slMultiTerm                                   :3_5:Other "honk:
+***************************************** / someSL                                      :3_5:Other "honk:
+***************************************** \ someSL has returned (["honk"],0)             :4_5:UnDeeper:
+**************************************** \ slMultiTerm has returned (["honk"],0)          :4_5:UnDeeper:
+*************************************** \ slAKA base has returned (["honk"],0)             :4_5:UnDeeper:
+************************************** \ $*| has returned (["honk"],0)                      :4_5:UnDeeper:
+************************************** / |>>/recurse                                        :4_5:UnDeeper:
+************************************** / |>>/base                                           :4_5:UnDeeper:
+*************************************** / slAKA optional akapart                           :4_5:UnDeeper:
+**************************************** / |?| optional something                         :4_5:UnDeeper:
+***************************************** / |>>/recurse                                  :4_5:UnDeeper:
+***************************************** / |>>/base                                     :4_5:UnDeeper:
+****************************************** / PAKA/akapart                               :4_5:UnDeeper:
+******************************************* / $>|                                      :4_5:UnDeeper:
+******************************************** / Aka Token                              :4_5:UnDeeper:
+**************************************** \ |?| optional something has returned (Nothing,0) :4_5:UnDeeper:
+*************************************** \ slAKA optional akapart has returned (Nothing,0)  :4_5:UnDeeper:
+*************************************** > |>>/base got Nothing                             :4_5:UnDeeper:
+************************************** \ |>>/base has returned (Nothing,0)                  :4_5:UnDeeper:
+************************************** / |>>/recurse                                        :4_5:UnDeeper:
+************************************** / |>>/base                                           :4_5:UnDeeper:
+*************************************** / slAKA optional typically                         :4_5:UnDeeper:
+**************************************** / |?| optional something                         :4_5:UnDeeper:
+***************************************** / |>>/recurse                                  :4_5:UnDeeper:
+***************************************** / |>>/base                                     :4_5:UnDeeper:
+****************************************** / typically                                  :4_5:UnDeeper:
+******************************************* / $>|                                      :4_5:UnDeeper:
+**************************************** \ |?| optional something has returned (Nothing,0) :4_5:UnDeeper:
+*************************************** \ slAKA optional typically has returned (Nothing,0) :4_5:UnDeeper:
+*************************************** > |>>/base got Nothing                             :4_5:UnDeeper:
+************************************** \ |>>/base has returned (Nothing,0)                  :4_5:UnDeeper:
+************************************** > slAKA: proceeding after base and entityalias are retrieved ... :4_5:UnDeeper:
+************************************** > pAKA: entityalias = Nothing                        :4_5:UnDeeper:
+************************************* \ slAKA has returned (["honk"],0)                      :4_5:UnDeeper:
+************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
+*********************************** \ RPMT has returned (RPMT ["honk"],0)                      :4_5:UnDeeper:
+********************************** \ slRelPred has returned (RPMT ["honk"],0)                   :4_5:UnDeeper:
+********************************** / undeepers                                                  :4_5:UnDeeper:
+*********************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :4_5:UnDeeper:
+*********************************** > sameLine: success!                                       :4_5:UnDeeper:
+********************************** \ undeepers has returned ()                                  :4_5:UnDeeper:
+********************************* \ pRelPred has returned RPMT ["honk"]                          :4_5:UnDeeper:
+******************************** \ term p/3:plain p has returned MyLeaf (RPMT ["honk"])           :4_5:UnDeeper:
+******************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["honk"])          :4_5:UnDeeper:
+****************************** \ term p has returned MyLeaf (RPMT ["honk"])                         :4_5:UnDeeper:
+****************************** / binary(Or)                                                         :4_5:UnDeeper:
+****************************** / binary(And)                                                        :4_5:UnDeeper:
+****************************** / binary(SetLess)                                                    :4_5:UnDeeper:
+****************************** / binary(SetPlus)                                                    :4_5:UnDeeper:
+***************************** \ expression has returned MyLeaf (RPMT ["honk"])                       :4_5:UnDeeper:
+**************************** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["honk"])              :4_5:UnDeeper:
+**************************** / myindented: consuming UnDeeper                                         :4_5:UnDeeper:
+**************************** \ myindented: consuming UnDeeper has returned UnDeeper                :4_4:Or:
+*************************** \ someIndentation has returned MyLeaf (RPMT ["honk"])                   :4_4:Or:
+************************** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["honk"])     :4_4:Or:
+************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["honk"])                   :4_4:Or:
+************************ \ term p has returned MyLeaf (RPMT ["honk"])                                  :4_4:Or:
+************************ / binary(Or)                                                                  :4_4:Or:
+************************ \ binary(Or) has returned Or                                                   :4_5:GoDeeper:
+************************ / term p                                                                       :4_5:GoDeeper:
+************************* / term p/1a:label directly above                                             :4_5:GoDeeper:
+************************** / $*|                                                                      :4_5:GoDeeper:
+*************************** / someSL                                                                 :4_5:GoDeeper:
+**************************** / pNumAsText                                                           :4_5:GoDeeper:
+************************* / term p/b:label to the left of line below, with EOL                         :4_5:GoDeeper:
+************************** / someSL                                                                   :4_5:GoDeeper:
+*************************** / pNumAsText                                                             :4_5:GoDeeper:
+************************* / term p/notLabelTerm                                                        :4_5:GoDeeper:
+************************** / term p/2:someIndentation expr p                                          :4_5:GoDeeper:
+*************************** / someIndentation                                                        :4_5:GoDeeper:
+**************************** / myindented: consuming GoDeeper                                       :4_5:GoDeeper:
+**************************** \ myindented: consuming GoDeeper has returned GoDeeper                  :4_5:Other "ponk:
+**************************** / manyIndentation/leaf?                                                 :4_5:Other "ponk:
+***************************** / expression                                                          :4_5:Other "ponk:
+****************************** / labelPrefix                                                       :4_5:Other "ponk:
+****************************** / term p                                                            :4_5:Other "ponk:
+******************************* / term p/1a:label directly above                                  :4_5:Other "ponk:
+******************************** / $*|                                                           :4_5:Other "ponk:
+********************************* / someSL                                                      :4_5:Other "ponk:
+********************************* \ someSL has returned (["ponk"],0)                       :1_2:UnDeeper:
+********************************* / pNumAsText                                             :1_2:UnDeeper:
+******************************* / term p/b:label to the left of line below, with EOL              :4_5:Other "ponk:
+******************************** / someSL                                                        :4_5:Other "ponk:
+******************************** \ someSL has returned (["ponk"],0)                         :1_2:UnDeeper:
+******************************** / undeepers                                                :1_2:UnDeeper:
+********************************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :1_2:UnDeeper:
+********************************* > sameLine: success!                                     :1_2:UnDeeper:
+******************************** \ undeepers has returned ()                                :1_2:UnDeeper:
+******************************** / matching EOL                                             :1_2:UnDeeper:
+******************************* / term p/notLabelTerm                                             :4_5:Other "ponk:
+******************************** / term p/2:someIndentation expr p                               :4_5:Other "ponk:
+********************************* / someIndentation                                             :4_5:Other "ponk:
+********************************** / myindented: consuming GoDeeper                            :4_5:Other "ponk:
+******************************** / term p/3:plain p                                              :4_5:Other "ponk:
+********************************* / pRelPred                                                    :4_5:Other "ponk:
+********************************** / slRelPred                                                 :4_5:Other "ponk:
+*********************************** / nested simpleHorn                                       :4_5:Other "ponk:
+************************************ > |^|                                                   :4_5:Other "ponk:
+************************************ / $*|                                                   :4_5:Other "ponk:
+************************************* / slMultiTerm                                         :4_5:Other "ponk:
+************************************** / someSL                                            :4_5:Other "ponk:
+************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
+************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
+************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
+************************************ / |^| deeps                                        :1_2:UnDeeper:
+************************************ \ |^| deeps has returned ([(),(),(),()],-4)   :EOF:
+*********************************** / RPConstraint                                            :4_5:Other "ponk:
+************************************ / $*|                                                   :4_5:Other "ponk:
+************************************* / slMultiTerm                                         :4_5:Other "ponk:
+************************************** / someSL                                            :4_5:Other "ponk:
+************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
+************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
+************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
+************************************ / |>| calling $>>                                  :1_2:UnDeeper:
+************************************* / |>>/recurse                                    :1_2:UnDeeper:
+************************************* / |>>/base                                       :1_2:UnDeeper:
+*********************************** / RPBoolStructR                                           :4_5:Other "ponk:
+************************************ / $*|                                                   :4_5:Other "ponk:
+************************************* / slMultiTerm                                         :4_5:Other "ponk:
+************************************** / someSL                                            :4_5:Other "ponk:
+************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
+************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
+************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
+************************************ / |>| calling $>>                                  :1_2:UnDeeper:
+************************************* / |>>/recurse                                    :1_2:UnDeeper:
+************************************* / |>>/base                                       :1_2:UnDeeper:
+*********************************** / RPMT                                                    :4_5:Other "ponk:
+************************************ / $*|                                                   :4_5:Other "ponk:
+************************************* / slAKA                                               :4_5:Other "ponk:
+************************************** / $*|                                               :4_5:Other "ponk:
+*************************************** / slAKA base                                      :4_5:Other "ponk:
+**************************************** / slMultiTerm                                   :4_5:Other "ponk:
+***************************************** / someSL                                      :4_5:Other "ponk:
+***************************************** \ someSL has returned (["ponk"],0)       :1_2:UnDeeper:
+**************************************** \ slMultiTerm has returned (["ponk"],0)    :1_2:UnDeeper:
+*************************************** \ slAKA base has returned (["ponk"],0)       :1_2:UnDeeper:
+************************************** \ $*| has returned (["ponk"],0)                :1_2:UnDeeper:
+************************************** / |>>/recurse                                  :1_2:UnDeeper:
+************************************** / |>>/base                                     :1_2:UnDeeper:
+*************************************** / slAKA optional akapart                     :1_2:UnDeeper:
+**************************************** / |?| optional something                   :1_2:UnDeeper:
+***************************************** / |>>/recurse                            :1_2:UnDeeper:
+***************************************** / |>>/base                               :1_2:UnDeeper:
+****************************************** / PAKA/akapart                         :1_2:UnDeeper:
+******************************************* / $>|                                :1_2:UnDeeper:
+******************************************** / Aka Token                        :1_2:UnDeeper:
+**************************************** \ |?| optional something has returned (Nothing,0) :1_2:UnDeeper:
+*************************************** \ slAKA optional akapart has returned (Nothing,0) :1_2:UnDeeper:
+*************************************** > |>>/base got Nothing                       :1_2:UnDeeper:
+************************************** \ |>>/base has returned (Nothing,0)            :1_2:UnDeeper:
+************************************** / |>>/recurse                                  :1_2:UnDeeper:
+************************************** / |>>/base                                     :1_2:UnDeeper:
+*************************************** / slAKA optional typically                   :1_2:UnDeeper:
+**************************************** / |?| optional something                   :1_2:UnDeeper:
+***************************************** / |>>/recurse                            :1_2:UnDeeper:
+***************************************** / |>>/base                               :1_2:UnDeeper:
+****************************************** / typically                            :1_2:UnDeeper:
+******************************************* / $>|                                :1_2:UnDeeper:
+**************************************** \ |?| optional something has returned (Nothing,0) :1_2:UnDeeper:
+*************************************** \ slAKA optional typically has returned (Nothing,0) :1_2:UnDeeper:
+*************************************** > |>>/base got Nothing                       :1_2:UnDeeper:
+************************************** \ |>>/base has returned (Nothing,0)            :1_2:UnDeeper:
+************************************** > slAKA: proceeding after base and entityalias are retrieved ... :1_2:UnDeeper:
+************************************** > pAKA: entityalias = Nothing                  :1_2:UnDeeper:
+************************************* \ slAKA has returned (["ponk"],0)                :1_2:UnDeeper:
+************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
+*********************************** \ RPMT has returned (RPMT ["ponk"],0)                :1_2:UnDeeper:
+********************************** \ slRelPred has returned (RPMT ["ponk"],0)             :1_2:UnDeeper:
+********************************** / undeepers                                            :1_2:UnDeeper:
+*********************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :1_2:UnDeeper:
+*********************************** > sameLine: success!                                 :1_2:UnDeeper:
+********************************** \ undeepers has returned ()                            :1_2:UnDeeper:
+********************************* \ pRelPred has returned RPMT ["ponk"]                    :1_2:UnDeeper:
+******************************** \ term p/3:plain p has returned MyLeaf (RPMT ["ponk"])     :1_2:UnDeeper:
+******************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["ponk"])    :1_2:UnDeeper:
+****************************** \ term p has returned MyLeaf (RPMT ["ponk"])                   :1_2:UnDeeper:
+****************************** / binary(Or)                                                   :1_2:UnDeeper:
+****************************** / binary(And)                                                  :1_2:UnDeeper:
+****************************** / binary(SetLess)                                              :1_2:UnDeeper:
+****************************** / binary(SetPlus)                                              :1_2:UnDeeper:
+***************************** \ expression has returned MyLeaf (RPMT ["ponk"])                 :1_2:UnDeeper:
+**************************** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["ponk"])        :1_2:UnDeeper:
+**************************** / myindented: consuming UnDeeper                                   :1_2:UnDeeper:
+**************************** \ myindented: consuming UnDeeper has returned UnDeeper               :1_3:UnDeeper:
+*************************** \ someIndentation has returned MyLeaf (RPMT ["ponk"])                  :1_3:UnDeeper:
+************************** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["ponk"])    :1_3:UnDeeper:
+************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["ponk"])                  :1_3:UnDeeper:
+************************ \ term p has returned MyLeaf (RPMT ["ponk"])                                 :1_3:UnDeeper:
+************************ / binary(Or)                                                                 :1_3:UnDeeper:
+************************ / binary(And)                                                                :1_3:UnDeeper:
+************************ / binary(SetLess)                                                            :1_3:UnDeeper:
+************************ / binary(SetPlus)                                                            :1_3:UnDeeper:
+*********************** \ expression has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_3:UnDeeper:
+********************** \ manyIndentation/leaf? has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_3:UnDeeper:
+********************** / myindented: consuming UnDeeper                                                 :1_3:UnDeeper:
+********************** \ myindented: consuming UnDeeper has returned UnDeeper                             :1_4:UnDeeper:
+********************* \ someIndentation has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
+******************** \ term p/2:someIndentation expr p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
+******************* \ term p/notLabelTerm has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
+****************** \ term p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]                :1_4:UnDeeper:
+****************** / binary(Or)                                                                               :1_4:UnDeeper:
+****************** / binary(And)                                                                              :1_4:UnDeeper:
+****************** / binary(SetLess)                                                                          :1_4:UnDeeper:
+****************** / binary(SetPlus)                                                                          :1_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]              :1_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]     :1_4:UnDeeper:
+**************** / myindented: consuming UnDeeper                                                               :1_4:UnDeeper:
+**************** \ myindented: consuming UnDeeper has returned UnDeeper                                           :1_5:UnDeeper:
+*************** \ someIndentation has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]               :1_5:UnDeeper:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_5:UnDeeper:
+************* \ term p/notLabelTerm has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]               :1_5:UnDeeper:
+************ \ term p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]                              :1_5:UnDeeper:
+************ / binary(Or)                                                                                             :1_5:UnDeeper:
+************ / binary(And)                                                                                            :1_5:UnDeeper:
+************ / binary(SetLess)                                                                                        :1_5:UnDeeper:
+************ / binary(SetPlus)                                                                                        :1_5:UnDeeper:
+*********** \ expression has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])          :1_5:UnDeeper:
+********** \ manyIndentation/leaf? has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :1_5:UnDeeper:
+********** / myindented: consuming UnDeeper                                                                             :1_5:UnDeeper:
+********** \ myindented: consuming UnDeeper has returned UnDeeper                                            :EOF:
+********* \ someIndentation has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
+******** \ term p/2:someIndentation expr p has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
+******* \ term p/notLabelTerm has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
+****** \ term p has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])             :EOF:
+****** / binary(Or)                                                                                              :EOF:
+****** / binary(And)                                                                                             :EOF:
+****** / binary(SetLess)                                                                                         :EOF:
+****** / binary(SetPlus)                                                                                         :EOF:
+***** \ expression has returned MyAny [MyLeaf (RPMT ["poopoo"]),MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])] :EOF:
+**** \ ppp inner has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
+*** \ pBSR has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
+** \ made it to pBSR has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
+** / undeepers                                                                                                       :EOF:
+*** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                                        :EOF:
+*** > sameLine: success!                                                                                            :EOF:
+** \ undeepers has returned ()                                                                                       :EOF:
 * final
 :PROPERTIES:
 :VISIBILITY: all
@@ -353,32 +532,9 @@ natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-r/)
 
 
 PDPA
-  inline-1-r FAILED [1]
+  inline-1-r
 
-Failures:
+Finished in 0.0075 seconds
+1 example, 0 failures
 
-  test/Spec.hs:124:3: 
-  1) PDPA inline-1-r
-       expected: [((["Bad"],Means,Any Nothing [Any (Just (PrePost "any unauthorised" "of personal data")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])],Any (Just (PrePost "loss of storage medium on which personal data is stored in circumstances where the unauthorised" "of the personal data is likely to occur")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])]]),[])]
-       but parsing failed with error:
-       4:4:
-       unexpected Or
-       expecting MPNot or expression
-                 multiwonk                                        
-       MEANS     poopoo                                           
-       OR        the                           honk               
-                                     ✳ OR      ponk               
-       
-
-  To rerun use: --match "/PDPA/inline-1-r/"
-
-Randomized with seed 945765109
-
-Finished in 0.0155 seconds
-1 example, 1 failure
-
-natural4> Test suite natural4-test failed
-Test suite failure for package natural4-0.1.0.0
-    natural4-test:  exited with: ExitFailure 1
-Logs printed to console
-
+natural4> Test suite natural4-test passed

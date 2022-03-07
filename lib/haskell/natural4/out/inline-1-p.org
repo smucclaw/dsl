@@ -908,7 +908,7 @@
 ************ / |:| some                                                                                           :1_3:UnDeeper:
 ************* / |:| base parser                                                                                  :1_3:UnDeeper:
 ************** / pNumAsText                                                                                     :1_3:UnDeeper:
-******** / withPreOnly                                                                                            :2_2:GoDeeper:
+******* / withPreOnly                                          :2_2:GoDeeper:
 ********* / $*|                                                                                                  :2_2:GoDeeper:
 ********** / pre part                                                                                           :2_2:GoDeeper:
 *********** / aboveNextLineKeyword                                                                              :2_2:Other "a":

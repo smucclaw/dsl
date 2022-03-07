@@ -124,8 +124,6 @@ nlg rl = do
             subjWho = applyMaybe "Who" whoA (gf dummyNP) --(gf $ peelNP subjA)
             subj = mkApp (mkCId "Every") [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
-            king_may_sing_upon = applyMaybe "Upon" uponA king_may_sing
-            -- mkApp2 "Who" <$> whoA
             existingQualifiers = [(name,expr) |
                                   (name,Just expr) <- [("Cond", condA),
                                                        ("Temporal", temporalA),
@@ -149,6 +147,12 @@ nlg rl = do
       _ -> return "()"
 
 doNLG :: [(String,Expr)] -> Expr -> Expr
+-- Single modifiers
+doNLG [("Cond", condA)] king = mkApp (mkCId "Cond") [condA, king]
+doNLG [("Upon", uponA)] king = mkApp (mkCId "Upon") [uponA, king]
+doNLG [("Temporal", temporalA)] king = mkApp (mkCId "Temporal") [temporalA, king]
+doNLG [("Given", givenA)] king = mkApp (mkCId "Given") [givenA, king]
+-- Combinations of two
 doNLG [("Cond", condA), ("Temporal", temporalA)] king = mkApp (mkCId "CondTemporal") [condA, temporalA, king]
 doNLG [("Cond", condA), ("Upon", uponA)] king = mkApp (mkCId "CondUpon") [condA, uponA, king]
 doNLG [("Cond", condA), ("Given", givenA)] king = mkApp (mkCId "CondGiven") [condA, givenA, king]

@@ -11,7 +11,7 @@ import LS.Types ( Deontic(..),
       ParamText,
       BoolStruct(..),
       RuleName,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate (RPBoolStructR), HornClause2 (hHead) )
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate(..), HornClause2(..) )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF as PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -205,16 +205,25 @@ parseFields env rl = case rl of
     name = [nm]
   , detail = [det]
   } -> return $ Alias nm det
-  Hornlike {
-    clauses = cls:_
-  } -> case hHead cls of
-        RPBoolStructR _ _ bsr -> do
-          expr <- bsr2gf env bsr
-          return $ HornlikeA {clausesA = [expr]}
-        _ -> error "parseFields: doesn't support Hornlike yet"
-
-  _ -> error "parseFields: rule type not supported yet"
+  Hornlike { clauses } -> do
+    exprs <- mapM (parseHornClause env) clauses
+    return $ HornlikeA {clausesA = concat exprs}
+  _ -> return $ Alias "foo" "bar"
+--  _ error "parseFields: rule type not supported yet"
   where
+    parseHornClause :: UDEnv -> HornClause2 -> IO [Expr]
+    parseHornClause env (HC2 rp Nothing) = (:[]) `fmap` parseRP env rp
+    parseHornClause env (HC2 rp (Just bsr)) = do
+      bsrExpr <- bsr2gf env bsr
+      rpExpr <- parseRP env rp
+      return [bsrExpr, rpExpr]
+
+    parseRP :: UDEnv -> RelationalPredicate -> IO Expr
+    parseRP env (RPParamText pt) = parseParamText env pt
+    parseRP env (RPMT txts) = parseName env txts
+    -- parseRP env (RPConstraint txts rr txts') = _wk
+    parseRP env (RPBoolStructR txts rr bsr) = bsr2gf env bsr
+
     -- ConstitutiveName is [Text.Text]
     parseName :: UDEnv -> [Text.Text] -> IO Expr
     parseName env txt = parseOut env (Text.unwords txt)

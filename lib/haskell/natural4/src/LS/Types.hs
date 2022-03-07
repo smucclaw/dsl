@@ -4,6 +4,8 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
@@ -240,6 +242,20 @@ data HornBody = HBRP HornRP
                       , hbthen :: HornRP
                       , hbelse :: HornRP }
   deriving (Eq, Show, Generic, ToJSON)
+
+class PrependHead a where
+  -- Used to prepend what was first interpreted to be a label to an item
+  prependHead :: Text.Text -> a -> a
+
+instance PrependHead Text.Text where
+  prependHead s = ((s <> " ") <>)
+instance PrependHead ParamText where
+  prependHead s ((xs, ts) :| xss) = (pure s <> xs, ts) :| xss
+instance PrependHead RelationalPredicate where
+  prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
+  prependHead s (RPMT txts)             = RPMT (s : txts)
+  prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
+  prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
@@ -618,12 +634,11 @@ pYLocation = token test Set.empty <|> pure 0 <?> "y location"
     test (WithPos (SourcePos _ y _x) _ _ _) = Just (unPos y)
 
 
-pTokenMatch :: (MyToken -> Bool) -> MyToken -> Parser MyToken
-pTokenMatch f c = token test (Set.singleton . Tokens . nes . liftMyToken $ c)
+pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
+pTokenMatch f c = token test (Set.singleton . Tokens . fmap liftMyToken $ c)
   where
     test (WithPos _ _ _ x) =
       if f x
         then Just x
         else Nothing
-    nes x = x :| []
 

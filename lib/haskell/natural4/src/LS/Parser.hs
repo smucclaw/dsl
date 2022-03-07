@@ -13,6 +13,7 @@ import qualified AnyAll as AA
 import Control.Monad.Combinators.Expr
 import Text.Megaparsec
 import qualified Data.Text.Lazy as Text
+import Data.List.NonEmpty (NonEmpty ((:|)))
 
 
 data MyItem lbl a =
@@ -21,6 +22,7 @@ data MyItem lbl a =
   | MyAll     [MyItem lbl a]
   | MyAny     [MyItem lbl a]
   | MyNot     (MyItem lbl a)
+  | Nest (MyItem lbl a)
   deriving (Eq, Show)
   deriving (Functor)
 
@@ -31,41 +33,44 @@ type MyBoolStruct = MyItem MultiTerm
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = prePostParse pOtherVal
 
-prePostParse :: Show a => Parser a -> Parser (AA.Item a)
+prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.Item a)
 prePostParse base = ppp $ either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: Show a => MyBoolStruct a -> Either String (AA.Item a)
+toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.Item a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
 toBoolStruct (MyLabel lab (MyAll xs))        = AA.All (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel lab (MyAny xs))        = AA.Any (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
 toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
-toBoolStruct (MyLabel lab (MyLabel lab2 _x)) = Left $ "Label (" ++ show lab ++ ") followed by label (" ++ show lab2 ++ ") is not allowed"
-toBoolStruct (MyLabel lab (MyLeaf x))        = Left $ "Label (" ++ show lab ++ ") followed by leaf (" ++ show x ++ ") is not allowed"
+toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
+toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
+toBoolStruct (MyLabel lab (Nest x))          = error $ "Label (" ++ show lab ++ ") followed by nesting (" ++ show (Nest x) ++ ") is not allowed"
+toBoolStruct (Nest x)                        = toBoolStruct x
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = debugName "term p" $ do
-  try (debugName "term p/1a:label directly above" $ do
-        (lbl, inner) <- (,)
-          $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
-          |>< expr p
-        debugPrint $ "got label, then inner immediately below: " ++ show lbl
-        debugPrint $ "got inner: " <> show inner
-        return $ MyLabel lbl inner)
-    <|>
-    try (debugName "term p/b:label to the left of line below, with EOL" $ do
-        lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
-        debugPrint $ "got label then EOL: " ++ show lbl
-        inner <- expr p
-        debugPrint $ "got inner: " ++ show inner
-        return $ MyLabel lbl inner)
-    <|> debugName "term p/notLabelTerm" (notLabelTerm p)
+  -- try (debugName "term p/1a:label directly above" $ do
+  --       (lbl, inner) <- (,)
+  --         $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
+  --         |>< expr p
+  --       debugPrint $ "got label, then inner immediately below: " ++ show lbl
+  --       debugPrint $ "got inner: " <> show inner
+  --       return $ MyLabel lbl inner)
+  --   <|>
+    -- try (debugName "term p/b:label to the left of line below, with EOL" $ do
+    --     lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
+    --     debugPrint $ "got label then EOL: " ++ show lbl
+    --     inner <- expr p
+    --     debugPrint $ "got inner: " ++ show inner
+    --     return $ MyLabel lbl inner)
+    -- <|>
+     debugName "term p/notLabelTerm" (notLabelTerm p)
 
 
 notLabelTerm p =
@@ -76,9 +81,17 @@ table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
+        , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
         ]
+
+labelPrefix :: Parser (MyBoolStruct a -> MyBoolStruct a)
+labelPrefix = fmap (MyLabel . (:[])) . debugName "labelPrefix" $ do
+  try (pOtherVal <* notEnd)
+
+notEnd :: Parser ()
+notEnd = notFollowedBy (pToken UnDeeper <|> pToken GoDeeper *> pTokenOneOf (Typically :| []))
 
 -- SetPlus is an Or
 -- SetLess is an And Not:   X LESS Y is X AND NOT Y
@@ -93,7 +106,7 @@ getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
 myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
+-- myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
@@ -109,8 +122,9 @@ getAny (MyAny xs) = xs
 getAny x = [x]
 
 myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
+-- myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
+-- myOr a b                          = MyAny [a, b]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
 binary  tname f = InfixR  (f <$ (debugName ("binary(" <> show tname <> ")") $ pToken tname))
@@ -210,7 +224,7 @@ aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
   if n == undp_count
     then return ((slmt, tok), m)
     else fail $ "aNLK: expecting depth " ++ show undp_count ++ " but the cursor seems to be placed such that we have " ++ show n ++ "; a different backtrack will probably fare better"
-  
+
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
 -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0

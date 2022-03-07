@@ -2016,14 +2016,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -2032,24 +2032,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -2084,29 +2084,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -4319,14 +4319,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -4335,24 +4335,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -4387,29 +4387,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -5260,14 +5260,14 @@ pTemporal/vaguely> expecting Other text
 
 regulative permutation with deontic-action> IN: Every GoDeeper Other "person" UnDeeper W <…>
 regulative permutation with deontic-action> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 permutationsReg> IN: Every GoDeeper Other "person" UnDeeper W <…>
 permutationsReg> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ***** / pHenceLest-Hence                                                                                          :EOF:
 pHenceLest-Hence> IN: <EMPTY>
 pHenceLest-Hence> MATCH (EERR): <EMPTY>
@@ -5284,25 +5284,25 @@ pHenceLest-Lest> offset=30:
 pHenceLest-Lest> unexpected end of input
 pHenceLest-Lest> expecting Lest
 
-****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ****   pRegRuleNormal: the positive preamble is Nothing                                                           :EOF:
 ****   pRegRuleNormal: the negative preamble is Nothing                                                           :EOF:
-****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRuleNormal> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRuleNormal> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 ** / pRule                                                                                                           :EOF:
 pRule> IN: <EMPTY>
 pRule> MATCH (EERR): <EMPTY>
@@ -7316,14 +7316,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -7332,24 +7332,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -7384,29 +7384,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -9619,14 +9619,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -9635,24 +9635,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -9687,29 +9687,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -10560,14 +10560,14 @@ pTemporal/vaguely> expecting Other text
 
 regulative permutation with deontic-action> IN: Every GoDeeper Other "person" UnDeeper W <…>
 regulative permutation with deontic-action> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 permutationsReg> IN: Every GoDeeper Other "person" UnDeeper W <…>
 permutationsReg> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ***** / pHenceLest-Hence                                                                                          :EOF:
 pHenceLest-Hence> IN: <EMPTY>
 pHenceLest-Hence> MATCH (EERR): <EMPTY>
@@ -10584,25 +10584,25 @@ pHenceLest-Lest> offset=30:
 pHenceLest-Lest> unexpected end of input
 pHenceLest-Lest> expecting Lest
 
-****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ****   pRegRuleNormal: the positive preamble is Nothing                                                           :EOF:
 ****   pRegRuleNormal: the negative preamble is Nothing                                                           :EOF:
-****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRuleNormal> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRuleNormal> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 [Every,GoDeeper,Other "person",UnDeeper,Who,GoDeeper,GoDeeper,Other "is",GoDeeper,Other "immortal",GoDeeper,Typically,GoDeeper,Other "false",UnDeeper,UnDeeper,UnDeeper,UnDeeper,Or,GoDeeper,Other "has",GoDeeper,Other "health insurance",UnDeeper,UnDeeper,UnDeeper,May,GoDeeper,Other "sharpen knives",UnDeeper]
 ** / pRule                                                                                                             :1_1:Every:
 *** / pRegRule                                                                                                        :1_1:Every:
@@ -12608,14 +12608,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -12624,24 +12624,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -12676,29 +12676,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -14911,14 +14911,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -14927,24 +14927,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -14979,29 +14979,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -15852,14 +15852,14 @@ pTemporal/vaguely> expecting Other text
 
 regulative permutation with deontic-action> IN: Every GoDeeper Other "person" UnDeeper W <…>
 regulative permutation with deontic-action> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 permutationsReg> IN: Every GoDeeper Other "person" UnDeeper W <…>
 permutationsReg> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ***** / pHenceLest-Hence                                                                                          :EOF:
 pHenceLest-Hence> IN: <EMPTY>
 pHenceLest-Hence> MATCH (EERR): <EMPTY>
@@ -15876,25 +15876,25 @@ pHenceLest-Lest> offset=30:
 pHenceLest-Lest> unexpected end of input
 pHenceLest-Lest> expecting Lest
 
-****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ****   pRegRuleNormal: the positive preamble is Nothing                                                           :EOF:
 ****   pRegRuleNormal: the negative preamble is Nothing                                                           :EOF:
-****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRuleNormal> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRuleNormal> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 [Every,GoDeeper,Other "person",UnDeeper,Who,GoDeeper,GoDeeper,Other "is",GoDeeper,Other "immortal",GoDeeper,Typically,GoDeeper,Other "false",UnDeeper,UnDeeper,UnDeeper,UnDeeper,Or,GoDeeper,Other "has",GoDeeper,Other "health insurance",UnDeeper,UnDeeper,UnDeeper,May,GoDeeper,Other "sharpen knives",UnDeeper]
 ** / pRule                                                                                                             :1_1:Every:
 *** / pRegRule                                                                                                        :1_1:Every:
@@ -17900,14 +17900,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -17916,24 +17916,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -17968,29 +17968,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -20203,14 +20203,14 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 expression> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***************** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+***************** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 manyIndentation/leaf?> IN: GoDeeper Other "is" GoDeeper Other "immo <…>
 manyIndentation/leaf?> MATCH (COK): GoDeeper Other "is" GoDeeper Other "immo <…>
-manyIndentation/leaf?> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**************** \ manyIndentation/leaf? has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_4:UnDeeper:
+**************** \ manyIndentation/leaf? has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_4:UnDeeper:
 **************** / myindented: consuming UnDeeper                                                               :4_4:UnDeeper:
 myindented: consuming UnDeeper> IN: UnDeeper May GoDeeper Other "sharpen kni <…>
 myindented: consuming UnDeeper> MATCH (COK): UnDeeper
@@ -20219,24 +20219,24 @@ myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 **************** \ myindented: consuming UnDeeper has returned UnDeeper                                  :4_1:May:
 someIndentation> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 someIndentation> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-someIndentation> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+someIndentation> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*************** \ someIndentation has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*************** \ someIndentation has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/2:someIndentation expr p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/2:someIndentation expr p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/2:someIndentation expr p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/2:someIndentation expr p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************** \ term p/2:someIndentation expr p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************** \ term p/2:someIndentation expr p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p/notLabelTerm> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p/notLabelTerm> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p/notLabelTerm> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p/notLabelTerm> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************* \ term p/notLabelTerm has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************* \ term p/notLabelTerm has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 term p> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 term p> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-term p> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+term p> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-************ \ term p has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+************ \ term p has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ************ / binary(Or)                                                                                    :4_1:May:
 binary(Or)> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 binary(Or)> MATCH (EERR): <EMPTY>
@@ -20271,29 +20271,29 @@ binary(SetPlus)> expecting SetPlus
 
 expression> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 expression> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-expression> VALUE: (MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+expression> VALUE: (MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*********** \ expression has returned MyLabel ["is"] (MyAny [MyLeaf (RPMT ["immortal"]),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))]) :4_1:May:
+*********** \ expression has returned MyAny [MyLabel ["is"] (MyLeaf (RPMT ["immortal"])),MyLabel ["has"] (MyLeaf (RPMT ["health insurance"]))] :4_1:May:
 ppp inner> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 ppp inner> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-ppp inner> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+ppp inner> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********** \ ppp inner has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********** \ ppp inner has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 pBSR> IN: GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
 pBSR> MATCH (COK): GoDeeper GoDeeper Other "is" GoDeeper Ot <…>
-pBSR> VALUE: (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pBSR> VALUE: (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])],[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-********* \ pBSR has returned Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
+********* \ pBSR has returned Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])] :4_1:May:
 preambleBoolStructR [Who,Which,Whose]> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 preambleBoolStructR [Who,Which,Whose]> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+preambleBoolStructR [Who,Which,Whose]> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******** \ preambleBoolStructR [Who,Which,Whose] has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 manyIndentation/leaf?> IN: Who GoDeeper GoDeeper Other "is" GoDeepe <…>
 manyIndentation/leaf?> MATCH (COK): Who GoDeeper GoDeeper Other "is" GoDeepe <…>
-manyIndentation/leaf?> VALUE: ((Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+manyIndentation/leaf?> VALUE: ((Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]),[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-******* \ manyIndentation/leaf? has returned (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
+******* \ manyIndentation/leaf? has returned (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]) :4_1:May:
 ******* / WHERE                                                                                                   :4_1:May:
 WHERE> IN: May GoDeeper Other "sharpen knives" UnDe <…>
 WHERE> MATCH (EERR): <EMPTY>
@@ -21144,14 +21144,14 @@ pTemporal/vaguely> expecting Other text
 
 regulative permutation with deontic-action> IN: Every GoDeeper Other "person" UnDeeper W <…>
 regulative permutation with deontic-action> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+regulative permutation with deontic-action> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****** \ regulative permutation with deontic-action has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 permutationsReg> IN: Every GoDeeper Other "person" UnDeeper W <…>
 permutationsReg> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+permutationsReg> VALUE: (RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+***** \ permutationsReg has returned RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ***** / pHenceLest-Hence                                                                                          :EOF:
 pHenceLest-Hence> IN: <EMPTY>
 pHenceLest-Hence> MATCH (EERR): <EMPTY>
@@ -21168,59 +21168,52 @@ pHenceLest-Lest> offset=30:
 pHenceLest-Lest> unexpected end of input
 pHenceLest-Lest> expecting Lest
 
-****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
+****   pRegRuleNormal: permutations returned rulebody RuleBody {rbaction = Leaf (("sharpen knives" :| [],Nothing) :| []), rbpbrs = [], rbpbrneg = [], rbdeon = DMay, rbtemporal = Nothing, rbupon = [], rbgiven = [], rbhaving = Nothing, rbkeyname = (Every,Leaf (("person" :| [],Nothing) :| [])), rbwho = Just (Who,Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), rbwhere = []} :EOF:
 ****   pRegRuleNormal: the positive preamble is Nothing                                                           :EOF:
 ****   pRegRuleNormal: the negative preamble is Nothing                                                           :EOF:
-****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+****   pRegRuleNormal: returning Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRuleNormal> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRuleNormal> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRuleNormal> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+**** \ pRegRuleNormal has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRegRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRegRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRegRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+*** \ pRegRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 pRule> IN: Every GoDeeper Other "person" UnDeeper W <…>
 pRule> MATCH (COK): Every GoDeeper Other "person" UnDeeper W <…>
-pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
+pRule> VALUE: (Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},[DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}])
 
-** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
+** \ pRule has returned Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []} :EOF:
 
 PDPA
   boolstructp-3 FAILED [1]
-  boolstructp-3
   boolstructp-3 FAILED [2]
-  boolstructp-3 FAILED [3]
+  boolstructp-3
+  boolstructp-3
 
 Failures:
 
   test/Spec.hs:124:3: 
   1) PDPA boolstructp-3
        expected: [[Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefTypically {name = ["is","immortal"], defaults = [RPConstraint ["is","immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}]]
-        but got: [[Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any (Just (Pre "is")) [Leaf (RPMT ["immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}]]
+        but got: [[Regulative {subj = Leaf (("person" :| [],Nothing) :| []), keyword = Every, who = Just (Any Nothing [Leaf (RPMT ["is","immortal"]),Leaf (RPMT ["has","health insurance"])]), cond = Nothing, deontic = DMay, action = Leaf (("sharpen knives" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefTypically {name = ["immortal"], defaults = [RPConstraint ["immortal"] RPis ["false"]], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}]]
 
   To rerun use: --match "/PDPA/boolstructp-3/"
 
   test/Spec.hs:124:3: 
   2) PDPA boolstructp-3
-       expected: [[["person","is","immortal"],["person","has","health insurance"]]]
-        but got: [[["person","immortal"],["person","has","health insurance"]]]
+       expected: [[["person","has","health insurance"]]]
+        but got: [[["person","is","immortal"],["person","has","health insurance"]]]
 
   To rerun use: --match "/PDPA/boolstructp-3/"
 
-  test/Spec.hs:124:3: 
-  3) PDPA boolstructp-3
-       expected: [[["Is the person immortal?"],["Does the person have health insurance?"]]]
-        but got: [[["person immortal"],["Does the person have health insurance?"]]]
+Randomized with seed 1560370964
 
-  To rerun use: --match "/PDPA/boolstructp-3/"
-
-Randomized with seed 530577890
-
-Finished in 0.1480 seconds
-4 examples, 3 failures
+Finished in 0.1464 seconds
+4 examples, 2 failures
 
 natural4> Test suite natural4-test failed
 Test suite failure for package natural4-0.1.0.0

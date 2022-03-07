@@ -19,6 +19,7 @@ import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
 import Data.Maybe (isNothing)
 import Text.Megaparsec.Debug (dbg)
+import Data.List.NonEmpty (NonEmpty)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -119,8 +120,8 @@ pSrcRef = do
 
 
 pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" $ do
-  (TNumber n) <- pTokenMatch isNumber (TNumber 1234)
+pNumAsText = debugName "pNumAsText" . label "number" $ do
+  (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
   return (Text.pack $ show n)
   where
     isNumber (TNumber _) = True
@@ -142,7 +143,7 @@ pNumAsText = debugName "pNumAsText" $ do
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" $ do
   (RuleMarker i sym, actualLabel, _) <- (,,)
-                                     $>| pTokenMatch isRuleMarker (RuleMarker 1 "§")
+                                     $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
                                      |>< optional (pToken EOL)
   return (sym, i, actualLabel)
@@ -158,7 +159,8 @@ liftedDBG dname p = do
     else p
 
 debugNameP :: Show a => String -> Parser a -> Parser a
-debugNameP dname p = do
+debugNameP dname p = -- label dname $
+   do
   -- debugPrint dname
   myTraceM $ "/ " <> dname
   res <- local (increaseNestLevel dname) (liftedDBG dname p)
@@ -203,7 +205,7 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 
 pNumOrText :: Parser Text.Text
-pNumOrText = pOtherVal <|> pNumAsText
+pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
@@ -811,8 +813,10 @@ tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 pToken :: MyToken -> Parser MyToken
-pToken c = pTokenMatch (== c) c
+pToken c = pTokenMatch (== c) (pure c)
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
-pTokenAnyDepth c = pTokenMatch (== c) c
+pTokenAnyDepth c = pTokenMatch (== c) (pure c)
 
+pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
+pTokenOneOf cs = pTokenMatch (`elem` cs) cs

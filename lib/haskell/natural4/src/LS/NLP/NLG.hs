@@ -264,10 +264,6 @@ parseLex :: UDEnv -> String -> [Expr]
 parseLex env str =
   [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
 
--- Example: expr=(EApp foo_N [])
--- convert the expr into string with showExpr,
--- and return the last character
--- disclosure_N -> (N)
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
   Left te -> error $ GfPretty.render $ ppTcError te -- gives string of error
@@ -288,9 +284,11 @@ disambiguateList pgf access_use_copying =
     unambiguousType :: [[String]]-> String
     unambiguousType access_use_copying
       | not (any isSingleton access_use_copying) =
-          head $ maximumOn length $ Data.List.group $ Data.List.sort $ concat access_use_copying
-        -- all wordlists are either empty or >1: default to something
-      | otherwise = head $ head $ sortOn length access_use_copying -- At least one list has exactly 1 element.
+         -- all wordlists are either empty or >1: take the most frequent cat
+         head $ maximumOn length $ Data.List.group $ Data.List.sort $ concat access_use_copying
+      | otherwise =
+         -- Some list has exactly 1 cat, use it to disambiguate the rest
+         head $ head $ sortOn length access_use_copying
 
     isSingleton [_] = True
     isSingleton _ = False

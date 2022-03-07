@@ -52,7 +52,8 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      aeson
+      QuickCheck >=2.7
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core
@@ -94,7 +95,8 @@ executable natural4-exe
       app
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck >=2.7
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core
@@ -139,7 +141,8 @@ test-suite natural4-test
       test
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck >=2.7
+    , aeson
     , aeson-pretty
     , anyall
     , baby-l4-core

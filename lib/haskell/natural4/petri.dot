@@ -28,25 +28,6 @@ digraph {
         16 [label="must\nrespond\neventually"
            ,shape=diamond
            ,comment=IsDeon];
-        19 [label=You
-           ,comment=IsFirstNode
-           ,comment="OrigRL \"Notify PDPC\""
-           ,comment=IsParty
-           ,comment=IsParty];
-        20 [label="if all of:-\nit is an NDB\nnot you are a Public Agency"
-           ,shape=diamond
-           ,comment=IsCond];
-        22 [label="must\nNOTIFY the PDPC\nbefore 3 days"
-           ,shape=diamond
-           ,comment=IsDeon];
-        25 [label="the PDPC"
-           ,comment=IsParty];
-        26 [label="may\nNOTIFY you\neventually"
-           ,shape=diamond
-           ,comment=IsDeon];
-        31 [label="must\nNOTIFY each of the Notifiable Individuals\nbefore 3 days"
-           ,shape=diamond
-           ,comment=IsDeon];
     }
     subgraph transitions {
         node [shape=box
@@ -74,26 +55,11 @@ digraph {
            ,comment=IsLastHappy
            ,comment="OrigRL \"Assess\""];
         18 [label="not done"];
-        21 [label=then,comment=IsThen];
-        23 [label="NOTIFY done"
-           ,comment="Temporal \"before 3 days\""
-           ,comment=IsLastHappy
-           ,comment="OrigRL \"Notify PDPC\""];
-        24 [label="not done"];
-        27 [label="NOTIFY occurred"
-           ,comment="Temporal \"eventually\""
-           ,comment=IsLastHappy
-           ,comment="OrigRL \"Notify PDPC\""];
-        32 [label="NOTIFY done"
-           ,comment="Temporal \"before 3 days\""
-           ,comment=IsLastHappy
-           ,comment="OrigRL \"Notify Individuals\""];
-        33 [label="not done"];
-        34 [label=both
+        19 [label="split (and)"
            ,comment=IsInfra
            ,comment=IsAnd
            ,comment=IsSplit];
-        35 [label="all done"
+        20 [label="all done"
            ,comment=IsInfra
            ,comment=IsAnd
            ,comment=IsJoin];
@@ -121,7 +87,7 @@ digraph {
             ,comment="southwest for negative"];
     9 -> 11;
     10 -> 12;
-    11 -> 20 [comment="due to mergePetri"];
+    11 -> 19 [comment="added by split from parent node"];
     12 -> 13;
     13 -> 14 [tailport=se
              ,comment="southeast for positive"];
@@ -133,27 +99,6 @@ digraph {
              ,comment="southwest for negative"];
     17 -> 1 [color=green];
     18 -> 0 [color=brown];
-    19 -> 34 [comment="due to mergePetri"];
-    20 -> 21 [comment="due to mergePetri"];
-    21 -> 19 [comment="due to mergePetri"];
-    22 -> 23 [tailport=se
-             ,comment="southeast for positive"];
-    22 -> 24 [tailport=sw
-             ,comment="southwest for negative"];
-    23 -> 25;
-    24 -> 0 [color=brown];
-    25 -> 26;
-    26 -> 27 [tailport=se
-             ,comment="southeast for positive"];
-    27 -> 35 [comment="added by join from tailnode"];
-    31 -> 32 [tailport=se
-             ,comment="southeast for positive"];
-    31 -> 33 [tailport=sw
-             ,comment="southwest for negative"];
-    32 -> 35 [comment="added by join from tailnode"];
-    33 -> 0 [color=brown];
-    34 -> 22 [comment="due to mergePetri"];
-    34 -> 31 [comment="due to mergePetri"];
-    35 -> 1 [color=green
+    20 -> 1 [color=green
             ,comment="added by join to fulfilledNode"];
 }

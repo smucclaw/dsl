@@ -30,7 +30,7 @@ import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
 import Control.Monad (when)
 import Data.Either (fromRight)
-import Data.Char
+import Data.Char (toLower)
 
 -- | Create an expectation by saying what the result should be.
 --
@@ -108,7 +108,9 @@ preprocess :: String -> String
 preprocess text = filter (not . (`elem` ['!', '.'])) text
 
 prop_gerundcheck :: String -> Bool
-prop_gerundcheck string = gfmkGerund preprocess(toLower string) == mkGerund preprocess(toLower string)
+prop_gerundcheck string =  gfmkGerund (preprocess string) == mkGerund (preprocess string)
+-- gfmkGerund preprocess(toLower string) == mkGerund preprocess(toLower string)
+
 
 main :: IO ()
 main = do

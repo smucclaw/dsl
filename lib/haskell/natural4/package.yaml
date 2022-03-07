@@ -52,6 +52,7 @@ dependencies:
 - graphviz
 - wordnet
 - edit-distance
+- QuickCheck  >= 2.7
 
 ghc-options: -Wall
 

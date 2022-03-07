@@ -165,8 +165,8 @@ parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {} -> do
     subjA'  <- parseBool env (subj rl)
-    whoA'   <- mapM (parseBSR env) (who rl)
-    condA'  <- mapM (parseBSR env) (cond rl)
+    whoA'   <- mapM (bsr2gf env) (who rl)
+    condA'  <- mapM (bsr2gf env) (cond rl)
     let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
@@ -185,7 +185,7 @@ parseFields env rl = case rl of
   Constitutive {} -> do
     givenA' <- mapM (parseParamText env) (given rl)
     nameA' <- parseName env (name rl)
-    condA'   <- mapM (parseBSR env) (cond rl) -- when/if/unless
+    condA'   <- mapM (bsr2gf env) (cond rl) -- when/if/unless
     return ConstitutiveA {
       givenA = givenA',
       nameA = nameA',
@@ -230,9 +230,6 @@ parseFields env rl = case rl of
 
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)
-
-    parseBSR :: UDEnv -> BoolStructR -> IO Expr
-    parseBSR env bsr = parseOut env (bsr2text bsr)
 
     parseParamText :: UDEnv -> ParamText -> IO Expr
     parseParamText env pt = parseOut env $ pt2text pt

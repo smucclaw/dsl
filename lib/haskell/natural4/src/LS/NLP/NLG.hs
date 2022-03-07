@@ -320,56 +320,103 @@ bsr2gf env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
+  -- AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
+  --   -- 1) Parse the actual contents. This can be
+  --   contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
+  --   let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
+  --       contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
+  --       listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
+
+  --   -- print "contentsUDS"
+  --   -- print $ map (showExpr . gf) contentsUDS
+  --   -- 2) Parse the premodifier
+  --   amodUDS <- parseOut env any_unauthorised
+
+  --   -- 3) Parse the postmodifier
+  --   nmodUDS <- parseOut env of_personal_data
+  --   -- TODO: add more options, if the postmodifier is not a prepositional phrase
+  --   let personal_data = peelNP nmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+
+  --   -- TODO: add more options in constructTree, depending on whether
+  --   let tree = constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data (fg amodUDS)
+  --   return tree
+
+  -- AA.All (Just (AA.PrePost the cat)) cute_fluffy_furry -> do
+  --   -- 1) Parse the actual contents. This can be
+  --   contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
+  --   let contents = disambiguateList (pgfGrammar env) contentsAmb :: [Expr]
+  --       contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
+  --       listAP = GListAP $ mapMaybe apFromUDS contentsUDS
+
+  --   -- 2) Parse the premodifier
+  --   detUDS <- parseOut env the
+  --   let theDet = peelDet detUDS
+
+  --   -- 3) Parse the postmodifier
+  --   headUDS <- parseOut env cat
+  --   let catCN = peelCN headUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+
+  --   -- Construct the final tree
+  --   let tree = constructTreeDetAPsCN listAP (LexConj "and_Conj") catCN theDet
+  --   return tree
+
+
+  -- AA.Any Nothing contents -> do
+  --   -- 1) Parse the actual contents. This can be
+  --   contentsAmb <- mapM (bsr2gfAmb env) contents :: [[Expr]]
+  --   let contents' = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
+  --       contentsUDS = map (toUDS (pgfGrammar env)) contents'        -- contents may come from UD parsing or lexicon, force them to be same type
+
+  --       -- Here we need to determine which GF type the contents are
+  --       -- TODO: what if they are different types?
+  --       potential_advs = mapMaybe advFromUDS contentsUDS
+  --       potential_aps =  mapMaybe apFromUDS contentsUDS
+  --       potential_cns = mapMaybe cnFromUDS contentsUDS
+  --       potential_dets = mapMaybe detFromUDS contentsUDS
+
+  --   -- TODO: add more options in constructTree, depending on whether
+  --   let tree = constructTreeSimple listcn (LexConj "or_Conj")
+  --   return tree
+
+  -- _ -> return dummyExpr
+
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
-    -- 1) Parse the actual contents. This can be
-    contentsAmb <- mapM (bsr2gfAmb env) access_use_copying
-    let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
-        contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
-        listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
+  -- 1) Parse the actual contents. This can be
+    -- contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
+    -- let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
+    -- contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
+    contentsUDS <- parseAndDisambiguate env access_use_copying
+    let listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
 
-        -- -- Here we need to determine which GF type the contents are
-        -- -- TODO: what if they are different types?
-        -- advs = mapMaybe advFromUDS contentsUDS
-        -- aps =  mapMaybe apFromUDS contentsUDS
-        -- cns = mapMaybe cnFromUDS contentsUDS
-        -- dets = mapMaybe detFromUDS contentsUDS
-
+-- ORIGINAL
+    -- contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
+    -- let contents = disambiguateList (pgfGrammar env) contentsAmb :: [Expr]
+    --     contentsUDS = map (toUDS (pgfGrammar env)) contents
+    --     listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
 
     -- print "contentsUDS"
     -- print $ map (showExpr . gf) contentsUDS
     -- 2) Parse the premodifier
-    premodUDS <- parseOut env any_unauthorised
+    amodUDS <- parseOut env any_unauthorised
 
     -- 3) Parse the postmodifier
-    postmodUDS <- parseOut env of_personal_data
-
+    nmodUDS <- parseOut env of_personal_data
     -- TODO: add more options, if the postmodifier is not a prepositional phrase
-    let postmod = peelNP postmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+    let personal_data = peelNP nmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
 
     -- TODO: add more options in constructTree, depending on whether
-    let tree = constructTree listcn (LexConj "or_Conj") postmod (fg premodUDS)
+    let tree = constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data (fg amodUDS)
     return tree
 
-  _ -> return dummyExpr
+parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
+parseAndDisambiguate env text = do
+  contentsAmb <- mapM (bsr2gfAmb env) text
+  let contents = disambiguateList (pgfGrammar env) contentsAmb
+  return $ map (toUDS (pgfGrammar env)) contents
 
 
-toUDS :: PGF -> Expr -> GUDS
-toUDS pgf e = case findType pgf e of
-  "UDS" -> fg e -- it's already a UDS
-  "NP" -> Groot_only (GrootN_                 (fg e))
-  "CN" -> Groot_only (GrootN_ (GMassNP        (fg e)))
-  "N"  -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
-  "AP" -> Groot_only (GrootA_          (fg e))
-  "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
-  "VP" -> Groot_only (GrootV_        (fg e))
-  "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
-  "Adv"-> Groot_only (GrootAdv_ (fg e))
-  "Det"-> Groot_only (GrootDet_ (fg e))
-  "Quant"-> Groot_only (GrootQuant_ (fg e))
-  _ -> fg dummyExpr
-
-constructTree :: GListCN -> GConj -> GNP -> GUDS -> Expr
-constructTree cns conj nmod qualUDS = finalTree
+constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr
+constructTreeAPCNsOfNP cns conj nmod qualUDS = finalTree
   where
     amod = case getRoot qualUDS of
       [] -> dummyAP
@@ -389,6 +436,21 @@ constructTree cns conj nmod qualUDS = finalTree
       Nothing -> GMassNP cn
       Just det -> GDetCN det cn
 
+
+toUDS :: PGF -> Expr -> GUDS
+toUDS pgf e = case findType pgf e of
+  "UDS" -> fg e -- it's already a UDS
+  "NP" -> Groot_only (GrootN_                 (fg e))
+  "CN" -> Groot_only (GrootN_ (GMassNP        (fg e)))
+  "N"  -> Groot_only (GrootN_ (GMassNP (GUseN (fg e))))
+  "AP" -> Groot_only (GrootA_          (fg e))
+  "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
+  "VP" -> Groot_only (GrootV_        (fg e))
+  "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
+  "Adv"-> Groot_only (GrootAdv_ (fg e))
+  "Det"-> Groot_only (GrootDet_ (fg e))
+  "Quant"-> Groot_only (GrootQuant_ (fg e))
+  _ -> fg dummyExpr
 
 -----------------------------------------------------------------------------
 -- Manipulating GF trees
@@ -410,6 +472,9 @@ peelAP ap = fromMaybe dummyAP (apFromUDS $ fg ap)
 
 peelAdv :: Expr -> GAdv
 peelAdv adv = fromMaybe dummyAdv (advFromUDS $ fg adv)
+
+-- peelDet :: Expr -> GDet
+-- peelDet det = fromMaybe dummyDet (detFromUDS $ fg det)
 
 npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of

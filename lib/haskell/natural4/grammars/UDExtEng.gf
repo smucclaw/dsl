@@ -9,6 +9,8 @@ concrete UDExtEng of UDExt = UDAppEng ** open
 
   lincat
     UDFragment = S ;
+    [UDFragment] = [S];
+
   lin
     -- : UDS -> UDFragment -> UDFragment ;
     Upon upon action =
@@ -59,6 +61,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
       let conjCN : CN = ConjCN conj cns ;
        in mkCN ap (mkCN conjCN (mkAdv possess_Prep np)) ;
 
+    
   oper
     applyDeontic : VV -> LinUDS -> LinUDS = \may,king_sing ->
       let may_sing : VP = ComplVPIVV may king_sing.pred.inf ;

@@ -4,6 +4,8 @@ abstract UDExt = UDApp ** {
 
   cat
     UDFragment ;
+    [UDFragment]{2};
+
   fun
 
     -- Compositional,

@@ -78,6 +78,9 @@ mt2text = Text.unwords
 newtype DList a = DList (Endo [a])
   deriving newtype (Semigroup, Monoid)
 
+instance Show a => Show (DList a) where
+  show = show . dlToList
+
 singeltonDL :: a -> DList a
 singeltonDL a = DList $ Endo (a:)
 

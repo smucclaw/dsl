@@ -49,7 +49,7 @@ toBoolStruct (MyLabel lab (MyLeaf x))        = Left $ "Label (" ++ show lab ++ "
 toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-expr p = makeExprParser (term p) table <?> "expression"
+expr p = debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = debugName "term p" $ do
   try (debugName "term p/1a:label directly above" $ do
         (lbl, inner) <- (,)

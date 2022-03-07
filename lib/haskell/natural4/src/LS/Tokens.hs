@@ -9,7 +9,7 @@ module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 import qualified Data.Set           as Set
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Control.Monad.Reader (asks, local)
+import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT))
 import Control.Monad.Writer.Lazy
 import Data.List (intercalate)
 
@@ -18,6 +18,7 @@ import Debug.Trace (traceM)
 import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
 import Data.Maybe (isNothing)
+import Text.Megaparsec.Debug (dbg)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -149,11 +150,18 @@ pRuleLabel = debugName "pRuleLabel" $ do
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
 
+liftedDBG :: Show a => String -> Parser a -> Parser a
+liftedDBG dname p = do
+  isDebug <- asks debug
+  if isDebug
+    then WriterT . ReaderT . (\x -> dbg dname . runReaderT x) . runWriterT $ p
+    else p
+
 debugNameP :: Show a => String -> Parser a -> Parser a
 debugNameP dname p = do
   -- debugPrint dname
   myTraceM $ "/ " <> dname
-  res <- local (increaseNestLevel dname) p
+  res <- local (increaseNestLevel dname) (liftedDBG dname p)
   myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
 

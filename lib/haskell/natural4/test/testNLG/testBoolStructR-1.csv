@@ -1,0 +1,11 @@
+// The BoolStructR is in the cond field
+// We have two items in the "contents", a Leaf and a Not (which contains a Leaf), and no Label
+// Grammatically speaking, both of the content things are full sentences.
+// My suggestion for a GF tree: add list instance for UDFragment, and make these two use it
+// Simplified example: ConjUDFragment and_Conj it_is_NBD you_arent_PA
+
+you,MUST,,,,,,,,
+,IF,,it is,an NDB,,,,,
+,UNLESS,,you are a Public Agency,,,,,,
+,,,,,,,,,
+,➔,,notify the PDPC,,,,,,

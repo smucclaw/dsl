@@ -161,7 +161,7 @@ pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
 preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  condWord <- choice (try . pToken <$> wanted)
+  condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)

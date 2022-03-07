@@ -234,6 +234,7 @@ parseFields env rl = case rl of
         DMay   -> mkCId "May"
         DShant -> mkCId "Shant"
 
+    -- NB. we assume here only structure like "before 3 months", not "before the king sings"
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
     parseTemporal env (TemporalConstraint keyword time tunit) = do
       uds <- parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
@@ -301,11 +302,11 @@ bsr2gfAmb env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
     let checkWords = length $ Text.words access
-    print "morpho"
+    putStrLn "morpho"
     print $ lookupMorpho (makeMorpho env) (Text.unpack access)
-    print "---"
-    print $ map (showExpr) (parseLex env (Text.unpack access))
-    print "***"
+    putStrLn "---"
+    print $ map showExpr (parseLex env (Text.unpack access))
+    putStrLn "***"
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
       _ -> singletonList $ parseOut env access
@@ -322,16 +323,33 @@ bsr2gf env bsr = case bsr of
     let access = rp2text rp
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
+    -- 1) Parse the actual contents. This can be
     contentsAmb <- mapM (bsr2gfAmb env) access_use_copying
     let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
         contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
-        listcn = GListCN $ mapMaybe cnFromUDS contentsUDS -- TODO: generalise to things that are not nouns
-    print "contentsUDS"
-    print $ map (showExpr . gf) contentsUDS
-    advUDS <- parseOut env of_personal_data
-    let nmod = peelNP advUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
-    qualUDS <- parseOut env any_unauthorised
-    let tree = constructTree listcn (LexConj "or_Conj") nmod (fg qualUDS)
+        listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
+
+        -- -- Here we need to determine which GF type the contents are
+        -- -- TODO: what if they are different types?
+        -- advs = mapMaybe advFromUDS contentsUDS
+        -- aps =  mapMaybe apFromUDS contentsUDS
+        -- cns = mapMaybe cnFromUDS contentsUDS
+        -- dets = mapMaybe detFromUDS contentsUDS
+
+
+    -- print "contentsUDS"
+    -- print $ map (showExpr . gf) contentsUDS
+    -- 2) Parse the premodifier
+    premodUDS <- parseOut env any_unauthorised
+
+    -- 3) Parse the postmodifier
+    postmodUDS <- parseOut env of_personal_data
+
+    -- TODO: add more options, if the postmodifier is not a prepositional phrase
+    let postmod = peelNP postmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+
+    -- TODO: add more options in constructTree, depending on whether
+    let tree = constructTree listcn (LexConj "or_Conj") postmod (fg premodUDS)
     return tree
 
   _ -> return dummyExpr
@@ -384,7 +402,7 @@ dummyAP :: GAP
 dummyAP = GStrAP (GString [])
 
 dummyAdv :: GAdv
-dummyAdv = LexAdv "now_Adv"
+dummyAdv = LexAdv "never_Adv"
 
 peelNP :: Expr -> GNP
 peelNP np = fromMaybe dummyNP (npFromUDS $ fg np)
@@ -403,8 +421,7 @@ npFromUDS x = case x of
 --  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
 
 cnFromUDS :: GUDS -> Maybe GCN
-cnFromUDS x | Just np <- npFromUDS x = np2cn np
-            | otherwise              = Nothing
+cnFromUDS x = np2cn =<< npFromUDS x
   where
     np2cn :: GNP -> Maybe GCN
     np2cn np = case np of
@@ -425,6 +442,11 @@ apFromUDS x = case x of
 advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
+  _ -> Nothing
+
+detFromUDS :: GUDS -> Maybe GDet
+detFromUDS x = case x of
+  Groot_only (GrootDet_ someDet) -> Just someDet
   _ -> Nothing
 
 getRoot :: Tree a -> [Groot]

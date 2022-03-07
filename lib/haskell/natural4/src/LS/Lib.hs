@@ -715,7 +715,7 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 -- [TODO]: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP calling exprP" $ do
-  toBoolStruct <$> exprP
+  either fail pure . toBoolStruct =<< exprP
 
 exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do

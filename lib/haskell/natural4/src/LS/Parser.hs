@@ -32,21 +32,21 @@ pBoolStruct :: Parser BoolStruct
 pBoolStruct = prePostParse pOtherVal
 
 prePostParse :: Show a => Parser a -> Parser (AA.Item a)
-prePostParse base = ppp $ toBoolStruct <$> expr base
+prePostParse base = ppp $ either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: Show a => MyBoolStruct a -> AA.Item a
-toBoolStruct (MyLeaf txt) = AA.Leaf txt
-toBoolStruct (MyLabel lab (MyAll xs)) = AA.All (Just (AA.Pre (Text.unwords lab))) (map toBoolStruct xs)
-toBoolStruct (MyLabel lab (MyAny xs)) = AA.Any (Just (AA.Pre (Text.unwords lab))) (map toBoolStruct xs)
-toBoolStruct (MyAll mis) = AA.All Nothing (map toBoolStruct mis)
-toBoolStruct (MyAny mis) = AA.Any Nothing (map toBoolStruct mis)
-toBoolStruct (MyNot mi') = AA.Not (toBoolStruct mi')
-toBoolStruct (MyLabel  lab (MyLabel lab2 x)) = toBoolStruct (MyLabel (lab <> lab2) x)
-toBoolStruct (MyLabel _lab (MyLeaf x)) = toBoolStruct (MyLeaf x)
-toBoolStruct (MyLabel _lab (MyNot x)) = AA.Not $ toBoolStruct x
+toBoolStruct :: Show a => MyBoolStruct a -> Either String (AA.Item a)
+toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
+toBoolStruct (MyLabel lab (MyAll xs))        = AA.All (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel lab (MyAny xs))        = AA.Any (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
+toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
+toBoolStruct (MyLabel lab (MyLabel lab2 _x)) = Left $ "Label (" ++ show lab ++ ") followed by label (" ++ show lab2 ++ ") is not allowed"
+toBoolStruct (MyLabel lab (MyLeaf x))        = Left $ "Label (" ++ show lab ++ ") followed by leaf (" ++ show x ++ ") is not allowed"
+toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = makeExprParser (term p) table <?> "expression"

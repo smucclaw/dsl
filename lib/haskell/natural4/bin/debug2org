@@ -35,7 +35,7 @@ for (@input) {
 EOPROPERTIES
   }
 
-  my $wantOutputPrefix = /^(\d+)_(\d+)/;
+  my $wantOutputPrefix = /^(\d+)_(\d+)|^EOF/;
   my $prefix = substr($_, 0, $prefix_length);
   my $rhs = substr($_, $prefix_length);
   
@@ -63,7 +63,7 @@ EOPROPERTIES
   }
 
   my ($row,$col) = $prefix =~ /^(\d+)_(\d+)/;
-
+  
   my $indent = ($col - 1) * 2 + ($prefix =~ /GoDeeper/ ? -1 :
                                  $prefix =~ /UnDeeper/ ? 1
                                  : 0);
@@ -72,6 +72,7 @@ EOPROPERTIES
   my $spacing = 120 - length($outlhs) - $numpipes + $indent;
      $prefix =~ s/ +$//;
   my $out = $outlhs . " " x $spacing . " :$prefix:";
+
   if ($wantOutputPrefix) {
     print $out, "\n";
   } else {

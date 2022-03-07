@@ -52,8 +52,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
        in Se.ExtAdvS cond_Adv (Upon upon king) ;
 
     CondGiven cond given king =
-      let cond_Adv : Adv = SyntaxEng.mkAdv
-       in Se.AdvS (conditionsHold king)
+      Se.AdvS (conditionsHold king) (makeList cond given);
 
     -- : AP -> Conj -> [CN] -> NP -> CN ; -- unauthorised access or copying of personal data
     CN_AP_Conj_CNs_of_NP ap conj cns np =
@@ -76,8 +75,17 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     udsToS : LinUDS -> S = \given ->
       PredVPS given.subj given.pred.fin ;
 
-    conditionsHold : UDFragment -> UDFragment = \king ->
-      king + "if the following conditions hold:"
+    conditionsHold : UDFragment -> UDFragment = \king -> king ** -- extends the type
+      cc2 king (ss "if the following conditions hold") ; --cc2 : SS -> SS -> SS ; ss : Str -> SS
+ --  lin S {s = king.s ++ "if the following conditions hold"}
+  -- {s = king.s ++ "if the following conditions hold" ; lock_S = <>}
+
+    addBullet : S -> S = \s -> s ** {s = "\\*" ++ s.s} ;
+
+    makeList : UDS -> UDS -> S = \uds1,uds2 ->
+      mkS emptyConj (mkListS (addBullet (udsToS uds1)) (addBullet (udsToS uds2))) ;
+
+    emptyConj : Conj = and_Conj ** {s1,s2 = ""} ;
 
   lin
 -- Aarne

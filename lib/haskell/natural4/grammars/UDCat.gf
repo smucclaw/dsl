@@ -3,6 +3,7 @@
 abstract UDCat = BareRG ** {
 	cat
         UDS ;
+        [UDS]{2} ;
         acl ;
         aclRelcl ;
         advcl ;

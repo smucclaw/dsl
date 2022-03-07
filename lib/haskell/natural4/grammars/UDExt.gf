@@ -33,7 +33,7 @@ abstract UDExt = UDApp ** {
 
     CondGiven : (cond, given : UDS) -> (king_must_sing: UDFragment) -> UDFragment ;
     -- [the king must sing], if the following conditions hold:
-      -- * the prime minister is happy,  upon opening the door.
+      -- * the prime minister is happy, the door is open.
 
     -- CondGivenTemporal : (cond, given, temp : UDS) -> (king_must_sing : UDFragment) -> UDFragment ;
 

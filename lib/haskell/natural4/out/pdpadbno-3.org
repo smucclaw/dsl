@@ -167,7 +167,7 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=4:
 pNumAsText> unexpected Aka
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Other "Data Intermediary" GoDeeper Aka G <…>
 someSL> MATCH (COK): Other "Data Intermediary"
@@ -401,62 +401,6 @@ labelPrefix> unexpected GoDeeper
 labelPrefix> expecting Other text
 
 ************ / term p                                                                                         :2_2:GoDeeper:
-************* / term p/1a:label directly above                                                               :2_2:GoDeeper:
-************** / $*|                                                                                        :2_2:GoDeeper:
-*************** / someSL                                                                                   :2_2:GoDeeper:
-**************** / pNumAsText                                                                             :2_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "processes personal data  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "processes personal data  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=11:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "processes personal data  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=11:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "processes personal data  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=11:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-************* / term p/b:label to the left of line below, with EOL                                           :2_2:GoDeeper:
-************** / someSL                                                                                     :2_2:GoDeeper:
-*************** / pNumAsText                                                                               :2_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "processes personal data  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "processes personal data  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=11:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "processes personal data  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=11:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ************* / term p/notLabelTerm                                                                          :2_2:GoDeeper:
 ************** / term p/2:someIndentation expr p                                                            :2_2:GoDeeper:
 *************** / someIndentation                                                                          :2_2:GoDeeper:
@@ -476,66 +420,6 @@ labelPrefix> offset=13:
 labelPrefix> unexpected UnDeeper
 
 ****************** / term p                                                                              :2_2:Other "proc:
-******************* / term p/1a:label directly above                                                    :2_2:Other "proc:
-******************** / $*|                                                                             :2_2:Other "proc:
-********************* / someSL                                                                        :2_2:Other "proc:
-someSL> IN: Other "processes personal data on behalf <…>
-someSL> MATCH (COK): Other "processes personal data on behalf <…>
-someSL> VALUE: ((["processes personal data on behalf of and for the purposes of a public agency"],0),[])
-
-********************* \ someSL has returned (["processes personal data on behalf of and for the purposes of a public agency"],0) :3_2:UnDeeper:
-********************* / pNumAsText                                                                     :3_2:UnDeeper:
-pNumAsText> IN: UnDeeper Must GoDeeper Other "without un <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=13:
-pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
-
-$*|> IN: Other "processes personal data on behalf <…>
-$*|> MATCH (CERR): Other "processes personal data on behalf <…>
-$*|> ERROR:
-$*|> offset=13:
-$*|> unexpected UnDeeper
-$*|> expecting GoDeeper, Other text, or TNumber 1234
-
-term p/1a:label directly above> IN: Other "processes personal data on behalf <…>
-term p/1a:label directly above> MATCH (CERR): Other "processes personal data on behalf <…>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=13:
-term p/1a:label directly above> unexpected UnDeeper
-term p/1a:label directly above> expecting GoDeeper, Other text, or TNumber 1234
-
-******************* / term p/b:label to the left of line below, with EOL                                :2_2:Other "proc:
-******************** / someSL                                                                          :2_2:Other "proc:
-someSL> IN: Other "processes personal data on behalf <…>
-someSL> MATCH (COK): Other "processes personal data on behalf <…>
-someSL> VALUE: ((["processes personal data on behalf of and for the purposes of a public agency"],0),[])
-
-******************** \ someSL has returned (["processes personal data on behalf of and for the purposes of a public agency"],0) :3_2:UnDeeper:
-******************** / undeepers                                                                        :3_2:UnDeeper:
-********************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers         :3_2:UnDeeper:
-********************* > sameLine: success!                                                             :3_2:UnDeeper:
-undeepers> IN: UnDeeper Must GoDeeper Other "without un <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-******************** \ undeepers has returned ()                                                        :3_2:UnDeeper:
-******************** / matching EOL                                                                     :3_2:UnDeeper:
-matching EOL> IN: UnDeeper Must GoDeeper Other "without un <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=13:
-matching EOL> unexpected UnDeeper
-matching EOL> expecting EOL
-
-term p/b:label to the left of line below, with EOL> IN: Other "processes personal data on behalf <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): Other "processes personal data on behalf <…>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=13:
-term p/b:label to the left of line below, with EOL> unexpected UnDeeper
-term p/b:label to the left of line below, with EOL> expecting EOL or GoDeeper
-
 ******************* / term p/notLabelTerm                                                               :2_2:Other "proc:
 ******************** / term p/2:someIndentation expr p                                                 :2_2:Other "proc:
 ********************* / someIndentation                                                               :2_2:Other "proc:
@@ -1486,56 +1370,56 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=21:
 pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=21:
 someSL> unexpected UnDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=21:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=21:
 slKeyValues> unexpected UnDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=21:
 slAKA base> unexpected UnDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=21:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=21:
 slAKA> unexpected UnDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=21:
 pKeyValuesAka> unexpected UnDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 sameMany> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 sameMany> MATCH (EOK): <EMPTY>
@@ -1678,62 +1562,6 @@ labelPrefix> unexpected GoDeeper
 labelPrefix> expecting Other text
 
 ************ / term p                                                                                         :5_2:GoDeeper:
-************* / term p/1a:label directly above                                                               :5_2:GoDeeper:
-************** / $*|                                                                                        :5_2:GoDeeper:
-*************** / someSL                                                                                   :5_2:GoDeeper:
-**************** / pNumAsText                                                                             :5_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=23:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=23:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=23:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=23:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-************* / term p/b:label to the left of line below, with EOL                                           :5_2:GoDeeper:
-************** / someSL                                                                                     :5_2:GoDeeper:
-*************** / pNumAsText                                                                               :5_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=23:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=23:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=23:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ************* / term p/notLabelTerm                                                                          :5_2:GoDeeper:
 ************** / term p/2:someIndentation expr p                                                            :5_2:GoDeeper:
 *************** / someIndentation                                                                          :5_2:GoDeeper:
@@ -1752,62 +1580,6 @@ labelPrefix> VALUE: ("NOTIFY",[])
 
 ****************** \ labelPrefix has returned "NOTIFY"                                                    :5_3:GoDeeper:
 ****************** / term p                                                                               :5_3:GoDeeper:
-******************* / term p/1a:label directly above                                                     :5_3:GoDeeper:
-******************** / $*|                                                                              :5_3:GoDeeper:
-********************* / someSL                                                                         :5_3:GoDeeper:
-********************** / pNumAsText                                                                   :5_3:GoDeeper:
-pNumAsText> IN: GoDeeper Other "the Public Agency" UnDee <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=25:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=25:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "the Public Agency" UnDee <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=25:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "the Public Agency" UnDee <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=25:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-******************* / term p/b:label to the left of line below, with EOL                                 :5_3:GoDeeper:
-******************** / someSL                                                                           :5_3:GoDeeper:
-********************* / pNumAsText                                                                     :5_3:GoDeeper:
-pNumAsText> IN: GoDeeper Other "the Public Agency" UnDee <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=25:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=25:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=25:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ******************* / term p/notLabelTerm                                                                :5_3:GoDeeper:
 ******************** / term p/2:someIndentation expr p                                                  :5_3:GoDeeper:
 ********************* / someIndentation                                                                :5_3:GoDeeper:
@@ -1827,66 +1599,6 @@ labelPrefix> offset=27:
 labelPrefix> unexpected UnDeeper
 
 ************************ / term p                                                                    :5_3:Other "the:
-************************* / term p/1a:label directly above                                          :5_3:Other "the:
-************************** / $*|                                                                   :5_3:Other "the:
-*************************** / someSL                                                              :5_3:Other "the:
-someSL> IN: Other "the Public Agency" UnDeeper Other <…>
-someSL> MATCH (COK): Other "the Public Agency"
-someSL> VALUE: ((["the Public Agency"],0),[])
-
-*************************** \ someSL has returned (["the Public Agency"],0)                        :6_3:UnDeeper:
-*************************** / pNumAsText                                                           :6_3:UnDeeper:
-pNumAsText> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=27:
-pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
-
-$*|> IN: Other "the Public Agency" UnDeeper Other <…>
-$*|> MATCH (CERR): Other "the Public Agency"
-$*|> ERROR:
-$*|> offset=27:
-$*|> unexpected UnDeeper
-$*|> expecting GoDeeper, Other text, or TNumber 1234
-
-term p/1a:label directly above> IN: Other "the Public Agency" UnDeeper Other <…>
-term p/1a:label directly above> MATCH (CERR): Other "the Public Agency"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=27:
-term p/1a:label directly above> unexpected UnDeeper
-term p/1a:label directly above> expecting GoDeeper, Other text, or TNumber 1234
-
-************************* / term p/b:label to the left of line below, with EOL                      :5_3:Other "the:
-************************** / someSL                                                                :5_3:Other "the:
-someSL> IN: Other "the Public Agency" UnDeeper Other <…>
-someSL> MATCH (COK): Other "the Public Agency"
-someSL> VALUE: ((["the Public Agency"],0),[])
-
-************************** \ someSL has returned (["the Public Agency"],0)                          :6_3:UnDeeper:
-************************** / undeepers                                                              :6_3:UnDeeper:
-*************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :6_3:UnDeeper:
-*************************** > sameLine: success!                                                   :6_3:UnDeeper:
-undeepers> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-************************** \ undeepers has returned ()                                              :6_3:UnDeeper:
-************************** / matching EOL                                                           :6_3:UnDeeper:
-matching EOL> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=27:
-matching EOL> unexpected UnDeeper
-matching EOL> expecting EOL
-
-term p/b:label to the left of line below, with EOL> IN: Other "the Public Agency" UnDeeper Other <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): Other "the Public Agency"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=27:
-term p/b:label to the left of line below, with EOL> unexpected UnDeeper
-term p/b:label to the left of line below, with EOL> expecting EOL or GoDeeper
-
 ************************* / term p/notLabelTerm                                                     :5_3:Other "the:
 ************************** / term p/2:someIndentation expr p                                       :5_3:Other "the:
 *************************** / someIndentation                                                     :5_3:Other "the:
@@ -2167,56 +1879,56 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=27:
 pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=27:
 someSL> unexpected UnDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=27:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=27:
 slKeyValues> unexpected UnDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=27:
 slAKA base> unexpected UnDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=27:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=27:
 slAKA> unexpected UnDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=27:
 pKeyValuesAka> unexpected UnDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 sameMany> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 sameMany> MATCH (EOK): <EMPTY>
@@ -2401,77 +2113,77 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=23:
 pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=23:
 someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=23:
 $*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=23:
 slKeyValues> unexpected GoDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=23:
 slAKA base> unexpected GoDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=23:
 $*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=23:
 slAKA> unexpected GoDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=23:
 pKeyValuesAka> unexpected GoDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 pParamText(flat) first line: pKeyValues> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
 pParamText(flat) first line: pKeyValues> ERROR:
 pParamText(flat) first line: pKeyValues> offset=23:
 pParamText(flat) first line: pKeyValues> unexpected GoDeeper
-pParamText(flat) first line: pKeyValues> expecting Other text or TNumber 1234
+pParamText(flat) first line: pKeyValues> expecting other text or number
 
 pParamText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pParamText> MATCH (EERR): <EMPTY>
 pParamText> ERROR:
 pParamText> offset=23:
 pParamText> unexpected GoDeeper
-pParamText> expecting Other text or TNumber 1234
+pParamText> expecting other text or number
 
 term p/3:plain p> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=23:
 term p/3:plain p> unexpected GoDeeper
-term p/3:plain p> expecting Other text or TNumber 1234
+term p/3:plain p> expecting other text or number
 
 term p/notLabelTerm> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
@@ -2656,7 +2368,7 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=4:
 pNumAsText> unexpected Aka
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Other "Data Intermediary" GoDeeper Aka G <…>
 someSL> MATCH (COK): Other "Data Intermediary"
@@ -2890,62 +2602,6 @@ labelPrefix> unexpected GoDeeper
 labelPrefix> expecting Other text
 
 ************ / term p                                                                                         :2_2:GoDeeper:
-************* / term p/1a:label directly above                                                               :2_2:GoDeeper:
-************** / $*|                                                                                        :2_2:GoDeeper:
-*************** / someSL                                                                                   :2_2:GoDeeper:
-**************** / pNumAsText                                                                             :2_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "processes personal data  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "processes personal data  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=11:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "processes personal data  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=11:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "processes personal data  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=11:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-************* / term p/b:label to the left of line below, with EOL                                           :2_2:GoDeeper:
-************** / someSL                                                                                     :2_2:GoDeeper:
-*************** / pNumAsText                                                                               :2_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "processes personal data  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "processes personal data  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=11:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "processes personal data  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=11:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ************* / term p/notLabelTerm                                                                          :2_2:GoDeeper:
 ************** / term p/2:someIndentation expr p                                                            :2_2:GoDeeper:
 *************** / someIndentation                                                                          :2_2:GoDeeper:
@@ -2965,66 +2621,6 @@ labelPrefix> offset=13:
 labelPrefix> unexpected UnDeeper
 
 ****************** / term p                                                                              :2_2:Other "proc:
-******************* / term p/1a:label directly above                                                    :2_2:Other "proc:
-******************** / $*|                                                                             :2_2:Other "proc:
-********************* / someSL                                                                        :2_2:Other "proc:
-someSL> IN: Other "processes personal data on behalf <…>
-someSL> MATCH (COK): Other "processes personal data on behalf <…>
-someSL> VALUE: ((["processes personal data on behalf of and for the purposes of a public agency"],0),[])
-
-********************* \ someSL has returned (["processes personal data on behalf of and for the purposes of a public agency"],0) :3_2:UnDeeper:
-********************* / pNumAsText                                                                     :3_2:UnDeeper:
-pNumAsText> IN: UnDeeper Must GoDeeper Other "without un <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=13:
-pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
-
-$*|> IN: Other "processes personal data on behalf <…>
-$*|> MATCH (CERR): Other "processes personal data on behalf <…>
-$*|> ERROR:
-$*|> offset=13:
-$*|> unexpected UnDeeper
-$*|> expecting GoDeeper, Other text, or TNumber 1234
-
-term p/1a:label directly above> IN: Other "processes personal data on behalf <…>
-term p/1a:label directly above> MATCH (CERR): Other "processes personal data on behalf <…>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=13:
-term p/1a:label directly above> unexpected UnDeeper
-term p/1a:label directly above> expecting GoDeeper, Other text, or TNumber 1234
-
-******************* / term p/b:label to the left of line below, with EOL                                :2_2:Other "proc:
-******************** / someSL                                                                          :2_2:Other "proc:
-someSL> IN: Other "processes personal data on behalf <…>
-someSL> MATCH (COK): Other "processes personal data on behalf <…>
-someSL> VALUE: ((["processes personal data on behalf of and for the purposes of a public agency"],0),[])
-
-******************** \ someSL has returned (["processes personal data on behalf of and for the purposes of a public agency"],0) :3_2:UnDeeper:
-******************** / undeepers                                                                        :3_2:UnDeeper:
-********************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers         :3_2:UnDeeper:
-********************* > sameLine: success!                                                             :3_2:UnDeeper:
-undeepers> IN: UnDeeper Must GoDeeper Other "without un <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-******************** \ undeepers has returned ()                                                        :3_2:UnDeeper:
-******************** / matching EOL                                                                     :3_2:UnDeeper:
-matching EOL> IN: UnDeeper Must GoDeeper Other "without un <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=13:
-matching EOL> unexpected UnDeeper
-matching EOL> expecting EOL
-
-term p/b:label to the left of line below, with EOL> IN: Other "processes personal data on behalf <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): Other "processes personal data on behalf <…>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=13:
-term p/b:label to the left of line below, with EOL> unexpected UnDeeper
-term p/b:label to the left of line below, with EOL> expecting EOL or GoDeeper
-
 ******************* / term p/notLabelTerm                                                               :2_2:Other "proc:
 ******************** / term p/2:someIndentation expr p                                                 :2_2:Other "proc:
 ********************* / someIndentation                                                               :2_2:Other "proc:
@@ -3632,62 +3228,6 @@ labelPrefix> unexpected GoDeeper
 labelPrefix> expecting Other text
 
 ************ / term p                                                                                         :3_2:GoDeeper:
-************* / term p/1a:label directly above                                                               :3_2:GoDeeper:
-************** / $*|                                                                                        :3_2:GoDeeper:
-*************** / someSL                                                                                   :3_2:GoDeeper:
-**************** / pNumAsText                                                                             :3_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "without undue delay" UnD <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=15:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "without undue delay" UnD <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=15:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "without undue delay" UnD <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=15:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "without undue delay" UnD <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=15:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-************* / term p/b:label to the left of line below, with EOL                                           :3_2:GoDeeper:
-************** / someSL                                                                                     :3_2:GoDeeper:
-*************** / pNumAsText                                                                               :3_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "without undue delay" UnD <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=15:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "without undue delay" UnD <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=15:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "without undue delay" UnD <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=15:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ************* / term p/notLabelTerm                                                                          :3_2:GoDeeper:
 ************** / term p/2:someIndentation expr p                                                            :3_2:GoDeeper:
 *************** / someIndentation                                                                          :3_2:GoDeeper:
@@ -3707,66 +3247,6 @@ labelPrefix> offset=17:
 labelPrefix> unexpected UnDeeper
 
 ****************** / term p                                                                              :3_2:Other "with:
-******************* / term p/1a:label directly above                                                    :3_2:Other "with:
-******************** / $*|                                                                             :3_2:Other "with:
-********************* / someSL                                                                        :3_2:Other "with:
-someSL> IN: Other "without undue delay" UnDeeper Upo <…>
-someSL> MATCH (COK): Other "without undue delay"
-someSL> VALUE: ((["without undue delay"],0),[])
-
-********************* \ someSL has returned (["without undue delay"],0)                                :4_2:UnDeeper:
-********************* / pNumAsText                                                                     :4_2:UnDeeper:
-pNumAsText> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=17:
-pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
-
-$*|> IN: Other "without undue delay" UnDeeper Upo <…>
-$*|> MATCH (CERR): Other "without undue delay"
-$*|> ERROR:
-$*|> offset=17:
-$*|> unexpected UnDeeper
-$*|> expecting GoDeeper, Other text, or TNumber 1234
-
-term p/1a:label directly above> IN: Other "without undue delay" UnDeeper Upo <…>
-term p/1a:label directly above> MATCH (CERR): Other "without undue delay"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=17:
-term p/1a:label directly above> unexpected UnDeeper
-term p/1a:label directly above> expecting GoDeeper, Other text, or TNumber 1234
-
-******************* / term p/b:label to the left of line below, with EOL                                :3_2:Other "with:
-******************** / someSL                                                                          :3_2:Other "with:
-someSL> IN: Other "without undue delay" UnDeeper Upo <…>
-someSL> MATCH (COK): Other "without undue delay"
-someSL> VALUE: ((["without undue delay"],0),[])
-
-******************** \ someSL has returned (["without undue delay"],0)                                  :4_2:UnDeeper:
-******************** / undeepers                                                                        :4_2:UnDeeper:
-********************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers         :4_2:UnDeeper:
-********************* > sameLine: success!                                                             :4_2:UnDeeper:
-undeepers> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-******************** \ undeepers has returned ()                                                        :4_2:UnDeeper:
-******************** / matching EOL                                                                     :4_2:UnDeeper:
-matching EOL> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=17:
-matching EOL> unexpected UnDeeper
-matching EOL> expecting EOL
-
-term p/b:label to the left of line below, with EOL> IN: Other "without undue delay" UnDeeper Upo <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): Other "without undue delay"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=17:
-term p/b:label to the left of line below, with EOL> unexpected UnDeeper
-term p/b:label to the left of line below, with EOL> expecting EOL or GoDeeper
-
 ******************* / term p/notLabelTerm                                                               :3_2:Other "with:
 ******************** / term p/2:someIndentation expr p                                                 :3_2:Other "with:
 ********************* / someIndentation                                                               :3_2:Other "with:
@@ -4047,56 +3527,56 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=17:
 pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=17:
 someSL> unexpected UnDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=17:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=17:
 slKeyValues> unexpected UnDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=17:
 slAKA base> unexpected UnDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=17:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=17:
 slAKA> unexpected UnDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=17:
 pKeyValuesAka> unexpected UnDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 sameMany> IN: UnDeeper Upon GoDeeper Other "becoming a <…>
 sameMany> MATCH (EOK): <EMPTY>
@@ -4570,56 +4050,56 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=21:
 pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=21:
 someSL> unexpected UnDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=21:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=21:
 slKeyValues> unexpected UnDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=21:
 slAKA base> unexpected UnDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=21:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=21:
 slAKA> unexpected UnDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=21:
 pKeyValuesAka> unexpected UnDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 sameMany> IN: UnDeeper Do GoDeeper Other "NOTIFY" GoDe <…>
 sameMany> MATCH (EOK): <EMPTY>
@@ -4980,62 +4460,6 @@ labelPrefix> unexpected GoDeeper
 labelPrefix> expecting Other text
 
 ************ / term p                                                                                         :5_2:GoDeeper:
-************* / term p/1a:label directly above                                                               :5_2:GoDeeper:
-************** / $*|                                                                                        :5_2:GoDeeper:
-*************** / someSL                                                                                   :5_2:GoDeeper:
-**************** / pNumAsText                                                                             :5_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=23:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=23:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=23:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=23:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-************* / term p/b:label to the left of line below, with EOL                                           :5_2:GoDeeper:
-************** / someSL                                                                                     :5_2:GoDeeper:
-*************** / pNumAsText                                                                               :5_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=23:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=23:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=23:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ************* / term p/notLabelTerm                                                                          :5_2:GoDeeper:
 ************** / term p/2:someIndentation expr p                                                            :5_2:GoDeeper:
 *************** / someIndentation                                                                          :5_2:GoDeeper:
@@ -5054,62 +4478,6 @@ labelPrefix> VALUE: ("NOTIFY",[])
 
 ****************** \ labelPrefix has returned "NOTIFY"                                                    :5_3:GoDeeper:
 ****************** / term p                                                                               :5_3:GoDeeper:
-******************* / term p/1a:label directly above                                                     :5_3:GoDeeper:
-******************** / $*|                                                                              :5_3:GoDeeper:
-********************* / someSL                                                                         :5_3:GoDeeper:
-********************** / pNumAsText                                                                   :5_3:GoDeeper:
-pNumAsText> IN: GoDeeper Other "the Public Agency" UnDee <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=25:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=25:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-$*|> IN: GoDeeper Other "the Public Agency" UnDee <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=25:
-$*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
-
-term p/1a:label directly above> IN: GoDeeper Other "the Public Agency" UnDee <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=25:
-term p/1a:label directly above> unexpected GoDeeper
-term p/1a:label directly above> expecting Other text or TNumber 1234
-
-******************* / term p/b:label to the left of line below, with EOL                                 :5_3:GoDeeper:
-******************** / someSL                                                                           :5_3:GoDeeper:
-********************* / pNumAsText                                                                     :5_3:GoDeeper:
-pNumAsText> IN: GoDeeper Other "the Public Agency" UnDee <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=25:
-pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
-
-someSL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=25:
-someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
-
-term p/b:label to the left of line below, with EOL> IN: GoDeeper Other "the Public Agency" UnDee <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=25:
-term p/b:label to the left of line below, with EOL> unexpected GoDeeper
-term p/b:label to the left of line below, with EOL> expecting Other text or TNumber 1234
-
 ******************* / term p/notLabelTerm                                                                :5_3:GoDeeper:
 ******************** / term p/2:someIndentation expr p                                                  :5_3:GoDeeper:
 ********************* / someIndentation                                                                :5_3:GoDeeper:
@@ -5129,66 +4497,6 @@ labelPrefix> offset=27:
 labelPrefix> unexpected UnDeeper
 
 ************************ / term p                                                                    :5_3:Other "the:
-************************* / term p/1a:label directly above                                          :5_3:Other "the:
-************************** / $*|                                                                   :5_3:Other "the:
-*************************** / someSL                                                              :5_3:Other "the:
-someSL> IN: Other "the Public Agency" UnDeeper Other <…>
-someSL> MATCH (COK): Other "the Public Agency"
-someSL> VALUE: ((["the Public Agency"],0),[])
-
-*************************** \ someSL has returned (["the Public Agency"],0)                        :6_3:UnDeeper:
-*************************** / pNumAsText                                                           :6_3:UnDeeper:
-pNumAsText> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=27:
-pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
-
-$*|> IN: Other "the Public Agency" UnDeeper Other <…>
-$*|> MATCH (CERR): Other "the Public Agency"
-$*|> ERROR:
-$*|> offset=27:
-$*|> unexpected UnDeeper
-$*|> expecting GoDeeper, Other text, or TNumber 1234
-
-term p/1a:label directly above> IN: Other "the Public Agency" UnDeeper Other <…>
-term p/1a:label directly above> MATCH (CERR): Other "the Public Agency"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=27:
-term p/1a:label directly above> unexpected UnDeeper
-term p/1a:label directly above> expecting GoDeeper, Other text, or TNumber 1234
-
-************************* / term p/b:label to the left of line below, with EOL                      :5_3:Other "the:
-************************** / someSL                                                                :5_3:Other "the:
-someSL> IN: Other "the Public Agency" UnDeeper Other <…>
-someSL> MATCH (COK): Other "the Public Agency"
-someSL> VALUE: ((["the Public Agency"],0),[])
-
-************************** \ someSL has returned (["the Public Agency"],0)                          :6_3:UnDeeper:
-************************** / undeepers                                                              :6_3:UnDeeper:
-*************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :6_3:UnDeeper:
-*************************** > sameLine: success!                                                   :6_3:UnDeeper:
-undeepers> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-************************** \ undeepers has returned ()                                              :6_3:UnDeeper:
-************************** / matching EOL                                                           :6_3:UnDeeper:
-matching EOL> IN: UnDeeper Other "for which" GoDeeper Othe <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=27:
-matching EOL> unexpected UnDeeper
-matching EOL> expecting EOL
-
-term p/b:label to the left of line below, with EOL> IN: Other "the Public Agency" UnDeeper Other <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): Other "the Public Agency"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=27:
-term p/b:label to the left of line below, with EOL> unexpected UnDeeper
-term p/b:label to the left of line below, with EOL> expecting EOL or GoDeeper
-
 ************************* / term p/notLabelTerm                                                     :5_3:Other "the:
 ************************** / term p/2:someIndentation expr p                                       :5_3:Other "the:
 *************************** / someIndentation                                                     :5_3:Other "the:
@@ -5469,56 +4777,56 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=27:
 pNumAsText> unexpected UnDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=27:
 someSL> unexpected UnDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=27:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=27:
 slKeyValues> unexpected UnDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=27:
 slAKA base> unexpected UnDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=27:
 $*|> unexpected UnDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=27:
 slAKA> unexpected UnDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=27:
 pKeyValuesAka> unexpected UnDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 sameMany> IN: UnDeeper Other "for which" GoDeeper Othe <…>
 sameMany> MATCH (EOK): <EMPTY>
@@ -5703,77 +5011,77 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=23:
 pNumAsText> unexpected GoDeeper
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=23:
 someSL> unexpected GoDeeper
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 $*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=23:
 $*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slKeyValues> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=23:
 slKeyValues> unexpected GoDeeper
-slKeyValues> expecting Other text or TNumber 1234
+slKeyValues> expecting other text or number
 
 slAKA base> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=23:
 slAKA base> unexpected GoDeeper
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=23:
 $*|> unexpected GoDeeper
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=23:
 slAKA> unexpected GoDeeper
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pKeyValuesAka> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=23:
 pKeyValuesAka> unexpected GoDeeper
-pKeyValuesAka> expecting Other text or TNumber 1234
+pKeyValuesAka> expecting other text or number
 
 pParamText(flat) first line: pKeyValues> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
 pParamText(flat) first line: pKeyValues> ERROR:
 pParamText(flat) first line: pKeyValues> offset=23:
 pParamText(flat) first line: pKeyValues> unexpected GoDeeper
-pParamText(flat) first line: pKeyValues> expecting Other text or TNumber 1234
+pParamText(flat) first line: pKeyValues> expecting other text or number
 
 pParamText> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 pParamText> MATCH (EERR): <EMPTY>
 pParamText> ERROR:
 pParamText> offset=23:
 pParamText> unexpected GoDeeper
-pParamText> expecting Other text or TNumber 1234
+pParamText> expecting other text or number
 
 term p/3:plain p> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=23:
 term p/3:plain p> unexpected GoDeeper
-term p/3:plain p> expecting Other text or TNumber 1234
+term p/3:plain p> expecting other text or number
 
 term p/notLabelTerm> IN: GoDeeper Other "NOTIFY" GoDeeper Other " <…>
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
@@ -6084,63 +5392,63 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 pAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pAKA> MATCH (EERR): <EMPTY>
 pAKA> ERROR:
 pAKA> offset=22:
 pAKA> unexpected Do
-pAKA> expecting Other text or TNumber 1234
+pAKA> expecting other text or number
 
 pMultiTermAka> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pMultiTermAka> MATCH (EERR): <EMPTY>
 pMultiTermAka> ERROR:
 pMultiTermAka> offset=22:
 pMultiTermAka> unexpected Do
-pMultiTermAka> expecting Other text or TNumber 1234
+pMultiTermAka> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ***** / manyIndentation/deeper; calling someIndentation                                                             :5_1:Do:
 ****** / someIndentation                                                                                           :5_1:Do:
@@ -6171,14 +5479,14 @@ calling myindented pNameParens> MATCH (EERR): <EMPTY>
 calling myindented pNameParens> ERROR:
 calling myindented pNameParens> offset=22:
 calling myindented pNameParens> unexpected Do
-calling myindented pNameParens> expecting GoDeeper, Other text, or TNumber 1234
+calling myindented pNameParens> expecting GoDeeper or other text or number
 
 pConstitutiveRule> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pConstitutiveRule> MATCH (EERR): <EMPTY>
 pConstitutiveRule> ERROR:
 pConstitutiveRule> offset=22:
 pConstitutiveRule> unexpected Do
-pConstitutiveRule> expecting GoDeeper, Other text, RuleMarker 1 "\167", or TNumber 1234
+pConstitutiveRule> expecting GoDeeper, RuleMarker 1 "\167", or other text or number
 
 *** / pScenarioRule                                                                                                   :5_1:Do:
 **** / pRuleLabel                                                                                                    :5_1:Do:
@@ -6391,35 +5699,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ************* / RPConstraint                                                                                :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -6431,35 +5739,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ************* / RPBoolStructR                                                                               :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -6471,35 +5779,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ************* / RPMT                                                                                        :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -6514,98 +5822,98 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 pRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=22:
 pRelPred> unexpected Do
-pRelPred> expecting Other text or TNumber 1234
+pRelPred> expecting other text or number
 
 optIndented> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndented> MATCH (EERR): <EMPTY>
 optIndented> ERROR:
 optIndented> offset=22:
 optIndented> unexpected Do
-optIndented> expecting Other text or TNumber 1234
+optIndented> expecting other text or number
 
 optIndentedTuple> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndentedTuple> MATCH (EERR): <EMPTY>
 optIndentedTuple> ERROR:
 optIndentedTuple> offset=22:
 optIndentedTuple> unexpected Do
-optIndentedTuple> expecting Other text or TNumber 1234
+optIndentedTuple> expecting other text or number
 
 pRelPred optIndentedTuple whenCase> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred optIndentedTuple whenCase> MATCH (EERR): <EMPTY>
 pRelPred optIndentedTuple whenCase> ERROR:
 pRelPred optIndentedTuple whenCase> offset=22:
 pRelPred optIndentedTuple whenCase> unexpected Do
-pRelPred optIndentedTuple whenCase> expecting Other text or TNumber 1234
+pRelPred optIndentedTuple whenCase> expecting other text or number
 
 relPredNextlineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredNextlineWhen> MATCH (EERR): <EMPTY>
 relPredNextlineWhen> ERROR:
 relPredNextlineWhen> offset=22:
 relPredNextlineWhen> unexpected Do
-relPredNextlineWhen> expecting Other text or TNumber 1234
+relPredNextlineWhen> expecting other text or number
 
 ******* / relPredSamelineWhen                                                                                     :5_1:Do:
 ******** / $*|                                                                                                   :5_1:Do:
@@ -6621,35 +5929,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                      :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -6661,35 +5969,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                     :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -6701,35 +6009,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                              :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -6744,84 +6052,84 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 relPredSamelineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredSamelineWhen> MATCH (EERR): <EMPTY>
 relPredSamelineWhen> ERROR:
 relPredSamelineWhen> offset=22:
 relPredSamelineWhen> unexpected Do
-relPredSamelineWhen> expecting Other text or TNumber 1234
+relPredSamelineWhen> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ****** / manyIndentation/deeper; calling someIndentation                                                           :5_1:Do:
 ******* / someIndentation                                                                                         :5_1:Do:
@@ -6852,7 +6160,7 @@ pHornlike/someStructure> MATCH (EERR): <EMPTY>
 pHornlike/someStructure> ERROR:
 pHornlike/someStructure> offset=22:
 pHornlike/someStructure> unexpected Do
-pHornlike/someStructure> expecting Decide, Define, GoDeeper, Other text, or TNumber 1234
+pHornlike/someStructure> expecting Decide, Define, GoDeeper, or other text or number
 
 ***** / pHornlike/ambitious                                                                                         :5_1:Do:
 ****** / $>|                                                                                                       :5_1:Do:
@@ -6889,35 +6197,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ************* / RPConstraint                                                                                :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -6929,35 +6237,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ************* / RPBoolStructR                                                                               :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -6969,35 +6277,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ************* / RPMT                                                                                        :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -7012,98 +6320,98 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 pRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=22:
 pRelPred> unexpected Do
-pRelPred> expecting Other text or TNumber 1234
+pRelPred> expecting other text or number
 
 optIndented> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndented> MATCH (EERR): <EMPTY>
 optIndented> ERROR:
 optIndented> offset=22:
 optIndented> unexpected Do
-optIndented> expecting Other text or TNumber 1234
+optIndented> expecting other text or number
 
 optIndentedTuple> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndentedTuple> MATCH (EERR): <EMPTY>
 optIndentedTuple> ERROR:
 optIndentedTuple> offset=22:
 optIndentedTuple> unexpected Do
-optIndentedTuple> expecting Other text or TNumber 1234
+optIndentedTuple> expecting other text or number
 
 pRelPred optIndentedTuple whenCase> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred optIndentedTuple whenCase> MATCH (EERR): <EMPTY>
 pRelPred optIndentedTuple whenCase> ERROR:
 pRelPred optIndentedTuple whenCase> offset=22:
 pRelPred optIndentedTuple whenCase> unexpected Do
-pRelPred optIndentedTuple whenCase> expecting Other text or TNumber 1234
+pRelPred optIndentedTuple whenCase> expecting other text or number
 
 relPredNextlineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredNextlineWhen> MATCH (EERR): <EMPTY>
 relPredNextlineWhen> ERROR:
 relPredNextlineWhen> offset=22:
 relPredNextlineWhen> unexpected Do
-relPredNextlineWhen> expecting Other text or TNumber 1234
+relPredNextlineWhen> expecting other text or number
 
 ******* / relPredSamelineWhen                                                                                     :5_1:Do:
 ******** / $*|                                                                                                   :5_1:Do:
@@ -7119,35 +6427,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                      :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7159,35 +6467,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                     :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7199,35 +6507,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                              :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7242,84 +6550,84 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 relPredSamelineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredSamelineWhen> MATCH (EERR): <EMPTY>
 relPredSamelineWhen> ERROR:
 relPredSamelineWhen> offset=22:
 relPredSamelineWhen> unexpected Do
-relPredSamelineWhen> expecting Other text or TNumber 1234
+relPredSamelineWhen> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ****** / manyIndentation/deeper; calling someIndentation                                                           :5_1:Do:
 ******* / someIndentation                                                                                         :5_1:Do:
@@ -7350,7 +6658,7 @@ pHornlike/someStructure> MATCH (EERR): <EMPTY>
 pHornlike/someStructure> ERROR:
 pHornlike/someStructure> offset=22:
 pHornlike/someStructure> unexpected Do
-pHornlike/someStructure> expecting Decide, Define, GoDeeper, Other text, or TNumber 1234
+pHornlike/someStructure> expecting Decide, Define, GoDeeper, or other text or number
 
 ***** / pHornlike/givenLimb                                                                                         :5_1:Do:
 ****** / preambleParamText:[Given]                                                                                 :5_1:Do:
@@ -7483,35 +6791,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ************* / RPConstraint                                                                                :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -7523,35 +6831,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ************* / RPBoolStructR                                                                               :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -7563,35 +6871,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ************* / RPMT                                                                                        :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -7606,98 +6914,98 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 pRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=22:
 pRelPred> unexpected Do
-pRelPred> expecting Other text or TNumber 1234
+pRelPred> expecting other text or number
 
 optIndented> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndented> MATCH (EERR): <EMPTY>
 optIndented> ERROR:
 optIndented> offset=22:
 optIndented> unexpected Do
-optIndented> expecting Other text or TNumber 1234
+optIndented> expecting other text or number
 
 optIndentedTuple> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndentedTuple> MATCH (EERR): <EMPTY>
 optIndentedTuple> ERROR:
 optIndentedTuple> offset=22:
 optIndentedTuple> unexpected Do
-optIndentedTuple> expecting Other text or TNumber 1234
+optIndentedTuple> expecting other text or number
 
 pRelPred optIndentedTuple whenCase> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred optIndentedTuple whenCase> MATCH (EERR): <EMPTY>
 pRelPred optIndentedTuple whenCase> ERROR:
 pRelPred optIndentedTuple whenCase> offset=22:
 pRelPred optIndentedTuple whenCase> unexpected Do
-pRelPred optIndentedTuple whenCase> expecting Other text or TNumber 1234
+pRelPred optIndentedTuple whenCase> expecting other text or number
 
 relPredNextlineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredNextlineWhen> MATCH (EERR): <EMPTY>
 relPredNextlineWhen> ERROR:
 relPredNextlineWhen> offset=22:
 relPredNextlineWhen> unexpected Do
-relPredNextlineWhen> expecting Other text or TNumber 1234
+relPredNextlineWhen> expecting other text or number
 
 ******* / relPredSamelineWhen                                                                                     :5_1:Do:
 ******** / $*|                                                                                                   :5_1:Do:
@@ -7713,35 +7021,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                      :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7753,35 +7061,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                     :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7793,35 +7101,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                              :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -7836,84 +7144,84 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 relPredSamelineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredSamelineWhen> MATCH (EERR): <EMPTY>
 relPredSamelineWhen> ERROR:
 relPredSamelineWhen> offset=22:
 relPredSamelineWhen> unexpected Do
-relPredSamelineWhen> expecting Other text or TNumber 1234
+relPredSamelineWhen> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ****** / manyIndentation/deeper; calling someIndentation                                                           :5_1:Do:
 ******* / someIndentation                                                                                         :5_1:Do:
@@ -7944,7 +7252,7 @@ pHornlike/someStructure> MATCH (EERR): <EMPTY>
 pHornlike/someStructure> ERROR:
 pHornlike/someStructure> offset=22:
 pHornlike/someStructure> unexpected Do
-pHornlike/someStructure> expecting Decide, Define, GoDeeper, Other text, or TNumber 1234
+pHornlike/someStructure> expecting Decide, Define, GoDeeper, or other text or number
 
 ***** / pHornlike/ambitious                                                                                         :5_1:Do:
 ****** / $>|                                                                                                       :5_1:Do:
@@ -7981,35 +7289,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ************* / RPConstraint                                                                                :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8021,35 +7329,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ************* / RPBoolStructR                                                                               :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8061,35 +7369,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ************* / RPMT                                                                                        :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8104,98 +7412,98 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 pRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=22:
 pRelPred> unexpected Do
-pRelPred> expecting Other text or TNumber 1234
+pRelPred> expecting other text or number
 
 optIndented> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndented> MATCH (EERR): <EMPTY>
 optIndented> ERROR:
 optIndented> offset=22:
 optIndented> unexpected Do
-optIndented> expecting Other text or TNumber 1234
+optIndented> expecting other text or number
 
 optIndentedTuple> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndentedTuple> MATCH (EERR): <EMPTY>
 optIndentedTuple> ERROR:
 optIndentedTuple> offset=22:
 optIndentedTuple> unexpected Do
-optIndentedTuple> expecting Other text or TNumber 1234
+optIndentedTuple> expecting other text or number
 
 pRelPred optIndentedTuple whenCase> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred optIndentedTuple whenCase> MATCH (EERR): <EMPTY>
 pRelPred optIndentedTuple whenCase> ERROR:
 pRelPred optIndentedTuple whenCase> offset=22:
 pRelPred optIndentedTuple whenCase> unexpected Do
-pRelPred optIndentedTuple whenCase> expecting Other text or TNumber 1234
+pRelPred optIndentedTuple whenCase> expecting other text or number
 
 relPredNextlineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredNextlineWhen> MATCH (EERR): <EMPTY>
 relPredNextlineWhen> ERROR:
 relPredNextlineWhen> offset=22:
 relPredNextlineWhen> unexpected Do
-relPredNextlineWhen> expecting Other text or TNumber 1234
+relPredNextlineWhen> expecting other text or number
 
 ******* / relPredSamelineWhen                                                                                     :5_1:Do:
 ******** / $*|                                                                                                   :5_1:Do:
@@ -8211,35 +7519,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                      :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8251,35 +7559,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                     :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8291,35 +7599,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                              :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8334,84 +7642,84 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 relPredSamelineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredSamelineWhen> MATCH (EERR): <EMPTY>
 relPredSamelineWhen> ERROR:
 relPredSamelineWhen> offset=22:
 relPredSamelineWhen> unexpected Do
-relPredSamelineWhen> expecting Other text or TNumber 1234
+relPredSamelineWhen> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ****** / manyIndentation/deeper; calling someIndentation                                                           :5_1:Do:
 ******* / someIndentation                                                                                         :5_1:Do:
@@ -8442,7 +7750,7 @@ pHornlike/someStructure> MATCH (EERR): <EMPTY>
 pHornlike/someStructure> ERROR:
 pHornlike/someStructure> offset=22:
 pHornlike/someStructure> unexpected Do
-pHornlike/someStructure> expecting Decide, Define, GoDeeper, Other text, or TNumber 1234
+pHornlike/someStructure> expecting Decide, Define, GoDeeper, or other text or number
 
 ***** / pHornlike/ambitious                                                                                         :5_1:Do:
 ****** / $>|                                                                                                       :5_1:Do:
@@ -8479,35 +7787,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ************* / RPConstraint                                                                                :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8519,35 +7827,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ************* / RPBoolStructR                                                                               :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8559,35 +7867,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ************* / RPMT                                                                                        :5_1:Do:
 ************** / $*|                                                                                       :5_1:Do:
@@ -8602,98 +7910,98 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 pRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=22:
 pRelPred> unexpected Do
-pRelPred> expecting Other text or TNumber 1234
+pRelPred> expecting other text or number
 
 optIndented> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndented> MATCH (EERR): <EMPTY>
 optIndented> ERROR:
 optIndented> offset=22:
 optIndented> unexpected Do
-optIndented> expecting Other text or TNumber 1234
+optIndented> expecting other text or number
 
 optIndentedTuple> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 optIndentedTuple> MATCH (EERR): <EMPTY>
 optIndentedTuple> ERROR:
 optIndentedTuple> offset=22:
 optIndentedTuple> unexpected Do
-optIndentedTuple> expecting Other text or TNumber 1234
+optIndentedTuple> expecting other text or number
 
 pRelPred optIndentedTuple whenCase> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pRelPred optIndentedTuple whenCase> MATCH (EERR): <EMPTY>
 pRelPred optIndentedTuple whenCase> ERROR:
 pRelPred optIndentedTuple whenCase> offset=22:
 pRelPred optIndentedTuple whenCase> unexpected Do
-pRelPred optIndentedTuple whenCase> expecting Other text or TNumber 1234
+pRelPred optIndentedTuple whenCase> expecting other text or number
 
 relPredNextlineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredNextlineWhen> MATCH (EERR): <EMPTY>
 relPredNextlineWhen> ERROR:
 relPredNextlineWhen> offset=22:
 relPredNextlineWhen> unexpected Do
-relPredNextlineWhen> expecting Other text or TNumber 1234
+relPredNextlineWhen> expecting other text or number
 
 ******* / relPredSamelineWhen                                                                                     :5_1:Do:
 ******** / $*|                                                                                                   :5_1:Do:
@@ -8709,35 +8017,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 nested simpleHorn> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=22:
 nested simpleHorn> unexpected Do
-nested simpleHorn> expecting Other text or TNumber 1234
+nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                      :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8749,35 +8057,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPConstraint> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=22:
 RPConstraint> unexpected Do
-RPConstraint> expecting Other text or TNumber 1234
+RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                     :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8789,35 +8097,35 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPBoolStructR> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=22:
 RPBoolStructR> unexpected Do
-RPBoolStructR> expecting Other text or TNumber 1234
+RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                              :5_1:Do:
 *********** / $*|                                                                                             :5_1:Do:
@@ -8832,84 +8140,84 @@ pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=22:
 pNumAsText> unexpected Do
-pNumAsText> expecting TNumber 1234
+pNumAsText> expecting number
 
 someSL> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=22:
 someSL> unexpected Do
-someSL> expecting Other text or TNumber 1234
+someSL> expecting other text or number
 
 slMultiTerm> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=22:
 slMultiTerm> unexpected Do
-slMultiTerm> expecting Other text or TNumber 1234
+slMultiTerm> expecting other text or number
 
 slAKA base> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=22:
 slAKA base> unexpected Do
-slAKA base> expecting Other text or TNumber 1234
+slAKA base> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 slAKA> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=22:
 slAKA> unexpected Do
-slAKA> expecting Other text or TNumber 1234
+slAKA> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 RPMT> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=22:
 RPMT> unexpected Do
-RPMT> expecting Other text or TNumber 1234
+RPMT> expecting other text or number
 
 slRelPred> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=22:
 slRelPred> unexpected Do
-slRelPred> expecting Other text or TNumber 1234
+slRelPred> expecting other text or number
 
 $*|> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=22:
 $*|> unexpected Do
-$*|> expecting Other text or TNumber 1234
+$*|> expecting other text or number
 
 relPredSamelineWhen> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 relPredSamelineWhen> MATCH (EERR): <EMPTY>
 relPredSamelineWhen> ERROR:
 relPredSamelineWhen> offset=22:
 relPredSamelineWhen> unexpected Do
-relPredSamelineWhen> expecting Other text or TNumber 1234
+relPredSamelineWhen> expecting other text or number
 
 manyIndentation/leaf?> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=22:
 manyIndentation/leaf?> unexpected Do
-manyIndentation/leaf?> expecting Other text or TNumber 1234
+manyIndentation/leaf?> expecting other text or number
 
 ****** / manyIndentation/deeper; calling someIndentation                                                           :5_1:Do:
 ******* / someIndentation                                                                                         :5_1:Do:
@@ -8940,21 +8248,21 @@ pHornlike/someStructure> MATCH (EERR): <EMPTY>
 pHornlike/someStructure> ERROR:
 pHornlike/someStructure> offset=22:
 pHornlike/someStructure> unexpected Do
-pHornlike/someStructure> expecting Decide, Define, GoDeeper, Other text, or TNumber 1234
+pHornlike/someStructure> expecting Decide, Define, GoDeeper, or other text or number
 
 pHornlike / permute> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pHornlike / permute> MATCH (EERR): <EMPTY>
 pHornlike / permute> ERROR:
 pHornlike / permute> offset=22:
 pHornlike / permute> unexpected Do
-pHornlike / permute> expecting Decide, Define, Given, GoDeeper, If, Means, Other text, Otherwise, TNumber 1234, Upon, or When
+pHornlike / permute> expecting Decide, Define, Given, GoDeeper, If, Means, Otherwise, Upon, When, or other text or number
 
 pHornlike> IN: Do GoDeeper Other "NOTIFY" GoDeeper Othe <…>
 pHornlike> MATCH (EERR): <EMPTY>
 pHornlike> ERROR:
 pHornlike> offset=22:
 pHornlike> unexpected Do
-pHornlike> expecting Decide, Define, Given, GoDeeper, If, Means, Other text, Otherwise, RuleMarker 1 "\167", TNumber 1234, Upon, or When
+pHornlike> expecting Decide, Define, Given, GoDeeper, If, Means, Otherwise, RuleMarker 1 "\167", Upon, When, or other text or number
 
 *** / pRuleLabel                                                                                                      :5_1:Do:
 **** / $>|                                                                                                           :5_1:Do:
@@ -9018,9 +8326,9 @@ Failures:
 
   To rerun use: --match "/PDPA/pdpadbno-3/"
 
-Randomized with seed 325098781
+Randomized with seed 955171492
 
-Finished in 0.0678 seconds
+Finished in 0.0507 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

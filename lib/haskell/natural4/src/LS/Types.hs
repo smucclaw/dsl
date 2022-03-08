@@ -591,30 +591,6 @@ toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = pure $ Other x
 
-renderToken :: MyToken -> String
-renderToken TokAll = "ALL"
-renderToken MPNot = "NOT"
-renderToken TokLT = "<"
-renderToken TokLTE = "<="
-renderToken TokGT = ">"
-renderToken TokGTE = ">="
-renderToken TokIn = "IN"
-renderToken TokNotIn = "NOT IN"
-renderToken TokEQ = "=="
-renderToken Checkbox = ""
-renderToken GoDeeper = "("
-renderToken UnDeeper = ")"
-renderToken SetPlus = "PLUS"
-renderToken SetLess = "LESS"
-renderToken A_An = "A"
-renderToken (TNumber n) = show n
-renderToken OneOf = "ONE OF"
-renderToken TypeSeparator = "::"
-renderToken (Other txt) = show txt
-renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
-renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
-renderToken tok = map toUpper (show tok)
-
 
 
 whenDebug :: Parser () -> Parser ()

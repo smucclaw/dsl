@@ -185,7 +185,7 @@ main = do
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
-  let dumpStream s = traceM "* Tokens" >> traceShowM (tokenVal <$> unMyStream s)
+  let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
   let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
   let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
   let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s

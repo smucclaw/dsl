@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE EmptyCase #-}
 
 module LS.Error where
 
@@ -16,10 +17,12 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import LS.BasicTypes (MyStream, myStreamInput)
+import LS.BasicTypes (MyStream , myStreamInput, MyToken, WithPos)
 import Data.Vector (imap, foldl')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))
+import Data.Void (Void)
+import qualified Data.Set as Set
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::
@@ -95,3 +98,22 @@ errorFancyLength :: ShowErrorComponent e => ErrorFancy e -> Int
 errorFancyLength = \case
   ErrorCustom a -> errorComponentLen a
   _ -> 1
+
+--------
+
+-- | Oneline error message for debug purposes.
+onelineErrorMsg :: ParseError MyStream Void -> String
+onelineErrorMsg (TrivialError _ Nothing set) = "Expecting: " <>
+  unwords (map onelineErrorItem $ Set.toList set)
+onelineErrorMsg (TrivialError _ (Just ei) set) = "Unexpected " <>
+  onelineErrorItem ei <> " Expecting: " <>
+  unwords (map onelineErrorItem $ Set.toList set)
+onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
+  where 
+    showFancy :: ErrorFancy Void -> String
+    showFancy (ErrorFail s) = "Fail: " <> s
+    showFancy (ErrorIndentation ord pos pos') = "Indent error: " <> show pos <> " should be " <> show ord <> show pos'
+    showFancy (ErrorCustom vo) = case vo of {}
+
+onelineErrorItem :: ErrorItem (WithPos MyToken) -> String
+onelineErrorItem = showErrorItem @MyStream Proxy

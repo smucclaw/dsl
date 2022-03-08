@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
@@ -19,7 +20,10 @@ import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
 import Data.Maybe (isNothing)
 import Text.Megaparsec.Debug (dbg)
+import qualified Text.Megaparsec.Internal as MPInternal
 import Data.List.NonEmpty (NonEmpty)
+import Data.Functor.Identity (Identity)
+import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -152,18 +156,36 @@ pRuleLabel = debugName "pRuleLabel" $ do
     isRuleMarker _                = False
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
-liftedDBG dname p = do
+liftedDBG = mapWhenDebug . liftRawPFun . dbg
+
+mapWhenDebug :: (Parser a -> Parser a) -> Parser a -> Parser a
+mapWhenDebug f p = do
   isDebug <- asks debug
   if isDebug
-    then WriterT . ReaderT . (\x -> dbg dname . runReaderT x) . runWriterT $ p
+    then f p
     else p
+
+type RawParser a = Parsec Void MyStream (a, DList Rule)
+
+liftRawPFun :: (RawParser a -> RawParser a) -> Parser a -> Parser a
+liftRawPFun f = WriterT . ReaderT . (\x -> f . runReaderT x) . runWriterT
+
+printErrors :: String -> RunConfig -> Parser a -> Parser a
+printErrors dname r = runOnErrors $ \ cnsmp err s res -> do
+  let consumption = case cnsmp of
+        MPInternal.Consumed -> "Consumed"
+        MPInternal.Virgin -> "Unconsumed"
+  let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s 
+                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) (\_ _ -> error "eerr")
+  magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
 
 debugNameP :: Show a => String -> Parser a -> Parser a
 debugNameP dname p = -- label dname $
-   do
+  do
   -- debugPrint dname
   myTraceM $ "/ " <> dname
-  res <- local (increaseNestLevel dname) (liftedDBG dname p)
+  r <- asks id 
+  res <- printErrors dname r $ local (increaseNestLevel dname) $ liftedDBG dname p
   myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
 
@@ -820,3 +842,12 @@ pTokenAnyDepth c = pTokenMatch (== c) (pure c)
 
 pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
 pTokenOneOf cs = pTokenMatch (`elem` cs) cs
+runOnErrors :: (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) -> Parser a -> Parser a
+runOnErrors f = liftRawPFun (iRunOnErrors f)
+
+iRunOnErrors :: (Stream s, Ord e, Monad m) => (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) -> ParsecT e  s m a -> ParsecT e s m a
+iRunOnErrors f pt = MPInternal.ParsecT $ \s cok cerr eok eerr ->
+    let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
+        eerr' err s' = f MPInternal.Virgin err s' (eerr err s')
+    in
+    MPInternal.unParser pt s cok cerr' eok eerr'

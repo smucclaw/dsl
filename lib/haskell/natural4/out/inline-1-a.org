@@ -6,7 +6,10 @@
 natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-a/)
 
 * Tokens
-[GoDeeper,Other "Food",UnDeeper,Means,GoDeeper,Other "yummy",GoDeeper,Other "nightshades",Other "potato",UnDeeper,Or,GoDeeper,Other "tomato",UnDeeper,UnDeeper]
+( "Food" ) MEANS
+    ( "yummy"
+        ( "nightshades" "potato" ) OR ( "tomato" )
+    )
 1_2:GoDeeper   > |<|
 1_2:GoDeeper   > |<* starting
 * main
@@ -17,67 +20,67 @@ natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-a/)
 ** / $*|                                                                                                                :1_2:GoDeeper:
 *** / |>>/recurse                                                                                                      :1_2:GoDeeper:
 **** / |>>/recurse                                                                                                     :1_2:Other "Food:
-|>>/recurse> IN: Other "Food" UnDeeper Means GoDeeper Oth <…>
+|>>/recurse> IN: "Food" ) MEANS ( "yummy" ( "nightshades" <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=1:
-|>>/recurse> unexpected Other "Food"
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected "Food"
+|>>/recurse> expecting (
 
 **** / |>>/base                                                                                                        :1_2:Other "Food:
 ***** / slMultiTerm                                                                                                   :1_2:Other "Food:
 ****** / someSL                                                                                                      :1_2:Other "Food:
-someSL> IN: Other "Food" UnDeeper Means GoDeeper Oth <…>
-someSL> MATCH (COK): Other "Food"
+someSL> IN: "Food" ) MEANS ( "yummy" ( "nightshades" <…>
+someSL> MATCH (COK): "Food"
 someSL> VALUE: ((["Food"],0),[])
 
 ****** \ someSL has returned (["Food"],0)                                                                             :2_2:UnDeeper:
-slMultiTerm> IN: Other "Food" UnDeeper Means GoDeeper Oth <…>
-slMultiTerm> MATCH (COK): Other "Food"
+slMultiTerm> IN: "Food" ) MEANS ( "yummy" ( "nightshades" <…>
+slMultiTerm> MATCH (COK): "Food"
 slMultiTerm> VALUE: ((["Food"],0),[])
 
 ***** \ slMultiTerm has returned (["Food"],0)                                                                          :2_2:UnDeeper:
 ***** > |>>/base got ["Food"]                                                                                          :2_2:UnDeeper:
-|>>/base> IN: Other "Food" UnDeeper Means GoDeeper Oth <…>
-|>>/base> MATCH (COK): Other "Food"
+|>>/base> IN: "Food" ) MEANS ( "yummy" ( "nightshades" <…>
+|>>/base> MATCH (COK): "Food"
 |>>/base> VALUE: ((["Food"],0),[])
 
 **** \ |>>/base has returned (["Food"],0)                                                                               :2_2:UnDeeper:
-|>>/recurse> IN: GoDeeper Other "Food" UnDeeper Means GoD <…>
-|>>/recurse> MATCH (COK): GoDeeper Other "Food"
+|>>/recurse> IN: ( "Food" ) MEANS ( "yummy" ( "nightshade <…>
+|>>/recurse> MATCH (COK): ( "Food"
 |>>/recurse> VALUE: ((["Food"],1),[])
 
 *** \ |>>/recurse has returned (["Food"],1)                                                                              :2_2:UnDeeper:
-$*|> IN: GoDeeper Other "Food" UnDeeper Means GoD <…>
-$*|> MATCH (COK): GoDeeper Other "Food"
+$*|> IN: ( "Food" ) MEANS ( "yummy" ( "nightshade <…>
+$*|> MATCH (COK): ( "Food"
 $*|> VALUE: ((["Food"],1),[])
 
 ** \ $*| has returned (["Food"],1)                                                                                        :2_2:UnDeeper:
 ** / |<*/parent                                                                                                           :2_2:UnDeeper:
 *** > |<*/recurse                                                                                                        :2_2:UnDeeper:
 *** > |<*/recurse matched 1 UnDeepers                                                                                  :2_2:GoDeeper:
-|<*/parent> IN: UnDeeper Means GoDeeper Other "yummy" Go <…>
-|<*/parent> MATCH (COK): UnDeeper Means
+|<*/parent> IN: ) MEANS ( "yummy" ( "nightshades" "potat <…>
+|<*/parent> MATCH (COK): ) MEANS
 |<*/parent> VALUE: ((Means,-1),[])
 
 ** \ |<*/parent has returned (Means,-1)                                                                                 :2_2:GoDeeper:
 ** / |>| calling $>>                                                                                                    :2_2:GoDeeper:
 *** / |>>/recurse                                                                                                      :2_2:GoDeeper:
 **** / |>>/recurse                                                                                                     :2_2:Other "yumm:
-|>>/recurse> IN: Other "yummy" GoDeeper Other "nightshade <…>
+|>>/recurse> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected Other "yummy"
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected "yummy"
+|>>/recurse> expecting (
 
 **** / |>>/base                                                                                                        :2_2:Other "yumm:
 ***** / pBSR                                                                                                          :2_2:Other "yumm:
 ****** / ppp inner                                                                                                   :2_2:Other "yumm:
 ******* / expression                                                                                                :2_2:Other "yumm:
 ******** / labelPrefix                                                                                             :2_2:Other "yumm:
-labelPrefix> IN: Other "yummy" GoDeeper Other "nightshade <…>
-labelPrefix> MATCH (COK): Other "yummy"
+labelPrefix> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
+labelPrefix> MATCH (COK): "yummy"
 labelPrefix> VALUE: ("yummy",[])
 
 ******** \ labelPrefix has returned "yummy"                                                                         :2_3:GoDeeper:
@@ -86,16 +89,16 @@ labelPrefix> VALUE: ("yummy",[])
 ********** / term p/2:someIndentation expr p                                                                      :2_3:GoDeeper:
 *********** / someIndentation                                                                                    :2_3:GoDeeper:
 ************ / myindented: consuming GoDeeper                                                                   :2_3:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "nightshades" Other "pota <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "nightshades" "potato" ) OR ( "tomato" <…>
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ************ \ myindented: consuming GoDeeper has returned GoDeeper                                              :2_3:Other "nigh:
 ************ / manyIndentation/leaf?                                                                             :2_3:Other "nigh:
 ************* / expression                                                                                      :2_3:Other "nigh:
 ************** / labelPrefix                                                                                   :2_3:Other "nigh:
-labelPrefix> IN: Other "nightshades" Other "potato" UnDee <…>
-labelPrefix> MATCH (COK): Other "nightshades"
+labelPrefix> IN: "nightshades" "potato" ) OR ( "tomato" ) <…>
+labelPrefix> MATCH (COK): "nightshades"
 labelPrefix> VALUE: ("nightshades",[])
 
 ************** \ labelPrefix has returned "nightshades"                                                        :3_3:Other "pota:
@@ -104,26 +107,26 @@ labelPrefix> VALUE: ("nightshades",[])
 **************** / term p/2:someIndentation expr p                                                           :3_3:Other "pota:
 ***************** / someIndentation                                                                         :3_3:Other "pota:
 ****************** / myindented: consuming GoDeeper                                                        :3_3:Other "pota:
-myindented: consuming GoDeeper> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
+myindented: consuming GoDeeper> IN: "potato" ) OR ( "tomato" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=8:
-myindented: consuming GoDeeper> unexpected Other "potato"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "potato"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
+someIndentation> IN: "potato" ) OR ( "tomato" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=8:
-someIndentation> unexpected Other "potato"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "potato"
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
+term p/2:someIndentation expr p> IN: "potato" ) OR ( "tomato" ) )
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=8:
-term p/2:someIndentation expr p> unexpected Other "potato"
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected "potato"
+term p/2:someIndentation expr p> expecting (
 
 **************** / term p/3:plain p                                                                          :3_3:Other "pota:
 ***************** / pRelPred                                                                                :3_3:Other "pota:
@@ -133,133 +136,133 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ******************** / $*|                                                                               :3_3:Other "pota:
 ********************* / slMultiTerm                                                                     :3_3:Other "pota:
 ********************** / someSL                                                                        :3_3:Other "pota:
-someSL> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-someSL> MATCH (COK): Other "potato"
+someSL> IN: "potato" ) OR ( "tomato" ) )
+someSL> MATCH (COK): "potato"
 someSL> VALUE: ((["potato"],0),[])
 
 ********************** \ someSL has returned (["potato"],0)                                             :4_3:UnDeeper:
-slMultiTerm> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slMultiTerm> MATCH (COK): Other "potato"
+slMultiTerm> IN: "potato" ) OR ( "tomato" ) )
+slMultiTerm> MATCH (COK): "potato"
 slMultiTerm> VALUE: ((["potato"],0),[])
 
 ********************* \ slMultiTerm has returned (["potato"],0)                                          :4_3:UnDeeper:
-$*|> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-$*|> MATCH (COK): Other "potato"
+$*|> IN: "potato" ) OR ( "tomato" ) )
+$*|> MATCH (COK): "potato"
 $*|> VALUE: ((["potato"],0),[])
 
 ******************** \ $*| has returned (["potato"],0)                                                    :4_3:UnDeeper:
 ******************** / |^| deeps                                                                          :4_3:UnDeeper:
-|^| deeps> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
-|^| deeps> MATCH (COK): UnDeeper
+|^| deeps> IN: ) OR ( "tomato" ) )
+|^| deeps> MATCH (COK): )
 |^| deeps> VALUE: (([()],-1),[])
 
 ******************** \ |^| deeps has returned ([()],-1)                                                :4_2:Or:
-nested simpleHorn> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-nested simpleHorn> MATCH (CERR): Other "potato" UnDeeper
+nested simpleHorn> IN: "potato" ) OR ( "tomato" ) )
+nested simpleHorn> MATCH (CERR): "potato" )
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=10:
-nested simpleHorn> unexpected Or
-nested simpleHorn> expecting Means or UnDeeper
+nested simpleHorn> unexpected OR
+nested simpleHorn> expecting ) or MEANS
 
 ******************* / RPConstraint                                                                        :3_3:Other "pota:
 ******************** / $*|                                                                               :3_3:Other "pota:
 ********************* / slMultiTerm                                                                     :3_3:Other "pota:
 ********************** / someSL                                                                        :3_3:Other "pota:
-someSL> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-someSL> MATCH (COK): Other "potato"
+someSL> IN: "potato" ) OR ( "tomato" ) )
+someSL> MATCH (COK): "potato"
 someSL> VALUE: ((["potato"],0),[])
 
 ********************** \ someSL has returned (["potato"],0)                                             :4_3:UnDeeper:
-slMultiTerm> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slMultiTerm> MATCH (COK): Other "potato"
+slMultiTerm> IN: "potato" ) OR ( "tomato" ) )
+slMultiTerm> MATCH (COK): "potato"
 slMultiTerm> VALUE: ((["potato"],0),[])
 
 ********************* \ slMultiTerm has returned (["potato"],0)                                          :4_3:UnDeeper:
-$*|> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-$*|> MATCH (COK): Other "potato"
+$*|> IN: "potato" ) OR ( "tomato" ) )
+$*|> MATCH (COK): "potato"
 $*|> VALUE: ((["potato"],0),[])
 
 ******************** \ $*| has returned (["potato"],0)                                                    :4_3:UnDeeper:
 ******************** / |>| calling $>>                                                                    :4_3:UnDeeper:
 ********************* / |>>/recurse                                                                      :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************* / |>>/base                                                                         :4_3:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=9:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
 
-|>| calling $>>> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>| calling $>>> IN: ) OR ( "tomato" ) )
 |>| calling $>>> MATCH (EERR): <EMPTY>
 |>| calling $>>> ERROR:
 |>| calling $>>> offset=9:
-|>| calling $>>> unexpected UnDeeper
-|>| calling $>>> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
-RPConstraint> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-RPConstraint> MATCH (CERR): Other "potato"
+RPConstraint> IN: "potato" ) OR ( "tomato" ) )
+RPConstraint> MATCH (CERR): "potato"
 RPConstraint> ERROR:
 RPConstraint> offset=9:
-RPConstraint> unexpected UnDeeper
-RPConstraint> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+RPConstraint> unexpected )
+RPConstraint> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
 ******************* / RPBoolStructR                                                                       :3_3:Other "pota:
 ******************** / $*|                                                                               :3_3:Other "pota:
 ********************* / slMultiTerm                                                                     :3_3:Other "pota:
 ********************** / someSL                                                                        :3_3:Other "pota:
-someSL> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-someSL> MATCH (COK): Other "potato"
+someSL> IN: "potato" ) OR ( "tomato" ) )
+someSL> MATCH (COK): "potato"
 someSL> VALUE: ((["potato"],0),[])
 
 ********************** \ someSL has returned (["potato"],0)                                             :4_3:UnDeeper:
-slMultiTerm> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slMultiTerm> MATCH (COK): Other "potato"
+slMultiTerm> IN: "potato" ) OR ( "tomato" ) )
+slMultiTerm> MATCH (COK): "potato"
 slMultiTerm> VALUE: ((["potato"],0),[])
 
 ********************* \ slMultiTerm has returned (["potato"],0)                                          :4_3:UnDeeper:
-$*|> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-$*|> MATCH (COK): Other "potato"
+$*|> IN: "potato" ) OR ( "tomato" ) )
+$*|> MATCH (COK): "potato"
 $*|> VALUE: ((["potato"],0),[])
 
 ******************** \ $*| has returned (["potato"],0)                                                    :4_3:UnDeeper:
 ******************** / |>| calling $>>                                                                    :4_3:UnDeeper:
 ********************* / |>>/recurse                                                                      :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************* / |>>/base                                                                         :4_3:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=9:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
 
-|>| calling $>>> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>| calling $>>> IN: ) OR ( "tomato" ) )
 |>| calling $>>> MATCH (EERR): <EMPTY>
 |>| calling $>>> ERROR:
 |>| calling $>>> offset=9:
-|>| calling $>>> unexpected UnDeeper
-|>| calling $>>> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
-RPBoolStructR> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-RPBoolStructR> MATCH (CERR): Other "potato"
+RPBoolStructR> IN: "potato" ) OR ( "tomato" ) )
+RPBoolStructR> MATCH (CERR): "potato"
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=9:
-RPBoolStructR> unexpected UnDeeper
-RPBoolStructR> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+RPBoolStructR> unexpected )
+RPBoolStructR> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
 ******************* / RPMT                                                                                :3_3:Other "pota:
 ******************** / $*|                                                                               :3_3:Other "pota:
@@ -268,273 +271,273 @@ RPBoolStructR> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLT
 *********************** / slAKA base                                                                  :3_3:Other "pota:
 ************************ / slMultiTerm                                                               :3_3:Other "pota:
 ************************* / someSL                                                                  :3_3:Other "pota:
-someSL> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-someSL> MATCH (COK): Other "potato"
+someSL> IN: "potato" ) OR ( "tomato" ) )
+someSL> MATCH (COK): "potato"
 someSL> VALUE: ((["potato"],0),[])
 
 ************************* \ someSL has returned (["potato"],0)                                       :4_3:UnDeeper:
-slMultiTerm> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slMultiTerm> MATCH (COK): Other "potato"
+slMultiTerm> IN: "potato" ) OR ( "tomato" ) )
+slMultiTerm> MATCH (COK): "potato"
 slMultiTerm> VALUE: ((["potato"],0),[])
 
 ************************ \ slMultiTerm has returned (["potato"],0)                                    :4_3:UnDeeper:
-slAKA base> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slAKA base> MATCH (COK): Other "potato"
+slAKA base> IN: "potato" ) OR ( "tomato" ) )
+slAKA base> MATCH (COK): "potato"
 slAKA base> VALUE: ((["potato"],0),[])
 
 *********************** \ slAKA base has returned (["potato"],0)                                       :4_3:UnDeeper:
-$*|> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-$*|> MATCH (COK): Other "potato"
+$*|> IN: "potato" ) OR ( "tomato" ) )
+$*|> MATCH (COK): "potato"
 $*|> VALUE: ((["potato"],0),[])
 
 ********************** \ $*| has returned (["potato"],0)                                                :4_3:UnDeeper:
 ********************** / |>>/recurse                                                                    :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                       :4_3:UnDeeper:
 *********************** / slAKA optional akapart                                                       :4_3:UnDeeper:
 ************************ / |?| optional something                                                     :4_3:UnDeeper:
 ************************* / |>>/recurse                                                              :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************* / |>>/base                                                                 :4_3:UnDeeper:
 ************************** / PAKA/akapart                                                           :4_3:UnDeeper:
 *************************** / $>|                                                                  :4_3:UnDeeper:
 **************************** / Aka Token                                                          :4_3:UnDeeper:
-Aka Token> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+Aka Token> IN: ) OR ( "tomato" ) )
 Aka Token> MATCH (EERR): <EMPTY>
 Aka Token> ERROR:
 Aka Token> offset=9:
-Aka Token> unexpected UnDeeper
-Aka Token> expecting Aka
+Aka Token> unexpected )
+Aka Token> expecting AKA
 
-$>|> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+$>|> IN: ) OR ( "tomato" ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=9:
-$>|> unexpected UnDeeper
-$>|> expecting Aka
+$>|> unexpected )
+$>|> expecting AKA
 
-PAKA/akapart> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+PAKA/akapart> IN: ) OR ( "tomato" ) )
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
 PAKA/akapart> offset=9:
-PAKA/akapart> unexpected UnDeeper
-PAKA/akapart> expecting Aka
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=9:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Aka
+|>>/base> unexpected )
+|>>/base> expecting AKA
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|?| optional something> IN: ) OR ( "tomato" ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ************************ \ |?| optional something has returned (Nothing,0)                            :4_3:UnDeeper:
-slAKA optional akapart> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+slAKA optional akapart> IN: ) OR ( "tomato" ) )
 slAKA optional akapart> MATCH (EOK): <EMPTY>
 slAKA optional akapart> VALUE: ((Nothing,0),[])
 
 *********************** \ slAKA optional akapart has returned (Nothing,0)                              :4_3:UnDeeper:
 *********************** > |>>/base got Nothing                                                         :4_3:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ********************** \ |>>/base has returned (Nothing,0)                                              :4_3:UnDeeper:
 ********************** / |>>/recurse                                                                    :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                       :4_3:UnDeeper:
 *********************** / slAKA optional typically                                                     :4_3:UnDeeper:
 ************************ / |?| optional something                                                     :4_3:UnDeeper:
 ************************* / |>>/recurse                                                              :4_3:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/recurse> IN: ) OR ( "tomato" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=9:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************* / |>>/base                                                                 :4_3:UnDeeper:
 ************************** / typically                                                              :4_3:UnDeeper:
 *************************** / $>|                                                                  :4_3:UnDeeper:
-$>|> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+$>|> IN: ) OR ( "tomato" ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=9:
-$>|> unexpected UnDeeper
-$>|> expecting Typically
+$>|> unexpected )
+$>|> expecting TYPICALLY
 
-typically> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+typically> IN: ) OR ( "tomato" ) )
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
 typically> offset=9:
-typically> unexpected UnDeeper
-typically> expecting Typically
+typically> unexpected )
+typically> expecting TYPICALLY
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=9:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Typically
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|?| optional something> IN: ) OR ( "tomato" ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ************************ \ |?| optional something has returned (Nothing,0)                            :4_3:UnDeeper:
-slAKA optional typically> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+slAKA optional typically> IN: ) OR ( "tomato" ) )
 slAKA optional typically> MATCH (EOK): <EMPTY>
 slAKA optional typically> VALUE: ((Nothing,0),[])
 
 *********************** \ slAKA optional typically has returned (Nothing,0)                            :4_3:UnDeeper:
 *********************** > |>>/base got Nothing                                                         :4_3:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+|>>/base> IN: ) OR ( "tomato" ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ********************** \ |>>/base has returned (Nothing,0)                                              :4_3:UnDeeper:
 ********************** > slAKA: proceeding after base and entityalias are retrieved ...                 :4_3:UnDeeper:
 ********************** > pAKA: entityalias = Nothing                                                    :4_3:UnDeeper:
-slAKA> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slAKA> MATCH (COK): Other "potato"
+slAKA> IN: "potato" ) OR ( "tomato" ) )
+slAKA> MATCH (COK): "potato"
 slAKA> VALUE: ((["potato"],0),[])
 
 ********************* \ slAKA has returned (["potato"],0)                                                :4_3:UnDeeper:
-$*|> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-$*|> MATCH (COK): Other "potato"
+$*|> IN: "potato" ) OR ( "tomato" ) )
+$*|> MATCH (COK): "potato"
 $*|> VALUE: ((["potato"],0),[])
 
 ******************** \ $*| has returned (["potato"],0)                                                    :4_3:UnDeeper:
-RPMT> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-RPMT> MATCH (COK): Other "potato"
+RPMT> IN: "potato" ) OR ( "tomato" ) )
+RPMT> MATCH (COK): "potato"
 RPMT> VALUE: ((RPMT ["potato"],0),[])
 
 ******************* \ RPMT has returned (RPMT ["potato"],0)                                                :4_3:UnDeeper:
-slRelPred> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-slRelPred> MATCH (COK): Other "potato"
+slRelPred> IN: "potato" ) OR ( "tomato" ) )
+slRelPred> MATCH (COK): "potato"
 slRelPred> VALUE: ((RPMT ["potato"],0),[])
 
 ****************** \ slRelPred has returned (RPMT ["potato"],0)                                             :4_3:UnDeeper:
 ****************** / undeepers                                                                              :4_3:UnDeeper:
 ******************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers               :4_3:UnDeeper:
 ******************* > sameLine: success!                                                                   :4_3:UnDeeper:
-undeepers> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+undeepers> IN: ) OR ( "tomato" ) )
 undeepers> MATCH (EOK): <EMPTY>
 undeepers> VALUE: ((),[])
 
 ****************** \ undeepers has returned ()                                                              :4_3:UnDeeper:
-pRelPred> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-pRelPred> MATCH (COK): Other "potato"
+pRelPred> IN: "potato" ) OR ( "tomato" ) )
+pRelPred> MATCH (COK): "potato"
 pRelPred> VALUE: (RPMT ["potato"],[])
 
 ***************** \ pRelPred has returned RPMT ["potato"]                                                    :4_3:UnDeeper:
-term p/3:plain p> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-term p/3:plain p> MATCH (COK): Other "potato"
+term p/3:plain p> IN: "potato" ) OR ( "tomato" ) )
+term p/3:plain p> MATCH (COK): "potato"
 term p/3:plain p> VALUE: (MyLeaf (RPMT ["potato"]),[])
 
 **************** \ term p/3:plain p has returned MyLeaf (RPMT ["potato"])                                     :4_3:UnDeeper:
-term p/notLabelTerm> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-term p/notLabelTerm> MATCH (COK): Other "potato"
+term p/notLabelTerm> IN: "potato" ) OR ( "tomato" ) )
+term p/notLabelTerm> MATCH (COK): "potato"
 term p/notLabelTerm> VALUE: (MyLeaf (RPMT ["potato"]),[])
 
 *************** \ term p/notLabelTerm has returned MyLeaf (RPMT ["potato"])                                    :4_3:UnDeeper:
-term p> IN: Other "potato" UnDeeper Or GoDeeper Othe <…>
-term p> MATCH (COK): Other "potato"
+term p> IN: "potato" ) OR ( "tomato" ) )
+term p> MATCH (COK): "potato"
 term p> VALUE: (MyLeaf (RPMT ["potato"]),[])
 
 ************** \ term p has returned MyLeaf (RPMT ["potato"])                                                   :4_3:UnDeeper:
 ************** / binary(Or)                                                                                     :4_3:UnDeeper:
-binary(Or)> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+binary(Or)> IN: ) OR ( "tomato" ) )
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=9:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ************** / binary(And)                                                                                    :4_3:UnDeeper:
-binary(And)> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+binary(And)> IN: ) OR ( "tomato" ) )
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=9:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ************** / binary(SetLess)                                                                                :4_3:UnDeeper:
-binary(SetLess)> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+binary(SetLess)> IN: ) OR ( "tomato" ) )
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=9:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ************** / binary(SetPlus)                                                                                :4_3:UnDeeper:
-binary(SetPlus)> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
+binary(SetPlus)> IN: ) OR ( "tomato" ) )
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=9:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "nightshades" Other "potato" UnDee <…>
-expression> MATCH (COK): Other "nightshades" Other "potato"
+expression> IN: "nightshades" "potato" ) OR ( "tomato" ) <…>
+expression> MATCH (COK): "nightshades" "potato"
 expression> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 ************* \ expression has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))                       :4_3:UnDeeper:
-manyIndentation/leaf?> IN: Other "nightshades" Other "potato" UnDee <…>
-manyIndentation/leaf?> MATCH (COK): Other "nightshades" Other "potato"
+manyIndentation/leaf?> IN: "nightshades" "potato" ) OR ( "tomato" ) <…>
+manyIndentation/leaf?> MATCH (COK): "nightshades" "potato"
 manyIndentation/leaf?> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 ************ \ manyIndentation/leaf? has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))              :4_3:UnDeeper:
 ************ / myindented: consuming UnDeeper                                                                     :4_3:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper Or GoDeeper Other "tomato" UnDe <…>
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: ) OR ( "tomato" ) )
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 ************ \ myindented: consuming UnDeeper has returned UnDeeper                                            :4_2:Or:
-someIndentation> IN: GoDeeper Other "nightshades" Other "pota <…>
-someIndentation> MATCH (COK): GoDeeper Other "nightshades" Other "pota <…>
+someIndentation> IN: ( "nightshades" "potato" ) OR ( "tomato" <…>
+someIndentation> MATCH (COK): ( "nightshades" "potato" )
 someIndentation> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 *********** \ someIndentation has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))                   :4_2:Or:
-term p/2:someIndentation expr p> IN: GoDeeper Other "nightshades" Other "pota <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "nightshades" Other "pota <…>
+term p/2:someIndentation expr p> IN: ( "nightshades" "potato" ) OR ( "tomato" <…>
+term p/2:someIndentation expr p> MATCH (COK): ( "nightshades" "potato" )
 term p/2:someIndentation expr p> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 ********** \ term p/2:someIndentation expr p has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))     :4_2:Or:
-term p/notLabelTerm> IN: GoDeeper Other "nightshades" Other "pota <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "nightshades" Other "pota <…>
+term p/notLabelTerm> IN: ( "nightshades" "potato" ) OR ( "tomato" <…>
+term p/notLabelTerm> MATCH (COK): ( "nightshades" "potato" )
 term p/notLabelTerm> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 ********* \ term p/notLabelTerm has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))                   :4_2:Or:
-term p> IN: GoDeeper Other "nightshades" Other "pota <…>
-term p> MATCH (COK): GoDeeper Other "nightshades" Other "pota <…>
+term p> IN: ( "nightshades" "potato" ) OR ( "tomato" <…>
+term p> MATCH (COK): ( "nightshades" "potato" )
 term p> VALUE: (MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),[])
 
 ******** \ term p has returned MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"]))                                  :4_2:Or:
 ******** / binary(Or)                                                                                              :4_2:Or:
-binary(Or)> IN: Or GoDeeper Other "tomato" UnDeeper UnDe <…>
-binary(Or)> MATCH (COK): Or
+binary(Or)> IN: OR ( "tomato" ) )
+binary(Or)> MATCH (COK): OR
 binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                               :4_3:GoDeeper:
@@ -543,45 +546,45 @@ binary(Or)> VALUE: (Or,[])
 ********** / term p/2:someIndentation expr p                                                                      :4_3:GoDeeper:
 *********** / someIndentation                                                                                    :4_3:GoDeeper:
 ************ / myindented: consuming GoDeeper                                                                   :4_3:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "tomato" UnDeeper UnDeepe <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "tomato" ) )
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ************ \ myindented: consuming GoDeeper has returned GoDeeper                                              :4_3:Other "toma:
 ************ / manyIndentation/leaf?                                                                             :4_3:Other "toma:
 ************* / expression                                                                                      :4_3:Other "toma:
 ************** / labelPrefix                                                                                   :4_3:Other "toma:
-labelPrefix> IN: Other "tomato" UnDeeper UnDeeper
+labelPrefix> IN: "tomato" ) )
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=13:
-labelPrefix> unexpected UnDeeper
+labelPrefix> unexpected )
 
 ************** / term p                                                                                        :4_3:Other "toma:
 *************** / term p/notLabelTerm                                                                         :4_3:Other "toma:
 **************** / term p/2:someIndentation expr p                                                           :4_3:Other "toma:
 ***************** / someIndentation                                                                         :4_3:Other "toma:
 ****************** / myindented: consuming GoDeeper                                                        :4_3:Other "toma:
-myindented: consuming GoDeeper> IN: Other "tomato" UnDeeper UnDeeper
+myindented: consuming GoDeeper> IN: "tomato" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=12:
-myindented: consuming GoDeeper> unexpected Other "tomato"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "tomato"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "tomato" UnDeeper UnDeeper
+someIndentation> IN: "tomato" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=12:
-someIndentation> unexpected Other "tomato"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "tomato"
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Other "tomato" UnDeeper UnDeeper
+term p/2:someIndentation expr p> IN: "tomato" ) )
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=12:
-term p/2:someIndentation expr p> unexpected Other "tomato"
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected "tomato"
+term p/2:someIndentation expr p> expecting (
 
 **************** / term p/3:plain p                                                                          :4_3:Other "toma:
 ***************** / pRelPred                                                                                :4_3:Other "toma:
@@ -591,133 +594,133 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ******************** / $*|                                                                               :4_3:Other "toma:
 ********************* / slMultiTerm                                                                     :4_3:Other "toma:
 ********************** / someSL                                                                        :4_3:Other "toma:
-someSL> IN: Other "tomato" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "tomato"
+someSL> IN: "tomato" ) )
+someSL> MATCH (COK): "tomato"
 someSL> VALUE: ((["tomato"],0),[])
 
 ********************** \ someSL has returned (["tomato"],0)                                           :1_2:UnDeeper:
-slMultiTerm> IN: Other "tomato" UnDeeper UnDeeper
-slMultiTerm> MATCH (COK): Other "tomato"
+slMultiTerm> IN: "tomato" ) )
+slMultiTerm> MATCH (COK): "tomato"
 slMultiTerm> VALUE: ((["tomato"],0),[])
 
 ********************* \ slMultiTerm has returned (["tomato"],0)                                        :1_2:UnDeeper:
-$*|> IN: Other "tomato" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "tomato"
+$*|> IN: "tomato" ) )
+$*|> MATCH (COK): "tomato"
 $*|> VALUE: ((["tomato"],0),[])
 
 ******************** \ $*| has returned (["tomato"],0)                                                  :1_2:UnDeeper:
 ******************** / |^| deeps                                                                        :1_2:UnDeeper:
-|^| deeps> IN: UnDeeper UnDeeper
-|^| deeps> MATCH (COK): UnDeeper UnDeeper
+|^| deeps> IN: ) )
+|^| deeps> MATCH (COK): ) )
 |^| deeps> VALUE: (([(),()],-2),[])
 
 ******************** \ |^| deeps has returned ([(),()],-2)                                         :EOF:
-nested simpleHorn> IN: Other "tomato" UnDeeper UnDeeper
-nested simpleHorn> MATCH (CERR): Other "tomato" UnDeeper UnDeeper
+nested simpleHorn> IN: "tomato" ) )
+nested simpleHorn> MATCH (CERR): "tomato" ) )
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=15:
 nested simpleHorn> unexpected end of input
-nested simpleHorn> expecting Means, UnDeeper, or any token
+nested simpleHorn> expecting ), MEANS, or any token
 
 ******************* / RPConstraint                                                                        :4_3:Other "toma:
 ******************** / $*|                                                                               :4_3:Other "toma:
 ********************* / slMultiTerm                                                                     :4_3:Other "toma:
 ********************** / someSL                                                                        :4_3:Other "toma:
-someSL> IN: Other "tomato" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "tomato"
+someSL> IN: "tomato" ) )
+someSL> MATCH (COK): "tomato"
 someSL> VALUE: ((["tomato"],0),[])
 
 ********************** \ someSL has returned (["tomato"],0)                                           :1_2:UnDeeper:
-slMultiTerm> IN: Other "tomato" UnDeeper UnDeeper
-slMultiTerm> MATCH (COK): Other "tomato"
+slMultiTerm> IN: "tomato" ) )
+slMultiTerm> MATCH (COK): "tomato"
 slMultiTerm> VALUE: ((["tomato"],0),[])
 
 ********************* \ slMultiTerm has returned (["tomato"],0)                                        :1_2:UnDeeper:
-$*|> IN: Other "tomato" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "tomato"
+$*|> IN: "tomato" ) )
+$*|> MATCH (COK): "tomato"
 $*|> VALUE: ((["tomato"],0),[])
 
 ******************** \ $*| has returned (["tomato"],0)                                                  :1_2:UnDeeper:
 ******************** / |>| calling $>>                                                                  :1_2:UnDeeper:
 ********************* / |>>/recurse                                                                    :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************* / |>>/base                                                                       :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=13:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
 
-|>| calling $>>> IN: UnDeeper UnDeeper
+|>| calling $>>> IN: ) )
 |>| calling $>>> MATCH (EERR): <EMPTY>
 |>| calling $>>> ERROR:
 |>| calling $>>> offset=13:
-|>| calling $>>> unexpected UnDeeper
-|>| calling $>>> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
-RPConstraint> IN: Other "tomato" UnDeeper UnDeeper
-RPConstraint> MATCH (CERR): Other "tomato"
+RPConstraint> IN: "tomato" ) )
+RPConstraint> MATCH (CERR): "tomato"
 RPConstraint> ERROR:
 RPConstraint> offset=13:
-RPConstraint> unexpected UnDeeper
-RPConstraint> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+RPConstraint> unexpected )
+RPConstraint> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
 ******************* / RPBoolStructR                                                                       :4_3:Other "toma:
 ******************** / $*|                                                                               :4_3:Other "toma:
 ********************* / slMultiTerm                                                                     :4_3:Other "toma:
 ********************** / someSL                                                                        :4_3:Other "toma:
-someSL> IN: Other "tomato" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "tomato"
+someSL> IN: "tomato" ) )
+someSL> MATCH (COK): "tomato"
 someSL> VALUE: ((["tomato"],0),[])
 
 ********************** \ someSL has returned (["tomato"],0)                                           :1_2:UnDeeper:
-slMultiTerm> IN: Other "tomato" UnDeeper UnDeeper
-slMultiTerm> MATCH (COK): Other "tomato"
+slMultiTerm> IN: "tomato" ) )
+slMultiTerm> MATCH (COK): "tomato"
 slMultiTerm> VALUE: ((["tomato"],0),[])
 
 ********************* \ slMultiTerm has returned (["tomato"],0)                                        :1_2:UnDeeper:
-$*|> IN: Other "tomato" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "tomato"
+$*|> IN: "tomato" ) )
+$*|> MATCH (COK): "tomato"
 $*|> VALUE: ((["tomato"],0),[])
 
 ******************** \ $*| has returned (["tomato"],0)                                                  :1_2:UnDeeper:
 ******************** / |>| calling $>>                                                                  :1_2:UnDeeper:
 ********************* / |>>/recurse                                                                    :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************* / |>>/base                                                                       :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=13:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
 
-|>| calling $>>> IN: UnDeeper UnDeeper
+|>| calling $>>> IN: ) )
 |>| calling $>>> MATCH (EERR): <EMPTY>
 |>| calling $>>> ERROR:
 |>| calling $>>> offset=13:
-|>| calling $>>> unexpected UnDeeper
-|>| calling $>>> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
-RPBoolStructR> IN: Other "tomato" UnDeeper UnDeeper
-RPBoolStructR> MATCH (CERR): Other "tomato"
+RPBoolStructR> IN: "tomato" ) )
+RPBoolStructR> MATCH (CERR): "tomato"
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=13:
-RPBoolStructR> unexpected UnDeeper
-RPBoolStructR> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLTE, or TokNotIn
+RPBoolStructR> unexpected )
+RPBoolStructR> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
 
 ******************* / RPMT                                                                                :4_3:Other "toma:
 ******************** / $*|                                                                               :4_3:Other "toma:
@@ -726,338 +729,338 @@ RPBoolStructR> expecting GoDeeper, Is, TokEQ, TokGT, TokGTE, TokIn, TokLT, TokLT
 *********************** / slAKA base                                                                  :4_3:Other "toma:
 ************************ / slMultiTerm                                                               :4_3:Other "toma:
 ************************* / someSL                                                                  :4_3:Other "toma:
-someSL> IN: Other "tomato" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "tomato"
+someSL> IN: "tomato" ) )
+someSL> MATCH (COK): "tomato"
 someSL> VALUE: ((["tomato"],0),[])
 
 ************************* \ someSL has returned (["tomato"],0)                                     :1_2:UnDeeper:
-slMultiTerm> IN: Other "tomato" UnDeeper UnDeeper
-slMultiTerm> MATCH (COK): Other "tomato"
+slMultiTerm> IN: "tomato" ) )
+slMultiTerm> MATCH (COK): "tomato"
 slMultiTerm> VALUE: ((["tomato"],0),[])
 
 ************************ \ slMultiTerm has returned (["tomato"],0)                                  :1_2:UnDeeper:
-slAKA base> IN: Other "tomato" UnDeeper UnDeeper
-slAKA base> MATCH (COK): Other "tomato"
+slAKA base> IN: "tomato" ) )
+slAKA base> MATCH (COK): "tomato"
 slAKA base> VALUE: ((["tomato"],0),[])
 
 *********************** \ slAKA base has returned (["tomato"],0)                                     :1_2:UnDeeper:
-$*|> IN: Other "tomato" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "tomato"
+$*|> IN: "tomato" ) )
+$*|> MATCH (COK): "tomato"
 $*|> VALUE: ((["tomato"],0),[])
 
 ********************** \ $*| has returned (["tomato"],0)                                              :1_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                     :1_2:UnDeeper:
 *********************** / slAKA optional akapart                                                     :1_2:UnDeeper:
 ************************ / |?| optional something                                                   :1_2:UnDeeper:
 ************************* / |>>/recurse                                                            :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************* / |>>/base                                                               :1_2:UnDeeper:
 ************************** / PAKA/akapart                                                         :1_2:UnDeeper:
 *************************** / $>|                                                                :1_2:UnDeeper:
 **************************** / Aka Token                                                        :1_2:UnDeeper:
-Aka Token> IN: UnDeeper UnDeeper
+Aka Token> IN: ) )
 Aka Token> MATCH (EERR): <EMPTY>
 Aka Token> ERROR:
 Aka Token> offset=13:
-Aka Token> unexpected UnDeeper
-Aka Token> expecting Aka
+Aka Token> unexpected )
+Aka Token> expecting AKA
 
-$>|> IN: UnDeeper UnDeeper
+$>|> IN: ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=13:
-$>|> unexpected UnDeeper
-$>|> expecting Aka
+$>|> unexpected )
+$>|> expecting AKA
 
-PAKA/akapart> IN: UnDeeper UnDeeper
+PAKA/akapart> IN: ) )
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
 PAKA/akapart> offset=13:
-PAKA/akapart> unexpected UnDeeper
-PAKA/akapart> expecting Aka
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
 
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=13:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Aka
+|>>/base> unexpected )
+|>>/base> expecting AKA
 
-|?| optional something> IN: UnDeeper UnDeeper
+|?| optional something> IN: ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ************************ \ |?| optional something has returned (Nothing,0)                          :1_2:UnDeeper:
-slAKA optional akapart> IN: UnDeeper UnDeeper
+slAKA optional akapart> IN: ) )
 slAKA optional akapart> MATCH (EOK): <EMPTY>
 slAKA optional akapart> VALUE: ((Nothing,0),[])
 
 *********************** \ slAKA optional akapart has returned (Nothing,0)                            :1_2:UnDeeper:
 *********************** > |>>/base got Nothing                                                       :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ********************** \ |>>/base has returned (Nothing,0)                                            :1_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                     :1_2:UnDeeper:
 *********************** / slAKA optional typically                                                   :1_2:UnDeeper:
 ************************ / |?| optional something                                                   :1_2:UnDeeper:
 ************************* / |>>/recurse                                                            :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=13:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************* / |>>/base                                                               :1_2:UnDeeper:
 ************************** / typically                                                            :1_2:UnDeeper:
 *************************** / $>|                                                                :1_2:UnDeeper:
-$>|> IN: UnDeeper UnDeeper
+$>|> IN: ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=13:
-$>|> unexpected UnDeeper
-$>|> expecting Typically
+$>|> unexpected )
+$>|> expecting TYPICALLY
 
-typically> IN: UnDeeper UnDeeper
+typically> IN: ) )
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
 typically> offset=13:
-typically> unexpected UnDeeper
-typically> expecting Typically
+typically> unexpected )
+typically> expecting TYPICALLY
 
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=13:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Typically
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
 
-|?| optional something> IN: UnDeeper UnDeeper
+|?| optional something> IN: ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ************************ \ |?| optional something has returned (Nothing,0)                          :1_2:UnDeeper:
-slAKA optional typically> IN: UnDeeper UnDeeper
+slAKA optional typically> IN: ) )
 slAKA optional typically> MATCH (EOK): <EMPTY>
 slAKA optional typically> VALUE: ((Nothing,0),[])
 
 *********************** \ slAKA optional typically has returned (Nothing,0)                          :1_2:UnDeeper:
 *********************** > |>>/base got Nothing                                                       :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ********************** \ |>>/base has returned (Nothing,0)                                            :1_2:UnDeeper:
 ********************** > slAKA: proceeding after base and entityalias are retrieved ...               :1_2:UnDeeper:
 ********************** > pAKA: entityalias = Nothing                                                  :1_2:UnDeeper:
-slAKA> IN: Other "tomato" UnDeeper UnDeeper
-slAKA> MATCH (COK): Other "tomato"
+slAKA> IN: "tomato" ) )
+slAKA> MATCH (COK): "tomato"
 slAKA> VALUE: ((["tomato"],0),[])
 
 ********************* \ slAKA has returned (["tomato"],0)                                              :1_2:UnDeeper:
-$*|> IN: Other "tomato" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "tomato"
+$*|> IN: "tomato" ) )
+$*|> MATCH (COK): "tomato"
 $*|> VALUE: ((["tomato"],0),[])
 
 ******************** \ $*| has returned (["tomato"],0)                                                  :1_2:UnDeeper:
-RPMT> IN: Other "tomato" UnDeeper UnDeeper
-RPMT> MATCH (COK): Other "tomato"
+RPMT> IN: "tomato" ) )
+RPMT> MATCH (COK): "tomato"
 RPMT> VALUE: ((RPMT ["tomato"],0),[])
 
 ******************* \ RPMT has returned (RPMT ["tomato"],0)                                              :1_2:UnDeeper:
-slRelPred> IN: Other "tomato" UnDeeper UnDeeper
-slRelPred> MATCH (COK): Other "tomato"
+slRelPred> IN: "tomato" ) )
+slRelPred> MATCH (COK): "tomato"
 slRelPred> VALUE: ((RPMT ["tomato"],0),[])
 
 ****************** \ slRelPred has returned (RPMT ["tomato"],0)                                           :1_2:UnDeeper:
 ****************** / undeepers                                                                            :1_2:UnDeeper:
 ******************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :1_2:UnDeeper:
 ******************* > sameLine: success!                                                                 :1_2:UnDeeper:
-undeepers> IN: UnDeeper UnDeeper
+undeepers> IN: ) )
 undeepers> MATCH (EOK): <EMPTY>
 undeepers> VALUE: ((),[])
 
 ****************** \ undeepers has returned ()                                                            :1_2:UnDeeper:
-pRelPred> IN: Other "tomato" UnDeeper UnDeeper
-pRelPred> MATCH (COK): Other "tomato"
+pRelPred> IN: "tomato" ) )
+pRelPred> MATCH (COK): "tomato"
 pRelPred> VALUE: (RPMT ["tomato"],[])
 
 ***************** \ pRelPred has returned RPMT ["tomato"]                                                  :1_2:UnDeeper:
-term p/3:plain p> IN: Other "tomato" UnDeeper UnDeeper
-term p/3:plain p> MATCH (COK): Other "tomato"
+term p/3:plain p> IN: "tomato" ) )
+term p/3:plain p> MATCH (COK): "tomato"
 term p/3:plain p> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 **************** \ term p/3:plain p has returned MyLeaf (RPMT ["tomato"])                                   :1_2:UnDeeper:
-term p/notLabelTerm> IN: Other "tomato" UnDeeper UnDeeper
-term p/notLabelTerm> MATCH (COK): Other "tomato"
+term p/notLabelTerm> IN: "tomato" ) )
+term p/notLabelTerm> MATCH (COK): "tomato"
 term p/notLabelTerm> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 *************** \ term p/notLabelTerm has returned MyLeaf (RPMT ["tomato"])                                  :1_2:UnDeeper:
-term p> IN: Other "tomato" UnDeeper UnDeeper
-term p> MATCH (COK): Other "tomato"
+term p> IN: "tomato" ) )
+term p> MATCH (COK): "tomato"
 term p> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ************** \ term p has returned MyLeaf (RPMT ["tomato"])                                                 :1_2:UnDeeper:
 ************** / binary(Or)                                                                                   :1_2:UnDeeper:
-binary(Or)> IN: UnDeeper UnDeeper
+binary(Or)> IN: ) )
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=13:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ************** / binary(And)                                                                                  :1_2:UnDeeper:
-binary(And)> IN: UnDeeper UnDeeper
+binary(And)> IN: ) )
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=13:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ************** / binary(SetLess)                                                                              :1_2:UnDeeper:
-binary(SetLess)> IN: UnDeeper UnDeeper
+binary(SetLess)> IN: ) )
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=13:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ************** / binary(SetPlus)                                                                              :1_2:UnDeeper:
-binary(SetPlus)> IN: UnDeeper UnDeeper
+binary(SetPlus)> IN: ) )
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=13:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "tomato" UnDeeper UnDeeper
-expression> MATCH (COK): Other "tomato"
+expression> IN: "tomato" ) )
+expression> MATCH (COK): "tomato"
 expression> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ************* \ expression has returned MyLeaf (RPMT ["tomato"])                                               :1_2:UnDeeper:
-manyIndentation/leaf?> IN: Other "tomato" UnDeeper UnDeeper
-manyIndentation/leaf?> MATCH (COK): Other "tomato"
+manyIndentation/leaf?> IN: "tomato" ) )
+manyIndentation/leaf?> MATCH (COK): "tomato"
 manyIndentation/leaf?> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ************ \ manyIndentation/leaf? has returned MyLeaf (RPMT ["tomato"])                                      :1_2:UnDeeper:
 ************ / myindented: consuming UnDeeper                                                                   :1_2:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper UnDeeper
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: ) )
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 ************ \ myindented: consuming UnDeeper has returned UnDeeper                                               :1_3:UnDeeper:
-someIndentation> IN: GoDeeper Other "tomato" UnDeeper UnDeepe <…>
-someIndentation> MATCH (COK): GoDeeper Other "tomato" UnDeeper
+someIndentation> IN: ( "tomato" ) )
+someIndentation> MATCH (COK): ( "tomato" )
 someIndentation> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 *********** \ someIndentation has returned MyLeaf (RPMT ["tomato"])                                                :1_3:UnDeeper:
-term p/2:someIndentation expr p> IN: GoDeeper Other "tomato" UnDeeper UnDeepe <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "tomato" UnDeeper
+term p/2:someIndentation expr p> IN: ( "tomato" ) )
+term p/2:someIndentation expr p> MATCH (COK): ( "tomato" )
 term p/2:someIndentation expr p> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ********** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["tomato"])                                  :1_3:UnDeeper:
-term p/notLabelTerm> IN: GoDeeper Other "tomato" UnDeeper UnDeepe <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "tomato" UnDeeper
+term p/notLabelTerm> IN: ( "tomato" ) )
+term p/notLabelTerm> MATCH (COK): ( "tomato" )
 term p/notLabelTerm> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ********* \ term p/notLabelTerm has returned MyLeaf (RPMT ["tomato"])                                                :1_3:UnDeeper:
-term p> IN: GoDeeper Other "tomato" UnDeeper UnDeepe <…>
-term p> MATCH (COK): GoDeeper Other "tomato" UnDeeper
+term p> IN: ( "tomato" ) )
+term p> MATCH (COK): ( "tomato" )
 term p> VALUE: (MyLeaf (RPMT ["tomato"]),[])
 
 ******** \ term p has returned MyLeaf (RPMT ["tomato"])                                                               :1_3:UnDeeper:
 ******** / binary(Or)                                                                                                 :1_3:UnDeeper:
-binary(Or)> IN: UnDeeper
+binary(Or)> IN: )
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=14:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ******** / binary(And)                                                                                                :1_3:UnDeeper:
-binary(And)> IN: UnDeeper
+binary(And)> IN: )
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=14:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ******** / binary(SetLess)                                                                                            :1_3:UnDeeper:
-binary(SetLess)> IN: UnDeeper
+binary(SetLess)> IN: )
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=14:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ******** / binary(SetPlus)                                                                                            :1_3:UnDeeper:
-binary(SetPlus)> IN: UnDeeper
+binary(SetPlus)> IN: )
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=14:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "yummy" GoDeeper Other "nightshade <…>
-expression> MATCH (COK): Other "yummy" GoDeeper Other "nightshade <…>
+expression> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
+expression> MATCH (COK): "yummy" ( "nightshades" "potato" ) OR (  <…>
 expression> VALUE: (MyLabel ["yummy"] (MyAny [MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),MyLeaf (RPMT ["tomato"])]),[])
 
 ******* \ expression has returned MyLabel ["yummy"] (MyAny [MyLabel ["nightshades"] (MyLeaf (RPMT ["potato"])),MyLeaf (RPMT ["tomato"])]) :1_3:UnDeeper:
-ppp inner> IN: Other "yummy" GoDeeper Other "nightshade <…>
-ppp inner> MATCH (COK): Other "yummy" GoDeeper Other "nightshade <…>
+ppp inner> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
+ppp inner> MATCH (COK): "yummy" ( "nightshades" "potato" ) OR (  <…>
 ppp inner> VALUE: (Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],[])
 
 ****** \ ppp inner has returned Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])]  :1_3:UnDeeper:
-pBSR> IN: Other "yummy" GoDeeper Other "nightshade <…>
-pBSR> MATCH (COK): Other "yummy" GoDeeper Other "nightshade <…>
+pBSR> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
+pBSR> MATCH (COK): "yummy" ( "nightshades" "potato" ) OR (  <…>
 pBSR> VALUE: (Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],[])
 
 ***** \ pBSR has returned Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])]         :1_3:UnDeeper:
 ***** > |>>/base got Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])]              :1_3:UnDeeper:
-|>>/base> IN: Other "yummy" GoDeeper Other "nightshade <…>
-|>>/base> MATCH (COK): Other "yummy" GoDeeper Other "nightshade <…>
+|>>/base> IN: "yummy" ( "nightshades" "potato" ) OR (  <…>
+|>>/base> MATCH (COK): "yummy" ( "nightshades" "potato" ) OR (  <…>
 |>>/base> VALUE: ((Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],0),[])
 
 **** \ |>>/base has returned (Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],0)   :1_3:UnDeeper:
-|>>/recurse> IN: GoDeeper Other "yummy" GoDeeper Other "n <…>
-|>>/recurse> MATCH (COK): GoDeeper Other "yummy" GoDeeper Other "n <…>
+|>>/recurse> IN: ( "yummy" ( "nightshades" "potato" ) OR  <…>
+|>>/recurse> MATCH (COK): ( "yummy" ( "nightshades" "potato" ) OR  <…>
 |>>/recurse> VALUE: ((Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],1),[])
 
 *** \ |>>/recurse has returned (Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],1)  :1_3:UnDeeper:
-|>| calling $>>> IN: GoDeeper Other "yummy" GoDeeper Other "n <…>
-|>| calling $>>> MATCH (COK): GoDeeper Other "yummy" GoDeeper Other "n <…>
+|>| calling $>>> IN: ( "yummy" ( "nightshades" "potato" ) OR  <…>
+|>| calling $>>> MATCH (COK): ( "yummy" ( "nightshades" "potato" ) OR  <…>
 |>| calling $>>> VALUE: ((Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],1),[])
 
 ** \ |>| calling $>> has returned (Any (Just (Pre "yummy")) [Leaf (RPMT ["nightshades","potato"]),Leaf (RPMT ["tomato"])],1) :1_3:UnDeeper:
 ** / undeepers                                                                                                              :1_3:UnDeeper:
 *** > sameLine/undeepers: reached end of line; now need to clear 1 UnDeepers                                               :1_3:UnDeeper:
 *** > sameLine: success!                                                                                            :EOF:
-undeepers> IN: UnDeeper
-undeepers> MATCH (COK): UnDeeper
+undeepers> IN: )
+undeepers> MATCH (COK): )
 undeepers> VALUE: ((),[])
 
 ** \ undeepers has returned ()                                                                                       :EOF:
@@ -1074,9 +1077,9 @@ Failures:
 
   To rerun use: --match "/PDPA/inline-1-a/"
 
-Randomized with seed 313987237
+Randomized with seed 1903192007
 
-Finished in 0.0088 seconds
+Finished in 0.0089 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

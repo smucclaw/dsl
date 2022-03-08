@@ -7,7 +7,8 @@ natural4> test (suite: natural4-test, args: --match "/our new parser/indent-2-c-
 
 * Tokens
 Lib preprocessor: inserting EOL between Other "this is a label" and Other "mid3"
-[GoDeeper,Other "top1",UnDeeper,Or,GoDeeper,Other "top2",UnDeeper,Or,GoDeeper,Other "this is a label",EOL,GoDeeper,Other "mid3",UnDeeper,Or,GoDeeper,Other "mid4",UnDeeper,UnDeeper]
+( "top1" ) OR ( "top2" ) OR
+    ( "this is a label" EOL ( "mid3" ) OR ( "mid4" ) )
 * main
 :PROPERTIES:
 :VISIBILITY: children
@@ -16,11 +17,11 @@ Lib preprocessor: inserting EOL between Other "this is a label" and Other "mid3"
 ** / expr pParamText                                                                                                    :1_2:GoDeeper:
 *** / expression                                                                                                       :1_2:GoDeeper:
 **** / labelPrefix                                                                                                    :1_2:GoDeeper:
-labelPrefix> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
+labelPrefix> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=0:
-labelPrefix> unexpected GoDeeper
+labelPrefix> unexpected (
 labelPrefix> expecting Other text
 
 **** / term p                                                                                                         :1_2:GoDeeper:
@@ -28,45 +29,45 @@ labelPrefix> expecting Other text
 ****** / term p/2:someIndentation expr p                                                                            :1_2:GoDeeper:
 ******* / someIndentation                                                                                          :1_2:GoDeeper:
 ******** / myindented: consuming GoDeeper                                                                         :1_2:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :1_2:Other "top1:
 ******** / manyIndentation/leaf?                                                                                   :1_2:Other "top1:
 ********* / expression                                                                                            :1_2:Other "top1:
 ********** / labelPrefix                                                                                         :1_2:Other "top1:
-labelPrefix> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
+labelPrefix> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=2:
-labelPrefix> unexpected UnDeeper
+labelPrefix> unexpected )
 
 ********** / term p                                                                                              :1_2:Other "top1:
 *********** / term p/notLabelTerm                                                                               :1_2:Other "top1:
 ************ / term p/2:someIndentation expr p                                                                 :1_2:Other "top1:
 ************* / someIndentation                                                                               :1_2:Other "top1:
 ************** / myindented: consuming GoDeeper                                                              :1_2:Other "top1:
-myindented: consuming GoDeeper> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
+myindented: consuming GoDeeper> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=1:
-myindented: consuming GoDeeper> unexpected Other "top1"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "top1"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
+someIndentation> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=1:
-someIndentation> unexpected Other "top1"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "top1"
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
+term p/2:someIndentation expr p> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=1:
-term p/2:someIndentation expr p> unexpected Other "top1"
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected "top1"
+term p/2:someIndentation expr p> expecting (
 
 ************ / term p/3:plain p                                                                                :1_2:Other "top1:
 ************* / pParamText                                                                                    :1_2:Other "top1:
@@ -78,232 +79,232 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ******************* / slKeyValues                                                                       :1_2:Other "top1:
 ******************** / $*|                                                                             :1_2:Other "top1:
 ********************* / someSL                                                                        :1_2:Other "top1:
-someSL> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-someSL> MATCH (COK): Other "top1"
+someSL> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+someSL> MATCH (COK): "top1"
 someSL> VALUE: ((["top1"],0),[])
 
 ********************* \ someSL has returned (["top1"],0)                                               :2_2:UnDeeper:
-$*|> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-$*|> MATCH (COK): Other "top1"
+$*|> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+$*|> MATCH (COK): "top1"
 $*|> VALUE: ((["top1"],0),[])
 
 ******************** \ $*| has returned (["top1"],0)                                                    :2_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / |?| optional something                                                         :2_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                     :2_2:UnDeeper:
 *********************** / slTypeSig                                                                  :2_2:UnDeeper:
 ************************ / $>|                                                                      :2_2:UnDeeper:
-$>|> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+$>|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=2:
-$>|> unexpected UnDeeper
-$>|> expecting Is or TypeSeparator
+$>|> unexpected )
+$>|> expecting :: or IS
 
-slTypeSig> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slTypeSig> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slTypeSig> MATCH (EERR): <EMPTY>
 slTypeSig> ERROR:
 slTypeSig> offset=2:
-slTypeSig> unexpected UnDeeper
-slTypeSig> expecting Is or TypeSeparator
+slTypeSig> unexpected )
+slTypeSig> expecting :: or IS
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=2:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is or TypeSeparator
+|>>/base> unexpected )
+|>>/base> expecting :: or IS
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ********************* \ |?| optional something has returned (Nothing,0)                                :2_2:UnDeeper:
 ********************* > |>>/base got Nothing                                                           :2_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ******************** \ |>>/base has returned (Nothing,0)                                                :2_2:UnDeeper:
-slKeyValues> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-slKeyValues> MATCH (COK): Other "top1"
+slKeyValues> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+slKeyValues> MATCH (COK): "top1"
 slKeyValues> VALUE: ((("top1" :| [],Nothing),0),[])
 
 ******************* \ slKeyValues has returned (("top1" :| [],Nothing),0)                                :2_2:UnDeeper:
-slAKA base> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-slAKA base> MATCH (COK): Other "top1"
+slAKA base> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+slAKA base> MATCH (COK): "top1"
 slAKA base> VALUE: ((("top1" :| [],Nothing),0),[])
 
 ****************** \ slAKA base has returned (("top1" :| [],Nothing),0)                                   :2_2:UnDeeper:
-$*|> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-$*|> MATCH (COK): Other "top1"
+$*|> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+$*|> MATCH (COK): "top1"
 $*|> VALUE: ((("top1" :| [],Nothing),0),[])
 
 ***************** \ $*| has returned (("top1" :| [],Nothing),0)                                            :2_2:UnDeeper:
 ***************** / |>>/recurse                                                                            :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************** / |>>/base                                                                               :2_2:UnDeeper:
 ****************** / slAKA optional akapart                                                               :2_2:UnDeeper:
 ******************* / |?| optional something                                                             :2_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / PAKA/akapart                                                                   :2_2:UnDeeper:
 ********************** / $>|                                                                          :2_2:UnDeeper:
 *********************** / Aka Token                                                                  :2_2:UnDeeper:
-Aka Token> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+Aka Token> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 Aka Token> MATCH (EERR): <EMPTY>
 Aka Token> ERROR:
 Aka Token> offset=2:
-Aka Token> unexpected UnDeeper
-Aka Token> expecting Aka
+Aka Token> unexpected )
+Aka Token> expecting AKA
 
-$>|> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+$>|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=2:
-$>|> unexpected UnDeeper
-$>|> expecting Aka
+$>|> unexpected )
+$>|> expecting AKA
 
-PAKA/akapart> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+PAKA/akapart> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
 PAKA/akapart> offset=2:
-PAKA/akapart> unexpected UnDeeper
-PAKA/akapart> expecting Aka
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=2:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Aka
+|>>/base> unexpected )
+|>>/base> expecting AKA
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ******************* \ |?| optional something has returned (Nothing,0)                                    :2_2:UnDeeper:
-slAKA optional akapart> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slAKA optional akapart> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA optional akapart> MATCH (EOK): <EMPTY>
 slAKA optional akapart> VALUE: ((Nothing,0),[])
 
 ****************** \ slAKA optional akapart has returned (Nothing,0)                                      :2_2:UnDeeper:
 ****************** > |>>/base got Nothing                                                                 :2_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ***************** \ |>>/base has returned (Nothing,0)                                                      :2_2:UnDeeper:
 ***************** / |>>/recurse                                                                            :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************** / |>>/base                                                                               :2_2:UnDeeper:
 ****************** / slAKA optional typically                                                             :2_2:UnDeeper:
 ******************* / |?| optional something                                                             :2_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :2_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/recurse> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / typically                                                                      :2_2:UnDeeper:
 ********************** / $>|                                                                          :2_2:UnDeeper:
-$>|> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+$>|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=2:
-$>|> unexpected UnDeeper
-$>|> expecting Typically
+$>|> unexpected )
+$>|> expecting TYPICALLY
 
-typically> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+typically> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
 typically> offset=2:
-typically> unexpected UnDeeper
-typically> expecting Typically
+typically> unexpected )
+typically> expecting TYPICALLY
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=2:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Typically
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ******************* \ |?| optional something has returned (Nothing,0)                                    :2_2:UnDeeper:
-slAKA optional typically> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slAKA optional typically> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA optional typically> MATCH (EOK): <EMPTY>
 slAKA optional typically> VALUE: ((Nothing,0),[])
 
 ****************** \ slAKA optional typically has returned (Nothing,0)                                    :2_2:UnDeeper:
 ****************** > |>>/base got Nothing                                                                 :2_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+|>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ***************** \ |>>/base has returned (Nothing,0)                                                      :2_2:UnDeeper:
 ***************** > slAKA: proceeding after base and entityalias are retrieved ...                         :2_2:UnDeeper:
 ***************** > pAKA: entityalias = Nothing                                                            :2_2:UnDeeper:
-slAKA> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-slAKA> MATCH (COK): Other "top1"
+slAKA> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+slAKA> MATCH (COK): "top1"
 slAKA> VALUE: ((("top1" :| [],Nothing),0),[])
 
 **************** \ slAKA has returned (("top1" :| [],Nothing),0)                                            :2_2:UnDeeper:
 **************** / undeepers                                                                                :2_2:UnDeeper:
 ***************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                 :2_2:UnDeeper:
 ***************** > sameLine: success!                                                                     :2_2:UnDeeper:
-undeepers> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+undeepers> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 undeepers> MATCH (EOK): <EMPTY>
 undeepers> VALUE: ((),[])
 
 **************** \ undeepers has returned ()                                                                :2_2:UnDeeper:
-pKeyValuesAka> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-pKeyValuesAka> MATCH (COK): Other "top1"
+pKeyValuesAka> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+pKeyValuesAka> MATCH (COK): "top1"
 pKeyValuesAka> VALUE: (("top1" :| [],Nothing),[])
 
 *************** \ pKeyValuesAka has returned ("top1" :| [],Nothing)                                          :2_2:UnDeeper:
-pParamText(flat) first line: pKeyValues> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-pParamText(flat) first line: pKeyValues> MATCH (COK): Other "top1"
+pParamText(flat) first line: pKeyValues> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+pParamText(flat) first line: pKeyValues> MATCH (COK): "top1"
 pParamText(flat) first line: pKeyValues> VALUE: (("top1" :| [],Nothing),[])
 
 ************** \ pParamText(flat) first line: pKeyValues has returned ("top1" :| [],Nothing)                  :2_2:UnDeeper:
@@ -318,168 +319,168 @@ pParamText(flat) first line: pKeyValues> VALUE: (("top1" :| [],Nothing),[])
 ********************** / $*|                                                                          :2_2:UnDeeper:
 *********************** / someSL                                                                     :2_2:UnDeeper:
 ************************ / pNumAsText                                                               :2_2:UnDeeper:
-pNumAsText> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+pNumAsText> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected UnDeeper
+pNumAsText> unexpected )
 pNumAsText> expecting number
 
-someSL> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+someSL> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=2:
-someSL> unexpected UnDeeper
+someSL> unexpected )
 someSL> expecting other text or number
 
-$*|> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+$*|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slKeyValues> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slKeyValues> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=2:
-slKeyValues> unexpected UnDeeper
+slKeyValues> unexpected )
 slKeyValues> expecting other text or number
 
-slAKA base> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slAKA base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=2:
-slAKA base> unexpected UnDeeper
+slAKA base> unexpected )
 slAKA base> expecting other text or number
 
-$*|> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+$*|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slAKA> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+slAKA> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=2:
-slAKA> unexpected UnDeeper
+slAKA> unexpected )
 slAKA> expecting other text or number
 
-pKeyValuesAka> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+pKeyValuesAka> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=2:
-pKeyValuesAka> unexpected UnDeeper
+pKeyValuesAka> unexpected )
 pKeyValuesAka> expecting other text or number
 
-sameMany> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+sameMany> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 sameMany> MATCH (EOK): <EMPTY>
 sameMany> VALUE: ([],[])
 
 **************** \ sameMany has returned []                                                                 :2_2:UnDeeper:
-manyIndentation/leaf?> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+manyIndentation/leaf?> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 manyIndentation/leaf?> MATCH (EOK): <EMPTY>
 manyIndentation/leaf?> VALUE: ([],[])
 
 *************** \ manyIndentation/leaf? has returned []                                                      :2_2:UnDeeper:
-pParamText(flat) subsequent lines: sameMany pKeyValues> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+pParamText(flat) subsequent lines: sameMany pKeyValues> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 pParamText(flat) subsequent lines: sameMany pKeyValues> MATCH (EOK): <EMPTY>
 pParamText(flat) subsequent lines: sameMany pKeyValues> VALUE: ([],[])
 
 ************** \ pParamText(flat) subsequent lines: sameMany pKeyValues has returned []                       :2_2:UnDeeper:
-pParamText> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-pParamText> MATCH (COK): Other "top1"
+pParamText> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+pParamText> MATCH (COK): "top1"
 pParamText> VALUE: (("top1" :| [],Nothing) :| [],[])
 
 ************* \ pParamText has returned ("top1" :| [],Nothing) :| []                                           :2_2:UnDeeper:
-term p/3:plain p> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-term p/3:plain p> MATCH (COK): Other "top1"
+term p/3:plain p> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+term p/3:plain p> MATCH (COK): "top1"
 term p/3:plain p> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ************ \ term p/3:plain p has returned MyLeaf (("top1" :| [],Nothing) :| [])                              :2_2:UnDeeper:
-term p/notLabelTerm> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-term p/notLabelTerm> MATCH (COK): Other "top1"
+term p/notLabelTerm> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+term p/notLabelTerm> MATCH (COK): "top1"
 term p/notLabelTerm> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 *********** \ term p/notLabelTerm has returned MyLeaf (("top1" :| [],Nothing) :| [])                             :2_2:UnDeeper:
-term p> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-term p> MATCH (COK): Other "top1"
+term p> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+term p> MATCH (COK): "top1"
 term p> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ********** \ term p has returned MyLeaf (("top1" :| [],Nothing) :| [])                                            :2_2:UnDeeper:
 ********** / binary(Or)                                                                                           :2_2:UnDeeper:
-binary(Or)> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+binary(Or)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=2:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ********** / binary(And)                                                                                          :2_2:UnDeeper:
-binary(And)> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+binary(And)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=2:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ********** / binary(SetLess)                                                                                      :2_2:UnDeeper:
-binary(SetLess)> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+binary(SetLess)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=2:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ********** / binary(SetPlus)                                                                                      :2_2:UnDeeper:
-binary(SetPlus)> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
+binary(SetPlus)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=2:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-expression> MATCH (COK): Other "top1"
+expression> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+expression> MATCH (COK): "top1"
 expression> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ********* \ expression has returned MyLeaf (("top1" :| [],Nothing) :| [])                                          :2_2:UnDeeper:
-manyIndentation/leaf?> IN: Other "top1" UnDeeper Or GoDeeper Other  <…>
-manyIndentation/leaf?> MATCH (COK): Other "top1"
+manyIndentation/leaf?> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
+manyIndentation/leaf?> MATCH (COK): "top1"
 manyIndentation/leaf?> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ******** \ manyIndentation/leaf? has returned MyLeaf (("top1" :| [],Nothing) :| [])                                 :2_2:UnDeeper:
 ******** / myindented: consuming UnDeeper                                                                           :2_2:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper Or GoDeeper Other "top2" UnDeep <…>
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 ******** \ myindented: consuming UnDeeper has returned UnDeeper                                                  :2_1:Or:
-someIndentation> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-someIndentation> MATCH (COK): GoDeeper Other "top1" UnDeeper
+someIndentation> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+someIndentation> MATCH (COK): ( "top1" )
 someIndentation> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ******* \ someIndentation has returned MyLeaf (("top1" :| [],Nothing) :| [])                                      :2_1:Or:
-term p/2:someIndentation expr p> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "top1" UnDeeper
+term p/2:someIndentation expr p> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+term p/2:someIndentation expr p> MATCH (COK): ( "top1" )
 term p/2:someIndentation expr p> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ****** \ term p/2:someIndentation expr p has returned MyLeaf (("top1" :| [],Nothing) :| [])                        :2_1:Or:
-term p/notLabelTerm> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "top1" UnDeeper
+term p/notLabelTerm> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+term p/notLabelTerm> MATCH (COK): ( "top1" )
 term p/notLabelTerm> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 ***** \ term p/notLabelTerm has returned MyLeaf (("top1" :| [],Nothing) :| [])                                      :2_1:Or:
-term p> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-term p> MATCH (COK): GoDeeper Other "top1" UnDeeper
+term p> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+term p> MATCH (COK): ( "top1" )
 term p> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
 
 **** \ term p has returned MyLeaf (("top1" :| [],Nothing) :| [])                                                     :2_1:Or:
 **** / binary(Or)                                                                                                    :2_1:Or:
-binary(Or)> IN: Or GoDeeper Other "top2" UnDeeper Or GoD <…>
-binary(Or)> MATCH (COK): Or
+binary(Or)> IN: OR ( "top2" ) OR ( "this is a label" EOL <…>
+binary(Or)> MATCH (COK): OR
 binary(Or)> VALUE: (Or,[])
 
 **** \ binary(Or) has returned Or                                                                                     :2_2:GoDeeper:
@@ -488,45 +489,45 @@ binary(Or)> VALUE: (Or,[])
 ****** / term p/2:someIndentation expr p                                                                            :2_2:GoDeeper:
 ******* / someIndentation                                                                                          :2_2:GoDeeper:
 ******** / myindented: consuming GoDeeper                                                                         :2_2:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "top2" UnDeeper Or GoDeep <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "top2" ) OR ( "this is a label" EOL (  <…>
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :2_2:Other "top2:
 ******** / manyIndentation/leaf?                                                                                   :2_2:Other "top2:
 ********* / expression                                                                                            :2_2:Other "top2:
 ********** / labelPrefix                                                                                         :2_2:Other "top2:
-labelPrefix> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
+labelPrefix> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=6:
-labelPrefix> unexpected UnDeeper
+labelPrefix> unexpected )
 
 ********** / term p                                                                                              :2_2:Other "top2:
 *********** / term p/notLabelTerm                                                                               :2_2:Other "top2:
 ************ / term p/2:someIndentation expr p                                                                 :2_2:Other "top2:
 ************* / someIndentation                                                                               :2_2:Other "top2:
 ************** / myindented: consuming GoDeeper                                                              :2_2:Other "top2:
-myindented: consuming GoDeeper> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
+myindented: consuming GoDeeper> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=5:
-myindented: consuming GoDeeper> unexpected Other "top2"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "top2"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
+someIndentation> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=5:
-someIndentation> unexpected Other "top2"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "top2"
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
+term p/2:someIndentation expr p> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=5:
-term p/2:someIndentation expr p> unexpected Other "top2"
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected "top2"
+term p/2:someIndentation expr p> expecting (
 
 ************ / term p/3:plain p                                                                                :2_2:Other "top2:
 ************* / pParamText                                                                                    :2_2:Other "top2:
@@ -538,232 +539,232 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ******************* / slKeyValues                                                                       :2_2:Other "top2:
 ******************** / $*|                                                                             :2_2:Other "top2:
 ********************* / someSL                                                                        :2_2:Other "top2:
-someSL> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-someSL> MATCH (COK): Other "top2"
+someSL> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+someSL> MATCH (COK): "top2"
 someSL> VALUE: ((["top2"],0),[])
 
 ********************* \ someSL has returned (["top2"],0)                                               :3_2:UnDeeper:
-$*|> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-$*|> MATCH (COK): Other "top2"
+$*|> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+$*|> MATCH (COK): "top2"
 $*|> VALUE: ((["top2"],0),[])
 
 ******************** \ $*| has returned (["top2"],0)                                                    :3_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / |?| optional something                                                         :3_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ********************** / |>>/base                                                                     :3_2:UnDeeper:
 *********************** / slTypeSig                                                                  :3_2:UnDeeper:
 ************************ / $>|                                                                      :3_2:UnDeeper:
-$>|> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+$>|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=6:
-$>|> unexpected UnDeeper
-$>|> expecting Is or TypeSeparator
+$>|> unexpected )
+$>|> expecting :: or IS
 
-slTypeSig> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slTypeSig> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slTypeSig> MATCH (EERR): <EMPTY>
 slTypeSig> ERROR:
 slTypeSig> offset=6:
-slTypeSig> unexpected UnDeeper
-slTypeSig> expecting Is or TypeSeparator
+slTypeSig> unexpected )
+slTypeSig> expecting :: or IS
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=6:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is or TypeSeparator
+|>>/base> unexpected )
+|>>/base> expecting :: or IS
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ********************* \ |?| optional something has returned (Nothing,0)                                :3_2:UnDeeper:
 ********************* > |>>/base got Nothing                                                           :3_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ******************** \ |>>/base has returned (Nothing,0)                                                :3_2:UnDeeper:
-slKeyValues> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-slKeyValues> MATCH (COK): Other "top2"
+slKeyValues> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+slKeyValues> MATCH (COK): "top2"
 slKeyValues> VALUE: ((("top2" :| [],Nothing),0),[])
 
 ******************* \ slKeyValues has returned (("top2" :| [],Nothing),0)                                :3_2:UnDeeper:
-slAKA base> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-slAKA base> MATCH (COK): Other "top2"
+slAKA base> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+slAKA base> MATCH (COK): "top2"
 slAKA base> VALUE: ((("top2" :| [],Nothing),0),[])
 
 ****************** \ slAKA base has returned (("top2" :| [],Nothing),0)                                   :3_2:UnDeeper:
-$*|> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-$*|> MATCH (COK): Other "top2"
+$*|> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+$*|> MATCH (COK): "top2"
 $*|> VALUE: ((("top2" :| [],Nothing),0),[])
 
 ***************** \ $*| has returned (("top2" :| [],Nothing),0)                                            :3_2:UnDeeper:
 ***************** / |>>/recurse                                                                            :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************** / |>>/base                                                                               :3_2:UnDeeper:
 ****************** / slAKA optional akapart                                                               :3_2:UnDeeper:
 ******************* / |?| optional something                                                             :3_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / PAKA/akapart                                                                   :3_2:UnDeeper:
 ********************** / $>|                                                                          :3_2:UnDeeper:
 *********************** / Aka Token                                                                  :3_2:UnDeeper:
-Aka Token> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+Aka Token> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 Aka Token> MATCH (EERR): <EMPTY>
 Aka Token> ERROR:
 Aka Token> offset=6:
-Aka Token> unexpected UnDeeper
-Aka Token> expecting Aka
+Aka Token> unexpected )
+Aka Token> expecting AKA
 
-$>|> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+$>|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=6:
-$>|> unexpected UnDeeper
-$>|> expecting Aka
+$>|> unexpected )
+$>|> expecting AKA
 
-PAKA/akapart> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+PAKA/akapart> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
 PAKA/akapart> offset=6:
-PAKA/akapart> unexpected UnDeeper
-PAKA/akapart> expecting Aka
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=6:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Aka
+|>>/base> unexpected )
+|>>/base> expecting AKA
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ******************* \ |?| optional something has returned (Nothing,0)                                    :3_2:UnDeeper:
-slAKA optional akapart> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slAKA optional akapart> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA optional akapart> MATCH (EOK): <EMPTY>
 slAKA optional akapart> VALUE: ((Nothing,0),[])
 
 ****************** \ slAKA optional akapart has returned (Nothing,0)                                      :3_2:UnDeeper:
 ****************** > |>>/base got Nothing                                                                 :3_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ***************** \ |>>/base has returned (Nothing,0)                                                      :3_2:UnDeeper:
 ***************** / |>>/recurse                                                                            :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************** / |>>/base                                                                               :3_2:UnDeeper:
 ****************** / slAKA optional typically                                                             :3_2:UnDeeper:
 ******************* / |?| optional something                                                             :3_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :3_2:UnDeeper:
-|>>/recurse> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/recurse> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=6:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / typically                                                                      :3_2:UnDeeper:
 ********************** / $>|                                                                          :3_2:UnDeeper:
-$>|> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+$>|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=6:
-$>|> unexpected UnDeeper
-$>|> expecting Typically
+$>|> unexpected )
+$>|> expecting TYPICALLY
 
-typically> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+typically> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
 typically> offset=6:
-typically> unexpected UnDeeper
-typically> expecting Typically
+typically> unexpected )
+typically> expecting TYPICALLY
 
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=6:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Typically
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
 
-|?| optional something> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ******************* \ |?| optional something has returned (Nothing,0)                                    :3_2:UnDeeper:
-slAKA optional typically> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slAKA optional typically> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA optional typically> MATCH (EOK): <EMPTY>
 slAKA optional typically> VALUE: ((Nothing,0),[])
 
 ****************** \ slAKA optional typically has returned (Nothing,0)                                    :3_2:UnDeeper:
 ****************** > |>>/base got Nothing                                                                 :3_2:UnDeeper:
-|>>/base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+|>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ***************** \ |>>/base has returned (Nothing,0)                                                      :3_2:UnDeeper:
 ***************** > slAKA: proceeding after base and entityalias are retrieved ...                         :3_2:UnDeeper:
 ***************** > pAKA: entityalias = Nothing                                                            :3_2:UnDeeper:
-slAKA> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-slAKA> MATCH (COK): Other "top2"
+slAKA> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+slAKA> MATCH (COK): "top2"
 slAKA> VALUE: ((("top2" :| [],Nothing),0),[])
 
 **************** \ slAKA has returned (("top2" :| [],Nothing),0)                                            :3_2:UnDeeper:
 **************** / undeepers                                                                                :3_2:UnDeeper:
 ***************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                 :3_2:UnDeeper:
 ***************** > sameLine: success!                                                                     :3_2:UnDeeper:
-undeepers> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+undeepers> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 undeepers> MATCH (EOK): <EMPTY>
 undeepers> VALUE: ((),[])
 
 **************** \ undeepers has returned ()                                                                :3_2:UnDeeper:
-pKeyValuesAka> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-pKeyValuesAka> MATCH (COK): Other "top2"
+pKeyValuesAka> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+pKeyValuesAka> MATCH (COK): "top2"
 pKeyValuesAka> VALUE: (("top2" :| [],Nothing),[])
 
 *************** \ pKeyValuesAka has returned ("top2" :| [],Nothing)                                          :3_2:UnDeeper:
-pParamText(flat) first line: pKeyValues> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-pParamText(flat) first line: pKeyValues> MATCH (COK): Other "top2"
+pParamText(flat) first line: pKeyValues> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+pParamText(flat) first line: pKeyValues> MATCH (COK): "top2"
 pParamText(flat) first line: pKeyValues> VALUE: (("top2" :| [],Nothing),[])
 
 ************** \ pParamText(flat) first line: pKeyValues has returned ("top2" :| [],Nothing)                  :3_2:UnDeeper:
@@ -778,168 +779,168 @@ pParamText(flat) first line: pKeyValues> VALUE: (("top2" :| [],Nothing),[])
 ********************** / $*|                                                                          :3_2:UnDeeper:
 *********************** / someSL                                                                     :3_2:UnDeeper:
 ************************ / pNumAsText                                                               :3_2:UnDeeper:
-pNumAsText> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+pNumAsText> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=6:
-pNumAsText> unexpected UnDeeper
+pNumAsText> unexpected )
 pNumAsText> expecting number
 
-someSL> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+someSL> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=6:
-someSL> unexpected UnDeeper
+someSL> unexpected )
 someSL> expecting other text or number
 
-$*|> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+$*|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=6:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slKeyValues> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slKeyValues> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=6:
-slKeyValues> unexpected UnDeeper
+slKeyValues> unexpected )
 slKeyValues> expecting other text or number
 
-slAKA base> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slAKA base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=6:
-slAKA base> unexpected UnDeeper
+slAKA base> unexpected )
 slAKA base> expecting other text or number
 
-$*|> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+$*|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=6:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slAKA> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+slAKA> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=6:
-slAKA> unexpected UnDeeper
+slAKA> unexpected )
 slAKA> expecting other text or number
 
-pKeyValuesAka> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+pKeyValuesAka> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=6:
-pKeyValuesAka> unexpected UnDeeper
+pKeyValuesAka> unexpected )
 pKeyValuesAka> expecting other text or number
 
-sameMany> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+sameMany> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 sameMany> MATCH (EOK): <EMPTY>
 sameMany> VALUE: ([],[])
 
 **************** \ sameMany has returned []                                                                 :3_2:UnDeeper:
-manyIndentation/leaf?> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+manyIndentation/leaf?> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 manyIndentation/leaf?> MATCH (EOK): <EMPTY>
 manyIndentation/leaf?> VALUE: ([],[])
 
 *************** \ manyIndentation/leaf? has returned []                                                      :3_2:UnDeeper:
-pParamText(flat) subsequent lines: sameMany pKeyValues> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+pParamText(flat) subsequent lines: sameMany pKeyValues> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 pParamText(flat) subsequent lines: sameMany pKeyValues> MATCH (EOK): <EMPTY>
 pParamText(flat) subsequent lines: sameMany pKeyValues> VALUE: ([],[])
 
 ************** \ pParamText(flat) subsequent lines: sameMany pKeyValues has returned []                       :3_2:UnDeeper:
-pParamText> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-pParamText> MATCH (COK): Other "top2"
+pParamText> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+pParamText> MATCH (COK): "top2"
 pParamText> VALUE: (("top2" :| [],Nothing) :| [],[])
 
 ************* \ pParamText has returned ("top2" :| [],Nothing) :| []                                           :3_2:UnDeeper:
-term p/3:plain p> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-term p/3:plain p> MATCH (COK): Other "top2"
+term p/3:plain p> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+term p/3:plain p> MATCH (COK): "top2"
 term p/3:plain p> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ************ \ term p/3:plain p has returned MyLeaf (("top2" :| [],Nothing) :| [])                              :3_2:UnDeeper:
-term p/notLabelTerm> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-term p/notLabelTerm> MATCH (COK): Other "top2"
+term p/notLabelTerm> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+term p/notLabelTerm> MATCH (COK): "top2"
 term p/notLabelTerm> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 *********** \ term p/notLabelTerm has returned MyLeaf (("top2" :| [],Nothing) :| [])                             :3_2:UnDeeper:
-term p> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-term p> MATCH (COK): Other "top2"
+term p> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+term p> MATCH (COK): "top2"
 term p> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ********** \ term p has returned MyLeaf (("top2" :| [],Nothing) :| [])                                            :3_2:UnDeeper:
 ********** / binary(Or)                                                                                           :3_2:UnDeeper:
-binary(Or)> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+binary(Or)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=6:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ********** / binary(And)                                                                                          :3_2:UnDeeper:
-binary(And)> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+binary(And)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=6:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ********** / binary(SetLess)                                                                                      :3_2:UnDeeper:
-binary(SetLess)> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+binary(SetLess)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=6:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ********** / binary(SetPlus)                                                                                      :3_2:UnDeeper:
-binary(SetPlus)> IN: UnDeeper Or GoDeeper Other "this is a la <…>
+binary(SetPlus)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=6:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-expression> MATCH (COK): Other "top2"
+expression> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+expression> MATCH (COK): "top2"
 expression> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ********* \ expression has returned MyLeaf (("top2" :| [],Nothing) :| [])                                          :3_2:UnDeeper:
-manyIndentation/leaf?> IN: Other "top2" UnDeeper Or GoDeeper Other  <…>
-manyIndentation/leaf?> MATCH (COK): Other "top2"
+manyIndentation/leaf?> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
+manyIndentation/leaf?> MATCH (COK): "top2"
 manyIndentation/leaf?> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ******** \ manyIndentation/leaf? has returned MyLeaf (("top2" :| [],Nothing) :| [])                                 :3_2:UnDeeper:
 ******** / myindented: consuming UnDeeper                                                                           :3_2:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper Or GoDeeper Other "this is a la <…>
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 ******** \ myindented: consuming UnDeeper has returned UnDeeper                                                  :3_1:Or:
-someIndentation> IN: GoDeeper Other "top2" UnDeeper Or GoDeep <…>
-someIndentation> MATCH (COK): GoDeeper Other "top2" UnDeeper
+someIndentation> IN: ( "top2" ) OR ( "this is a label" EOL (  <…>
+someIndentation> MATCH (COK): ( "top2" )
 someIndentation> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ******* \ someIndentation has returned MyLeaf (("top2" :| [],Nothing) :| [])                                      :3_1:Or:
-term p/2:someIndentation expr p> IN: GoDeeper Other "top2" UnDeeper Or GoDeep <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "top2" UnDeeper
+term p/2:someIndentation expr p> IN: ( "top2" ) OR ( "this is a label" EOL (  <…>
+term p/2:someIndentation expr p> MATCH (COK): ( "top2" )
 term p/2:someIndentation expr p> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ****** \ term p/2:someIndentation expr p has returned MyLeaf (("top2" :| [],Nothing) :| [])                        :3_1:Or:
-term p/notLabelTerm> IN: GoDeeper Other "top2" UnDeeper Or GoDeep <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "top2" UnDeeper
+term p/notLabelTerm> IN: ( "top2" ) OR ( "this is a label" EOL (  <…>
+term p/notLabelTerm> MATCH (COK): ( "top2" )
 term p/notLabelTerm> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 ***** \ term p/notLabelTerm has returned MyLeaf (("top2" :| [],Nothing) :| [])                                      :3_1:Or:
-term p> IN: GoDeeper Other "top2" UnDeeper Or GoDeep <…>
-term p> MATCH (COK): GoDeeper Other "top2" UnDeeper
+term p> IN: ( "top2" ) OR ( "this is a label" EOL (  <…>
+term p> MATCH (COK): ( "top2" )
 term p> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
 
 **** \ term p has returned MyLeaf (("top2" :| [],Nothing) :| [])                                                     :3_1:Or:
 **** / binary(Or)                                                                                                    :3_1:Or:
-binary(Or)> IN: Or GoDeeper Other "this is a label" EOL  <…>
-binary(Or)> MATCH (COK): Or
+binary(Or)> IN: OR ( "this is a label" EOL ( "mid3" ) OR <…>
+binary(Or)> MATCH (COK): OR
 binary(Or)> VALUE: (Or,[])
 
 **** \ binary(Or) has returned Or                                                                                     :3_2:GoDeeper:
@@ -948,16 +949,16 @@ binary(Or)> VALUE: (Or,[])
 ****** / term p/2:someIndentation expr p                                                                            :3_2:GoDeeper:
 ******* / someIndentation                                                                                          :3_2:GoDeeper:
 ******** / myindented: consuming GoDeeper                                                                         :3_2:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "this is a label" EOL GoD <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :3_2:Other "this:
 ******** / manyIndentation/leaf?                                                                                   :3_2:Other "this:
 ********* / expression                                                                                            :3_2:Other "this:
 ********** / labelPrefix                                                                                         :3_2:Other "this:
-labelPrefix> IN: Other "this is a label" EOL GoDeeper Oth <…>
-labelPrefix> MATCH (COK): Other "this is a label"
+labelPrefix> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+labelPrefix> MATCH (COK): "this is a label"
 labelPrefix> VALUE: ("this is a label",[])
 
 ********** \ labelPrefix has returned "this is a label"                                                          :3_2:EOL:
@@ -966,26 +967,26 @@ labelPrefix> VALUE: ("this is a label",[])
 ************ / term p/2:someIndentation expr p                                                                 :3_2:EOL:
 ************* / someIndentation                                                                               :3_2:EOL:
 ************** / myindented: consuming GoDeeper                                                              :3_2:EOL:
-myindented: consuming GoDeeper> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+myindented: consuming GoDeeper> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=10:
 myindented: consuming GoDeeper> unexpected EOL
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+someIndentation> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=10:
 someIndentation> unexpected EOL
-someIndentation> expecting GoDeeper
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+term p/2:someIndentation expr p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=10:
 term p/2:someIndentation expr p> unexpected EOL
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> expecting (
 
 ************ / term p/3:plain p                                                                                :3_2:EOL:
 ************* / pParamText                                                                                    :3_2:EOL:
@@ -998,148 +999,148 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ******************** / $*|                                                                             :3_2:EOL:
 ********************* / someSL                                                                        :3_2:EOL:
 ********************** / pNumAsText                                                                  :3_2:EOL:
-pNumAsText> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+pNumAsText> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=10:
 pNumAsText> unexpected EOL
 pNumAsText> expecting number
 
-someSL> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+someSL> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=10:
 someSL> unexpected EOL
 someSL> expecting other text or number
 
-$*|> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=10:
 $*|> unexpected EOL
 $*|> expecting other text or number
 
-slKeyValues> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+slKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=10:
 slKeyValues> unexpected EOL
 slKeyValues> expecting other text or number
 
-slAKA base> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+slAKA base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=10:
 slAKA base> unexpected EOL
 slAKA base> expecting other text or number
 
-$*|> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=10:
 $*|> unexpected EOL
 $*|> expecting other text or number
 
-slAKA> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+slAKA> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=10:
 slAKA> unexpected EOL
 slAKA> expecting other text or number
 
-pKeyValuesAka> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+pKeyValuesAka> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=10:
 pKeyValuesAka> unexpected EOL
 pKeyValuesAka> expecting other text or number
 
-pParamText(flat) first line: pKeyValues> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+pParamText(flat) first line: pKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
 pParamText(flat) first line: pKeyValues> ERROR:
 pParamText(flat) first line: pKeyValues> offset=10:
 pParamText(flat) first line: pKeyValues> unexpected EOL
 pParamText(flat) first line: pKeyValues> expecting other text or number
 
-pParamText> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+pParamText> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 pParamText> MATCH (EERR): <EMPTY>
 pParamText> ERROR:
 pParamText> offset=10:
 pParamText> unexpected EOL
 pParamText> expecting other text or number
 
-term p/3:plain p> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+term p/3:plain p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=10:
 term p/3:plain p> unexpected EOL
 term p/3:plain p> expecting other text or number
 
-term p/notLabelTerm> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+term p/notLabelTerm> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
 term p/notLabelTerm> ERROR:
 term p/notLabelTerm> offset=10:
 term p/notLabelTerm> unexpected EOL
-term p/notLabelTerm> expecting GoDeeper or term
+term p/notLabelTerm> expecting ( or term
 
-term p> IN: EOL GoDeeper Other "mid3" UnDeeper Or Go <…>
+term p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
 term p> MATCH (EERR): <EMPTY>
 term p> ERROR:
 term p> offset=10:
 term p> unexpected EOL
-term p> expecting GoDeeper or term
+term p> expecting ( or term
 
-expression> IN: Other "this is a label" EOL GoDeeper Oth <…>
-expression> MATCH (CERR): Other "this is a label"
+expression> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+expression> MATCH (CERR): "this is a label"
 expression> ERROR:
 expression> offset=10:
 expression> unexpected EOL
-expression> expecting GoDeeper, MPNot, or term
+expression> expecting (, NOT, or term
 
-manyIndentation/leaf?> IN: Other "this is a label" EOL GoDeeper Oth <…>
+manyIndentation/leaf?> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=10:
 manyIndentation/leaf?> unexpected EOL
-manyIndentation/leaf?> expecting GoDeeper, MPNot, or term
+manyIndentation/leaf?> expecting (, NOT, or term
 
 ******** / manyIndentation/deeper; calling someIndentation                                                         :3_2:Other "this:
 ********* / someIndentation                                                                                       :3_2:Other "this:
 ********** / myindented: consuming GoDeeper                                                                      :3_2:Other "this:
-myindented: consuming GoDeeper> IN: Other "this is a label" EOL GoDeeper Oth <…>
+myindented: consuming GoDeeper> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=9:
-myindented: consuming GoDeeper> unexpected Other "this is a label"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "this is a label"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "this is a label" EOL GoDeeper Oth <…>
+someIndentation> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=9:
-someIndentation> unexpected Other "this is a label"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "this is a label"
+someIndentation> expecting (
 
-manyIndentation/deeper; calling someIndentation> IN: Other "this is a label" EOL GoDeeper Oth <…>
+manyIndentation/deeper; calling someIndentation> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 manyIndentation/deeper; calling someIndentation> MATCH (EERR): <EMPTY>
 manyIndentation/deeper; calling someIndentation> ERROR:
 manyIndentation/deeper; calling someIndentation> offset=9:
-manyIndentation/deeper; calling someIndentation> unexpected Other "this is a label"
-manyIndentation/deeper; calling someIndentation> expecting GoDeeper
+manyIndentation/deeper; calling someIndentation> unexpected "this is a label"
+manyIndentation/deeper; calling someIndentation> expecting (
 
-someIndentation> IN: GoDeeper Other "this is a label" EOL GoD <…>
-someIndentation> MATCH (CERR): GoDeeper
+someIndentation> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
+someIndentation> MATCH (CERR): (
 someIndentation> ERROR:
 someIndentation> offset=10:
 someIndentation> unexpected EOL
-someIndentation> expecting GoDeeper, MPNot, or term
+someIndentation> expecting (, NOT, or term
 
-term p/2:someIndentation expr p> IN: GoDeeper Other "this is a label" EOL GoD <…>
-term p/2:someIndentation expr p> MATCH (CERR): GoDeeper
+term p/2:someIndentation expr p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
+term p/2:someIndentation expr p> MATCH (CERR): (
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=10:
 term p/2:someIndentation expr p> unexpected EOL
-term p/2:someIndentation expr p> expecting GoDeeper, MPNot, or term
+term p/2:someIndentation expr p> expecting (, NOT, or term
 
 ****** / term p/3:plain p                                                                                           :3_2:GoDeeper:
 ******* / pParamText                                                                                               :3_2:GoDeeper:
@@ -1152,110 +1153,110 @@ term p/2:someIndentation expr p> expecting GoDeeper, MPNot, or term
 ************** / $*|                                                                                        :3_2:GoDeeper:
 *************** / someSL                                                                                   :3_2:GoDeeper:
 **************** / pNumAsText                                                                             :3_2:GoDeeper:
-pNumAsText> IN: GoDeeper Other "this is a label" EOL GoD <…>
+pNumAsText> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=8:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
-someSL> IN: GoDeeper Other "this is a label" EOL GoD <…>
+someSL> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=8:
-someSL> unexpected GoDeeper
+someSL> unexpected (
 someSL> expecting other text or number
 
-$*|> IN: GoDeeper Other "this is a label" EOL GoD <…>
+$*|> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=8:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-slKeyValues> IN: GoDeeper Other "this is a label" EOL GoD <…>
+slKeyValues> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=8:
-slKeyValues> unexpected GoDeeper
+slKeyValues> unexpected (
 slKeyValues> expecting other text or number
 
-slAKA base> IN: GoDeeper Other "this is a label" EOL GoD <…>
+slAKA base> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=8:
-slAKA base> unexpected GoDeeper
+slAKA base> unexpected (
 slAKA base> expecting other text or number
 
-$*|> IN: GoDeeper Other "this is a label" EOL GoD <…>
+$*|> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=8:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-slAKA> IN: GoDeeper Other "this is a label" EOL GoD <…>
+slAKA> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=8:
-slAKA> unexpected GoDeeper
+slAKA> unexpected (
 slAKA> expecting other text or number
 
-pKeyValuesAka> IN: GoDeeper Other "this is a label" EOL GoD <…>
+pKeyValuesAka> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=8:
-pKeyValuesAka> unexpected GoDeeper
+pKeyValuesAka> unexpected (
 pKeyValuesAka> expecting other text or number
 
-pParamText(flat) first line: pKeyValues> IN: GoDeeper Other "this is a label" EOL GoD <…>
+pParamText(flat) first line: pKeyValues> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
 pParamText(flat) first line: pKeyValues> ERROR:
 pParamText(flat) first line: pKeyValues> offset=8:
-pParamText(flat) first line: pKeyValues> unexpected GoDeeper
+pParamText(flat) first line: pKeyValues> unexpected (
 pParamText(flat) first line: pKeyValues> expecting other text or number
 
-pParamText> IN: GoDeeper Other "this is a label" EOL GoD <…>
+pParamText> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pParamText> MATCH (EERR): <EMPTY>
 pParamText> ERROR:
 pParamText> offset=8:
-pParamText> unexpected GoDeeper
+pParamText> unexpected (
 pParamText> expecting other text or number
 
-term p/3:plain p> IN: GoDeeper Other "this is a label" EOL GoD <…>
+term p/3:plain p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=8:
-term p/3:plain p> unexpected GoDeeper
+term p/3:plain p> unexpected (
 term p/3:plain p> expecting other text or number
 
-term p/notLabelTerm> IN: GoDeeper Other "this is a label" EOL GoD <…>
+term p/notLabelTerm> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
 term p/notLabelTerm> ERROR:
 term p/notLabelTerm> offset=10:
 term p/notLabelTerm> unexpected EOL
-term p/notLabelTerm> expecting GoDeeper, MPNot, or term
+term p/notLabelTerm> expecting (, NOT, or term
 
-term p> IN: GoDeeper Other "this is a label" EOL GoD <…>
+term p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p> MATCH (EERR): <EMPTY>
 term p> ERROR:
 term p> offset=10:
 term p> unexpected EOL
-term p> expecting GoDeeper, MPNot, or term
+term p> expecting (, NOT, or term
 
-expression> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-expression> MATCH (CERR): GoDeeper Other "top1" UnDeeper Or GoDeep <…>
+expression> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+expression> MATCH (CERR): ( "top1" ) OR ( "top2" ) OR
 expression> ERROR:
 expression> offset=10:
 expression> unexpected EOL
-expression> expecting GoDeeper, MPNot, or term
+expression> expecting (, NOT, or term
 
-expr pParamText> IN: GoDeeper Other "top1" UnDeeper Or GoDeep <…>
-expr pParamText> MATCH (CERR): GoDeeper Other "top1" UnDeeper Or GoDeep <…>
+expr pParamText> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
+expr pParamText> MATCH (CERR): ( "top1" ) OR ( "top2" ) OR
 expr pParamText> ERROR:
 expr pParamText> offset=10:
 expr pParamText> unexpected EOL
-expr pParamText> expecting GoDeeper, MPNot, or term
+expr pParamText> expecting (, NOT, or term
 
 
 our new parser
@@ -1269,7 +1270,7 @@ Failures:
        but parsing failed with error:
        3:2:
        unexpected EOL
-       expecting GoDeeper, MPNot, or term
+       expecting (, NOT, or term
                          top1                                                 
        OR                top2                                                 
        OR                ✳ this is a label                                    
@@ -1279,9 +1280,9 @@ Failures:
 
   To rerun use: --match "/our new parser/indent-2-c-3/"
 
-Randomized with seed 123331561
+Randomized with seed 1397798348
 
-Finished in 0.0091 seconds
+Finished in 0.0089 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

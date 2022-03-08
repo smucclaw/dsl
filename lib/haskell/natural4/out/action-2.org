@@ -6,15 +6,16 @@
 natural4> test (suite: natural4-test, args: --match "/parser elements and fragments ... should parse/action-2/")
 
 * Tokens
-[Do,GoDeeper,Other "win",GoDeeper,Other "gloriously",UnDeeper,UnDeeper]
+DO
+    ( "win" ( "gloriously" ) )
 * main
 :PROPERTIES:
 :VISIBILITY: children
 :END:
 
 ** / pDoAction/Do                                                                                                      :1_1:Do:
-pDoAction/Do> IN: Do GoDeeper Other "win" GoDeeper Other " <…>
-pDoAction/Do> MATCH (COK): Do
+pDoAction/Do> IN: DO ( "win" ( "gloriously" ) )
+pDoAction/Do> MATCH (COK): DO
 pDoAction/Do> VALUE: (Do,[])
 
 ** \ pDoAction/Do has returned Do                                                                                       :1_2:GoDeeper:
@@ -24,11 +25,11 @@ pDoAction/Do> VALUE: (Do,[])
 ***** / expr pParamText                                                                                              :1_2:GoDeeper:
 ****** / expression                                                                                                 :1_2:GoDeeper:
 ******* / labelPrefix                                                                                              :1_2:GoDeeper:
-labelPrefix> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
+labelPrefix> IN: ( "win" ( "gloriously" ) )
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=1:
-labelPrefix> unexpected GoDeeper
+labelPrefix> unexpected (
 labelPrefix> expecting Other text
 
 ******* / term p                                                                                                   :1_2:GoDeeper:
@@ -36,16 +37,16 @@ labelPrefix> expecting Other text
 ********* / term p/2:someIndentation expr p                                                                      :1_2:GoDeeper:
 ********** / someIndentation                                                                                    :1_2:GoDeeper:
 *********** / myindented: consuming GoDeeper                                                                   :1_2:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "win" ( "gloriously" ) )
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 *********** \ myindented: consuming GoDeeper has returned GoDeeper                                              :1_2:Other "win":
 *********** / manyIndentation/leaf?                                                                             :1_2:Other "win":
 ************ / expression                                                                                      :1_2:Other "win":
 ************* / labelPrefix                                                                                   :1_2:Other "win":
-labelPrefix> IN: Other "win" GoDeeper Other "gloriously"  <…>
-labelPrefix> MATCH (COK): Other "win"
+labelPrefix> IN: "win" ( "gloriously" ) )
+labelPrefix> MATCH (COK): "win"
 labelPrefix> VALUE: ("win",[])
 
 ************* \ labelPrefix has returned "win"                                                                 :1_3:GoDeeper:
@@ -54,45 +55,45 @@ labelPrefix> VALUE: ("win",[])
 *************** / term p/2:someIndentation expr p                                                            :1_3:GoDeeper:
 **************** / someIndentation                                                                          :1_3:GoDeeper:
 ***************** / myindented: consuming GoDeeper                                                         :1_3:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Other "gloriously" UnDeeper UnD <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( "gloriously" ) )
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ***************** \ myindented: consuming GoDeeper has returned GoDeeper                                    :1_3:Other "glor:
 ***************** / manyIndentation/leaf?                                                                   :1_3:Other "glor:
 ****************** / expression                                                                            :1_3:Other "glor:
 ******************* / labelPrefix                                                                         :1_3:Other "glor:
-labelPrefix> IN: Other "gloriously" UnDeeper UnDeeper
+labelPrefix> IN: "gloriously" ) )
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=5:
-labelPrefix> unexpected UnDeeper
+labelPrefix> unexpected )
 
 ******************* / term p                                                                              :1_3:Other "glor:
 ******************** / term p/notLabelTerm                                                               :1_3:Other "glor:
 ********************* / term p/2:someIndentation expr p                                                 :1_3:Other "glor:
 ********************** / someIndentation                                                               :1_3:Other "glor:
 *********************** / myindented: consuming GoDeeper                                              :1_3:Other "glor:
-myindented: consuming GoDeeper> IN: Other "gloriously" UnDeeper UnDeeper
+myindented: consuming GoDeeper> IN: "gloriously" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=4:
-myindented: consuming GoDeeper> unexpected Other "gloriously"
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected "gloriously"
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Other "gloriously" UnDeeper UnDeeper
+someIndentation> IN: "gloriously" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=4:
-someIndentation> unexpected Other "gloriously"
-someIndentation> expecting GoDeeper
+someIndentation> unexpected "gloriously"
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Other "gloriously" UnDeeper UnDeeper
+term p/2:someIndentation expr p> IN: "gloriously" ) )
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=4:
-term p/2:someIndentation expr p> unexpected Other "gloriously"
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected "gloriously"
+term p/2:someIndentation expr p> expecting (
 
 ********************* / term p/3:plain p                                                                :1_3:Other "glor:
 ********************** / pParamText                                                                    :1_3:Other "glor:
@@ -104,232 +105,232 @@ term p/2:someIndentation expr p> expecting GoDeeper
 **************************** / slKeyValues                                                       :1_3:Other "glor:
 ***************************** / $*|                                                             :1_3:Other "glor:
 ****************************** / someSL                                                        :1_3:Other "glor:
-someSL> IN: Other "gloriously" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "gloriously"
+someSL> IN: "gloriously" ) )
+someSL> MATCH (COK): "gloriously"
 someSL> VALUE: ((["gloriously"],0),[])
 
 ****************************** \ someSL has returned (["gloriously"],0)                       :1_2:UnDeeper:
-$*|> IN: Other "gloriously" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "gloriously"
+$*|> IN: "gloriously" ) )
+$*|> MATCH (COK): "gloriously"
 $*|> VALUE: ((["gloriously"],0),[])
 
 ***************************** \ $*| has returned (["gloriously"],0)                            :1_2:UnDeeper:
 ***************************** / |>>/recurse                                                    :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************************** / |>>/base                                                       :1_2:UnDeeper:
 ****************************** / |?| optional something                                       :1_2:UnDeeper:
 ******************************* / |>>/recurse                                                :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ******************************* / |>>/base                                                   :1_2:UnDeeper:
 ******************************** / slTypeSig                                                :1_2:UnDeeper:
 ********************************* / $>|                                                    :1_2:UnDeeper:
-$>|> IN: UnDeeper UnDeeper
+$>|> IN: ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=5:
-$>|> unexpected UnDeeper
-$>|> expecting Is or TypeSeparator
+$>|> unexpected )
+$>|> expecting :: or IS
 
-slTypeSig> IN: UnDeeper UnDeeper
+slTypeSig> IN: ) )
 slTypeSig> MATCH (EERR): <EMPTY>
 slTypeSig> ERROR:
 slTypeSig> offset=5:
-slTypeSig> unexpected UnDeeper
-slTypeSig> expecting Is or TypeSeparator
+slTypeSig> unexpected )
+slTypeSig> expecting :: or IS
 
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=5:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Is or TypeSeparator
+|>>/base> unexpected )
+|>>/base> expecting :: or IS
 
-|?| optional something> IN: UnDeeper UnDeeper
+|?| optional something> IN: ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 ****************************** \ |?| optional something has returned (Nothing,0)              :1_2:UnDeeper:
 ****************************** > |>>/base got Nothing                                         :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ***************************** \ |>>/base has returned (Nothing,0)                              :1_2:UnDeeper:
-slKeyValues> IN: Other "gloriously" UnDeeper UnDeeper
-slKeyValues> MATCH (COK): Other "gloriously"
+slKeyValues> IN: "gloriously" ) )
+slKeyValues> MATCH (COK): "gloriously"
 slKeyValues> VALUE: ((("gloriously" :| [],Nothing),0),[])
 
 **************************** \ slKeyValues has returned (("gloriously" :| [],Nothing),0)        :1_2:UnDeeper:
-slAKA base> IN: Other "gloriously" UnDeeper UnDeeper
-slAKA base> MATCH (COK): Other "gloriously"
+slAKA base> IN: "gloriously" ) )
+slAKA base> MATCH (COK): "gloriously"
 slAKA base> VALUE: ((("gloriously" :| [],Nothing),0),[])
 
 *************************** \ slAKA base has returned (("gloriously" :| [],Nothing),0)           :1_2:UnDeeper:
-$*|> IN: Other "gloriously" UnDeeper UnDeeper
-$*|> MATCH (COK): Other "gloriously"
+$*|> IN: "gloriously" ) )
+$*|> MATCH (COK): "gloriously"
 $*|> VALUE: ((("gloriously" :| [],Nothing),0),[])
 
 ************************** \ $*| has returned (("gloriously" :| [],Nothing),0)                    :1_2:UnDeeper:
 ************************** / |>>/recurse                                                          :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************** / |>>/base                                                             :1_2:UnDeeper:
 *************************** / slAKA optional akapart                                             :1_2:UnDeeper:
 **************************** / |?| optional something                                           :1_2:UnDeeper:
 ***************************** / |>>/recurse                                                    :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************************** / |>>/base                                                       :1_2:UnDeeper:
 ****************************** / PAKA/akapart                                                 :1_2:UnDeeper:
 ******************************* / $>|                                                        :1_2:UnDeeper:
 ******************************** / Aka Token                                                :1_2:UnDeeper:
-Aka Token> IN: UnDeeper UnDeeper
+Aka Token> IN: ) )
 Aka Token> MATCH (EERR): <EMPTY>
 Aka Token> ERROR:
 Aka Token> offset=5:
-Aka Token> unexpected UnDeeper
-Aka Token> expecting Aka
+Aka Token> unexpected )
+Aka Token> expecting AKA
 
-$>|> IN: UnDeeper UnDeeper
+$>|> IN: ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=5:
-$>|> unexpected UnDeeper
-$>|> expecting Aka
+$>|> unexpected )
+$>|> expecting AKA
 
-PAKA/akapart> IN: UnDeeper UnDeeper
+PAKA/akapart> IN: ) )
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
 PAKA/akapart> offset=5:
-PAKA/akapart> unexpected UnDeeper
-PAKA/akapart> expecting Aka
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
 
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=5:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Aka
+|>>/base> unexpected )
+|>>/base> expecting AKA
 
-|?| optional something> IN: UnDeeper UnDeeper
+|?| optional something> IN: ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 **************************** \ |?| optional something has returned (Nothing,0)                  :1_2:UnDeeper:
-slAKA optional akapart> IN: UnDeeper UnDeeper
+slAKA optional akapart> IN: ) )
 slAKA optional akapart> MATCH (EOK): <EMPTY>
 slAKA optional akapart> VALUE: ((Nothing,0),[])
 
 *************************** \ slAKA optional akapart has returned (Nothing,0)                    :1_2:UnDeeper:
 *************************** > |>>/base got Nothing                                               :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ************************** \ |>>/base has returned (Nothing,0)                                    :1_2:UnDeeper:
 ************************** / |>>/recurse                                                          :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ************************** / |>>/base                                                             :1_2:UnDeeper:
 *************************** / slAKA optional typically                                           :1_2:UnDeeper:
 **************************** / |?| optional something                                           :1_2:UnDeeper:
 ***************************** / |>>/recurse                                                    :1_2:UnDeeper:
-|>>/recurse> IN: UnDeeper UnDeeper
+|>>/recurse> IN: ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=5:
-|>>/recurse> unexpected UnDeeper
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
 
 ***************************** / |>>/base                                                       :1_2:UnDeeper:
 ****************************** / typically                                                    :1_2:UnDeeper:
 ******************************* / $>|                                                        :1_2:UnDeeper:
-$>|> IN: UnDeeper UnDeeper
+$>|> IN: ) )
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
 $>|> offset=5:
-$>|> unexpected UnDeeper
-$>|> expecting Typically
+$>|> unexpected )
+$>|> expecting TYPICALLY
 
-typically> IN: UnDeeper UnDeeper
+typically> IN: ) )
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
 typically> offset=5:
-typically> unexpected UnDeeper
-typically> expecting Typically
+typically> unexpected )
+typically> expecting TYPICALLY
 
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
 |>>/base> offset=5:
-|>>/base> unexpected UnDeeper
-|>>/base> expecting Typically
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
 
-|?| optional something> IN: UnDeeper UnDeeper
+|?| optional something> IN: ) )
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
 
 **************************** \ |?| optional something has returned (Nothing,0)                  :1_2:UnDeeper:
-slAKA optional typically> IN: UnDeeper UnDeeper
+slAKA optional typically> IN: ) )
 slAKA optional typically> MATCH (EOK): <EMPTY>
 slAKA optional typically> VALUE: ((Nothing,0),[])
 
 *************************** \ slAKA optional typically has returned (Nothing,0)                  :1_2:UnDeeper:
 *************************** > |>>/base got Nothing                                               :1_2:UnDeeper:
-|>>/base> IN: UnDeeper UnDeeper
+|>>/base> IN: ) )
 |>>/base> MATCH (EOK): <EMPTY>
 |>>/base> VALUE: ((Nothing,0),[])
 
 ************************** \ |>>/base has returned (Nothing,0)                                    :1_2:UnDeeper:
 ************************** > slAKA: proceeding after base and entityalias are retrieved ...       :1_2:UnDeeper:
 ************************** > pAKA: entityalias = Nothing                                          :1_2:UnDeeper:
-slAKA> IN: Other "gloriously" UnDeeper UnDeeper
-slAKA> MATCH (COK): Other "gloriously"
+slAKA> IN: "gloriously" ) )
+slAKA> MATCH (COK): "gloriously"
 slAKA> VALUE: ((("gloriously" :| [],Nothing),0),[])
 
 ************************* \ slAKA has returned (("gloriously" :| [],Nothing),0)                    :1_2:UnDeeper:
 ************************* / undeepers                                                              :1_2:UnDeeper:
 ************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :1_2:UnDeeper:
 ************************** > sameLine: success!                                                   :1_2:UnDeeper:
-undeepers> IN: UnDeeper UnDeeper
+undeepers> IN: ) )
 undeepers> MATCH (EOK): <EMPTY>
 undeepers> VALUE: ((),[])
 
 ************************* \ undeepers has returned ()                                              :1_2:UnDeeper:
-pKeyValuesAka> IN: Other "gloriously" UnDeeper UnDeeper
-pKeyValuesAka> MATCH (COK): Other "gloriously"
+pKeyValuesAka> IN: "gloriously" ) )
+pKeyValuesAka> MATCH (COK): "gloriously"
 pKeyValuesAka> VALUE: (("gloriously" :| [],Nothing),[])
 
 ************************ \ pKeyValuesAka has returned ("gloriously" :| [],Nothing)                  :1_2:UnDeeper:
-pParamText(flat) first line: pKeyValues> IN: Other "gloriously" UnDeeper UnDeeper
-pParamText(flat) first line: pKeyValues> MATCH (COK): Other "gloriously"
+pParamText(flat) first line: pKeyValues> IN: "gloriously" ) )
+pParamText(flat) first line: pKeyValues> MATCH (COK): "gloriously"
 pParamText(flat) first line: pKeyValues> VALUE: (("gloriously" :| [],Nothing),[])
 
 *********************** \ pParamText(flat) first line: pKeyValues has returned ("gloriously" :| [],Nothing) :1_2:UnDeeper:
@@ -344,230 +345,230 @@ pParamText(flat) first line: pKeyValues> VALUE: (("gloriously" :| [],Nothing),[]
 ******************************* / $*|                                                        :1_2:UnDeeper:
 ******************************** / someSL                                                   :1_2:UnDeeper:
 ********************************* / pNumAsText                                             :1_2:UnDeeper:
-pNumAsText> IN: UnDeeper UnDeeper
+pNumAsText> IN: ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=5:
-pNumAsText> unexpected UnDeeper
+pNumAsText> unexpected )
 pNumAsText> expecting number
 
-someSL> IN: UnDeeper UnDeeper
+someSL> IN: ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=5:
-someSL> unexpected UnDeeper
+someSL> unexpected )
 someSL> expecting other text or number
 
-$*|> IN: UnDeeper UnDeeper
+$*|> IN: ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=5:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slKeyValues> IN: UnDeeper UnDeeper
+slKeyValues> IN: ) )
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
 slKeyValues> offset=5:
-slKeyValues> unexpected UnDeeper
+slKeyValues> unexpected )
 slKeyValues> expecting other text or number
 
-slAKA base> IN: UnDeeper UnDeeper
+slAKA base> IN: ) )
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=5:
-slAKA base> unexpected UnDeeper
+slAKA base> unexpected )
 slAKA base> expecting other text or number
 
-$*|> IN: UnDeeper UnDeeper
+$*|> IN: ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=5:
-$*|> unexpected UnDeeper
+$*|> unexpected )
 $*|> expecting other text or number
 
-slAKA> IN: UnDeeper UnDeeper
+slAKA> IN: ) )
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=5:
-slAKA> unexpected UnDeeper
+slAKA> unexpected )
 slAKA> expecting other text or number
 
-pKeyValuesAka> IN: UnDeeper UnDeeper
+pKeyValuesAka> IN: ) )
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
 pKeyValuesAka> offset=5:
-pKeyValuesAka> unexpected UnDeeper
+pKeyValuesAka> unexpected )
 pKeyValuesAka> expecting other text or number
 
-sameMany> IN: UnDeeper UnDeeper
+sameMany> IN: ) )
 sameMany> MATCH (EOK): <EMPTY>
 sameMany> VALUE: ([],[])
 
 ************************* \ sameMany has returned []                                               :1_2:UnDeeper:
-manyIndentation/leaf?> IN: UnDeeper UnDeeper
+manyIndentation/leaf?> IN: ) )
 manyIndentation/leaf?> MATCH (EOK): <EMPTY>
 manyIndentation/leaf?> VALUE: ([],[])
 
 ************************ \ manyIndentation/leaf? has returned []                                    :1_2:UnDeeper:
-pParamText(flat) subsequent lines: sameMany pKeyValues> IN: UnDeeper UnDeeper
+pParamText(flat) subsequent lines: sameMany pKeyValues> IN: ) )
 pParamText(flat) subsequent lines: sameMany pKeyValues> MATCH (EOK): <EMPTY>
 pParamText(flat) subsequent lines: sameMany pKeyValues> VALUE: ([],[])
 
 *********************** \ pParamText(flat) subsequent lines: sameMany pKeyValues has returned []     :1_2:UnDeeper:
-pParamText> IN: Other "gloriously" UnDeeper UnDeeper
-pParamText> MATCH (COK): Other "gloriously"
+pParamText> IN: "gloriously" ) )
+pParamText> MATCH (COK): "gloriously"
 pParamText> VALUE: (("gloriously" :| [],Nothing) :| [],[])
 
 ********************** \ pParamText has returned ("gloriously" :| [],Nothing) :| []                   :1_2:UnDeeper:
-term p/3:plain p> IN: Other "gloriously" UnDeeper UnDeeper
-term p/3:plain p> MATCH (COK): Other "gloriously"
+term p/3:plain p> IN: "gloriously" ) )
+term p/3:plain p> MATCH (COK): "gloriously"
 term p/3:plain p> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ********************* \ term p/3:plain p has returned MyLeaf (("gloriously" :| [],Nothing) :| [])      :1_2:UnDeeper:
-term p/notLabelTerm> IN: Other "gloriously" UnDeeper UnDeeper
-term p/notLabelTerm> MATCH (COK): Other "gloriously"
+term p/notLabelTerm> IN: "gloriously" ) )
+term p/notLabelTerm> MATCH (COK): "gloriously"
 term p/notLabelTerm> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ******************** \ term p/notLabelTerm has returned MyLeaf (("gloriously" :| [],Nothing) :| [])     :1_2:UnDeeper:
-term p> IN: Other "gloriously" UnDeeper UnDeeper
-term p> MATCH (COK): Other "gloriously"
+term p> IN: "gloriously" ) )
+term p> MATCH (COK): "gloriously"
 term p> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ******************* \ term p has returned MyLeaf (("gloriously" :| [],Nothing) :| [])                    :1_2:UnDeeper:
 ******************* / binary(Or)                                                                         :1_2:UnDeeper:
-binary(Or)> IN: UnDeeper UnDeeper
+binary(Or)> IN: ) )
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=5:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ******************* / binary(And)                                                                        :1_2:UnDeeper:
-binary(And)> IN: UnDeeper UnDeeper
+binary(And)> IN: ) )
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=5:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ******************* / binary(SetLess)                                                                    :1_2:UnDeeper:
-binary(SetLess)> IN: UnDeeper UnDeeper
+binary(SetLess)> IN: ) )
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=5:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ******************* / binary(SetPlus)                                                                    :1_2:UnDeeper:
-binary(SetPlus)> IN: UnDeeper UnDeeper
+binary(SetPlus)> IN: ) )
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=5:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "gloriously" UnDeeper UnDeeper
-expression> MATCH (COK): Other "gloriously"
+expression> IN: "gloriously" ) )
+expression> MATCH (COK): "gloriously"
 expression> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ****************** \ expression has returned MyLeaf (("gloriously" :| [],Nothing) :| [])                  :1_2:UnDeeper:
-manyIndentation/leaf?> IN: Other "gloriously" UnDeeper UnDeeper
-manyIndentation/leaf?> MATCH (COK): Other "gloriously"
+manyIndentation/leaf?> IN: "gloriously" ) )
+manyIndentation/leaf?> MATCH (COK): "gloriously"
 manyIndentation/leaf?> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ***************** \ manyIndentation/leaf? has returned MyLeaf (("gloriously" :| [],Nothing) :| [])         :1_2:UnDeeper:
 ***************** / myindented: consuming UnDeeper                                                         :1_2:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper UnDeeper
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: ) )
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 ***************** \ myindented: consuming UnDeeper has returned UnDeeper                                     :1_3:UnDeeper:
-someIndentation> IN: GoDeeper Other "gloriously" UnDeeper UnD <…>
-someIndentation> MATCH (COK): GoDeeper Other "gloriously" UnDeeper
+someIndentation> IN: ( "gloriously" ) )
+someIndentation> MATCH (COK): ( "gloriously" )
 someIndentation> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 **************** \ someIndentation has returned MyLeaf (("gloriously" :| [],Nothing) :| [])                   :1_3:UnDeeper:
-term p/2:someIndentation expr p> IN: GoDeeper Other "gloriously" UnDeeper UnD <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "gloriously" UnDeeper
+term p/2:someIndentation expr p> IN: ( "gloriously" ) )
+term p/2:someIndentation expr p> MATCH (COK): ( "gloriously" )
 term p/2:someIndentation expr p> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 *************** \ term p/2:someIndentation expr p has returned MyLeaf (("gloriously" :| [],Nothing) :| [])     :1_3:UnDeeper:
-term p/notLabelTerm> IN: GoDeeper Other "gloriously" UnDeeper UnD <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "gloriously" UnDeeper
+term p/notLabelTerm> IN: ( "gloriously" ) )
+term p/notLabelTerm> MATCH (COK): ( "gloriously" )
 term p/notLabelTerm> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ************** \ term p/notLabelTerm has returned MyLeaf (("gloriously" :| [],Nothing) :| [])                   :1_3:UnDeeper:
-term p> IN: GoDeeper Other "gloriously" UnDeeper UnD <…>
-term p> MATCH (COK): GoDeeper Other "gloriously" UnDeeper
+term p> IN: ( "gloriously" ) )
+term p> MATCH (COK): ( "gloriously" )
 term p> VALUE: (MyLeaf (("gloriously" :| [],Nothing) :| []),[])
 
 ************* \ term p has returned MyLeaf (("gloriously" :| [],Nothing) :| [])                                  :1_3:UnDeeper:
 ************* / binary(Or)                                                                                       :1_3:UnDeeper:
-binary(Or)> IN: UnDeeper
+binary(Or)> IN: )
 binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=6:
-binary(Or)> unexpected UnDeeper
-binary(Or)> expecting Or
+binary(Or)> unexpected )
+binary(Or)> expecting OR
 
 ************* / binary(And)                                                                                      :1_3:UnDeeper:
-binary(And)> IN: UnDeeper
+binary(And)> IN: )
 binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=6:
-binary(And)> unexpected UnDeeper
-binary(And)> expecting And
+binary(And)> unexpected )
+binary(And)> expecting AND
 
 ************* / binary(SetLess)                                                                                  :1_3:UnDeeper:
-binary(SetLess)> IN: UnDeeper
+binary(SetLess)> IN: )
 binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=6:
-binary(SetLess)> unexpected UnDeeper
-binary(SetLess)> expecting SetLess
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
 
 ************* / binary(SetPlus)                                                                                  :1_3:UnDeeper:
-binary(SetPlus)> IN: UnDeeper
+binary(SetPlus)> IN: )
 binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=6:
-binary(SetPlus)> unexpected UnDeeper
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
 
-expression> IN: Other "win" GoDeeper Other "gloriously"  <…>
-expression> MATCH (COK): Other "win" GoDeeper Other "gloriously"  <…>
+expression> IN: "win" ( "gloriously" ) )
+expression> MATCH (COK): "win" ( "gloriously" )
 expression> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ************ \ expression has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))              :1_3:UnDeeper:
-manyIndentation/leaf?> IN: Other "win" GoDeeper Other "gloriously"  <…>
-manyIndentation/leaf?> MATCH (COK): Other "win" GoDeeper Other "gloriously"  <…>
+manyIndentation/leaf?> IN: "win" ( "gloriously" ) )
+manyIndentation/leaf?> MATCH (COK): "win" ( "gloriously" )
 manyIndentation/leaf?> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 *********** \ manyIndentation/leaf? has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))     :1_3:UnDeeper:
 *********** / myindented: consuming UnDeeper                                                                       :1_3:UnDeeper:
-myindented: consuming UnDeeper> IN: UnDeeper
-myindented: consuming UnDeeper> MATCH (COK): UnDeeper
+myindented: consuming UnDeeper> IN: )
+myindented: consuming UnDeeper> MATCH (COK): )
 myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
 
 *********** \ myindented: consuming UnDeeper has returned UnDeeper                                          :EOF:
-someIndentation> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-someIndentation> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+someIndentation> IN: ( "win" ( "gloriously" ) )
+someIndentation> MATCH (COK): ( "win" ( "gloriously" ) )
 someIndentation> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ********** \ someIndentation has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))      :EOF:
-term p/2:someIndentation expr p> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-term p/2:someIndentation expr p> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+term p/2:someIndentation expr p> IN: ( "win" ( "gloriously" ) )
+term p/2:someIndentation expr p> MATCH (COK): ( "win" ( "gloriously" ) )
 term p/2:someIndentation expr p> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ********* \ term p/2:someIndentation expr p has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])) :EOF:
-term p/notLabelTerm> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-term p/notLabelTerm> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+term p/notLabelTerm> IN: ( "win" ( "gloriously" ) )
+term p/notLabelTerm> MATCH (COK): ( "win" ( "gloriously" ) )
 term p/notLabelTerm> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ******** \ term p/notLabelTerm has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))      :EOF:
-term p> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-term p> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+term p> IN: ( "win" ( "gloriously" ) )
+term p> MATCH (COK): ( "win" ( "gloriously" ) )
 term p> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ******* \ term p has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))                     :EOF:
@@ -577,7 +578,7 @@ binary(Or)> MATCH (EERR): <EMPTY>
 binary(Or)> ERROR:
 binary(Or)> offset=7:
 binary(Or)> unexpected end of input
-binary(Or)> expecting Or
+binary(Or)> expecting OR
 
 ******* / binary(And)                                                                                           :EOF:
 binary(And)> IN: <EMPTY>
@@ -585,7 +586,7 @@ binary(And)> MATCH (EERR): <EMPTY>
 binary(And)> ERROR:
 binary(And)> offset=7:
 binary(And)> unexpected end of input
-binary(And)> expecting And
+binary(And)> expecting AND
 
 ******* / binary(SetLess)                                                                                       :EOF:
 binary(SetLess)> IN: <EMPTY>
@@ -593,7 +594,7 @@ binary(SetLess)> MATCH (EERR): <EMPTY>
 binary(SetLess)> ERROR:
 binary(SetLess)> offset=7:
 binary(SetLess)> unexpected end of input
-binary(SetLess)> expecting SetLess
+binary(SetLess)> expecting LESS
 
 ******* / binary(SetPlus)                                                                                       :EOF:
 binary(SetPlus)> IN: <EMPTY>
@@ -601,30 +602,30 @@ binary(SetPlus)> MATCH (EERR): <EMPTY>
 binary(SetPlus)> ERROR:
 binary(SetPlus)> offset=7:
 binary(SetPlus)> unexpected end of input
-binary(SetPlus)> expecting SetPlus
+binary(SetPlus)> expecting PLUS
 
-expression> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-expression> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+expression> IN: ( "win" ( "gloriously" ) )
+expression> MATCH (COK): ( "win" ( "gloriously" ) )
 expression> VALUE: (MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| [])),[])
 
 ****** \ expression has returned MyLabel ["win"] (MyLeaf (("gloriously" :| [],Nothing) :| []))                   :EOF:
-expr pParamText> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-expr pParamText> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+expr pParamText> IN: ( "win" ( "gloriously" ) )
+expr pParamText> MATCH (COK): ( "win" ( "gloriously" ) )
 expr pParamText> VALUE: (MyLeaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)]),[])
 
 ***** \ expr pParamText has returned MyLeaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)])             :EOF:
-dBoolStructP calling exprP> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-dBoolStructP calling exprP> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+dBoolStructP calling exprP> IN: ( "win" ( "gloriously" ) )
+dBoolStructP calling exprP> MATCH (COK): ( "win" ( "gloriously" ) )
 dBoolStructP calling exprP> VALUE: (Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)]),[])
 
 **** \ dBoolStructP calling exprP has returned Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)])      :EOF:
-pAction calling dBoolStructP> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-pAction calling dBoolStructP> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+pAction calling dBoolStructP> IN: ( "win" ( "gloriously" ) )
+pAction calling dBoolStructP> MATCH (COK): ( "win" ( "gloriously" ) )
 pAction calling dBoolStructP> VALUE: (Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)]),[])
 
 *** \ pAction calling dBoolStructP has returned Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)])      :EOF:
-pDoAction/pAction> IN: GoDeeper Other "win" GoDeeper Other "glo <…>
-pDoAction/pAction> MATCH (COK): GoDeeper Other "win" GoDeeper Other "glo <…>
+pDoAction/pAction> IN: ( "win" ( "gloriously" ) )
+pDoAction/pAction> MATCH (COK): ( "win" ( "gloriously" ) )
 pDoAction/pAction> VALUE: (Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)]),[])
 
 ** \ pDoAction/pAction has returned Leaf (("win" :| [],Nothing) :| [("gloriously" :| [],Nothing)])                   :EOF:
@@ -641,9 +642,9 @@ Failures:
 
   To rerun use: --match "/parser elements and fragments ... should parse/action-2/"
 
-Randomized with seed 385639587
+Randomized with seed 291259240
 
-Finished in 0.0055 seconds
+Finished in 0.0053 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

@@ -6,7 +6,8 @@
 natural4> test (suite: natural4-test, args: --match "/revised parser/horn-0-1/")
 
 * Tokens
-[Other "X",GoDeeper,Is,GoDeeper,Other "Y",UnDeeper,UnDeeper]
+"X"
+    ( IS ( "Y" ) )
 * main
 :PROPERTIES:
 :VISIBILITY: children
@@ -20,158 +21,159 @@ natural4> test (suite: natural4-test, args: --match "/revised parser/horn-0-1/")
 ****** / slMultiTerm                                                                                               :1_1:Other "X":
 ******* / someSL                                                                                                  :1_1:Other "X":
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-someSL> MATCH (COK): Other "X"
+someSL> IN: "X" ( IS ( "Y" ) )
+someSL> MATCH (COK): "X"
 someSL> VALUE: ((["X"],0),[])
 
 ******* \ someSL has returned (["X"],0)                                                                            :1_2:GoDeeper:
-slMultiTerm> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-slMultiTerm> MATCH (COK): Other "X"
+slMultiTerm> IN: "X" ( IS ( "Y" ) )
+slMultiTerm> MATCH (COK): "X"
 slMultiTerm> VALUE: ((["X"],0),[])
 
 ****** \ slMultiTerm has returned (["X"],0)                                                                         :1_2:GoDeeper:
-$*|> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-$*|> MATCH (COK): Other "X"
+$*|> IN: "X" ( IS ( "Y" ) )
+$*|> MATCH (COK): "X"
 $*|> VALUE: ((["X"],0),[])
 
 ***** \ $*| has returned (["X"],0)                                                                                   :1_2:GoDeeper:
 ***** / |^| deeps                                                                                                    :1_2:GoDeeper:
-|^| deeps> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-|^| deeps> MATCH (COK): GoDeeper
+|^| deeps> IN: ( IS ( "Y" ) )
+|^| deeps> MATCH (COK): (
 |^| deeps> VALUE: (([()],1),[])
 
 ***** \ |^| deeps has returned ([()],1)                                                                               :1_2:Is:
-nested simpleHorn> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-nested simpleHorn> MATCH (CERR): Other "X" GoDeeper
+nested simpleHorn> IN: "X" ( IS ( "Y" ) )
+nested simpleHorn> MATCH (CERR): "X" (
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=2:
-nested simpleHorn> unexpected Is
-nested simpleHorn> expecting GoDeeper or Means
+nested simpleHorn> unexpected IS
+nested simpleHorn> expecting ( or MEANS
 
 **** / RPConstraint                                                                                                  :1_1:Other "X":
 ***** / $*|                                                                                                         :1_1:Other "X":
 ****** / slMultiTerm                                                                                               :1_1:Other "X":
 ******* / someSL                                                                                                  :1_1:Other "X":
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-someSL> MATCH (COK): Other "X"
+someSL> IN: "X" ( IS ( "Y" ) )
+someSL> MATCH (COK): "X"
 someSL> VALUE: ((["X"],0),[])
 
 ******* \ someSL has returned (["X"],0)                                                                            :1_2:GoDeeper:
-slMultiTerm> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-slMultiTerm> MATCH (COK): Other "X"
+slMultiTerm> IN: "X" ( IS ( "Y" ) )
+slMultiTerm> MATCH (COK): "X"
 slMultiTerm> VALUE: ((["X"],0),[])
 
 ****** \ slMultiTerm has returned (["X"],0)                                                                         :1_2:GoDeeper:
-$*|> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-$*|> MATCH (COK): Other "X"
+$*|> IN: "X" ( IS ( "Y" ) )
+$*|> MATCH (COK): "X"
 $*|> VALUE: ((["X"],0),[])
 
 ***** \ $*| has returned (["X"],0)                                                                                   :1_2:GoDeeper:
 ***** / |>| calling $>>                                                                                              :1_2:GoDeeper:
 ****** / |>>/recurse                                                                                                :1_2:GoDeeper:
 ******* / |>>/recurse                                                                                               :1_2:Is:
-|>>/recurse> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+|>>/recurse> IN: IS ( "Y" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=2:
-|>>/recurse> unexpected Is
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected IS
+|>>/recurse> expecting (
 
 ******* / |>>/base                                                                                                  :1_2:Is:
 ******** > |>>/base got RPis                                                                                        :1_3:GoDeeper:
-|>>/base> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
-|>>/base> MATCH (COK): Is
+|>>/base> IN: IS ( "Y" ) )
+|>>/base> MATCH (COK): IS
 |>>/base> VALUE: ((RPis,0),[])
 
 ******* \ |>>/base has returned (RPis,0)                                                                             :1_3:GoDeeper:
-|>>/recurse> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-|>>/recurse> MATCH (COK): GoDeeper Is
+|>>/recurse> IN: ( IS ( "Y" ) )
+|>>/recurse> MATCH (COK): ( IS
 |>>/recurse> VALUE: ((RPis,1),[])
 
 ****** \ |>>/recurse has returned (RPis,1)                                                                            :1_3:GoDeeper:
-|>| calling $>>> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-|>| calling $>>> MATCH (COK): GoDeeper Is
+|>| calling $>>> IN: ( IS ( "Y" ) )
+|>| calling $>>> MATCH (COK): ( IS
 |>| calling $>>> VALUE: ((RPis,1),[])
 
 ***** \ |>| calling $>> has returned (RPis,1)                                                                          :1_3:GoDeeper:
 ***** / |>>/recurse                                                                                                    :1_3:GoDeeper:
 ****** / |>>/recurse                                                                                                   :1_3:Other "Y":
-|>>/recurse> IN: Other "Y" UnDeeper UnDeeper
+|>>/recurse> IN: "Y" ) )
 |>>/recurse> MATCH (EERR): <EMPTY>
 |>>/recurse> ERROR:
 |>>/recurse> offset=4:
-|>>/recurse> unexpected Other "Y"
-|>>/recurse> expecting GoDeeper
+|>>/recurse> unexpected "Y"
+|>>/recurse> expecting (
 
 ****** / |>>/base                                                                                                      :1_3:Other "Y":
 ******* / slMultiTerm                                                                                                 :1_3:Other "Y":
 ******** / someSL                                                                                                    :1_3:Other "Y":
-someSL> IN: Other "Y" UnDeeper UnDeeper
-someSL> MATCH (COK): Other "Y"
+someSL> IN: "Y" ) )
+someSL> MATCH (COK): "Y"
 someSL> VALUE: ((["Y"],0),[])
 
 ******** \ someSL has returned (["Y"],0)                                                                            :1_2:UnDeeper:
-slMultiTerm> IN: Other "Y" UnDeeper UnDeeper
-slMultiTerm> MATCH (COK): Other "Y"
+slMultiTerm> IN: "Y" ) )
+slMultiTerm> MATCH (COK): "Y"
 slMultiTerm> VALUE: ((["Y"],0),[])
 
 ******* \ slMultiTerm has returned (["Y"],0)                                                                         :1_2:UnDeeper:
 ******* > |>>/base got ["Y"]                                                                                         :1_2:UnDeeper:
-|>>/base> IN: Other "Y" UnDeeper UnDeeper
-|>>/base> MATCH (COK): Other "Y"
+|>>/base> IN: "Y" ) )
+|>>/base> MATCH (COK): "Y"
 |>>/base> VALUE: ((["Y"],0),[])
 
 ****** \ |>>/base has returned (["Y"],0)                                                                              :1_2:UnDeeper:
-|>>/recurse> IN: GoDeeper Other "Y" UnDeeper UnDeeper
-|>>/recurse> MATCH (COK): GoDeeper Other "Y"
+|>>/recurse> IN: ( "Y" ) )
+|>>/recurse> MATCH (COK): ( "Y"
 |>>/recurse> VALUE: ((["Y"],1),[])
 
 ***** \ |>>/recurse has returned (["Y"],1)                                                                             :1_2:UnDeeper:
-RPConstraint> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-RPConstraint> MATCH (COK): Other "X" GoDeeper Is GoDeeper Other "Y"
+RPConstraint> IN: "X" ( IS ( "Y" ) )
+RPConstraint> MATCH (COK): "X" ( IS ( "Y"
 RPConstraint> VALUE: ((RPConstraint ["X"] RPis ["Y"],2),[])
 
 **** \ RPConstraint has returned (RPConstraint ["X"] RPis ["Y"],2)                                                      :1_2:UnDeeper:
-slRelPred> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-slRelPred> MATCH (COK): Other "X" GoDeeper Is GoDeeper Other "Y"
+slRelPred> IN: "X" ( IS ( "Y" ) )
+slRelPred> MATCH (COK): "X" ( IS ( "Y"
 slRelPred> VALUE: ((RPConstraint ["X"] RPis ["Y"],2),[])
 
 *** \ slRelPred has returned (RPConstraint ["X"] RPis ["Y"],2)                                                           :1_2:UnDeeper:
 *** / undeepers                                                                                                          :1_2:UnDeeper:
 **** > sameLine/undeepers: reached end of line; now need to clear 2 UnDeepers                                           :1_2:UnDeeper:
 **** > sameLine: success!                                                                                          :EOF:
-undeepers> IN: UnDeeper UnDeeper
-undeepers> MATCH (COK): UnDeeper UnDeeper
+undeepers> IN: ) )
+undeepers> MATCH (COK): ) )
 undeepers> VALUE: ((),[])
 
 *** \ undeepers has returned ()                                                                                     :EOF:
-pRelPred> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-pRelPred> MATCH (COK): Other "X" GoDeeper Is GoDeeper Other "Y" <…>
+pRelPred> IN: "X" ( IS ( "Y" ) )
+pRelPred> MATCH (COK): "X" ( IS ( "Y" ) )
 pRelPred> VALUE: (RPConstraint ["X"] RPis ["Y"],[])
 
 ** \ pRelPred has returned RPConstraint ["X"] RPis ["Y"]                                                             :EOF:
-[Other "X",GoDeeper,Is,GoDeeper,Other "Y",UnDeeper,UnDeeper]
+"X"
+    ( IS ( "Y" ) )
 ** / pBSR                                                                                                              :1_1:Other "X":
 *** / ppp inner                                                                                                       :1_1:Other "X":
 **** / expression                                                                                                    :1_1:Other "X":
 ***** / labelPrefix                                                                                                 :1_1:Other "X":
-labelPrefix> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-labelPrefix> MATCH (COK): Other "X"
+labelPrefix> IN: "X" ( IS ( "Y" ) )
+labelPrefix> MATCH (COK): "X"
 labelPrefix> VALUE: ("X",[])
 
 ***** \ labelPrefix has returned "X"                                                                                 :1_2:GoDeeper:
@@ -180,19 +182,19 @@ labelPrefix> VALUE: ("X",[])
 ******* / term p/2:someIndentation expr p                                                                          :1_2:GoDeeper:
 ******** / someIndentation                                                                                        :1_2:GoDeeper:
 ********* / myindented: consuming GoDeeper                                                                       :1_2:GoDeeper:
-myindented: consuming GoDeeper> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-myindented: consuming GoDeeper> MATCH (COK): GoDeeper
+myindented: consuming GoDeeper> IN: ( IS ( "Y" ) )
+myindented: consuming GoDeeper> MATCH (COK): (
 myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 
 ********* \ myindented: consuming GoDeeper has returned GoDeeper                                                  :1_2:Is:
 ********* / manyIndentation/leaf?                                                                                 :1_2:Is:
 ********** / expression                                                                                          :1_2:Is:
 *********** / labelPrefix                                                                                       :1_2:Is:
-labelPrefix> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+labelPrefix> IN: IS ( "Y" ) )
 labelPrefix> MATCH (EERR): <EMPTY>
 labelPrefix> ERROR:
 labelPrefix> offset=2:
-labelPrefix> unexpected Is
+labelPrefix> unexpected IS
 labelPrefix> expecting Other text
 
 *********** / term p                                                                                            :1_2:Is:
@@ -200,26 +202,26 @@ labelPrefix> expecting Other text
 ************* / term p/2:someIndentation expr p                                                               :1_2:Is:
 ************** / someIndentation                                                                             :1_2:Is:
 *************** / myindented: consuming GoDeeper                                                            :1_2:Is:
-myindented: consuming GoDeeper> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+myindented: consuming GoDeeper> IN: IS ( "Y" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=2:
-myindented: consuming GoDeeper> unexpected Is
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected IS
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someIndentation> IN: IS ( "Y" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=2:
-someIndentation> unexpected Is
-someIndentation> expecting GoDeeper
+someIndentation> unexpected IS
+someIndentation> expecting (
 
-term p/2:someIndentation expr p> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+term p/2:someIndentation expr p> IN: IS ( "Y" ) )
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=2:
-term p/2:someIndentation expr p> unexpected Is
-term p/2:someIndentation expr p> expecting GoDeeper
+term p/2:someIndentation expr p> unexpected IS
+term p/2:someIndentation expr p> expecting (
 
 ************* / term p/3:plain p                                                                              :1_2:Is:
 ************** / pRelPred                                                                                    :1_2:Is:
@@ -230,39 +232,39 @@ term p/2:someIndentation expr p> expecting GoDeeper
 ****************** / slMultiTerm                                                                         :1_2:Is:
 ******************* / someSL                                                                            :1_2:Is:
 ******************** / pNumAsText                                                                      :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someSL> IN: IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=2:
-someSL> unexpected Is
+someSL> unexpected IS
 someSL> expecting other text or number
 
-slMultiTerm> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slMultiTerm> IN: IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=2:
-slMultiTerm> unexpected Is
+slMultiTerm> unexpected IS
 slMultiTerm> expecting other text or number
 
-$*|> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+$*|> IN: IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
+$*|> unexpected IS
 $*|> expecting other text or number
 
-nested simpleHorn> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+nested simpleHorn> IN: IS ( "Y" ) )
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=2:
-nested simpleHorn> unexpected Is
+nested simpleHorn> unexpected IS
 nested simpleHorn> expecting other text or number
 
 **************** / RPConstraint                                                                            :1_2:Is:
@@ -270,39 +272,39 @@ nested simpleHorn> expecting other text or number
 ****************** / slMultiTerm                                                                         :1_2:Is:
 ******************* / someSL                                                                            :1_2:Is:
 ******************** / pNumAsText                                                                      :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someSL> IN: IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=2:
-someSL> unexpected Is
+someSL> unexpected IS
 someSL> expecting other text or number
 
-slMultiTerm> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slMultiTerm> IN: IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=2:
-slMultiTerm> unexpected Is
+slMultiTerm> unexpected IS
 slMultiTerm> expecting other text or number
 
-$*|> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+$*|> IN: IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
+$*|> unexpected IS
 $*|> expecting other text or number
 
-RPConstraint> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+RPConstraint> IN: IS ( "Y" ) )
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=2:
-RPConstraint> unexpected Is
+RPConstraint> unexpected IS
 RPConstraint> expecting other text or number
 
 **************** / RPBoolStructR                                                                           :1_2:Is:
@@ -310,39 +312,39 @@ RPConstraint> expecting other text or number
 ****************** / slMultiTerm                                                                         :1_2:Is:
 ******************* / someSL                                                                            :1_2:Is:
 ******************** / pNumAsText                                                                      :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someSL> IN: IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=2:
-someSL> unexpected Is
+someSL> unexpected IS
 someSL> expecting other text or number
 
-slMultiTerm> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slMultiTerm> IN: IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=2:
-slMultiTerm> unexpected Is
+slMultiTerm> unexpected IS
 slMultiTerm> expecting other text or number
 
-$*|> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+$*|> IN: IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
+$*|> unexpected IS
 $*|> expecting other text or number
 
-RPBoolStructR> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+RPBoolStructR> IN: IS ( "Y" ) )
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=2:
-RPBoolStructR> unexpected Is
+RPBoolStructR> unexpected IS
 RPBoolStructR> expecting other text or number
 
 **************** / RPMT                                                                                    :1_2:Is:
@@ -353,148 +355,148 @@ RPBoolStructR> expecting other text or number
 ********************* / slMultiTerm                                                                   :1_2:Is:
 ********************** / someSL                                                                      :1_2:Is:
 *********************** / pNumAsText                                                                :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-someSL> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someSL> IN: IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=2:
-someSL> unexpected Is
+someSL> unexpected IS
 someSL> expecting other text or number
 
-slMultiTerm> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slMultiTerm> IN: IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=2:
-slMultiTerm> unexpected Is
+slMultiTerm> unexpected IS
 slMultiTerm> expecting other text or number
 
-slAKA base> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slAKA base> IN: IS ( "Y" ) )
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=2:
-slAKA base> unexpected Is
+slAKA base> unexpected IS
 slAKA base> expecting other text or number
 
-$*|> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+$*|> IN: IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
+$*|> unexpected IS
 $*|> expecting other text or number
 
-slAKA> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slAKA> IN: IS ( "Y" ) )
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=2:
-slAKA> unexpected Is
+slAKA> unexpected IS
 slAKA> expecting other text or number
 
-$*|> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+$*|> IN: IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
+$*|> unexpected IS
 $*|> expecting other text or number
 
-RPMT> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+RPMT> IN: IS ( "Y" ) )
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=2:
-RPMT> unexpected Is
+RPMT> unexpected IS
 RPMT> expecting other text or number
 
-slRelPred> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+slRelPred> IN: IS ( "Y" ) )
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=2:
-slRelPred> unexpected Is
+slRelPred> unexpected IS
 slRelPred> expecting other text or number
 
-pRelPred> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pRelPred> IN: IS ( "Y" ) )
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=2:
-pRelPred> unexpected Is
+pRelPred> unexpected IS
 pRelPred> expecting other text or number
 
-term p/3:plain p> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+term p/3:plain p> IN: IS ( "Y" ) )
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=2:
-term p/3:plain p> unexpected Is
+term p/3:plain p> unexpected IS
 term p/3:plain p> expecting other text or number
 
-term p/notLabelTerm> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+term p/notLabelTerm> IN: IS ( "Y" ) )
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
 term p/notLabelTerm> ERROR:
 term p/notLabelTerm> offset=2:
-term p/notLabelTerm> unexpected Is
-term p/notLabelTerm> expecting GoDeeper or term
+term p/notLabelTerm> unexpected IS
+term p/notLabelTerm> expecting ( or term
 
-term p> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+term p> IN: IS ( "Y" ) )
 term p> MATCH (EERR): <EMPTY>
 term p> ERROR:
 term p> offset=2:
-term p> unexpected Is
-term p> expecting GoDeeper or term
+term p> unexpected IS
+term p> expecting ( or term
 
-expression> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+expression> IN: IS ( "Y" ) )
 expression> MATCH (EERR): <EMPTY>
 expression> ERROR:
 expression> offset=2:
-expression> unexpected Is
+expression> unexpected IS
 expression> expecting expression
 
-manyIndentation/leaf?> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+manyIndentation/leaf?> IN: IS ( "Y" ) )
 manyIndentation/leaf?> MATCH (EERR): <EMPTY>
 manyIndentation/leaf?> ERROR:
 manyIndentation/leaf?> offset=2:
-manyIndentation/leaf?> unexpected Is
+manyIndentation/leaf?> unexpected IS
 manyIndentation/leaf?> expecting expression
 
 ********* / manyIndentation/deeper; calling someIndentation                                                       :1_2:Is:
 ********** / someIndentation                                                                                     :1_2:Is:
 *********** / myindented: consuming GoDeeper                                                                    :1_2:Is:
-myindented: consuming GoDeeper> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+myindented: consuming GoDeeper> IN: IS ( "Y" ) )
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
 myindented: consuming GoDeeper> offset=2:
-myindented: consuming GoDeeper> unexpected Is
-myindented: consuming GoDeeper> expecting GoDeeper
+myindented: consuming GoDeeper> unexpected IS
+myindented: consuming GoDeeper> expecting (
 
-someIndentation> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+someIndentation> IN: IS ( "Y" ) )
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
 someIndentation> offset=2:
-someIndentation> unexpected Is
-someIndentation> expecting GoDeeper
+someIndentation> unexpected IS
+someIndentation> expecting (
 
-manyIndentation/deeper; calling someIndentation> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+manyIndentation/deeper; calling someIndentation> IN: IS ( "Y" ) )
 manyIndentation/deeper; calling someIndentation> MATCH (EERR): <EMPTY>
 manyIndentation/deeper; calling someIndentation> ERROR:
 manyIndentation/deeper; calling someIndentation> offset=2:
-manyIndentation/deeper; calling someIndentation> unexpected Is
-manyIndentation/deeper; calling someIndentation> expecting GoDeeper
+manyIndentation/deeper; calling someIndentation> unexpected IS
+manyIndentation/deeper; calling someIndentation> expecting (
 
-someIndentation> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-someIndentation> MATCH (CERR): GoDeeper
+someIndentation> IN: ( IS ( "Y" ) )
+someIndentation> MATCH (CERR): (
 someIndentation> ERROR:
 someIndentation> offset=2:
-someIndentation> unexpected Is
-someIndentation> expecting GoDeeper or expression
+someIndentation> unexpected IS
+someIndentation> expecting ( or expression
 
-term p/2:someIndentation expr p> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-term p/2:someIndentation expr p> MATCH (CERR): GoDeeper
+term p/2:someIndentation expr p> IN: ( IS ( "Y" ) )
+term p/2:someIndentation expr p> MATCH (CERR): (
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=2:
-term p/2:someIndentation expr p> unexpected Is
-term p/2:someIndentation expr p> expecting GoDeeper or expression
+term p/2:someIndentation expr p> unexpected IS
+term p/2:someIndentation expr p> expecting ( or expression
 
 ******* / term p/3:plain p                                                                                         :1_2:GoDeeper:
 ******** / pRelPred                                                                                               :1_2:GoDeeper:
@@ -505,39 +507,39 @@ term p/2:someIndentation expr p> expecting GoDeeper or expression
 ************ / slMultiTerm                                                                                    :1_2:GoDeeper:
 ************* / someSL                                                                                       :1_2:GoDeeper:
 ************** / pNumAsText                                                                                 :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
-someSL> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+someSL> IN: ( IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=1:
-someSL> unexpected GoDeeper
+someSL> unexpected (
 someSL> expecting other text or number
 
-slMultiTerm> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slMultiTerm> IN: ( IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=1:
-slMultiTerm> unexpected GoDeeper
+slMultiTerm> unexpected (
 slMultiTerm> expecting other text or number
 
-$*|> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+$*|> IN: ( IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=1:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-nested simpleHorn> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+nested simpleHorn> IN: ( IS ( "Y" ) )
 nested simpleHorn> MATCH (EERR): <EMPTY>
 nested simpleHorn> ERROR:
 nested simpleHorn> offset=1:
-nested simpleHorn> unexpected GoDeeper
+nested simpleHorn> unexpected (
 nested simpleHorn> expecting other text or number
 
 ********** / RPConstraint                                                                                       :1_2:GoDeeper:
@@ -545,39 +547,39 @@ nested simpleHorn> expecting other text or number
 ************ / slMultiTerm                                                                                    :1_2:GoDeeper:
 ************* / someSL                                                                                       :1_2:GoDeeper:
 ************** / pNumAsText                                                                                 :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
-someSL> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+someSL> IN: ( IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=1:
-someSL> unexpected GoDeeper
+someSL> unexpected (
 someSL> expecting other text or number
 
-slMultiTerm> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slMultiTerm> IN: ( IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=1:
-slMultiTerm> unexpected GoDeeper
+slMultiTerm> unexpected (
 slMultiTerm> expecting other text or number
 
-$*|> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+$*|> IN: ( IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=1:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-RPConstraint> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+RPConstraint> IN: ( IS ( "Y" ) )
 RPConstraint> MATCH (EERR): <EMPTY>
 RPConstraint> ERROR:
 RPConstraint> offset=1:
-RPConstraint> unexpected GoDeeper
+RPConstraint> unexpected (
 RPConstraint> expecting other text or number
 
 ********** / RPBoolStructR                                                                                      :1_2:GoDeeper:
@@ -585,39 +587,39 @@ RPConstraint> expecting other text or number
 ************ / slMultiTerm                                                                                    :1_2:GoDeeper:
 ************* / someSL                                                                                       :1_2:GoDeeper:
 ************** / pNumAsText                                                                                 :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
-someSL> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+someSL> IN: ( IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=1:
-someSL> unexpected GoDeeper
+someSL> unexpected (
 someSL> expecting other text or number
 
-slMultiTerm> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slMultiTerm> IN: ( IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=1:
-slMultiTerm> unexpected GoDeeper
+slMultiTerm> unexpected (
 slMultiTerm> expecting other text or number
 
-$*|> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+$*|> IN: ( IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=1:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-RPBoolStructR> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+RPBoolStructR> IN: ( IS ( "Y" ) )
 RPBoolStructR> MATCH (EERR): <EMPTY>
 RPBoolStructR> ERROR:
 RPBoolStructR> offset=1:
-RPBoolStructR> unexpected GoDeeper
+RPBoolStructR> unexpected (
 RPBoolStructR> expecting other text or number
 
 ********** / RPMT                                                                                               :1_2:GoDeeper:
@@ -628,110 +630,110 @@ RPBoolStructR> expecting other text or number
 *************** / slMultiTerm                                                                              :1_2:GoDeeper:
 **************** / someSL                                                                                 :1_2:GoDeeper:
 ***************** / pNumAsText                                                                           :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
-someSL> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+someSL> IN: ( IS ( "Y" ) )
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
 someSL> offset=1:
-someSL> unexpected GoDeeper
+someSL> unexpected (
 someSL> expecting other text or number
 
-slMultiTerm> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slMultiTerm> IN: ( IS ( "Y" ) )
 slMultiTerm> MATCH (EERR): <EMPTY>
 slMultiTerm> ERROR:
 slMultiTerm> offset=1:
-slMultiTerm> unexpected GoDeeper
+slMultiTerm> unexpected (
 slMultiTerm> expecting other text or number
 
-slAKA base> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slAKA base> IN: ( IS ( "Y" ) )
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
 slAKA base> offset=1:
-slAKA base> unexpected GoDeeper
+slAKA base> unexpected (
 slAKA base> expecting other text or number
 
-$*|> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+$*|> IN: ( IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=1:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-slAKA> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slAKA> IN: ( IS ( "Y" ) )
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
 slAKA> offset=1:
-slAKA> unexpected GoDeeper
+slAKA> unexpected (
 slAKA> expecting other text or number
 
-$*|> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+$*|> IN: ( IS ( "Y" ) )
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
 $*|> offset=1:
-$*|> unexpected GoDeeper
+$*|> unexpected (
 $*|> expecting other text or number
 
-RPMT> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+RPMT> IN: ( IS ( "Y" ) )
 RPMT> MATCH (EERR): <EMPTY>
 RPMT> ERROR:
 RPMT> offset=1:
-RPMT> unexpected GoDeeper
+RPMT> unexpected (
 RPMT> expecting other text or number
 
-slRelPred> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+slRelPred> IN: ( IS ( "Y" ) )
 slRelPred> MATCH (EERR): <EMPTY>
 slRelPred> ERROR:
 slRelPred> offset=1:
-slRelPred> unexpected GoDeeper
+slRelPred> unexpected (
 slRelPred> expecting other text or number
 
-pRelPred> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pRelPred> IN: ( IS ( "Y" ) )
 pRelPred> MATCH (EERR): <EMPTY>
 pRelPred> ERROR:
 pRelPred> offset=1:
-pRelPred> unexpected GoDeeper
+pRelPred> unexpected (
 pRelPred> expecting other text or number
 
-term p/3:plain p> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+term p/3:plain p> IN: ( IS ( "Y" ) )
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
 term p/3:plain p> offset=1:
-term p/3:plain p> unexpected GoDeeper
+term p/3:plain p> unexpected (
 term p/3:plain p> expecting other text or number
 
-term p/notLabelTerm> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+term p/notLabelTerm> IN: ( IS ( "Y" ) )
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
 term p/notLabelTerm> ERROR:
 term p/notLabelTerm> offset=2:
-term p/notLabelTerm> unexpected Is
-term p/notLabelTerm> expecting GoDeeper or expression
+term p/notLabelTerm> unexpected IS
+term p/notLabelTerm> expecting ( or expression
 
-term p> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+term p> IN: ( IS ( "Y" ) )
 term p> MATCH (EERR): <EMPTY>
 term p> ERROR:
 term p> offset=2:
-term p> unexpected Is
-term p> expecting GoDeeper or expression
+term p> unexpected IS
+term p> expecting ( or expression
 
-expression> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-expression> MATCH (CERR): Other "X"
+expression> IN: "X" ( IS ( "Y" ) )
+expression> MATCH (CERR): "X"
 expression> ERROR:
 expression> offset=2:
-expression> unexpected Is
-expression> expecting GoDeeper, MPNot, or expression
+expression> unexpected IS
+expression> expecting (, NOT, or expression
 
-ppp inner> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-ppp inner> MATCH (CERR): Other "X"
+ppp inner> IN: "X" ( IS ( "Y" ) )
+ppp inner> MATCH (CERR): "X"
 ppp inner> ERROR:
 ppp inner> offset=2:
-ppp inner> unexpected Is
-ppp inner> expecting GoDeeper, MPNot, or expression
+ppp inner> unexpected IS
+ppp inner> expecting (, NOT, or expression
 
 *** / withPrePost                                                                                                     :1_1:Other "X":
 **** > |<* starting                                                                                                  :1_1:Other "X":
@@ -740,81 +742,81 @@ ppp inner> expecting GoDeeper, MPNot, or expression
 ****** / aboveNextLineKeyword                                                                                       :1_2:GoDeeper:
 ******* / expectUnDeepers                                                                                          :1_2:GoDeeper:
 ******** / pNumAsText                                                                                             :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-expectUnDeepers> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-expectUnDeepers> MATCH (CERR): GoDeeper
+expectUnDeepers> IN: ( IS ( "Y" ) )
+expectUnDeepers> MATCH (CERR): (
 expectUnDeepers> ERROR:
 expectUnDeepers> offset=2:
-expectUnDeepers> unexpected Is
-expectUnDeepers> expecting GoDeeper, UnDeeper, or other text or number
+expectUnDeepers> unexpected IS
+expectUnDeepers> expecting (, ), or other text or number
 
-aboveNextLineKeyword> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-aboveNextLineKeyword> MATCH (CERR): GoDeeper
+aboveNextLineKeyword> IN: ( IS ( "Y" ) )
+aboveNextLineKeyword> MATCH (CERR): (
 aboveNextLineKeyword> ERROR:
 aboveNextLineKeyword> offset=2:
-aboveNextLineKeyword> unexpected Is
-aboveNextLineKeyword> expecting GoDeeper, UnDeeper, or other text or number
+aboveNextLineKeyword> unexpected IS
+aboveNextLineKeyword> expecting (, ), or other text or number
 
 ****** > /*= lookAhead failed, delegating to plain /+=                                                              :1_2:GoDeeper:
 ****** / aboveNextLineKeyword                                                                                        :1_2:Is:
 ******* / expectUnDeepers                                                                                           :1_2:Is:
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-expectUnDeepers> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+expectUnDeepers> IN: IS ( "Y" ) )
 expectUnDeepers> MATCH (EERR): <EMPTY>
 expectUnDeepers> ERROR:
 expectUnDeepers> offset=2:
-expectUnDeepers> unexpected Is
-expectUnDeepers> expecting GoDeeper, UnDeeper, or other text or number
+expectUnDeepers> unexpected IS
+expectUnDeepers> expecting (, ), or other text or number
 
-aboveNextLineKeyword> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+aboveNextLineKeyword> IN: IS ( "Y" ) )
 aboveNextLineKeyword> MATCH (EERR): <EMPTY>
 aboveNextLineKeyword> ERROR:
 aboveNextLineKeyword> offset=2:
-aboveNextLineKeyword> unexpected Is
-aboveNextLineKeyword> expecting GoDeeper, UnDeeper, or other text or number
+aboveNextLineKeyword> unexpected IS
+aboveNextLineKeyword> expecting (, ), or other text or number
 
 ****** > /*= lookAhead failed, delegating to plain /+=                                                               :1_2:Is:
-pre part> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-pre part> MATCH (CERR): Other "X"
+pre part> IN: "X" ( IS ( "Y" ) )
+pre part> MATCH (CERR): "X"
 pre part> ERROR:
 pre part> offset=2:
-pre part> unexpected Is
-pre part> expecting GoDeeper, Other text, UnDeeper, or other text or number
+pre part> unexpected IS
+pre part> expecting (, ), Other text, or other text or number
 
-$*|> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-$*|> MATCH (CERR): Other "X"
+$*|> IN: "X" ( IS ( "Y" ) )
+$*|> MATCH (CERR): "X"
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
-$*|> expecting GoDeeper, Other text, UnDeeper, or other text or number
+$*|> unexpected IS
+$*|> expecting (, ), Other text, or other text or number
 
-withPrePost> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-withPrePost> MATCH (CERR): Other "X"
+withPrePost> IN: "X" ( IS ( "Y" ) )
+withPrePost> MATCH (CERR): "X"
 withPrePost> ERROR:
 withPrePost> offset=2:
-withPrePost> unexpected Is
-withPrePost> expecting GoDeeper, Other text, UnDeeper, or other text or number
+withPrePost> unexpected IS
+withPrePost> expecting (, ), Other text, or other text or number
 
 *** / withPreOnly                                                                                                     :1_1:Other "X":
 **** / $*|                                                                                                           :1_1:Other "X":
@@ -822,88 +824,88 @@ withPrePost> expecting GoDeeper, Other text, UnDeeper, or other text or number
 ****** / aboveNextLineKeyword                                                                                       :1_2:GoDeeper:
 ******* / expectUnDeepers                                                                                          :1_2:GoDeeper:
 ******** / pNumAsText                                                                                             :1_2:GoDeeper:
-pNumAsText> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
+pNumAsText> IN: ( IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=1:
-pNumAsText> unexpected GoDeeper
+pNumAsText> unexpected (
 pNumAsText> expecting number
 
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-expectUnDeepers> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-expectUnDeepers> MATCH (CERR): GoDeeper
+expectUnDeepers> IN: ( IS ( "Y" ) )
+expectUnDeepers> MATCH (CERR): (
 expectUnDeepers> ERROR:
 expectUnDeepers> offset=2:
-expectUnDeepers> unexpected Is
-expectUnDeepers> expecting GoDeeper, UnDeeper, or other text or number
+expectUnDeepers> unexpected IS
+expectUnDeepers> expecting (, ), or other text or number
 
-aboveNextLineKeyword> IN: GoDeeper Is GoDeeper Other "Y" UnDeeper  <…>
-aboveNextLineKeyword> MATCH (CERR): GoDeeper
+aboveNextLineKeyword> IN: ( IS ( "Y" ) )
+aboveNextLineKeyword> MATCH (CERR): (
 aboveNextLineKeyword> ERROR:
 aboveNextLineKeyword> offset=2:
-aboveNextLineKeyword> unexpected Is
-aboveNextLineKeyword> expecting GoDeeper, UnDeeper, or other text or number
+aboveNextLineKeyword> unexpected IS
+aboveNextLineKeyword> expecting (, ), or other text or number
 
 ****** > /*= lookAhead failed, delegating to plain /+=                                                              :1_2:GoDeeper:
 ****** / aboveNextLineKeyword                                                                                        :1_2:Is:
 ******* / expectUnDeepers                                                                                           :1_2:Is:
 ******** / pNumAsText                                                                                              :1_2:Is:
-pNumAsText> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+pNumAsText> IN: IS ( "Y" ) )
 pNumAsText> MATCH (EERR): <EMPTY>
 pNumAsText> ERROR:
 pNumAsText> offset=2:
-pNumAsText> unexpected Is
+pNumAsText> unexpected IS
 pNumAsText> expecting number
 
-expectUnDeepers> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+expectUnDeepers> IN: IS ( "Y" ) )
 expectUnDeepers> MATCH (EERR): <EMPTY>
 expectUnDeepers> ERROR:
 expectUnDeepers> offset=2:
-expectUnDeepers> unexpected Is
-expectUnDeepers> expecting GoDeeper, UnDeeper, or other text or number
+expectUnDeepers> unexpected IS
+expectUnDeepers> expecting (, ), or other text or number
 
-aboveNextLineKeyword> IN: Is GoDeeper Other "Y" UnDeeper UnDeeper
+aboveNextLineKeyword> IN: IS ( "Y" ) )
 aboveNextLineKeyword> MATCH (EERR): <EMPTY>
 aboveNextLineKeyword> ERROR:
 aboveNextLineKeyword> offset=2:
-aboveNextLineKeyword> unexpected Is
-aboveNextLineKeyword> expecting GoDeeper, UnDeeper, or other text or number
+aboveNextLineKeyword> unexpected IS
+aboveNextLineKeyword> expecting (, ), or other text or number
 
 ****** > /*= lookAhead failed, delegating to plain /+=                                                               :1_2:Is:
-pre part> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-pre part> MATCH (CERR): Other "X"
+pre part> IN: "X" ( IS ( "Y" ) )
+pre part> MATCH (CERR): "X"
 pre part> ERROR:
 pre part> offset=2:
-pre part> unexpected Is
-pre part> expecting GoDeeper, Other text, UnDeeper, or other text or number
+pre part> unexpected IS
+pre part> expecting (, ), Other text, or other text or number
 
-$*|> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-$*|> MATCH (CERR): Other "X"
+$*|> IN: "X" ( IS ( "Y" ) )
+$*|> MATCH (CERR): "X"
 $*|> ERROR:
 $*|> offset=2:
-$*|> unexpected Is
-$*|> expecting GoDeeper, Other text, UnDeeper, or other text or number
+$*|> unexpected IS
+$*|> expecting (, ), Other text, or other text or number
 
-withPreOnly> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-withPreOnly> MATCH (CERR): Other "X"
+withPreOnly> IN: "X" ( IS ( "Y" ) )
+withPreOnly> MATCH (CERR): "X"
 withPreOnly> ERROR:
 withPreOnly> offset=2:
-withPreOnly> unexpected Is
-withPreOnly> expecting GoDeeper, Other text, UnDeeper, or other text or number
+withPreOnly> unexpected IS
+withPreOnly> expecting (, ), Other text, or other text or number
 
-pBSR> IN: Other "X" GoDeeper Is GoDeeper Other "Y" <…>
-pBSR> MATCH (CERR): Other "X"
+pBSR> IN: "X" ( IS ( "Y" ) )
+pBSR> MATCH (CERR): "X"
 pBSR> ERROR:
 pBSR> offset=2:
-pBSR> unexpected Is
-pBSR> expecting GoDeeper, MPNot, Other text, UnDeeper, expression, or other text or number
+pBSR> unexpected IS
+pBSR> expecting (, ), NOT, Other text, expression, or other text or number
 
 
 revised parser
@@ -917,16 +919,16 @@ Failures:
        expected: [(Leaf (RPConstraint ["X"] RPis ["Y"]),[])]
        but parsing failed with error:
        1:2:
-       unexpected Is
-       expecting GoDeeper, MPNot, Other text, UnDeeper, expression, or other text or number
+       unexpected IS
+       expecting (, ), NOT, Other text, expression, or other text or number
        X    ✳ IS Y   
        
 
   To rerun use: --match "/revised parser/horn-0-1/"
 
-Randomized with seed 386256661
+Randomized with seed 1603360649
 
-Finished in 0.0068 seconds
+Finished in 0.0054 seconds
 2 examples, 1 failure
 
 natural4> Test suite natural4-test failed

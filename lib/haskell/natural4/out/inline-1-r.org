@@ -3,10 +3,15 @@
 :VISIBILITY: folded
 :END:
 
-natural4> test (suite: natural4-test, args: --match /inline-1-r/)
+natural4> test (suite: natural4-test, args: --match /PDPA/inline-1-r/)
 
 * Tokens
-[GoDeeper,Other "multiwonk",UnDeeper,Means,GoDeeper,Other "poopoo",UnDeeper,Or,GoDeeper,Other "the",GoDeeper,GoDeeper,GoDeeper,Other "honk",UnDeeper,Or,GoDeeper,Other "ponk",UnDeeper,UnDeeper,UnDeeper,UnDeeper]
+( "multiwonk" ) MEANS ( "poopoo" ) OR
+    ( "the"
+        (
+            ( ( "honk" ) OR ( "ponk" ) )
+        )
+    )
 1_2:GoDeeper   > |<|
 1_2:GoDeeper   > |<* starting
 * main
@@ -17,60 +22,230 @@ natural4> test (suite: natural4-test, args: --match /inline-1-r/)
 ** / $*|                                                                                                                :1_2:GoDeeper:
 *** / |>>/recurse                                                                                                      :1_2:GoDeeper:
 **** / |>>/recurse                                                                                                     :1_2:Other "mult:
+|>>/recurse> IN: "multiwonk" ) MEANS ( "poopoo" ) OR ( "t <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=1:
+|>>/recurse> unexpected "multiwonk"
+|>>/recurse> expecting (
+
+**** \ !Unconsumed Error: |>>/recurse: Unexpected "multiwonk" Expecting: (                                             :1_2:Other "mult:
 **** / |>>/base                                                                                                        :1_2:Other "mult:
 ***** / subject slMultiTerm                                                                                           :1_2:Other "mult:
 ****** / slMultiTerm                                                                                                 :1_2:Other "mult:
 ******* / someSL                                                                                                    :1_2:Other "mult:
+someSL> IN: "multiwonk" ) MEANS ( "poopoo" ) OR ( "t <…>
+someSL> MATCH (COK): "multiwonk"
+someSL> VALUE: ((["multiwonk"],0),[])
+
 ******* \ someSL has returned (["multiwonk"],0)                                                                      :2_2:UnDeeper:
+slMultiTerm> IN: "multiwonk" ) MEANS ( "poopoo" ) OR ( "t <…>
+slMultiTerm> MATCH (COK): "multiwonk"
+slMultiTerm> VALUE: ((["multiwonk"],0),[])
+
 ****** \ slMultiTerm has returned (["multiwonk"],0)                                                                   :2_2:UnDeeper:
+subject slMultiTerm> IN: "multiwonk" ) MEANS ( "poopoo" ) OR ( "t <…>
+subject slMultiTerm> MATCH (COK): "multiwonk"
+subject slMultiTerm> VALUE: ((["multiwonk"],0),[])
+
 ***** \ subject slMultiTerm has returned (["multiwonk"],0)                                                             :2_2:UnDeeper:
 ***** > |>>/base got ["multiwonk"]                                                                                     :2_2:UnDeeper:
+|>>/base> IN: "multiwonk" ) MEANS ( "poopoo" ) OR ( "t <…>
+|>>/base> MATCH (COK): "multiwonk"
+|>>/base> VALUE: ((["multiwonk"],0),[])
+
 **** \ |>>/base has returned (["multiwonk"],0)                                                                          :2_2:UnDeeper:
+|>>/recurse> IN: ( "multiwonk" ) MEANS ( "poopoo" ) OR (  <…>
+|>>/recurse> MATCH (COK): ( "multiwonk"
+|>>/recurse> VALUE: ((["multiwonk"],1),[])
+
 *** \ |>>/recurse has returned (["multiwonk"],1)                                                                         :2_2:UnDeeper:
+$*|> IN: ( "multiwonk" ) MEANS ( "poopoo" ) OR (  <…>
+$*|> MATCH (COK): ( "multiwonk"
+$*|> VALUE: ((["multiwonk"],1),[])
+
 ** \ $*| has returned (["multiwonk"],1)                                                                                   :2_2:UnDeeper:
 ** / |<*/parent                                                                                                           :2_2:UnDeeper:
 *** > |<*/recurse                                                                                                        :2_2:UnDeeper:
 *** > |<*/recurse matched 1 UnDeepers                                                                                  :2_2:GoDeeper:
+|<*/parent> IN: ) MEANS ( "poopoo" ) OR ( "the" ( ( ( "h <…>
+|<*/parent> MATCH (COK): ) MEANS
+|<*/parent> VALUE: ((Means,-1),[])
+
 ** \ |<*/parent has returned (Means,-1)                                                                                 :2_2:GoDeeper:
 ** / made it to pBSR                                                                                                    :2_2:GoDeeper:
 *** / pBSR                                                                                                             :2_2:GoDeeper:
 **** / ppp inner                                                                                                      :2_2:GoDeeper:
 ***** / expression                                                                                                   :2_2:GoDeeper:
-****** / labelPrefix                                                                                                :2_2:GoDeeper:
 ****** / term p                                                                                                     :2_2:GoDeeper:
 ******* / term p/1a:label directly above                                                                           :2_2:GoDeeper:
 ******** / $*|                                                                                                    :2_2:GoDeeper:
 ********* / someSL                                                                                               :2_2:GoDeeper:
 ********** / pNumAsText                                                                                         :2_2:GoDeeper:
+pNumAsText> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=4:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                      :2_2:GoDeeper:
+someSL> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=4:
+someSL> unexpected (
+someSL> expecting other text or number
+
+********* \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                              :2_2:GoDeeper:
+$*|> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=4:
+$*|> unexpected (
+$*|> expecting other text or number
+
+******** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                   :2_2:GoDeeper:
+term p/1a:label directly above> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+term p/1a:label directly above> MATCH (EERR): <EMPTY>
+term p/1a:label directly above> ERROR:
+term p/1a:label directly above> offset=4:
+term p/1a:label directly above> unexpected (
+term p/1a:label directly above> expecting other text or number
+
+******* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number          :2_2:GoDeeper:
 ******* / term p/b:label to the left of line below, with EOL                                                       :2_2:GoDeeper:
 ******** / someSL                                                                                                 :2_2:GoDeeper:
 ********* / pNumAsText                                                                                           :2_2:GoDeeper:
+pNumAsText> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=4:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+********* \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                        :2_2:GoDeeper:
+someSL> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=4:
+someSL> unexpected (
+someSL> expecting other text or number
+
+******** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                :2_2:GoDeeper:
+term p/b:label to the left of line below, with EOL> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
+term p/b:label to the left of line below, with EOL> ERROR:
+term p/b:label to the left of line below, with EOL> offset=4:
+term p/b:label to the left of line below, with EOL> unexpected (
+term p/b:label to the left of line below, with EOL> expecting other text or number
+
+******* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :2_2:GoDeeper:
 ******* / term p/notLabelTerm                                                                                      :2_2:GoDeeper:
 ******** / term p/2:someIndentation expr p                                                                        :2_2:GoDeeper:
 ********* / someIndentation                                                                                      :2_2:GoDeeper:
 ********** / myindented: consuming GoDeeper                                                                     :2_2:GoDeeper:
+myindented: consuming GoDeeper> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+myindented: consuming GoDeeper> MATCH (COK): (
+myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
+
 ********** \ myindented: consuming GoDeeper has returned GoDeeper                                                :2_2:Other "poop:
 ********** / manyIndentation/leaf?                                                                               :2_2:Other "poop:
 *********** / expression                                                                                        :2_2:Other "poop:
-************ / labelPrefix                                                                                     :2_2:Other "poop:
 ************ / term p                                                                                          :2_2:Other "poop:
 ************* / term p/1a:label directly above                                                                :2_2:Other "poop:
 ************** / $*|                                                                                         :2_2:Other "poop:
 *************** / someSL                                                                                    :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 *************** \ someSL has returned (["poopoo"],0)                                                         :3_2:UnDeeper:
 *************** / pNumAsText                                                                                 :3_2:UnDeeper:
+pNumAsText> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=6:
+pNumAsText> unexpected )
+pNumAsText> expecting number
+
+*************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                              :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (CERR): "poopoo"
+$*|> ERROR:
+$*|> offset=6:
+$*|> unexpected )
+$*|> expecting ( or other text or number
+
+************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                         :3_2:UnDeeper:
+term p/1a:label directly above> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p/1a:label directly above> MATCH (CERR): "poopoo"
+term p/1a:label directly above> ERROR:
+term p/1a:label directly above> offset=6:
+term p/1a:label directly above> unexpected )
+term p/1a:label directly above> expecting ( or other text or number
+
+************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :3_2:UnDeeper:
 ************* / term p/b:label to the left of line below, with EOL                                            :2_2:Other "poop:
 ************** / someSL                                                                                      :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 ************** \ someSL has returned (["poopoo"],0)                                                           :3_2:UnDeeper:
 ************** / undeepers                                                                                    :3_2:UnDeeper:
 *************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                     :3_2:UnDeeper:
 *************** > sameLine: success!                                                                         :3_2:UnDeeper:
+undeepers> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+undeepers> MATCH (EOK): <EMPTY>
+undeepers> VALUE: ((),[])
+
 ************** \ undeepers has returned ()                                                                    :3_2:UnDeeper:
 ************** / matching EOL                                                                                 :3_2:UnDeeper:
+matching EOL> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+matching EOL> MATCH (EERR): <EMPTY>
+matching EOL> ERROR:
+matching EOL> offset=6:
+matching EOL> unexpected )
+matching EOL> expecting EOL
+
+************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                                 :3_2:UnDeeper:
+term p/b:label to the left of line below, with EOL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p/b:label to the left of line below, with EOL> MATCH (CERR): "poopoo"
+term p/b:label to the left of line below, with EOL> ERROR:
+term p/b:label to the left of line below, with EOL> offset=6:
+term p/b:label to the left of line below, with EOL> unexpected )
+term p/b:label to the left of line below, with EOL> expecting ( or EOL
+
+************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :3_2:UnDeeper:
 ************* / term p/notLabelTerm                                                                           :2_2:Other "poop:
 ************** / term p/2:someIndentation expr p                                                             :2_2:Other "poop:
 *************** / someIndentation                                                                           :2_2:Other "poop:
 **************** / myindented: consuming GoDeeper                                                          :2_2:Other "poop:
+myindented: consuming GoDeeper> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
+myindented: consuming GoDeeper> ERROR:
+myindented: consuming GoDeeper> offset=5:
+myindented: consuming GoDeeper> unexpected "poopoo"
+myindented: consuming GoDeeper> expecting (
+
+**************** \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "poopoo" Expecting: (     :2_2:Other "poop:
+someIndentation> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someIndentation> MATCH (EERR): <EMPTY>
+someIndentation> ERROR:
+someIndentation> offset=5:
+someIndentation> unexpected "poopoo"
+someIndentation> expecting (
+
+*************** \ !Unconsumed Error: someIndentation: Unexpected "poopoo" Expecting: (                      :2_2:Other "poop:
+term p/2:someIndentation expr p> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
+term p/2:someIndentation expr p> ERROR:
+term p/2:someIndentation expr p> offset=5:
+term p/2:someIndentation expr p> unexpected "poopoo"
+term p/2:someIndentation expr p> expecting (
+
+************** \ !Unconsumed Error: term p/2:someIndentation expr p: Unexpected "poopoo" Expecting: (        :2_2:Other "poop:
 ************** / term p/3:plain p                                                                            :2_2:Other "poop:
 *************** / pRelPred                                                                                  :2_2:Other "poop:
 **************** / slRelPred                                                                               :2_2:Other "poop:
@@ -79,31 +254,143 @@ natural4> test (suite: natural4-test, args: --match /inline-1-r/)
 ****************** / $*|                                                                                 :2_2:Other "poop:
 ******************* / slMultiTerm                                                                       :2_2:Other "poop:
 ******************** / someSL                                                                          :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 ******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+slMultiTerm> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slMultiTerm> MATCH (COK): "poopoo"
+slMultiTerm> VALUE: ((["poopoo"],0),[])
+
 ******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (COK): "poopoo"
+$*|> VALUE: ((["poopoo"],0),[])
+
 ****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
 ****************** / |^| deeps                                                                            :3_2:UnDeeper:
+|^| deeps> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|^| deeps> MATCH (COK): )
+|^| deeps> VALUE: (([()],-1),[])
+
 ****************** \ |^| deeps has returned ([()],-1)                                                  :3_1:Or:
+nested simpleHorn> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+nested simpleHorn> MATCH (CERR): "poopoo" )
+nested simpleHorn> ERROR:
+nested simpleHorn> offset=7:
+nested simpleHorn> unexpected OR
+nested simpleHorn> expecting ) or MEANS
+
+***************** \ !Consumed Error: nested simpleHorn: Unexpected OR Expecting: MEANS )                :3_1:Or:
 ***************** / RPConstraint                                                                          :2_2:Other "poop:
 ****************** / $*|                                                                                 :2_2:Other "poop:
 ******************* / slMultiTerm                                                                       :2_2:Other "poop:
 ******************** / someSL                                                                          :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 ******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+slMultiTerm> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slMultiTerm> MATCH (COK): "poopoo"
+slMultiTerm> VALUE: ((["poopoo"],0),[])
+
 ******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (COK): "poopoo"
+$*|> VALUE: ((["poopoo"],0),[])
+
 ****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
 ****************** / |>| calling $>>                                                                      :3_2:UnDeeper:
 ******************* / |>>/recurse                                                                        :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************* \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                          :3_2:UnDeeper:
 ******************* / |>>/base                                                                           :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=6:
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
+
+******************* \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS < <= > >= IN NOT IN ==     :3_2:UnDeeper:
+|>| calling $>>> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>| calling $>>> MATCH (EERR): <EMPTY>
+|>| calling $>>> ERROR:
+|>| calling $>>> offset=6:
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+****************** \ !Unconsumed Error: |>| calling $>>: Unexpected ) Expecting: IS < <= > >= IN NOT IN == ( :3_2:UnDeeper:
+RPConstraint> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+RPConstraint> MATCH (CERR): "poopoo"
+RPConstraint> ERROR:
+RPConstraint> offset=6:
+RPConstraint> unexpected )
+RPConstraint> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+***************** \ !Consumed Error: RPConstraint: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (     :3_2:UnDeeper:
 ***************** / RPBoolStructR                                                                         :2_2:Other "poop:
 ****************** / $*|                                                                                 :2_2:Other "poop:
 ******************* / slMultiTerm                                                                       :2_2:Other "poop:
 ******************** / someSL                                                                          :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 ******************** \ someSL has returned (["poopoo"],0)                                               :3_2:UnDeeper:
+slMultiTerm> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slMultiTerm> MATCH (COK): "poopoo"
+slMultiTerm> VALUE: ((["poopoo"],0),[])
+
 ******************* \ slMultiTerm has returned (["poopoo"],0)                                            :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (COK): "poopoo"
+$*|> VALUE: ((["poopoo"],0),[])
+
 ****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
 ****************** / |>| calling $>>                                                                      :3_2:UnDeeper:
 ******************* / |>>/recurse                                                                        :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************* \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                          :3_2:UnDeeper:
 ******************* / |>>/base                                                                           :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=6:
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
+
+******************* \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS < <= > >= IN NOT IN ==     :3_2:UnDeeper:
+|>| calling $>>> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>| calling $>>> MATCH (EERR): <EMPTY>
+|>| calling $>>> ERROR:
+|>| calling $>>> offset=6:
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+****************** \ !Unconsumed Error: |>| calling $>>: Unexpected ) Expecting: IS < <= > >= IN NOT IN == ( :3_2:UnDeeper:
+RPBoolStructR> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+RPBoolStructR> MATCH (CERR): "poopoo"
+RPBoolStructR> ERROR:
+RPBoolStructR> offset=6:
+RPBoolStructR> unexpected )
+RPBoolStructR> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+***************** \ !Consumed Error: RPBoolStructR: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (    :3_2:UnDeeper:
 ***************** / RPMT                                                                                  :2_2:Other "poop:
 ****************** / $*|                                                                                 :2_2:Other "poop:
 ******************* / slAKA                                                                             :2_2:Other "poop:
@@ -111,430 +398,1355 @@ natural4> test (suite: natural4-test, args: --match /inline-1-r/)
 ********************* / slAKA base                                                                    :2_2:Other "poop:
 ********************** / slMultiTerm                                                                 :2_2:Other "poop:
 *********************** / someSL                                                                    :2_2:Other "poop:
+someSL> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+someSL> MATCH (COK): "poopoo"
+someSL> VALUE: ((["poopoo"],0),[])
+
 *********************** \ someSL has returned (["poopoo"],0)                                         :3_2:UnDeeper:
+slMultiTerm> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slMultiTerm> MATCH (COK): "poopoo"
+slMultiTerm> VALUE: ((["poopoo"],0),[])
+
 ********************** \ slMultiTerm has returned (["poopoo"],0)                                      :3_2:UnDeeper:
+slAKA base> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slAKA base> MATCH (COK): "poopoo"
+slAKA base> VALUE: ((["poopoo"],0),[])
+
 ********************* \ slAKA base has returned (["poopoo"],0)                                         :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (COK): "poopoo"
+$*|> VALUE: ((["poopoo"],0),[])
+
 ******************** \ $*| has returned (["poopoo"],0)                                                  :3_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :3_2:UnDeeper:
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / slAKA optional akapart                                                         :3_2:UnDeeper:
 ********************** / |?| optional something                                                       :3_2:UnDeeper:
 *********************** / |>>/recurse                                                                :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+*********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                  :3_2:UnDeeper:
 *********************** / |>>/base                                                                   :3_2:UnDeeper:
 ************************ / PAKA/akapart                                                             :3_2:UnDeeper:
 ************************* / $>|                                                                    :3_2:UnDeeper:
 ************************** / Aka Token                                                            :3_2:UnDeeper:
+Aka Token> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+Aka Token> MATCH (EERR): <EMPTY>
+Aka Token> ERROR:
+Aka Token> offset=6:
+Aka Token> unexpected )
+Aka Token> expecting AKA
+
+************************** \ !Unconsumed Error: Aka Token: Unexpected ) Expecting: AKA            :3_2:UnDeeper:
+$>|> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=6:
+$>|> unexpected )
+$>|> expecting AKA
+
+************************* \ !Unconsumed Error: $>|: Unexpected ) Expecting: AKA                    :3_2:UnDeeper:
+PAKA/akapart> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+PAKA/akapart> MATCH (EERR): <EMPTY>
+PAKA/akapart> ERROR:
+PAKA/akapart> offset=6:
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
+
+************************ \ !Unconsumed Error: PAKA/akapart: Unexpected ) Expecting: AKA             :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=6:
+|>>/base> unexpected )
+|>>/base> expecting AKA
+
+*********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: AKA                   :3_2:UnDeeper:
+|?| optional something> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
 ********************** \ |?| optional something has returned (Nothing,0)                              :3_2:UnDeeper:
+slAKA optional akapart> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+slAKA optional akapart> MATCH (EOK): <EMPTY>
+slAKA optional akapart> VALUE: ((Nothing,0),[])
+
 ********************* \ slAKA optional akapart has returned (Nothing,0)                                :3_2:UnDeeper:
 ********************* > |>>/base got Nothing                                                           :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
 ******************** \ |>>/base has returned (Nothing,0)                                                :3_2:UnDeeper:
 ******************** / |>>/recurse                                                                      :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :3_2:UnDeeper:
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / slAKA optional typically                                                       :3_2:UnDeeper:
 ********************** / |?| optional something                                                       :3_2:UnDeeper:
 *********************** / |>>/recurse                                                                :3_2:UnDeeper:
+|>>/recurse> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=6:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+*********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                  :3_2:UnDeeper:
 *********************** / |>>/base                                                                   :3_2:UnDeeper:
 ************************ / typically                                                                :3_2:UnDeeper:
 ************************* / $>|                                                                    :3_2:UnDeeper:
+$>|> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=6:
+$>|> unexpected )
+$>|> expecting TYPICALLY
+
+************************* \ !Unconsumed Error: $>|: Unexpected ) Expecting: TYPICALLY              :3_2:UnDeeper:
+typically> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+typically> MATCH (EERR): <EMPTY>
+typically> ERROR:
+typically> offset=6:
+typically> unexpected )
+typically> expecting TYPICALLY
+
+************************ \ !Unconsumed Error: typically: Unexpected ) Expecting: TYPICALLY          :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=6:
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
+
+*********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: TYPICALLY             :3_2:UnDeeper:
+|?| optional something> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
 ********************** \ |?| optional something has returned (Nothing,0)                              :3_2:UnDeeper:
+slAKA optional typically> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+slAKA optional typically> MATCH (EOK): <EMPTY>
+slAKA optional typically> VALUE: ((Nothing,0),[])
+
 ********************* \ slAKA optional typically has returned (Nothing,0)                              :3_2:UnDeeper:
 ********************* > |>>/base got Nothing                                                           :3_2:UnDeeper:
+|>>/base> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
 ******************** \ |>>/base has returned (Nothing,0)                                                :3_2:UnDeeper:
 ******************** > slAKA: proceeding after base and entityalias are retrieved ...                   :3_2:UnDeeper:
 ******************** > pAKA: entityalias = Nothing                                                      :3_2:UnDeeper:
+slAKA> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slAKA> MATCH (COK): "poopoo"
+slAKA> VALUE: ((["poopoo"],0),[])
+
 ******************* \ slAKA has returned (["poopoo"],0)                                                  :3_2:UnDeeper:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (COK): "poopoo"
+$*|> VALUE: ((["poopoo"],0),[])
+
 ****************** \ $*| has returned (["poopoo"],0)                                                      :3_2:UnDeeper:
+RPMT> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+RPMT> MATCH (COK): "poopoo"
+RPMT> VALUE: ((RPMT ["poopoo"],0),[])
+
 ***************** \ RPMT has returned (RPMT ["poopoo"],0)                                                  :3_2:UnDeeper:
+slRelPred> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+slRelPred> MATCH (COK): "poopoo"
+slRelPred> VALUE: ((RPMT ["poopoo"],0),[])
+
 **************** \ slRelPred has returned (RPMT ["poopoo"],0)                                               :3_2:UnDeeper:
 **************** / undeepers                                                                                :3_2:UnDeeper:
 ***************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                 :3_2:UnDeeper:
 ***************** > sameLine: success!                                                                     :3_2:UnDeeper:
+undeepers> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+undeepers> MATCH (EOK): <EMPTY>
+undeepers> VALUE: ((),[])
+
 **************** \ undeepers has returned ()                                                                :3_2:UnDeeper:
+pRelPred> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+pRelPred> MATCH (COK): "poopoo"
+pRelPred> VALUE: (RPMT ["poopoo"],[])
+
 *************** \ pRelPred has returned RPMT ["poopoo"]                                                      :3_2:UnDeeper:
+term p/3:plain p> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p/3:plain p> MATCH (COK): "poopoo"
+term p/3:plain p> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ************** \ term p/3:plain p has returned MyLeaf (RPMT ["poopoo"])                                       :3_2:UnDeeper:
+term p/notLabelTerm> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p/notLabelTerm> MATCH (COK): "poopoo"
+term p/notLabelTerm> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                      :3_2:UnDeeper:
+term p> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+term p> MATCH (COK): "poopoo"
+term p> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ************ \ term p has returned MyLeaf (RPMT ["poopoo"])                                                     :3_2:UnDeeper:
 ************ / binary(Or)                                                                                       :3_2:UnDeeper:
+binary(Or)> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+binary(Or)> MATCH (EERR): <EMPTY>
+binary(Or)> ERROR:
+binary(Or)> offset=6:
+binary(Or)> unexpected )
+binary(Or)> expecting OR
+
+************ \ !Unconsumed Error: binary(Or): Unexpected ) Expecting: OR                                        :3_2:UnDeeper:
 ************ / binary(And)                                                                                      :3_2:UnDeeper:
+binary(And)> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+binary(And)> MATCH (EERR): <EMPTY>
+binary(And)> ERROR:
+binary(And)> offset=6:
+binary(And)> unexpected )
+binary(And)> expecting AND
+
+************ \ !Unconsumed Error: binary(And): Unexpected ) Expecting: AND                                      :3_2:UnDeeper:
 ************ / binary(SetLess)                                                                                  :3_2:UnDeeper:
+binary(SetLess)> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+binary(SetLess)> MATCH (EERR): <EMPTY>
+binary(SetLess)> ERROR:
+binary(SetLess)> offset=6:
+binary(SetLess)> unexpected )
+binary(SetLess)> expecting LESS
+
+************ \ !Unconsumed Error: binary(SetLess): Unexpected ) Expecting: LESS                                 :3_2:UnDeeper:
 ************ / binary(SetPlus)                                                                                  :3_2:UnDeeper:
+binary(SetPlus)> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+binary(SetPlus)> MATCH (EERR): <EMPTY>
+binary(SetPlus)> ERROR:
+binary(SetPlus)> offset=6:
+binary(SetPlus)> unexpected )
+binary(SetPlus)> expecting PLUS
+
+************ \ !Unconsumed Error: binary(SetPlus): Unexpected ) Expecting: PLUS                                 :3_2:UnDeeper:
+expression> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+expression> MATCH (COK): "poopoo"
+expression> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 *********** \ expression has returned MyLeaf (RPMT ["poopoo"])                                                   :3_2:UnDeeper:
+manyIndentation/leaf?> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+manyIndentation/leaf?> MATCH (COK): "poopoo"
+manyIndentation/leaf?> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ********** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["poopoo"])                                          :3_2:UnDeeper:
 ********** / myindented: consuming UnDeeper                                                                       :3_2:UnDeeper:
+myindented: consuming UnDeeper> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+myindented: consuming UnDeeper> MATCH (COK): )
+myindented: consuming UnDeeper> VALUE: (UnDeeper,[])
+
 ********** \ myindented: consuming UnDeeper has returned UnDeeper                                              :3_1:Or:
+someIndentation> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+someIndentation> MATCH (COK): ( "poopoo" )
+someIndentation> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ********* \ someIndentation has returned MyLeaf (RPMT ["poopoo"])                                               :3_1:Or:
+term p/2:someIndentation expr p> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+term p/2:someIndentation expr p> MATCH (COK): ( "poopoo" )
+term p/2:someIndentation expr p> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ******** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["poopoo"])                                 :3_1:Or:
+term p/notLabelTerm> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+term p/notLabelTerm> MATCH (COK): ( "poopoo" )
+term p/notLabelTerm> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ******* \ term p/notLabelTerm has returned MyLeaf (RPMT ["poopoo"])                                               :3_1:Or:
+term p> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+term p> MATCH (COK): ( "poopoo" )
+term p> VALUE: (MyLeaf (RPMT ["poopoo"]),[])
+
 ****** \ term p has returned MyLeaf (RPMT ["poopoo"])                                                              :3_1:Or:
 ****** / binary(Or)                                                                                                :3_1:Or:
+binary(Or)> IN: OR ( "the" ( ( ( "honk" ) OR ( "ponk" )  <…>
+binary(Or)> MATCH (COK): OR
+binary(Or)> VALUE: (Or,[])
+
 ****** \ binary(Or) has returned Or                                                                                 :3_2:GoDeeper:
 ****** / term p                                                                                                     :3_2:GoDeeper:
 ******* / term p/1a:label directly above                                                                           :3_2:GoDeeper:
 ******** / $*|                                                                                                    :3_2:GoDeeper:
 ********* / someSL                                                                                               :3_2:GoDeeper:
 ********** / pNumAsText                                                                                         :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                      :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+********* \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                              :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+******** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                   :3_2:GoDeeper:
+term p/1a:label directly above> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p/1a:label directly above> MATCH (EERR): <EMPTY>
+term p/1a:label directly above> ERROR:
+term p/1a:label directly above> offset=8:
+term p/1a:label directly above> unexpected (
+term p/1a:label directly above> expecting other text or number
+
+******* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number          :3_2:GoDeeper:
 ******* / term p/b:label to the left of line below, with EOL                                                       :3_2:GoDeeper:
 ******** / someSL                                                                                                 :3_2:GoDeeper:
 ********* / pNumAsText                                                                                           :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+********* \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                        :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+******** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                :3_2:GoDeeper:
+term p/b:label to the left of line below, with EOL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
+term p/b:label to the left of line below, with EOL> ERROR:
+term p/b:label to the left of line below, with EOL> offset=8:
+term p/b:label to the left of line below, with EOL> unexpected (
+term p/b:label to the left of line below, with EOL> expecting other text or number
+
+******* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :3_2:GoDeeper:
 ******* / term p/notLabelTerm                                                                                      :3_2:GoDeeper:
 ******** / term p/2:someIndentation expr p                                                                        :3_2:GoDeeper:
 ********* / someIndentation                                                                                      :3_2:GoDeeper:
 ********** / myindented: consuming GoDeeper                                                                     :3_2:GoDeeper:
+myindented: consuming GoDeeper> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+myindented: consuming GoDeeper> MATCH (COK): (
+myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
+
 ********** \ myindented: consuming GoDeeper has returned GoDeeper                                                :3_2:Other "the":
 ********** / manyIndentation/leaf?                                                                               :3_2:Other "the":
 *********** / expression                                                                                        :3_2:Other "the":
-************ / labelPrefix                                                                                     :3_2:Other "the":
-************ \ labelPrefix has returned "the"                                                                   :3_3:GoDeeper:
-************ / term p                                                                                           :3_3:GoDeeper:
-************* / term p/1a:label directly above                                                                 :3_3:GoDeeper:
-************** / $*|                                                                                          :3_3:GoDeeper:
-*************** / someSL                                                                                     :3_3:GoDeeper:
-**************** / pNumAsText                                                                               :3_3:GoDeeper:
-************* / term p/b:label to the left of line below, with EOL                                             :3_3:GoDeeper:
-************** / someSL                                                                                       :3_3:GoDeeper:
-*************** / pNumAsText                                                                                 :3_3:GoDeeper:
-************* / term p/notLabelTerm                                                                            :3_3:GoDeeper:
-************** / term p/2:someIndentation expr p                                                              :3_3:GoDeeper:
-*************** / someIndentation                                                                            :3_3:GoDeeper:
-**************** / myindented: consuming GoDeeper                                                           :3_3:GoDeeper:
-**************** \ myindented: consuming GoDeeper has returned GoDeeper                                       :3_4:GoDeeper:
-**************** / manyIndentation/leaf?                                                                      :3_4:GoDeeper:
-***************** / expression                                                                               :3_4:GoDeeper:
-****************** / labelPrefix                                                                            :3_4:GoDeeper:
-****************** / term p                                                                                 :3_4:GoDeeper:
-******************* / term p/1a:label directly above                                                       :3_4:GoDeeper:
-******************** / $*|                                                                                :3_4:GoDeeper:
-********************* / someSL                                                                           :3_4:GoDeeper:
-********************** / pNumAsText                                                                     :3_4:GoDeeper:
-******************* / term p/b:label to the left of line below, with EOL                                   :3_4:GoDeeper:
-******************** / someSL                                                                             :3_4:GoDeeper:
-********************* / pNumAsText                                                                       :3_4:GoDeeper:
-******************* / term p/notLabelTerm                                                                  :3_4:GoDeeper:
-******************** / term p/2:someIndentation expr p                                                    :3_4:GoDeeper:
-********************* / someIndentation                                                                  :3_4:GoDeeper:
-********************** / myindented: consuming GoDeeper                                                 :3_4:GoDeeper:
-********************** \ myindented: consuming GoDeeper has returned GoDeeper                             :3_5:GoDeeper:
-********************** / manyIndentation/leaf?                                                            :3_5:GoDeeper:
-*********************** / expression                                                                     :3_5:GoDeeper:
-************************ / labelPrefix                                                                  :3_5:GoDeeper:
-************************ / term p                                                                       :3_5:GoDeeper:
-************************* / term p/1a:label directly above                                             :3_5:GoDeeper:
-************************** / $*|                                                                      :3_5:GoDeeper:
-*************************** / someSL                                                                 :3_5:GoDeeper:
-**************************** / pNumAsText                                                           :3_5:GoDeeper:
-************************* / term p/b:label to the left of line below, with EOL                         :3_5:GoDeeper:
-************************** / someSL                                                                   :3_5:GoDeeper:
-*************************** / pNumAsText                                                             :3_5:GoDeeper:
-************************* / term p/notLabelTerm                                                        :3_5:GoDeeper:
-************************** / term p/2:someIndentation expr p                                          :3_5:GoDeeper:
-*************************** / someIndentation                                                        :3_5:GoDeeper:
-**************************** / myindented: consuming GoDeeper                                       :3_5:GoDeeper:
-**************************** \ myindented: consuming GoDeeper has returned GoDeeper                  :3_5:Other "honk:
-**************************** / manyIndentation/leaf?                                                 :3_5:Other "honk:
-***************************** / expression                                                          :3_5:Other "honk:
-****************************** / labelPrefix                                                       :3_5:Other "honk:
-****************************** / term p                                                            :3_5:Other "honk:
-******************************* / term p/1a:label directly above                                  :3_5:Other "honk:
-******************************** / $*|                                                           :3_5:Other "honk:
-********************************* / someSL                                                      :3_5:Other "honk:
-********************************* \ someSL has returned (["honk"],0)                             :4_5:UnDeeper:
-********************************* / pNumAsText                                                   :4_5:UnDeeper:
-******************************* / term p/b:label to the left of line below, with EOL              :3_5:Other "honk:
-******************************** / someSL                                                        :3_5:Other "honk:
-******************************** \ someSL has returned (["honk"],0)                               :4_5:UnDeeper:
-******************************** / undeepers                                                      :4_5:UnDeeper:
-********************************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :4_5:UnDeeper:
-********************************* > sameLine: success!                                           :4_5:UnDeeper:
-******************************** \ undeepers has returned ()                                      :4_5:UnDeeper:
-******************************** / matching EOL                                                   :4_5:UnDeeper:
-******************************* / term p/notLabelTerm                                             :3_5:Other "honk:
-******************************** / term p/2:someIndentation expr p                               :3_5:Other "honk:
-********************************* / someIndentation                                             :3_5:Other "honk:
-********************************** / myindented: consuming GoDeeper                            :3_5:Other "honk:
-******************************** / term p/3:plain p                                              :3_5:Other "honk:
-********************************* / pRelPred                                                    :3_5:Other "honk:
-********************************** / slRelPred                                                 :3_5:Other "honk:
-*********************************** / nested simpleHorn                                       :3_5:Other "honk:
-************************************ > |^|                                                   :3_5:Other "honk:
-************************************ / $*|                                                   :3_5:Other "honk:
-************************************* / slMultiTerm                                         :3_5:Other "honk:
-************************************** / someSL                                            :3_5:Other "honk:
-************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
-************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
-************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
-************************************ / |^| deeps                                              :4_5:UnDeeper:
-************************************ \ |^| deeps has returned ([()],-1)                    :4_4:Or:
-*********************************** / RPConstraint                                            :3_5:Other "honk:
-************************************ / $*|                                                   :3_5:Other "honk:
-************************************* / slMultiTerm                                         :3_5:Other "honk:
-************************************** / someSL                                            :3_5:Other "honk:
-************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
-************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
-************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
-************************************ / |>| calling $>>                                        :4_5:UnDeeper:
-************************************* / |>>/recurse                                          :4_5:UnDeeper:
-************************************* / |>>/base                                             :4_5:UnDeeper:
-*********************************** / RPBoolStructR                                           :3_5:Other "honk:
-************************************ / $*|                                                   :3_5:Other "honk:
-************************************* / slMultiTerm                                         :3_5:Other "honk:
-************************************** / someSL                                            :3_5:Other "honk:
-************************************** \ someSL has returned (["honk"],0)                   :4_5:UnDeeper:
-************************************* \ slMultiTerm has returned (["honk"],0)                :4_5:UnDeeper:
-************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
-************************************ / |>| calling $>>                                        :4_5:UnDeeper:
-************************************* / |>>/recurse                                          :4_5:UnDeeper:
-************************************* / |>>/base                                             :4_5:UnDeeper:
-*********************************** / RPMT                                                    :3_5:Other "honk:
-************************************ / $*|                                                   :3_5:Other "honk:
-************************************* / slAKA                                               :3_5:Other "honk:
-************************************** / $*|                                               :3_5:Other "honk:
-*************************************** / slAKA base                                      :3_5:Other "honk:
-**************************************** / slMultiTerm                                   :3_5:Other "honk:
-***************************************** / someSL                                      :3_5:Other "honk:
-***************************************** \ someSL has returned (["honk"],0)             :4_5:UnDeeper:
-**************************************** \ slMultiTerm has returned (["honk"],0)          :4_5:UnDeeper:
-*************************************** \ slAKA base has returned (["honk"],0)             :4_5:UnDeeper:
-************************************** \ $*| has returned (["honk"],0)                      :4_5:UnDeeper:
-************************************** / |>>/recurse                                        :4_5:UnDeeper:
-************************************** / |>>/base                                           :4_5:UnDeeper:
-*************************************** / slAKA optional akapart                           :4_5:UnDeeper:
-**************************************** / |?| optional something                         :4_5:UnDeeper:
-***************************************** / |>>/recurse                                  :4_5:UnDeeper:
-***************************************** / |>>/base                                     :4_5:UnDeeper:
-****************************************** / PAKA/akapart                               :4_5:UnDeeper:
-******************************************* / $>|                                      :4_5:UnDeeper:
-******************************************** / Aka Token                              :4_5:UnDeeper:
-**************************************** \ |?| optional something has returned (Nothing,0) :4_5:UnDeeper:
-*************************************** \ slAKA optional akapart has returned (Nothing,0)  :4_5:UnDeeper:
-*************************************** > |>>/base got Nothing                             :4_5:UnDeeper:
-************************************** \ |>>/base has returned (Nothing,0)                  :4_5:UnDeeper:
-************************************** / |>>/recurse                                        :4_5:UnDeeper:
-************************************** / |>>/base                                           :4_5:UnDeeper:
-*************************************** / slAKA optional typically                         :4_5:UnDeeper:
-**************************************** / |?| optional something                         :4_5:UnDeeper:
-***************************************** / |>>/recurse                                  :4_5:UnDeeper:
-***************************************** / |>>/base                                     :4_5:UnDeeper:
-****************************************** / typically                                  :4_5:UnDeeper:
-******************************************* / $>|                                      :4_5:UnDeeper:
-**************************************** \ |?| optional something has returned (Nothing,0) :4_5:UnDeeper:
-*************************************** \ slAKA optional typically has returned (Nothing,0) :4_5:UnDeeper:
-*************************************** > |>>/base got Nothing                             :4_5:UnDeeper:
-************************************** \ |>>/base has returned (Nothing,0)                  :4_5:UnDeeper:
-************************************** > slAKA: proceeding after base and entityalias are retrieved ... :4_5:UnDeeper:
-************************************** > pAKA: entityalias = Nothing                        :4_5:UnDeeper:
-************************************* \ slAKA has returned (["honk"],0)                      :4_5:UnDeeper:
-************************************ \ $*| has returned (["honk"],0)                          :4_5:UnDeeper:
-*********************************** \ RPMT has returned (RPMT ["honk"],0)                      :4_5:UnDeeper:
-********************************** \ slRelPred has returned (RPMT ["honk"],0)                   :4_5:UnDeeper:
-********************************** / undeepers                                                  :4_5:UnDeeper:
-*********************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :4_5:UnDeeper:
-*********************************** > sameLine: success!                                       :4_5:UnDeeper:
-********************************** \ undeepers has returned ()                                  :4_5:UnDeeper:
-********************************* \ pRelPred has returned RPMT ["honk"]                          :4_5:UnDeeper:
-******************************** \ term p/3:plain p has returned MyLeaf (RPMT ["honk"])           :4_5:UnDeeper:
-******************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["honk"])          :4_5:UnDeeper:
-****************************** \ term p has returned MyLeaf (RPMT ["honk"])                         :4_5:UnDeeper:
-****************************** / binary(Or)                                                         :4_5:UnDeeper:
-****************************** / binary(And)                                                        :4_5:UnDeeper:
-****************************** / binary(SetLess)                                                    :4_5:UnDeeper:
-****************************** / binary(SetPlus)                                                    :4_5:UnDeeper:
-***************************** \ expression has returned MyLeaf (RPMT ["honk"])                       :4_5:UnDeeper:
-**************************** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["honk"])              :4_5:UnDeeper:
-**************************** / myindented: consuming UnDeeper                                         :4_5:UnDeeper:
-**************************** \ myindented: consuming UnDeeper has returned UnDeeper                :4_4:Or:
-*************************** \ someIndentation has returned MyLeaf (RPMT ["honk"])                   :4_4:Or:
-************************** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["honk"])     :4_4:Or:
-************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["honk"])                   :4_4:Or:
-************************ \ term p has returned MyLeaf (RPMT ["honk"])                                  :4_4:Or:
-************************ / binary(Or)                                                                  :4_4:Or:
-************************ \ binary(Or) has returned Or                                                   :4_5:GoDeeper:
-************************ / term p                                                                       :4_5:GoDeeper:
-************************* / term p/1a:label directly above                                             :4_5:GoDeeper:
-************************** / $*|                                                                      :4_5:GoDeeper:
-*************************** / someSL                                                                 :4_5:GoDeeper:
-**************************** / pNumAsText                                                           :4_5:GoDeeper:
-************************* / term p/b:label to the left of line below, with EOL                         :4_5:GoDeeper:
-************************** / someSL                                                                   :4_5:GoDeeper:
-*************************** / pNumAsText                                                             :4_5:GoDeeper:
-************************* / term p/notLabelTerm                                                        :4_5:GoDeeper:
-************************** / term p/2:someIndentation expr p                                          :4_5:GoDeeper:
-*************************** / someIndentation                                                        :4_5:GoDeeper:
-**************************** / myindented: consuming GoDeeper                                       :4_5:GoDeeper:
-**************************** \ myindented: consuming GoDeeper has returned GoDeeper                  :4_5:Other "ponk:
-**************************** / manyIndentation/leaf?                                                 :4_5:Other "ponk:
-***************************** / expression                                                          :4_5:Other "ponk:
-****************************** / labelPrefix                                                       :4_5:Other "ponk:
-****************************** / term p                                                            :4_5:Other "ponk:
-******************************* / term p/1a:label directly above                                  :4_5:Other "ponk:
-******************************** / $*|                                                           :4_5:Other "ponk:
-********************************* / someSL                                                      :4_5:Other "ponk:
-********************************* \ someSL has returned (["ponk"],0)                       :1_2:UnDeeper:
-********************************* / pNumAsText                                             :1_2:UnDeeper:
-******************************* / term p/b:label to the left of line below, with EOL              :4_5:Other "ponk:
-******************************** / someSL                                                        :4_5:Other "ponk:
-******************************** \ someSL has returned (["ponk"],0)                         :1_2:UnDeeper:
-******************************** / undeepers                                                :1_2:UnDeeper:
-********************************* > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :1_2:UnDeeper:
-********************************* > sameLine: success!                                     :1_2:UnDeeper:
-******************************** \ undeepers has returned ()                                :1_2:UnDeeper:
-******************************** / matching EOL                                             :1_2:UnDeeper:
-******************************* / term p/notLabelTerm                                             :4_5:Other "ponk:
-******************************** / term p/2:someIndentation expr p                               :4_5:Other "ponk:
-********************************* / someIndentation                                             :4_5:Other "ponk:
-********************************** / myindented: consuming GoDeeper                            :4_5:Other "ponk:
-******************************** / term p/3:plain p                                              :4_5:Other "ponk:
-********************************* / pRelPred                                                    :4_5:Other "ponk:
-********************************** / slRelPred                                                 :4_5:Other "ponk:
-*********************************** / nested simpleHorn                                       :4_5:Other "ponk:
-************************************ > |^|                                                   :4_5:Other "ponk:
-************************************ / $*|                                                   :4_5:Other "ponk:
-************************************* / slMultiTerm                                         :4_5:Other "ponk:
-************************************** / someSL                                            :4_5:Other "ponk:
-************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
-************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
-************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
-************************************ / |^| deeps                                        :1_2:UnDeeper:
-************************************ \ |^| deeps has returned ([(),(),(),()],-4)   :EOF:
-*********************************** / RPConstraint                                            :4_5:Other "ponk:
-************************************ / $*|                                                   :4_5:Other "ponk:
-************************************* / slMultiTerm                                         :4_5:Other "ponk:
-************************************** / someSL                                            :4_5:Other "ponk:
-************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
-************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
-************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
-************************************ / |>| calling $>>                                  :1_2:UnDeeper:
-************************************* / |>>/recurse                                    :1_2:UnDeeper:
-************************************* / |>>/base                                       :1_2:UnDeeper:
-*********************************** / RPBoolStructR                                           :4_5:Other "ponk:
-************************************ / $*|                                                   :4_5:Other "ponk:
-************************************* / slMultiTerm                                         :4_5:Other "ponk:
-************************************** / someSL                                            :4_5:Other "ponk:
-************************************** \ someSL has returned (["ponk"],0)             :1_2:UnDeeper:
-************************************* \ slMultiTerm has returned (["ponk"],0)          :1_2:UnDeeper:
-************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
-************************************ / |>| calling $>>                                  :1_2:UnDeeper:
-************************************* / |>>/recurse                                    :1_2:UnDeeper:
-************************************* / |>>/base                                       :1_2:UnDeeper:
-*********************************** / RPMT                                                    :4_5:Other "ponk:
-************************************ / $*|                                                   :4_5:Other "ponk:
-************************************* / slAKA                                               :4_5:Other "ponk:
-************************************** / $*|                                               :4_5:Other "ponk:
-*************************************** / slAKA base                                      :4_5:Other "ponk:
-**************************************** / slMultiTerm                                   :4_5:Other "ponk:
-***************************************** / someSL                                      :4_5:Other "ponk:
-***************************************** \ someSL has returned (["ponk"],0)       :1_2:UnDeeper:
-**************************************** \ slMultiTerm has returned (["ponk"],0)    :1_2:UnDeeper:
-*************************************** \ slAKA base has returned (["ponk"],0)       :1_2:UnDeeper:
-************************************** \ $*| has returned (["ponk"],0)                :1_2:UnDeeper:
-************************************** / |>>/recurse                                  :1_2:UnDeeper:
-************************************** / |>>/base                                     :1_2:UnDeeper:
-*************************************** / slAKA optional akapart                     :1_2:UnDeeper:
-**************************************** / |?| optional something                   :1_2:UnDeeper:
-***************************************** / |>>/recurse                            :1_2:UnDeeper:
-***************************************** / |>>/base                               :1_2:UnDeeper:
-****************************************** / PAKA/akapart                         :1_2:UnDeeper:
-******************************************* / $>|                                :1_2:UnDeeper:
-******************************************** / Aka Token                        :1_2:UnDeeper:
-**************************************** \ |?| optional something has returned (Nothing,0) :1_2:UnDeeper:
-*************************************** \ slAKA optional akapart has returned (Nothing,0) :1_2:UnDeeper:
-*************************************** > |>>/base got Nothing                       :1_2:UnDeeper:
-************************************** \ |>>/base has returned (Nothing,0)            :1_2:UnDeeper:
-************************************** / |>>/recurse                                  :1_2:UnDeeper:
-************************************** / |>>/base                                     :1_2:UnDeeper:
-*************************************** / slAKA optional typically                   :1_2:UnDeeper:
-**************************************** / |?| optional something                   :1_2:UnDeeper:
-***************************************** / |>>/recurse                            :1_2:UnDeeper:
-***************************************** / |>>/base                               :1_2:UnDeeper:
-****************************************** / typically                            :1_2:UnDeeper:
-******************************************* / $>|                                :1_2:UnDeeper:
-**************************************** \ |?| optional something has returned (Nothing,0) :1_2:UnDeeper:
-*************************************** \ slAKA optional typically has returned (Nothing,0) :1_2:UnDeeper:
-*************************************** > |>>/base got Nothing                       :1_2:UnDeeper:
-************************************** \ |>>/base has returned (Nothing,0)            :1_2:UnDeeper:
-************************************** > slAKA: proceeding after base and entityalias are retrieved ... :1_2:UnDeeper:
-************************************** > pAKA: entityalias = Nothing                  :1_2:UnDeeper:
-************************************* \ slAKA has returned (["ponk"],0)                :1_2:UnDeeper:
-************************************ \ $*| has returned (["ponk"],0)                    :1_2:UnDeeper:
-*********************************** \ RPMT has returned (RPMT ["ponk"],0)                :1_2:UnDeeper:
-********************************** \ slRelPred has returned (RPMT ["ponk"],0)             :1_2:UnDeeper:
-********************************** / undeepers                                            :1_2:UnDeeper:
-*********************************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers :1_2:UnDeeper:
-*********************************** > sameLine: success!                                 :1_2:UnDeeper:
-********************************** \ undeepers has returned ()                            :1_2:UnDeeper:
-********************************* \ pRelPred has returned RPMT ["ponk"]                    :1_2:UnDeeper:
-******************************** \ term p/3:plain p has returned MyLeaf (RPMT ["ponk"])     :1_2:UnDeeper:
-******************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["ponk"])    :1_2:UnDeeper:
-****************************** \ term p has returned MyLeaf (RPMT ["ponk"])                   :1_2:UnDeeper:
-****************************** / binary(Or)                                                   :1_2:UnDeeper:
-****************************** / binary(And)                                                  :1_2:UnDeeper:
-****************************** / binary(SetLess)                                              :1_2:UnDeeper:
-****************************** / binary(SetPlus)                                              :1_2:UnDeeper:
-***************************** \ expression has returned MyLeaf (RPMT ["ponk"])                 :1_2:UnDeeper:
-**************************** \ manyIndentation/leaf? has returned MyLeaf (RPMT ["ponk"])        :1_2:UnDeeper:
-**************************** / myindented: consuming UnDeeper                                   :1_2:UnDeeper:
-**************************** \ myindented: consuming UnDeeper has returned UnDeeper               :1_3:UnDeeper:
-*************************** \ someIndentation has returned MyLeaf (RPMT ["ponk"])                  :1_3:UnDeeper:
-************************** \ term p/2:someIndentation expr p has returned MyLeaf (RPMT ["ponk"])    :1_3:UnDeeper:
-************************* \ term p/notLabelTerm has returned MyLeaf (RPMT ["ponk"])                  :1_3:UnDeeper:
-************************ \ term p has returned MyLeaf (RPMT ["ponk"])                                 :1_3:UnDeeper:
-************************ / binary(Or)                                                                 :1_3:UnDeeper:
-************************ / binary(And)                                                                :1_3:UnDeeper:
-************************ / binary(SetLess)                                                            :1_3:UnDeeper:
-************************ / binary(SetPlus)                                                            :1_3:UnDeeper:
-*********************** \ expression has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_3:UnDeeper:
-********************** \ manyIndentation/leaf? has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_3:UnDeeper:
-********************** / myindented: consuming UnDeeper                                                 :1_3:UnDeeper:
-********************** \ myindented: consuming UnDeeper has returned UnDeeper                             :1_4:UnDeeper:
-********************* \ someIndentation has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
-******************** \ term p/2:someIndentation expr p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
-******************* \ term p/notLabelTerm has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_4:UnDeeper:
-****************** \ term p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]                :1_4:UnDeeper:
-****************** / binary(Or)                                                                               :1_4:UnDeeper:
-****************** / binary(And)                                                                              :1_4:UnDeeper:
-****************** / binary(SetLess)                                                                          :1_4:UnDeeper:
-****************** / binary(SetPlus)                                                                          :1_4:UnDeeper:
-***************** \ expression has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]              :1_4:UnDeeper:
-**************** \ manyIndentation/leaf? has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]     :1_4:UnDeeper:
-**************** / myindented: consuming UnDeeper                                                               :1_4:UnDeeper:
-**************** \ myindented: consuming UnDeeper has returned UnDeeper                                           :1_5:UnDeeper:
-*************** \ someIndentation has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]               :1_5:UnDeeper:
-************** \ term p/2:someIndentation expr p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])] :1_5:UnDeeper:
-************* \ term p/notLabelTerm has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]               :1_5:UnDeeper:
-************ \ term p has returned MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]                              :1_5:UnDeeper:
-************ / binary(Or)                                                                                             :1_5:UnDeeper:
-************ / binary(And)                                                                                            :1_5:UnDeeper:
-************ / binary(SetLess)                                                                                        :1_5:UnDeeper:
-************ / binary(SetPlus)                                                                                        :1_5:UnDeeper:
-*********** \ expression has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])          :1_5:UnDeeper:
-********** \ manyIndentation/leaf? has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :1_5:UnDeeper:
-********** / myindented: consuming UnDeeper                                                                             :1_5:UnDeeper:
-********** \ myindented: consuming UnDeeper has returned UnDeeper                                            :EOF:
-********* \ someIndentation has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
-******** \ term p/2:someIndentation expr p has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
-******* \ term p/notLabelTerm has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])]) :EOF:
-****** \ term p has returned MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])             :EOF:
-****** / binary(Or)                                                                                              :EOF:
-****** / binary(And)                                                                                             :EOF:
-****** / binary(SetLess)                                                                                         :EOF:
-****** / binary(SetPlus)                                                                                         :EOF:
-***** \ expression has returned MyAny [MyLeaf (RPMT ["poopoo"]),MyLabel ["the"] (MyAny [MyLeaf (RPMT ["honk"]),MyLeaf (RPMT ["ponk"])])] :EOF:
-**** \ ppp inner has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
-*** \ pBSR has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
-** \ made it to pBSR has returned Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]] :EOF:
-** / undeepers                                                                                                       :EOF:
-*** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                                        :EOF:
-*** > sameLine: success!                                                                                            :EOF:
-** \ undeepers has returned ()                                                                                       :EOF:
-* final
-:PROPERTIES:
-:VISIBILITY: all
-:END:
+************ / term p                                                                                          :3_2:Other "the":
+************* / term p/1a:label directly above                                                                :3_2:Other "the":
+************** / $*|                                                                                         :3_2:Other "the":
+*************** / someSL                                                                                    :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
 
+*************** \ someSL has returned (["the","honk"],3)                                                           :4_5:UnDeeper:
+*************** / pNumAsText                                                                                       :4_5:UnDeeper:
+pNumAsText> IN: ) OR ( "ponk" ) ) ) )
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=14:
+pNumAsText> unexpected )
+pNumAsText> expecting number
+
+*************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                                    :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (CERR): "the" ( ( ( "honk"
+$*|> ERROR:
+$*|> offset=14:
+$*|> unexpected )
+$*|> expecting ( or other text or number
+
+************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                               :4_5:UnDeeper:
+term p/1a:label directly above> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p/1a:label directly above> MATCH (CERR): "the" ( ( ( "honk"
+term p/1a:label directly above> ERROR:
+term p/1a:label directly above> offset=14:
+term p/1a:label directly above> unexpected )
+term p/1a:label directly above> expecting ( or other text or number
+
+************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number      :4_5:UnDeeper:
+************* / term p/b:label to the left of line below, with EOL                                            :3_2:Other "the":
+************** / someSL                                                                                      :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
+
+************** \ someSL has returned (["the","honk"],3)                                                             :4_5:UnDeeper:
+************** / undeepers                                                                                          :4_5:UnDeeper:
+*************** > sameLine/undeepers: reached end of line; now need to clear 3 UnDeepers                           :4_5:UnDeeper:
+undeepers> IN: ) OR ( "ponk" ) ) ) )
+undeepers> MATCH (CERR): )
+undeepers> ERROR:
+undeepers> offset=15:
+undeepers> unexpected OR
+undeepers> expecting )
+
+************** \ !Consumed Error: undeepers: Unexpected OR Expecting: )                                          :4_4:Or:
+term p/b:label to the left of line below, with EOL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p/b:label to the left of line below, with EOL> MATCH (CERR): "the" ( ( ( "honk" )
+term p/b:label to the left of line below, with EOL> ERROR:
+term p/b:label to the left of line below, with EOL> offset=15:
+term p/b:label to the left of line below, with EOL> unexpected OR
+term p/b:label to the left of line below, with EOL> expecting )
+
+************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected OR Expecting: )   :4_4:Or:
+************* / term p/notLabelTerm                                                                           :3_2:Other "the":
+************** / term p/2:someIndentation expr p                                                             :3_2:Other "the":
+*************** / someIndentation                                                                           :3_2:Other "the":
+**************** / myindented: consuming GoDeeper                                                          :3_2:Other "the":
+myindented: consuming GoDeeper> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
+myindented: consuming GoDeeper> ERROR:
+myindented: consuming GoDeeper> offset=9:
+myindented: consuming GoDeeper> unexpected "the"
+myindented: consuming GoDeeper> expecting (
+
+**************** \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "the" Expecting: (        :3_2:Other "the":
+someIndentation> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someIndentation> MATCH (EERR): <EMPTY>
+someIndentation> ERROR:
+someIndentation> offset=9:
+someIndentation> unexpected "the"
+someIndentation> expecting (
+
+*************** \ !Unconsumed Error: someIndentation: Unexpected "the" Expecting: (                         :3_2:Other "the":
+term p/2:someIndentation expr p> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
+term p/2:someIndentation expr p> ERROR:
+term p/2:someIndentation expr p> offset=9:
+term p/2:someIndentation expr p> unexpected "the"
+term p/2:someIndentation expr p> expecting (
+
+************** \ !Unconsumed Error: term p/2:someIndentation expr p: Unexpected "the" Expecting: (           :3_2:Other "the":
+************** / term p/3:plain p                                                                            :3_2:Other "the":
+*************** / pRelPred                                                                                  :3_2:Other "the":
+**************** / slRelPred                                                                               :3_2:Other "the":
+***************** / nested simpleHorn                                                                     :3_2:Other "the":
+****************** > |^|                                                                                 :3_2:Other "the":
+****************** / $*|                                                                                 :3_2:Other "the":
+******************* / slMultiTerm                                                                       :3_2:Other "the":
+******************** / someSL                                                                          :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
+
+******************** \ someSL has returned (["the","honk"],3)                                                 :4_5:UnDeeper:
+slMultiTerm> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slMultiTerm> MATCH (COK): "the" ( ( ( "honk"
+slMultiTerm> VALUE: ((["the","honk"],3),[])
+
+******************* \ slMultiTerm has returned (["the","honk"],3)                                              :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (COK): "the" ( ( ( "honk"
+$*|> VALUE: ((["the","honk"],3),[])
+
+****************** \ $*| has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
+****************** / |^| deeps                                                                                  :4_5:UnDeeper:
+|^| deeps> IN: ) OR ( "ponk" ) ) ) )
+|^| deeps> MATCH (COK): )
+|^| deeps> VALUE: (([()],-1),[])
+
+****************** \ |^| deeps has returned ([()],-1)                                                        :4_4:Or:
+nested simpleHorn> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+nested simpleHorn> MATCH (CERR): "the" ( ( ( "honk" )
+nested simpleHorn> ERROR:
+nested simpleHorn> offset=15:
+nested simpleHorn> unexpected OR
+nested simpleHorn> expecting ) or MEANS
+
+***************** \ !Consumed Error: nested simpleHorn: Unexpected OR Expecting: MEANS )                      :4_4:Or:
+***************** / RPConstraint                                                                          :3_2:Other "the":
+****************** / $*|                                                                                 :3_2:Other "the":
+******************* / slMultiTerm                                                                       :3_2:Other "the":
+******************** / someSL                                                                          :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
+
+******************** \ someSL has returned (["the","honk"],3)                                                 :4_5:UnDeeper:
+slMultiTerm> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slMultiTerm> MATCH (COK): "the" ( ( ( "honk"
+slMultiTerm> VALUE: ((["the","honk"],3),[])
+
+******************* \ slMultiTerm has returned (["the","honk"],3)                                              :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (COK): "the" ( ( ( "honk"
+$*|> VALUE: ((["the","honk"],3),[])
+
+****************** \ $*| has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
+****************** / |>| calling $>>                                                                            :4_5:UnDeeper:
+******************* / |>>/recurse                                                                              :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************* \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                                :4_5:UnDeeper:
+******************* / |>>/base                                                                                 :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=14:
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
+
+******************* \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS < <= > >= IN NOT IN ==           :4_5:UnDeeper:
+|>| calling $>>> IN: ) OR ( "ponk" ) ) ) )
+|>| calling $>>> MATCH (EERR): <EMPTY>
+|>| calling $>>> ERROR:
+|>| calling $>>> offset=14:
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+****************** \ !Unconsumed Error: |>| calling $>>: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (    :4_5:UnDeeper:
+RPConstraint> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+RPConstraint> MATCH (CERR): "the" ( ( ( "honk"
+RPConstraint> ERROR:
+RPConstraint> offset=14:
+RPConstraint> unexpected )
+RPConstraint> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+***************** \ !Consumed Error: RPConstraint: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (           :4_5:UnDeeper:
+***************** / RPBoolStructR                                                                         :3_2:Other "the":
+****************** / $*|                                                                                 :3_2:Other "the":
+******************* / slMultiTerm                                                                       :3_2:Other "the":
+******************** / someSL                                                                          :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
+
+******************** \ someSL has returned (["the","honk"],3)                                                 :4_5:UnDeeper:
+slMultiTerm> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slMultiTerm> MATCH (COK): "the" ( ( ( "honk"
+slMultiTerm> VALUE: ((["the","honk"],3),[])
+
+******************* \ slMultiTerm has returned (["the","honk"],3)                                              :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (COK): "the" ( ( ( "honk"
+$*|> VALUE: ((["the","honk"],3),[])
+
+****************** \ $*| has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
+****************** / |>| calling $>>                                                                            :4_5:UnDeeper:
+******************* / |>>/recurse                                                                              :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************* \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                                :4_5:UnDeeper:
+******************* / |>>/base                                                                                 :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=14:
+|>>/base> unexpected )
+|>>/base> expecting <, <=, ==, >, >=, IN, IS, or NOT IN
+
+******************* \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS < <= > >= IN NOT IN ==           :4_5:UnDeeper:
+|>| calling $>>> IN: ) OR ( "ponk" ) ) ) )
+|>| calling $>>> MATCH (EERR): <EMPTY>
+|>| calling $>>> ERROR:
+|>| calling $>>> offset=14:
+|>| calling $>>> unexpected )
+|>| calling $>>> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+****************** \ !Unconsumed Error: |>| calling $>>: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (    :4_5:UnDeeper:
+RPBoolStructR> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+RPBoolStructR> MATCH (CERR): "the" ( ( ( "honk"
+RPBoolStructR> ERROR:
+RPBoolStructR> offset=14:
+RPBoolStructR> unexpected )
+RPBoolStructR> expecting (, <, <=, ==, >, >=, IN, IS, or NOT IN
+
+***************** \ !Consumed Error: RPBoolStructR: Unexpected ) Expecting: IS < <= > >= IN NOT IN == (          :4_5:UnDeeper:
+***************** / RPMT                                                                                  :3_2:Other "the":
+****************** / $*|                                                                                 :3_2:Other "the":
+******************* / slAKA                                                                             :3_2:Other "the":
+******************** / $*|                                                                             :3_2:Other "the":
+********************* / slAKA base                                                                    :3_2:Other "the":
+********************** / slMultiTerm                                                                 :3_2:Other "the":
+*********************** / someSL                                                                    :3_2:Other "the":
+someSL> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someSL> MATCH (COK): "the" ( ( ( "honk"
+someSL> VALUE: ((["the","honk"],3),[])
+
+*********************** \ someSL has returned (["the","honk"],3)                                           :4_5:UnDeeper:
+slMultiTerm> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slMultiTerm> MATCH (COK): "the" ( ( ( "honk"
+slMultiTerm> VALUE: ((["the","honk"],3),[])
+
+********************** \ slMultiTerm has returned (["the","honk"],3)                                        :4_5:UnDeeper:
+slAKA base> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slAKA base> MATCH (COK): "the" ( ( ( "honk"
+slAKA base> VALUE: ((["the","honk"],3),[])
+
+********************* \ slAKA base has returned (["the","honk"],3)                                           :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (COK): "the" ( ( ( "honk"
+$*|> VALUE: ((["the","honk"],3),[])
+
+******************** \ $*| has returned (["the","honk"],3)                                                    :4_5:UnDeeper:
+******************** / |>>/recurse                                                                            :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :4_5:UnDeeper:
+******************** / |>>/base                                                                               :4_5:UnDeeper:
+********************* / slAKA optional akapart                                                               :4_5:UnDeeper:
+********************** / |?| optional something                                                             :4_5:UnDeeper:
+*********************** / |>>/recurse                                                                      :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+*********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :4_5:UnDeeper:
+*********************** / |>>/base                                                                         :4_5:UnDeeper:
+************************ / PAKA/akapart                                                                   :4_5:UnDeeper:
+************************* / $>|                                                                          :4_5:UnDeeper:
+************************** / Aka Token                                                                  :4_5:UnDeeper:
+Aka Token> IN: ) OR ( "ponk" ) ) ) )
+Aka Token> MATCH (EERR): <EMPTY>
+Aka Token> ERROR:
+Aka Token> offset=14:
+Aka Token> unexpected )
+Aka Token> expecting AKA
+
+************************** \ !Unconsumed Error: Aka Token: Unexpected ) Expecting: AKA                  :4_5:UnDeeper:
+$>|> IN: ) OR ( "ponk" ) ) ) )
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=14:
+$>|> unexpected )
+$>|> expecting AKA
+
+************************* \ !Unconsumed Error: $>|: Unexpected ) Expecting: AKA                          :4_5:UnDeeper:
+PAKA/akapart> IN: ) OR ( "ponk" ) ) ) )
+PAKA/akapart> MATCH (EERR): <EMPTY>
+PAKA/akapart> ERROR:
+PAKA/akapart> offset=14:
+PAKA/akapart> unexpected )
+PAKA/akapart> expecting AKA
+
+************************ \ !Unconsumed Error: PAKA/akapart: Unexpected ) Expecting: AKA                   :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=14:
+|>>/base> unexpected )
+|>>/base> expecting AKA
+
+*********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: AKA                         :4_5:UnDeeper:
+|?| optional something> IN: ) OR ( "ponk" ) ) ) )
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
+********************** \ |?| optional something has returned (Nothing,0)                                    :4_5:UnDeeper:
+slAKA optional akapart> IN: ) OR ( "ponk" ) ) ) )
+slAKA optional akapart> MATCH (EOK): <EMPTY>
+slAKA optional akapart> VALUE: ((Nothing,0),[])
+
+********************* \ slAKA optional akapart has returned (Nothing,0)                                      :4_5:UnDeeper:
+********************* > |>>/base got Nothing                                                                 :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
+******************** \ |>>/base has returned (Nothing,0)                                                      :4_5:UnDeeper:
+******************** / |>>/recurse                                                                            :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :4_5:UnDeeper:
+******************** / |>>/base                                                                               :4_5:UnDeeper:
+********************* / slAKA optional typically                                                             :4_5:UnDeeper:
+********************** / |?| optional something                                                             :4_5:UnDeeper:
+*********************** / |>>/recurse                                                                      :4_5:UnDeeper:
+|>>/recurse> IN: ) OR ( "ponk" ) ) ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=14:
+|>>/recurse> unexpected )
+|>>/recurse> expecting (
+
+*********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :4_5:UnDeeper:
+*********************** / |>>/base                                                                         :4_5:UnDeeper:
+************************ / typically                                                                      :4_5:UnDeeper:
+************************* / $>|                                                                          :4_5:UnDeeper:
+$>|> IN: ) OR ( "ponk" ) ) ) )
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=14:
+$>|> unexpected )
+$>|> expecting TYPICALLY
+
+************************* \ !Unconsumed Error: $>|: Unexpected ) Expecting: TYPICALLY                    :4_5:UnDeeper:
+typically> IN: ) OR ( "ponk" ) ) ) )
+typically> MATCH (EERR): <EMPTY>
+typically> ERROR:
+typically> offset=14:
+typically> unexpected )
+typically> expecting TYPICALLY
+
+************************ \ !Unconsumed Error: typically: Unexpected ) Expecting: TYPICALLY                :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=14:
+|>>/base> unexpected )
+|>>/base> expecting TYPICALLY
+
+*********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: TYPICALLY                   :4_5:UnDeeper:
+|?| optional something> IN: ) OR ( "ponk" ) ) ) )
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
+********************** \ |?| optional something has returned (Nothing,0)                                    :4_5:UnDeeper:
+slAKA optional typically> IN: ) OR ( "ponk" ) ) ) )
+slAKA optional typically> MATCH (EOK): <EMPTY>
+slAKA optional typically> VALUE: ((Nothing,0),[])
+
+********************* \ slAKA optional typically has returned (Nothing,0)                                    :4_5:UnDeeper:
+********************* > |>>/base got Nothing                                                                 :4_5:UnDeeper:
+|>>/base> IN: ) OR ( "ponk" ) ) ) )
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
+******************** \ |>>/base has returned (Nothing,0)                                                      :4_5:UnDeeper:
+******************** > slAKA: proceeding after base and entityalias are retrieved ...                         :4_5:UnDeeper:
+******************** > pAKA: entityalias = Nothing                                                            :4_5:UnDeeper:
+slAKA> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slAKA> MATCH (COK): "the" ( ( ( "honk"
+slAKA> VALUE: ((["the","honk"],3),[])
+
+******************* \ slAKA has returned (["the","honk"],3)                                                    :4_5:UnDeeper:
+$*|> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+$*|> MATCH (COK): "the" ( ( ( "honk"
+$*|> VALUE: ((["the","honk"],3),[])
+
+****************** \ $*| has returned (["the","honk"],3)                                                        :4_5:UnDeeper:
+RPMT> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+RPMT> MATCH (COK): "the" ( ( ( "honk"
+RPMT> VALUE: ((RPMT ["the","honk"],3),[])
+
+***************** \ RPMT has returned (RPMT ["the","honk"],3)                                                    :4_5:UnDeeper:
+slRelPred> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+slRelPred> MATCH (COK): "the" ( ( ( "honk"
+slRelPred> VALUE: ((RPMT ["the","honk"],3),[])
+
+**************** \ slRelPred has returned (RPMT ["the","honk"],3)                                                 :4_5:UnDeeper:
+**************** / undeepers                                                                                      :4_5:UnDeeper:
+***************** > sameLine/undeepers: reached end of line; now need to clear 3 UnDeepers                       :4_5:UnDeeper:
+undeepers> IN: ) OR ( "ponk" ) ) ) )
+undeepers> MATCH (CERR): )
+undeepers> ERROR:
+undeepers> offset=15:
+undeepers> unexpected OR
+undeepers> expecting )
+
+**************** \ !Consumed Error: undeepers: Unexpected OR Expecting: )                                      :4_4:Or:
+pRelPred> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+pRelPred> MATCH (CERR): "the" ( ( ( "honk" )
+pRelPred> ERROR:
+pRelPred> offset=15:
+pRelPred> unexpected OR
+pRelPred> expecting )
+
+*************** \ !Consumed Error: pRelPred: Unexpected OR Expecting: )                                         :4_4:Or:
+term p/3:plain p> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p/3:plain p> MATCH (CERR): "the" ( ( ( "honk" )
+term p/3:plain p> ERROR:
+term p/3:plain p> offset=15:
+term p/3:plain p> unexpected OR
+term p/3:plain p> expecting )
+
+************** \ !Consumed Error: term p/3:plain p: Unexpected OR Expecting: )                                   :4_4:Or:
+term p/notLabelTerm> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p/notLabelTerm> MATCH (EERR): <EMPTY>
+term p/notLabelTerm> ERROR:
+term p/notLabelTerm> offset=15:
+term p/notLabelTerm> unexpected OR
+term p/notLabelTerm> expecting )
+
+************* \ !Unconsumed Error: term p/notLabelTerm: Unexpected OR Expecting: )                            :3_2:Other "the":
+term p> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+term p> MATCH (EERR): <EMPTY>
+term p> ERROR:
+term p> offset=15:
+term p> unexpected OR
+term p> expecting )
+
+************ \ !Unconsumed Error: term p: Unexpected OR Expecting: )                                           :3_2:Other "the":
+expression> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+expression> MATCH (EERR): <EMPTY>
+expression> ERROR:
+expression> offset=15:
+expression> unexpected OR
+expression> expecting expression
+
+*********** \ !Unconsumed Error: expression: Unexpected OR Expecting: expression                                :3_2:Other "the":
+manyIndentation/leaf?> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+manyIndentation/leaf?> MATCH (EERR): <EMPTY>
+manyIndentation/leaf?> ERROR:
+manyIndentation/leaf?> offset=15:
+manyIndentation/leaf?> unexpected OR
+manyIndentation/leaf?> expecting expression
+
+********** \ !Unconsumed Error: manyIndentation/leaf?: Unexpected OR Expecting: expression                       :3_2:Other "the":
+********** / manyIndentation/deeper; calling someIndentation                                                     :3_2:Other "the":
+*********** / someIndentation                                                                                   :3_2:Other "the":
+************ / myindented: consuming GoDeeper                                                                  :3_2:Other "the":
+myindented: consuming GoDeeper> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
+myindented: consuming GoDeeper> ERROR:
+myindented: consuming GoDeeper> offset=9:
+myindented: consuming GoDeeper> unexpected "the"
+myindented: consuming GoDeeper> expecting (
+
+************ \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "the" Expecting: (                :3_2:Other "the":
+someIndentation> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+someIndentation> MATCH (EERR): <EMPTY>
+someIndentation> ERROR:
+someIndentation> offset=9:
+someIndentation> unexpected "the"
+someIndentation> expecting (
+
+*********** \ !Unconsumed Error: someIndentation: Unexpected "the" Expecting: (                                 :3_2:Other "the":
+manyIndentation/deeper; calling someIndentation> IN: "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) )
+manyIndentation/deeper; calling someIndentation> MATCH (EERR): <EMPTY>
+manyIndentation/deeper; calling someIndentation> ERROR:
+manyIndentation/deeper; calling someIndentation> offset=9:
+manyIndentation/deeper; calling someIndentation> unexpected "the"
+manyIndentation/deeper; calling someIndentation> expecting (
+
+********** \ !Unconsumed Error: manyIndentation/deeper; calling someIndentation: Unexpected "the" Expecting: (   :3_2:Other "the":
+someIndentation> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someIndentation> MATCH (CERR): (
+someIndentation> ERROR:
+someIndentation> offset=15:
+someIndentation> unexpected OR
+someIndentation> expecting expression
+
+********* \ !Consumed Error: someIndentation: Unexpected OR Expecting: expression                                 :3_2:Other "the":
+term p/2:someIndentation expr p> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p/2:someIndentation expr p> MATCH (CERR): (
+term p/2:someIndentation expr p> ERROR:
+term p/2:someIndentation expr p> offset=15:
+term p/2:someIndentation expr p> unexpected OR
+term p/2:someIndentation expr p> expecting expression
+
+******** \ !Consumed Error: term p/2:someIndentation expr p: Unexpected OR Expecting: expression                   :3_2:Other "the":
+******** / term p/3:plain p                                                                                       :3_2:GoDeeper:
+********* / pRelPred                                                                                             :3_2:GoDeeper:
+********** / slRelPred                                                                                          :3_2:GoDeeper:
+*********** / nested simpleHorn                                                                                :3_2:GoDeeper:
+************ > |^|                                                                                            :3_2:GoDeeper:
+************ / $*|                                                                                            :3_2:GoDeeper:
+************* / slMultiTerm                                                                                  :3_2:GoDeeper:
+************** / someSL                                                                                     :3_2:GoDeeper:
+*************** / pNumAsText                                                                               :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+*************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                            :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                    :3_2:GoDeeper:
+slMultiTerm> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slMultiTerm> MATCH (EERR): <EMPTY>
+slMultiTerm> ERROR:
+slMultiTerm> offset=8:
+slMultiTerm> unexpected (
+slMultiTerm> expecting other text or number
+
+************* \ !Unconsumed Error: slMultiTerm: Unexpected ( Expecting: other text or number                 :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+************ \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                           :3_2:GoDeeper:
+nested simpleHorn> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+nested simpleHorn> MATCH (EERR): <EMPTY>
+nested simpleHorn> ERROR:
+nested simpleHorn> offset=8:
+nested simpleHorn> unexpected (
+nested simpleHorn> expecting other text or number
+
+*********** \ !Unconsumed Error: nested simpleHorn: Unexpected ( Expecting: other text or number               :3_2:GoDeeper:
+*********** / RPConstraint                                                                                     :3_2:GoDeeper:
+************ / $*|                                                                                            :3_2:GoDeeper:
+************* / slMultiTerm                                                                                  :3_2:GoDeeper:
+************** / someSL                                                                                     :3_2:GoDeeper:
+*************** / pNumAsText                                                                               :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+*************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                            :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                    :3_2:GoDeeper:
+slMultiTerm> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slMultiTerm> MATCH (EERR): <EMPTY>
+slMultiTerm> ERROR:
+slMultiTerm> offset=8:
+slMultiTerm> unexpected (
+slMultiTerm> expecting other text or number
+
+************* \ !Unconsumed Error: slMultiTerm: Unexpected ( Expecting: other text or number                 :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+************ \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                           :3_2:GoDeeper:
+RPConstraint> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+RPConstraint> MATCH (EERR): <EMPTY>
+RPConstraint> ERROR:
+RPConstraint> offset=8:
+RPConstraint> unexpected (
+RPConstraint> expecting other text or number
+
+*********** \ !Unconsumed Error: RPConstraint: Unexpected ( Expecting: other text or number                    :3_2:GoDeeper:
+*********** / RPBoolStructR                                                                                    :3_2:GoDeeper:
+************ / $*|                                                                                            :3_2:GoDeeper:
+************* / slMultiTerm                                                                                  :3_2:GoDeeper:
+************** / someSL                                                                                     :3_2:GoDeeper:
+*************** / pNumAsText                                                                               :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+*************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                            :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                    :3_2:GoDeeper:
+slMultiTerm> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slMultiTerm> MATCH (EERR): <EMPTY>
+slMultiTerm> ERROR:
+slMultiTerm> offset=8:
+slMultiTerm> unexpected (
+slMultiTerm> expecting other text or number
+
+************* \ !Unconsumed Error: slMultiTerm: Unexpected ( Expecting: other text or number                 :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+************ \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                           :3_2:GoDeeper:
+RPBoolStructR> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+RPBoolStructR> MATCH (EERR): <EMPTY>
+RPBoolStructR> ERROR:
+RPBoolStructR> offset=8:
+RPBoolStructR> unexpected (
+RPBoolStructR> expecting other text or number
+
+*********** \ !Unconsumed Error: RPBoolStructR: Unexpected ( Expecting: other text or number                   :3_2:GoDeeper:
+*********** / RPMT                                                                                             :3_2:GoDeeper:
+************ / $*|                                                                                            :3_2:GoDeeper:
+************* / slAKA                                                                                        :3_2:GoDeeper:
+************** / $*|                                                                                        :3_2:GoDeeper:
+*************** / slAKA base                                                                               :3_2:GoDeeper:
+**************** / slMultiTerm                                                                            :3_2:GoDeeper:
+***************** / someSL                                                                               :3_2:GoDeeper:
+****************** / pNumAsText                                                                         :3_2:GoDeeper:
+pNumAsText> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=8:
+pNumAsText> unexpected (
+pNumAsText> expecting number
+
+****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                      :3_2:GoDeeper:
+someSL> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=8:
+someSL> unexpected (
+someSL> expecting other text or number
+
+***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number              :3_2:GoDeeper:
+slMultiTerm> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slMultiTerm> MATCH (EERR): <EMPTY>
+slMultiTerm> ERROR:
+slMultiTerm> offset=8:
+slMultiTerm> unexpected (
+slMultiTerm> expecting other text or number
+
+**************** \ !Unconsumed Error: slMultiTerm: Unexpected ( Expecting: other text or number           :3_2:GoDeeper:
+slAKA base> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slAKA base> MATCH (EERR): <EMPTY>
+slAKA base> ERROR:
+slAKA base> offset=8:
+slAKA base> unexpected (
+slAKA base> expecting other text or number
+
+*************** \ !Unconsumed Error: slAKA base: Unexpected ( Expecting: other text or number              :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                       :3_2:GoDeeper:
+slAKA> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slAKA> MATCH (EERR): <EMPTY>
+slAKA> ERROR:
+slAKA> offset=8:
+slAKA> unexpected (
+slAKA> expecting other text or number
+
+************* \ !Unconsumed Error: slAKA: Unexpected ( Expecting: other text or number                       :3_2:GoDeeper:
+$*|> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=8:
+$*|> unexpected (
+$*|> expecting other text or number
+
+************ \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                           :3_2:GoDeeper:
+RPMT> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+RPMT> MATCH (EERR): <EMPTY>
+RPMT> ERROR:
+RPMT> offset=8:
+RPMT> unexpected (
+RPMT> expecting other text or number
+
+*********** \ !Unconsumed Error: RPMT: Unexpected ( Expecting: other text or number                            :3_2:GoDeeper:
+slRelPred> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+slRelPred> MATCH (EERR): <EMPTY>
+slRelPred> ERROR:
+slRelPred> offset=8:
+slRelPred> unexpected (
+slRelPred> expecting other text or number
+
+********** \ !Unconsumed Error: slRelPred: Unexpected ( Expecting: other text or number                         :3_2:GoDeeper:
+pRelPred> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+pRelPred> MATCH (EERR): <EMPTY>
+pRelPred> ERROR:
+pRelPred> offset=8:
+pRelPred> unexpected (
+pRelPred> expecting other text or number
+
+********* \ !Unconsumed Error: pRelPred: Unexpected ( Expecting: other text or number                            :3_2:GoDeeper:
+term p/3:plain p> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p/3:plain p> MATCH (EERR): <EMPTY>
+term p/3:plain p> ERROR:
+term p/3:plain p> offset=8:
+term p/3:plain p> unexpected (
+term p/3:plain p> expecting other text or number
+
+******** \ !Unconsumed Error: term p/3:plain p: Unexpected ( Expecting: other text or number                      :3_2:GoDeeper:
+term p/notLabelTerm> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p/notLabelTerm> MATCH (EERR): <EMPTY>
+term p/notLabelTerm> ERROR:
+term p/notLabelTerm> offset=15:
+term p/notLabelTerm> unexpected OR
+term p/notLabelTerm> expecting expression
+
+******* \ !Unconsumed Error: term p/notLabelTerm: Unexpected OR Expecting: expression                              :3_2:GoDeeper:
+term p> IN: ( "the" ( ( ( "honk" ) OR ( "ponk" ) ) ) <…>
+term p> MATCH (EERR): <EMPTY>
+term p> ERROR:
+term p> offset=15:
+term p> unexpected OR
+term p> expecting expression
+
+****** \ !Unconsumed Error: term p: Unexpected OR Expecting: expression                                             :3_2:GoDeeper:
+expression> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+expression> MATCH (CERR): ( "poopoo" ) OR
+expression> ERROR:
+expression> offset=15:
+expression> unexpected OR
+expression> expecting NOT or expression
+
+***** \ !Consumed Error: expression: Unexpected OR Expecting: NOT expression                                         :3_2:GoDeeper:
+ppp inner> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+ppp inner> MATCH (CERR): ( "poopoo" ) OR
+ppp inner> ERROR:
+ppp inner> offset=15:
+ppp inner> unexpected OR
+ppp inner> expecting NOT or expression
+
+**** \ !Consumed Error: ppp inner: Unexpected OR Expecting: NOT expression                                            :3_2:GoDeeper:
+**** / withPrePost                                                                                                    :2_2:GoDeeper:
+***** > |<* starting                                                                                                 :2_2:GoDeeper:
+***** / $*|                                                                                                          :2_2:GoDeeper:
+****** / pre part                                                                                                   :2_2:GoDeeper:
+******* / aboveNextLineKeyword                                                                                      :2_2:Other "poop:
+******** / expectUnDeepers                                                                                         :2_2:Other "poop:
+********* > ignoring ["poopoo"]                                                                                    :3_2:UnDeeper:
+********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
+expectUnDeepers> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+expectUnDeepers> MATCH (EOK): <EMPTY>
+expectUnDeepers> VALUE: (1,[])
+
+******** \ expectUnDeepers has returned 1                                                                          :2_2:Other "poop:
+******** > aNLK: determined undp_count = 1                                                                         :2_2:Other "poop:
+******** > ->| trying to consume 1 GoDeepers                                                                       :2_2:Other "poop:
+******** / $*|                                                                                                     :2_2:Other "poop:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (EOK): <EMPTY>
+$*|> VALUE: (((),0),[])
+
+******** \ $*| has returned ((),0)                                                                                 :2_2:Other "poop:
+aboveNextLineKeyword> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+aboveNextLineKeyword> MATCH (EERR): <EMPTY>
+aboveNextLineKeyword> ERROR:
+aboveNextLineKeyword> offset=5:
+aboveNextLineKeyword> unexpected "poopoo"
+aboveNextLineKeyword> expecting (
+
+******* \ !Unconsumed Error: aboveNextLineKeyword: Unexpected "poopoo" Expecting: (                                 :2_2:Other "poop:
+******* > /*= lookAhead failed, delegating to plain /+=                                                             :2_2:Other "poop:
+******* / aboveNextLineKeyword                                                                                       :3_2:UnDeeper:
+******** / expectUnDeepers                                                                                          :3_2:UnDeeper:
+********* > ignoring []                                                                                            :3_2:UnDeeper:
+********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
+expectUnDeepers> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+expectUnDeepers> MATCH (EOK): <EMPTY>
+expectUnDeepers> VALUE: (1,[])
+
+******** \ expectUnDeepers has returned 1                                                                           :3_2:UnDeeper:
+******** > aNLK: determined undp_count = 1                                                                          :3_2:UnDeeper:
+******** > ->| trying to consume 1 GoDeepers                                                                        :3_2:UnDeeper:
+******** / $*|                                                                                                      :3_2:UnDeeper:
+$*|> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+$*|> MATCH (EOK): <EMPTY>
+$*|> VALUE: (((),0),[])
+
+******** \ $*| has returned ((),0)                                                                                  :3_2:UnDeeper:
+aboveNextLineKeyword> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+aboveNextLineKeyword> MATCH (EERR): <EMPTY>
+aboveNextLineKeyword> ERROR:
+aboveNextLineKeyword> offset=6:
+aboveNextLineKeyword> unexpected )
+aboveNextLineKeyword> expecting (
+
+******* \ !Unconsumed Error: aboveNextLineKeyword: Unexpected ) Expecting: (                                         :3_2:UnDeeper:
+******* > /*= lookAhead failed, delegating to plain /+=                                                              :3_2:UnDeeper:
+pre part> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+pre part> MATCH (CERR): (
+pre part> ERROR:
+pre part> offset=6:
+pre part> unexpected )
+pre part> expecting ( or Other text
+
+****** \ !Consumed Error: pre part: Unexpected ) Expecting: ( Other text                                             :2_2:Other "poop:
+$*|> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+$*|> MATCH (CERR): (
+$*|> ERROR:
+$*|> offset=6:
+$*|> unexpected )
+$*|> expecting ( or Other text
+
+***** \ !Consumed Error: $*|: Unexpected ) Expecting: ( Other text                                                    :2_2:Other "poop:
+withPrePost> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+withPrePost> MATCH (CERR): (
+withPrePost> ERROR:
+withPrePost> offset=6:
+withPrePost> unexpected )
+withPrePost> expecting ( or Other text
+
+**** \ !Consumed Error: withPrePost: Unexpected ) Expecting: ( Other text                                              :2_2:Other "poop:
+**** / withPreOnly                                                                                                    :2_2:GoDeeper:
+***** / $*|                                                                                                          :2_2:GoDeeper:
+****** / pre part                                                                                                   :2_2:GoDeeper:
+******* / aboveNextLineKeyword                                                                                      :2_2:Other "poop:
+******** / expectUnDeepers                                                                                         :2_2:Other "poop:
+********* > ignoring ["poopoo"]                                                                                    :3_2:UnDeeper:
+********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
+expectUnDeepers> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+expectUnDeepers> MATCH (EOK): <EMPTY>
+expectUnDeepers> VALUE: (1,[])
+
+******** \ expectUnDeepers has returned 1                                                                          :2_2:Other "poop:
+******** > aNLK: determined undp_count = 1                                                                         :2_2:Other "poop:
+******** > ->| trying to consume 1 GoDeepers                                                                       :2_2:Other "poop:
+******** / $*|                                                                                                     :2_2:Other "poop:
+$*|> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+$*|> MATCH (EOK): <EMPTY>
+$*|> VALUE: (((),0),[])
+
+******** \ $*| has returned ((),0)                                                                                 :2_2:Other "poop:
+aboveNextLineKeyword> IN: "poopoo" ) OR ( "the" ( ( ( "honk" ) OR  <…>
+aboveNextLineKeyword> MATCH (EERR): <EMPTY>
+aboveNextLineKeyword> ERROR:
+aboveNextLineKeyword> offset=5:
+aboveNextLineKeyword> unexpected "poopoo"
+aboveNextLineKeyword> expecting (
+
+******* \ !Unconsumed Error: aboveNextLineKeyword: Unexpected "poopoo" Expecting: (                                 :2_2:Other "poop:
+******* > /*= lookAhead failed, delegating to plain /+=                                                             :2_2:Other "poop:
+******* / aboveNextLineKeyword                                                                                       :3_2:UnDeeper:
+******** / expectUnDeepers                                                                                          :3_2:UnDeeper:
+********* > ignoring []                                                                                            :3_2:UnDeeper:
+********* > matched undeepers [UnDeeper]                                                                        :3_1:Or:
+expectUnDeepers> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+expectUnDeepers> MATCH (EOK): <EMPTY>
+expectUnDeepers> VALUE: (1,[])
+
+******** \ expectUnDeepers has returned 1                                                                           :3_2:UnDeeper:
+******** > aNLK: determined undp_count = 1                                                                          :3_2:UnDeeper:
+******** > ->| trying to consume 1 GoDeepers                                                                        :3_2:UnDeeper:
+******** / $*|                                                                                                      :3_2:UnDeeper:
+$*|> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+$*|> MATCH (EOK): <EMPTY>
+$*|> VALUE: (((),0),[])
+
+******** \ $*| has returned ((),0)                                                                                  :3_2:UnDeeper:
+aboveNextLineKeyword> IN: ) OR ( "the" ( ( ( "honk" ) OR ( "ponk"  <…>
+aboveNextLineKeyword> MATCH (EERR): <EMPTY>
+aboveNextLineKeyword> ERROR:
+aboveNextLineKeyword> offset=6:
+aboveNextLineKeyword> unexpected )
+aboveNextLineKeyword> expecting (
+
+******* \ !Unconsumed Error: aboveNextLineKeyword: Unexpected ) Expecting: (                                         :3_2:UnDeeper:
+******* > /*= lookAhead failed, delegating to plain /+=                                                              :3_2:UnDeeper:
+pre part> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+pre part> MATCH (CERR): (
+pre part> ERROR:
+pre part> offset=6:
+pre part> unexpected )
+pre part> expecting ( or Other text
+
+****** \ !Consumed Error: pre part: Unexpected ) Expecting: ( Other text                                             :2_2:Other "poop:
+$*|> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+$*|> MATCH (CERR): (
+$*|> ERROR:
+$*|> offset=6:
+$*|> unexpected )
+$*|> expecting ( or Other text
+
+***** \ !Consumed Error: $*|: Unexpected ) Expecting: ( Other text                                                    :2_2:Other "poop:
+withPreOnly> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+withPreOnly> MATCH (CERR): (
+withPreOnly> ERROR:
+withPreOnly> offset=6:
+withPreOnly> unexpected )
+withPreOnly> expecting ( or Other text
+
+**** \ !Consumed Error: withPreOnly: Unexpected ) Expecting: ( Other text                                              :2_2:Other "poop:
+pBSR> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+pBSR> MATCH (CERR): (
+pBSR> ERROR:
+pBSR> offset=15:
+pBSR> unexpected OR
+pBSR> expecting NOT or expression
+
+*** \ !Consumed Error: pBSR: Unexpected OR Expecting: NOT expression                                                    :2_2:Other "poop:
+made it to pBSR> IN: ( "poopoo" ) OR ( "the" ( ( ( "honk" ) O <…>
+made it to pBSR> MATCH (CERR): (
+made it to pBSR> ERROR:
+made it to pBSR> offset=15:
+made it to pBSR> unexpected OR
+made it to pBSR> expecting NOT or expression
+
+** \ !Consumed Error: made it to pBSR: Unexpected OR Expecting: NOT expression                                           :2_2:Other "poop:
 
 PDPA
-  inline-1-r
+  inline-1-r FAILED [1]
 
-Finished in 0.0075 seconds
-1 example, 0 failures
+Failures:
 
-natural4> Test suite natural4-test passed
+  test/Spec.hs:124:3: 
+  1) PDPA inline-1-r
+       expected: [((["multiwonk"],Means,Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]]),[])]
+       but parsing failed with error:
+       4:4:
+       unexpected OR
+       expecting NOT or expression
+                 multiwonk                                        
+       MEANS     poopoo                                           
+       OR        the                           honk               
+                                     ✳ OR      ponk               
+       
+
+  To rerun use: --match "/PDPA/inline-1-r/"
+
+Randomized with seed 683117024
+
+Finished in 0.0142 seconds
+1 example, 1 failure
+
+natural4> Test suite natural4-test failed
+Test suite failure for package natural4-0.1.0.0
+    natural4-test:  exited with: ExitFailure 1
+Logs printed to console
+

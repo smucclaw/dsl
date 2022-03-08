@@ -145,7 +145,7 @@ pNumAsText = debugName "pNumAsText" . label "number" $ do
 
 
 pRuleLabel :: Parser RuleLabel
-pRuleLabel = debugName "pRuleLabel" $ do
+pRuleLabel = debugName "pRuleLabel" . pretendEmpty $ do
   (RuleMarker i sym, actualLabel, _) <- (,,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal

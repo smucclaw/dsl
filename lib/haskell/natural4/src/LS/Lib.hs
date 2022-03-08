@@ -106,11 +106,11 @@ parseRules o = do
   if null files
     then parseSTDIN runConfig { sourceURL="STDIN" }
     else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
-  
+
   where
     getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
-    getBS other = BS.readFile other  
+    getBS other = BS.readFile other
     parseSTDIN rc = do
       bs <- BS.getContents
       mapM (parseStream rc "STDIN") (exampleStreams bs)
@@ -129,7 +129,7 @@ parseRules o = do
         -- Left bundle -> pPrint bundle
         Right ([], []) -> return $ Right []
         Right (xs, xs') -> return $ Right (xs ++ xs')
-          
+
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
 dumpRules opts = concat . rights <$> parseRules opts
@@ -300,7 +300,7 @@ vvlookup rs (x,y) = rs !? y >>= (!? x)
 stanzaAsStream :: RawStanza -> MyStream
 stanzaAsStream rs =
   let vvt = rs
-  in 
+  in
   -- MyStream (Text.unpack $ decodeUtf8 s) [ WithPos {..}
   MyStream rs $ parenthesize [ WithPos {..}
              | y <- [ 0 .. V.length vvt       - 1 ]
@@ -336,7 +336,7 @@ stanzaAsStream rs =
       | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
                         : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
-      | otherwise    = [a]                            
+      | otherwise    = [a]
       where
         aCol = unPos . sourceColumn $ aPos
         bCol = unPos . sourceColumn $ bPos
@@ -356,7 +356,7 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  try (some pRule) <* eof
+  some pRule <* eof
 
 pRules = pRulesOnly
 
@@ -386,10 +386,10 @@ pRule = debugName "pRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  foundRule <- try (pRegRule <?> "regulative rule")
-    <|> try (pTypeDefinition   <?> "ontology definition")
-    <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
-    <|> try (pScenarioRule <?> "scenario rule")
+  foundRule <- (pRegRule <?> "regulative rule")
+    <|> (pTypeDefinition   <?> "ontology definition")
+    <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
+    <|> (pScenarioRule <?> "scenario rule")
     <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
@@ -430,8 +430,8 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pHornlike/givenLimb" $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pHornlike/uponLimb"  $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pHornlike/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pHornlike/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
 
@@ -440,7 +440,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
   rlabel <- optional pRuleLabel
   (expects,givens) <- permute $ (,)
     <$$> some pExpect
-    <|?> ([], pToken Given >> someIndentation pGivens)
+    <|?> ([], pretendEmpty $ pToken Given >> someIndentation pGivens)
   return $ Scenario
     { scgiven = givens
     , expect  = expects
@@ -457,7 +457,7 @@ pExpect = debugName "pExpect" $ do
     { hHead = relPred
     , hBody = whenpart
     }
-          
+
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" $ do
   sameDepth pRelationalPredicate
@@ -609,7 +609,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 --  MUST WITHIN 200 years
 --    -> die
 
-  
+
 
 pDoAction ::  Parser BoolStructP
 pDoAction = do
@@ -697,7 +697,7 @@ pDT = debugName "pDT" $ do
     $>| pDeontic
     |>< optional pTemporal
   return (pd, join pt)
-  
+
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
@@ -813,7 +813,7 @@ anything :: Parser [WithPos MyToken]
 anything = many anySingle
 
 
-  
+
 
 pHornClause2 :: Parser HornClause2
 pHornClause2 = do

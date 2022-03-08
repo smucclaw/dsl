@@ -22,7 +22,6 @@ data MyItem lbl a =
   | MyAll     [MyItem lbl a]
   | MyAny     [MyItem lbl a]
   | MyNot     (MyItem lbl a)
-  | Nest (MyItem lbl a)
   deriving (Eq, Show)
   deriving (Functor)
 
@@ -49,27 +48,25 @@ toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
 toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
 toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
-toBoolStruct (MyLabel lab (Nest x))          = error $ "Label (" ++ show lab ++ ") followed by nesting (" ++ show (Nest x) ++ ") is not allowed"
-toBoolStruct (Nest x)                        = toBoolStruct x
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = debugName "term p" $ do
-  -- try (debugName "term p/1a:label directly above" $ do
-  --       (lbl, inner) <- (,)
-  --         $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
-  --         |>< expr p
-  --       debugPrint $ "got label, then inner immediately below: " ++ show lbl
-  --       debugPrint $ "got inner: " <> show inner
-  --       return $ MyLabel lbl inner)
-  --   <|>
-    -- try (debugName "term p/b:label to the left of line below, with EOL" $ do
-    --     lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
-    --     debugPrint $ "got label then EOL: " ++ show lbl
-    --     inner <- expr p
-    --     debugPrint $ "got inner: " ++ show inner
-    --     return $ MyLabel lbl inner)
-    -- <|>
+  try (debugName "term p/1a:label directly above" $ do
+        (lbl, inner) <- (,)
+          $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
+          |>< expr p
+        debugPrint $ "got label, then inner immediately below: " ++ show lbl
+        debugPrint $ "got inner: " <> show inner
+        return $ MyLabel lbl inner)
+    <|>
+    try (debugName "term p/b:label to the left of line below, with EOL" $ do
+        lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
+        debugPrint $ "got label then EOL: " ++ show lbl
+        inner <- expr p
+        debugPrint $ "got inner: " ++ show inner
+        return $ MyLabel lbl inner)
+    <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)
 
 
@@ -81,7 +78,7 @@ table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
         , [ binary  And   myAnd  ]
-        , [ Prefix labelPrefix]
+        -- , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
         ]
@@ -106,7 +103,7 @@ getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
 myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
--- myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
+myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
@@ -122,7 +119,7 @@ getAny (MyAny xs) = xs
 getAny x = [x]
 
 myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
--- myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
+myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 -- myOr a b                          = MyAny [a, b]
 

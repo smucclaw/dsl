@@ -179,7 +179,7 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- debugName "pSrcRef" pSrcRef
+  (rlabel, srcref) <- debugName "pSrcRef" (pretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
     <$$> (try ambitious <|> someStructure)
     <|?> (Nothing, fmap snd <$> optional givenLimb)

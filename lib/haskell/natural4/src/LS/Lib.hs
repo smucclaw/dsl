@@ -390,9 +390,9 @@ pRule = debugName "pRule" $ do
     <|> try (pTypeDefinition   <?> "ontology definition")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
-    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
-    <|> try ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
-    <|> try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
+    <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
+    <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
   return $ foundRule { srcref = Just srcref }
 

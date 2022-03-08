@@ -842,6 +842,15 @@ pTokenAnyDepth c = pTokenMatch (== c) (pure c)
 
 pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
 pTokenOneOf cs = pTokenMatch (`elem` cs) cs
+
+pretendEmpty :: Parser a -> Parser a
+pretendEmpty = liftRawPFun iPretendEmpty
+
+-- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
+iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
+iPretendEmpty pt = MPInternal.ParsecT $ \s _ _ eok eerr ->
+    MPInternal.unParser pt s eok eerr eok eerr
+
 runOnErrors :: (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) -> Parser a -> Parser a
 runOnErrors f = liftRawPFun (iRunOnErrors f)
 

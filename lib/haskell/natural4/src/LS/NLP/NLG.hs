@@ -11,7 +11,7 @@ import LS.Types ( Deontic(..),
       ParamText,
       BoolStruct(..),
       RuleName,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate(..), HornClause2(..) )
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF as PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -41,6 +41,7 @@ import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
+import Data.List.NonEmpty (NonEmpty((:|)))
 
 showExpr = PGF.showExpr []
 
@@ -258,6 +259,22 @@ parseFields env rl = case rl of
           TOn -> "on "
           TVague -> "around "
         time2txt t = Text.pack $ maybe "" show t
+
+
+------------------------------------------------------------
+-- Let's try to parse a BoolStructP into a GF list
+-- First use case: "notify the PDPC in te form and manner specified at … with a notification msg and a list of individuals for whom …"
+bsp2gf :: UDEnv -> BoolStructP -> IO Expr
+bsp2gf env bsp = case bsp of
+  AA.Leaf (action :| mods) -> do
+    let actionStr = mt2text $ tm2mt action
+        modStrs = map (mt2text . tm2mt) mods
+        -- then parse those in GF and put in appropriate trees
+    return undefined
+  _ -> error "bsp2gf: not supported yet"
+  -- AA.All m_la its -> _
+  -- AA.Any m_la its -> _
+  -- AA.Not it -> _
 
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructR into a GF list

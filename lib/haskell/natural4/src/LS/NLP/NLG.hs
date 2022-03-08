@@ -13,7 +13,7 @@ import LS.Types ( Deontic(..),
       RuleName,
       Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
-import qualified PGF as PGF
+import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import           Data.Text.Lazy         (Text)
@@ -75,7 +75,7 @@ mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'
     patterns (a,b) = do
       char a
       join <$> manyTill
-              ((fst <$> match (patterns (a,b))) <|> (pure <$> anySingle))
+              (fst <$> match (patterns (a,b)) <|> pure <$> anySingle)
               (char b)
 
     grabStrings :: (Char, Char) -> String -> [String]
@@ -96,9 +96,7 @@ parseOut env txt = do
   lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
   let expr = case parseConllu env conll of -- env -> str -> [[expr]]
                Just e -> e
-               Nothing -> case parseConllu env lowerConll of
-                            Just e' -> e'
-                            Nothing -> dummyExpr
+               Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
   putStrLn $ showExpr expr
   return expr
 -----------------------------------------------------------------------------
@@ -340,92 +338,55 @@ bsr2gfAmb env bsr = case bsr of
   where
     singletonList x = (:[]) `fmap` x
 
-bsr2gf :: UDEnv -> BoolStructR -> IO PGF.Expr
+bsr2gf :: UDEnv -> BoolStructR -> IO Expr
 bsr2gf env bsr = case bsr of
   -- This happens only if the full BoolStructR is just a single Leaf
   -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
   AA.Leaf rp -> do
     let access = rp2text rp
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
-  -- AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
-  --   -- 1) Parse the actual contents. This can be
-  --   contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
-  --   let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
-  --       contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
-  --       listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
 
-  --   -- print "contentsUDS"
-  --   -- print $ map (showExpr . gf) contentsUDS
-  --   -- 2) Parse the premodifier
-  --   amodUDS <- parseOut env any_unauthorised
+  AA.Any Nothing contents -> do
+    -- 1) Parse the actual contents. This can be
+    contentsUDS <- parseAndDisambiguate env contents
 
-  --   -- 3) Parse the postmodifier
-  --   nmodUDS <- parseOut env of_personal_data
-  --   -- TODO: add more options, if the postmodifier is not a prepositional phrase
-  --   let personal_data = peelNP nmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+        -- Here we need to determine which GF type the contents are
+        -- TODO: what if they are different types?
+    let
+        pcns =  mapMaybe cnFromUDS contentsUDS --  :: [GCN]
+        pdets = mapMaybe detFromUDS contentsUDS -- :: [GDet]
 
-  --   -- TODO: add more options in constructTree, depending on whether
-  --   let tree = constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data (fg amodUDS)
-  --   return tree
+        treeAdv :: Maybe Expr
+        treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
+                    advs@(a:as) -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
+                    [adv] -> Just $ gf adv
+                    [] -> Nothing
 
-  -- AA.All (Just (AA.PrePost the cat)) cute_fluffy_furry -> do
-  --   -- 1) Parse the actual contents. This can be
-  --   contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
-  --   let contents = disambiguateList (pgfGrammar env) contentsAmb :: [Expr]
-  --       contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
-  --       listAP = GListAP $ mapMaybe apFromUDS contentsUDS
+        treeAP :: Maybe Expr
+        treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
+                    aps@(a:as) -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
+                    [ap] -> Just $ gf ap
+                    [] -> Nothing
 
-  --   -- 2) Parse the premodifier
-  --   detUDS <- parseOut env the
-  --   let theDet = peelDet detUDS
+        treeCN :: Maybe Expr
+        treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
+                    cns@(a:as) -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
+                    [cn] -> Just $ gf cn
+                    [] -> Nothing
+        treeDet :: Maybe Expr
+        treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
+                    dets@(a:as) -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
+                    [det] -> Just $ gf det
+                    [] -> Nothing
 
-  --   -- 3) Parse the postmodifier
-  --   headUDS <- parseOut env cat
-  --   let catCN = peelCN headUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
-
-  --   -- Construct the final tree
-  --   let tree = constructTreeDetAPsCN listAP (LexConj "and_Conj") catCN theDet
-  --   return tree
-
-
-  -- AA.Any Nothing contents -> do
-  --   -- 1) Parse the actual contents. This can be
-  --   contentsAmb <- mapM (bsr2gfAmb env) contents :: [[Expr]]
-  --   let contents' = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
-  --       contentsUDS = map (toUDS (pgfGrammar env)) contents'        -- contents may come from UD parsing or lexicon, force them to be same type
-
-  --       -- Here we need to determine which GF type the contents are
-  --       -- TODO: what if they are different types?
-  --       potential_advs = mapMaybe advFromUDS contentsUDS
-  --       potential_aps =  mapMaybe apFromUDS contentsUDS
-  --       potential_cns = mapMaybe cnFromUDS contentsUDS
-  --       potential_dets = mapMaybe detFromUDS contentsUDS
-
-  --   -- TODO: add more options in constructTree, depending on whether
-  --   let tree = constructTreeSimple listcn (LexConj "or_Conj")
-  --   return tree
-
-  -- _ -> return dummyExpr
+    return $ head $ catMaybes [treeAP,treeAdv,treeCN, treeDet]
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
-  -- 1) Parse the actual contents. This can be
-    -- contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
-    -- let contents = disambiguateList (pgfGrammar env) (contentsAmb :: [[Expr]])
-    -- contentsUDS = map (toUDS (pgfGrammar env)) contents        -- contents may come from UD parsing or lexicon, force them to be same type
+    -- 1) Parse the actual contents. This can be
     contentsUDS <- parseAndDisambiguate env access_use_copying
     let listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
-
--- ORIGINAL
-    -- contentsAmb <- mapM (bsr2gfAmb env) access_use_copying :: [[Expr]]
-    -- let contents = disambiguateList (pgfGrammar env) contentsAmb :: [Expr]
-    --     contentsUDS = map (toUDS (pgfGrammar env)) contents
-    --     listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
-
-    -- print "contentsUDS"
-    -- print $ map (showExpr . gf) contentsUDS
     -- 2) Parse the premodifier
     amodUDS <- parseOut env any_unauthorised
-
     -- 3) Parse the postmodifier
     nmodUDS <- parseOut env of_personal_data
     -- TODO: add more options, if the postmodifier is not a prepositional phrase
@@ -434,6 +395,8 @@ bsr2gf env bsr = case bsr of
     -- TODO: add more options in constructTree, depending on whether
     let tree = constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data (fg amodUDS)
     return tree
+
+  _ -> return dummyExpr
 
 parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do

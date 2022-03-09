@@ -27,8 +27,8 @@
             pkgs.nix
             gf-pkgs.bnfc
             gf-pkgs.gf-with-rgl
-            # pkgs.haskellPackages.happy
-            # pkgs.haskellPackages.alex
+            pkgs.haskellPackages.happy
+            pkgs.haskellPackages.alex
             pkgs.graphviz
           ];
           # inputsFrom = throw nixpkgs;

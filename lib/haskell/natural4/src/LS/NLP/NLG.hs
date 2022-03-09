@@ -143,6 +143,7 @@ nlg rl = do
               , let linTree = showExpr tree ]
 
         return linTrees_exprs
+      RegBreachA -> return "IT'S A BREACH >:( >:( >:("
       _ -> return "()"
 
 doNLG :: [(String,Expr)] -> Expr -> Expr
@@ -170,48 +171,38 @@ parseFields env rl = case rl of
     subjA'  <- parseBool env (subj rl)
     whoA'   <- mapM (bsr2gf env) (who rl)
     condA'  <- mapM (bsr2gf env) (cond rl)
-    let deonticA' = parseDeontic (deontic rl)    :: CId
     actionA' <- parseBool env (action rl)
     temporalA' <- mapM (parseTemporal env) (temporal rl)
     uponA' <- mapM (parseParamText env) (upon rl)
     givenA' <- mapM (parseParamText env) (given rl)
     return RegulativeA {
-      subjA = subjA',
-      whoA = whoA',
-      condA = condA',
-      deonticA = deonticA',
-      actionA = actionA',
-      temporalA = temporalA',
-      uponA = uponA',
-      givenA = givenA'
+      subjA = subjA'
+    , keywordA = keyword2cid (keyword rl)
+    , whoA = whoA'
+    , condA = condA'
+    , deonticA = deontic2cid (deontic rl)
+    , actionA = actionA'
+    , temporalA = temporalA'
+    , uponA = uponA'
+    , givenA = givenA'
     }
   Constitutive {} -> do
     givenA' <- mapM (parseParamText env) (given rl)
     nameA' <- parseName env (name rl)
     condA'   <- mapM (bsr2gf env) (cond rl) -- when/if/unless
     return ConstitutiveA {
-      givenA = givenA',
-      nameA = nameA',
-      condA = condA'
+      givenA = givenA'
+    , nameA = nameA'
+    , condA = condA'
     }
-  -- meansA <- parseMeans --    keyword  :: MyToken       -- Means
-  -- includesA <-  -- keyword :: MyToken  Includes, Is, Deem
-  -- deemsA <-  -- keyword :: MyToken  Deem
-  -- letbindA <-
-    --name     :: ConstitutiveName   -- the thing we are defining
-    -- letbind  :: BoolStructP   -- might be just a bunch of words to be parsed downstream
-    -- rlabel   :: Maybe Text.Text
-    -- lsource  :: Maybe Text.Text
-    -- srcref   :: Maybe SrcRef
-    -- orig     :: [(Preamble, BoolStructP)]
-  DefNameAlias {
-    name = [nm]
-  , detail = [det]
-  } -> return $ Alias nm det
+  -- DefNameAlias {
+  --   name = [nm]
+  -- , detail = [det]
+  -- } -> return $ DefNameAliasA nm det
   Hornlike { clauses } -> do
     exprs <- mapM (parseHornClause env) clauses
-    return $ HornlikeA {clausesA = concat exprs}
-  _ -> return $ Alias "foo" "bar"
+    return $ HornlikeA {nameA=dummyExpr, clausesA = concat exprs}
+  _ -> return RegBreachA
 --  _ error "parseFields: rule type not supported yet"
   where
     parseHornClause :: UDEnv -> HornClause2 -> IO [Expr]
@@ -237,11 +228,8 @@ parseFields env rl = case rl of
     parseParamText :: UDEnv -> ParamText -> IO Expr
     parseParamText env pt = parseOut env $ pt2text pt
 
-    parseDeontic :: Deontic -> CId
-    parseDeontic d = case d of
-        DMust  -> mkCId "Must"
-        DMay   -> mkCId "May"
-        DShant -> mkCId "Shant"
+    keyword2cid = mkCId . show
+    deontic2cid = mkCId . show
 
     -- NB. we assume here only structure like "before 3 months", not "before the king sings"
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
@@ -510,37 +498,73 @@ getRoot rt@(GrootDet_ _) = [rt]
 getRoot rt@(GrootDetA_ _ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]
 getRoot x = composOpMonoid getRoot x
------------------------------------------------------------------------------
--- Ignore everything below for now
 
+-----------------------------------------------------------------------------
+-- AnnotatedRule, almost isomorphic to LS.Types.Rule
 
 data AnnotatedRule = RegulativeA
             { subjA     :: Expr                      -- man AND woman AND child
+            , keywordA  :: CId                       -- Every , Party, All — GF funs
             , whoA      :: Maybe Expr                -- who walks and (eats or drinks)
             , condA     :: Maybe Expr                -- if it is a saturday
             , deonticA  :: CId                       -- must, may
             , actionA   :: Expr                      -- sing / pay the king $20
             , temporalA :: Maybe Expr                -- before midnight
-            , uponA     :: Maybe Expr                -- UPON entering the club (event prereq trigger)
-            , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
-            -- TODO later
             -- , henceA    :: Maybe [AnnotatedRule]     -- hence [UDS]
             -- , lestA     :: Maybe [AnnotatedRule]     -- lest [UDS]
-            -- , rlabelA   :: Maybe Text.Text -- TODO what are these?
-            -- , lsourceA  :: Maybe Text.Text
-            -- , srcrefA   :: Maybe SrcRef
+            , uponA     :: Maybe Expr                -- UPON entering the club (event prereq trigger)
+            , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
+            -- skipping rlabel, lsource, srcref
+            , havingA   :: Maybe Expr  -- HAVING sung...
+            , wwhereA   :: [AnnotatedRule]
+            -- TODO: what are these?
+--            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+--            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
-            | ConstitutiveA
-                { nameA       :: Expr   -- the thing we are defining
-                -- , keyword  :: MyToken       -- Means, Includes, Is, Deem
-                , letbindA    :: BoolStructP   -- might be just a bunch of words to be parsed downstream
-                , condA       :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
-                , givenA      :: Maybe Expr
-                -- , rlabel    :: Maybe Text.Text
-                -- , lsource   :: Maybe Text.Text
-                -- , srcref    :: Maybe SrcRef
-                -- , orig      :: [(Preamble, BoolStructP)]
-                }
-            | Alias Text Text -- TODO: where to use this info?
-            | HornlikeA {clausesA :: [Expr]}
-          deriving (Eq, Show)
+            | ConstitutiveA {
+              nameA     :: Expr   -- the thing we are defining
+            , keywordA  :: CId       -- Means, Includes, Is, Deem
+            , condA     :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
+            , givenA    :: Maybe Expr
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | HornlikeA {
+              nameA     :: Expr           -- colour
+            , keywordA  :: CId            -- decide / define / means
+            , givenA    :: Maybe Expr    -- applicant has submitted fee
+            , uponA     :: Maybe Expr    -- second request occurs
+            , clausesA  :: [Expr]
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | TypeDeclA {
+              nameA     :: Expr  --      DEFINE Sign
+            , superA    :: Maybe Expr     --                  :: Thing
+            , hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , enumsA    :: Maybe Expr   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , givenA    :: Maybe Expr
+            , uponA     :: Maybe Expr
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | ScenarioA {
+              scgiven  :: [Expr]
+            , expect   :: [Expr]      -- investment is savings when dependents is 5
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | DefNameAliasA { -- inline alias, like     some thing AKA Thing
+              nameA   :: Expr  -- "Thing" -- the thing usually said as ("Thing")
+            , detailA :: Expr  -- ["some", "thing"]
+            , nlhintA :: Maybe Text.Text   -- "lang=en number=singular"
+            }
+            | RegFulfilledA  -- trivial top
+            | RegBreachA     -- trivial bottom
+{- skipping the following
+            | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
+            , srcref :: Maybe SrcRef
+            }
+          | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
+          | RuleGroup { rlabel :: Maybe RuleLabel
+                      , srcref :: Maybe SrcRef }  -- § NextStep
+
+          | NotARule [MyToken] -}

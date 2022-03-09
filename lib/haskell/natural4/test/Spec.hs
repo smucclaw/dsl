@@ -801,6 +801,11 @@ main = do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
 
+    describe "MISC" $ do
+      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a Data Breach"] RPis (Leaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (Leaf (RPMT ["a data breach","occurred"]))}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})},Hornlike {name = ["a data breach","occurred"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "unauthorised" "should parse correctly"
+        (parseR pToplevel) unauthorisedExpected
+
     describe "PDPA" $ do
 
       filetest "pdpadbno-1" "must assess"

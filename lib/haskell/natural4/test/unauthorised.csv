@@ -1,4 +1,3 @@
-§,NDB Qualification,,,,,,,,,,,,,,,,,,,
 ,a Data Breach,,,,,,,,,,,,,,,,,,,
 MEANS,TRUE,a Notifiable Data Breach,,,,AKA,NDB,,,,,,,,,,,,,
 IF,TRUE,a data breach,,,occurred,,,,,,,,,,,,,,,

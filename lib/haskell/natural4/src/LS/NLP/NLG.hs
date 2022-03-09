@@ -170,7 +170,7 @@ parseFields env rl = case rl of
     givenA' <- mapM (parseParamText env) (given rl)
     return RegulativeA {
       subjA = subjA'
-    , keywordA = keyword2cid (keyword rl)
+    , keywordA = keyword2cid (rkeyword rl)
     , whoA = whoA'
     , condA = condA'
     , deonticA = deontic2cid (deontic rl)

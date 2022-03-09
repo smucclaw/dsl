@@ -731,13 +731,13 @@ exprP = debugName "expr pParamText" $ do
   --               ,("amount" :| ["$20"]     , Nothing)[))
 
   return $ case raw of
-    MyLabel lbl myitem -> prefixFirstLeaf lbl myitem
+    MyLabel pre post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText
     -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
     prefixFirstLeaf p (MyLeaf x)           = MyLeaf (prefixItem p x)
-    prefixFirstLeaf p (MyLabel lbl myitem) = MyLabel lbl (prefixFirstLeaf p myitem)
+    prefixFirstLeaf p (MyLabel pre post myitem) = MyLabel pre post (prefixFirstLeaf p myitem)
     prefixFirstLeaf p (MyAll (x:xs))       = MyAll (prefixFirstLeaf p x : xs)
     prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ mt2pt p]
     prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ mt2pt p]

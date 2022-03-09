@@ -709,8 +709,8 @@ main = do
 
       let ablcd = (MyAny [MyLeaf (text2pt "top1")
                         , MyLeaf (text2pt "top2")
-                        , MyLabel ["this is a label"] $ MyAny [ MyLeaf (text2pt "mid3")
-                                                              , MyLeaf (text2pt "mid4") ]
+                        , MyLabel ["this is a label"] Nothing $ MyAny [ MyLeaf (text2pt "mid3")
+                                                                      , MyLeaf (text2pt "mid4") ]
                         ],[])
 
       -- of the three layouts below, only 2-c-3 works.

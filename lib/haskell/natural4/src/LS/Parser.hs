@@ -18,7 +18,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 
 data MyItem lbl a =
     MyLeaf                a
-  | MyLabel           lbl (MyItem lbl a)
+  | MyLabel  lbl (Maybe lbl) (MyItem lbl a)
   | MyAll     [MyItem lbl a]
   | MyAny     [MyItem lbl a]
   | MyNot     (MyItem lbl a)
@@ -40,16 +40,18 @@ prePostParse base = ppp $ either fail pure . toBoolStruct =<< expr base
 
 toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.Item a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
-toBoolStruct (MyLabel lab (MyAll xs))        = AA.All (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel lab (MyAny xs))        = AA.Any (Just (AA.Pre (Text.unwords lab))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.All (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.Any (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
 toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
-toBoolStruct (MyLabel lab (MyLabel lab2 _))  = Left $ "Nested labels not supported: " ++ show (lab :| [lab2])
-toBoolStruct (MyLabel lab (MyLeaf x))        = Left $ "Label " ++ show lab ++ " cannot be applied to a leaf: " ++ show x
+toBoolStruct (MyLabel pre post (MyLabel pre2 post2 _))  = Left $ "Nested labels not supported: " ++ show (MyLabel pre post (MyLeaf ()), MyLabel pre2 post2 (MyLeaf ()))
+toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre ++ " cannot be applied to a leaf: " ++ show x
 -- toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
 -- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
-toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
+toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = debugName "expression" (makeExprParser (term p) table <?> "expression")
@@ -60,14 +62,14 @@ term p = debugName "term p" $ do
           |>< expr p
         debugPrint $ "got label, then inner immediately below: " ++ show lbl
         debugPrint $ "got inner: " <> show inner
-        return $ MyLabel lbl inner)
+        return $ MyLabel lbl Nothing inner)
     <|>
     try (debugName "term p/b:label to the left of line below, with EOL" $ do
         lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
         debugPrint $ "got label then EOL: " ++ show lbl
         inner <- expr p
         debugPrint $ "got inner: " ++ show inner
-        return $ MyLabel lbl inner)
+        return $ MyLabel lbl Nothing inner)
     <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)
 
@@ -86,7 +88,7 @@ table = [ [ prefix  MPNot  MyNot  ]
         ]
 
 labelPrefix :: Parser (MyBoolStruct a -> MyBoolStruct a)
-labelPrefix = fmap (MyLabel . (:[])) . debugName "labelPrefix" $ do
+labelPrefix = fmap (flip MyLabel Nothing . (:[])) . debugName "labelPrefix" $ do
   try (pOtherVal <* notEnd)
 
 notEnd :: Parser ()
@@ -105,7 +107,7 @@ getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
 myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myAnd (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAll (a :  getAll b)
+myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
@@ -121,7 +123,7 @@ getAny (MyAny xs) = xs
 getAny x = [x]
 
 myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myOr (MyLabel lbl a@(MyLeaf _)) b = MyLabel lbl $ MyAny (a :  getAny b)
+myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 -- myOr a b                          = MyAny [a, b]
 
@@ -131,7 +133,7 @@ prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
 mylabel :: Operator Parser (MyBoolStruct Text.Text)
-mylabel         = Prefix  (MyLabel <$> try (manyDeep pOtherVal))
+mylabel         = Prefix  (MyLabel <$> try (manyDeep pOtherVal) <*> pure Nothing)
 
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p

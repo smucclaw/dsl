@@ -54,6 +54,18 @@ abstract UDExt = UDApp ** {
     TokAll,
     Party : NP -> NP ;
 
+    -- RPRel
+    RPis,
+    RPeq,
+    RPlt,
+    RPlte,
+    RPgt,
+    RPgte,
+    RPelem,
+    RPnotElem : NP -> UDS -> UDFragment ; -- TODO: types?
+
+    Means : NP -> UDS -> UDFragment ; -- foo MEANS bar -- what types to use???
+
     Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
     subjAction : NP -> UDS -> UDFragment ;
 

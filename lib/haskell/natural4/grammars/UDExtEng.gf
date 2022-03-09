@@ -44,6 +44,17 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     DMust = applyDeontic must_VV ;
     DShant = applyDeontic shant_VV ;
 
+    -- : NP -> UDS -> UDFragment ; -- TODO: types?
+    Means, -- TODO: needs different type, need to peel off the NP or whatever from the UDS in haskell
+    RPis,
+    RPeq = \sky,blue -> PredVPS sky blue.pred.fin ;
+{-  RPlt,  -- TODO: later. maybe need different types?
+    RPlte,
+    RPgt,
+    RPgte,
+    RPelem,
+    RPnotElem -}
+
     CondStandalone uds = ss (linUDS uds) ;
     TemporalStandalone uds = ss (linUDS uds) ;
     GivenStandalone uds = ss (linUDS uds) ;

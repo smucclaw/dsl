@@ -423,7 +423,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|><)  :: Show a           => SLParser (a -> b) ->   Parser a       ->    Parser b       -- end         fancy plain
 (|<$)  ::                     SLParser  a       -> (Int->Parser ()) ->    Parser a       -- end         fancy plain manual undeeper -- used for undeepers
 (|--)  ::                     SLParser  a       -> (Int->Parser ()) ->  SLParser a       -- end         tell a function (usually debugPrint) how deep we are
-(->|)  ::                     SLParser (a -> b) -> Int              ->  SLParser (a -> b)  -- must consume at least this many GoDeepers before proceeding
+(->|)  ::                     SLParser  a       -> Int              ->  SLParser a       -- must consume at least this many GoDeepers before proceeding
 
 (>><)  :: Show a           =>   Parser       a                      ->    Parser a       -- consume, parse, undeeper
 (>><) = manyIndentation
@@ -636,12 +636,12 @@ p1 |-- p2 = mkSL $ do
   return (result, n)
 infixl 4 |--
 
-l ->| n = mkSL $ do
+l ->| n = do
   debugPrint ("->| trying to consume " ++ show n ++ " GoDeepers")
-  (f, m) <- runSL l
-  _ <- count n (pToken GoDeeper)
+  f <- l
+  _ <- godeeper n
   debugPrint "->| success"
-  return (f, m+n)
+  return f
 
 infixl 4 ->|
 

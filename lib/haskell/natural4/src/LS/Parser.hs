@@ -209,10 +209,8 @@ aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
 aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
   undp_count <- expectUnDeepers
   debugPrint $ "aNLK: determined undp_count = " ++ show undp_count
-  ((_,slmt),n) <- runSL $ (,)
-                 $*| return () -- this just gets us from (,,) into the SLParser context
-                 ->| 1
-                 |*| slMultiTerm
+  (slmt,n) <- runSL $ godeeper 1
+                 *> (|>>) slMultiTerm
                  |-- (\d -> debugPrint $ "aNLK: current depth is " ++ show d)
   (tok,m) <- runSL $ id
              +>| n

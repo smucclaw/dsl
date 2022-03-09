@@ -84,7 +84,7 @@ testAdvRule = Regulative
             , Nothing
             ) :| []
         )
-    , keyword = Party
+    , rkeyword = RParty
     , who = Nothing
     , cond = Just
         ( AA.Any Nothing
@@ -158,7 +158,7 @@ nestedCcompRule = defaultRule {
 everyOrgNotPublicAg ::  Rule
 everyOrgNotPublicAg = Regulative
   { subj = mkLeaf "organization"
-  , keyword = Every
+  , rkeyword = REvery
   , who = Just $ multiterm2bsr' ["is not a public agency"]
   , cond = Nothing
   , deontic = DMust

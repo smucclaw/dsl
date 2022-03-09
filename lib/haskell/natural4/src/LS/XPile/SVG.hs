@@ -382,7 +382,7 @@ r2fgl rs defRL r@Regulative{..} = do
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
 
-  let everywho = Text.unwords ( ( if keyword == Every then [ Text.pack (show keyword) ] else [] )
+  let everywho = Text.unwords ( ( if rkeyword == REvery then [ Text.pack (show (tokenOf rkeyword)) ] else [] )
                                 <> [ subj2nl NLen subj ] )
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho

@@ -20,7 +20,7 @@ sfl4ToCorel4 rus
 sfl4ToCorel4Rule :: SFL4.Rule -> TopLevelElement SRng
 sfl4ToCorel4Rule Regulative
             { subj     -- every person
-            , keyword  -- every / party / all
+            , rkeyword  -- every / party / all
             , who      -- who walks and (eats or drinks)
             , cond     -- if it is a saturday
             , deontic  -- must

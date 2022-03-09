@@ -488,7 +488,7 @@ pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
   entityname         <- AA.Leaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
-  let keynamewho = pure ((Party, entityname), Nothing)
+  let keynamewho = pure ((RParty, entityname), Nothing)
   (rulebody,henceLimb,lestLimb) <- someIndentation ((,,)
                                                      <$> permutationsReg keynamewho
                                                      <*> optional (pHenceLest Hence)
@@ -498,7 +498,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
       toreturn = Regulative
                  { subj     = entityname
-                 , keyword  = Party
+                 , rkeyword  = RParty
                  , who      = Nothing
                  , cond     = addneg poscond negcond
                  , deontic  = rbdeon rulebody
@@ -531,7 +531,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
-  let keynamewho = (,) <$> pActor [Every,Party,TokAll]
+  let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
                    <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
@@ -543,7 +543,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 
   let toreturn = Regulative
                  { subj     = snd $ rbkeyname rulebody
-                 , keyword  = fst $ rbkeyname rulebody
+                 , rkeyword  = fst $ rbkeyname rulebody
                  , who      = snd <$> rbwho rulebody
                  , cond     = addneg poscond negcond
                  , deontic  = rbdeon rulebody
@@ -586,12 +586,12 @@ pTemporal = eventually <|> specifically <|> vaguely
     vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague (Just 0) <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
-pPreamble :: [MyToken] -> Parser Preamble
-pPreamble toks = choice (try . pToken <$> toks)
+pPreamble :: [RegKeywords] -> Parser RegKeywords
+pPreamble toks = choice (try . pTokenish <$> toks)
 
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
-pActor :: [MyToken] -> Parser (Preamble, BoolStructP)
+pActor :: [RegKeywords] -> Parser (RegKeywords, BoolStructP)
 pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
@@ -625,7 +625,7 @@ pAction = debugName "pAction calling dBoolStructP" dBoolStructP
 -- though later we may object if there is more than one.
 
 mkRBfromDT :: BoolStructP
-           -> ((Preamble, BoolStructP )  -- every person
+           -> ((RegKeywords, BoolStructP )  -- every person
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> [(Preamble, BoolStructR)] -- positive  -- IF / WHEN
@@ -639,7 +639,7 @@ mkRBfromDT rba (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere =
   RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
 mkRBfromDA :: (Deontic, BoolStructP)
-           -> ((Preamble, BoolStructP ) -- every person or thing
+           -> ((RegKeywords, BoolStructP ) -- every person or thing
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> Maybe (TemporalConstraint Text.Text)
            -> [(Preamble, BoolStructR)] -- whenif
@@ -659,7 +659,7 @@ preambleRelPred preambles = do
   relpred  <- someIndentation pRelationalPredicate
   return (preamble, relpred)
 
-permutationsReg :: Parser ((Preamble, BoolStructP), Maybe (Preamble, BoolStructR))
+permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStructR))
                 -> Parser RuleBody
 permutationsReg keynamewho =
   debugName "permutationsReg" $ do

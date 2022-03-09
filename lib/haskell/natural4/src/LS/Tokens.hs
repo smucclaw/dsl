@@ -837,6 +837,10 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 pToken :: MyToken -> Parser MyToken
 pToken c = pTokenMatch (== c) (pure c)
 
+pTokenish :: HasToken a => a -> Parser a
+pTokenish c = c <$ pTokenMatch (== tok) (pure tok)
+  where tok = tokenOf c
+
 pTokenAnyDepth :: MyToken -> Parser MyToken
 pTokenAnyDepth c = pTokenMatch (== c) (pure c)
 

@@ -104,7 +104,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- [TODO], figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
-                         , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
+                         , rbkeyname  :: (RegKeywords, BoolStructP)   -- Every man AND woman
                          , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
                          , rbwhere    :: [Rule]      -- Hornlike rules only, please       -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
@@ -126,10 +126,22 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 data KW a = KW { dictK :: MyToken
                , dictV :: a }
 
+data RegKeywords =
+  REvery | RParty | RTokAll
+  deriving (Eq, Show, Generic, ToJSON)
+
+class HasToken a where
+  tokenOf :: a -> MyToken
+
+instance HasToken RegKeywords where
+  tokenOf REvery = Every
+  tokenOf RParty = Party
+  tokenOf RTokAll = TokAll
+
 -- [TODO]: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
-            , keyword  :: MyToken                   -- Every | Party | TokAll
+            , rkeyword :: RegKeywords               -- Every | Party | TokAll
             , who      :: Maybe BoolStructR         -- WHO walks and (eats or drinks)
             , cond     :: Maybe BoolStructR         -- IF it is a saturday
             , deontic  :: Deontic            -- must

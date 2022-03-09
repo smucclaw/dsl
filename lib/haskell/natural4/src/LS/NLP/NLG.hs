@@ -5,24 +5,17 @@
 module LS.NLP.NLG where
 
 import LS.NLP.UDExt
-import LS.Types ( Deontic(..),
-      EntityType,
-      TemporalConstraint (..), TComparison(..),
+import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
-      BoolStruct(..),
-      RuleName,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, bsr2text, rp2texts, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, Lemma, Analysis, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import           Data.Text.Lazy         (Text)
 import Data.Char (toLower)
-import Data.List.Split (splitOn)
 import Data.Void (Void)
 -- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
-import AnyAll (Item(..))
 import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe, catMaybes, mapMaybe )
 import Data.List ( elemIndex, intercalate, group, sort, sortOn )

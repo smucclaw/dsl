@@ -45,12 +45,16 @@ abstract UDExt = UDApp ** {
     -- CondGivenUpon : (cond, given, upon : UDS) -> (king_must_sing : UDFragment)  -> UDFragment ;
     -- -- if the prime minister is happy, and the queen had a nice breakfast, [the king must sing] upon opening the door
 
-    -- stuff
-
+    -- GF funs that correspond to LS.Types constructors
+    -- Deontic
     DMust, DMay, DShant : UDS -> UDS ;
 
+    -- MyToken
+    Every,
+    TokAll,
+    Party : NP -> NP ;
+
     Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
-    Every : NP -> NP ;
     subjAction : NP -> UDS -> UDFragment ;
 
   -- AnyAll library in GF

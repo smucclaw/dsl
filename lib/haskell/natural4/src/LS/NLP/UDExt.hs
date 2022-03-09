@@ -488,8 +488,10 @@ data Tree :: * -> * where
   GNP_the_loss_of_any_CN_RS :: GCN -> GRS -> Tree GNP_
   GNP_the_unauthorised_ConjN2_of_NP :: GListCN -> GNP -> Tree GNP_
   GNP_the_unauthorised_N2_of_NP :: GCN -> GNP -> Tree GNP_
+  GParty :: GNP -> Tree GNP_
   GPredetNP :: GPredet -> GNP -> Tree GNP_
   GRelNP :: GNP -> GRS -> Tree GNP_
+  GTokAll :: GNP -> Tree GNP_
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
   GWho :: GUDS -> GNP -> Tree GNP_
@@ -1039,8 +1041,10 @@ instance Eq (Tree a) where
     (GNP_the_loss_of_any_CN_RS x1 x2,GNP_the_loss_of_any_CN_RS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GNP_the_unauthorised_ConjN2_of_NP x1 x2,GNP_the_unauthorised_ConjN2_of_NP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GNP_the_unauthorised_N2_of_NP x1 x2,GNP_the_unauthorised_N2_of_NP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GParty x1,GParty y1) -> and [ x1 == y1 ]
     (GPredetNP x1 x2,GPredetNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GTokAll x1,GTokAll y1) -> and [ x1 == y1 ]
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
     (GWho x1 x2,GWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -2031,8 +2035,10 @@ instance Gf GNP where
   gf (GNP_the_loss_of_any_CN_RS x1 x2) = mkApp (mkCId "NP_the_loss_of_any_CN_RS") [gf x1, gf x2]
   gf (GNP_the_unauthorised_ConjN2_of_NP x1 x2) = mkApp (mkCId "NP_the_unauthorised_ConjN2_of_NP") [gf x1, gf x2]
   gf (GNP_the_unauthorised_N2_of_NP x1 x2) = mkApp (mkCId "NP_the_unauthorised_N2_of_NP") [gf x1, gf x2]
+  gf (GParty x1) = mkApp (mkCId "Party") [gf x1]
   gf (GPredetNP x1 x2) = mkApp (mkCId "PredetNP") [gf x1, gf x2]
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
+  gf (GTokAll x1) = mkApp (mkCId "TokAll") [gf x1]
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
   gf (GWho x1 x2) = mkApp (mkCId "Who") [gf x1, gf x2]
@@ -2055,8 +2061,10 @@ instance Gf GNP where
       Just (i,[x1,x2]) | i == mkCId "NP_the_loss_of_any_CN_RS" -> GNP_the_loss_of_any_CN_RS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "NP_the_unauthorised_ConjN2_of_NP" -> GNP_the_unauthorised_ConjN2_of_NP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "NP_the_unauthorised_N2_of_NP" -> GNP_the_unauthorised_N2_of_NP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "Party" -> GParty (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredetNP" -> GPredetNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "TokAll" -> GTokAll (fg x1)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Who" -> GWho (fg x1) (fg x2)
@@ -3837,8 +3845,10 @@ instance Compos Tree where
     GNP_the_loss_of_any_CN_RS x1 x2 -> r GNP_the_loss_of_any_CN_RS `a` f x1 `a` f x2
     GNP_the_unauthorised_ConjN2_of_NP x1 x2 -> r GNP_the_unauthorised_ConjN2_of_NP `a` f x1 `a` f x2
     GNP_the_unauthorised_N2_of_NP x1 x2 -> r GNP_the_unauthorised_N2_of_NP `a` f x1 `a` f x2
+    GParty x1 -> r GParty `a` f x1
     GPredetNP x1 x2 -> r GPredetNP `a` f x1 `a` f x2
     GRelNP x1 x2 -> r GRelNP `a` f x1 `a` f x2
+    GTokAll x1 -> r GTokAll `a` f x1
     GUsePN x1 -> r GUsePN `a` f x1
     GUsePron x1 -> r GUsePron `a` f x1
     GWho x1 x2 -> r GWho `a` f x1 `a` f x2

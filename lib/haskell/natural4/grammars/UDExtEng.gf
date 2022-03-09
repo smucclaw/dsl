@@ -37,6 +37,8 @@ concrete UDExtEng of UDExt = UDAppEng ** open
        in ExtAdvNP king who_is_singer_Adv ;
 
     Every np = mkNP (lin Predet {s = "every"}) np ;
+    TokAll np = mkNP (lin Predet {s = "all"}) np ;
+    Party np = np ;
 
     DMay = applyDeontic ExtraEng.may_VV ;
     DMust = applyDeontic must_VV ;

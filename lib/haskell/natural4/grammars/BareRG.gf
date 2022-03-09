@@ -17,6 +17,7 @@ abstract BareRG =
     AdvS ,
     ExtAdvS
     ,UseCl, UseRCl
+    ,EmbedVP -- used in UDExt
   ],
 
   Verb [
@@ -97,6 +98,8 @@ abstract BareRG =
     XorMore : Card -> Det ; -- one/two/… or more
 
     CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
+
+    SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
 
   -- passives
     PassV : V -> VP ;             -- is:auxPass affected

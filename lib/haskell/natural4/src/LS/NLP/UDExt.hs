@@ -151,6 +151,8 @@ type GRS = Tree GRS_
 data GRS_
 type GS = Tree GS_
 data GS_
+type GSC = Tree GSC_
+data GSC_
 type GSub10 = Tree GSub10_
 data GSub10_
 type GSub100 = Tree GSub100_
@@ -311,8 +313,6 @@ type GPhr = Tree GPhr_
 data GPhr_
 type GQS = Tree GQS_
 data GQS_
-type GSC = Tree GSC_
-data GSC_
 type GSSlash = Tree GSSlash_
 data GSSlash_
 type GText = Tree GText_
@@ -491,6 +491,7 @@ data Tree :: * -> * where
   GParty :: GNP -> Tree GNP_
   GPredetNP :: GPredet -> GNP -> Tree GNP_
   GRelNP :: GNP -> GRS -> Tree GNP_
+  GSentNP :: GNP -> GSC -> Tree GNP_
   GTokAll :: GNP -> Tree GNP_
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
@@ -547,6 +548,7 @@ data Tree :: * -> * where
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GExtAdvS :: GAdv -> GS -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
+  GEmbedVP :: GVP -> Tree GSC_
   Gpot0 :: GDigit -> Tree GSub10_
   Gpot01 :: Tree GSub10_
   Gpot0as1 :: GSub10 -> Tree GSub100_
@@ -576,6 +578,16 @@ data Tree :: * -> * where
   GCondUpon :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
   GGiven :: GUDS -> GUDFragment -> Tree GUDFragment_
   GGivenStandalone :: GUDS -> Tree GUDFragment_
+  GHornClause2 :: GUDFragment -> GUDS -> Tree GUDFragment_
+  GMeans :: GNP -> GUDS -> Tree GUDFragment_
+  GRPelem :: GNP -> GUDS -> Tree GUDFragment_
+  GRPeq :: GNP -> GUDS -> Tree GUDFragment_
+  GRPgt :: GNP -> GUDS -> Tree GUDFragment_
+  GRPgte :: GNP -> GUDS -> Tree GUDFragment_
+  GRPis :: GNP -> GUDS -> Tree GUDFragment_
+  GRPlt :: GNP -> GUDS -> Tree GUDFragment_
+  GRPlte :: GNP -> GUDS -> Tree GUDFragment_
+  GRPnotElem :: GNP -> GUDS -> Tree GUDFragment_
   GTemporal :: GAdv -> GUDFragment -> Tree GUDFragment_
   GTemporalStandalone :: GUDS -> Tree GUDFragment_
   GUpon :: GUDS -> GUDFragment -> Tree GUDFragment_
@@ -1044,6 +1056,7 @@ instance Eq (Tree a) where
     (GParty x1,GParty y1) -> and [ x1 == y1 ]
     (GPredetNP x1 x2,GPredetNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSentNP x1 x2,GSentNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTokAll x1,GTokAll y1) -> and [ x1 == y1 ]
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
@@ -1100,6 +1113,7 @@ instance Eq (Tree a) where
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GExtAdvS x1 x2,GExtAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseCl x1 x2 x3,GUseCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GEmbedVP x1,GEmbedVP y1) -> and [ x1 == y1 ]
     (Gpot0 x1,Gpot0 y1) -> and [ x1 == y1 ]
     (Gpot01,Gpot01) -> and [ ]
     (Gpot0as1 x1,Gpot0as1 y1) -> and [ x1 == y1 ]
@@ -1129,6 +1143,16 @@ instance Eq (Tree a) where
     (GCondUpon x1 x2 x3,GCondUpon y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GGiven x1 x2,GGiven y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGivenStandalone x1,GGivenStandalone y1) -> and [ x1 == y1 ]
+    (GHornClause2 x1 x2,GHornClause2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GMeans x1 x2,GMeans y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPelem x1 x2,GRPelem y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPeq x1 x2,GRPeq y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPgt x1 x2,GRPgt y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPgte x1 x2,GRPgte y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPis x1 x2,GRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPlt x1 x2,GRPlt y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPlte x1 x2,GRPlte y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPnotElem x1 x2,GRPnotElem y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTemporal x1 x2,GTemporal y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTemporalStandalone x1,GTemporalStandalone y1) -> and [ x1 == y1 ]
     (GUpon x1 x2,GUpon y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -2038,6 +2062,7 @@ instance Gf GNP where
   gf (GParty x1) = mkApp (mkCId "Party") [gf x1]
   gf (GPredetNP x1 x2) = mkApp (mkCId "PredetNP") [gf x1, gf x2]
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
+  gf (GSentNP x1 x2) = mkApp (mkCId "SentNP") [gf x1, gf x2]
   gf (GTokAll x1) = mkApp (mkCId "TokAll") [gf x1]
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
@@ -2064,6 +2089,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "Party" -> GParty (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredetNP" -> GPredetNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "SentNP" -> GSentNP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "TokAll" -> GTokAll (fg x1)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
@@ -2297,6 +2323,16 @@ instance Gf GS where
 
       _ -> error ("no S " ++ show t)
 
+instance Gf GSC where
+  gf (GEmbedVP x1) = mkApp (mkCId "EmbedVP") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "EmbedVP" -> GEmbedVP (fg x1)
+
+
+      _ -> error ("no SC " ++ show t)
+
 instance Gf GSub10 where
   gf (Gpot0 x1) = mkApp (mkCId "pot0") [gf x1]
   gf Gpot01 = mkApp (mkCId "pot01") []
@@ -2411,6 +2447,16 @@ instance Gf GUDFragment where
   gf (GCondUpon x1 x2 x3) = mkApp (mkCId "CondUpon") [gf x1, gf x2, gf x3]
   gf (GGiven x1 x2) = mkApp (mkCId "Given") [gf x1, gf x2]
   gf (GGivenStandalone x1) = mkApp (mkCId "GivenStandalone") [gf x1]
+  gf (GHornClause2 x1 x2) = mkApp (mkCId "HornClause2") [gf x1, gf x2]
+  gf (GMeans x1 x2) = mkApp (mkCId "Means") [gf x1, gf x2]
+  gf (GRPelem x1 x2) = mkApp (mkCId "RPelem") [gf x1, gf x2]
+  gf (GRPeq x1 x2) = mkApp (mkCId "RPeq") [gf x1, gf x2]
+  gf (GRPgt x1 x2) = mkApp (mkCId "RPgt") [gf x1, gf x2]
+  gf (GRPgte x1 x2) = mkApp (mkCId "RPgte") [gf x1, gf x2]
+  gf (GRPis x1 x2) = mkApp (mkCId "RPis") [gf x1, gf x2]
+  gf (GRPlt x1 x2) = mkApp (mkCId "RPlt") [gf x1, gf x2]
+  gf (GRPlte x1 x2) = mkApp (mkCId "RPlte") [gf x1, gf x2]
+  gf (GRPnotElem x1 x2) = mkApp (mkCId "RPnotElem") [gf x1, gf x2]
   gf (GTemporal x1 x2) = mkApp (mkCId "Temporal") [gf x1, gf x2]
   gf (GTemporalStandalone x1) = mkApp (mkCId "TemporalStandalone") [gf x1]
   gf (GUpon x1 x2) = mkApp (mkCId "Upon") [gf x1, gf x2]
@@ -2427,6 +2473,16 @@ instance Gf GUDFragment where
       Just (i,[x1,x2,x3]) | i == mkCId "CondUpon" -> GCondUpon (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "Given" -> GGiven (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "GivenStandalone" -> GGivenStandalone (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "HornClause2" -> GHornClause2 (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "Means" -> GMeans (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPelem" -> GRPelem (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPeq" -> GRPeq (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPgt" -> GRPgt (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPgte" -> GRPgte (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPis" -> GRPis (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPlt" -> GRPlt (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPlte" -> GRPlte (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPnotElem" -> GRPnotElem (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Temporal" -> GTemporal (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "TemporalStandalone" -> GTemporalStandalone (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Upon" -> GUpon (fg x1) (fg x2)
@@ -3625,14 +3681,6 @@ instance Gf GQS where
 
 
 
-instance Gf GSC where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
 instance Gf GSSlash where
   gf _ = undefined
   fg _ = undefined
@@ -3848,6 +3896,7 @@ instance Compos Tree where
     GParty x1 -> r GParty `a` f x1
     GPredetNP x1 x2 -> r GPredetNP `a` f x1 `a` f x2
     GRelNP x1 x2 -> r GRelNP `a` f x1 `a` f x2
+    GSentNP x1 x2 -> r GSentNP `a` f x1 `a` f x2
     GTokAll x1 -> r GTokAll `a` f x1
     GUsePN x1 -> r GUsePN `a` f x1
     GUsePron x1 -> r GUsePron `a` f x1
@@ -3887,6 +3936,7 @@ instance Compos Tree where
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
     GExtAdvS x1 x2 -> r GExtAdvS `a` f x1 `a` f x2
     GUseCl x1 x2 x3 -> r GUseCl `a` f x1 `a` f x2 `a` f x3
+    GEmbedVP x1 -> r GEmbedVP `a` f x1
     Gpot0 x1 -> r Gpot0 `a` f x1
     Gpot0as1 x1 -> r Gpot0as1 `a` f x1
     Gpot1 x1 -> r Gpot1 `a` f x1
@@ -3908,6 +3958,16 @@ instance Compos Tree where
     GCondUpon x1 x2 x3 -> r GCondUpon `a` f x1 `a` f x2 `a` f x3
     GGiven x1 x2 -> r GGiven `a` f x1 `a` f x2
     GGivenStandalone x1 -> r GGivenStandalone `a` f x1
+    GHornClause2 x1 x2 -> r GHornClause2 `a` f x1 `a` f x2
+    GMeans x1 x2 -> r GMeans `a` f x1 `a` f x2
+    GRPelem x1 x2 -> r GRPelem `a` f x1 `a` f x2
+    GRPeq x1 x2 -> r GRPeq `a` f x1 `a` f x2
+    GRPgt x1 x2 -> r GRPgt `a` f x1 `a` f x2
+    GRPgte x1 x2 -> r GRPgte `a` f x1 `a` f x2
+    GRPis x1 x2 -> r GRPis `a` f x1 `a` f x2
+    GRPlt x1 x2 -> r GRPlt `a` f x1 `a` f x2
+    GRPlte x1 x2 -> r GRPlte `a` f x1 `a` f x2
+    GRPnotElem x1 x2 -> r GRPnotElem `a` f x1 `a` f x2
     GTemporal x1 x2 -> r GTemporal `a` f x1 `a` f x2
     GTemporalStandalone x1 -> r GTemporalStandalone `a` f x1
     GUpon x1 x2 -> r GUpon `a` f x1 `a` f x2

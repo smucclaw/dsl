@@ -28,3 +28,5 @@ l4/generated/*.l4
 # src-bnfc/*.hs
 # src-bnfc/*.x
 # src-bnfc/*.y
+# l4/generated
+# *.gfo

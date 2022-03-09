@@ -109,6 +109,10 @@ type GListRS = Tree GListRS_
 data GListRS_
 type GListS = Tree GListS_
 data GListS_
+type GListUDFragment = Tree GListUDFragment_
+data GListUDFragment_
+type GListUDS = Tree GListUDS_
+data GListUDS_
 type GN = Tree GN_
 data GN_
 type GN2 = Tree GN2_
@@ -461,6 +465,8 @@ data Tree :: * -> * where
   GListPrep :: [GPrep] -> Tree GListPrep_
   GListRS :: [GRS] -> Tree GListRS_
   GListS :: [GS] -> Tree GListS_
+  GListUDFragment :: [GUDFragment] -> Tree GListUDFragment_
+  GListUDS :: [GUDS] -> Tree GListUDS_
   GCompoundCN :: GCN -> GN -> Tree GN_
   GCompoundN :: GN -> GN -> Tree GN_
   GStrN :: GString -> Tree GN_
@@ -561,11 +567,21 @@ data Tree :: * -> * where
   GTPast :: Tree GTense_
   GTPres :: Tree GTense_
   GAdv_no_later_than_Num_calendar_days_after_the_day_UDS :: GNumeral -> GUDS -> Tree GUDFragment_
+  GCond :: GUDS -> GUDFragment -> Tree GUDFragment_
+  GCondGiven :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
+  GCondStandalone :: GUDS -> Tree GUDFragment_
+  GCondTemporal :: GUDS -> GAdv -> GUDFragment -> Tree GUDFragment_
+  GCondUpon :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
+  GGiven :: GUDS -> GUDFragment -> Tree GUDFragment_
+  GGivenStandalone :: GUDS -> Tree GUDFragment_
+  GTemporal :: GAdv -> GUDFragment -> Tree GUDFragment_
+  GTemporalStandalone :: GUDS -> Tree GUDFragment_
   GUpon :: GUDS -> GUDFragment -> Tree GUDFragment_
+  GUponStandalone :: GUDS -> Tree GUDFragment_
   GsubjAction :: GNP -> GUDS -> Tree GUDFragment_
-  GMay :: GUDS -> Tree GUDS_
-  GMust :: GUDS -> Tree GUDS_
-  GShant :: GUDS -> Tree GUDS_
+  GDMay :: GUDS -> Tree GUDS_
+  GDMust :: GUDS -> Tree GUDS_
+  GDShant :: GUDS -> Tree GUDS_
   Groot_acl :: Groot -> Gacl -> Tree GUDS_
   Groot_aclRelcl :: Groot -> GaclRelcl -> Tree GUDS_
   Groot_aclRelcl_nmod :: Groot -> GaclRelcl -> Gnmod -> Tree GUDS_
@@ -1000,6 +1016,8 @@ instance Eq (Tree a) where
     (GListPrep x1,GListPrep y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListRS x1,GListRS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListS x1,GListS y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListUDFragment x1,GListUDFragment y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListUDS x1,GListUDS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GCompoundCN x1 x2,GCompoundCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCompoundN x1 x2,GCompoundN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GStrN x1,GStrN y1) -> and [ x1 == y1 ]
@@ -1100,11 +1118,21 @@ instance Eq (Tree a) where
     (GTPast,GTPast) -> and [ ]
     (GTPres,GTPres) -> and [ ]
     (GAdv_no_later_than_Num_calendar_days_after_the_day_UDS x1 x2,GAdv_no_later_than_Num_calendar_days_after_the_day_UDS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GCond x1 x2,GCond y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GCondGiven x1 x2 x3,GCondGiven y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GCondStandalone x1,GCondStandalone y1) -> and [ x1 == y1 ]
+    (GCondTemporal x1 x2 x3,GCondTemporal y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GCondUpon x1 x2 x3,GCondUpon y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GGiven x1 x2,GGiven y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GGivenStandalone x1,GGivenStandalone y1) -> and [ x1 == y1 ]
+    (GTemporal x1 x2,GTemporal y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GTemporalStandalone x1,GTemporalStandalone y1) -> and [ x1 == y1 ]
     (GUpon x1 x2,GUpon y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GUponStandalone x1,GUponStandalone y1) -> and [ x1 == y1 ]
     (GsubjAction x1 x2,GsubjAction y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GMay x1,GMay y1) -> and [ x1 == y1 ]
-    (GMust x1,GMust y1) -> and [ x1 == y1 ]
-    (GShant x1,GShant y1) -> and [ x1 == y1 ]
+    (GDMay x1,GDMay y1) -> and [ x1 == y1 ]
+    (GDMust x1,GDMust y1) -> and [ x1 == y1 ]
+    (GDShant x1,GDShant y1) -> and [ x1 == y1 ]
     (Groot_acl x1 x2,Groot_acl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl x1 x2,Groot_aclRelcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl_nmod x1 x2 x3,Groot_aclRelcl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1936,6 +1964,30 @@ instance Gf GListS where
 
       _ -> error ("no ListS " ++ show t)
 
+instance Gf GListUDFragment where
+  gf (GListUDFragment [x1,x2]) = mkApp (mkCId "BaseUDFragment") [gf x1, gf x2]
+  gf (GListUDFragment (x:xs)) = mkApp (mkCId "ConsUDFragment") [gf x, gf (GListUDFragment xs)]
+  fg t =
+    GListUDFragment (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseUDFragment" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsUDFragment" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListUDFragment " ++ show t)
+
+instance Gf GListUDS where
+  gf (GListUDS [x1,x2]) = mkApp (mkCId "BaseUDS") [gf x1, gf x2]
+  gf (GListUDS (x:xs)) = mkApp (mkCId "ConsUDS") [gf x, gf (GListUDS xs)]
+  fg t =
+    GListUDS (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseUDS" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsUDS" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListUDS " ++ show t)
+
 instance Gf GN where
   gf (GCompoundCN x1 x2) = mkApp (mkCId "CompoundCN") [gf x1, gf x2]
   gf (GCompoundN x1 x2) = mkApp (mkCId "CompoundN") [gf x1, gf x2]
@@ -2344,22 +2396,42 @@ instance Gf GTense where
 
 instance Gf GUDFragment where
   gf (GAdv_no_later_than_Num_calendar_days_after_the_day_UDS x1 x2) = mkApp (mkCId "Adv_no_later_than_Num_calendar_days_after_the_day_UDS") [gf x1, gf x2]
+  gf (GCond x1 x2) = mkApp (mkCId "Cond") [gf x1, gf x2]
+  gf (GCondGiven x1 x2 x3) = mkApp (mkCId "CondGiven") [gf x1, gf x2, gf x3]
+  gf (GCondStandalone x1) = mkApp (mkCId "CondStandalone") [gf x1]
+  gf (GCondTemporal x1 x2 x3) = mkApp (mkCId "CondTemporal") [gf x1, gf x2, gf x3]
+  gf (GCondUpon x1 x2 x3) = mkApp (mkCId "CondUpon") [gf x1, gf x2, gf x3]
+  gf (GGiven x1 x2) = mkApp (mkCId "Given") [gf x1, gf x2]
+  gf (GGivenStandalone x1) = mkApp (mkCId "GivenStandalone") [gf x1]
+  gf (GTemporal x1 x2) = mkApp (mkCId "Temporal") [gf x1, gf x2]
+  gf (GTemporalStandalone x1) = mkApp (mkCId "TemporalStandalone") [gf x1]
   gf (GUpon x1 x2) = mkApp (mkCId "Upon") [gf x1, gf x2]
+  gf (GUponStandalone x1) = mkApp (mkCId "UponStandalone") [gf x1]
   gf (GsubjAction x1 x2) = mkApp (mkCId "subjAction") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "Adv_no_later_than_Num_calendar_days_after_the_day_UDS" -> GAdv_no_later_than_Num_calendar_days_after_the_day_UDS (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "Cond" -> GCond (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "CondGiven" -> GCondGiven (fg x1) (fg x2) (fg x3)
+      Just (i,[x1]) | i == mkCId "CondStandalone" -> GCondStandalone (fg x1)
+      Just (i,[x1,x2,x3]) | i == mkCId "CondTemporal" -> GCondTemporal (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "CondUpon" -> GCondUpon (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2]) | i == mkCId "Given" -> GGiven (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "GivenStandalone" -> GGivenStandalone (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "Temporal" -> GTemporal (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "TemporalStandalone" -> GTemporalStandalone (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Upon" -> GUpon (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "UponStandalone" -> GUponStandalone (fg x1)
       Just (i,[x1,x2]) | i == mkCId "subjAction" -> GsubjAction (fg x1) (fg x2)
 
 
       _ -> error ("no UDFragment " ++ show t)
 
 instance Gf GUDS where
-  gf (GMay x1) = mkApp (mkCId "May") [gf x1]
-  gf (GMust x1) = mkApp (mkCId "Must") [gf x1]
-  gf (GShant x1) = mkApp (mkCId "Shant") [gf x1]
+  gf (GDMay x1) = mkApp (mkCId "DMay") [gf x1]
+  gf (GDMust x1) = mkApp (mkCId "DMust") [gf x1]
+  gf (GDShant x1) = mkApp (mkCId "DShant") [gf x1]
   gf (Groot_acl x1 x2) = mkApp (mkCId "root_acl") [gf x1, gf x2]
   gf (Groot_aclRelcl x1 x2) = mkApp (mkCId "root_aclRelcl") [gf x1, gf x2]
   gf (Groot_aclRelcl_nmod x1 x2 x3) = mkApp (mkCId "root_aclRelcl_nmod") [gf x1, gf x2, gf x3]
@@ -2562,9 +2634,9 @@ instance Gf GUDS where
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "May" -> GMay (fg x1)
-      Just (i,[x1]) | i == mkCId "Must" -> GMust (fg x1)
-      Just (i,[x1]) | i == mkCId "Shant" -> GShant (fg x1)
+      Just (i,[x1]) | i == mkCId "DMay" -> GDMay (fg x1)
+      Just (i,[x1]) | i == mkCId "DMust" -> GDMust (fg x1)
+      Just (i,[x1]) | i == mkCId "DShant" -> GDShant (fg x1)
       Just (i,[x1,x2]) | i == mkCId "root_acl" -> Groot_acl (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_aclRelcl" -> Groot_aclRelcl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_aclRelcl_nmod" -> Groot_aclRelcl_nmod (fg x1) (fg x2) (fg x3)
@@ -3819,11 +3891,21 @@ instance Compos Tree where
     GStrSymb x1 -> r GStrSymb `a` f x1
     GTTAnt x1 x2 -> r GTTAnt `a` f x1 `a` f x2
     GAdv_no_later_than_Num_calendar_days_after_the_day_UDS x1 x2 -> r GAdv_no_later_than_Num_calendar_days_after_the_day_UDS `a` f x1 `a` f x2
+    GCond x1 x2 -> r GCond `a` f x1 `a` f x2
+    GCondGiven x1 x2 x3 -> r GCondGiven `a` f x1 `a` f x2 `a` f x3
+    GCondStandalone x1 -> r GCondStandalone `a` f x1
+    GCondTemporal x1 x2 x3 -> r GCondTemporal `a` f x1 `a` f x2 `a` f x3
+    GCondUpon x1 x2 x3 -> r GCondUpon `a` f x1 `a` f x2 `a` f x3
+    GGiven x1 x2 -> r GGiven `a` f x1 `a` f x2
+    GGivenStandalone x1 -> r GGivenStandalone `a` f x1
+    GTemporal x1 x2 -> r GTemporal `a` f x1 `a` f x2
+    GTemporalStandalone x1 -> r GTemporalStandalone `a` f x1
     GUpon x1 x2 -> r GUpon `a` f x1 `a` f x2
+    GUponStandalone x1 -> r GUponStandalone `a` f x1
     GsubjAction x1 x2 -> r GsubjAction `a` f x1 `a` f x2
-    GMay x1 -> r GMay `a` f x1
-    GMust x1 -> r GMust `a` f x1
-    GShant x1 -> r GShant `a` f x1
+    GDMay x1 -> r GDMay `a` f x1
+    GDMust x1 -> r GDMust `a` f x1
+    GDShant x1 -> r GDShant `a` f x1
     Groot_acl x1 x2 -> r Groot_acl `a` f x1 `a` f x2
     Groot_aclRelcl x1 x2 -> r Groot_aclRelcl `a` f x1 `a` f x2
     Groot_aclRelcl_nmod x1 x2 x3 -> r Groot_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3
@@ -4125,6 +4207,8 @@ instance Compos Tree where
     GListPrep x1 -> r GListPrep `a` foldr (a . a (r (:)) . f) (r []) x1
     GListRS x1 -> r GListRS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListS x1 -> r GListS `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListUDFragment x1 -> r GListUDFragment `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListUDS x1 -> r GListUDS `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
 
 class Compos t where

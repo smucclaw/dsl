@@ -52,6 +52,7 @@ dependencies:
 - graphviz
 - wordnet
 - edit-distance
+- extra
 - lens
 - QuickCheck
 - generic-arbitrary

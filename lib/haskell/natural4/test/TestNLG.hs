@@ -2,15 +2,27 @@
 
 module TestNLG where
 
-import PGF
+import PGF hiding (showExpr)
 import Test.Hspec
 import LS.NLP.ToPredicate
 import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
+import qualified AnyAll as AA
+import Data.List.NonEmpty (NonEmpty((:|)))
+import UDAnnotations ( UDEnv(..), getEnv )
+import System.IO.Unsafe
 
 nlgTests :: Spec
 nlgTests = do
+
+    describe "test bsr2gf" $ do
+      let Just bsr = cond testAdvRule
+          env = unsafePerformIO myUDEnv
+          tree = unsafePerformIO (bsr2gf env bsr)
+      it "Should return an averbial" $ do
+        showExpr tree `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
+
     describe "Convert to predicate" $ do
       -- "organization"
       let Just org = readExpr "root_only (rootN_ (MassNP (UseN organization_N)))"
@@ -63,6 +75,53 @@ nlgTests = do
         convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
         applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
 
+
+testAdvRule :: Rule
+testAdvRule = Regulative
+    { subj = AA.Leaf
+        (
+            ( "you" :| []
+            , Nothing
+            ) :| []
+        )
+    , keyword = Party
+    , who = Nothing
+    , cond = Just
+        ( AA.Any Nothing
+            [ AA.Leaf
+                ( RPMT [ "today" ] )
+            , AA.Leaf
+                ( RPMT [ "tomorrow" ] )
+            ]
+        )
+    , deontic = DMust
+    , action = AA.Leaf
+        (
+            ( "notify the PDPC" :| []
+            , Nothing
+            ) :| []
+        )
+    , temporal = Nothing
+    , hence = Nothing
+    , lest = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/testNLG/simpleAdv.csv"
+            , short = "test/testNLG/simpleAdv.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , upon = Nothing
+    , given = Nothing
+    , having = Nothing
+    , wwhere = []
+    , defaults = []
+    , symtab = []
+    }
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {

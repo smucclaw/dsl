@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE EmptyCase #-}
 
 module LS.Error where
 
@@ -16,10 +17,13 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import LS.BasicTypes (MyStream, myStreamInput)
-import Data.Vector (imap, foldl')
+import LS.BasicTypes (MyStream , myStreamInput, MyToken, WithPos)
+import Data.Vector (imap, foldl', foldl1')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))
+import Data.Void (Void)
+import qualified Data.Set as Set
+import qualified Data.Vector as V
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::
@@ -45,16 +49,21 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         col = unPos (sourceColumn epos) - 1
         excelTable = pst & pstateInput & myStreamInput
         excelTableMarked =
-          imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) . (<> "") else id) else id ) excelTable
+          imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) excelTable
           & fmap (fmap Text.unpack)
-        foldMax = foldl' max 1
-        maxLength = foldMax (fmap (foldMax . fmap length) excelTableMarked) & fromIntegral @_ @Int
+          -- & fmap (fmap (Text.unpack. ("(" <>) . (<>")")))
+        -- foldMax = foldl' _ 1
+        maxAllowedWidth = 35
+        maxLengths = fmap (fmap (min maxAllowedWidth . length)) excelTableMarked & foldl1' (V.zipWith max) & fmap (fromIntegral @_ @Int)
         boxRepresentation = excelTableMarked
-          & fmap (fmap (Box.alignHoriz Box.left maxLength . Box.text) >>> hsep 1 Box.left)
+          -- & sequence -- NOTE: This only works if the table is actually rectangular and doesn't have jagged rows
+          -- & fmap (vcat Box.left . fmap Box.text )
+          & fmap (imap (\c -> Box.alignHoriz Box.left (maxLengths V.! c) . Box.para Box.left maxAllowedWidth) >>> hsep 3 Box.left)
           & vcat Box.left & Box.render
         outChunk =
           "\n" <> sourcePosPretty epos <> ":\n"
           <> parseErrorTextPretty e
+          <> "\n"
           <> boxRepresentation <> "\n"
 
 ----------------------------------------------------------------------------
@@ -95,3 +104,22 @@ errorFancyLength :: ShowErrorComponent e => ErrorFancy e -> Int
 errorFancyLength = \case
   ErrorCustom a -> errorComponentLen a
   _ -> 1
+
+--------
+
+-- | Oneline error message for debug purposes.
+onelineErrorMsg :: ParseError MyStream Void -> String
+onelineErrorMsg (TrivialError _ Nothing set) = "Expecting: " <>
+  unwords (map onelineErrorItem $ Set.toList set)
+onelineErrorMsg (TrivialError _ (Just ei) set) = "Unexpected " <>
+  onelineErrorItem ei <> " Expecting: " <>
+  unwords (map onelineErrorItem $ Set.toList set)
+onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
+  where 
+    showFancy :: ErrorFancy Void -> String
+    showFancy (ErrorFail s) = "Fail: " <> s
+    showFancy (ErrorIndentation ord pos pos') = "Indent error: " <> show pos <> " should be " <> show ord <> show pos'
+    showFancy (ErrorCustom vo) = case vo of {}
+
+onelineErrorItem :: ErrorItem (WithPos MyToken) -> String
+onelineErrorItem = showErrorItem @MyStream Proxy

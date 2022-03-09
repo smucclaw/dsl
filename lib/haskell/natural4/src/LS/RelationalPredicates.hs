@@ -35,7 +35,7 @@ tok2rel = choice
     ]
 
 
--- TODO: FIXME: this is a hack, because we don't have a good way to parse the thing
+-- [TODO]: [FIXME]: this is a hack, because we don't have a good way to parse the thing
 unLeaf :: BoolStructR -> RelationalPredicate
 unLeaf (AA.Leaf x) = x
 unLeaf _ = error "unLeaf: not a leaf"
@@ -161,7 +161,7 @@ pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
 preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  condWord <- choice (try . pToken <$> wanted)
+  condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
@@ -179,7 +179,7 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- debugName "pSrcRef" pSrcRef
+  (rlabel, srcref) <- debugName "pSrcRef" (pretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
     <$$> (try ambitious <|> someStructure)
     <|?> (Nothing, fmap snd <$> optional givenLimb)

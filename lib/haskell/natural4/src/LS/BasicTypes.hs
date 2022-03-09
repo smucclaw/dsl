@@ -12,6 +12,7 @@ import qualified Data.List as DL
 import qualified Data.Vector as V
 import Data.Aeson (ToJSON)
 import GHC.Generics
+import Data.Char (toUpper)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -99,9 +100,10 @@ instance Stream MyStream where
       Just _nex -> (x, MyStream str s')
 
 instance VisualStream MyStream where
-  showTokens Proxy = unwords
+  -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
+  showTokens Proxy xs = unwords
     . NE.toList
-    . fmap (showMyToken . tokenVal)
+    . fmap (showMyToken . tokenVal) $ xs
   tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 instance TraversableStream MyStream where
@@ -153,7 +155,33 @@ pxy :: Proxy MyStream
 pxy = Proxy
 
 showMyToken :: MyToken -> String
-showMyToken = show
+-- showMyToken = show
+showMyToken = renderToken
+
+renderToken :: MyToken -> String
+renderToken TokAll = "ALL"
+renderToken MPNot = "NOT"
+renderToken TokLT = "<"
+renderToken TokLTE = "<="
+renderToken TokGT = ">"
+renderToken TokGTE = ">="
+renderToken TokIn = "IN"
+renderToken TokNotIn = "NOT IN"
+renderToken TokEQ = "=="
+renderToken Checkbox = ""
+renderToken GoDeeper = "("
+renderToken UnDeeper = ")"
+renderToken SetPlus = "PLUS"
+renderToken SetLess = "LESS"
+renderToken A_An = "A"
+renderToken (TNumber n) = show n
+renderToken OneOf = "ONE OF"
+renderToken TypeSeparator = "::"
+renderToken (Other txt) = show txt
+renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
+renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
+renderToken tok = map toUpper (show tok)
+
 
 liftMyToken :: MyToken -> WithPos MyToken
 liftMyToken = WithPos pos pos 0

@@ -92,7 +92,7 @@ clpEnums st tname ens =
   [ Clause (Struct "l4enum" [vartl tname, vari i, vartl v]) []
   | (v :| _, i) <- Prelude.zip (NE.toList $ untypePT ens) [n..] ]
   where n = 1 :: Int
-  -- TODO: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
+  -- [TODO]: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
 
 mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []

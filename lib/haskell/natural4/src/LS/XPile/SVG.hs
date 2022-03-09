@@ -144,7 +144,7 @@ splitJoin rs og sj sgs entry = runGM og $ do
                         , m <- suc og n -- there is a direct link to FULFILLED
                         , m == fulfilledNode
                         ]
-      -- TODO: handle Or splits
+      -- [TODO]: handle Or splits
       -- but we have to think about the semantics of an "or" in a contract ...
       -- maybe you are allowed to take multiple courses of action in parallel, rather than choosing one up front.
       -- normally, an AND split/join looks like       P T (P ... P)+ T   so multiple tokens spawn and then wait for one another before enabling the last T.
@@ -451,7 +451,7 @@ r2fgl rs defRL r@Regulative{..} = do
   pure $ Just whoN
   where
     vp2np :: Text -> Text
-    vp2np = unsafePerformIO . wnNounDerivations
+    vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive"]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]

@@ -185,7 +185,7 @@ main = do
   let runConfig = runConfig_ { sourceURL = "test/Spec" }
       runConfigDebug = runConfig { debug = True }
   let combine (a,b) = a ++ b
-  let dumpStream s = traceM "* Tokens" >> traceShowM (tokenVal <$> unMyStream s)
+  let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
   let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
   let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
   let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
@@ -1277,6 +1277,7 @@ main = do
       let inline_1 = ( ( ["Bad"] , Means , inline_pp ), [] )
           inline_2 = ( ( ["Bad"] , Means , inline_p  ), [] )
           inline_3 = ( ( ["Bad"] , Means , inline_   ), [] )
+          inline_r = ((["multiwonk"],Means,Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]]),[])
           inline_4 = ( ( ["Bad"] , Means , inline_4xs), [] )
           inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
           inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
@@ -1315,7 +1316,7 @@ main = do
       filetest "inline-1-o" "line crossing" pInline1 inline_3
       filetest "inline-1-p" "line crossing" pInline1 ((["wonk"],Means,Any (Just (Pre "a")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]),[])
       filetest "inline-1-q" "line crossing" pInline1 ((["poowonk"],Means,Any Nothing [Leaf (RPMT ["poopoo"]),Leaf (RPMT ["just a","honk"])]),[])
-      filetest "inline-1-r" "line crossing" pInline1 inline_4
+      filetest "inline-1-r" "line crossing" pInline1 inline_r
       filetest "inline-1-s" "line crossing" pInline1 inline_4
 
       filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])

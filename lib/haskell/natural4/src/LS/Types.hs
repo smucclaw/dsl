@@ -4,6 +4,8 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
@@ -78,6 +80,9 @@ mt2text = Text.unwords
 newtype DList a = DList (Endo [a])
   deriving newtype (Semigroup, Monoid)
 
+instance Show a => Show (DList a) where
+  show = show . dlToList
+
 singeltonDL :: a -> DList a
 singeltonDL a = DList $ Endo (a:)
 
@@ -96,7 +101,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbpbrneg   :: [(Preamble, BoolStructR)] -- negative global conditions
                          , rbdeon     :: Deontic
                          , rbtemporal :: Maybe (TemporalConstraint Text.Text)
-                         , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- TODO, figure out how these are joined; or should we ban multiple UPONs?
+                         , rbupon     :: [(Preamble, ParamText)] -- Upon  event conditions -- [TODO], figure out how these are joined; or should we ban multiple UPONs?
                          , rbgiven    :: [(Preamble, ParamText)] -- Given
                          , rbhaving   :: Maybe ParamText
                          , rbkeyname  :: (Preamble, BoolStructP)   -- Every man AND woman
@@ -121,7 +126,7 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 data KW a = KW { dictK :: MyToken
                , dictV :: a }
 
--- TODO: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
+-- [TODO]: we need to start preserving the keywords for each preamble*, because maybe this is a "which" not a "who"
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , keyword  :: MyToken                   -- Every | Party | TokAll
@@ -195,7 +200,7 @@ data Rule = Regulative
             , srcref :: Maybe SrcRef
             }
           | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
-            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. [FIXME]
             , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
             , srcref :: Maybe SrcRef
             }
@@ -237,6 +242,20 @@ data HornBody = HBRP HornRP
                       , hbthen :: HornRP
                       , hbelse :: HornRP }
   deriving (Eq, Show, Generic, ToJSON)
+
+class PrependHead a where
+  -- Used to prepend what was first interpreted to be a label to an item
+  prependHead :: Text.Text -> a -> a
+
+instance PrependHead Text.Text where
+  prependHead s = ((s <> " ") <>)
+instance PrependHead ParamText where
+  prependHead s ((xs, ts) :| xss) = (pure s <> xs, ts) :| xss
+instance PrependHead RelationalPredicate where
+  prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
+  prependHead s (RPMT txts)             = RPMT (s : txts)
+  prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
+  prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
@@ -379,7 +398,7 @@ mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ s
 
 mkTC :: MyToken -> Maybe Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure unit
--- TODO: Consider supporting non-integer time constraints
+-- [TODO]: Consider supporting non-integer time constraints
 
 data NatLang = NLen
 
@@ -572,30 +591,6 @@ toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = pure $ Other x
 
-renderToken :: MyToken -> String
-renderToken TokAll = "ALL"
-renderToken MPNot = "NOT"
-renderToken TokLT = "<"
-renderToken TokLTE = "<="
-renderToken TokGT = ">"
-renderToken TokGTE = ">="
-renderToken TokIn = "IN"
-renderToken TokNotIn = "NOT IN"
-renderToken TokEQ = "=="
-renderToken Checkbox = ""
-renderToken GoDeeper = "("
-renderToken UnDeeper = ")"
-renderToken SetPlus = "PLUS"
-renderToken SetLess = "LESS"
-renderToken A_An = "A"
-renderToken (TNumber n) = show n
-renderToken OneOf = "ONE OF"
-renderToken TypeSeparator = "::"
-renderToken (Other txt) = show txt
-renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
-renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
-renderToken tok = map toUpper (show tok)
-
 
 
 whenDebug :: Parser () -> Parser ()
@@ -615,12 +610,11 @@ pYLocation = token test Set.empty <|> pure 0 <?> "y location"
     test (WithPos (SourcePos _ y _x) _ _ _) = Just (unPos y)
 
 
-pTokenMatch :: (MyToken -> Bool) -> MyToken -> Parser MyToken
-pTokenMatch f c = token test (Set.singleton . Tokens . nes . liftMyToken $ c)
+pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
+pTokenMatch f c = token test (Set.singleton . Tokens . fmap liftMyToken $ c)
   where
     test (WithPos _ _ _ x) =
       if f x
         then Just x
         else Nothing
-    nes x = x :| []
 

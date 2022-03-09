@@ -24,7 +24,7 @@ import Data.ByteString.Lazy (ByteString)
 import qualified Data.Csv as Cassava
 import qualified Data.Vector as V
 import Data.Vector ((!), (!?))
-import Text.Pretty.Simple (pPrint, pPrintString)
+import Text.Pretty.Simple (pPrintString, pStringNoColor)
 import qualified AnyAll as AA
 import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
@@ -106,11 +106,11 @@ parseRules o = do
   if null files
     then parseSTDIN runConfig { sourceURL="STDIN" }
     else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
-  
+
   where
     getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
-    getBS other = BS.readFile other  
+    getBS other = BS.readFile other
     parseSTDIN rc = do
       bs <- BS.getContents
       mapM (parseStream rc "STDIN") (exampleStreams bs)
@@ -123,23 +123,26 @@ parseRules o = do
           putStrLn $ "* error while parsing " ++ filename
           putStr (errorBundlePrettyCustom bundle)
           putStrLn "** stream"
-          renderStream stream
+          printStream stream
           return (Left bundle)
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
         Right ([], []) -> return $ Right []
         Right (xs, xs') -> return $ Right (xs ++ xs')
-          
+
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
 dumpRules opts = concat . rights <$> parseRules opts
 
 
 printStream :: MonadIO m => MyStream -> m ()
-printStream stream = pPrint (tokenVal <$> unMyStream stream)
+printStream = pPrintString . renderStream
 
-renderStream :: MonadIO m => MyStream -> m ()
-renderStream stream = pPrintString . unwords $ renderToken . tokenVal <$> unMyStream stream 
+renderStream :: MyStream -> String
+renderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
+
+pRenderStream :: MyStream -> String
+pRenderStream = Text.unpack . pStringNoColor . renderStream
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of
@@ -202,7 +205,7 @@ asCSV s =
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
--- TODO: left trim all blank columns
+-- [TODO]: left trim all blank columns
 
 rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt
@@ -297,7 +300,7 @@ vvlookup rs (x,y) = rs !? y >>= (!? x)
 stanzaAsStream :: RawStanza -> MyStream
 stanzaAsStream rs =
   let vvt = rs
-  in 
+  in
   -- MyStream (Text.unpack $ decodeUtf8 s) [ WithPos {..}
   MyStream rs $ parenthesize [ WithPos {..}
              | y <- [ 0 .. V.length vvt       - 1 ]
@@ -333,7 +336,7 @@ stanzaAsStream rs =
       | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
                         : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
-      | otherwise    = [a]                            
+      | otherwise    = [a]
       where
         aCol = unPos . sourceColumn $ aPos
         bCol = unPos . sourceColumn $ bPos
@@ -353,7 +356,7 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  try (some pRule) <* eof
+  some pRule <* eof
 
 pRules = pRulesOnly
 
@@ -383,13 +386,13 @@ pRule = debugName "pRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  foundRule <- try (pRegRule <?> "regulative rule")
-    <|> try (pTypeDefinition   <?> "ontology definition")
-    <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
-    <|> try (pScenarioRule <?> "scenario rule")
-    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
-    <|> try ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
-    <|> try (debugName "pRule: unwrapping indentation and recursing" $ myindented pRule)
+  foundRule <- (pRegRule <?> "regulative rule")
+    <|> (pTypeDefinition   <?> "ontology definition")
+    <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
+    <|> (pScenarioRule <?> "scenario rule")
+    <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
+    <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
   return $ foundRule { srcref = Just srcref }
 
@@ -427,8 +430,8 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pHornlike/givenLimb" $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pHornlike/uponLimb"  $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pHornlike/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pHornlike/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
 
@@ -437,7 +440,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
   rlabel <- optional pRuleLabel
   (expects,givens) <- permute $ (,)
     <$$> some pExpect
-    <|?> ([], pToken Given >> someIndentation pGivens)
+    <|?> ([], pretendEmpty $ pToken Given >> someIndentation pGivens)
   return $ Scenario
     { scgiven = givens
     , expect  = expects
@@ -454,7 +457,7 @@ pExpect = debugName "pExpect" $ do
     { hHead = relPred
     , hBody = whenpart
     }
-          
+
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" $ do
   sameDepth pRelationalPredicate
@@ -529,7 +532,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [Every,Party,TokAll]
-                   <*> optional (try (manyIndentation (preambleBoolStructR [Who,Which,Whose])))
+                   <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
@@ -606,7 +609,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 --  MUST WITHIN 200 years
 --    -> die
 
-  
+
 
 pDoAction ::  Parser BoolStructP
 pDoAction = do
@@ -694,7 +697,7 @@ pDT = debugName "pDT" $ do
     $>| pDeontic
     |>< optional pTemporal
   return (pd, join pt)
-  
+
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
@@ -712,10 +715,10 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 
 
--- TODO: Actually parse ParamTexts and not just single cells
+-- [TODO]: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP calling exprP" $ do
-  toBoolStruct <$> exprP
+  either fail pure . toBoolStruct =<< exprP
 
 exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do
@@ -769,7 +772,7 @@ pAtomicElement = debugName "pAtomicElement" $ do
     <|> pNotElement
     <|> pLeafVal
 
--- TODO: switch all this over the the Expr parser
+-- [TODO]: switch all this over the the Expr parser
 
 pElement :: Parser BoolStructP
 pElement = debugName "pElement" $ do
@@ -795,7 +798,7 @@ pLeafVal = debugName "pLeafVal" $ do
   myTraceM $ "pLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
 
--- TODO: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
+-- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 
 pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" $ do
@@ -810,7 +813,7 @@ anything :: Parser [WithPos MyToken]
 anything = many anySingle
 
 
-  
+
 
 pHornClause2 :: Parser HornClause2
 pHornClause2 = do

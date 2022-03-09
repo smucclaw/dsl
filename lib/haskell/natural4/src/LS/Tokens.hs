@@ -3,13 +3,14 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import qualified Data.Set           as Set
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Control.Monad.Reader (asks, local)
+import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT))
 import Control.Monad.Writer.Lazy
 import Data.List (intercalate)
 
@@ -18,6 +19,11 @@ import Debug.Trace (traceM)
 import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
 import Data.Maybe (isNothing)
+import Text.Megaparsec.Debug (dbg)
+import qualified Text.Megaparsec.Internal as MPInternal
+import Data.List.NonEmpty (NonEmpty)
+import Data.Functor.Identity (Identity)
+import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken
@@ -118,8 +124,8 @@ pSrcRef = do
 
 
 pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" $ do
-  (TNumber n) <- pTokenMatch isNumber (TNumber 1234)
+pNumAsText = debugName "pNumAsText" . label "number" $ do
+  (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
   return (Text.pack $ show n)
   where
     isNumber (TNumber _) = True
@@ -139,9 +145,9 @@ pNumAsText = debugName "pNumAsText" $ do
 
 
 pRuleLabel :: Parser RuleLabel
-pRuleLabel = debugName "pRuleLabel" $ do
+pRuleLabel = debugName "pRuleLabel" . pretendEmpty $ do
   (RuleMarker i sym, actualLabel, _) <- (,,)
-                                     $>| pTokenMatch isRuleMarker (RuleMarker 1 "§")
+                                     $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
                                      |>< optional (pToken EOL)
   return (sym, i, actualLabel)
@@ -149,11 +155,37 @@ pRuleLabel = debugName "pRuleLabel" $ do
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
 
+liftedDBG :: Show a => String -> Parser a -> Parser a
+liftedDBG = mapWhenDebug . liftRawPFun . dbg
+
+mapWhenDebug :: (Parser a -> Parser a) -> Parser a -> Parser a
+mapWhenDebug f p = do
+  isDebug <- asks debug
+  if isDebug
+    then f p
+    else p
+
+type RawParser a = Parsec Void MyStream (a, DList Rule)
+
+liftRawPFun :: (RawParser a -> RawParser a) -> Parser a -> Parser a
+liftRawPFun f = WriterT . ReaderT . (\x -> f . runReaderT x) . runWriterT
+
+printErrors :: String -> RunConfig -> Parser a -> Parser a
+printErrors dname r = runOnErrors $ \ cnsmp err s res -> do
+  let consumption = case cnsmp of
+        MPInternal.Consumed -> "Consumed"
+        MPInternal.Virgin -> "Unconsumed"
+  let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s 
+                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) (\_ _ -> error "eerr")
+  magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
+
 debugNameP :: Show a => String -> Parser a -> Parser a
-debugNameP dname p = do
+debugNameP dname p = -- label dname $
+  do
   -- debugPrint dname
   myTraceM $ "/ " <> dname
-  res <- local (increaseNestLevel dname) p
+  r <- asks id 
+  res <- printErrors dname r $ local (increaseNestLevel dname) $ liftedDBG dname p
   myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
 
@@ -195,7 +227,7 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 
 pNumOrText :: Parser Text.Text
-pNumOrText = pOtherVal <|> pNumAsText
+pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
@@ -501,10 +533,7 @@ p1 |>| p2 = do
   return (l r)
 infixl 4 |>|
 
-p1 |*| p2 = do
-  l <- p1
-  r <- (|>>) p2
-  return (l r)
+p1 |*| p2 = p1 <*> (|>>) p2
 infixl 4 |*|
 
 p1 |-| p2 = p1 |=| liftSL p2
@@ -640,18 +669,11 @@ someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" $ do
   slUnDeeper >> manyUndeepers
 
-($>>) p = do
-  try recurse <|> base
-  where
-    base = debugName "$>>/base" $ do
-      out <- liftSL p
-      debugPrint $ "$>>/base got " ++ show out
-      return out
-    recurse = debugName "$>>/recurse" $ do
-      _ <- slDeeper
-      ($>>) p
+-- | consume any GoDeepers, then parse -- plain 
+($>>) p = (|>>) (liftSL p)
 infixl 4 $>>
 
+-- | consume any GoDeepers, then parse -- fancy
 (|>>) p = do
   try recurse <|> base
   where
@@ -813,8 +835,28 @@ tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 pToken :: MyToken -> Parser MyToken
-pToken c = pTokenMatch (== c) c
+pToken c = pTokenMatch (== c) (pure c)
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
-pTokenAnyDepth c = pTokenMatch (== c) c
+pTokenAnyDepth c = pTokenMatch (== c) (pure c)
 
+pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
+pTokenOneOf cs = pTokenMatch (`elem` cs) cs
+
+pretendEmpty :: Parser a -> Parser a
+pretendEmpty = liftRawPFun iPretendEmpty
+
+-- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
+iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
+iPretendEmpty pt = MPInternal.ParsecT $ \s _ _ eok eerr ->
+    MPInternal.unParser pt s eok eerr eok eerr
+
+runOnErrors :: (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) -> Parser a -> Parser a
+runOnErrors f = liftRawPFun (iRunOnErrors f)
+
+iRunOnErrors :: (Stream s, Ord e, Monad m) => (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) -> ParsecT e  s m a -> ParsecT e s m a
+iRunOnErrors f pt = MPInternal.ParsecT $ \s cok cerr eok eerr ->
+    let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
+        eerr' err s' = f MPInternal.Virgin err s' (eerr err s')
+    in
+    MPInternal.unParser pt s cok cerr' eok eerr'

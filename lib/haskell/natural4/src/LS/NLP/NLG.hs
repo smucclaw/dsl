@@ -36,6 +36,7 @@ import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 
+showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
 myUDEnv :: IO UDEnv
@@ -66,7 +67,7 @@ mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'
   where
     patterns :: (Char, Char) -> Parsec Void String String
     patterns (a,b) = do
-      char a
+      _ <- char a
       join <$> manyTill
               (fst <$> match (patterns (a,b)) <|> pure <$> anySingle)
               (char b)
@@ -113,7 +114,7 @@ nlg rl = do
       , givenA
       } -> do
         let deonticAction = mkApp deonticA [actionA]
-            subjWho = applyMaybe "Who" whoA (gf dummyNP) --(gf $ peelNP subjA)
+            subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
             subj = mkApp (mkCId "Every") [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
@@ -149,6 +150,7 @@ doNLG [("Given", givenA)] king = mkApp (mkCId "Given") [givenA, king]
 doNLG [("Cond", condA), ("Temporal", temporalA)] king = mkApp (mkCId "CondTemporal") [condA, temporalA, king]
 doNLG [("Cond", condA), ("Upon", uponA)] king = mkApp (mkCId "CondUpon") [condA, uponA, king]
 doNLG [("Cond", condA), ("Given", givenA)] king = mkApp (mkCId "CondGiven") [condA, givenA, king]
+doNLG _ expr = expr
 
 
 applyMaybe :: String -> Maybe Expr -> Expr -> Expr
@@ -268,7 +270,7 @@ makeMorpho env =
 -- mkApp :: CId -> [Expr] -> Expr
 parseLex :: UDEnv -> String -> [Expr]
 parseLex env str =
-  [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
+  [ mkApp cid [] | (cid, _analy) <- lookupMorpho (makeMorpho env) str]
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
@@ -306,11 +308,6 @@ bsr2gfAmb env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
     let checkWords = length $ Text.words access
-    putStrLn "morpho"
-    print $ lookupMorpho (makeMorpho env) (Text.unpack access)
-    putStrLn "---"
-    print $ map showExpr (parseLex env (Text.unpack access))
-    putStrLn "***"
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
       _ -> singletonList $ parseOut env access
@@ -333,34 +330,31 @@ bsr2gf env bsr = case bsr of
 
         -- Here we need to determine which GF type the contents are
         -- TODO: what if they are different types?
-    let
-        pcns =  mapMaybe cnFromUDS contentsUDS --  :: [GCN]
-        pdets = mapMaybe detFromUDS contentsUDS -- :: [GDet]
-
-        treeAdv :: Maybe Expr
+    let treeAdv :: Maybe Expr
         treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
-                    advs@(a:as) -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
+                    []    -> Nothing
                     [adv] -> Just $ gf adv
-                    [] -> Nothing
+                    advs  -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
 
         treeAP :: Maybe Expr
         treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
-                    aps@(a:as) -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
+                    []   -> Nothing
                     [ap] -> Just $ gf ap
-                    [] -> Nothing
+                    aps  -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
 
         treeCN :: Maybe Expr
         treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
-                    cns@(a:as) -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
+                    []   -> Nothing
                     [cn] -> Just $ gf cn
-                    [] -> Nothing
+                    cns  -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
         treeDet :: Maybe Expr
         treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
-                    dets@(a:as) -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
+                    []    -> Nothing
                     [det] -> Just $ gf det
-                    [] -> Nothing
+                    dets  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
 
-    return $ head $ catMaybes [treeAP,treeAdv,treeCN, treeDet]
+    -- add dummyExpr into the list, so if all 4 are Nothing, at least program doesn't crash
+    return $ head $ catMaybes [treeAP, treeAdv, treeCN, treeDet, Just dummyExpr]
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     -- 1) Parse the actual contents. This can be

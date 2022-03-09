@@ -1732,17 +1732,18 @@ Failures:
        4:4:
        unexpected OR
        expecting NOT or expression
-                 multiwonk                                        
-       MEANS     poopoo                                           
-       OR        the                           honk               
-                                     ✳ OR      ponk               
+       
+               multiwonk                    
+       MEANS   poopoo                       
+       OR      the                   honk   
+                              ✳ OR   ponk   
        
 
   To rerun use: --match "/PDPA/inline-1-r/"
 
-Randomized with seed 683117024
+Randomized with seed 1419335972
 
-Finished in 0.0142 seconds
+Finished in 0.0128 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

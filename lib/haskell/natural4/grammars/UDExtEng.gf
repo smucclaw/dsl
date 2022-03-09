@@ -38,9 +38,9 @@ concrete UDExtEng of UDExt = UDAppEng ** open
 
     Every np = mkNP (lin Predet {s = "every"}) np ;
 
-    May = applyDeontic ExtraEng.may_VV ;
-    Must = applyDeontic must_VV ;
-    Shant = applyDeontic shant_VV ;
+    DMay = applyDeontic ExtraEng.may_VV ;
+    DMust = applyDeontic must_VV ;
+    DShant = applyDeontic shant_VV ;
 
     CondStandalone uds = ss (linUDS uds) ;
     TemporalStandalone uds = ss (linUDS uds) ;
@@ -66,7 +66,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
       let conjCN : CN = ConjCN conj cns ;
        in mkCN ap (mkCN conjCN (mkAdv possess_Prep np)) ;
 
-    
+
   oper
     applyDeontic : VV -> LinUDS -> LinUDS = \may,king_sing ->
       let may_sing : VP = ComplVPIVV may king_sing.pred.inf ;

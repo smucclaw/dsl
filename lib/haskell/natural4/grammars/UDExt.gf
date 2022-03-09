@@ -47,7 +47,7 @@ abstract UDExt = UDApp ** {
 
     -- stuff
 
-    Must, May, Shant : UDS -> UDS ;
+    DMust, DMay, DShant : UDS -> UDS ;
 
     Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
     Every : NP -> NP ;

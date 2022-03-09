@@ -579,9 +579,9 @@ data Tree :: * -> * where
   GUpon :: GUDS -> GUDFragment -> Tree GUDFragment_
   GUponStandalone :: GUDS -> Tree GUDFragment_
   GsubjAction :: GNP -> GUDS -> Tree GUDFragment_
-  GMay :: GUDS -> Tree GUDS_
-  GMust :: GUDS -> Tree GUDS_
-  GShant :: GUDS -> Tree GUDS_
+  GDMay :: GUDS -> Tree GUDS_
+  GDMust :: GUDS -> Tree GUDS_
+  GDShant :: GUDS -> Tree GUDS_
   Groot_acl :: Groot -> Gacl -> Tree GUDS_
   Groot_aclRelcl :: Groot -> GaclRelcl -> Tree GUDS_
   Groot_aclRelcl_nmod :: Groot -> GaclRelcl -> Gnmod -> Tree GUDS_
@@ -1130,9 +1130,9 @@ instance Eq (Tree a) where
     (GUpon x1 x2,GUpon y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUponStandalone x1,GUponStandalone y1) -> and [ x1 == y1 ]
     (GsubjAction x1 x2,GsubjAction y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GMay x1,GMay y1) -> and [ x1 == y1 ]
-    (GMust x1,GMust y1) -> and [ x1 == y1 ]
-    (GShant x1,GShant y1) -> and [ x1 == y1 ]
+    (GDMay x1,GDMay y1) -> and [ x1 == y1 ]
+    (GDMust x1,GDMust y1) -> and [ x1 == y1 ]
+    (GDShant x1,GDShant y1) -> and [ x1 == y1 ]
     (Groot_acl x1 x2,Groot_acl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl x1 x2,Groot_aclRelcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl_nmod x1 x2 x3,Groot_aclRelcl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -2429,9 +2429,9 @@ instance Gf GUDFragment where
       _ -> error ("no UDFragment " ++ show t)
 
 instance Gf GUDS where
-  gf (GMay x1) = mkApp (mkCId "May") [gf x1]
-  gf (GMust x1) = mkApp (mkCId "Must") [gf x1]
-  gf (GShant x1) = mkApp (mkCId "Shant") [gf x1]
+  gf (GDMay x1) = mkApp (mkCId "DMay") [gf x1]
+  gf (GDMust x1) = mkApp (mkCId "DMust") [gf x1]
+  gf (GDShant x1) = mkApp (mkCId "DShant") [gf x1]
   gf (Groot_acl x1 x2) = mkApp (mkCId "root_acl") [gf x1, gf x2]
   gf (Groot_aclRelcl x1 x2) = mkApp (mkCId "root_aclRelcl") [gf x1, gf x2]
   gf (Groot_aclRelcl_nmod x1 x2 x3) = mkApp (mkCId "root_aclRelcl_nmod") [gf x1, gf x2, gf x3]
@@ -2634,9 +2634,9 @@ instance Gf GUDS where
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "May" -> GMay (fg x1)
-      Just (i,[x1]) | i == mkCId "Must" -> GMust (fg x1)
-      Just (i,[x1]) | i == mkCId "Shant" -> GShant (fg x1)
+      Just (i,[x1]) | i == mkCId "DMay" -> GDMay (fg x1)
+      Just (i,[x1]) | i == mkCId "DMust" -> GDMust (fg x1)
+      Just (i,[x1]) | i == mkCId "DShant" -> GDShant (fg x1)
       Just (i,[x1,x2]) | i == mkCId "root_acl" -> Groot_acl (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_aclRelcl" -> Groot_aclRelcl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_aclRelcl_nmod" -> Groot_aclRelcl_nmod (fg x1) (fg x2) (fg x3)
@@ -3903,9 +3903,9 @@ instance Compos Tree where
     GUpon x1 x2 -> r GUpon `a` f x1 `a` f x2
     GUponStandalone x1 -> r GUponStandalone `a` f x1
     GsubjAction x1 x2 -> r GsubjAction `a` f x1 `a` f x2
-    GMay x1 -> r GMay `a` f x1
-    GMust x1 -> r GMust `a` f x1
-    GShant x1 -> r GShant `a` f x1
+    GDMay x1 -> r GDMay `a` f x1
+    GDMust x1 -> r GDMust `a` f x1
+    GDShant x1 -> r GDShant `a` f x1
     Groot_acl x1 x2 -> r Groot_acl `a` f x1 `a` f x2
     Groot_aclRelcl x1 x2 -> r Groot_aclRelcl `a` f x1 `a` f x2
     Groot_aclRelcl_nmod x1 x2 x3 -> r Groot_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3

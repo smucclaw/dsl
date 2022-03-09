@@ -45,8 +45,10 @@ toBoolStruct (MyLabel lab (MyAny xs))        = AA.Any (Just (AA.Pre (Text.unword
 toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
-toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
-toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
+toBoolStruct (MyLabel lab (MyLabel lab2 _))  = Left $ "Nested labels not supported: " ++ show (lab :| [lab2])
+toBoolStruct (MyLabel lab (MyLeaf x))        = Left $ "Label " ++ show lab ++ " cannot be applied to a leaf: " ++ show x
+-- toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
+-- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel lab (MyNot x))         = Left $ "Label (" ++ show lab ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)

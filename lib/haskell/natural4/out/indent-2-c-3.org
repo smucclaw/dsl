@@ -16,14 +16,6 @@ Lib preprocessor: inserting EOL between Other "this is a label" and Other "mid3"
 
 ** / expr pParamText                                                                                                    :1_2:GoDeeper:
 *** / expression                                                                                                       :1_2:GoDeeper:
-**** / labelPrefix                                                                                                    :1_2:GoDeeper:
-labelPrefix> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
-labelPrefix> MATCH (EERR): <EMPTY>
-labelPrefix> ERROR:
-labelPrefix> offset=0:
-labelPrefix> unexpected (
-labelPrefix> expecting Other text
-
 **** / term p                                                                                                         :1_2:GoDeeper:
 ***** / term p/notLabelTerm                                                                                          :1_2:GoDeeper:
 ****** / term p/2:someIndentation expr p                                                                            :1_2:GoDeeper:
@@ -36,13 +28,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :1_2:Other "top1:
 ******** / manyIndentation/leaf?                                                                                   :1_2:Other "top1:
 ********* / expression                                                                                            :1_2:Other "top1:
-********** / labelPrefix                                                                                         :1_2:Other "top1:
-labelPrefix> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
-labelPrefix> MATCH (EERR): <EMPTY>
-labelPrefix> ERROR:
-labelPrefix> offset=2:
-labelPrefix> unexpected )
-
 ********** / term p                                                                                              :1_2:Other "top1:
 *********** / term p/notLabelTerm                                                                               :1_2:Other "top1:
 ************ / term p/2:someIndentation expr p                                                                 :1_2:Other "top1:
@@ -55,6 +40,7 @@ myindented: consuming GoDeeper> offset=1:
 myindented: consuming GoDeeper> unexpected "top1"
 myindented: consuming GoDeeper> expecting (
 
+************** \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "top1" Expecting: (           :1_2:Other "top1:
 someIndentation> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
@@ -62,6 +48,7 @@ someIndentation> offset=1:
 someIndentation> unexpected "top1"
 someIndentation> expecting (
 
+************* \ !Unconsumed Error: someIndentation: Unexpected "top1" Expecting: (                            :1_2:Other "top1:
 term p/2:someIndentation expr p> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
@@ -69,6 +56,7 @@ term p/2:someIndentation expr p> offset=1:
 term p/2:someIndentation expr p> unexpected "top1"
 term p/2:someIndentation expr p> expecting (
 
+************ \ !Unconsumed Error: term p/2:someIndentation expr p: Unexpected "top1" Expecting: (              :1_2:Other "top1:
 ************ / term p/3:plain p                                                                                :1_2:Other "top1:
 ************* / pParamText                                                                                    :1_2:Other "top1:
 ************** / pParamText(flat) first line: pKeyValues                                                     :1_2:Other "top1:
@@ -97,6 +85,7 @@ $*|> VALUE: ((["top1"],0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :2_2:UnDeeper:
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / |?| optional something                                                         :2_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :2_2:UnDeeper:
@@ -107,6 +96,7 @@ $*|> VALUE: ((["top1"],0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                    :2_2:UnDeeper:
 ********************** / |>>/base                                                                     :2_2:UnDeeper:
 *********************** / slTypeSig                                                                  :2_2:UnDeeper:
 ************************ / $>|                                                                      :2_2:UnDeeper:
@@ -117,6 +107,7 @@ $>|> offset=2:
 $>|> unexpected )
 $>|> expecting :: or IS
 
+************************ \ !Unconsumed Error: $>|: Unexpected ) Expecting: IS ::                    :2_2:UnDeeper:
 slTypeSig> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slTypeSig> MATCH (EERR): <EMPTY>
 slTypeSig> ERROR:
@@ -124,6 +115,7 @@ slTypeSig> offset=2:
 slTypeSig> unexpected )
 slTypeSig> expecting :: or IS
 
+*********************** \ !Unconsumed Error: slTypeSig: Unexpected ) Expecting: IS ::                :2_2:UnDeeper:
 |>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -131,6 +123,7 @@ slTypeSig> expecting :: or IS
 |>>/base> unexpected )
 |>>/base> expecting :: or IS
 
+********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS ::                   :2_2:UnDeeper:
 |?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -165,6 +158,7 @@ $*|> VALUE: ((("top1" :| [],Nothing),0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :2_2:UnDeeper:
 ***************** / |>>/base                                                                               :2_2:UnDeeper:
 ****************** / slAKA optional akapart                                                               :2_2:UnDeeper:
 ******************* / |?| optional something                                                             :2_2:UnDeeper:
@@ -176,6 +170,7 @@ $*|> VALUE: ((("top1" :| [],Nothing),0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :2_2:UnDeeper:
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / PAKA/akapart                                                                   :2_2:UnDeeper:
 ********************** / $>|                                                                          :2_2:UnDeeper:
@@ -187,6 +182,7 @@ Aka Token> offset=2:
 Aka Token> unexpected )
 Aka Token> expecting AKA
 
+*********************** \ !Unconsumed Error: Aka Token: Unexpected ) Expecting: AKA                  :2_2:UnDeeper:
 $>|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
@@ -194,6 +190,7 @@ $>|> offset=2:
 $>|> unexpected )
 $>|> expecting AKA
 
+********************** \ !Unconsumed Error: $>|: Unexpected ) Expecting: AKA                          :2_2:UnDeeper:
 PAKA/akapart> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
@@ -201,6 +198,7 @@ PAKA/akapart> offset=2:
 PAKA/akapart> unexpected )
 PAKA/akapart> expecting AKA
 
+********************* \ !Unconsumed Error: PAKA/akapart: Unexpected ) Expecting: AKA                   :2_2:UnDeeper:
 |>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -208,6 +206,7 @@ PAKA/akapart> expecting AKA
 |>>/base> unexpected )
 |>>/base> expecting AKA
 
+******************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: AKA                         :2_2:UnDeeper:
 |?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -232,6 +231,7 @@ slAKA optional akapart> VALUE: ((Nothing,0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :2_2:UnDeeper:
 ***************** / |>>/base                                                                               :2_2:UnDeeper:
 ****************** / slAKA optional typically                                                             :2_2:UnDeeper:
 ******************* / |?| optional something                                                             :2_2:UnDeeper:
@@ -243,6 +243,7 @@ slAKA optional akapart> VALUE: ((Nothing,0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :2_2:UnDeeper:
 ******************** / |>>/base                                                                         :2_2:UnDeeper:
 ********************* / typically                                                                      :2_2:UnDeeper:
 ********************** / $>|                                                                          :2_2:UnDeeper:
@@ -253,6 +254,7 @@ $>|> offset=2:
 $>|> unexpected )
 $>|> expecting TYPICALLY
 
+********************** \ !Unconsumed Error: $>|: Unexpected ) Expecting: TYPICALLY                    :2_2:UnDeeper:
 typically> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
@@ -260,6 +262,7 @@ typically> offset=2:
 typically> unexpected )
 typically> expecting TYPICALLY
 
+********************* \ !Unconsumed Error: typically: Unexpected ) Expecting: TYPICALLY                :2_2:UnDeeper:
 |>>/base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -267,6 +270,7 @@ typically> expecting TYPICALLY
 |>>/base> unexpected )
 |>>/base> expecting TYPICALLY
 
+******************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: TYPICALLY                   :2_2:UnDeeper:
 |?| optional something> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -326,6 +330,7 @@ pNumAsText> offset=2:
 pNumAsText> unexpected )
 pNumAsText> expecting number
 
+************************ \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number            :2_2:UnDeeper:
 someSL> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
@@ -333,6 +338,7 @@ someSL> offset=2:
 someSL> unexpected )
 someSL> expecting other text or number
 
+*********************** \ !Unconsumed Error: someSL: Unexpected ) Expecting: other text or number    :2_2:UnDeeper:
 $*|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -340,6 +346,7 @@ $*|> offset=2:
 $*|> unexpected )
 $*|> expecting other text or number
 
+********************** \ !Unconsumed Error: $*|: Unexpected ) Expecting: other text or number         :2_2:UnDeeper:
 slKeyValues> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
@@ -347,6 +354,7 @@ slKeyValues> offset=2:
 slKeyValues> unexpected )
 slKeyValues> expecting other text or number
 
+********************* \ !Unconsumed Error: slKeyValues: Unexpected ) Expecting: other text or number   :2_2:UnDeeper:
 slAKA base> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
@@ -354,6 +362,7 @@ slAKA base> offset=2:
 slAKA base> unexpected )
 slAKA base> expecting other text or number
 
+******************** \ !Unconsumed Error: slAKA base: Unexpected ) Expecting: other text or number      :2_2:UnDeeper:
 $*|> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -361,6 +370,7 @@ $*|> offset=2:
 $*|> unexpected )
 $*|> expecting other text or number
 
+******************* \ !Unconsumed Error: $*|: Unexpected ) Expecting: other text or number               :2_2:UnDeeper:
 slAKA> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
@@ -368,6 +378,7 @@ slAKA> offset=2:
 slAKA> unexpected )
 slAKA> expecting other text or number
 
+****************** \ !Unconsumed Error: slAKA: Unexpected ) Expecting: other text or number               :2_2:UnDeeper:
 pKeyValuesAka> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
@@ -375,6 +386,7 @@ pKeyValuesAka> offset=2:
 pKeyValuesAka> unexpected )
 pKeyValuesAka> expecting other text or number
 
+***************** \ !Unconsumed Error: pKeyValuesAka: Unexpected ) Expecting: other text or number         :2_2:UnDeeper:
 sameMany> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 sameMany> MATCH (EOK): <EMPTY>
 sameMany> VALUE: ([],[])
@@ -418,6 +430,7 @@ binary(Or)> offset=2:
 binary(Or)> unexpected )
 binary(Or)> expecting OR
 
+********** \ !Unconsumed Error: binary(Or): Unexpected ) Expecting: OR                                            :2_2:UnDeeper:
 ********** / binary(And)                                                                                          :2_2:UnDeeper:
 binary(And)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(And)> MATCH (EERR): <EMPTY>
@@ -426,6 +439,7 @@ binary(And)> offset=2:
 binary(And)> unexpected )
 binary(And)> expecting AND
 
+********** \ !Unconsumed Error: binary(And): Unexpected ) Expecting: AND                                          :2_2:UnDeeper:
 ********** / binary(SetLess)                                                                                      :2_2:UnDeeper:
 binary(SetLess)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(SetLess)> MATCH (EERR): <EMPTY>
@@ -434,6 +448,7 @@ binary(SetLess)> offset=2:
 binary(SetLess)> unexpected )
 binary(SetLess)> expecting LESS
 
+********** \ !Unconsumed Error: binary(SetLess): Unexpected ) Expecting: LESS                                     :2_2:UnDeeper:
 ********** / binary(SetPlus)                                                                                      :2_2:UnDeeper:
 binary(SetPlus)> IN: ) OR ( "top2" ) OR ( "this is a label" E <…>
 binary(SetPlus)> MATCH (EERR): <EMPTY>
@@ -442,6 +457,7 @@ binary(SetPlus)> offset=2:
 binary(SetPlus)> unexpected )
 binary(SetPlus)> expecting PLUS
 
+********** \ !Unconsumed Error: binary(SetPlus): Unexpected ) Expecting: PLUS                                     :2_2:UnDeeper:
 expression> IN: "top1" ) OR ( "top2" ) OR ( "this is a l <…>
 expression> MATCH (COK): "top1"
 expression> VALUE: (MyLeaf (("top1" :| [],Nothing) :| []),[])
@@ -496,13 +512,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :2_2:Other "top2:
 ******** / manyIndentation/leaf?                                                                                   :2_2:Other "top2:
 ********* / expression                                                                                            :2_2:Other "top2:
-********** / labelPrefix                                                                                         :2_2:Other "top2:
-labelPrefix> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
-labelPrefix> MATCH (EERR): <EMPTY>
-labelPrefix> ERROR:
-labelPrefix> offset=6:
-labelPrefix> unexpected )
-
 ********** / term p                                                                                              :2_2:Other "top2:
 *********** / term p/notLabelTerm                                                                               :2_2:Other "top2:
 ************ / term p/2:someIndentation expr p                                                                 :2_2:Other "top2:
@@ -515,6 +524,7 @@ myindented: consuming GoDeeper> offset=5:
 myindented: consuming GoDeeper> unexpected "top2"
 myindented: consuming GoDeeper> expecting (
 
+************** \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "top2" Expecting: (           :2_2:Other "top2:
 someIndentation> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
@@ -522,6 +532,7 @@ someIndentation> offset=5:
 someIndentation> unexpected "top2"
 someIndentation> expecting (
 
+************* \ !Unconsumed Error: someIndentation: Unexpected "top2" Expecting: (                            :2_2:Other "top2:
 term p/2:someIndentation expr p> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
 term p/2:someIndentation expr p> ERROR:
@@ -529,6 +540,7 @@ term p/2:someIndentation expr p> offset=5:
 term p/2:someIndentation expr p> unexpected "top2"
 term p/2:someIndentation expr p> expecting (
 
+************ \ !Unconsumed Error: term p/2:someIndentation expr p: Unexpected "top2" Expecting: (              :2_2:Other "top2:
 ************ / term p/3:plain p                                                                                :2_2:Other "top2:
 ************* / pParamText                                                                                    :2_2:Other "top2:
 ************** / pParamText(flat) first line: pKeyValues                                                     :2_2:Other "top2:
@@ -557,6 +569,7 @@ $*|> VALUE: ((["top2"],0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :3_2:UnDeeper:
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / |?| optional something                                                         :3_2:UnDeeper:
 ********************** / |>>/recurse                                                                  :3_2:UnDeeper:
@@ -567,6 +580,7 @@ $*|> VALUE: ((["top2"],0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+********************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                    :3_2:UnDeeper:
 ********************** / |>>/base                                                                     :3_2:UnDeeper:
 *********************** / slTypeSig                                                                  :3_2:UnDeeper:
 ************************ / $>|                                                                      :3_2:UnDeeper:
@@ -577,6 +591,7 @@ $>|> offset=6:
 $>|> unexpected )
 $>|> expecting :: or IS
 
+************************ \ !Unconsumed Error: $>|: Unexpected ) Expecting: IS ::                    :3_2:UnDeeper:
 slTypeSig> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slTypeSig> MATCH (EERR): <EMPTY>
 slTypeSig> ERROR:
@@ -584,6 +599,7 @@ slTypeSig> offset=6:
 slTypeSig> unexpected )
 slTypeSig> expecting :: or IS
 
+*********************** \ !Unconsumed Error: slTypeSig: Unexpected ) Expecting: IS ::                :3_2:UnDeeper:
 |>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -591,6 +607,7 @@ slTypeSig> expecting :: or IS
 |>>/base> unexpected )
 |>>/base> expecting :: or IS
 
+********************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: IS ::                   :3_2:UnDeeper:
 |?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -625,6 +642,7 @@ $*|> VALUE: ((("top2" :| [],Nothing),0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :3_2:UnDeeper:
 ***************** / |>>/base                                                                               :3_2:UnDeeper:
 ****************** / slAKA optional akapart                                                               :3_2:UnDeeper:
 ******************* / |?| optional something                                                             :3_2:UnDeeper:
@@ -636,6 +654,7 @@ $*|> VALUE: ((("top2" :| [],Nothing),0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :3_2:UnDeeper:
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / PAKA/akapart                                                                   :3_2:UnDeeper:
 ********************** / $>|                                                                          :3_2:UnDeeper:
@@ -647,6 +666,7 @@ Aka Token> offset=6:
 Aka Token> unexpected )
 Aka Token> expecting AKA
 
+*********************** \ !Unconsumed Error: Aka Token: Unexpected ) Expecting: AKA                  :3_2:UnDeeper:
 $>|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $>|> MATCH (EERR): <EMPTY>
 $>|> ERROR:
@@ -654,6 +674,7 @@ $>|> offset=6:
 $>|> unexpected )
 $>|> expecting AKA
 
+********************** \ !Unconsumed Error: $>|: Unexpected ) Expecting: AKA                          :3_2:UnDeeper:
 PAKA/akapart> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 PAKA/akapart> MATCH (EERR): <EMPTY>
 PAKA/akapart> ERROR:
@@ -661,6 +682,7 @@ PAKA/akapart> offset=6:
 PAKA/akapart> unexpected )
 PAKA/akapart> expecting AKA
 
+********************* \ !Unconsumed Error: PAKA/akapart: Unexpected ) Expecting: AKA                   :3_2:UnDeeper:
 |>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -668,6 +690,7 @@ PAKA/akapart> expecting AKA
 |>>/base> unexpected )
 |>>/base> expecting AKA
 
+******************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: AKA                         :3_2:UnDeeper:
 |?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -692,6 +715,7 @@ slAKA optional akapart> VALUE: ((Nothing,0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                              :3_2:UnDeeper:
 ***************** / |>>/base                                                                               :3_2:UnDeeper:
 ****************** / slAKA optional typically                                                             :3_2:UnDeeper:
 ******************* / |?| optional something                                                             :3_2:UnDeeper:
@@ -703,6 +727,7 @@ slAKA optional akapart> VALUE: ((Nothing,0),[])
 |>>/recurse> unexpected )
 |>>/recurse> expecting (
 
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected ) Expecting: (                        :3_2:UnDeeper:
 ******************** / |>>/base                                                                         :3_2:UnDeeper:
 ********************* / typically                                                                      :3_2:UnDeeper:
 ********************** / $>|                                                                          :3_2:UnDeeper:
@@ -713,6 +738,7 @@ $>|> offset=6:
 $>|> unexpected )
 $>|> expecting TYPICALLY
 
+********************** \ !Unconsumed Error: $>|: Unexpected ) Expecting: TYPICALLY                    :3_2:UnDeeper:
 typically> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 typically> MATCH (EERR): <EMPTY>
 typically> ERROR:
@@ -720,6 +746,7 @@ typically> offset=6:
 typically> unexpected )
 typically> expecting TYPICALLY
 
+********************* \ !Unconsumed Error: typically: Unexpected ) Expecting: TYPICALLY                :3_2:UnDeeper:
 |>>/base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |>>/base> MATCH (EERR): <EMPTY>
 |>>/base> ERROR:
@@ -727,6 +754,7 @@ typically> expecting TYPICALLY
 |>>/base> unexpected )
 |>>/base> expecting TYPICALLY
 
+******************** \ !Unconsumed Error: |>>/base: Unexpected ) Expecting: TYPICALLY                   :3_2:UnDeeper:
 |?| optional something> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 |?| optional something> MATCH (EOK): <EMPTY>
 |?| optional something> VALUE: ((Nothing,0),[])
@@ -786,6 +814,7 @@ pNumAsText> offset=6:
 pNumAsText> unexpected )
 pNumAsText> expecting number
 
+************************ \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number            :3_2:UnDeeper:
 someSL> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
@@ -793,6 +822,7 @@ someSL> offset=6:
 someSL> unexpected )
 someSL> expecting other text or number
 
+*********************** \ !Unconsumed Error: someSL: Unexpected ) Expecting: other text or number    :3_2:UnDeeper:
 $*|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -800,6 +830,7 @@ $*|> offset=6:
 $*|> unexpected )
 $*|> expecting other text or number
 
+********************** \ !Unconsumed Error: $*|: Unexpected ) Expecting: other text or number         :3_2:UnDeeper:
 slKeyValues> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
@@ -807,6 +838,7 @@ slKeyValues> offset=6:
 slKeyValues> unexpected )
 slKeyValues> expecting other text or number
 
+********************* \ !Unconsumed Error: slKeyValues: Unexpected ) Expecting: other text or number   :3_2:UnDeeper:
 slAKA base> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
@@ -814,6 +846,7 @@ slAKA base> offset=6:
 slAKA base> unexpected )
 slAKA base> expecting other text or number
 
+******************** \ !Unconsumed Error: slAKA base: Unexpected ) Expecting: other text or number      :3_2:UnDeeper:
 $*|> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -821,6 +854,7 @@ $*|> offset=6:
 $*|> unexpected )
 $*|> expecting other text or number
 
+******************* \ !Unconsumed Error: $*|: Unexpected ) Expecting: other text or number               :3_2:UnDeeper:
 slAKA> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
@@ -828,6 +862,7 @@ slAKA> offset=6:
 slAKA> unexpected )
 slAKA> expecting other text or number
 
+****************** \ !Unconsumed Error: slAKA: Unexpected ) Expecting: other text or number               :3_2:UnDeeper:
 pKeyValuesAka> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
@@ -835,6 +870,7 @@ pKeyValuesAka> offset=6:
 pKeyValuesAka> unexpected )
 pKeyValuesAka> expecting other text or number
 
+***************** \ !Unconsumed Error: pKeyValuesAka: Unexpected ) Expecting: other text or number         :3_2:UnDeeper:
 sameMany> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 sameMany> MATCH (EOK): <EMPTY>
 sameMany> VALUE: ([],[])
@@ -878,6 +914,7 @@ binary(Or)> offset=6:
 binary(Or)> unexpected )
 binary(Or)> expecting OR
 
+********** \ !Unconsumed Error: binary(Or): Unexpected ) Expecting: OR                                            :3_2:UnDeeper:
 ********** / binary(And)                                                                                          :3_2:UnDeeper:
 binary(And)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(And)> MATCH (EERR): <EMPTY>
@@ -886,6 +923,7 @@ binary(And)> offset=6:
 binary(And)> unexpected )
 binary(And)> expecting AND
 
+********** \ !Unconsumed Error: binary(And): Unexpected ) Expecting: AND                                          :3_2:UnDeeper:
 ********** / binary(SetLess)                                                                                      :3_2:UnDeeper:
 binary(SetLess)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(SetLess)> MATCH (EERR): <EMPTY>
@@ -894,6 +932,7 @@ binary(SetLess)> offset=6:
 binary(SetLess)> unexpected )
 binary(SetLess)> expecting LESS
 
+********** \ !Unconsumed Error: binary(SetLess): Unexpected ) Expecting: LESS                                     :3_2:UnDeeper:
 ********** / binary(SetPlus)                                                                                      :3_2:UnDeeper:
 binary(SetPlus)> IN: ) OR ( "this is a label" EOL ( "mid3" )  <…>
 binary(SetPlus)> MATCH (EERR): <EMPTY>
@@ -902,6 +941,7 @@ binary(SetPlus)> offset=6:
 binary(SetPlus)> unexpected )
 binary(SetPlus)> expecting PLUS
 
+********** \ !Unconsumed Error: binary(SetPlus): Unexpected ) Expecting: PLUS                                     :3_2:UnDeeper:
 expression> IN: "top2" ) OR ( "this is a label" EOL ( "m <…>
 expression> MATCH (COK): "top2"
 expression> VALUE: (MyLeaf (("top2" :| [],Nothing) :| []),[])
@@ -956,157 +996,11 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ******** \ myindented: consuming GoDeeper has returned GoDeeper                                                    :3_2:Other "this:
 ******** / manyIndentation/leaf?                                                                                   :3_2:Other "this:
 ********* / expression                                                                                            :3_2:Other "this:
-********** / labelPrefix                                                                                         :3_2:Other "this:
-labelPrefix> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
-labelPrefix> MATCH (COK): "this is a label"
-labelPrefix> VALUE: ("this is a label",[])
-
-********** \ labelPrefix has returned "this is a label"                                                          :3_2:EOL:
-********** / term p                                                                                              :3_2:EOL:
-*********** / term p/notLabelTerm                                                                               :3_2:EOL:
-************ / term p/2:someIndentation expr p                                                                 :3_2:EOL:
-************* / someIndentation                                                                               :3_2:EOL:
-************** / myindented: consuming GoDeeper                                                              :3_2:EOL:
-myindented: consuming GoDeeper> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
-myindented: consuming GoDeeper> ERROR:
-myindented: consuming GoDeeper> offset=10:
-myindented: consuming GoDeeper> unexpected EOL
-myindented: consuming GoDeeper> expecting (
-
-someIndentation> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-someIndentation> MATCH (EERR): <EMPTY>
-someIndentation> ERROR:
-someIndentation> offset=10:
-someIndentation> unexpected EOL
-someIndentation> expecting (
-
-term p/2:someIndentation expr p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
-term p/2:someIndentation expr p> ERROR:
-term p/2:someIndentation expr p> offset=10:
-term p/2:someIndentation expr p> unexpected EOL
-term p/2:someIndentation expr p> expecting (
-
-************ / term p/3:plain p                                                                                :3_2:EOL:
-************* / pParamText                                                                                    :3_2:EOL:
-************** / pParamText(flat) first line: pKeyValues                                                     :3_2:EOL:
-*************** / pKeyValuesAka                                                                             :3_2:EOL:
-**************** / slAKA                                                                                   :3_2:EOL:
-***************** / $*|                                                                                   :3_2:EOL:
-****************** / slAKA base                                                                          :3_2:EOL:
-******************* / slKeyValues                                                                       :3_2:EOL:
-******************** / $*|                                                                             :3_2:EOL:
-********************* / someSL                                                                        :3_2:EOL:
-********************** / pNumAsText                                                                  :3_2:EOL:
-pNumAsText> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=10:
-pNumAsText> unexpected EOL
-pNumAsText> expecting number
-
-someSL> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=10:
-someSL> unexpected EOL
-someSL> expecting other text or number
-
-$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=10:
-$*|> unexpected EOL
-$*|> expecting other text or number
-
-slKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-slKeyValues> MATCH (EERR): <EMPTY>
-slKeyValues> ERROR:
-slKeyValues> offset=10:
-slKeyValues> unexpected EOL
-slKeyValues> expecting other text or number
-
-slAKA base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-slAKA base> MATCH (EERR): <EMPTY>
-slAKA base> ERROR:
-slAKA base> offset=10:
-slAKA base> unexpected EOL
-slAKA base> expecting other text or number
-
-$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=10:
-$*|> unexpected EOL
-$*|> expecting other text or number
-
-slAKA> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-slAKA> MATCH (EERR): <EMPTY>
-slAKA> ERROR:
-slAKA> offset=10:
-slAKA> unexpected EOL
-slAKA> expecting other text or number
-
-pKeyValuesAka> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-pKeyValuesAka> MATCH (EERR): <EMPTY>
-pKeyValuesAka> ERROR:
-pKeyValuesAka> offset=10:
-pKeyValuesAka> unexpected EOL
-pKeyValuesAka> expecting other text or number
-
-pParamText(flat) first line: pKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
-pParamText(flat) first line: pKeyValues> ERROR:
-pParamText(flat) first line: pKeyValues> offset=10:
-pParamText(flat) first line: pKeyValues> unexpected EOL
-pParamText(flat) first line: pKeyValues> expecting other text or number
-
-pParamText> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-pParamText> MATCH (EERR): <EMPTY>
-pParamText> ERROR:
-pParamText> offset=10:
-pParamText> unexpected EOL
-pParamText> expecting other text or number
-
-term p/3:plain p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-term p/3:plain p> MATCH (EERR): <EMPTY>
-term p/3:plain p> ERROR:
-term p/3:plain p> offset=10:
-term p/3:plain p> unexpected EOL
-term p/3:plain p> expecting other text or number
-
-term p/notLabelTerm> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-term p/notLabelTerm> MATCH (EERR): <EMPTY>
-term p/notLabelTerm> ERROR:
-term p/notLabelTerm> offset=10:
-term p/notLabelTerm> unexpected EOL
-term p/notLabelTerm> expecting ( or term
-
-term p> IN: EOL ( "mid3" ) OR ( "mid4" ) )
-term p> MATCH (EERR): <EMPTY>
-term p> ERROR:
-term p> offset=10:
-term p> unexpected EOL
-term p> expecting ( or term
-
-expression> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
-expression> MATCH (CERR): "this is a label"
-expression> ERROR:
-expression> offset=10:
-expression> unexpected EOL
-expression> expecting (, NOT, or term
-
-manyIndentation/leaf?> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
-manyIndentation/leaf?> MATCH (EERR): <EMPTY>
-manyIndentation/leaf?> ERROR:
-manyIndentation/leaf?> offset=10:
-manyIndentation/leaf?> unexpected EOL
-manyIndentation/leaf?> expecting (, NOT, or term
-
-******** / manyIndentation/deeper; calling someIndentation                                                         :3_2:Other "this:
-********* / someIndentation                                                                                       :3_2:Other "this:
-********** / myindented: consuming GoDeeper                                                                      :3_2:Other "this:
+********** / term p                                                                                              :3_2:Other "this:
+*********** / term p/notLabelTerm                                                                               :3_2:Other "this:
+************ / term p/2:someIndentation expr p                                                                 :3_2:Other "this:
+************* / someIndentation                                                                               :3_2:Other "this:
+************** / myindented: consuming GoDeeper                                                              :3_2:Other "this:
 myindented: consuming GoDeeper> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 myindented: consuming GoDeeper> MATCH (EERR): <EMPTY>
 myindented: consuming GoDeeper> ERROR:
@@ -1114,6 +1008,7 @@ myindented: consuming GoDeeper> offset=9:
 myindented: consuming GoDeeper> unexpected "this is a label"
 myindented: consuming GoDeeper> expecting (
 
+************** \ !Unconsumed Error: myindented: consuming GoDeeper: Unexpected "this is a label" Expecting: ( :3_2:Other "this:
 someIndentation> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
 someIndentation> MATCH (EERR): <EMPTY>
 someIndentation> ERROR:
@@ -1121,27 +1016,451 @@ someIndentation> offset=9:
 someIndentation> unexpected "this is a label"
 someIndentation> expecting (
 
-manyIndentation/deeper; calling someIndentation> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
-manyIndentation/deeper; calling someIndentation> MATCH (EERR): <EMPTY>
-manyIndentation/deeper; calling someIndentation> ERROR:
-manyIndentation/deeper; calling someIndentation> offset=9:
-manyIndentation/deeper; calling someIndentation> unexpected "this is a label"
-manyIndentation/deeper; calling someIndentation> expecting (
+************* \ !Unconsumed Error: someIndentation: Unexpected "this is a label" Expecting: (                 :3_2:Other "this:
+term p/2:someIndentation expr p> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+term p/2:someIndentation expr p> MATCH (EERR): <EMPTY>
+term p/2:someIndentation expr p> ERROR:
+term p/2:someIndentation expr p> offset=9:
+term p/2:someIndentation expr p> unexpected "this is a label"
+term p/2:someIndentation expr p> expecting (
 
+************ \ !Unconsumed Error: term p/2:someIndentation expr p: Unexpected "this is a label" Expecting: (   :3_2:Other "this:
+************ / term p/3:plain p                                                                                :3_2:Other "this:
+************* / pParamText                                                                                    :3_2:Other "this:
+************** / pParamText(flat) first line: pKeyValues                                                     :3_2:Other "this:
+*************** / pKeyValuesAka                                                                             :3_2:Other "this:
+**************** / slAKA                                                                                   :3_2:Other "this:
+***************** / $*|                                                                                   :3_2:Other "this:
+****************** / slAKA base                                                                          :3_2:Other "this:
+******************* / slKeyValues                                                                       :3_2:Other "this:
+******************** / $*|                                                                             :3_2:Other "this:
+********************* / someSL                                                                        :3_2:Other "this:
+someSL> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+someSL> MATCH (COK): "this is a label"
+someSL> VALUE: ((["this is a label"],0),[])
+
+********************* \ someSL has returned (["this is a label"],0)                                   :3_2:EOL:
+$*|> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+$*|> MATCH (COK): "this is a label"
+$*|> VALUE: ((["this is a label"],0),[])
+
+******************** \ $*| has returned (["this is a label"],0)                                        :3_2:EOL:
+******************** / |>>/recurse                                                                     :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                     :3_2:EOL:
+******************** / |>>/base                                                                        :3_2:EOL:
+********************* / |?| optional something                                                        :3_2:EOL:
+********************** / |>>/recurse                                                                 :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+********************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                 :3_2:EOL:
+********************** / |>>/base                                                                    :3_2:EOL:
+*********************** / slTypeSig                                                                 :3_2:EOL:
+************************ / $>|                                                                     :3_2:EOL:
+$>|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=10:
+$>|> unexpected EOL
+$>|> expecting :: or IS
+
+************************ \ !Unconsumed Error: $>|: Unexpected EOL Expecting: IS ::                 :3_2:EOL:
+slTypeSig> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slTypeSig> MATCH (EERR): <EMPTY>
+slTypeSig> ERROR:
+slTypeSig> offset=10:
+slTypeSig> unexpected EOL
+slTypeSig> expecting :: or IS
+
+*********************** \ !Unconsumed Error: slTypeSig: Unexpected EOL Expecting: IS ::             :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=10:
+|>>/base> unexpected EOL
+|>>/base> expecting :: or IS
+
+********************** \ !Unconsumed Error: |>>/base: Unexpected EOL Expecting: IS ::                :3_2:EOL:
+|?| optional something> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
+********************* \ |?| optional something has returned (Nothing,0)                               :3_2:EOL:
+********************* > |>>/base got Nothing                                                          :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
+******************** \ |>>/base has returned (Nothing,0)                                               :3_2:EOL:
+slKeyValues> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+slKeyValues> MATCH (COK): "this is a label"
+slKeyValues> VALUE: ((("this is a label" :| [],Nothing),0),[])
+
+******************* \ slKeyValues has returned (("this is a label" :| [],Nothing),0)                    :3_2:EOL:
+slAKA base> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+slAKA base> MATCH (COK): "this is a label"
+slAKA base> VALUE: ((("this is a label" :| [],Nothing),0),[])
+
+****************** \ slAKA base has returned (("this is a label" :| [],Nothing),0)                       :3_2:EOL:
+$*|> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+$*|> MATCH (COK): "this is a label"
+$*|> VALUE: ((("this is a label" :| [],Nothing),0),[])
+
+***************** \ $*| has returned (("this is a label" :| [],Nothing),0)                                :3_2:EOL:
+***************** / |>>/recurse                                                                           :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                           :3_2:EOL:
+***************** / |>>/base                                                                              :3_2:EOL:
+****************** / slAKA optional akapart                                                              :3_2:EOL:
+******************* / |?| optional something                                                            :3_2:EOL:
+******************** / |>>/recurse                                                                     :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                     :3_2:EOL:
+******************** / |>>/base                                                                        :3_2:EOL:
+********************* / PAKA/akapart                                                                  :3_2:EOL:
+********************** / $>|                                                                         :3_2:EOL:
+*********************** / Aka Token                                                                 :3_2:EOL:
+Aka Token> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+Aka Token> MATCH (EERR): <EMPTY>
+Aka Token> ERROR:
+Aka Token> offset=10:
+Aka Token> unexpected EOL
+Aka Token> expecting AKA
+
+*********************** \ !Unconsumed Error: Aka Token: Unexpected EOL Expecting: AKA               :3_2:EOL:
+$>|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=10:
+$>|> unexpected EOL
+$>|> expecting AKA
+
+********************** \ !Unconsumed Error: $>|: Unexpected EOL Expecting: AKA                       :3_2:EOL:
+PAKA/akapart> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+PAKA/akapart> MATCH (EERR): <EMPTY>
+PAKA/akapart> ERROR:
+PAKA/akapart> offset=10:
+PAKA/akapart> unexpected EOL
+PAKA/akapart> expecting AKA
+
+********************* \ !Unconsumed Error: PAKA/akapart: Unexpected EOL Expecting: AKA                :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=10:
+|>>/base> unexpected EOL
+|>>/base> expecting AKA
+
+******************** \ !Unconsumed Error: |>>/base: Unexpected EOL Expecting: AKA                      :3_2:EOL:
+|?| optional something> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
+******************* \ |?| optional something has returned (Nothing,0)                                   :3_2:EOL:
+slAKA optional akapart> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slAKA optional akapart> MATCH (EOK): <EMPTY>
+slAKA optional akapart> VALUE: ((Nothing,0),[])
+
+****************** \ slAKA optional akapart has returned (Nothing,0)                                     :3_2:EOL:
+****************** > |>>/base got Nothing                                                                :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
+***************** \ |>>/base has returned (Nothing,0)                                                     :3_2:EOL:
+***************** / |>>/recurse                                                                           :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+***************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                           :3_2:EOL:
+***************** / |>>/base                                                                              :3_2:EOL:
+****************** / slAKA optional typically                                                            :3_2:EOL:
+******************* / |?| optional something                                                            :3_2:EOL:
+******************** / |>>/recurse                                                                     :3_2:EOL:
+|>>/recurse> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/recurse> MATCH (EERR): <EMPTY>
+|>>/recurse> ERROR:
+|>>/recurse> offset=10:
+|>>/recurse> unexpected EOL
+|>>/recurse> expecting (
+
+******************** \ !Unconsumed Error: |>>/recurse: Unexpected EOL Expecting: (                     :3_2:EOL:
+******************** / |>>/base                                                                        :3_2:EOL:
+********************* / typically                                                                     :3_2:EOL:
+********************** / $>|                                                                         :3_2:EOL:
+$>|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+$>|> MATCH (EERR): <EMPTY>
+$>|> ERROR:
+$>|> offset=10:
+$>|> unexpected EOL
+$>|> expecting TYPICALLY
+
+********************** \ !Unconsumed Error: $>|: Unexpected EOL Expecting: TYPICALLY                 :3_2:EOL:
+typically> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+typically> MATCH (EERR): <EMPTY>
+typically> ERROR:
+typically> offset=10:
+typically> unexpected EOL
+typically> expecting TYPICALLY
+
+********************* \ !Unconsumed Error: typically: Unexpected EOL Expecting: TYPICALLY             :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EERR): <EMPTY>
+|>>/base> ERROR:
+|>>/base> offset=10:
+|>>/base> unexpected EOL
+|>>/base> expecting TYPICALLY
+
+******************** \ !Unconsumed Error: |>>/base: Unexpected EOL Expecting: TYPICALLY                :3_2:EOL:
+|?| optional something> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|?| optional something> MATCH (EOK): <EMPTY>
+|?| optional something> VALUE: ((Nothing,0),[])
+
+******************* \ |?| optional something has returned (Nothing,0)                                   :3_2:EOL:
+slAKA optional typically> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slAKA optional typically> MATCH (EOK): <EMPTY>
+slAKA optional typically> VALUE: ((Nothing,0),[])
+
+****************** \ slAKA optional typically has returned (Nothing,0)                                   :3_2:EOL:
+****************** > |>>/base got Nothing                                                                :3_2:EOL:
+|>>/base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+|>>/base> MATCH (EOK): <EMPTY>
+|>>/base> VALUE: ((Nothing,0),[])
+
+***************** \ |>>/base has returned (Nothing,0)                                                     :3_2:EOL:
+***************** > slAKA: proceeding after base and entityalias are retrieved ...                        :3_2:EOL:
+***************** > pAKA: entityalias = Nothing                                                           :3_2:EOL:
+slAKA> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+slAKA> MATCH (COK): "this is a label"
+slAKA> VALUE: ((("this is a label" :| [],Nothing),0),[])
+
+**************** \ slAKA has returned (("this is a label" :| [],Nothing),0)                                :3_2:EOL:
+**************** / undeepers                                                                               :3_2:EOL:
+***************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers                :3_2:EOL:
+***************** > sameLine: success!                                                                    :3_2:EOL:
+undeepers> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+undeepers> MATCH (EOK): <EMPTY>
+undeepers> VALUE: ((),[])
+
+**************** \ undeepers has returned ()                                                               :3_2:EOL:
+pKeyValuesAka> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+pKeyValuesAka> MATCH (COK): "this is a label"
+pKeyValuesAka> VALUE: (("this is a label" :| [],Nothing),[])
+
+*************** \ pKeyValuesAka has returned ("this is a label" :| [],Nothing)                              :3_2:EOL:
+pParamText(flat) first line: pKeyValues> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+pParamText(flat) first line: pKeyValues> MATCH (COK): "this is a label"
+pParamText(flat) first line: pKeyValues> VALUE: (("this is a label" :| [],Nothing),[])
+
+************** \ pParamText(flat) first line: pKeyValues has returned ("this is a label" :| [],Nothing)      :3_2:EOL:
+************** / pParamText(flat) subsequent lines: sameMany pKeyValues                                      :3_2:EOL:
+*************** / manyIndentation/leaf?                                                                     :3_2:EOL:
+**************** / sameMany                                                                                :3_2:EOL:
+***************** / pKeyValuesAka                                                                         :3_2:EOL:
+****************** / slAKA                                                                               :3_2:EOL:
+******************* / $*|                                                                               :3_2:EOL:
+******************** / slAKA base                                                                      :3_2:EOL:
+********************* / slKeyValues                                                                   :3_2:EOL:
+********************** / $*|                                                                         :3_2:EOL:
+*********************** / someSL                                                                    :3_2:EOL:
+************************ / pNumAsText                                                              :3_2:EOL:
+pNumAsText> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+pNumAsText> MATCH (EERR): <EMPTY>
+pNumAsText> ERROR:
+pNumAsText> offset=10:
+pNumAsText> unexpected EOL
+pNumAsText> expecting number
+
+************************ \ !Unconsumed Error: pNumAsText: Unexpected EOL Expecting: number         :3_2:EOL:
+someSL> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+someSL> MATCH (EERR): <EMPTY>
+someSL> ERROR:
+someSL> offset=10:
+someSL> unexpected EOL
+someSL> expecting other text or number
+
+*********************** \ !Unconsumed Error: someSL: Unexpected EOL Expecting: other text or number :3_2:EOL:
+$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=10:
+$*|> unexpected EOL
+$*|> expecting other text or number
+
+********************** \ !Unconsumed Error: $*|: Unexpected EOL Expecting: other text or number      :3_2:EOL:
+slKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slKeyValues> MATCH (EERR): <EMPTY>
+slKeyValues> ERROR:
+slKeyValues> offset=10:
+slKeyValues> unexpected EOL
+slKeyValues> expecting other text or number
+
+********************* \ !Unconsumed Error: slKeyValues: Unexpected EOL Expecting: other text or number :3_2:EOL:
+slAKA base> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slAKA base> MATCH (EERR): <EMPTY>
+slAKA base> ERROR:
+slAKA base> offset=10:
+slAKA base> unexpected EOL
+slAKA base> expecting other text or number
+
+******************** \ !Unconsumed Error: slAKA base: Unexpected EOL Expecting: other text or number   :3_2:EOL:
+$*|> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+$*|> MATCH (EERR): <EMPTY>
+$*|> ERROR:
+$*|> offset=10:
+$*|> unexpected EOL
+$*|> expecting other text or number
+
+******************* \ !Unconsumed Error: $*|: Unexpected EOL Expecting: other text or number            :3_2:EOL:
+slAKA> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+slAKA> MATCH (EERR): <EMPTY>
+slAKA> ERROR:
+slAKA> offset=10:
+slAKA> unexpected EOL
+slAKA> expecting other text or number
+
+****************** \ !Unconsumed Error: slAKA: Unexpected EOL Expecting: other text or number            :3_2:EOL:
+pKeyValuesAka> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+pKeyValuesAka> MATCH (EERR): <EMPTY>
+pKeyValuesAka> ERROR:
+pKeyValuesAka> offset=10:
+pKeyValuesAka> unexpected EOL
+pKeyValuesAka> expecting other text or number
+
+***************** \ !Unconsumed Error: pKeyValuesAka: Unexpected EOL Expecting: other text or number      :3_2:EOL:
+sameMany> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+sameMany> MATCH (EOK): <EMPTY>
+sameMany> VALUE: ([],[])
+
+**************** \ sameMany has returned []                                                                :3_2:EOL:
+manyIndentation/leaf?> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+manyIndentation/leaf?> MATCH (EOK): <EMPTY>
+manyIndentation/leaf?> VALUE: ([],[])
+
+*************** \ manyIndentation/leaf? has returned []                                                     :3_2:EOL:
+pParamText(flat) subsequent lines: sameMany pKeyValues> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+pParamText(flat) subsequent lines: sameMany pKeyValues> MATCH (EOK): <EMPTY>
+pParamText(flat) subsequent lines: sameMany pKeyValues> VALUE: ([],[])
+
+************** \ pParamText(flat) subsequent lines: sameMany pKeyValues has returned []                      :3_2:EOL:
+pParamText> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+pParamText> MATCH (COK): "this is a label"
+pParamText> VALUE: (("this is a label" :| [],Nothing) :| [],[])
+
+************* \ pParamText has returned ("this is a label" :| [],Nothing) :| []                               :3_2:EOL:
+term p/3:plain p> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+term p/3:plain p> MATCH (COK): "this is a label"
+term p/3:plain p> VALUE: (MyLeaf (("this is a label" :| [],Nothing) :| []),[])
+
+************ \ term p/3:plain p has returned MyLeaf (("this is a label" :| [],Nothing) :| [])                  :3_2:EOL:
+term p/notLabelTerm> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+term p/notLabelTerm> MATCH (COK): "this is a label"
+term p/notLabelTerm> VALUE: (MyLeaf (("this is a label" :| [],Nothing) :| []),[])
+
+*********** \ term p/notLabelTerm has returned MyLeaf (("this is a label" :| [],Nothing) :| [])                 :3_2:EOL:
+term p> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+term p> MATCH (COK): "this is a label"
+term p> VALUE: (MyLeaf (("this is a label" :| [],Nothing) :| []),[])
+
+********** \ term p has returned MyLeaf (("this is a label" :| [],Nothing) :| [])                                :3_2:EOL:
+********** / binary(Or)                                                                                          :3_2:EOL:
+binary(Or)> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+binary(Or)> MATCH (EERR): <EMPTY>
+binary(Or)> ERROR:
+binary(Or)> offset=10:
+binary(Or)> unexpected EOL
+binary(Or)> expecting OR
+
+********** \ !Unconsumed Error: binary(Or): Unexpected EOL Expecting: OR                                         :3_2:EOL:
+********** / binary(And)                                                                                         :3_2:EOL:
+binary(And)> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+binary(And)> MATCH (EERR): <EMPTY>
+binary(And)> ERROR:
+binary(And)> offset=10:
+binary(And)> unexpected EOL
+binary(And)> expecting AND
+
+********** \ !Unconsumed Error: binary(And): Unexpected EOL Expecting: AND                                       :3_2:EOL:
+********** / binary(SetLess)                                                                                     :3_2:EOL:
+binary(SetLess)> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+binary(SetLess)> MATCH (EERR): <EMPTY>
+binary(SetLess)> ERROR:
+binary(SetLess)> offset=10:
+binary(SetLess)> unexpected EOL
+binary(SetLess)> expecting LESS
+
+********** \ !Unconsumed Error: binary(SetLess): Unexpected EOL Expecting: LESS                                  :3_2:EOL:
+********** / binary(SetPlus)                                                                                     :3_2:EOL:
+binary(SetPlus)> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+binary(SetPlus)> MATCH (EERR): <EMPTY>
+binary(SetPlus)> ERROR:
+binary(SetPlus)> offset=10:
+binary(SetPlus)> unexpected EOL
+binary(SetPlus)> expecting PLUS
+
+********** \ !Unconsumed Error: binary(SetPlus): Unexpected EOL Expecting: PLUS                                  :3_2:EOL:
+expression> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+expression> MATCH (COK): "this is a label"
+expression> VALUE: (MyLeaf (("this is a label" :| [],Nothing) :| []),[])
+
+********* \ expression has returned MyLeaf (("this is a label" :| [],Nothing) :| [])                              :3_2:EOL:
+manyIndentation/leaf?> IN: "this is a label" EOL ( "mid3" ) OR ( "m <…>
+manyIndentation/leaf?> MATCH (COK): "this is a label"
+manyIndentation/leaf?> VALUE: (MyLeaf (("this is a label" :| [],Nothing) :| []),[])
+
+******** \ manyIndentation/leaf? has returned MyLeaf (("this is a label" :| [],Nothing) :| [])                     :3_2:EOL:
+******** / myindented: consuming UnDeeper                                                                          :3_2:EOL:
+myindented: consuming UnDeeper> IN: EOL ( "mid3" ) OR ( "mid4" ) )
+myindented: consuming UnDeeper> MATCH (EERR): <EMPTY>
+myindented: consuming UnDeeper> ERROR:
+myindented: consuming UnDeeper> offset=10:
+myindented: consuming UnDeeper> unexpected EOL
+myindented: consuming UnDeeper> expecting )
+
+******** \ !Unconsumed Error: myindented: consuming UnDeeper: Unexpected EOL Expecting: )                          :3_2:EOL:
 someIndentation> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
-someIndentation> MATCH (CERR): (
+someIndentation> MATCH (CERR): ( "this is a label"
 someIndentation> ERROR:
 someIndentation> offset=10:
 someIndentation> unexpected EOL
-someIndentation> expecting (, NOT, or term
+someIndentation> expecting (, ), ::, AKA, AND, IS, LESS, OR, PLUS, TYPICALLY, or other text or number
 
+******* \ !Consumed Error: someIndentation: Unexpected EOL Expecting: OR AND IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:EOL:
 term p/2:someIndentation expr p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
-term p/2:someIndentation expr p> MATCH (CERR): (
+term p/2:someIndentation expr p> MATCH (CERR): ( "this is a label"
 term p/2:someIndentation expr p> ERROR:
 term p/2:someIndentation expr p> offset=10:
 term p/2:someIndentation expr p> unexpected EOL
-term p/2:someIndentation expr p> expecting (, NOT, or term
+term p/2:someIndentation expr p> expecting (, ), ::, AKA, AND, IS, LESS, OR, PLUS, TYPICALLY, or other text or number
 
+****** \ !Consumed Error: term p/2:someIndentation expr p: Unexpected EOL Expecting: OR AND IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:EOL:
 ****** / term p/3:plain p                                                                                           :3_2:GoDeeper:
 ******* / pParamText                                                                                               :3_2:GoDeeper:
 ******** / pParamText(flat) first line: pKeyValues                                                                :3_2:GoDeeper:
@@ -1160,6 +1479,7 @@ pNumAsText> offset=8:
 pNumAsText> unexpected (
 pNumAsText> expecting number
 
+**************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                          :3_2:GoDeeper:
 someSL> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 someSL> MATCH (EERR): <EMPTY>
 someSL> ERROR:
@@ -1167,6 +1487,7 @@ someSL> offset=8:
 someSL> unexpected (
 someSL> expecting other text or number
 
+*************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                  :3_2:GoDeeper:
 $*|> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -1174,6 +1495,7 @@ $*|> offset=8:
 $*|> unexpected (
 $*|> expecting other text or number
 
+************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                       :3_2:GoDeeper:
 slKeyValues> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slKeyValues> MATCH (EERR): <EMPTY>
 slKeyValues> ERROR:
@@ -1181,6 +1503,7 @@ slKeyValues> offset=8:
 slKeyValues> unexpected (
 slKeyValues> expecting other text or number
 
+************* \ !Unconsumed Error: slKeyValues: Unexpected ( Expecting: other text or number                 :3_2:GoDeeper:
 slAKA base> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slAKA base> MATCH (EERR): <EMPTY>
 slAKA base> ERROR:
@@ -1188,6 +1511,7 @@ slAKA base> offset=8:
 slAKA base> unexpected (
 slAKA base> expecting other text or number
 
+************ \ !Unconsumed Error: slAKA base: Unexpected ( Expecting: other text or number                    :3_2:GoDeeper:
 $*|> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 $*|> MATCH (EERR): <EMPTY>
 $*|> ERROR:
@@ -1195,6 +1519,7 @@ $*|> offset=8:
 $*|> unexpected (
 $*|> expecting other text or number
 
+*********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :3_2:GoDeeper:
 slAKA> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 slAKA> MATCH (EERR): <EMPTY>
 slAKA> ERROR:
@@ -1202,6 +1527,7 @@ slAKA> offset=8:
 slAKA> unexpected (
 slAKA> expecting other text or number
 
+********** \ !Unconsumed Error: slAKA: Unexpected ( Expecting: other text or number                             :3_2:GoDeeper:
 pKeyValuesAka> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pKeyValuesAka> MATCH (EERR): <EMPTY>
 pKeyValuesAka> ERROR:
@@ -1209,6 +1535,7 @@ pKeyValuesAka> offset=8:
 pKeyValuesAka> unexpected (
 pKeyValuesAka> expecting other text or number
 
+********* \ !Unconsumed Error: pKeyValuesAka: Unexpected ( Expecting: other text or number                       :3_2:GoDeeper:
 pParamText(flat) first line: pKeyValues> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pParamText(flat) first line: pKeyValues> MATCH (EERR): <EMPTY>
 pParamText(flat) first line: pKeyValues> ERROR:
@@ -1216,6 +1543,7 @@ pParamText(flat) first line: pKeyValues> offset=8:
 pParamText(flat) first line: pKeyValues> unexpected (
 pParamText(flat) first line: pKeyValues> expecting other text or number
 
+******** \ !Unconsumed Error: pParamText(flat) first line: pKeyValues: Unexpected ( Expecting: other text or number :3_2:GoDeeper:
 pParamText> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 pParamText> MATCH (EERR): <EMPTY>
 pParamText> ERROR:
@@ -1223,6 +1551,7 @@ pParamText> offset=8:
 pParamText> unexpected (
 pParamText> expecting other text or number
 
+******* \ !Unconsumed Error: pParamText: Unexpected ( Expecting: other text or number                              :3_2:GoDeeper:
 term p/3:plain p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p/3:plain p> MATCH (EERR): <EMPTY>
 term p/3:plain p> ERROR:
@@ -1230,34 +1559,39 @@ term p/3:plain p> offset=8:
 term p/3:plain p> unexpected (
 term p/3:plain p> expecting other text or number
 
+****** \ !Unconsumed Error: term p/3:plain p: Unexpected ( Expecting: other text or number                          :3_2:GoDeeper:
 term p/notLabelTerm> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p/notLabelTerm> MATCH (EERR): <EMPTY>
 term p/notLabelTerm> ERROR:
 term p/notLabelTerm> offset=10:
 term p/notLabelTerm> unexpected EOL
-term p/notLabelTerm> expecting (, NOT, or term
+term p/notLabelTerm> expecting (, ), ::, AKA, AND, IS, LESS, OR, PLUS, TYPICALLY, or other text or number
 
+***** \ !Unconsumed Error: term p/notLabelTerm: Unexpected EOL Expecting: OR AND IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:GoDeeper:
 term p> IN: ( "this is a label" EOL ( "mid3" ) OR (  <…>
 term p> MATCH (EERR): <EMPTY>
 term p> ERROR:
 term p> offset=10:
 term p> unexpected EOL
-term p> expecting (, NOT, or term
+term p> expecting (, ), ::, AKA, AND, IS, LESS, OR, PLUS, TYPICALLY, or other text or number
 
+**** \ !Unconsumed Error: term p: Unexpected EOL Expecting: OR AND IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:GoDeeper:
 expression> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
 expression> MATCH (CERR): ( "top1" ) OR ( "top2" ) OR
 expression> ERROR:
 expression> offset=10:
 expression> unexpected EOL
-expression> expecting (, NOT, or term
+expression> expecting (, ), ::, AKA, AND, IS, LESS, NOT, OR, PLUS, TYPICALLY, or other text or number
 
+*** \ !Consumed Error: expression: Unexpected EOL Expecting: OR AND NOT IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:GoDeeper:
 expr pParamText> IN: ( "top1" ) OR ( "top2" ) OR ( "this is a <…>
 expr pParamText> MATCH (CERR): ( "top1" ) OR ( "top2" ) OR
 expr pParamText> ERROR:
 expr pParamText> offset=10:
 expr pParamText> unexpected EOL
-expr pParamText> expecting (, NOT, or term
+expr pParamText> expecting (, ), ::, AKA, AND, IS, LESS, NOT, OR, PLUS, TYPICALLY, or other text or number
 
+** \ !Consumed Error: expr pParamText: Unexpected EOL Expecting: OR AND NOT IS :: AKA TYPICALLY ( ) PLUS LESS other text or number :3_2:GoDeeper:
 
 our new parser
   indent-2-c-3 FAILED [1]
@@ -1270,19 +1604,20 @@ Failures:
        but parsing failed with error:
        3:2:
        unexpected EOL
-       expecting (, NOT, or term
-                         top1                                                 
-       OR                top2                                                 
-       OR                ✳ this is a label                                    
-                                           mid3                               
-                         OR                mid4                               
+       expecting (, ), ::, AKA, AND, IS, LESS, NOT, OR, PLUS, TYPICALLY, or other text or number
+       
+            top1                       
+       OR   top2                       
+       OR   ✳ this is a label          
+                                mid3   
+            OR                  mid4   
        
 
   To rerun use: --match "/our new parser/indent-2-c-3/"
 
-Randomized with seed 1397798348
+Randomized with seed 1996277797
 
-Finished in 0.0089 seconds
+Finished in 0.0121 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

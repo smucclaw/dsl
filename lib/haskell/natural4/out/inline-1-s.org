@@ -86,69 +86,6 @@ $*|> VALUE: ((["a data breach occurred"],0),[])
 **** / ppp inner                                                                                                      :2_2:GoDeeper:
 ***** / expression                                                                                                   :2_2:GoDeeper:
 ****** / term p                                                                                                     :2_2:GoDeeper:
-******* / term p/1a:label directly above                                                                           :2_2:GoDeeper:
-******** / $*|                                                                                                    :2_2:GoDeeper:
-********* / someSL                                                                                               :2_2:GoDeeper:
-********** / pNumAsText                                                                                         :2_2:GoDeeper:
-pNumAsText> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=2:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                      :2_2:GoDeeper:
-someSL> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=2:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********* \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                              :2_2:GoDeeper:
-$*|> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=2:
-$*|> unexpected (
-$*|> expecting other text or number
-
-******** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                   :2_2:GoDeeper:
-term p/1a:label directly above> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=2:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-******* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number          :2_2:GoDeeper:
-******* / term p/b:label to the left of line below, with EOL                                                       :2_2:GoDeeper:
-******** / someSL                                                                                                 :2_2:GoDeeper:
-********* / pNumAsText                                                                                           :2_2:GoDeeper:
-pNumAsText> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=2:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-********* \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                        :2_2:GoDeeper:
-someSL> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=2:
-someSL> unexpected (
-someSL> expecting other text or number
-
-******** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                :2_2:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "any" ( "unauthorised" ( ( ( ( "access <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=2:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-******* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :2_2:GoDeeper:
 ******* / term p/notLabelTerm                                                                                      :2_2:GoDeeper:
 ******** / term p/2:someIndentation expr p                                                                        :2_2:GoDeeper:
 ********* / someIndentation                                                                                      :2_2:GoDeeper:
@@ -161,64 +98,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ********** / manyIndentation/leaf?                                                                               :2_2:Other "any":
 *********** / expression                                                                                        :2_2:Other "any":
 ************ / term p                                                                                          :2_2:Other "any":
-************* / term p/1a:label directly above                                                                :2_2:Other "any":
-************** / $*|                                                                                         :2_2:Other "any":
-*************** / someSL                                                                                    :2_2:Other "any":
-someSL> IN: "any" ( "unauthorised" ( ( ( ( "access"  <…>
-someSL> MATCH (COK): "any" ( "unauthorised" ( ( ( ( "access"
-someSL> VALUE: ((["any","unauthorised","access"],5),[])
-
-*************** \ someSL has returned (["any","unauthorised","access"],5)                                            :3_6:UnDeeper:
-*************** / pNumAsText                                                                                         :3_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "use" ) ) OR ( ( "disclosure" <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                                      :3_6:UnDeeper:
-$*|> IN: "any" ( "unauthorised" ( ( ( ( "access"  <…>
-$*|> MATCH (CERR): "any" ( "unauthorised" ( ( ( ( "access"
-$*|> ERROR:
-$*|> offset=11:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                                 :3_6:UnDeeper:
-term p/1a:label directly above> IN: "any" ( "unauthorised" ( ( ( ( "access"  <…>
-term p/1a:label directly above> MATCH (CERR): "any" ( "unauthorised" ( ( ( ( "access"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=11:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number        :3_6:UnDeeper:
-************* / term p/b:label to the left of line below, with EOL                                            :2_2:Other "any":
-************** / someSL                                                                                      :2_2:Other "any":
-someSL> IN: "any" ( "unauthorised" ( ( ( ( "access"  <…>
-someSL> MATCH (COK): "any" ( "unauthorised" ( ( ( ( "access"
-someSL> VALUE: ((["any","unauthorised","access"],5),[])
-
-************** \ someSL has returned (["any","unauthorised","access"],5)                                              :3_6:UnDeeper:
-************** / undeepers                                                                                            :3_6:UnDeeper:
-*************** > sameLine/undeepers: reached end of line; now need to clear 5 UnDeepers                             :3_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "use" ) ) OR ( ( "disclosure" <…>
-undeepers> MATCH (CERR): ) )
-undeepers> ERROR:
-undeepers> offset=13:
-undeepers> unexpected OR
-undeepers> expecting )
-
-************** \ !Consumed Error: undeepers: Unexpected OR Expecting: )                                            :3_5:Or:
-term p/b:label to the left of line below, with EOL> IN: "any" ( "unauthorised" ( ( ( ( "access"  <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "any" ( "unauthorised" ( ( ( ( "access"  <…>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=13:
-term p/b:label to the left of line below, with EOL> unexpected OR
-term p/b:label to the left of line below, with EOL> expecting )
-
-************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected OR Expecting: )     :3_5:Or:
 ************* / term p/notLabelTerm                                                                           :2_2:Other "any":
 ************** / term p/2:someIndentation expr p                                                             :2_2:Other "any":
 *************** / someIndentation                                                                           :2_2:Other "any":
@@ -1649,69 +1528,6 @@ $*|> VALUE: ((["any","unauthorised"],4),[])
 ****** / ppp inner                                                                                                          :2_6:GoDeeper:
 ******* / expression                                                                                                       :2_6:GoDeeper:
 ******** / term p                                                                                                         :2_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :2_6:GoDeeper:
-********** / $*|                                                                                                        :2_6:GoDeeper:
-*********** / someSL                                                                                                   :2_6:GoDeeper:
-************ / pNumAsText                                                                                             :2_6:GoDeeper:
-pNumAsText> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=8:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :2_6:GoDeeper:
-someSL> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=8:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :2_6:GoDeeper:
-$*|> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=8:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :2_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=8:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :2_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :2_6:GoDeeper:
-********** / someSL                                                                                                     :2_6:GoDeeper:
-*********** / pNumAsText                                                                                               :2_6:GoDeeper:
-pNumAsText> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=8:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :2_6:GoDeeper:
-someSL> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=8:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :2_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "access" ) ) OR ( ( "use" ) ) OR ( ( <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=8:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :2_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :2_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :2_6:GoDeeper:
 *********** / someIndentation                                                                                          :2_6:GoDeeper:
@@ -1724,69 +1540,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :2_7:GoDeeper:
 ************* / expression                                                                                             :2_7:GoDeeper:
 ************** / term p                                                                                               :2_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :2_7:GoDeeper:
-**************** / $*|                                                                                              :2_7:GoDeeper:
-***************** / someSL                                                                                         :2_7:GoDeeper:
-****************** / pNumAsText                                                                                   :2_7:GoDeeper:
-pNumAsText> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=9:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :2_7:GoDeeper:
-someSL> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=9:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :2_7:GoDeeper:
-$*|> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=9:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :2_7:GoDeeper:
-term p/1a:label directly above> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=9:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :2_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :2_7:GoDeeper:
-**************** / someSL                                                                                           :2_7:GoDeeper:
-***************** / pNumAsText                                                                                     :2_7:GoDeeper:
-pNumAsText> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=9:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :2_7:GoDeeper:
-someSL> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=9:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :2_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "access" ) ) OR ( ( "use" ) ) OR ( ( " <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=9:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :2_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :2_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :2_7:GoDeeper:
 ***************** / someIndentation                                                                                :2_7:GoDeeper:
@@ -1799,71 +1552,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :2_7:Other "acce:
 ******************* / expression                                                                                  :2_7:Other "acce:
 ******************** / term p                                                                                    :2_7:Other "acce:
-********************* / term p/1a:label directly above                                                          :2_7:Other "acce:
-********************** / $*|                                                                                   :2_7:Other "acce:
-*********************** / someSL                                                                              :2_7:Other "acce:
-someSL> IN: "access" ) ) OR ( ( "use" ) ) OR ( ( "di <…>
-someSL> MATCH (COK): "access"
-someSL> VALUE: ((["access"],0),[])
-
-*********************** \ someSL has returned (["access"],0)                                                 :3_6:UnDeeper:
-*********************** / pNumAsText                                                                         :3_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "use" ) ) OR ( ( "disclosure" <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=11:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                      :3_6:UnDeeper:
-$*|> IN: "access" ) ) OR ( ( "use" ) ) OR ( ( "di <…>
-$*|> MATCH (CERR): "access"
-$*|> ERROR:
-$*|> offset=11:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                 :3_6:UnDeeper:
-term p/1a:label directly above> IN: "access" ) ) OR ( ( "use" ) ) OR ( ( "di <…>
-term p/1a:label directly above> MATCH (CERR): "access"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=11:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :3_6:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :2_7:Other "acce:
-********************** / someSL                                                                                :2_7:Other "acce:
-someSL> IN: "access" ) ) OR ( ( "use" ) ) OR ( ( "di <…>
-someSL> MATCH (COK): "access"
-someSL> VALUE: ((["access"],0),[])
-
-********************** \ someSL has returned (["access"],0)                                                   :3_6:UnDeeper:
-********************** / undeepers                                                                            :3_6:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :3_6:UnDeeper:
-*********************** > sameLine: success!                                                                 :3_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "use" ) ) OR ( ( "disclosure" <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                            :3_6:UnDeeper:
-********************** / matching EOL                                                                         :3_6:UnDeeper:
-matching EOL> IN: ) ) OR ( ( "use" ) ) OR ( ( "disclosure" <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=11:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                         :3_6:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "access" ) ) OR ( ( "use" ) ) OR ( ( "di <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "access"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=11:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :3_6:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :2_7:Other "acce:
 ********************** / term p/2:someIndentation expr p                                                       :2_7:Other "acce:
 *********************** / someIndentation                                                                     :2_7:Other "acce:
@@ -2402,69 +2090,6 @@ binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                                     :3_6:GoDeeper:
 ******** / term p                                                                                                         :3_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :3_6:GoDeeper:
-********** / $*|                                                                                                        :3_6:GoDeeper:
-*********** / someSL                                                                                                   :3_6:GoDeeper:
-************ / pNumAsText                                                                                             :3_6:GoDeeper:
-pNumAsText> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=14:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :3_6:GoDeeper:
-someSL> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=14:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :3_6:GoDeeper:
-$*|> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=14:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :3_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=14:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :3_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :3_6:GoDeeper:
-********** / someSL                                                                                                     :3_6:GoDeeper:
-*********** / pNumAsText                                                                                               :3_6:GoDeeper:
-pNumAsText> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=14:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :3_6:GoDeeper:
-someSL> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=14:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :3_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "use" ) ) OR ( ( "disclosure" ) ) OR <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=14:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :3_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :3_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :3_6:GoDeeper:
 *********** / someIndentation                                                                                          :3_6:GoDeeper:
@@ -2477,69 +2102,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :3_7:GoDeeper:
 ************* / expression                                                                                             :3_7:GoDeeper:
 ************** / term p                                                                                               :3_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :3_7:GoDeeper:
-**************** / $*|                                                                                              :3_7:GoDeeper:
-***************** / someSL                                                                                         :3_7:GoDeeper:
-****************** / pNumAsText                                                                                   :3_7:GoDeeper:
-pNumAsText> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=15:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :3_7:GoDeeper:
-someSL> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=15:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :3_7:GoDeeper:
-$*|> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=15:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :3_7:GoDeeper:
-term p/1a:label directly above> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=15:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :3_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :3_7:GoDeeper:
-**************** / someSL                                                                                           :3_7:GoDeeper:
-***************** / pNumAsText                                                                                     :3_7:GoDeeper:
-pNumAsText> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=15:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :3_7:GoDeeper:
-someSL> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=15:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :3_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "use" ) ) OR ( ( "disclosure" ) ) OR ( <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=15:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :3_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :3_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :3_7:GoDeeper:
 ***************** / someIndentation                                                                                :3_7:GoDeeper:
@@ -2552,71 +2114,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :3_7:Other "use":
 ******************* / expression                                                                                  :3_7:Other "use":
 ******************** / term p                                                                                    :3_7:Other "use":
-********************* / term p/1a:label directly above                                                          :3_7:Other "use":
-********************** / $*|                                                                                   :3_7:Other "use":
-*********************** / someSL                                                                              :3_7:Other "use":
-someSL> IN: "use" ) ) OR ( ( "disclosure" ) ) OR ( ( <…>
-someSL> MATCH (COK): "use"
-someSL> VALUE: ((["use"],0),[])
-
-*********************** \ someSL has returned (["use"],0)                                                    :4_6:UnDeeper:
-*********************** / pNumAsText                                                                         :4_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "disclosure" ) ) OR ( ( "copy <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=17:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                      :4_6:UnDeeper:
-$*|> IN: "use" ) ) OR ( ( "disclosure" ) ) OR ( ( <…>
-$*|> MATCH (CERR): "use"
-$*|> ERROR:
-$*|> offset=17:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                 :4_6:UnDeeper:
-term p/1a:label directly above> IN: "use" ) ) OR ( ( "disclosure" ) ) OR ( ( <…>
-term p/1a:label directly above> MATCH (CERR): "use"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=17:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :4_6:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :3_7:Other "use":
-********************** / someSL                                                                                :3_7:Other "use":
-someSL> IN: "use" ) ) OR ( ( "disclosure" ) ) OR ( ( <…>
-someSL> MATCH (COK): "use"
-someSL> VALUE: ((["use"],0),[])
-
-********************** \ someSL has returned (["use"],0)                                                      :4_6:UnDeeper:
-********************** / undeepers                                                                            :4_6:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :4_6:UnDeeper:
-*********************** > sameLine: success!                                                                 :4_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "disclosure" ) ) OR ( ( "copy <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                            :4_6:UnDeeper:
-********************** / matching EOL                                                                         :4_6:UnDeeper:
-matching EOL> IN: ) ) OR ( ( "disclosure" ) ) OR ( ( "copy <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=17:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                         :4_6:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "use" ) ) OR ( ( "disclosure" ) ) OR ( ( <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "use"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=17:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :4_6:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :3_7:Other "use":
 ********************** / term p/2:someIndentation expr p                                                       :3_7:Other "use":
 *********************** / someIndentation                                                                     :3_7:Other "use":
@@ -3155,69 +2652,6 @@ binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                                     :4_6:GoDeeper:
 ******** / term p                                                                                                         :4_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :4_6:GoDeeper:
-********** / $*|                                                                                                        :4_6:GoDeeper:
-*********** / someSL                                                                                                   :4_6:GoDeeper:
-************ / pNumAsText                                                                                             :4_6:GoDeeper:
-pNumAsText> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=20:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :4_6:GoDeeper:
-someSL> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=20:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :4_6:GoDeeper:
-$*|> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=20:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :4_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=20:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :4_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :4_6:GoDeeper:
-********** / someSL                                                                                                     :4_6:GoDeeper:
-*********** / pNumAsText                                                                                               :4_6:GoDeeper:
-pNumAsText> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=20:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :4_6:GoDeeper:
-someSL> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=20:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :4_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "disclosure" ) ) OR ( ( "copying" )  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=20:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :4_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :4_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :4_6:GoDeeper:
 *********** / someIndentation                                                                                          :4_6:GoDeeper:
@@ -3230,69 +2664,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :4_7:GoDeeper:
 ************* / expression                                                                                             :4_7:GoDeeper:
 ************** / term p                                                                                               :4_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :4_7:GoDeeper:
-**************** / $*|                                                                                              :4_7:GoDeeper:
-***************** / someSL                                                                                         :4_7:GoDeeper:
-****************** / pNumAsText                                                                                   :4_7:GoDeeper:
-pNumAsText> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=21:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :4_7:GoDeeper:
-someSL> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=21:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :4_7:GoDeeper:
-$*|> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=21:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :4_7:GoDeeper:
-term p/1a:label directly above> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=21:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :4_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :4_7:GoDeeper:
-**************** / someSL                                                                                           :4_7:GoDeeper:
-***************** / pNumAsText                                                                                     :4_7:GoDeeper:
-pNumAsText> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=21:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :4_7:GoDeeper:
-someSL> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=21:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :4_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "disclosure" ) ) OR ( ( "copying" ) )  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=21:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :4_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :4_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :4_7:GoDeeper:
 ***************** / someIndentation                                                                                :4_7:GoDeeper:
@@ -3305,71 +2676,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :4_7:Other "disc:
 ******************* / expression                                                                                  :4_7:Other "disc:
 ******************** / term p                                                                                    :4_7:Other "disc:
-********************* / term p/1a:label directly above                                                          :4_7:Other "disc:
-********************** / $*|                                                                                   :4_7:Other "disc:
-*********************** / someSL                                                                              :4_7:Other "disc:
-someSL> IN: "disclosure" ) ) OR ( ( "copying" ) ) OR <…>
-someSL> MATCH (COK): "disclosure"
-someSL> VALUE: ((["disclosure"],0),[])
-
-*********************** \ someSL has returned (["disclosure"],0)                                             :5_6:UnDeeper:
-*********************** / pNumAsText                                                                         :5_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "copying" ) ) OR ( ( "modific <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=23:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                      :5_6:UnDeeper:
-$*|> IN: "disclosure" ) ) OR ( ( "copying" ) ) OR <…>
-$*|> MATCH (CERR): "disclosure"
-$*|> ERROR:
-$*|> offset=23:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                 :5_6:UnDeeper:
-term p/1a:label directly above> IN: "disclosure" ) ) OR ( ( "copying" ) ) OR <…>
-term p/1a:label directly above> MATCH (CERR): "disclosure"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=23:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :5_6:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :4_7:Other "disc:
-********************** / someSL                                                                                :4_7:Other "disc:
-someSL> IN: "disclosure" ) ) OR ( ( "copying" ) ) OR <…>
-someSL> MATCH (COK): "disclosure"
-someSL> VALUE: ((["disclosure"],0),[])
-
-********************** \ someSL has returned (["disclosure"],0)                                               :5_6:UnDeeper:
-********************** / undeepers                                                                            :5_6:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :5_6:UnDeeper:
-*********************** > sameLine: success!                                                                 :5_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "copying" ) ) OR ( ( "modific <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                            :5_6:UnDeeper:
-********************** / matching EOL                                                                         :5_6:UnDeeper:
-matching EOL> IN: ) ) OR ( ( "copying" ) ) OR ( ( "modific <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=23:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                         :5_6:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "disclosure" ) ) OR ( ( "copying" ) ) OR <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "disclosure"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=23:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :5_6:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :4_7:Other "disc:
 ********************** / term p/2:someIndentation expr p                                                       :4_7:Other "disc:
 *********************** / someIndentation                                                                     :4_7:Other "disc:
@@ -3908,69 +3214,6 @@ binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                                     :5_6:GoDeeper:
 ******** / term p                                                                                                         :5_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :5_6:GoDeeper:
-********** / $*|                                                                                                        :5_6:GoDeeper:
-*********** / someSL                                                                                                   :5_6:GoDeeper:
-************ / pNumAsText                                                                                             :5_6:GoDeeper:
-pNumAsText> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=26:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :5_6:GoDeeper:
-someSL> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=26:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :5_6:GoDeeper:
-$*|> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=26:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :5_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=26:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :5_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :5_6:GoDeeper:
-********** / someSL                                                                                                     :5_6:GoDeeper:
-*********** / pNumAsText                                                                                               :5_6:GoDeeper:
-pNumAsText> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=26:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :5_6:GoDeeper:
-someSL> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=26:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :5_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "copying" ) ) OR ( ( "modification"  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=26:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :5_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :5_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :5_6:GoDeeper:
 *********** / someIndentation                                                                                          :5_6:GoDeeper:
@@ -3983,69 +3226,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :5_7:GoDeeper:
 ************* / expression                                                                                             :5_7:GoDeeper:
 ************** / term p                                                                                               :5_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :5_7:GoDeeper:
-**************** / $*|                                                                                              :5_7:GoDeeper:
-***************** / someSL                                                                                         :5_7:GoDeeper:
-****************** / pNumAsText                                                                                   :5_7:GoDeeper:
-pNumAsText> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=27:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :5_7:GoDeeper:
-someSL> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=27:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :5_7:GoDeeper:
-$*|> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=27:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :5_7:GoDeeper:
-term p/1a:label directly above> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=27:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :5_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :5_7:GoDeeper:
-**************** / someSL                                                                                           :5_7:GoDeeper:
-***************** / pNumAsText                                                                                     :5_7:GoDeeper:
-pNumAsText> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=27:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :5_7:GoDeeper:
-someSL> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=27:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :5_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "copying" ) ) OR ( ( "modification" )  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=27:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :5_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :5_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :5_7:GoDeeper:
 ***************** / someIndentation                                                                                :5_7:GoDeeper:
@@ -4058,71 +3238,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :5_7:Other "copy:
 ******************* / expression                                                                                  :5_7:Other "copy:
 ******************** / term p                                                                                    :5_7:Other "copy:
-********************* / term p/1a:label directly above                                                          :5_7:Other "copy:
-********************** / $*|                                                                                   :5_7:Other "copy:
-*********************** / someSL                                                                              :5_7:Other "copy:
-someSL> IN: "copying" ) ) OR ( ( "modification" ) )  <…>
-someSL> MATCH (COK): "copying"
-someSL> VALUE: ((["copying"],0),[])
-
-*********************** \ someSL has returned (["copying"],0)                                                :6_6:UnDeeper:
-*********************** / pNumAsText                                                                         :6_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "modification" ) ) OR ( ( "di <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=29:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                      :6_6:UnDeeper:
-$*|> IN: "copying" ) ) OR ( ( "modification" ) )  <…>
-$*|> MATCH (CERR): "copying"
-$*|> ERROR:
-$*|> offset=29:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                 :6_6:UnDeeper:
-term p/1a:label directly above> IN: "copying" ) ) OR ( ( "modification" ) )  <…>
-term p/1a:label directly above> MATCH (CERR): "copying"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=29:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :6_6:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :5_7:Other "copy:
-********************** / someSL                                                                                :5_7:Other "copy:
-someSL> IN: "copying" ) ) OR ( ( "modification" ) )  <…>
-someSL> MATCH (COK): "copying"
-someSL> VALUE: ((["copying"],0),[])
-
-********************** \ someSL has returned (["copying"],0)                                                  :6_6:UnDeeper:
-********************** / undeepers                                                                            :6_6:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :6_6:UnDeeper:
-*********************** > sameLine: success!                                                                 :6_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "modification" ) ) OR ( ( "di <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                            :6_6:UnDeeper:
-********************** / matching EOL                                                                         :6_6:UnDeeper:
-matching EOL> IN: ) ) OR ( ( "modification" ) ) OR ( ( "di <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=29:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                         :6_6:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "copying" ) ) OR ( ( "modification" ) )  <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "copying"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=29:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :6_6:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :5_7:Other "copy:
 ********************** / term p/2:someIndentation expr p                                                       :5_7:Other "copy:
 *********************** / someIndentation                                                                     :5_7:Other "copy:
@@ -4661,69 +3776,6 @@ binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                                     :6_6:GoDeeper:
 ******** / term p                                                                                                         :6_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :6_6:GoDeeper:
-********** / $*|                                                                                                        :6_6:GoDeeper:
-*********** / someSL                                                                                                   :6_6:GoDeeper:
-************ / pNumAsText                                                                                             :6_6:GoDeeper:
-pNumAsText> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=32:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :6_6:GoDeeper:
-someSL> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=32:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :6_6:GoDeeper:
-$*|> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=32:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :6_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=32:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :6_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :6_6:GoDeeper:
-********** / someSL                                                                                                     :6_6:GoDeeper:
-*********** / pNumAsText                                                                                               :6_6:GoDeeper:
-pNumAsText> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=32:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :6_6:GoDeeper:
-someSL> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=32:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :6_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "modification" ) ) OR ( ( "disposal" <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=32:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :6_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :6_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :6_6:GoDeeper:
 *********** / someIndentation                                                                                          :6_6:GoDeeper:
@@ -4736,69 +3788,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :6_7:GoDeeper:
 ************* / expression                                                                                             :6_7:GoDeeper:
 ************** / term p                                                                                               :6_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :6_7:GoDeeper:
-**************** / $*|                                                                                              :6_7:GoDeeper:
-***************** / someSL                                                                                         :6_7:GoDeeper:
-****************** / pNumAsText                                                                                   :6_7:GoDeeper:
-pNumAsText> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=33:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :6_7:GoDeeper:
-someSL> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=33:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :6_7:GoDeeper:
-$*|> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=33:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :6_7:GoDeeper:
-term p/1a:label directly above> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=33:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :6_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :6_7:GoDeeper:
-**************** / someSL                                                                                           :6_7:GoDeeper:
-***************** / pNumAsText                                                                                     :6_7:GoDeeper:
-pNumAsText> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=33:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :6_7:GoDeeper:
-someSL> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=33:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :6_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "modification" ) ) OR ( ( "disposal" ) <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=33:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :6_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :6_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :6_7:GoDeeper:
 ***************** / someIndentation                                                                                :6_7:GoDeeper:
@@ -4811,71 +3800,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :6_7:Other "modi:
 ******************* / expression                                                                                  :6_7:Other "modi:
 ******************** / term p                                                                                    :6_7:Other "modi:
-********************* / term p/1a:label directly above                                                          :6_7:Other "modi:
-********************** / $*|                                                                                   :6_7:Other "modi:
-*********************** / someSL                                                                              :6_7:Other "modi:
-someSL> IN: "modification" ) ) OR ( ( "disposal" ) ) <…>
-someSL> MATCH (COK): "modification"
-someSL> VALUE: ((["modification"],0),[])
-
-*********************** \ someSL has returned (["modification"],0)                                           :7_6:UnDeeper:
-*********************** / pNumAsText                                                                         :7_6:UnDeeper:
-pNumAsText> IN: ) ) OR ( ( "disposal" ) ) ) ) "of person <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=35:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                      :7_6:UnDeeper:
-$*|> IN: "modification" ) ) OR ( ( "disposal" ) ) <…>
-$*|> MATCH (CERR): "modification"
-$*|> ERROR:
-$*|> offset=35:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number                 :7_6:UnDeeper:
-term p/1a:label directly above> IN: "modification" ) ) OR ( ( "disposal" ) ) <…>
-term p/1a:label directly above> MATCH (CERR): "modification"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=35:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :7_6:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :6_7:Other "modi:
-********************** / someSL                                                                                :6_7:Other "modi:
-someSL> IN: "modification" ) ) OR ( ( "disposal" ) ) <…>
-someSL> MATCH (COK): "modification"
-someSL> VALUE: ((["modification"],0),[])
-
-********************** \ someSL has returned (["modification"],0)                                             :7_6:UnDeeper:
-********************** / undeepers                                                                            :7_6:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers             :7_6:UnDeeper:
-*********************** > sameLine: success!                                                                 :7_6:UnDeeper:
-undeepers> IN: ) ) OR ( ( "disposal" ) ) ) ) "of person <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                            :7_6:UnDeeper:
-********************** / matching EOL                                                                         :7_6:UnDeeper:
-matching EOL> IN: ) ) OR ( ( "disposal" ) ) ) ) "of person <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=35:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                         :7_6:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "modification" ) ) OR ( ( "disposal" ) ) <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "modification"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=35:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :7_6:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :6_7:Other "modi:
 ********************** / term p/2:someIndentation expr p                                                       :6_7:Other "modi:
 *********************** / someIndentation                                                                     :6_7:Other "modi:
@@ -5414,69 +4338,6 @@ binary(Or)> VALUE: (Or,[])
 
 ******** \ binary(Or) has returned Or                                                                                     :7_6:GoDeeper:
 ******** / term p                                                                                                         :7_6:GoDeeper:
-********* / term p/1a:label directly above                                                                               :7_6:GoDeeper:
-********** / $*|                                                                                                        :7_6:GoDeeper:
-*********** / someSL                                                                                                   :7_6:GoDeeper:
-************ / pNumAsText                                                                                             :7_6:GoDeeper:
-pNumAsText> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=38:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-************ \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                          :7_6:GoDeeper:
-someSL> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=38:
-someSL> unexpected (
-someSL> expecting other text or number
-
-*********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                  :7_6:GoDeeper:
-$*|> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=38:
-$*|> unexpected (
-$*|> expecting other text or number
-
-********** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                                       :7_6:GoDeeper:
-term p/1a:label directly above> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=38:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-********* \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number              :7_6:GoDeeper:
-********* / term p/b:label to the left of line below, with EOL                                                           :7_6:GoDeeper:
-********** / someSL                                                                                                     :7_6:GoDeeper:
-*********** / pNumAsText                                                                                               :7_6:GoDeeper:
-pNumAsText> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=38:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-*********** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                            :7_6:GoDeeper:
-someSL> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=38:
-someSL> unexpected (
-someSL> expecting other text or number
-
-********** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                                    :7_6:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( ( "disposal" ) ) ) ) "of personal data <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=38:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-********* \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :7_6:GoDeeper:
 ********* / term p/notLabelTerm                                                                                          :7_6:GoDeeper:
 ********** / term p/2:someIndentation expr p                                                                            :7_6:GoDeeper:
 *********** / someIndentation                                                                                          :7_6:GoDeeper:
@@ -5489,69 +4350,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ************ / manyIndentation/leaf?                                                                                    :7_7:GoDeeper:
 ************* / expression                                                                                             :7_7:GoDeeper:
 ************** / term p                                                                                               :7_7:GoDeeper:
-*************** / term p/1a:label directly above                                                                     :7_7:GoDeeper:
-**************** / $*|                                                                                              :7_7:GoDeeper:
-***************** / someSL                                                                                         :7_7:GoDeeper:
-****************** / pNumAsText                                                                                   :7_7:GoDeeper:
-pNumAsText> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=39:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-****************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                :7_7:GoDeeper:
-someSL> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=39:
-someSL> unexpected (
-someSL> expecting other text or number
-
-***************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                        :7_7:GoDeeper:
-$*|> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-$*|> MATCH (EERR): <EMPTY>
-$*|> ERROR:
-$*|> offset=39:
-$*|> unexpected (
-$*|> expecting other text or number
-
-**************** \ !Unconsumed Error: $*|: Unexpected ( Expecting: other text or number                             :7_7:GoDeeper:
-term p/1a:label directly above> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-term p/1a:label directly above> MATCH (EERR): <EMPTY>
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=39:
-term p/1a:label directly above> unexpected (
-term p/1a:label directly above> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/1a:label directly above: Unexpected ( Expecting: other text or number    :7_7:GoDeeper:
-*************** / term p/b:label to the left of line below, with EOL                                                 :7_7:GoDeeper:
-**************** / someSL                                                                                           :7_7:GoDeeper:
-***************** / pNumAsText                                                                                     :7_7:GoDeeper:
-pNumAsText> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=39:
-pNumAsText> unexpected (
-pNumAsText> expecting number
-
-***************** \ !Unconsumed Error: pNumAsText: Unexpected ( Expecting: number                                  :7_7:GoDeeper:
-someSL> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-someSL> MATCH (EERR): <EMPTY>
-someSL> ERROR:
-someSL> offset=39:
-someSL> unexpected (
-someSL> expecting other text or number
-
-**************** \ !Unconsumed Error: someSL: Unexpected ( Expecting: other text or number                          :7_7:GoDeeper:
-term p/b:label to the left of line below, with EOL> IN: ( "disposal" ) ) ) ) "of personal data"  <…>
-term p/b:label to the left of line below, with EOL> MATCH (EERR): <EMPTY>
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=39:
-term p/b:label to the left of line below, with EOL> unexpected (
-term p/b:label to the left of line below, with EOL> expecting other text or number
-
-*************** \ !Unconsumed Error: term p/b:label to the left of line below, with EOL: Unexpected ( Expecting: other text or number :7_7:GoDeeper:
 *************** / term p/notLabelTerm                                                                                :7_7:GoDeeper:
 **************** / term p/2:someIndentation expr p                                                                  :7_7:GoDeeper:
 ***************** / someIndentation                                                                                :7_7:GoDeeper:
@@ -5564,71 +4362,6 @@ myindented: consuming GoDeeper> VALUE: (GoDeeper,[])
 ****************** / manyIndentation/leaf?                                                                         :7_7:Other "disp:
 ******************* / expression                                                                                  :7_7:Other "disp:
 ******************** / term p                                                                                    :7_7:Other "disp:
-********************* / term p/1a:label directly above                                                          :7_7:Other "disp:
-********************** / $*|                                                                                   :7_7:Other "disp:
-*********************** / someSL                                                                              :7_7:Other "disp:
-someSL> IN: "disposal" ) ) ) ) "of personal data" )  <…>
-someSL> MATCH (COK): "disposal"
-someSL> VALUE: ((["disposal"],0),[])
-
-*********************** \ someSL has returned (["disposal"],0)                                           :8_4:UnDeeper:
-*********************** / pNumAsText                                                                     :8_4:UnDeeper:
-pNumAsText> IN: ) ) ) ) "of personal data" ) ) OR ( "los <…>
-pNumAsText> MATCH (EERR): <EMPTY>
-pNumAsText> ERROR:
-pNumAsText> offset=41:
-pNumAsText> unexpected )
-pNumAsText> expecting number
-
-*********************** \ !Unconsumed Error: pNumAsText: Unexpected ) Expecting: number                  :8_4:UnDeeper:
-$*|> IN: "disposal" ) ) ) ) "of personal data" )  <…>
-$*|> MATCH (CERR): "disposal"
-$*|> ERROR:
-$*|> offset=41:
-$*|> unexpected )
-$*|> expecting ( or other text or number
-
-********************** \ !Consumed Error: $*|: Unexpected ) Expecting: ( other text or number             :8_4:UnDeeper:
-term p/1a:label directly above> IN: "disposal" ) ) ) ) "of personal data" )  <…>
-term p/1a:label directly above> MATCH (CERR): "disposal"
-term p/1a:label directly above> ERROR:
-term p/1a:label directly above> offset=41:
-term p/1a:label directly above> unexpected )
-term p/1a:label directly above> expecting ( or other text or number
-
-********************* \ !Consumed Error: term p/1a:label directly above: Unexpected ) Expecting: ( other text or number :8_4:UnDeeper:
-********************* / term p/b:label to the left of line below, with EOL                                      :7_7:Other "disp:
-********************** / someSL                                                                                :7_7:Other "disp:
-someSL> IN: "disposal" ) ) ) ) "of personal data" )  <…>
-someSL> MATCH (COK): "disposal"
-someSL> VALUE: ((["disposal"],0),[])
-
-********************** \ someSL has returned (["disposal"],0)                                             :8_4:UnDeeper:
-********************** / undeepers                                                                        :8_4:UnDeeper:
-*********************** > sameLine/undeepers: reached end of line; now need to clear 0 UnDeepers         :8_4:UnDeeper:
-*********************** > sameLine: success!                                                             :8_4:UnDeeper:
-undeepers> IN: ) ) ) ) "of personal data" ) ) OR ( "los <…>
-undeepers> MATCH (EOK): <EMPTY>
-undeepers> VALUE: ((),[])
-
-********************** \ undeepers has returned ()                                                        :8_4:UnDeeper:
-********************** / matching EOL                                                                     :8_4:UnDeeper:
-matching EOL> IN: ) ) ) ) "of personal data" ) ) OR ( "los <…>
-matching EOL> MATCH (EERR): <EMPTY>
-matching EOL> ERROR:
-matching EOL> offset=41:
-matching EOL> unexpected )
-matching EOL> expecting EOL
-
-********************** \ !Unconsumed Error: matching EOL: Unexpected ) Expecting: EOL                     :8_4:UnDeeper:
-term p/b:label to the left of line below, with EOL> IN: "disposal" ) ) ) ) "of personal data" )  <…>
-term p/b:label to the left of line below, with EOL> MATCH (CERR): "disposal"
-term p/b:label to the left of line below, with EOL> ERROR:
-term p/b:label to the left of line below, with EOL> offset=41:
-term p/b:label to the left of line below, with EOL> unexpected )
-term p/b:label to the left of line below, with EOL> expecting ( or EOL
-
-********************* \ !Consumed Error: term p/b:label to the left of line below, with EOL: Unexpected ) Expecting: EOL ( :8_4:UnDeeper:
 ********************* / term p/notLabelTerm                                                                     :7_7:Other "disp:
 ********************** / term p/2:someIndentation expr p                                                       :7_7:Other "disp:
 *********************** / someIndentation                                                                     :7_7:Other "disp:
@@ -6305,9 +5038,9 @@ Failures:
 
   To rerun use: --match "/PDPA/inline-1-s/"
 
-Randomized with seed 1382252577
+Randomized with seed 1473904660
 
-Finished in 0.0530 seconds
+Finished in 0.0391 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

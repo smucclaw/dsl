@@ -109,19 +109,10 @@ nlg rl = do
    gr <- nlgExtPGF
    let lang = head $ languages gr
    case annotatedRule of
-      RegulativeA {
-        subjA
-      , whoA
-      , condA
-      , deonticA
-      , actionA
-      , temporalA
-      , uponA
-      , givenA
-      } -> do
+      RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [actionA]
             subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
-            subj = mkApp (mkCId "Every") [subjWho]
+            subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
                                   (name,Just expr) <- [("Cond", condA),
@@ -129,7 +120,6 @@ nlg rl = do
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            -- finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
@@ -305,7 +295,7 @@ parseLex env str =
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
-  Left te -> error $ GfPretty.render $ ppTcError te -- gives string of error
+  Left te -> error $ "Tried to infer type of:\n\t* " ++ showExpr e ++ "\nGot the error:\n\t* " ++ GfPretty.render (ppTcError te) -- gives string of error
   Right (_, typ) -> showType [] typ -- string of type
 
 -- Given a list of ambiguous words like

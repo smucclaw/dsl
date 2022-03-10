@@ -23,6 +23,20 @@ nlgTests = do
       it "Should return an averbial" $ do
         showExpr tree `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
 
+    describe "test bsr2gf" $ do
+      let Just bsr = cond testAPRule
+          env = unsafePerformIO myUDEnv
+          tree = unsafePerformIO (bsr2gf env bsr)
+      it "Should return an advective phrase" $ do
+        showExpr tree `shouldBe` "ConjAP or_Conj (BaseAP (PositA harmful_A) (PositA significant_A))"
+
+    describe "test bsr2gf" $ do
+      let Just bsr = cond testCNRule
+          env = unsafePerformIO myUDEnv
+          tree = unsafePerformIO (bsr2gf env bsr)
+      it "Should return a common noun" $ do
+        showExpr tree `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
+
     describe "Convert to predicate" $ do
       -- "organization"
       let Just org = readExpr "root_only (rootN_ (MassNP (UseN organization_N)))"
@@ -110,6 +124,100 @@ testAdvRule = Regulative
         ( SrcRef
             { url = "test/testNLG/simpleAdv.csv"
             , short = "test/testNLG/simpleAdv.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , upon = Nothing
+    , given = Nothing
+    , having = Nothing
+    , wwhere = []
+    , defaults = []
+    , symtab = []
+    }
+
+testAPRule :: Rule
+testAPRule = Regulative
+    { subj = AA.Leaf
+        (
+            ( "you" :| []
+            , Nothing
+            ) :| []
+        )
+    , keyword = Party
+    , who = Nothing
+    , cond = Just
+        ( AA.Any Nothing
+            [ AA.Leaf
+                ( RPMT [ "harmful" ] )
+            , AA.Leaf
+                ( RPMT [ "significant" ] )
+            ]
+        )
+    , deontic = DMust
+    , action = AA.Leaf
+        (
+            ( "notify the PDPC" :| []
+            , Nothing
+            ) :| []
+        )
+    , temporal = Nothing
+    , hence = Nothing
+    , lest = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/testNLG/simpleAP.csv"
+            , short = "test/testNLG/simpleAP.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , upon = Nothing
+    , given = Nothing
+    , having = Nothing
+    , wwhere = []
+    , defaults = []
+    , symtab = []
+    }
+
+testCNRule :: Rule
+testCNRule = Regulative
+    { subj = AA.Leaf
+        (
+            ( "you" :| []
+            , Nothing
+            ) :| []
+        )
+    , keyword = Party
+    , who = Nothing
+    , cond = Just
+        ( AA.Any Nothing
+            [ AA.Leaf
+                ( RPMT [ "occurrence" ] )
+            , AA.Leaf
+                ( RPMT [ "assessment" ] )
+            ]
+        )
+    , deontic = DMust
+    , action = AA.Leaf
+        (
+            ( "notify the PDPC" :| []
+            , Nothing
+            ) :| []
+        )
+    , temporal = Nothing
+    , hence = Nothing
+    , lest = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/testNLG/simpleAP.csv"
+            , short = "test/testNLG/simpleAP.csv"
             , srcrow = 1
             , srccol = 1
             , version = Nothing

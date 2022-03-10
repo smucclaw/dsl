@@ -42,6 +42,9 @@ showExpr = PGF.showExpr []
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 
+nlgExtPGF :: IO PGF
+nlgExtPGF = readPGF (gfPath "UDExt.pgf")
+
 dummyExpr :: PGF.Expr
 dummyExpr = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
 
@@ -100,7 +103,7 @@ nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
-   gr <- readPGF (gfPath "UDExt.pgf")
+   gr <- nlgExtPGF
    let lang = head $ languages gr
    case annotatedRule of
       RegulativeA {
@@ -261,16 +264,15 @@ bsp2gf env bsp = case bsp of
 -- Let's try to parse a BoolStructR into a GF list
 -- First use case: "any unauthorised [access,use,…]  of personal data"
 
--- buildMorpho :: PGF -> Language -> Morpho
-makeMorpho :: UDEnv -> Morpho
-makeMorpho env =
-  buildMorpho (pgfGrammar env) (actLanguage env)
-
 -- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
 -- mkApp :: CId -> [Expr] -> Expr
 parseLex :: UDEnv -> String -> [Expr]
 parseLex env str =
-  [ mkApp cid [] | (cid, _analy) <- lookupMorpho (makeMorpho env) str]
+  [ mkApp cid [] | (cid, _analy) <- lookupMorpho morpho str]
+  where
+    morpho = buildMorpho parsingGrammar lang
+    parsingGrammar = pgfGrammar env -- use the parsing grammar, not extension grammar
+    lang = actLanguage env
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
@@ -376,9 +378,9 @@ bsr2gf env bsr = case bsr of
 parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
-  let contents = disambiguateList (pgfGrammar env) contentsAmb
-  return $ map (toUDS (pgfGrammar env)) contents
-
+  let parsingGrammar = pgfGrammar env -- here we use the parsing grammar, not extension grammar!
+      contents = disambiguateList parsingGrammar contentsAmb
+  return $ map (toUDS parsingGrammar) contents
 
 constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr
 constructTreeAPCNsOfNP cns conj nmod qualUDS = finalTree

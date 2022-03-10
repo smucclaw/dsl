@@ -92,11 +92,12 @@ parseConllu env str = trace ("\nconllu:\n" ++ str) $
 
 parseOut :: UDEnv -> Text.Text -> IO Expr
 parseOut env txt = do
-  conll <- udParse txt -- Initial parse
+--  conll <- udParse txt -- Initial parse
   lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  let expr = case parseConllu env conll of -- env -> str -> [[expr]]
-               Just e -> e
-               Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
+  -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
+  --              Just e -> e
+  --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
+  let expr = fromMaybe dummyExpr (parseConllu env lowerConll)
   putStrLn $ showExpr expr
   return expr
 -----------------------------------------------------------------------------

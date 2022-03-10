@@ -7,8 +7,11 @@ module LS.NLP.NLG where
 import LS.NLP.UDExt
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+      Rule(..),
+      BoolStructP, BoolStructR,
+      RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
+      rp2text, pt2text, bsp2text, mt2text, tm2mt)
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -165,60 +168,86 @@ mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
-  Regulative {} -> do
-    subjA'  <- parseBool env (subj rl)
-    whoA'   <- mapM (bsr2gf env) (who rl)
-    condA'  <- mapM (bsr2gf env) (cond rl)
-    actionA' <- parseBool env (action rl)
-    temporalA' <- mapM (parseTemporal env) (temporal rl)
-    uponA' <- mapM (parseParamText env) (upon rl)
-    givenA' <- mapM (parseParamText env) (given rl)
-    return RegulativeA {
-      subjA = subjA'
-    , keywordA = keyword2cid (rkeyword rl)
-    , whoA = whoA'
-    , condA = condA'
-    , deonticA = deontic2cid (deontic rl)
-    , actionA = actionA'
-    , temporalA = temporalA'
-    , uponA = uponA'
-    , givenA = givenA'
-    }
-  Constitutive {} -> do
-    givenA' <- mapM (parseParamText env) (given rl)
-    nameA' <- parseName env (name rl)
-    condA'   <- mapM (bsr2gf env) (cond rl) -- when/if/unless
-    return ConstitutiveA {
-      givenA = givenA'
-    , nameA = nameA'
-    , condA = condA'
-    }
-  -- DefNameAlias {
-  --   name = [nm]
-  -- , detail = [det]
-  -- } -> return $ DefNameAliasA nm det
-  Hornlike { clauses } -> do
-    exprs <- mapM (parseHornClause env) clauses
-    return $ HornlikeA {nameA=dummyExpr, clausesA = concat exprs}
+  Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
+    subjA <- parseBool env subj
+    let keywordA = keyword2cid $ tokenOf rkeyword
+    whoA <- mapM (bsr2gf env) who
+    condA <- mapM (bsr2gf env) cond
+    let deonticA = keyword2cid deontic
+    actionA <- parseBool env action
+    temporalA <- mapM (parseTemporal env) temporal
+    uponA <- mapM (parseParamText env) upon
+    givenA <- mapM (parseParamText env) given
+    havingA <- mapM (parseParamText env) having
+    return RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA, havingA}
+  Constitutive {name, keyword, cond, given} -> do
+    let keywordA = keyword2cid keyword
+    nameA <- parseName env name
+    condA <- mapM (bsr2gf env) cond
+    givenA <- mapM (parseParamText env) given
+    return ConstitutiveA {nameA, keywordA, condA, givenA}
+  Hornlike {name, keyword, given, upon, clauses} -> do
+    let keywordA = keyword2cid keyword
+    nameA <- parseName env name
+    givenA <- mapM (parseParamText env) given
+    uponA <- mapM (parseParamText env) upon
+    clausesA <- mapM (parseHornClause env keywordA) clauses
+    return HornlikeA {nameA, keywordA, givenA, uponA, clausesA}
+  TypeDecl {name, {-super, has,-} enums, given, upon} -> do
+    nameA <- parseName env name
+    --superA <- TODO: parse TypeSig
+    let superA = Just dummyExpr
+    enumsA <- mapM (parseParamText env) enums
+    givenA <- mapM (parseParamText env) given
+    uponA <- mapM (parseParamText env) upon
+    return TypeDeclA {nameA, superA, enumsA, givenA, uponA}
+  Scenario {scgiven, expect} -> do
+    let fun = mkCId "RPis" -- TODO fix this properly
+    scgivenA <- mapM (parseRP env fun) scgiven
+    expectA <- mapM (parseHornClause env fun) expect
+    return ScenarioA {scgivenA, expectA}
+  DefNameAlias { name, detail, nlhint } -> do
+    nameA <- parseName env name
+    detailA <- parseMulti env detail
+    return DefNameAliasA {nameA, detailA, nlhintA=nlhint}
+  RegFulfilled -> return RegFulfilledA
+  RegBreach -> return RegBreachA
   _ -> return RegBreachA
---  _ error "parseFields: rule type not supported yet"
   where
-    parseHornClause :: UDEnv -> HornClause2 -> IO [Expr]
-    parseHornClause env (HC2 rp Nothing) = (:[]) `fmap` parseRP env rp
-    parseHornClause env (HC2 rp (Just bsr)) = do
-      bsrExpr <- bsr2gf env bsr
-      rpExpr <- parseRP env rp
-      return [bsrExpr, rpExpr]
+    parseHornClause :: UDEnv -> CId -> HornClause2 -> IO Expr
+    parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
+    parseHornClause env fun (HC2 rp (Just bsr)) = do
+      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+      db_is_NDB_UDFragment <- fg `fmap` parseRP env fun rp -- TODO: dangerous assumption, not all parseRPs return UDFragment
+      db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
+      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
+      return $ gf hornclause
 
-    parseRP :: UDEnv -> RelationalPredicate -> IO Expr
-    parseRP env (RPParamText pt) = parseParamText env pt
-    parseRP env (RPMT txts) = parseName env txts
-    -- parseRP env (RPConstraint txts rr txts') = _wk
-    parseRP env (RPBoolStructR txts rr bsr) = bsr2gf env bsr
+    -- TODO: switch to GUDS or GUDFragment? How can we know which type they return?
+    -- Something a bit more typed than Expr would feel safer
+    parseRP :: UDEnv -> CId -> RelationalPredicate -> IO Expr
+    parseRP env _f (RPParamText pt) = parseParamText env pt
+    parseRP env _f (RPMT txts) = parseMulti env txts
+    parseRP env fun (RPConstraint sky is blue) = do
+      skyUDS <- parseMulti env sky
+      blueUDS <- parseMulti env blue
+      let skyNP = gf $ peelNP skyUDS
+      let rprel = if is==RPis then fun else keyword2cid is
+      return $ mkApp rprel [skyNP, blueUDS]
+    parseRP env fun (RPBoolStructR sky is blue) = do
+      gr <- nlgExtPGF
+      skyUDS <- parseMulti env sky
+      blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
+      let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
+      let rprel = if is==RPis then fun else keyword2cid is
+      return $ mkApp rprel [skyNP, blueUDS]
 
     -- ConstitutiveName is [Text.Text]
-    parseName :: UDEnv -> [Text.Text] -> IO Expr
-    parseName env txt = parseOut env (Text.unwords txt)
+    parseMulti :: UDEnv -> [Text.Text] -> IO Expr
+    parseMulti env txt = parseOut env (Text.unwords txt)
+
+    parseName :: UDEnv -> [Text.Text] -> IO Text.Text
+    parseName _env txt = return (Text.unwords txt)
 
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)
@@ -226,8 +255,8 @@ parseFields env rl = case rl of
     parseParamText :: UDEnv -> ParamText -> IO Expr
     parseParamText env pt = parseOut env $ pt2text pt
 
+    keyword2cid :: (Show a) => a -> CId
     keyword2cid = mkCId . show
-    deontic2cid = mkCId . show
 
     -- NB. we assume here only structure like "before 3 months", not "before the king sings"
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
@@ -505,20 +534,20 @@ data AnnotatedRule = RegulativeA
             , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
             -- skipping rlabel, lsource, srcref
             , havingA   :: Maybe Expr  -- HAVING sung...
-            , wwhereA   :: [AnnotatedRule]
+            -- , wwhereA   :: [AnnotatedRule]
             -- TODO: what are these?
 --            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
 --            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
             | ConstitutiveA {
-              nameA     :: Expr   -- the thing we are defining
+              nameA     :: Text.Text   -- the thing we are defining
             , keywordA  :: CId       -- Means, Includes, Is, Deem
             , condA     :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
             , givenA    :: Maybe Expr
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | HornlikeA {
-              nameA     :: Expr           -- colour
+              nameA     :: Text.Text           -- colour
             , keywordA  :: CId            -- decide / define / means
             , givenA    :: Maybe Expr    -- applicant has submitted fee
             , uponA     :: Maybe Expr    -- second request occurs
@@ -526,21 +555,21 @@ data AnnotatedRule = RegulativeA
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | TypeDeclA {
-              nameA     :: Expr  --      DEFINE Sign
+              nameA     :: Text.Text  --      DEFINE Sign
             , superA    :: Maybe Expr     --                  :: Thing
-            , hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            --, hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enumsA    :: Maybe Expr   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , givenA    :: Maybe Expr
             , uponA     :: Maybe Expr
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | ScenarioA {
-              scgiven  :: [Expr]
-            , expect   :: [Expr]      -- investment is savings when dependents is 5
+              scgivenA  :: [Expr]
+            , expectA   :: [Expr]      -- investment is savings when dependents is 5
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | DefNameAliasA { -- inline alias, like     some thing AKA Thing
-              nameA   :: Expr  -- "Thing" -- the thing usually said as ("Thing")
+              nameA   :: Text.Text  -- "Thing" -- the thing usually said as ("Thing")
             , detailA :: Expr  -- ["some", "thing"]
             , nlhintA :: Maybe Text.Text   -- "lang=en number=singular"
             }

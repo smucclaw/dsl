@@ -48,8 +48,10 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         row = unPos (sourceLine epos) - 1
         col = unPos (sourceColumn epos) - 1
         excelTable = pst & pstateInput & myStreamInput
+        numCols = maximum $ fmap length excelTable
+        paddedExcelTable = excelTable & fmap (\x -> x <> V.replicate (numCols - length x) "")
         excelTableMarked =
-          imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) excelTable
+          imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) paddedExcelTable
           & fmap (fmap Text.unpack)
           -- & fmap (fmap (Text.unpack. ("(" <>) . (<>")")))
         -- foldMax = foldl' _ 1

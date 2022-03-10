@@ -447,8 +447,8 @@ npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
+  Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP) --
   _ -> Nothing
---  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
 
 cnFromUDS :: GUDS -> Maybe GCN
 cnFromUDS x = np2cn =<< npFromUDS x

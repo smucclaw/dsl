@@ -44,8 +44,13 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     DMust = applyDeontic must_VV ;
     DShant = applyDeontic shant_VV ;
 
+    -- TODO: types ???
+    Means breach data_is_lost =
+      let mean_VS   : VS = P.mkVS mean_V ;
+          meansThat : VP = mkVP mean_VS (udsToS data_is_lost) ;
+       in mkS (mkCl breach meansThat) ;
+
     -- : NP -> UDS -> UDFragment ; -- TODO: types?
-    Means, -- TODO: needs different type, need to peel off the NP or whatever from the UDS in haskell
     RPis,
     RPeq = \sky,blue -> PredVPS sky blue.pred.fin ;
 {-  RPlt,  -- TODO: later. maybe need different types?

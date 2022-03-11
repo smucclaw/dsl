@@ -74,6 +74,8 @@
 #auxfun DetCN_anyPl det cn : Det -> CN -> NP = DetCN anyPl_Det cn ; det[LEMMA=any] head[Number=Plur]
 #disable anyPl_Det anySg_Det
 
+#auxfun rootDetA_anySg_ det ap : Det -> AP -> root = rootDetA_ anySg_Det ap ; det[LEMMA=any] head
+
 #auxfun DetCN_someSg det cn : Det -> CN -> NP = DetCN someSg_Det cn ; det[LEMMA=some] head[Number=Sing]
 #auxfun DetCN_somePl det cn : Det -> CN -> NP = DetCN somePl_Det cn ; det[LEMMA=some] head[Number=Plur]
 #disable somePl_Det someSg_Det

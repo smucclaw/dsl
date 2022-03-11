@@ -138,6 +138,13 @@ concrete BareRGEng of BareRG =
       n = ResEng.Pl ;
     } ;
 
+    --  : ACard -> Det ;
+    ACard2Det acard = every_Det **
+      {s = acard.s ! R.Nom ;
+       -- sp : Gender => Bool => NPCase => Str
+       sp = \\_g,_b,npc => acard.s ! R.npcase2case npc ;
+       n = acard.n ;
+       hasNum = False} ;
   lincat
     [Prep] = Co.ListX ;
 

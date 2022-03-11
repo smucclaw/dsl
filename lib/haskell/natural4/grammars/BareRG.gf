@@ -117,6 +117,8 @@ abstract BareRG =
 
     MkA2 : A -> Prep -> A2 ;
 
+    ACard2Det : ACard -> Det ;
+
   cat
     [Prep]{2} ;
 

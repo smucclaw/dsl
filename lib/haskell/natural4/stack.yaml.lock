@@ -31,16 +31,16 @@ packages:
     subdir: baby-l4-core
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
 - completed:
-    size: 1351076
-    url: https://github.com/anka-213/gf-ud/archive/d078668f179f9fa6afeb7d7d001a7f6b13d2adbd.tar.gz
+    size: 1354263
+    url: https://github.com/anka-213/gf-ud/archive/2d5d492ee75160fce8e091a2129ab00bb8ed9bc6.tar.gz
     name: gf-ud
     version: 0.1.0.0
-    sha256: 254ec50f0453e6c62deb11499cb8aa92bdb6f2e171b263c2888ef23b4775f1db
+    sha256: 15b74c7e182cbdd272c21c21232eda8d66cf8b1ae6e605933e2ee564b3f9bea3
     pantry-tree:
-      size: 6417
-      sha256: 5ad7f4599d469f5a9a75a805720cf8339fb4130a7316f16187f35d060833d2df
+      size: 6503
+      sha256: ad42e1872934ef0518e5bf8df9c603f3bd3024ed17d55b4576ad4eae20c81f0f
   original:
-    url: https://github.com/anka-213/gf-ud/archive/d078668f179f9fa6afeb7d7d001a7f6b13d2adbd.tar.gz
+    url: https://github.com/anka-213/gf-ud/archive/2d5d492ee75160fce8e091a2129ab00bb8ed9bc6.tar.gz
 - completed:
     size: 16398419
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz

@@ -18,7 +18,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
        in Se.ExtAdvS upon_Adv action ;
 
     Cond cond action =
-      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+      let cond_Adv : Adv = SyntaxEng.mkAdv SyntaxEng.if_Subj (udsToS cond) ;
        in Se.AdvS action cond_Adv;
 
     Temporal temp action = Se.AdvS action temp;
@@ -37,10 +37,33 @@ concrete UDExtEng of UDExt = UDAppEng ** open
        in ExtAdvNP king who_is_singer_Adv ;
 
     Every np = mkNP (lin Predet {s = "every"}) np ;
+    TokAll np = mkNP (lin Predet {s = "all"}) np ;
+    Party np = np ;
 
     DMay = applyDeontic ExtraEng.may_VV ;
     DMust = applyDeontic must_VV ;
     DShant = applyDeontic shant_VV ;
+
+    -- TODO: types ???
+    Means breach data_is_lost =
+      let mean_VS   : VS = P.mkVS mean_V ;
+          meansThat : VP = mkVP mean_VS (udsToS data_is_lost) ;
+       in mkS (mkCl breach meansThat) ;
+
+    -- : NP -> UDS -> UDFragment ; -- TODO: types?
+    RPis,
+    RPeq = \sky,blue -> PredVPS sky blue.pred.fin ;
+{-  RPlt,  -- TODO: later. maybe need different types?
+    RPlte,
+    RPgt,
+    RPgte,
+    RPelem,
+    RPnotElem -}
+
+    -- : UDFragment -> UDS -> UDFragment ; -- breach is severe WHEN data is lost
+    HornClause2 breach_is_severe data_is_lost =
+      let when_data_lost_Adv = mkAdv SyntaxEng.when_Subj (udsToS data_is_lost)
+       in hornlike breach_is_severe when_data_lost_Adv ;
 
     CondStandalone uds = ss (linUDS uds) ;
     TemporalStandalone uds = ss (linUDS uds) ;
@@ -95,6 +118,11 @@ concrete UDExtEng of UDExt = UDAppEng ** open
 
     emptyConj : Conj = and_Conj ** {s1,s2 = ""} ;
 
+    -- hack to make the order "S , Adv"
+    -- in English RG, lincat of S and Adv is both {s : Str} so we can do this
+    -- Unsafe, don't copy for other languages
+    hornlike : S -> Adv -> S = \consequence,condition ->
+      Se.ExtAdvS (lin Adv consequence) (lin S condition) ;
   lin
 -- Aarne
     -- : Numeral -> UDS -> UDFragment ;

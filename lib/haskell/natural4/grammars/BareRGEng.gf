@@ -14,6 +14,7 @@ concrete BareRGEng of BareRG =
     AdvS ,
     ExtAdvS
     ,UseCl, UseRCl
+    ,EmbedVP -- used in UDExt
   ],
 
   VerbEng [
@@ -108,6 +109,9 @@ concrete BareRGEng of BareRG =
         } ;
       a = R.RNoAg
       } ;
+
+    -- : NP -> SC -> NP ;     -- to get "a data breach occurred" to become a NP
+    SentNP np sc = AdvNP np <sc : Adv> ;
 
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
     -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;

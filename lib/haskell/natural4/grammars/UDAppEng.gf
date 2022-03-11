@@ -272,7 +272,7 @@ lin
             vp = mkVP rt.vp RSasAdv
           } ;
 
-	onlyPred : VP -> UDS = \vp -> mkUDS emptyNP vp ;
+	onlyPred : VP -> UDS = \vp -> mkUDS it_NP vp ;
 
   applyNeg : Root -> NP -> LinUDS = \root,subj -> {
     subj = subj ;

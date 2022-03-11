@@ -7,8 +7,11 @@ module LS.NLP.NLG where
 import LS.NLP.UDExt
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
-      Rule(..), BoolStructP, BoolStructR, rp2text, pt2text, bsp2text, RelationalPredicate(..), HornClause2(..), mt2text, tm2mt )
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, Morpho, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+      Rule(..),
+      BoolStructP, BoolStructR,
+      RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
+      rp2text, pt2text, bsp2text, mt2text, tm2mt)
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -36,10 +39,14 @@ import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 
+showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
 myUDEnv :: IO UDEnv
 myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
+
+nlgExtPGF :: IO PGF
+nlgExtPGF = readPGF (gfPath "UDExt.pgf")
 
 dummyExpr :: PGF.Expr
 dummyExpr = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
@@ -66,7 +73,7 @@ mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'
   where
     patterns :: (Char, Char) -> Parsec Void String String
     patterns (a,b) = do
-      char a
+      _ <- char a
       join <$> manyTill
               (fst <$> match (patterns (a,b)) <|> pure <$> anySingle)
               (char b)
@@ -85,11 +92,12 @@ parseConllu env str = trace ("\nconllu:\n" ++ str) $
 
 parseOut :: UDEnv -> Text.Text -> IO Expr
 parseOut env txt = do
-  conll <- udParse txt -- Initial parse
+--  conll <- udParse txt -- Initial parse
   lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  let expr = case parseConllu env conll of -- env -> str -> [[expr]]
-               Just e -> e
-               Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
+  -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
+  --              Just e -> e
+  --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
+  let expr = fromMaybe dummyExpr (parseConllu env lowerConll)
   putStrLn $ showExpr expr
   return expr
 -----------------------------------------------------------------------------
@@ -99,22 +107,13 @@ nlg rl = do
    env <- myUDEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
-   gr <- readPGF (gfPath "UDExt.pgf")
+   gr <- nlgExtPGF
    let lang = head $ languages gr
    case annotatedRule of
-      RegulativeA {
-        subjA
-      , whoA
-      , condA
-      , deonticA
-      , actionA
-      , temporalA
-      , uponA
-      , givenA
-      } -> do
+      RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [actionA]
-            subjWho = applyMaybe "Who" whoA (gf dummyNP) --(gf $ peelNP subjA)
-            subj = mkApp (mkCId "Every") [subjWho]
+            subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
+            subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
                                   (name,Just expr) <- [("Cond", condA),
@@ -122,7 +121,6 @@ nlg rl = do
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            -- finalTree = king_may_sing_upon
             linText = linearize gr lang finalTree
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
@@ -149,6 +147,7 @@ doNLG [("Given", givenA)] king = mkApp (mkCId "Given") [givenA, king]
 doNLG [("Cond", condA), ("Temporal", temporalA)] king = mkApp (mkCId "CondTemporal") [condA, temporalA, king]
 doNLG [("Cond", condA), ("Upon", uponA)] king = mkApp (mkCId "CondUpon") [condA, uponA, king]
 doNLG [("Cond", condA), ("Given", givenA)] king = mkApp (mkCId "CondGiven") [condA, givenA, king]
+doNLG _ expr = expr
 
 
 applyMaybe :: String -> Maybe Expr -> Expr -> Expr
@@ -160,60 +159,86 @@ mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
-  Regulative {} -> do
-    subjA'  <- parseBool env (subj rl)
-    whoA'   <- mapM (bsr2gf env) (who rl)
-    condA'  <- mapM (bsr2gf env) (cond rl)
-    actionA' <- parseBool env (action rl)
-    temporalA' <- mapM (parseTemporal env) (temporal rl)
-    uponA' <- mapM (parseParamText env) (upon rl)
-    givenA' <- mapM (parseParamText env) (given rl)
-    return RegulativeA {
-      subjA = subjA'
-    , keywordA = keyword2cid (rkeyword rl)
-    , whoA = whoA'
-    , condA = condA'
-    , deonticA = deontic2cid (deontic rl)
-    , actionA = actionA'
-    , temporalA = temporalA'
-    , uponA = uponA'
-    , givenA = givenA'
-    }
-  Constitutive {} -> do
-    givenA' <- mapM (parseParamText env) (given rl)
-    nameA' <- parseName env (name rl)
-    condA'   <- mapM (bsr2gf env) (cond rl) -- when/if/unless
-    return ConstitutiveA {
-      givenA = givenA'
-    , nameA = nameA'
-    , condA = condA'
-    }
-  -- DefNameAlias {
-  --   name = [nm]
-  -- , detail = [det]
-  -- } -> return $ DefNameAliasA nm det
-  Hornlike { clauses } -> do
-    exprs <- mapM (parseHornClause env) clauses
-    return $ HornlikeA {nameA=dummyExpr, clausesA = concat exprs}
+  Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
+    subjA <- parseBool env subj
+    let keywordA = keyword2cid $ tokenOf rkeyword
+    whoA <- mapM (bsr2gf env) who
+    condA <- mapM (bsr2gf env) cond
+    let deonticA = keyword2cid deontic
+    actionA <- parseBool env action
+    temporalA <- mapM (parseTemporal env) temporal
+    uponA <- mapM (parseParamText env) upon
+    givenA <- mapM (parseParamText env) given
+    havingA <- mapM (parseParamText env) having
+    return RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA, havingA}
+  Constitutive {name, keyword, cond, given} -> do
+    let keywordA = keyword2cid keyword
+    nameA <- parseName env name
+    condA <- mapM (bsr2gf env) cond
+    givenA <- mapM (parseParamText env) given
+    return ConstitutiveA {nameA, keywordA, condA, givenA}
+  Hornlike {name, keyword, given, upon, clauses} -> do
+    let keywordA = keyword2cid keyword
+    nameA <- parseName env name
+    givenA <- mapM (parseParamText env) given
+    uponA <- mapM (parseParamText env) upon
+    clausesA <- mapM (parseHornClause env keywordA) clauses
+    return HornlikeA {nameA, keywordA, givenA, uponA, clausesA}
+  TypeDecl {name, {-super, has,-} enums, given, upon} -> do
+    nameA <- parseName env name
+    --superA <- TODO: parse TypeSig
+    let superA = Just dummyExpr
+    enumsA <- mapM (parseParamText env) enums
+    givenA <- mapM (parseParamText env) given
+    uponA <- mapM (parseParamText env) upon
+    return TypeDeclA {nameA, superA, enumsA, givenA, uponA}
+  Scenario {scgiven, expect} -> do
+    let fun = mkCId "RPis" -- TODO fix this properly
+    scgivenA <- mapM (parseRP env fun) scgiven
+    expectA <- mapM (parseHornClause env fun) expect
+    return ScenarioA {scgivenA, expectA}
+  DefNameAlias { name, detail, nlhint } -> do
+    nameA <- parseName env name
+    detailA <- parseMulti env detail
+    return DefNameAliasA {nameA, detailA, nlhintA=nlhint}
+  RegFulfilled -> return RegFulfilledA
+  RegBreach -> return RegBreachA
   _ -> return RegBreachA
---  _ error "parseFields: rule type not supported yet"
   where
-    parseHornClause :: UDEnv -> HornClause2 -> IO [Expr]
-    parseHornClause env (HC2 rp Nothing) = (:[]) `fmap` parseRP env rp
-    parseHornClause env (HC2 rp (Just bsr)) = do
-      bsrExpr <- bsr2gf env bsr
-      rpExpr <- parseRP env rp
-      return [bsrExpr, rpExpr]
+    parseHornClause :: UDEnv -> CId -> HornClause2 -> IO Expr
+    parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
+    parseHornClause env fun (HC2 rp (Just bsr)) = do
+      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+      db_is_NDB_UDFragment <- fg `fmap` parseRP env fun rp -- TODO: dangerous assumption, not all parseRPs return UDFragment
+      db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
+      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
+      return $ gf hornclause
 
-    parseRP :: UDEnv -> RelationalPredicate -> IO Expr
-    parseRP env (RPParamText pt) = parseParamText env pt
-    parseRP env (RPMT txts) = parseName env txts
-    -- parseRP env (RPConstraint txts rr txts') = _wk
-    parseRP env (RPBoolStructR txts rr bsr) = bsr2gf env bsr
+    -- TODO: switch to GUDS or GUDFragment? How can we know which type they return?
+    -- Something a bit more typed than Expr would feel safer
+    parseRP :: UDEnv -> CId -> RelationalPredicate -> IO Expr
+    parseRP env _f (RPParamText pt) = parseParamText env pt
+    parseRP env _f (RPMT txts) = parseMulti env txts
+    parseRP env fun (RPConstraint sky is blue) = do
+      skyUDS <- parseMulti env sky
+      blueUDS <- parseMulti env blue
+      let skyNP = gf $ peelNP skyUDS
+      let rprel = if is==RPis then fun else keyword2cid is
+      return $ mkApp rprel [skyNP, blueUDS]
+    parseRP env fun (RPBoolStructR sky is blue) = do
+      gr <- nlgExtPGF
+      skyUDS <- parseMulti env sky
+      blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
+      let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
+      let rprel = if is==RPis then fun else keyword2cid is
+      return $ mkApp rprel [skyNP, blueUDS]
 
     -- ConstitutiveName is [Text.Text]
-    parseName :: UDEnv -> [Text.Text] -> IO Expr
-    parseName env txt = parseOut env (Text.unwords txt)
+    parseMulti :: UDEnv -> [Text.Text] -> IO Expr
+    parseMulti env txt = parseOut env (Text.unwords txt)
+
+    parseName :: UDEnv -> [Text.Text] -> IO Text.Text
+    parseName _env txt = return (Text.unwords txt)
 
     parseBool :: UDEnv -> BoolStructP -> IO Expr
     parseBool env bsp = parseOut env (bsp2text bsp)
@@ -221,8 +246,8 @@ parseFields env rl = case rl of
     parseParamText :: UDEnv -> ParamText -> IO Expr
     parseParamText env pt = parseOut env $ pt2text pt
 
+    keyword2cid :: (Show a) => a -> CId
     keyword2cid = mkCId . show
-    deontic2cid = mkCId . show
 
     -- NB. we assume here only structure like "before 3 months", not "before the king sings"
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
@@ -259,20 +284,19 @@ bsp2gf env bsp = case bsp of
 -- Let's try to parse a BoolStructR into a GF list
 -- First use case: "any unauthorised [access,use,…]  of personal data"
 
--- buildMorpho :: PGF -> Language -> Morpho
-makeMorpho :: UDEnv -> Morpho
-makeMorpho env =
-  buildMorpho (pgfGrammar env) (actLanguage env)
-
 -- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
 -- mkApp :: CId -> [Expr] -> Expr
 parseLex :: UDEnv -> String -> [Expr]
 parseLex env str =
-  [ mkApp cid [] | (cid, analy) <- lookupMorpho (makeMorpho env) str]
+  [ mkApp cid [] | (cid, _analy) <- lookupMorpho morpho str]
+  where
+    morpho = buildMorpho parsingGrammar lang
+    parsingGrammar = pgfGrammar env -- use the parsing grammar, not extension grammar
+    lang = actLanguage env
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
-  Left te -> error $ GfPretty.render $ ppTcError te -- gives string of error
+  Left te -> error $ "Tried to infer type of:\n\t* " ++ showExpr e ++ "\nGot the error:\n\t* " ++ GfPretty.render (ppTcError te) -- gives string of error
   Right (_, typ) -> showType [] typ -- string of type
 
 -- Given a list of ambiguous words like
@@ -306,11 +330,6 @@ bsr2gfAmb env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
     let checkWords = length $ Text.words access
-    putStrLn "morpho"
-    print $ lookupMorpho (makeMorpho env) (Text.unpack access)
-    putStrLn "---"
-    print $ map showExpr (parseLex env (Text.unpack access))
-    putStrLn "***"
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
       _ -> singletonList $ parseOut env access
@@ -333,34 +352,31 @@ bsr2gf env bsr = case bsr of
 
         -- Here we need to determine which GF type the contents are
         -- TODO: what if they are different types?
-    let
-        pcns =  mapMaybe cnFromUDS contentsUDS --  :: [GCN]
-        pdets = mapMaybe detFromUDS contentsUDS -- :: [GDet]
-
-        treeAdv :: Maybe Expr
+    let treeAdv :: Maybe Expr
         treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
-                    advs@(a:as) -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
+                    []    -> Nothing
                     [adv] -> Just $ gf adv
-                    [] -> Nothing
+                    advs  -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
 
         treeAP :: Maybe Expr
         treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
-                    aps@(a:as) -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
+                    []   -> Nothing
                     [ap] -> Just $ gf ap
-                    [] -> Nothing
+                    aps  -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
 
         treeCN :: Maybe Expr
         treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
-                    cns@(a:as) -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
+                    []   -> Nothing
                     [cn] -> Just $ gf cn
-                    [] -> Nothing
+                    cns  -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
         treeDet :: Maybe Expr
         treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
-                    dets@(a:as) -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
+                    []    -> Nothing
                     [det] -> Just $ gf det
-                    [] -> Nothing
+                    dets  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
 
-    return $ head $ catMaybes [treeAP,treeAdv,treeCN, treeDet]
+    -- add dummyExpr into the list, so if all 4 are Nothing, at least program doesn't crash
+    return $ head $ catMaybes [treeAP, treeAdv, treeCN, treeDet, Just dummyExpr]
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     -- 1) Parse the actual contents. This can be
@@ -382,9 +398,9 @@ bsr2gf env bsr = case bsr of
 parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
-  let contents = disambiguateList (pgfGrammar env) contentsAmb
-  return $ map (toUDS (pgfGrammar env)) contents
-
+  let parsingGrammar = pgfGrammar env -- here we use the parsing grammar, not extension grammar!
+      contents = disambiguateList parsingGrammar contentsAmb
+  return $ map (toUDS parsingGrammar) contents
 
 constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr
 constructTreeAPCNsOfNP cns conj nmod qualUDS = finalTree
@@ -451,8 +467,8 @@ npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
+  Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP) --
   _ -> Nothing
---  Groot_nsubj (rootV_ someVP) (nsubj_ someNP) -> GRelNP someNP (GRelVP someVP)
 
 cnFromUDS :: GUDS -> Maybe GCN
 cnFromUDS x = np2cn =<< npFromUDS x
@@ -509,20 +525,20 @@ data AnnotatedRule = RegulativeA
             , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
             -- skipping rlabel, lsource, srcref
             , havingA   :: Maybe Expr  -- HAVING sung...
-            , wwhereA   :: [AnnotatedRule]
+            -- , wwhereA   :: [AnnotatedRule]
             -- TODO: what are these?
 --            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
 --            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
             | ConstitutiveA {
-              nameA     :: Expr   -- the thing we are defining
+              nameA     :: Text.Text   -- the thing we are defining
             , keywordA  :: CId       -- Means, Includes, Is, Deem
             , condA     :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
             , givenA    :: Maybe Expr
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | HornlikeA {
-              nameA     :: Expr           -- colour
+              nameA     :: Text.Text           -- colour
             , keywordA  :: CId            -- decide / define / means
             , givenA    :: Maybe Expr    -- applicant has submitted fee
             , uponA     :: Maybe Expr    -- second request occurs
@@ -530,21 +546,21 @@ data AnnotatedRule = RegulativeA
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | TypeDeclA {
-              nameA     :: Expr  --      DEFINE Sign
+              nameA     :: Text.Text  --      DEFINE Sign
             , superA    :: Maybe Expr     --                  :: Thing
-            , hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            --, hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enumsA    :: Maybe Expr   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , givenA    :: Maybe Expr
             , uponA     :: Maybe Expr
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | ScenarioA {
-              scgiven  :: [Expr]
-            , expect   :: [Expr]      -- investment is savings when dependents is 5
+              scgivenA  :: [Expr]
+            , expectA   :: [Expr]      -- investment is savings when dependents is 5
             -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
             }
             | DefNameAliasA { -- inline alias, like     some thing AKA Thing
-              nameA   :: Expr  -- "Thing" -- the thing usually said as ("Thing")
+              nameA   :: Text.Text  -- "Thing" -- the thing usually said as ("Thing")
             , detailA :: Expr  -- ["some", "thing"]
             , nlhintA :: Maybe Text.Text   -- "lang=en number=singular"
             }

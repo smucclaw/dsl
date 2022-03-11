@@ -5,7 +5,6 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
-
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -411,6 +410,7 @@ data Tree :: * -> * where
   LexConj :: String -> Tree GConj_
   GAdjDAP :: GDAP -> GAP -> Tree GDAP_
   GDetDAP :: GDet -> Tree GDAP_
+  GACard2Det :: GACard -> Tree GDet_
   GConjDet :: GConj -> GListDAP -> Tree GDet_
   GDetQuant :: GQuant -> GNum -> Tree GDet_
   GDetQuantOrd :: GQuant -> GNum -> GOrd -> Tree GDet_
@@ -891,6 +891,7 @@ data Tree :: * -> * where
   Gpunct_ :: GX -> Tree Gpunct_
   Greparandum_ :: GX -> Tree Greparandum_
   GrootA_ :: GAP -> Tree Groot_
+  GrootAdA_ :: GAdA -> Tree Groot_
   GrootAdv_ :: GAdv -> Tree Groot_
   GrootDetA_ :: GDet -> GAP -> Tree Groot_
   GrootDet_ :: GDet -> Tree Groot_
@@ -976,6 +977,7 @@ instance Eq (Tree a) where
     (LexConj x,LexConj y) -> x == y
     (GAdjDAP x1 x2,GAdjDAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDetDAP x1,GDetDAP y1) -> and [ x1 == y1 ]
+    (GACard2Det x1,GACard2Det y1) -> and [ x1 == y1 ]
     (GConjDet x1 x2,GConjDet y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDetQuant x1 x2,GDetQuant y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDetQuantOrd x1 x2 x3,GDetQuantOrd y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1456,6 +1458,7 @@ instance Eq (Tree a) where
     (Gpunct_ x1,Gpunct_ y1) -> and [ x1 == y1 ]
     (Greparandum_ x1,Greparandum_ y1) -> and [ x1 == y1 ]
     (GrootA_ x1,GrootA_ y1) -> and [ x1 == y1 ]
+    (GrootAdA_ x1,GrootAdA_ y1) -> and [ x1 == y1 ]
     (GrootAdv_ x1,GrootAdv_ y1) -> and [ x1 == y1 ]
     (GrootDetA_ x1 x2,GrootDetA_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GrootDet_ x1,GrootDet_ y1) -> and [ x1 == y1 ]
@@ -1699,6 +1702,7 @@ instance Gf GDAP where
       _ -> error ("no DAP " ++ show t)
 
 instance Gf GDet where
+  gf (GACard2Det x1) = mkApp (mkCId "ACard2Det") [gf x1]
   gf (GConjDet x1 x2) = mkApp (mkCId "ConjDet") [gf x1, gf x2]
   gf (GDetQuant x1 x2) = mkApp (mkCId "DetQuant") [gf x1, gf x2]
   gf (GDetQuantOrd x1 x2 x3) = mkApp (mkCId "DetQuantOrd") [gf x1, gf x2, gf x3]
@@ -1707,6 +1711,7 @@ instance Gf GDet where
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "ACard2Det" -> GACard2Det (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjDet" -> GConjDet (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "DetQuant" -> GDetQuant (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "DetQuantOrd" -> GDetQuantOrd (fg x1) (fg x2) (fg x3)
@@ -3583,6 +3588,7 @@ instance Gf Greparandum where
 
 instance Gf Groot where
   gf (GrootA_ x1) = mkApp (mkCId "rootA_") [gf x1]
+  gf (GrootAdA_ x1) = mkApp (mkCId "rootAdA_") [gf x1]
   gf (GrootAdv_ x1) = mkApp (mkCId "rootAdv_") [gf x1]
   gf (GrootDetA_ x1 x2) = mkApp (mkCId "rootDetA_") [gf x1, gf x2]
   gf (GrootDet_ x1) = mkApp (mkCId "rootDet_") [gf x1]
@@ -3593,6 +3599,7 @@ instance Gf Groot where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "rootA_" -> GrootA_ (fg x1)
+      Just (i,[x1]) | i == mkCId "rootAdA_" -> GrootAdA_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootAdv_" -> GrootAdv_ (fg x1)
       Just (i,[x1,x2]) | i == mkCId "rootDetA_" -> GrootDetA_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "rootDet_" -> GrootDet_ (fg x1)
@@ -3858,6 +3865,7 @@ instance Compos Tree where
     GStrCard x1 -> r GStrCard `a` f x1
     GAdjDAP x1 x2 -> r GAdjDAP `a` f x1 `a` f x2
     GDetDAP x1 -> r GDetDAP `a` f x1
+    GACard2Det x1 -> r GACard2Det `a` f x1
     GConjDet x1 x2 -> r GConjDet `a` f x1 `a` f x2
     GDetQuant x1 x2 -> r GDetQuant `a` f x1 `a` f x2
     GDetQuantOrd x1 x2 x3 -> r GDetQuantOrd `a` f x1 `a` f x2 `a` f x3
@@ -4255,6 +4263,7 @@ instance Compos Tree where
     Gpunct_ x1 -> r Gpunct_ `a` f x1
     Greparandum_ x1 -> r Greparandum_ `a` f x1
     GrootA_ x1 -> r GrootA_ `a` f x1
+    GrootAdA_ x1 -> r GrootAdA_ `a` f x1
     GrootAdv_ x1 -> r GrootAdv_ `a` f x1
     GrootDetA_ x1 x2 -> r GrootDetA_ `a` f x1 `a` f x2
     GrootDet_ x1 -> r GrootDet_ `a` f x1

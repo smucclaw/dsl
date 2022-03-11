@@ -16,12 +16,18 @@ import System.IO.Unsafe
 nlgTests :: Spec
 nlgTests = do
 
-    describe "test bsr2gf" $ do
-      let Just bsr = cond testAdvRule
-          env = unsafePerformIO myUDEnv
-          tree = unsafePerformIO (bsr2gf env bsr)
-      it "Should return an averbial" $ do
-        showExpr tree `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
+   describe "test bsr2gf" $ do
+--     -- let Just bsr = cond testAdvRule
+--     --     env = unsafePerformIO myUDEnv
+--     --     tree = unsafePerformIO (bsr2gf env bsr)
+--     -- it "Should return an averbial" $ do
+--     --     showExpr tree `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
+    let Just bsr = cond testDetRule
+        env = unsafePerformIO myUDEnv
+        tree = unsafePerformIO (bsr2gf env bsr)
+    it "Should return a det" $ do
+        -- showExpr tree `shouldBe` "ConjNP or_Conj (BaseNP ((DetCN any_Det) UseN cat_N) ((DetCN any_Det) UseN dog_N))"
+        showExpr tree `shouldBe` "ConjNP or_Conj (BaseNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg)))"
 
     describe "Convert to predicate" $ do
       -- "organization"
@@ -75,6 +81,58 @@ nlgTests = do
         convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
         applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
 
+testDetRule :: Rule
+testDetRule = Regulative
+    { subj = AA.Leaf
+        (
+            ( "you" :| []
+            , Nothing
+            ) :| []
+        )
+    , rkeyword = RParty
+    , who = Nothing
+    , cond = Just
+        ( AA.Any Nothing
+            [ AA.Leaf
+                ( RPMT
+                    [ "this"
+                    ]
+                )
+            , AA.Leaf
+                ( RPMT
+                    [ "that"
+                    ]
+                )
+            ]
+        )
+    , deontic = DMust
+    , action = AA.Leaf
+        (
+            ( "notify the PDPC" :| []
+            , Nothing
+            ) :| []
+        )
+    , temporal = Nothing
+    , hence = Nothing
+    , lest = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "STDIN"
+            , short = "STDIN"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , upon = Nothing
+    , given = Nothing
+    , having = Nothing
+    , wwhere = []
+    , defaults = []
+    , symtab = []
+    }
 
 testAdvRule :: Rule
 testAdvRule = Regulative

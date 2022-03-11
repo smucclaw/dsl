@@ -158,6 +158,7 @@ abstract UDCat = BareRG ** {
         rootDet_ : Det -> root ; -- some
         rootDetA_ : Det -> AP -> root ; -- fragments like "any unauthorised"
         rootQuant_ : Quant -> root ; -- the customer's
+        rootAdA_ : AdA -> root ; -- much
 
     -- GF NPs can have many UD labels
         nsubj_ : NP -> nsubj ; -- lexical cat can be NOUN, DET, PRON, …

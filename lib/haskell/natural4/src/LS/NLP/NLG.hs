@@ -21,7 +21,7 @@ import Data.Void (Void)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromJust, fromMaybe, catMaybes, mapMaybe )
-import Data.List ( elemIndex, intercalate, group, sort, sortOn )
+import Data.List ( elemIndex, intercalate, group, sort, sortOn, nub )
 import Data.List.Extra (maximumOn)
 import Replace.Megaparsec ( sepCap )
 import Text.Megaparsec
@@ -116,7 +116,7 @@ nlg rl = do
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
-                                  (name,Just expr) <- [("Cond", condA),
+                                  (name,Just expr) <- [("Cond", fmap (gf . toUDS gr) condA),
                                                        ("Temporal", temporalA),
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
@@ -287,9 +287,15 @@ bsp2gf env bsp = case bsp of
 -- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
 -- mkApp :: CId -> [Expr] -> Expr
 parseLex :: UDEnv -> String -> [Expr]
-parseLex env str =
-  [ mkApp cid [] | (cid, _analy) <- lookupMorpho morpho str]
+parseLex env str = trace ("parseLex:" ++ show result) result
   where
+    lexicalCats :: [String]
+    lexicalCats = words "N V A N2 N3 V2 A2 VA V2V VV V3 VS V2A V2S V2Q Adv AdV AdA AdN ACard CAdv Conj Interj PN Prep Pron Quant Det Card Text Predet Subj"
+    result = nub [ mkApp cid []
+              | (cid, _analy) <- lookupMorpho morpho str
+              , let expr = mkApp cid []
+              , findType parsingGrammar expr `elem` lexicalCats
+            ]
     morpho = buildMorpho parsingGrammar lang
     parsingGrammar = pgfGrammar env -- use the parsing grammar, not extension grammar
     lang = actLanguage env
@@ -349,6 +355,8 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     -- 1) Parse the actual contents. This can be
     contentsUDS <- parseAndDisambiguate env contents
+    print $ map (showExpr . gf) contentsUDS
+    print contents
 
         -- Here we need to determine which GF type the contents are
         -- TODO: what if they are different types?
@@ -400,6 +408,7 @@ parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
   let parsingGrammar = pgfGrammar env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb
+  print contents
   return $ map (toUDS parsingGrammar) contents
 
 constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr
@@ -436,8 +445,11 @@ toUDS pgf e = case findType pgf e of
   "V"  -> Groot_only (GrootV_ (GUseV (fg e)))
   "Adv"-> Groot_only (GrootAdv_ (fg e))
   "Det"-> Groot_only (GrootDet_ (fg e))
-  "Quant"-> Groot_only (GrootQuant_ (fg e))
-  _ -> fg dummyExpr
+ -- "Quant"-> Groot_only (GrootQuant_ (fg e))
+  "Quant"-> Groot_only (GrootDet_ (GDetQuant (fg e) GNumSg))
+  "ACard" -> Groot_only (GrootDet_ (GACard2Det (fg e)))
+  "AdA" -> Groot_only (GrootAdA_ (fg e)) -- added from gf
+  _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
 
 -----------------------------------------------------------------------------
 -- Manipulating GF trees

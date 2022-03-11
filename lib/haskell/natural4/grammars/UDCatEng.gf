@@ -113,12 +113,21 @@ concrete UDCatEng of UDCat = BareRGEng **
     AclType = Finite | PastPart | PresPart ;
 
   oper
-    UDSPred : Type = {fin : VPS ; pp, presp : AP ; inf : VPI} ; -- because UDS can become an acl, either finite, gerund or past participle
+    UDSPred : Type = {fin : VPS ; pp, presp : AP ; inf : VPI ; np : NP ; isNP : Bool } ; -- because UDS can become an acl, either finite, gerund or past participle
+
+    defaultUDSPred : {np : NP ; isNP : Bool} = {
+      np = emptyNP ;
+      isNP = False
+    } ;
 
     LinUDS : Type = {subj : NP ; pred : UDSPred} ;
 
-    mkUDS : NP -> VP -> LinUDS = \np,vp -> {
-       subj = np ; pred = myVPS vp } ;
+    mkUDS : NP -> Root -> LinUDS = \np,rt -> {
+       subj = np ;
+       pred = case rt.isNP of {
+         True => myVPS rt.np ;
+         False => myVPS rt.vp
+       }} ;
 
     linUDS : LinUDS -> Str = linUDS' Finite ;
     linUDS' : AclType -> LinUDS -> Str = \at,uds -> case at of {
@@ -127,40 +136,58 @@ concrete UDCatEng of UDCat = BareRGEng **
       PastPart => (cc2 (mkUtt uds.subj) (mkUtt uds.pred.pp)).s } ;
 
     myVPS = overload {
-      myVPS : VP -> UDSPred = \vp -> {
+      myVPS : VP -> UDSPred = \vp -> defaultUDSPred ** {
         fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
         pp = BareRGEng.PastPartAP vp ;
         presp = BareRGEng.PresPartAP vp ;
         inf = ExtendEng.MkVPI vp } ;
-      myVPS : Tense -> VP -> UDSPred = \tns,vp -> {
+      myVPS : Tense -> VP -> UDSPred = \tns,vp -> defaultUDSPred ** {
         fin = MkVPS (mkTemp tns simultaneousAnt) positivePol vp ;
         pp = BareRGEng.PastPartAP vp ;
         presp = BareRGEng.PresPartAP vp ;
         inf = ExtendEng.MkVPI vp } ;
-      myVPS : Ant -> VP -> UDSPred = \ant,vp -> {
+      myVPS : Ant -> VP -> UDSPred = \ant,vp -> defaultUDSPred ** {
         fin = MkVPS (mkTemp presentTense ant) positivePol vp ;
         pp = BareRGEng.PastPartAP vp ;
         presp = BareRGEng.PresPartAP vp ;
-        inf = ExtendEng.MkVPI vp }
+        inf = ExtendEng.MkVPI vp } ;
+      myVPS : NP -> UDSPred = \np ->
+        let vp:VP = mkVP np in {
+        fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
+        pp = BareRGEng.PastPartAP vp ;
+        presp = BareRGEng.PresPartAP vp ;
+        inf = ExtendEng.MkVPI vp ;
+        np = np ;
+        isNP = True
+      } ;
     } ;
     --Aux : Type = {v : V ; isCop : Bool} ;
 --   Root : Type = {vp : VP ; comp : Comp ; c2 : Str} ;
 
-    Root : Type = {vp : VP ; c2 : Str ; adv : Adv} ;
+    Root : Type = {np : NP ; isNP : Bool ; vp : VP ; c2 : Str } ;
 
     -- alternative Root: {a : A ; n : N ; v : V ; adv : Adv ; whichFieldIsLegit : LegitField}
 
     mkRoot = overload {
        mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap ; adv = lin Adv (mkUtt ap)} ;
-       mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; adv = lin Adv (mkUtt np)} ;
+       mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; adv = lin Adv (mkUtt np) ; np = np ; isNP = True } ;
        mkRoot : VP -> Root = \vp -> emptyRoot ** {vp = vp ; adv = lin Adv (mkUtt vp)} ; ---- ADV is bad
        mkRoot : VPSlash -> Root = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2 ; adv = lin Adv (mkUtt <vp : VP>)}
     } ;
 
-    emptyRoot : Root = {
+    emptyRoot : Root = defaultUDSPred ** {
        vp = mkVP (P.mkN "dummy") ;
-       adv = ss "dummy" ;
        c2 = []
+    } ;
+
+    advRoot : Root -> Adv -> Root = \rt,adv -> rt ** {
+      vp = mkVP rt.vp adv ;
+      np = N.AdvNP <rt.np:NP> <adv:Adv> ;
+    } ;
+
+    dObjRoot : Root -> NP -> Root = \rt,np -> rt ** {
+      vp = mkVP (slashV rt.vp) np ;
+      np = ApposNP rt.np np
     } ;
 
     emptyNP : NP = it_NP ** {s = \\_ => ""} ;

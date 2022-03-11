@@ -48,7 +48,13 @@ concrete UDExtEng of UDExt = UDAppEng ** open
     Means breach data_is_lost =
       let mean_VS   : VS = P.mkVS mean_V ;
           meansThat : VP = mkVP mean_VS (udsToS data_is_lost) ;
-       in mkS (mkCl breach meansThat) ;
+          mean_V2   : V2 = P.mkV2 mean_V ;
+          meansThing : VP = mkVP mean_V2 data_is_lost.pred.np ;
+          chosenVP : VP = case data_is_lost.pred.isNP of {
+            True => meansThing ;
+            False => meansThat
+          } ;
+       in mkS (mkCl breach chosenVP) ;
 
     -- : NP -> UDS -> UDFragment ; -- TODO: types?
     RPis,

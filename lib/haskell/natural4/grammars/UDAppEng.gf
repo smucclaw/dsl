@@ -34,10 +34,10 @@ lin
 -- Variations on root_nsubj_*
 
     -- : root -> nsubj -> UDS ;  -- the cat sleeps
-    root_nsubj rt sub = mkUDS sub rt.vp ;
+    root_nsubj rt sub = mkUDS sub rt ;
 
     -- : root -> nsubj -> obj -> UDS ; -- the cat sees us
-    root_nsubj_obj rt sub ob = mkUDS sub (mkVP (root2vpslash rt) ob) ;
+    root_nsubj_obj rt sub ob = mkUDS sub (dObjRoot rt ob) ;
 
     -- : root -> nsubj -> cop -> UDS ; -- the cat is small
     root_nsubj_cop rt sub cp = root_nsubj rt sub ;
@@ -51,9 +51,9 @@ lin
       } ;
 
     root_nsubj_cop_obl,
-    root_nsubj_cop_nmod = \rt,sub,cop,adv -> mkUDS sub (mkVP rt.vp adv) ;
+    root_nsubj_cop_nmod = \rt,sub,cop,adv -> mkUDS sub (advRoot rt adv) ;
 
-    root_nsubj_obl rt sub adv = mkUDS sub (mkVP rt.vp adv) ;
+    root_nsubj_obl rt sub adv = mkUDS sub (advRoot rt adv) ;
 
     -- : root -> nsubj -> aux -> UDS ; --a data breach may occur
 		root_nsubj_aux occur breach may = {
@@ -127,7 +127,7 @@ lin
 -----------------------------------------------------------------------------
 -- No subject, only root
    -- : root -> UDS ;  -- sing ;
-    root_only rt = onlyPred rt.vp ;
+    root_only rt = onlyPred rt ;
 
    -- : root -> amod -> UDS ; -- significant breach
    root_amod rt ap = root_nsubj rt (ExtendEng.AdjAsNP ap) ; -- TODO: currently prints out "significant is a breach"
@@ -147,11 +147,6 @@ lin
       root_obj processes (mkNP personal_data for_purposes) ;
 
 -----------------------------------------------------------------------------
-    -- Hack for lists. TODO: use the new generic way to handle lists of arbitrary length.
-    root_nsubj_cop_cc_conj rt sub cop cc conj =
-      let big_and_old : Adv = mkAdv cc rt.adv <conj : Adv> ;
-      in mkUDS sub (mkVP big_and_old) ;
-
     -- We don't care that addRcl is a hack. For later applications, we can always attach the aclRelcl differently.
     -- : root -> nsubj -> cop -> aclRelcl -> UDS ;
     -- a data [intermediary]:nsubj is [one]:root that is [processing]:acl:relcl personal data  ;
@@ -197,7 +192,7 @@ lin
   -- : root -> ccomp -> UDS -- unlikely that X
   root_ccomp unlikely result_harm =
     let that_result_harm : Adv = mkAdv that_Subj result_harm ;
-     in onlyPred (mkVP unlikely.vp that_result_harm) ;
+     in onlyPred (advRoot unlikely that_result_harm) ;
 
 	-- root_nsubj_aux_obl : root -> nsubj -> aux -> obl -> UDS ;
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;
@@ -229,14 +224,17 @@ lin
 	-- : root -> cop -> advmod -> UDS ; -- is not beer
   root_cop_advmod rt cp am = case am.isNot of {
     True => applyNeg rt emptyNP ;
-    False => onlyPred (mkVP rt.vp am.adv) -- TODO or should it be AdV instead of Adv? Does word order matter?
+    False => onlyPred (advRoot rt am.adv) -- TODO or should it be AdV instead of Adv? Does word order matter?
   } ;
 
 ---------------------------------------------------------------------------
 -- acl, advcl
 
   -- : root -> acl -> UDS ;	--a message obeying a certain format ;
-	root_acl rt acl = onlyPred (mkVP rt.vp acl) ;
+	root_acl rt acl = onlyPred (advRoot rt acl) ;
+
+  	-- onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;
+
 
   -- : root -> acl -> nmod -> UDS ;
 	root_acl_nmod rt acl nm = root_acl (mkRoot (mkVP rt.vp nm)) acl ;
@@ -272,7 +270,10 @@ lin
             vp = mkVP rt.vp RSasAdv
           } ;
 
-	onlyPred : VP -> UDS = \vp -> mkUDS it_NP vp ;
+	onlyPred = overload {
+    onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;
+    onlyPred : Root -> UDS = \rt -> mkUDS it_NP rt
+  };
 
   applyNeg : Root -> NP -> LinUDS = \root,subj -> {
     subj = subj ;
@@ -286,7 +287,7 @@ lin
             inf =
               let inf' : VPI = MkVPI root.vp
                in inf' ** {s = \\typ,agr => "not" ++ inf'.s ! typ ! agr}
-           } ;
+           } ** defaultUDSPred;
     } ;
 
 

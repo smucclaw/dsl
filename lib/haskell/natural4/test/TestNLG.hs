@@ -12,36 +12,31 @@ import qualified AnyAll as AA
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDAnnotations ( UDEnv(..), getEnv )
 import System.IO.Unsafe
+import qualified Data.Text.Lazy as Text
 
 nlgTests :: Spec
 nlgTests = do
-
+   let env = unsafePerformIO myUDEnv
    describe "test bsr2gf" $ do
---     -- let Just bsr = cond testAdvRule
---     --     env = unsafePerformIO myUDEnv
---     --     tree = unsafePerformIO (bsr2gf env bsr)
---     -- it "Should return an averbial" $ do
---     --     showExpr tree `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
-    let Just bsr = cond testDetRule
-        env = unsafePerformIO myUDEnv
-        tree = unsafePerformIO (bsr2gf env bsr)
+    let treeAdv = unsafePerformIO (bsr2gf env testAdvBSR)
+    it "Should return an adverbial" $ do
+        showExpr treeAdv `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
+
+    let treeDet = unsafePerformIO (bsr2gf env testDetBSR)
     it "Should return a det" $ do
-        -- showExpr tree `shouldBe` "ConjNP or_Conj (BaseNP ((DetCN any_Det) UseN cat_N) ((DetCN any_Det) UseN dog_N))"
-        showExpr tree `shouldBe` "ConjNP or_Conj (BaseNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg)))"
+        showExpr treeDet `shouldBe` "ConjNP or_Conj (BaseNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg)))"
 
-    describe "test bsr2gf" $ do
-      let Just bsr = cond testAPRule
-          env = unsafePerformIO myUDEnv
-          tree = unsafePerformIO (bsr2gf env bsr)
-      it "Should return an advective phrase" $ do
-        showExpr tree `shouldBe` "ConjAP or_Conj (BaseAP (PositA harmful_A) (PositA significant_A))"
+    let treeAP = unsafePerformIO (bsr2gf env testAPBSR)
+    it "Should return an adjective phrase" $ do
+        showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (PositA harmful_A) (PositA significant_A))"
 
-    describe "test bsr2gf" $ do
-      let Just bsr = cond testCNRule
-          env = unsafePerformIO myUDEnv
-          tree = unsafePerformIO (bsr2gf env bsr)
-      it "Should return a common noun" $ do
-        showExpr tree `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
+    let treeCN = unsafePerformIO (bsr2gf env testCNBSR)
+    it "Should return a common noun" $ do
+        showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
+
+    let treeDetsDet = unsafePerformIO (bsr2gf env testDetsAsDet)
+    it "Should return a det as det" $ do
+        showExpr treeDetsDet `shouldBe` "foo"
 
     describe "Convert to predicate" $ do
       -- "organization"
@@ -95,18 +90,9 @@ nlgTests = do
         convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
         applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
 
-testDetRule :: Rule
-testDetRule = Regulative
-    { subj = AA.Leaf
-        (
-            ( "you" :| []
-            , Nothing
-            ) :| []
-        )
-    , rkeyword = RParty
-    , who = Nothing
-    , cond = Just
-        ( AA.Any Nothing
+testDetsAsDet :: BoolStructR
+testDetsAsDet =
+    AA.Any (Just (AA.PrePost "I like" "cat"))
             [ AA.Leaf
                 ( RPMT
                     [ "this"
@@ -118,176 +104,33 @@ testDetRule = Regulative
                     ]
                 )
             ]
-        )
-    , deontic = DMust
-    , action = AA.Leaf
-        (
-            ( "notify the PDPC" :| []
-            , Nothing
-            ) :| []
-        )
-    , temporal = Nothing
-    , hence = Nothing
-    , lest = Nothing
-    , rlabel = Nothing
-    , lsource = Nothing
-    , srcref = Just
-        ( SrcRef
-            { url = "STDIN"
-            , short = "STDIN"
-            , srcrow = 1
-            , srccol = 1
-            , version = Nothing
-            }
-        )
-    , upon = Nothing
-    , given = Nothing
-    , having = Nothing
-    , wwhere = []
-    , defaults = []
-    , symtab = []
-    }
 
-testAdvRule :: Rule
-testAdvRule = Regulative
-    { subj = AA.Leaf
-        (
-            ( "you" :| []
-            , Nothing
-            ) :| []
-        )
-    , rkeyword = RParty
-    , who = Nothing
-    , cond = Just
-        ( AA.Any Nothing
+testBSR :: String -> String -> BoolStructR
+testBSR str1 str2 =
+    AA.Any Nothing
             [ AA.Leaf
-                ( RPMT [ "today" ] )
+                ( RPMT
+                    [ Text.pack str1
+                    ]
+                )
             , AA.Leaf
-                ( RPMT [ "tomorrow" ] )
+                ( RPMT
+                    [ Text.pack str2
+                    ]
+                )
             ]
-        )
-    , deontic = DMust
-    , action = AA.Leaf
-        (
-            ( "notify the PDPC" :| []
-            , Nothing
-            ) :| []
-        )
-    , temporal = Nothing
-    , hence = Nothing
-    , lest = Nothing
-    , rlabel = Nothing
-    , lsource = Nothing
-    , srcref = Just
-        ( SrcRef
-            { url = "test/testNLG/simpleAdv.csv"
-            , short = "test/testNLG/simpleAdv.csv"
-            , srcrow = 1
-            , srccol = 1
-            , version = Nothing
-            }
-        )
-    , upon = Nothing
-    , given = Nothing
-    , having = Nothing
-    , wwhere = []
-    , defaults = []
-    , symtab = []
-    }
 
-testAPRule :: Rule
-testAPRule = Regulative
-    { subj = AA.Leaf
-        (
-            ( "you" :| []
-            , Nothing
-            ) :| []
-        )
-    , keyword = Party
-    , who = Nothing
-    , cond = Just
-        ( AA.Any Nothing
-            [ AA.Leaf
-                ( RPMT [ "harmful" ] )
-            , AA.Leaf
-                ( RPMT [ "significant" ] )
-            ]
-        )
-    , deontic = DMust
-    , action = AA.Leaf
-        (
-            ( "notify the PDPC" :| []
-            , Nothing
-            ) :| []
-        )
-    , temporal = Nothing
-    , hence = Nothing
-    , lest = Nothing
-    , rlabel = Nothing
-    , lsource = Nothing
-    , srcref = Just
-        ( SrcRef
-            { url = "test/testNLG/simpleAP.csv"
-            , short = "test/testNLG/simpleAP.csv"
-            , srcrow = 1
-            , srccol = 1
-            , version = Nothing
-            }
-        )
-    , upon = Nothing
-    , given = Nothing
-    , having = Nothing
-    , wwhere = []
-    , defaults = []
-    , symtab = []
-    }
+testDetBSR :: BoolStructR
+testDetBSR = testBSR "this" "that"
 
-testCNRule :: Rule
-testCNRule = Regulative
-    { subj = AA.Leaf
-        (
-            ( "you" :| []
-            , Nothing
-            ) :| []
-        )
-    , keyword = Party
-    , who = Nothing
-    , cond = Just
-        ( AA.Any Nothing
-            [ AA.Leaf
-                ( RPMT [ "occurrence" ] )
-            , AA.Leaf
-                ( RPMT [ "assessment" ] )
-            ]
-        )
-    , deontic = DMust
-    , action = AA.Leaf
-        (
-            ( "notify the PDPC" :| []
-            , Nothing
-            ) :| []
-        )
-    , temporal = Nothing
-    , hence = Nothing
-    , lest = Nothing
-    , rlabel = Nothing
-    , lsource = Nothing
-    , srcref = Just
-        ( SrcRef
-            { url = "test/testNLG/simpleAP.csv"
-            , short = "test/testNLG/simpleAP.csv"
-            , srcrow = 1
-            , srccol = 1
-            , version = Nothing
-            }
-        )
-    , upon = Nothing
-    , given = Nothing
-    , having = Nothing
-    , wwhere = []
-    , defaults = []
-    , symtab = []
-    }
+testAdvBSR :: BoolStructR
+testAdvBSR = testBSR "today" "tomorrow"
+
+testAPBSR :: BoolStructR
+testAPBSR = testBSR "harmful" "significant"
+
+testCNBSR :: BoolStructR
+testCNBSR = testBSR "occurrence" "assessment"
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {

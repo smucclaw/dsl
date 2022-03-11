@@ -287,7 +287,7 @@ bsp2gf env bsp = case bsp of
 -- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
 -- mkApp :: CId -> [Expr] -> Expr
 parseLex :: UDEnv -> String -> [Expr]
-parseLex env str = trace ("parseLex:" ++ show result) result
+parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
   where
     lexicalCats :: [String]
     lexicalCats = words "N V A N2 N3 V2 A2 VA V2V VV V3 VS V2A V2S V2Q Adv AdV AdA AdN ACard CAdv Conj Interj PN Prep Pron Quant Det Card Text Predet Subj"
@@ -355,8 +355,7 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     -- 1) Parse the actual contents. This can be
     contentsUDS <- parseAndDisambiguate env contents
-    print $ map (showExpr . gf) contentsUDS
-    print contents
+    -- print $ map (showExpr . gf) contentsUDS
 
         -- Here we need to determine which GF type the contents are
         -- TODO: what if they are different types?
@@ -408,7 +407,6 @@ parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
   let parsingGrammar = pgfGrammar env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb
-  print contents
   return $ map (toUDS parsingGrammar) contents
 
 constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr

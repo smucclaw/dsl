@@ -509,10 +509,22 @@ npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
-  Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP) --
+  Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP)
+  Groot_aclRelcl (GrootN_ np) (GaclRelclUDS_ relcl) -> Just $ GRelNP np (udRelcl2rglRS relcl)
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootN_ np:_ -> Just np
               _            -> Nothing
+
+udRelcl2rglRS :: GUDS -> GRS
+udRelcl2rglRS uds = case uds of
+  Groot_nsubj (GrootV_ vp) _ -> vp2rs vp -- TODO: check if nsubj contains something important
+  _ -> case getRoot uds of
+    GrootV_ vp:_ -> vp2rs vp
+ {- GrootN_ np:_ -> vp2rs (GUseComp (GCompNP np)) -- TODO: add all the Comp funs into BareRG
+    GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP np)) -}
+    _ -> error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
+  where
+    vp2rs vp = GUseRCl (GTTAnt GTPres GASimul) GPPos (GRelVP GIdRP vp)
 
 cnFromUDS :: GUDS -> Maybe GCN
 cnFromUDS x = np2cn =<< npFromUDS x

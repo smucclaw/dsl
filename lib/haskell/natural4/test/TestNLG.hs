@@ -34,6 +34,10 @@ nlgTests = do
     it "Should return a common noun" $ do
         showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
 
+    let treeNP = unsafePerformIO (bsr2gf env testNPBSR)
+    it "Should return a noun phrase" $ do
+        showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
+
     let treeDetsDet = unsafePerformIO (bsr2gf env testDetsAsDet)
     it "Should return a det as det" $ do
         showExpr treeDetsDet `shouldBe` "foo"
@@ -110,6 +114,9 @@ testAPBSR = testBSR ["harmful to the affected individual", "significant"]
 
 testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]
+
+testNPBSR :: BoolStructR
+testNPBSR = testBSR ["all occurrences", "this assessment"]
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {

@@ -442,13 +442,13 @@ constructTreeAPCNsOfNP cns conj nmod qualUDS = finalTree
       [] -> dummyAP
       x:_ -> case x of
         (GrootA_ am) -> am
-        (GrootDetA_ _det am) -> am
+        (GrootDAP_ (GAdjDAP _d am)) -> am
         _ -> dummyAP
     cn = GCN_AP_Conj_CNs_of_NP amod conj cns nmod
     maybedet = case getRoot qualUDS of
       [] -> Nothing
       x:_ -> case x of
-        (GrootDetA_ d _) -> Just d
+        (GrootDAP_ (GAdjDAP (GDetDAP d) _a)) -> Just d
         (GrootDet_ d) -> Just d
         (GrootQuant_ q) -> Just $ GDetQuant q GNumSg
         _ -> Nothing
@@ -585,7 +585,7 @@ getRoot rt@(GrootA_ _) = [rt]
 getRoot rt@(GrootN_ _) = [rt]
 getRoot rt@(GrootV_ _) = [rt]
 getRoot rt@(GrootDet_ _) = [rt]
-getRoot rt@(GrootDetA_ _ _) = [rt]
+getRoot rt@(GrootDAP_ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]
 getRoot x = composOpMonoid getRoot x
 

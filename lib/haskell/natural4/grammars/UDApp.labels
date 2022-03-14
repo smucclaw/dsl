@@ -112,7 +112,7 @@
 #fun RelCN 	head acl
 #fun SentCN 	head acl
 #fun AdNum 	advmod head
-#fun AdjDAP 	head amod
+#fun AdjDAP 	det head -- TODO: do we need auxfun for `head amod` variant?
 #fun ConjDet 	cc head
 #fun IIDig 	head goeswith
 #fun AdvIAdv 	advmod head

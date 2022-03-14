@@ -10,7 +10,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       Rule(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
-      rp2text, pt2text, bsp2text, mt2text, tm2mt)
+      rp2text, pt2text, bsp2text, mt2text, tm2mt, bsr2text)
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -371,19 +371,45 @@ bsr2gf env bsr = case bsr of
                     [ap] -> Just $ gf ap
                     aps  -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
 
+{- -- maybe too granular? reconsider this
+        treePN :: Maybe Expr
+        treePN = case mapMaybe pnFromUDS contentsUDS :: [GPN] of
+                    []   -> Nothing
+                    [pn] -> Just $ gf $ GUsePN pn
+                    pns  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP (map GUsePN pns))
+
+        treePron :: Maybe Expr
+        treePron = case mapMaybe pronFromUDS contentsUDS :: [GPron] of
+                    []   -> Nothing
+                    [pron] -> Just $ gf $ GUsePron pron
+                    prons  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP (map GUsePron prons))
+-}
+        -- Exclude MassNP here! MassNPs will be matched in treeCN
+        treeNP :: Maybe Expr
+        treeNP = case mapMaybe nonMassNpFromUDS contentsUDS :: [GNP] of
+                    []   -> Nothing
+                    [np] -> Just $ gf np
+                    nps  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP nps)
+
+        -- All CNs will match NP, but we only match here if it's a MassNP
         treeCN :: Maybe Expr
         treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
                     []   -> Nothing
                     [cn] -> Just $ gf cn
                     cns  -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
+
         treeDet :: Maybe Expr
         treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
                     []    -> Nothing
                     [det] -> Just $ gf det
                     dets  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
 
+        existingTrees = catMaybes [treeAP, treeAdv, treeNP, treeCN, treeDet]
+
     -- add dummyExpr into the list, so if all 4 are Nothing, at least program doesn't crash
-    return $ head $ catMaybes [treeAP, treeAdv, treeCN, treeDet, Just dummyExpr]
+    return $ case existingTrees of
+               [] -> trace ("bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)) dummyExpr
+               x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     -- 1) Parse the actual contents. This can be
@@ -473,6 +499,12 @@ peelAdv adv = fromMaybe dummyAdv (advFromUDS $ fg adv)
 -- peelDet :: Expr -> GDet
 -- peelDet det = fromMaybe dummyDet (detFromUDS $ fg det)
 
+-- Specialised version of npFromUDS: return Nothing if the NP is MassNP
+nonMassNpFromUDS :: GUDS -> Maybe GNP
+nonMassNpFromUDS x = case npFromUDS x of
+  Just (GMassNP _) -> Nothing
+  _ -> npFromUDS x
+
 npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
@@ -495,6 +527,22 @@ cnFromUDS x = np2cn =<< npFromUDS x
       GRelNP    np  _rs     -> np2cn np
       GPredetNP _pre np     -> np2cn np
       _                     -> Nothing
+
+pnFromUDS :: GUDS -> Maybe GPN
+pnFromUDS x = np2pn =<< npFromUDS x
+  where
+    np2pn :: GNP -> Maybe GPN
+    np2pn np = case np of
+      GUsePN pn -> Just pn
+      _         -> Nothing
+
+pronFromUDS :: GUDS -> Maybe GPron
+pronFromUDS x = np2pron =<< npFromUDS x
+  where
+    np2pron :: GNP -> Maybe GPron
+    np2pron np = case np of
+      GUsePron pron -> Just pron
+      _             -> Nothing
 
 apFromUDS :: GUDS -> Maybe GAP
 apFromUDS x = case x of

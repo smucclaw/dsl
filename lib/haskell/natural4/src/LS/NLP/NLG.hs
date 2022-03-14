@@ -511,6 +511,8 @@ npFromUDS x = case x of
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
   Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP)
   Groot_aclRelcl (GrootN_ np) (GaclRelclUDS_ relcl) -> Just $ GRelNP np (udRelcl2rglRS relcl)
+  Groot_nmod (GrootN_ rootNP) (Gnmod_ prep nmodNP) -> Just $ GAdvNP rootNP (GPrepNP prep nmodNP)
+
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootN_ np:_ -> Just np
               _            -> Nothing

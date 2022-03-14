@@ -38,6 +38,10 @@ nlgTests = do
     it "Should return a noun phrase" $ do
         showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
 
+    let treeNPComplex = unsafePerformIO (bsr2gf env testNPComplexBSR)
+    it "Should return a noun phrase" $ do
+        showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN occurrence_N)) (PrepNP at_Prep (DetCN (DetQuant DefArt NumSg) (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
+
     let treeDetsDet = unsafePerformIO (bsr2gf env testDetsAsDet)
     it "Should return a det as det" $ do
         showExpr treeDetsDet `shouldBe` "foo"
@@ -117,6 +121,9 @@ testCNBSR = testBSR ["occurrence", "assessment"]
 
 testNPBSR :: BoolStructR
 testNPBSR = testBSR ["all occurrences", "this assessment"]
+
+testNPComplexBSR :: BoolStructR
+testNPComplexBSR = testBSR ["the occurrence at the beach", "this assessment that sucks"]
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {

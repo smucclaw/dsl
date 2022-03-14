@@ -28,7 +28,7 @@ nlgTests = do
 
     let treeAP = unsafePerformIO (bsr2gf env testAPBSR)
     it "Should return an adjective phrase" $ do
-        showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (PositA harmful_A) (PositA significant_A))"
+        showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositA significant_A))"
 
     let treeCN = unsafePerformIO (bsr2gf env testCNBSR)
     it "Should return a common noun" $ do
@@ -93,53 +93,34 @@ nlgTests = do
 testDetsAsDet :: BoolStructR
 testDetsAsDet =
     AA.Any (Just (AA.PrePost "I like" "cat"))
-            [ AA.Leaf
-                ( RPMT
-                    [ "this"
-                    ]
-                )
-            , AA.Leaf
-                ( RPMT
-                    [ "that"
-                    ]
-                )
-            ]
+            [ AA.Leaf ( RPMT [ "this" ] )
+            , AA.Leaf ( RPMT [ "that" ] ) ]
 
-testBSR :: String -> String -> BoolStructR
-testBSR str1 str2 =
-    AA.Any Nothing
-            [ AA.Leaf
-                ( RPMT
-                    [ Text.pack str1
-                    ]
-                )
-            , AA.Leaf
-                ( RPMT
-                    [ Text.pack str2
-                    ]
-                )
-            ]
+testBSR :: [String] -> BoolStructR
+testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [Text.pack str]) | str <- strs ]
 
 testDetBSR :: BoolStructR
-testDetBSR = testBSR "this" "that"
+testDetBSR = testBSR ["this", "that"]
 
 testAdvBSR :: BoolStructR
-testAdvBSR = testBSR "today" "tomorrow"
+testAdvBSR = testBSR ["today", "tomorrow"]
 
 testAPBSR :: BoolStructR
-testAPBSR = testBSR "harmful" "significant"
+testAPBSR = testBSR ["harmful to the affected individual", "significant"]
 
 testCNBSR :: BoolStructR
-testCNBSR = testBSR "occurrence" "assessment"
+testCNBSR = testBSR ["occurrence", "assessment"]
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {
     subjA = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN organization_N)))",
+    keywordA = mkCId "Every",
     whoA = Nothing,
     condA = Nothing,
     deonticA = mkCId "dummy",
     actionA = fromJust $ readExpr "root_only (rootV_ (UseV sing_V))",
     temporalA = Nothing,
+    havingA = Nothing,
     uponA = Nothing,
     givenA = Nothing
     }

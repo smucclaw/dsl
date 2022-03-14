@@ -478,7 +478,9 @@ npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
   Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP) --
-  _ -> Nothing
+  _ -> case getRoot x of -- TODO: fill in other cases
+              GrootN_ np:_ -> Just np
+              _            -> Nothing
 
 cnFromUDS :: GUDS -> Maybe GCN
 cnFromUDS x = np2cn =<< npFromUDS x
@@ -496,18 +498,25 @@ cnFromUDS x = np2cn =<< npFromUDS x
 
 apFromUDS :: GUDS -> Maybe GAP
 apFromUDS x = case x of
-  Groot_only (GrootA_ someAP) -> Just someAP
-  _ -> Nothing
+  Groot_only (GrootA_ ap) -> Just ap
+  Groot_obl (GrootA_ ap) (Gobl_ adv) -> Just $ GAdvAP ap adv
+  _ -> case getRoot x of -- TODO: fill in other cases
+              GrootA_ ap:_ -> Just ap
+              _            -> Nothing
 
 advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
-  _ -> Nothing
+  _ -> case getRoot x of -- TODO: fill in other cases
+              GrootAdv_ adv:_ -> Just adv
+              _               -> Nothing
 
 detFromUDS :: GUDS -> Maybe GDet
 detFromUDS x = case x of
   Groot_only (GrootDet_ someDet) -> Just someDet
-  _ -> Nothing
+  _ -> case getRoot x of -- TODO: fill in other cases
+              GrootDet_ det:_ -> Just det
+              _               -> Nothing
 
 getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]

@@ -143,13 +143,16 @@ pNumAsText = debugName "pNumAsText" . label "number" $ do
 -- ["Dependents"] Is ["5"] becomes
 -- dependents is 5
 
+myEOL :: Parser ()
+myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
-pRuleLabel :: Parser RuleLabel
-pRuleLabel = debugName "pRuleLabel" . pretendEmpty $ do
-  (RuleMarker i sym, actualLabel, _) <- (,,)
+pRuleLabel :: SLParser RuleLabel
+pRuleLabel = debugName "pRuleLabel" . fmap pretendEmpty $ do
+  (RuleMarker i sym, actualLabel) <- (,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
-                                     |>< optional (pToken EOL)
+                                     <*  liftSL myEOL -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
+                                     
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True

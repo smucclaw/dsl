@@ -201,7 +201,8 @@ pHornlike = debugName "pHornlike" $ do
     -- this is actually kind of a meta-rule, because it really means
     -- assert(X :- (Y1, Y2)) :- body.
 
-    -- DECIDE x IS y WHEN Z IS Q
+    -- DECIDE X IS y
+    --   WHEN Z IS Q
 
     ambitious = debugName "pHornlike/ambitious" $ do
       (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
@@ -220,6 +221,11 @@ pHornlike = debugName "pHornlike" $ do
                       (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
       return (Just keyword, subject, clauses)
 
+    -- without the define/decide
+    --        X IS y             -- nextlinewhen
+    --   WHEN Z IS Q
+
+    --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
       (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)

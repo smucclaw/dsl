@@ -10,7 +10,7 @@ module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 import qualified Data.Set           as Set
 import qualified Data.Text.Lazy as Text
 import Text.Megaparsec
-import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT))
+import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT), MonadReader)
 import Control.Monad.Writer.Lazy
 import Data.List (intercalate)
 
@@ -114,11 +114,11 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 
-pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
+pSrcRef :: SLParser (Maybe RuleLabel, Maybe SrcRef)
 pSrcRef = do
   rlabel' <- optional pRuleLabel
-  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  leftY  <- liftSL $ lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX  <- liftSL $ lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
 
@@ -147,12 +147,12 @@ myEOL :: Parser ()
 myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
 pRuleLabel :: SLParser RuleLabel
-pRuleLabel = debugName "pRuleLabel" . fmap pretendEmpty $ do
+pRuleLabel = debugName "pRuleLabel" . slPretendEmpty $ do
   (RuleMarker i sym, actualLabel) <- (,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
                                      <*  liftSL myEOL -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
-                                     
+
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
@@ -178,7 +178,7 @@ printErrors dname r = runOnErrors $ \ cnsmp err s res -> do
   let consumption = case cnsmp of
         MPInternal.Consumed -> "Consumed"
         MPInternal.Virgin -> "Unconsumed"
-  let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s 
+  let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
                            (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) (\_ _ -> error "eerr")
   magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
 
@@ -187,7 +187,7 @@ debugNameP dname p = -- label dname $
   do
   -- debugPrint dname
   myTraceM $ "/ " <> dname
-  r <- asks id 
+  r <- asks id
   res <- printErrors dname r $ local (increaseNestLevel dname) $ liftedDBG dname p
   myTraceM $ "\\ " <> dname <> " has returned " <> show res
   return res
@@ -195,16 +195,23 @@ debugNameP dname p = -- label dname $
 debugNameSL :: Show a => String -> SLParser a -> SLParser a
 debugNameSL dname = mkSL . debugNameP dname . runSL
 
+slPretendEmpty :: IsParser f => f a -> f a
+slPretendEmpty = mapParser pretendEmpty
+
 class IsParser f where
   debugName :: Show a => String -> f a -> f a
   debugPrint :: String -> f ()
+  mapParser :: (forall x. Parser x -> Parser x) -> f a -> f a
 
 instance IsParser Parser where
   debugName = debugNameP
   debugPrint = debugPrintP
+  mapParser = id
+
 instance IsParser SLParser where
   debugName = debugNameSL
   debugPrint = debugPrintSL
+  mapParser f = mkSL . f . runSL
 
 debugPrintP :: String -> Parser ()
 debugPrintP str = -- whenDebug $ do
@@ -364,7 +371,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
 
 -- | A parser that has some pending GoDeepers to be consumed at the end.
 newtype SLParser a = SLParser {runSLParser_ :: WriterT (Sum Int) Parser a}
-  deriving (Functor, Applicative, Alternative, Monad, MonadPlus, MonadParsec Void MyStream)
+  deriving (Functor, Applicative, Alternative, Monad, MonadPlus, MonadParsec Void MyStream, MonadReader RunConfig, MonadFail)
   -- deriving (Functor, Applicative, Alternative, Monad, MonadPlus, MonadWriter (Sum Int))
 
 runSL :: SLParser a -> Parser (a, Int)
@@ -648,6 +655,10 @@ l ->| n = do
 
 infixl 4 ->|
 
+
+-- | Complete an SL parser and consume any outstanding UnDeepers
+finishSL :: SLParser a -> Parser a
+finishSL p = p |<$ undeepers
 
 -- consume all the UnDeepers that have been stacked off to the right
 -- which is to say, inside the snd of the Parser (_,Int)

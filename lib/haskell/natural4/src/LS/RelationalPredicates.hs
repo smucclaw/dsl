@@ -90,7 +90,7 @@ c2hornlike r = r
 
 pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
-  maybeLabel <- optional pRuleLabel
+  maybeLabel <- finishSL $ optional pRuleLabel -- TODO: Handle the SL
   leftY              <- lookAhead pYLocation
   namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -179,7 +179,7 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- debugName "pSrcRef" (pretendEmpty pSrcRef)
+  (rlabel, srcref) <- finishSL $ debugName "pSrcRef" (slPretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
     <$$> (try ambitious <|> someStructure)
     <|?> (Nothing, fmap snd <$> optional givenLimb)

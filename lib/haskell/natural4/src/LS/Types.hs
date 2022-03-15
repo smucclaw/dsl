@@ -424,6 +424,7 @@ tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", (m
 
 
 data RunConfig = RC { debug     :: Bool
+                    , printstream   :: Bool
                     , callDepth :: Int
                     , oldDepth  :: Int
                     , parseCallStack :: [String]
@@ -440,8 +441,11 @@ data RunConfig = RC { debug     :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
                     } deriving (Show, Eq)
+
+defaultRC :: RunConfig
 defaultRC = RC
         { debug = False
+        , printstream = False
         , callDepth = 0
         , oldDepth = 0
         , parseCallStack = []

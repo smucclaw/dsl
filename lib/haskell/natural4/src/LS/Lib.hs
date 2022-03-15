@@ -60,6 +60,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
                    , file :: w ::: NoLabel [String] <?> "filename..."
+                   , dstream :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
@@ -80,7 +81,8 @@ getConfig o = do
   mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
-        { debug = maybe (dbug o) (read :: String -> Bool) mpd
+        { debug       = maybe (dbug o) (read :: String -> Bool) mpd
+        , printstream = maybe (dstream o) (read :: String -> Bool) mpd
         , callDepth = 0
         , oldDepth = 0
         , parseCallStack = []
@@ -128,7 +130,9 @@ parseRules o = do
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
         Right ([], []) -> return $ Right []
-        Right (xs, xs') -> return $ Right (xs ++ xs')
+        Right (xs, xs') -> do
+          when (printstream rc) $ printStream stream
+          return $ Right (xs ++ xs')
 
 
 dumpRules :: Opts Unwrapped -> IO [Rule]

@@ -116,7 +116,7 @@ defaultHorn = Hornlike
   , symtab   = []
   }
 
-filetest :: (ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 
 filetest testfile desc parseFunc expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
@@ -1283,7 +1283,7 @@ main = do
           inline_2 = ( ( ["Bad"] , Means , inline_p  ), [] )
           inline_3 = ( ( ["Bad"] , Means , inline_   ), [] )
           inline_r = ((["multiwonk"],Means,Any Nothing [Leaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [Leaf (RPMT ["honk"]),Leaf (RPMT ["ponk"])]]),[])
-          inline_4 = ( ( ["Bad"] , Means , inline_4xs), [] )
+          inline_4 = ( ( ["a data breach occurred"] , Means , inline_4xs), [] )
           inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
           inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
           inline_   = Any Nothing                                                 inline_xs

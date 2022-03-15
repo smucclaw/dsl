@@ -33,7 +33,7 @@ pBoolStruct :: Parser BoolStruct
 pBoolStruct = prePostParse pOtherVal
 
 prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.Item a)
-prePostParse base = ppp $ either fail pure . toBoolStruct =<< expr base
+prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
@@ -54,7 +54,7 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-expr p = debugName "expression" (makeExprParser (term p) table <?> "expression")
+expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = debugName "term p" $ do
   try (debugName "term p/1a:label directly above" $ do
         (lbl, inner) <- (,)
@@ -147,7 +147,7 @@ plain p = MyLeaf <$> p
 
 
 
-ppp :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
+ppp :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 ppp base = -- local (\rc -> rc { debug = True }) $
   try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
   where
@@ -163,7 +163,7 @@ expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
   return $ length udps
 
 
-withPrePost, withPreOnly :: Show a => Parser (AA.Item a) -> Parser (AA.Item a)
+withPrePost, withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 withPrePost basep = debugName "withPrePost" $ do
   (pre, body, post) <- (,,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
@@ -174,12 +174,13 @@ withPrePost basep = debugName "withPrePost" $ do
     |<$ undeepers
   return $ relabelpp body (Text.unwords pre) (Text.unwords post)
   where
-    relabelpp :: AA.Item a -> Text.Text -> Text.Text -> AA.Item  a
-    relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
-    relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
-    relabelpp _ _ _ = error "RelationalPredicates: relabelpp failed"
+    relabelpp :: MyBoolStruct a -> Text.Text -> Text.Text -> MyBoolStruct a
+    relabelpp bs pre post = MyLabel [pre] (Just [post]) bs
+    -- relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
+    -- relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
+    -- relabelpp _ _ _ = error "RelationalPredicates: relabelpp failed"
 
-withPreOnly basep = debugName "withPreOnly" $ do
+withPreOnly basep = do -- debugName "withPreOnly" $ do
   (pre, body) <- (,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
@@ -188,10 +189,11 @@ withPreOnly basep = debugName "withPreOnly" $ do
     |<$ undeepers
   return $ relabelp body (Text.unwords pre)
   where
-    relabelp :: AA.Item a -> Text.Text -> AA.Item  a
-    relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
-    relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
-    relabelp  _ _ = error "RelationalPredicates: relabelp failed"
+    relabelp :: MyBoolStruct a -> Text.Text -> MyBoolStruct  a
+    relabelp bs pre = MyLabel [pre] Nothing bs
+    -- relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
+    -- relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
+    -- relabelp  _ _ = error "RelationalPredicates: relabelp failed"
 
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct

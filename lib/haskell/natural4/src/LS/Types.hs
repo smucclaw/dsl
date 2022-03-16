@@ -33,15 +33,55 @@ type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 type Parser = WriterT (DList Rule) PlainParser
 type Depth = Int
 type Preamble = MyToken
+
+type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
+type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
+
+-- * BoolStructs wrap Phrasal types
+
 type BoolStruct  = AA.Item Text.Text
 type BoolStructP = AA.Item ParamText
 type BoolStructR = AA.Item RelationalPredicate
 
+
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
-type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
-type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
+
+-- $phrasetypes
+
+-- | @ParamText@ contains /parameterized text/.
+-- 
+-- Suppose we want to say, "pay the Vendor the amount of $10, by bank transfer".
+--
+-- Conceptually, that has the structure of a function call with both positional and named arguments.
+-- We put the named arguments in an attribute dictionary object:
+--
+-- > pay( the Vendor, { amount = $10,
+-- >                    by     = bank transfer } )
+--
+-- In a table, we would say:
+--
+-- > | ... | pay | the Vendor |               |    |   |               |
+-- > |     |     | amount     | $10           | IS | A | Consideration |
+-- > |     |     | by         | bank transfer |    |   |               |
+--
+-- Parsed into a ParamText, we have a 'NonEmpty' list of 'TypedMulti', which are themselves a `NonEmpty Text` tupled with a `Maybe TypeSig`.
+-- 
+-- > action = (      "pay"    :| ["the Vendor"]       , Nothing )
+-- >          :| [ ( "amount" :| ["$10"] )            , SimpleType TOne "Consideration" )
+-- >             , ( "by"     :| ["bank transfer"] )  , Nothing )
+-- >             ] )
+-- 
+-- Linguistically, the first word ("pay") must always be a verb. If it is a transitive verb, the direct object follows on the same line. If it is an intransitive verb, the rest of the line can be blank. On subsequent lines, we give optional attributes: a "prepositional" keyword, followed by one or more optional parameters to that keyword.
+-- 
+-- 'ParamText' is primarily used in `Rule.action` keywords, which take a 'BoolStructP', whose base type is @ParamText@. That means that multiple ParamTexts can be connected together using @AND@ and @OR@ keywords.
+--
+-- In the simplest case, a ParamText could be simply a single intransitive verb, e.g. "walk", with no further arguments.
+--
+-- > action = ( "walk" :| [] , Nothing )
+--
 type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
                                                       --- |        | immediately    | :: | Urgency |
+
 
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)

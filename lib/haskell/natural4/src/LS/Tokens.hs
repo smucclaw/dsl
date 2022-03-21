@@ -151,7 +151,7 @@ pRuleLabel = debugName "pRuleLabel" . slPretendEmpty $ do
   (RuleMarker i sym, actualLabel) <- (,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
-                                     <*  liftSL myEOL -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
+                                     <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
 
   return (sym, i, actualLabel)
   where

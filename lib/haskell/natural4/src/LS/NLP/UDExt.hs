@@ -5,7 +5,6 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
-
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -63,6 +62,8 @@ type GCN = Tree GCN_
 data GCN_
 type GCard = Tree GCard_
 data GCard_
+type GComp = Tree GComp_
+data GComp_
 type GConj = Tree GConj_
 data GConj_
 type GDAP = Tree GDAP_
@@ -307,8 +308,6 @@ type GCl = Tree GCl_
 data GCl_
 type GClSlash = Tree GClSlash_
 data GClSlash_
-type GComp = Tree GComp_
-data GComp_
 type GPhr = Tree GPhr_
 data GPhr_
 type GQS = Tree GQS_
@@ -408,6 +407,9 @@ data Tree :: * -> * where
   GNumNumeral :: GNumeral -> Tree GCard_
   GStrCard :: GString -> Tree GCard_
   LexCard :: String -> Tree GCard_
+  GCompAP :: GAP -> Tree GComp_
+  GCompAdv :: GAdv -> Tree GComp_
+  GCompNP :: GNP -> Tree GComp_
   LexConj :: String -> Tree GConj_
   GAdjDAP :: GDAP -> GAP -> Tree GDAP_
   GDetDAP :: GDet -> Tree GDAP_
@@ -550,7 +552,9 @@ data Tree :: * -> * where
   GConjS :: GConj -> GListS -> Tree GS_
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GExtAdvS :: GAdv -> GS -> Tree GS_
+  GPredVPS :: GNP -> GVP -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
+  GEmbedS :: GS -> Tree GSC_
   GEmbedVP :: GVP -> Tree GSC_
   Gpot0 :: GDigit -> Tree GSub10_
   Gpot01 :: Tree GSub10_
@@ -806,6 +810,7 @@ data Tree :: * -> * where
   GPassV :: GV -> Tree GVP_
   GPassVAgent :: GV -> GNP -> Tree GVP_
   GProgrVP :: GVP -> Tree GVP_
+  GUseComp :: GComp -> Tree GVP_
   GUseV :: GV -> Tree GVP_
   GVP_assesses__Adv__that_S :: GAdv -> GS -> Tree GVP_
   GVP_may__SeqAdv__VP :: GListAdv -> GVP -> Tree GVP_
@@ -977,6 +982,9 @@ instance Eq (Tree a) where
     (GNumNumeral x1,GNumNumeral y1) -> and [ x1 == y1 ]
     (GStrCard x1,GStrCard y1) -> and [ x1 == y1 ]
     (LexCard x,LexCard y) -> x == y
+    (GCompAP x1,GCompAP y1) -> and [ x1 == y1 ]
+    (GCompAdv x1,GCompAdv y1) -> and [ x1 == y1 ]
+    (GCompNP x1,GCompNP y1) -> and [ x1 == y1 ]
     (LexConj x,LexConj y) -> x == y
     (GAdjDAP x1 x2,GAdjDAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDetDAP x1,GDetDAP y1) -> and [ x1 == y1 ]
@@ -1119,7 +1127,9 @@ instance Eq (Tree a) where
     (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GExtAdvS x1 x2,GExtAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseCl x1 x2 x3,GUseCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GEmbedS x1,GEmbedS y1) -> and [ x1 == y1 ]
     (GEmbedVP x1,GEmbedVP y1) -> and [ x1 == y1 ]
     (Gpot0 x1,Gpot0 y1) -> and [ x1 == y1 ]
     (Gpot01,Gpot01) -> and [ ]
@@ -1375,6 +1385,7 @@ instance Eq (Tree a) where
     (GPassV x1,GPassV y1) -> and [ x1 == y1 ]
     (GPassVAgent x1 x2,GPassVAgent y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
+    (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
     (GVP_assesses__Adv__that_S x1 x2,GVP_assesses__Adv__that_S y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GVP_may__SeqAdv__VP x1 x2,GVP_may__SeqAdv__VP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1684,6 +1695,20 @@ instance Gf GCard where
 
       Just (i,[]) -> LexCard (showCId i)
       _ -> error ("no Card " ++ show t)
+
+instance Gf GComp where
+  gf (GCompAP x1) = mkApp (mkCId "CompAP") [gf x1]
+  gf (GCompAdv x1) = mkApp (mkCId "CompAdv") [gf x1]
+  gf (GCompNP x1) = mkApp (mkCId "CompNP") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "CompAP" -> GCompAP (fg x1)
+      Just (i,[x1]) | i == mkCId "CompAdv" -> GCompAdv (fg x1)
+      Just (i,[x1]) | i == mkCId "CompNP" -> GCompNP (fg x1)
+
+
+      _ -> error ("no Comp " ++ show t)
 
 instance Gf GConj where
   gf (LexConj x) = mkApp (mkCId x) []
@@ -2331,6 +2356,7 @@ instance Gf GS where
   gf (GConjS x1 x2) = mkApp (mkCId "ConjS") [gf x1, gf x2]
   gf (GExistS x1 x2 x3) = mkApp (mkCId "ExistS") [gf x1, gf x2, gf x3]
   gf (GExtAdvS x1 x2) = mkApp (mkCId "ExtAdvS") [gf x1, gf x2]
+  gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
   gf (GUseCl x1 x2 x3) = mkApp (mkCId "UseCl") [gf x1, gf x2, gf x3]
 
   fg t =
@@ -2339,16 +2365,19 @@ instance Gf GS where
       Just (i,[x1,x2]) | i == mkCId "ConjS" -> GConjS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ExistS" -> GExistS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ExtAdvS" -> GExtAdvS (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "UseCl" -> GUseCl (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no S " ++ show t)
 
 instance Gf GSC where
+  gf (GEmbedS x1) = mkApp (mkCId "EmbedS") [gf x1]
   gf (GEmbedVP x1) = mkApp (mkCId "EmbedVP") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "EmbedS" -> GEmbedS (fg x1)
       Just (i,[x1]) | i == mkCId "EmbedVP" -> GEmbedVP (fg x1)
 
 
@@ -2943,6 +2972,7 @@ instance Gf GVP where
   gf (GPassV x1) = mkApp (mkCId "PassV") [gf x1]
   gf (GPassVAgent x1 x2) = mkApp (mkCId "PassVAgent") [gf x1, gf x2]
   gf (GProgrVP x1) = mkApp (mkCId "ProgrVP") [gf x1]
+  gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
   gf (GUseV x1) = mkApp (mkCId "UseV") [gf x1]
   gf (GVP_assesses__Adv__that_S x1 x2) = mkApp (mkCId "VP_assesses__Adv__that_S") [gf x1, gf x2]
   gf (GVP_may__SeqAdv__VP x1 x2) = mkApp (mkCId "VP_may__SeqAdv__VP") [gf x1, gf x2]
@@ -2958,6 +2988,7 @@ instance Gf GVP where
       Just (i,[x1]) | i == mkCId "PassV" -> GPassV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PassVAgent" -> GPassVAgent (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "ProgrVP" -> GProgrVP (fg x1)
+      Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
       Just (i,[x1]) | i == mkCId "UseV" -> GUseV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "VP_assesses__Adv__that_S" -> GVP_assesses__Adv__that_S (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "VP_may__SeqAdv__VP" -> GVP_may__SeqAdv__VP (fg x1) (fg x2)
@@ -3674,14 +3705,6 @@ instance Gf GClSlash where
 
 
 
-instance Gf GComp where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
 instance Gf GPhr where
   gf _ = undefined
   fg _ = undefined
@@ -3873,6 +3896,9 @@ instance Compos Tree where
     GNumDigits x1 -> r GNumDigits `a` f x1
     GNumNumeral x1 -> r GNumNumeral `a` f x1
     GStrCard x1 -> r GStrCard `a` f x1
+    GCompAP x1 -> r GCompAP `a` f x1
+    GCompAdv x1 -> r GCompAdv `a` f x1
+    GCompNP x1 -> r GCompNP `a` f x1
     GAdjDAP x1 x2 -> r GAdjDAP `a` f x1 `a` f x2
     GDetDAP x1 -> r GDetDAP `a` f x1
     GACard2Det x1 -> r GACard2Det `a` f x1
@@ -3954,7 +3980,9 @@ instance Compos Tree where
     GConjS x1 x2 -> r GConjS `a` f x1 `a` f x2
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
     GExtAdvS x1 x2 -> r GExtAdvS `a` f x1 `a` f x2
+    GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
     GUseCl x1 x2 x3 -> r GUseCl `a` f x1 `a` f x2 `a` f x3
+    GEmbedS x1 -> r GEmbedS `a` f x1
     GEmbedVP x1 -> r GEmbedVP `a` f x1
     Gpot0 x1 -> r Gpot0 `a` f x1
     Gpot0as1 x1 -> r Gpot0as1 `a` f x1
@@ -4201,6 +4229,7 @@ instance Compos Tree where
     GPassV x1 -> r GPassV `a` f x1
     GPassVAgent x1 x2 -> r GPassVAgent `a` f x1 `a` f x2
     GProgrVP x1 -> r GProgrVP `a` f x1
+    GUseComp x1 -> r GUseComp `a` f x1
     GUseV x1 -> r GUseV `a` f x1
     GVP_assesses__Adv__that_S x1 x2 -> r GVP_assesses__Adv__that_S `a` f x1 `a` f x2
     GVP_may__SeqAdv__VP x1 x2 -> r GVP_may__SeqAdv__VP `a` f x1 `a` f x2

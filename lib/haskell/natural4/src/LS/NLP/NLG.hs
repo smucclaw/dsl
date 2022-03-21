@@ -585,6 +585,9 @@ apFromUDS :: GUDS -> Maybe GAP
 apFromUDS x = case x of
   Groot_only (GrootA_ ap) -> Just ap
   Groot_obl (GrootA_ ap) (Gobl_ adv) -> Just $ GAdvAP ap adv
+  Groot_advmod (GrootA_ ap) (Gadvmod_ adv) -> Just $ GAdvAP ap adv
+  Groot_advmod (GrootV_ v) (Gadvmod_ adv) -> Just $ GAdvAP (GPastPartAP v) adv
+  Groot_ccomp (GrootA_ a1) (Gccomp_ (Groot_mark_nsubj_cop (GrootA_ a2) (Gmark_ m) (Gnsubj_ n) Gbe_cop)) -> Just $ GAdvAP a1 (GSubjS m (GPredVPS n (GUseComp (GCompAP a2))))
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootA_ ap:_ -> Just ap
               _            -> Nothing

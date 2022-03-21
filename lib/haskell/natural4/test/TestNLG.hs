@@ -30,6 +30,10 @@ nlgTests = do
     it "Should return an adjective phrase" $ do
         showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositA significant_A))"
 
+    let treeAPComplex = unsafePerformIO (bsr2gf env testAPComplexBSR)
+    it "Should return a complex adjective phrase" $ do
+        showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (BaseAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN (DetQuant DefArt NumSg) (UseN sky_N)) (UseComp (CompAP (PositA blue_A))))))))"
+
     let treeCN = unsafePerformIO (bsr2gf env testCNBSR)
     it "Should return a common noun" $ do
         showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
@@ -120,6 +124,9 @@ testAdvBSR = testBSR ["today", "tomorrow"]
 
 testAPBSR :: BoolStructR
 testAPBSR = testBSR ["harmful to the affected individual", "significant"]
+
+testAPComplexBSR :: BoolStructR
+testAPComplexBSR = testBSR ["dangerously lethal to the afflicted individual", "gravely disturbed", "happy that the sky is blue"]
 
 testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]

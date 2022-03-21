@@ -150,8 +150,9 @@ nlg rl = do
         mapM_ (putStrLn . showExpr) expectA
         return ""
       DefNameAliasA { nameA, detailA, nlhintA } -> do
-        let linText = linearize gr lang detailA
-            linTree = showExpr detailA
+        let tree = maybe detailA gf (npFromUDS $ fg detailA)
+            linText = linearize gr lang tree
+            linTree = showExpr tree
         return $ Text.pack (Text.unpack nameA ++ " AKA " ++ linText ++ "\n" ++ linTree ++ "\n")
       RegBreachA -> return "IT'S A BREACH >:( >:( >:("
       RegFulfilledA -> return "FULFILLED \\:D/ \\:D/ \\:D/"

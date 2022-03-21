@@ -17,16 +17,16 @@ abstract BareRG =
     AdvS ,
     ExtAdvS
     ,UseCl, UseRCl
-    ,EmbedVP -- used in UDExt
+    ,EmbedVP, EmbedS -- used in UDExt
   ],
 
   Verb [
      VP,AdV,Adv,AP,Comp,NP,V,Tense
-    ,UseV       -- V   -> VP ;             -- sleep
-    --    UseComp,
-   --  CompAP,
-   --  CompAdv,
-   --  CompNP,
+    ,UseV ,      -- V   -> VP ;             -- sleep
+    UseComp,
+    CompAP,
+    CompAdv,
+    CompNP
    ,UseAdv     -- Adv -> VP ;             -- be in the house ---s
    ,AdvVP      -- VP -> Adv -> VP ;       -- sleep here
    ,AdVVP
@@ -118,6 +118,8 @@ abstract BareRG =
     MkA2 : A -> Prep -> A2 ;
 
     ACard2Det : ACard -> Det ;
+
+    PredVPS : NP -> VP -> S ;
 
   cat
     [Prep]{2} ;

@@ -14,16 +14,16 @@ concrete BareRGEng of BareRG =
     AdvS ,
     ExtAdvS
     ,UseCl, UseRCl
-    ,EmbedVP -- used in UDExt
+    ,EmbedVP,EmbedS -- used in UDExt
   ],
 
   VerbEng [
    VP,AdV,Adv,AP,Comp,NP,V,Tense
-  ,UseV       -- V   -> VP ;             -- sleep
-  --    UseComp,
-  -- CompAP,
-  -- CompAdv,
-  -- CompNP,
+  ,UseV  ,     -- V   -> VP ;             -- sleep
+  UseComp,
+  CompAP,
+  CompAdv,
+  CompNP
   ,AdvVP    -- VP -> Adv -> VP ;       -- sleep here
   ,AdVVP
   ],
@@ -152,6 +152,7 @@ concrete BareRGEng of BareRG =
     BasePrep = Co.twoSS ;
     ConsPrep = Co.consrSS Co.comma ;
     ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
+    PredVPS np vp = mkS (mkCl np vp) ;
 
   oper
     slashV : VP -> VPSlash = \vp -> vp ** {

@@ -3,3 +3,5 @@ gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=N,V,A,N2,N3,V2,A2
 sed 's/module UDExt where/{-# OPTIONS_GHC -Wno-all #-}\nmodule LS.NLP.UDExt where/ ; s/instance Show .*//' UDExt.hs > /tmp/whatever.hs
 # 
 mv /tmp/whatever.hs ../src/LS/NLP/UDExt.hs
+rm UDExt.hs
+gf -make UDAppEng.gf

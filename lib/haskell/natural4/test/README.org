@@ -602,6 +602,34 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 |                        |                                                                                                 |                                         |   | OR | TRUE  | disposal     |
 |                        |                                                                                                 | of the personal data is likely to occur |   |    |       |              |
 
+***** PDPA Part 1 - simpler
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| personal data |    |       |
+| MEANS         |    | alpha |
+| OR            |    | beta  |
+| OR            |    | gamma |
+|               |    | c1    |
+|               | OR | c2    |
+|               | OR | c3    |
+
+***** PDPA Part 1 - fancier
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| personal data |    |     |       |
+| MEANS         |    |   1 | alpha |
+| OR            |    |   2 | beta  |
+| OR            |    |   5 | gamma |
+|               |    | 5.a | c1    |
+|               | OR | 5.b | c2    |
+|               | OR | 5.c | c3    |
+
 
 *** how do we deal with blanks in between things we care about?
 

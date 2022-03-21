@@ -9,6 +9,8 @@ abstract BareRG =
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN -- : N -> N -> N    -- control system
+    -- these only for UDExt; not in labels file
+    ,ApposNP, AdjAsNP
   ],
 
   Sentence [
@@ -36,11 +38,9 @@ abstract BareRG =
 
    Noun - [
       CountNP,
-      PartNP,
-      ApposCN
+      PartNP
       ,UseN2, Use2N3
       ,PPartNP
---      ,IndefArt, DefArt
    ],
 
   Adjective [
@@ -112,6 +112,7 @@ abstract BareRG =
 
     -- JustWordsWordNet has no V2 etc
     ComplV : V -> NP -> VP ; -- eat pizza
+    ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
     -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
     -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
 

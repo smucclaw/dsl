@@ -10,7 +10,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       Rule(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
-      rp2text, pt2text, bsp2text, mt2text, tm2mt, bsr2text)
+      rp2text, pt2text, bsp2text, mt2text, tm2mt, bsr2text, KVsPair)
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -373,62 +373,10 @@ bsr2gf env bsr = case bsr of
     parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
   AA.Any Nothing contents -> do
-    -- 1) Parse the actual contents. This can be
     contentsUDS <- parseAndDisambiguate env contents
-    -- print $ map (showExpr . gf) contentsUDS
-
-        -- Here we need to determine which GF type the contents are
-        -- TODO: what if they are different types?
-    let treeAdv :: Maybe Expr
-        treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
-                    []    -> Nothing
-                    [adv] -> Just $ gf adv
-                    advs  -> Just $ gf $ GConjAdv (LexConj "or_Conj") (GListAdv advs)
-
-        treeAP :: Maybe Expr
-        treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
-                    []   -> Nothing
-                    [ap] -> Just $ gf ap
-                    aps  -> Just $ gf $ GConjAP (LexConj "or_Conj") (GListAP aps)
-
-{- -- maybe too granular? reconsider this
-        treePN :: Maybe Expr
-        treePN = case mapMaybe pnFromUDS contentsUDS :: [GPN] of
-                    []   -> Nothing
-                    [pn] -> Just $ gf $ GUsePN pn
-                    pns  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP (map GUsePN pns))
-
-        treePron :: Maybe Expr
-        treePron = case mapMaybe pronFromUDS contentsUDS :: [GPron] of
-                    []   -> Nothing
-                    [pron] -> Just $ gf $ GUsePron pron
-                    prons  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP (map GUsePron prons))
--}
-        -- Exclude MassNP here! MassNPs will be matched in treeCN
-        treeNP :: Maybe Expr
-        treeNP = case mapMaybe nonMassNpFromUDS contentsUDS :: [GNP] of
-                    []   -> Nothing
-                    [np] -> Just $ gf np
-                    nps  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP nps)
-
-        -- All CNs will match NP, but we only match here if it's a MassNP
-        treeCN :: Maybe Expr
-        treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
-                    []   -> Nothing
-                    [cn] -> Just $ gf cn
-                    cns  -> Just $ gf $ GConjCN (LexConj "or_Conj") (GListCN cns)
-
-        treeDet :: Maybe Expr
-        treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
-                    []    -> Nothing
-                    [det] -> Just $ gf det
-                    dets  -> Just $ gf $ GConjNP (LexConj "or_Conj") (GListNP $ map GDetNP dets)
-
-        existingTrees = catMaybes [treeAP, treeAdv, treeNP, treeCN, treeDet]
-
-    -- add dummyExpr into the list, so if all 4 are Nothing, at least program doesn't crash
-    return $ case existingTrees of
-               [] -> trace ("bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)) dummyExpr
+    let existingTrees = doStuff (LexConj "or_Conj") contentsUDS
+    return $ case flattenGFTrees existingTrees of
+               []  -> trace ("bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)) dummyExpr
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
@@ -447,6 +395,79 @@ bsr2gf env bsr = case bsr of
     return tree
 
   _ -> return dummyExpr
+
+-- Try to determine which GF type the contents are
+data GFTrees = GFTrees {
+    gfAP  :: Maybe Expr
+  , gfAdv :: Maybe Expr
+  , gfNP  :: Maybe Expr
+  , gfDet :: Maybe Expr
+  , gfCN  :: Maybe Expr
+  , gfV   :: Maybe Expr
+   } deriving (Eq, Ord)
+
+instance Show GFTrees where
+  show = unlines . map showExpr . flattenGFTrees
+
+flattenGFTrees :: GFTrees -> [Expr]
+flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfV} = catMaybes [gfAP, gfAdv, gfNP, gfCN, gfDet, gfV]
+
+doStuff :: GConj -> [GUDS] -> GFTrees
+doStuff conj contentsUDS = GFTrees treeAP treeAdv treeNP treeCN treeDet treeV
+  -- TODO: what if they are different types?
+  where
+    treeAdv :: Maybe Expr
+    treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
+                []    -> Nothing
+                [adv] -> Just $ gf adv
+                advs  -> Just $ gf $ GConjAdv conj (GListAdv advs)
+
+    treeAP :: Maybe Expr
+    treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
+                []   -> Nothing
+                [ap] -> Just $ gf ap
+                aps  -> Just $ gf $ GConjAP conj (GListAP aps)
+
+{- -- maybe too granular? reconsider this
+    treePN :: Maybe Expr
+    treePN = case mapMaybe pnFromUDS contentsUDS :: [GPN] of
+                []   -> Nothing
+                [pn] -> Just $ gf $ GUsePN pn
+                pns  -> Just $ gf $ GConjNP conj (GListNP (map GUsePN pns))
+
+    treePron :: Maybe Expr
+    treePron = case mapMaybe pronFromUDS contentsUDS :: [GPron] of
+                []   -> Nothing
+                [pron] -> Just $ gf $ GUsePron pron
+                prons  -> Just $ gf $ GConjNP conj (GListNP (map GUsePron prons))
+-}
+    -- Exclude MassNP here! MassNPs will be matched in treeCN
+    treeNP :: Maybe Expr
+    treeNP = case mapMaybe nonMassNpFromUDS contentsUDS :: [GNP] of
+                []   -> Nothing
+                [np] -> Just $ gf np
+                nps  -> Just $ gf $ GConjNP conj (GListNP nps)
+
+    -- All CNs will match NP, but we only match here if it's a MassNP
+    treeCN :: Maybe Expr
+    treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
+                []   -> Nothing
+                [cn] -> Just $ gf cn
+                cns  -> Just $ gf $ GConjCN conj (GListCN cns)
+
+    treeDet :: Maybe Expr
+    treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
+                []    -> Nothing
+                [det] -> Just $ gf det
+                dets  -> Just $ gf $ GConjNP conj (GListNP $ map GDetNP dets)
+
+    treeV :: Maybe Expr
+    treeV = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
+                []    -> Nothing
+                [v] -> Just $ gf v
+                v:vs  -> Just $ gf v --later: list instance for verbs?
+
+
 
 parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
@@ -604,6 +625,17 @@ detFromUDS x = case x of
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootDet_ det:_ -> Just det
               _               -> Nothing
+
+verbFromUDS :: GUDS -> Maybe GVP
+verbFromUDS x = case x of
+  Groot_obl (GrootV_ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
+  Groot_obl_obl (GrootV_ vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
+  Groot_obl_xcomp (GrootV_ vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
+  Groot_xcomp (GrootV_ vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
+  Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
+  _ -> case getRoot x of -- TODO: fill in other cases
+              GrootV_ vp:_ -> Just vp
+              _            -> Nothing
 
 getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]

@@ -117,6 +117,8 @@ type GN = Tree GN_
 data GN_
 type GN2 = Tree GN2_
 data GN2_
+type GN3 = Tree GN3_
+data GN3_
 type GNP = Tree GNP_
 data GNP_
 type GNum = Tree GNum_
@@ -307,8 +309,6 @@ type GClSlash = Tree GClSlash_
 data GClSlash_
 type GComp = Tree GComp_
 data GComp_
-type GN3 = Tree GN3_
-data GN3_
 type GPhr = Tree GPhr_
 data GPhr_
 type GQS = Tree GQS_
@@ -475,6 +475,8 @@ data Tree :: * -> * where
   GComplN3 :: GN3 -> GNP -> Tree GN2_
   GUse3N3 :: GN3 -> Tree GN2_
   LexN2 :: String -> Tree GN2_
+  GMkN3 :: GN -> GPrep -> GPrep -> Tree GN3_
+  LexN3 :: String -> Tree GN3_
   GAdvNP :: GNP -> GAdv -> Tree GNP_
   GConjNP :: GConj -> GListNP -> Tree GNP_
   GDefPN :: GPN -> Tree GNP_
@@ -698,6 +700,7 @@ data Tree :: * -> * where
   Groot_nmodPoss_nmodPoss :: Groot -> GnmodPoss -> GnmodPoss -> Tree GUDS_
   Groot_nmod_acl :: Groot -> Gnmod -> Gacl -> Tree GUDS_
   Groot_nmod_aclRelcl :: Groot -> Gnmod -> GaclRelcl -> Tree GUDS_
+  Groot_nmod_nmod :: Groot -> Gnmod -> Gnmod -> Tree GUDS_
   Groot_nsubj :: Groot -> Gnsubj -> Tree GUDS_
   Groot_nsubjPass_auxPass :: Groot -> GnsubjPass -> GauxPass -> Tree GUDS_
   Groot_nsubjPass_auxPass_advmod_advcl :: Groot -> GnsubjPass -> GauxPass -> Gadvmod -> Gadvcl -> Tree GUDS_
@@ -905,7 +908,6 @@ data Tree :: * -> * where
   GxcompAdv_ :: GAdv -> Tree Gxcomp_
   GxcompN_ :: GNP -> Tree Gxcomp_
   GxcompToBeN_ :: Gmark -> Gcop -> GNP -> Tree Gxcomp_
-  LexN3 :: String -> Tree GN3_
   LexText :: String -> Tree GText_
   LexV2 :: String -> Tree GV2_
   LexV2A :: String -> Tree GV2A_
@@ -1042,6 +1044,8 @@ instance Eq (Tree a) where
     (GComplN3 x1 x2,GComplN3 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUse3N3 x1,GUse3N3 y1) -> and [ x1 == y1 ]
     (LexN2 x,LexN2 y) -> x == y
+    (GMkN3 x1 x2 x3,GMkN3 y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (LexN3 x,LexN3 y) -> x == y
     (GAdvNP x1 x2,GAdvNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjNP x1 x2,GConjNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDefPN x1,GDefPN y1) -> and [ x1 == y1 ]
@@ -1265,6 +1269,7 @@ instance Eq (Tree a) where
     (Groot_nmodPoss_nmodPoss x1 x2 x3,Groot_nmodPoss_nmodPoss y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod_acl x1 x2 x3,Groot_nmod_acl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod_aclRelcl x1 x2 x3,Groot_nmod_aclRelcl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (Groot_nmod_nmod x1 x2 x3,Groot_nmod_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj x1 x2,Groot_nsubj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_nsubjPass_auxPass x1 x2 x3,Groot_nsubjPass_auxPass y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5,Groot_nsubjPass_auxPass_advmod_advcl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
@@ -1472,7 +1477,6 @@ instance Eq (Tree a) where
     (GxcompAdv_ x1,GxcompAdv_ y1) -> and [ x1 == y1 ]
     (GxcompN_ x1,GxcompN_ y1) -> and [ x1 == y1 ]
     (GxcompToBeN_ x1 x2 x3,GxcompToBeN_ y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (LexN3 x,LexN3 y) -> x == y
     (LexText x,LexText y) -> x == y
     (LexV2 x,LexV2 y) -> x == y
     (LexV2A x,LexV2A y) -> x == y
@@ -2050,6 +2054,17 @@ instance Gf GN2 where
       Just (i,[]) -> LexN2 (showCId i)
       _ -> error ("no N2 " ++ show t)
 
+instance Gf GN3 where
+  gf (GMkN3 x1 x2 x3) = mkApp (mkCId "MkN3") [gf x1, gf x2, gf x3]
+  gf (LexN3 x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2,x3]) | i == mkCId "MkN3" -> GMkN3 (fg x1) (fg x2) (fg x3)
+
+      Just (i,[]) -> LexN3 (showCId i)
+      _ -> error ("no N3 " ++ show t)
+
 instance Gf GNP where
   gf (GAdvNP x1 x2) = mkApp (mkCId "AdvNP") [gf x1, gf x2]
   gf (GConjNP x1 x2) = mkApp (mkCId "ConjNP") [gf x1, gf x2]
@@ -2603,6 +2618,7 @@ instance Gf GUDS where
   gf (Groot_nmodPoss_nmodPoss x1 x2 x3) = mkApp (mkCId "root_nmodPoss_nmodPoss") [gf x1, gf x2, gf x3]
   gf (Groot_nmod_acl x1 x2 x3) = mkApp (mkCId "root_nmod_acl") [gf x1, gf x2, gf x3]
   gf (Groot_nmod_aclRelcl x1 x2 x3) = mkApp (mkCId "root_nmod_aclRelcl") [gf x1, gf x2, gf x3]
+  gf (Groot_nmod_nmod x1 x2 x3) = mkApp (mkCId "root_nmod_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj x1 x2) = mkApp (mkCId "root_nsubj") [gf x1, gf x2]
   gf (Groot_nsubjPass_auxPass x1 x2 x3) = mkApp (mkCId "root_nsubjPass_auxPass") [gf x1, gf x2, gf x3]
   gf (Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_auxPass_advmod_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5]
@@ -2808,6 +2824,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmodPoss_nmodPoss" -> Groot_nmodPoss_nmodPoss (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_acl" -> Groot_nmod_acl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_aclRelcl" -> Groot_nmod_aclRelcl (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_nmod" -> Groot_nmod_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_nsubj" -> Groot_nsubj (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubjPass_auxPass" -> Groot_nsubjPass_auxPass (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_auxPass_advmod_advcl" -> Groot_nsubjPass_auxPass_advmod_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
@@ -3665,14 +3682,6 @@ instance Gf GComp where
 
 
 
-instance Gf GN3 where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
 instance Gf GPhr where
   gf _ = undefined
   fg _ = undefined
@@ -3888,6 +3897,7 @@ instance Compos Tree where
     GStrN x1 -> r GStrN `a` f x1
     GComplN3 x1 x2 -> r GComplN3 `a` f x1 `a` f x2
     GUse3N3 x1 -> r GUse3N3 `a` f x1
+    GMkN3 x1 x2 x3 -> r GMkN3 `a` f x1 `a` f x2 `a` f x3
     GAdvNP x1 x2 -> r GAdvNP `a` f x1 `a` f x2
     GConjNP x1 x2 -> r GConjNP `a` f x1 `a` f x2
     GDefPN x1 -> r GDefPN `a` f x1
@@ -4086,6 +4096,7 @@ instance Compos Tree where
     Groot_nmodPoss_nmodPoss x1 x2 x3 -> r Groot_nmodPoss_nmodPoss `a` f x1 `a` f x2 `a` f x3
     Groot_nmod_acl x1 x2 x3 -> r Groot_nmod_acl `a` f x1 `a` f x2 `a` f x3
     Groot_nmod_aclRelcl x1 x2 x3 -> r Groot_nmod_aclRelcl `a` f x1 `a` f x2 `a` f x3
+    Groot_nmod_nmod x1 x2 x3 -> r Groot_nmod_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj x1 x2 -> r Groot_nsubj `a` f x1 `a` f x2
     Groot_nsubjPass_auxPass x1 x2 x3 -> r Groot_nsubjPass_auxPass `a` f x1 `a` f x2 `a` f x3
     Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5 -> r Groot_nsubjPass_auxPass_advmod_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5

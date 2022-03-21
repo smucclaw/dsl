@@ -116,7 +116,7 @@ abstract BareRG =
     -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
 
     MkA2 : A -> Prep -> A2 ;
-
+    MkN3 : N -> Prep -> Prep -> N3;
     ACard2Det : ACard -> Det ;
 
     PredVPS : NP -> VP -> S ;

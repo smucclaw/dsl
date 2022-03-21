@@ -170,6 +170,8 @@ concrete BareRGEng of BareRG =
     prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
     that_other_Det = mkDeterminer P.singular "that other" ;
 
+   MkA2 a p = P.mkA2 a p ;
+   MkN3 n p q = P.mkN3 n p q;
     -- : CN -> NP -> CN ;
     CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
 

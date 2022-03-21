@@ -34,6 +34,11 @@ nlgTests = do
     it "Should return a common noun" $ do
         showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
 
+    let treeCNComplex = unsafePerformIO (bsr2gf env testCNComplexBSR)
+    it "Should return a complex common noun" $ do
+        showExpr treeCNComplex `shouldBe` "(AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N))))"
+
+
     let treeNP = unsafePerformIO (bsr2gf env testNPBSR)
     it "Should return a noun phrase" $ do
         showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
@@ -118,6 +123,9 @@ testAPBSR = testBSR ["harmful to the affected individual", "significant"]
 
 testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]
+
+testCNComplexBSR :: BoolStructR
+testCNComplexBSR = testBSR ["service from the provider to the payer", "great harm that she suffered" ]
 
 testNPBSR :: BoolStructR
 testNPBSR = testBSR ["all occurrences", "this assessment"]

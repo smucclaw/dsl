@@ -346,6 +346,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nmod : root -> nmod -> UDS ;
 	--day of silence ;
 
+		root_nmod_nmod : root -> nmod -> nmod -> UDS ;
+	--service from provider to payee
+
 		root_nmodPoss_advmod : root -> nmodPoss -> advmod -> UDS ;
 	--"it results in ;
 

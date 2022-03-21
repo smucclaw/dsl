@@ -39,6 +39,7 @@
 #fun root_nsubj_aux_aux head nsubj aux aux
 #fun root_nsubj_cop_aclRelcl_obl head nsubj cop acl:relcl obl
 #fun root_nsubj_cop_obl head nsubj cop obl
+#fun root_nmod_nmod head nmod nmod
 
 #fun passRelcl_ head nsubj:pass cop                -- root -> nsubj:pass -> cop -> acl:relcl ;
 #fun oblRP_ case head

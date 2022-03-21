@@ -134,8 +134,27 @@ nlg rl = do
               , let linTree = showExpr tree ]
 
         return linTrees_exprs
+      ConstitutiveA {nameA, keywordA, condA, givenA} -> do
+        putStrLn "Constitutive rule:"
+        putStrLn $ Text.unpack nameA
+        mapM_ (putStrLn . showExpr) (catMaybes [condA, givenA])
+        return ""
+      TypeDeclA {nameA, superA, enumsA, givenA, uponA} -> do
+        putStrLn "Type declaration:"
+        putStrLn $ Text.unpack nameA
+        mapM_ (putStrLn . showExpr) (catMaybes [superA, enumsA, givenA, uponA])
+        return ""
+      ScenarioA {scgivenA, expectA} -> do
+        putStrLn "Scenario:"
+        mapM_ (putStrLn . showExpr) scgivenA
+        mapM_ (putStrLn . showExpr) expectA
+        return ""
+      DefNameAliasA { nameA, detailA, nlhintA } -> do
+        let linText = linearize gr lang detailA
+            linTree = showExpr detailA
+        return $ Text.pack (Text.unpack nameA ++ " AKA " ++ linText ++ "\n" ++ linTree ++ "\n")
       RegBreachA -> return "IT'S A BREACH >:( >:( >:("
-      _ -> return "()"
+      RegFulfilledA -> return "FULFILLED \\:D/ \\:D/ \\:D/"
 
 doNLG :: [(String,Expr)] -> Expr -> Expr
 -- Single modifiers

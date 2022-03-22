@@ -105,6 +105,7 @@
 #fun ConjAdV 	cc head
 #fun ConjAdv 	cc head
 #fun PrepNP 	case head
+#fun PrepRP     case head
 #fun SubjS 	mark head
 #fun AdvCN 	head nmod
 #fun ComplN2 	head nmod

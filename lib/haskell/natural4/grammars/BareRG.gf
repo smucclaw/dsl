@@ -13,14 +13,7 @@ abstract BareRG =
     ,ApposNP, AdjAsNP
   ],
 
-  Sentence [
-    S,QS,RS,Cl,RCl,QCl,NP,Temp,Tense,Pol,VP,Imp,Adv,
-    ImpVP ,      -- VP -> Imp ;                 -- walk / do not walk
-    AdvS ,
-    ExtAdvS
-    ,UseCl, UseRCl
-    ,EmbedVP, EmbedS -- used in UDExt
-  ],
+  Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
 
   Verb [
      VP,AdV,Adv,AP,Comp,NP,V,Tense
@@ -34,7 +27,7 @@ abstract BareRG =
    ,AdVVP
   ],
 
-  Idiom [ProgrVP],
+  Idiom [ProgrVP, GenericCl], -- Not used for parsing
 
    Noun - [
       CountNP,
@@ -94,6 +87,7 @@ abstract BareRG =
 
     everyone_Pron : Pron ;
     who_RP, that_RP : RP ;
+    PrepRP : Prep -> RP -> RP ; -- for which
 
     XorMore : Card -> Det ; -- one/two/… or more
 
@@ -121,6 +115,7 @@ abstract BareRG =
     ACard2Det : ACard -> Det ;
 
     PredVPS : NP -> VP -> S ;
+    SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
 
   cat
     [Prep]{2} ;

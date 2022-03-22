@@ -18,41 +18,41 @@ nlgTests :: Spec
 nlgTests = do
    let env = unsafePerformIO myUDEnv
    describe "test bsr2gf" $ do
-    let treeAdv = unsafePerformIO (bsr2gf env testAdvBSR)
     it "Should return an adverbial" $ do
+        treeAdv <- bsr2gf env testAdvBSR
         showExpr treeAdv `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
 
-    let treeDet = unsafePerformIO (bsr2gf env testDetBSR)
     it "Should return a det" $ do
+        treeDet <- bsr2gf env testDetBSR
         showExpr treeDet `shouldBe` "ConjNP or_Conj (BaseNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg)))"
 
-    let treeAP = unsafePerformIO (bsr2gf env testAPBSR)
     it "Should return an adjective phrase" $ do
+        treeAP <- bsr2gf env testAPBSR
         showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositA significant_A))"
 
-    let treeAPComplex = unsafePerformIO (bsr2gf env testAPComplexBSR)
     it "Should return a complex adjective phrase" $ do
+        treeAPComplex <- bsr2gf env testAPComplexBSR
         showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (ConsAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (BaseAP (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN (DetQuant DefArt NumSg) (UseN sky_N)) (UseComp (CompAP (PositA blue_A)))))) (AdvAP (ConjAP and_Conj (BaseAP (PositA pulpy_A) (PositA tentacled_A))) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (AdvCN (UseN head_N) (PrepNP to_Prep (DetCN (DetQuant DefArt NumPl) (AdjCN (PositA rudimentary_A) (UseN wing_N)))))))))))"
 
-    let treeCN = unsafePerformIO (bsr2gf env testCNBSR)
     it "Should return a common noun" $ do
+        treeCN <- bsr2gf env testCNBSR
         showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
 
-    let treeCNComplex = unsafePerformIO (bsr2gf env testCNComplexBSR)
     it "Should return a complex common noun" $ do
+        treeCNComplex <- bsr2gf env testCNComplexBSR
         showExpr treeCNComplex `shouldBe` "AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N)))"
 
 
-    let treeNP = unsafePerformIO (bsr2gf env testNPBSR)
     it "Should return a noun phrase" $ do
+        treeNP <- bsr2gf env testNPBSR
         showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
 
-    let treeNPComplex = unsafePerformIO (bsr2gf env testNPComplexBSR)
     it "Should return a noun phrase" $ do
+        treeNPComplex <- bsr2gf env testNPComplexBSR
         showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN occurrence_N)) (PrepNP at_Prep (DetCN (DetQuant DefArt NumSg) (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
-    let treeDetsDet = unsafePerformIO (bsr2gf env testDetsAsDet)
     it "Should return a det as det" $ do
+        treeDetsDet <- bsr2gf env testDetsAsDet
         showExpr treeDetsDet `shouldBe` "foo"
 
     describe "Convert to predicate" $ do

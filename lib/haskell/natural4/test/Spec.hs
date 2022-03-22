@@ -1489,5 +1489,3 @@ srccol1     = srccol' 1
 srccol2     = srccol' 2
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
 
-
-

@@ -478,7 +478,7 @@ bsr2gf env bsr = case bsr of
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    let existingTrees = doStuff (LexConj "or_Conj") contentsUDS
+    let existingTrees = groupByRGLtype (LexConj "or_Conj") contentsUDS
     return $ case flattenGFTrees existingTrees of
                []  -> trace ("bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)) dummyExpr
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -500,78 +500,104 @@ bsr2gf env bsr = case bsr of
 
   _ -> return dummyExpr
 
--- Try to determine which GF type the contents are
+-- | A data structure for GF trees, which has different bins for different RGL categories.
+--
 data GFTrees = GFTrees {
-    gfAP  :: Maybe Expr
-  , gfAdv :: Maybe Expr
-  , gfNP  :: Maybe Expr
-  , gfDet :: Maybe Expr
-  , gfCN  :: Maybe Expr
-  , gfV   :: Maybe Expr
-   } deriving (Eq, Ord)
+    gfAP   :: Maybe GAP
+  , gfAdv  :: Maybe GAdv
+  , gfNP   :: Maybe GNP
+  , gfDet  :: Maybe GDet
+  , gfCN   :: Maybe GCN
+  , gfV    :: Maybe GVP
+  , gfPrep :: Maybe GPrep
+  , gfRP   :: Maybe GRP
+  , gfCl   :: Maybe GCl
+   } deriving (Eq)
 
 instance Show GFTrees where
   show = unlines . map showExpr . flattenGFTrees
 
+-- | workaround to get heterogeneous lists
+--
+-- alternative: catMaybes [gf <$> gfAP, gf <$> gfAdv, gf <$> gfNP, …]
 flattenGFTrees :: GFTrees -> [Expr]
-flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfV} = catMaybes [gfAP, gfAdv, gfNP, gfCN, gfDet, gfV]
+flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfV, gfPrep, gfRP, gfCl} =
+  gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfV <: gfPrep <: gfRP <: gfCl <: []
+  where
+    infixr 5 <:
+    (<:) :: (Gf a) => Maybe a -> [Expr] -> [Expr]
+    Nothing <: exprs = exprs
+    Just ap <: exprs = gf ap : exprs
 
-doStuff :: GConj -> [GUDS] -> GFTrees
-doStuff conj contentsUDS = GFTrees treeAP treeAdv treeNP treeCN treeDet treeV
+-- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
+groupByRGLtype :: GConj -> [GUDS] -> GFTrees
+groupByRGLtype conj contentsUDS = GFTrees treeAP treeAdv treeNP treeDet treeCN treeV treePrep treeRP treeCl
   -- TODO: what if they are different types?
   where
-    treeAdv :: Maybe Expr
+    treeAdv :: Maybe GAdv
     treeAdv = case mapMaybe advFromUDS contentsUDS :: [GAdv] of
                 []    -> Nothing
-                [adv] -> Just $ gf adv
-                advs  -> Just $ gf $ GConjAdv conj (GListAdv advs)
+                [adv] -> Just adv
+                advs  -> Just $ GConjAdv conj (GListAdv advs)
 
-    treeAP :: Maybe Expr
+    treeAP :: Maybe GAP
     treeAP = case mapMaybe apFromUDS contentsUDS :: [GAP] of
                 []   -> Nothing
-                [ap] -> Just $ gf ap
-                aps  -> Just $ gf $ GConjAP conj (GListAP aps)
+                [ap] -> Just ap
+                aps  -> Just $ GConjAP conj (GListAP aps)
 
 {- -- maybe too granular? reconsider this
     treePN :: Maybe Expr
     treePN = case mapMaybe pnFromUDS contentsUDS :: [GPN] of
                 []   -> Nothing
-                [pn] -> Just $ gf $ GUsePN pn
-                pns  -> Just $ gf $ GConjNP conj (GListNP (map GUsePN pns))
+                [pn] -> Just $ GUsePN pn
+                pns  -> Just $ GConjNP conj (GListNP (map GUsePN pns))
 
     treePron :: Maybe Expr
     treePron = case mapMaybe pronFromUDS contentsUDS :: [GPron] of
                 []   -> Nothing
-                [pron] -> Just $ gf $ GUsePron pron
-                prons  -> Just $ gf $ GConjNP conj (GListNP (map GUsePron prons))
+                [pron] -> Just $ GUsePron pron
+                prons  -> Just $ GConjNP conj (GListNP (map GUsePron prons))
 -}
     -- Exclude MassNP here! MassNPs will be matched in treeCN
-    treeNP :: Maybe Expr
+    treeNP :: Maybe GNP
     treeNP = case mapMaybe nonMassNpFromUDS contentsUDS :: [GNP] of
                 []   -> Nothing
-                [np] -> Just $ gf np
-                nps  -> Just $ gf $ GConjNP conj (GListNP nps)
+                [np] -> Just np
+                nps  -> Just $ GConjNP conj (GListNP nps)
 
     -- All CNs will match NP, but we only match here if it's a MassNP
-    treeCN :: Maybe Expr
+    treeCN :: Maybe GCN
     treeCN = case mapMaybe cnFromUDS contentsUDS :: [GCN] of
                 []   -> Nothing
-                [cn] -> Just $ gf cn
-                cns  -> Just $ gf $ GConjCN conj (GListCN cns)
+                [cn] -> Just cn
+                cns  -> Just $ GConjCN conj (GListCN cns)
 
-    treeDet :: Maybe Expr
+    treeDet :: Maybe GDet
     treeDet = case mapMaybe detFromUDS contentsUDS :: [GDet] of
                 []    -> Nothing
-                [det] -> Just $ gf det
-                dets  -> Just $ gf $ GConjNP conj (GListNP $ map GDetNP dets)
+                [det] -> Just det
+                dets  -> Just $ GConjDet conj (GListDAP $ map GDetDAP dets)
 
-    treeV :: Maybe Expr
+    treeV :: Maybe GVP
     treeV = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
                 []    -> Nothing
-                [v] -> Just $ gf v
-                v:vs  -> Just $ gf v --later: list instance for verbs?
+                v:_  -> Just v --later: list instance for verbs?
 
+    treePrep :: Maybe GPrep
+    treePrep = case mapMaybe prepFromUDS contentsUDS :: [GPrep] of
+                []    -> Nothing
+                v:_  -> Just v
 
+    treeRP :: Maybe GRP
+    treeRP = case mapMaybe rpFromUDS contentsUDS :: [GRP] of
+                []    -> Nothing
+                r:_  -> Just r
+
+    treeCl :: Maybe GCl
+    treeCl = case mapMaybe clFromUDS contentsUDS :: [GCl] of
+                []    -> Nothing
+                c:_  -> Just c
 
 parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
@@ -618,6 +644,16 @@ toUDS pgf e = case findType pgf e of
   "Quant"-> Groot_only (GrootDet_ (GDetQuant (fg e) GNumSg))
   "ACard" -> Groot_only (GrootDet_ (GACard2Det (fg e)))
   "AdA" -> Groot_only (GrootAdA_ (fg e)) -- added from gf
+  "Prep" -> Groot_only (GrootPrep_ (fg e))
+  "RP" -> Groot_only (GrootRP_ (fg e))
+  "RCl" -> case fg e :: GRCl of
+             GRelVP _rp vp -> toUDS pgf (gf vp)
+             GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
+             _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
+  "Cl" -> case fg e :: GCl of
+            GPredVP np vp -> Groot_nsubj (GrootV_ vp) (Gnsubj_ np)
+            GGenericCl vp -> toUDS pgf (gf vp)
+            _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
   _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
 
 -----------------------------------------------------------------------------
@@ -732,6 +768,16 @@ detFromUDS x = case x of
               GrootDet_ det:_ -> Just det
               _               -> Nothing
 
+prepFromUDS :: GUDS -> Maybe GPrep
+prepFromUDS x = case getRoot x of
+  GrootPrep_ p:_ -> Just p
+  _              -> Nothing
+
+rpFromUDS :: GUDS -> Maybe GRP
+rpFromUDS x = case getRoot x of
+  GrootRP_ rp:_ -> Just rp
+  _             -> Nothing
+
 verbFromUDS :: GUDS -> Maybe GVP
 verbFromUDS x = case x of
   Groot_obl (GrootV_ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
@@ -750,6 +796,9 @@ getRoot rt@(GrootV_ _) = [rt]
 getRoot rt@(GrootDet_ _) = [rt]
 getRoot rt@(GrootDAP_ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]
+getRoot rt@(GrootAdA_ _) = [rt]
+getRoot rt@(GrootPrep_ _) = [rt]
+getRoot rt@(GrootRP_ _) = [rt]
 getRoot x = composOpMonoid getRoot x
 
 -----------------------------------------------------------------------------

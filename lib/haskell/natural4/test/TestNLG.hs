@@ -24,7 +24,7 @@ nlgTests = do
 
     it "Should return a det" $ do
         treeDet <- bsr2gf env testDetBSR
-        showExpr treeDet `shouldBe` "ConjNP or_Conj (BaseNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg)))"
+        showExpr treeDet `shouldBe` "ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))"
 
     it "Should return an adjective phrase" $ do
         treeAP <- bsr2gf env testAPBSR
@@ -53,7 +53,7 @@ nlgTests = do
 
     it "Should return a det as det" $ do
         treeDetsDet <- bsr2gf env testDetsAsDet
-        showExpr treeDetsDet `shouldBe` "foo"
+        showExpr treeDetsDet `shouldBe` "PredVP (UsePron i_Pron) (ComplVP (UseV like_V) (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N)))"
 
     describe "Convert to predicate" $ do
       -- "organization"

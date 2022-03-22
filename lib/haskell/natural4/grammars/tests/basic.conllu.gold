@@ -1,31 +1,31 @@
 root_only (rootN_ (DetCN (DetQuant IndefArt (NumCard (StrCard "500"))) (UseN people_N)))
 
-LIN: is 500 people
+LIN: it is 500 people
 
 root_only (rootN_ (DetCN (DetQuant IndefArt (NumCard (AdNum (AdnCAdv more_CAdv) (StrCard "500")))) (UseN people_N)))
 
-LIN: is more than 500 people
+LIN: it is more than 500 people
 
 root_only (rootN_ (DetNP (DetQuant IndefArt (NumCard (AdNum at_least_AdN (StrCard "500"))))))
 
-LIN: is at least 500
+LIN: it is at least 500
 
 root_only (rootN_ (DetCN (DetQuant IndefArt (NumCard (AdNum at_least_AdN (StrCard "500")))) (UseN people_N)))
 
-LIN: is at least 500 people
+LIN: it is at least 500 people
 
 root_only (rootN_ (DetCN (DetQuant (PossPron i_Pron) NumPl) (UseN cat_N)))
 
-LIN: is my cats
+LIN: it is my cats
 
 root_only (rootN_ (DetCN (DetQuant (PossPron i_Pron) (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 (pot0 n5)))))))) (UseN cat_N)))
 
-LIN: is my five cats
+LIN: it is my five cats
 
 root_only (rootN_ (DetCN (DetQuant (GenNP (UsePN sylvia_PN)) (StrNum "500")) (UseN cat_N)))
 
-LIN: is Sylvia's 500 cats
+LIN: it is Sylvia's 500 cats
 
 root_only (rootN_ (DetCN (DetQuant (GenNP (DetCN (DetQuant (PossPron i_Pron) NumSg) (UseN mother_N))) (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 (pot0 n5)))))))) (UseN cat_N)))
 
-LIN: is my mother's five cats
+LIN: it is my mother's five cats

@@ -90,7 +90,7 @@ parseConllu env str = trace ("\nconllu:\n" ++ str) $
     _ -> Nothing
 
 
-parseOut :: UDEnv -> Text.Text -> IO Expr
+parseOut :: UDEnv -> Text.Text -> IO GUDS
 parseOut env txt = do
 --  conll <- udParse txt -- Initial parse
   lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
@@ -99,7 +99,7 @@ parseOut env txt = do
   --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
   let expr = fromMaybe dummyExpr (parseConllu env lowerConll)
   putStrLn $ showExpr expr
-  return expr
+  return $ fg expr
 -----------------------------------------------------------------------------
 
 nlg :: Rule -> IO Text.Text
@@ -180,7 +180,8 @@ mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 parseFields :: UDEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
-    subjA <- parseBool env subj
+    let gr = pgfGrammar env
+    subjA <- (gf . toUDS gr) <$> bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
     condA <- mapM (bsr2gf env) cond
@@ -255,16 +256,13 @@ parseFields env rl = case rl of
 
     -- ConstitutiveName is [Text.Text]
     parseMulti :: UDEnv -> [Text.Text] -> IO Expr
-    parseMulti env txt = parseOut env (Text.unwords txt)
+    parseMulti env txt = gf `fmap` parseOut env (Text.unwords txt)
 
     parseName :: UDEnv -> [Text.Text] -> IO Text.Text
     parseName _env txt = return (Text.unwords txt)
 
-    parseBool :: UDEnv -> BoolStructP -> IO Expr
-    parseBool env bsp = parseOut env (bsp2text bsp)
-
     parseParamText :: UDEnv -> ParamText -> IO Expr
-    parseParamText env pt = parseOut env $ pt2text pt
+    parseParamText env pt = gf `fmap` (parseOut env $ pt2text pt)
 
     keyword2cid :: (Show a) => a -> CId
     keyword2cid = mkCId . show
@@ -273,7 +271,7 @@ parseFields env rl = case rl of
     parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
     parseTemporal env (TemporalConstraint keyword time tunit) = do
       uds <- parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
-      let adv = peelAdv uds
+      let Just adv = advFromUDS uds
       return $ gf adv
       where
         kw2txt tcomp = Text.pack $ case tcomp of
@@ -291,116 +289,124 @@ parseFields env rl = case rl of
 bsp2gf :: UDEnv -> BoolStructP -> IO Expr
 bsp2gf env bsp = case bsp of
   AA.Leaf (action :| mods) -> do
-    let actionStr = mt2text $ tm2mt action
-        modStrs = map (mt2text . tm2mt) mods
-        -- then parse those in GF and put in appropriate trees
-    action2gf env action
+    actionExpr <- kvspair2gf env action  -- notify the PDPC
+    modExprs <- mapM (kvspair2gf env) mods -- [by email, at latest at the deadline]
+    return $ combineActionMods actionExpr modExprs
   _ -> error "bsp2gf: not supported yet"
-  -- AA.All m_la its -> _
-  -- AA.Any m_la its -> _
-  -- AA.Not it -> _
 
-action2gf :: UDEnv -> KVsPair -> IO Expr
-action2gf env (action,_) = case action of
-  pred :| []     -> parseOut env pred
-  pred :| compls -> do
-    predExpr <- parseOut env pred
-    complExpr <- parseOut env (Text.unwords compls) -- TODO: or parse each item one by one?
-
-    return $ combineExpr predExpr complExpr
-
-combineExpr :: Expr -> Expr -> Expr
-combineExpr predExpr complExpr = result
+-- | Takes the main action, a list of modifiers, and combines them into one Expr
+combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
+combineActionMods (_, expr) [] = expr
+combineActionMods ("VP",act) (("Adv",mod):rest) = combineActionMods advVP rest
   where
-    pred = fg predExpr :: GUDS
-    compl = fg complExpr :: GUDS
-    dummyConj = LexConj "" -- not needed for this instance of doStuff — TODO make helper fun and hide this dummy
-    predTyped = getTypeAndValue $ doStuff dummyConj [pred]
-    complTyped = getTypeAndValue $ doStuff dummyConj [compl]
-    result = case predTyped of
-      ("V", notify) -> case complTyped of
-        ("CN", car) -> gf $
-          GComplVP (fg notify) (GMassNP (fg car))
-        ("NP", johnson) -> gf $
-          GComplVP (fg notify) (fg johnson)
-        ("Det", my) -> gf $
-          GComplVP (fg notify) (GDetNP (fg my))
-        ("Adv", on_the_hill) -> gf $
-          GAdvVP (fg notify) (fg on_the_hill)
-        ("AP", haunted) -> gf $
-          GComplVP (fg notify) (GAdjAsNP (fg haunted))
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      ("CN", house) -> case complTyped of
-        ("CN", car) -> gf $
-          GApposCN (fg house) (GMassNP (fg car))
-        ("NP", johnson) -> gf $
-          GApposCN (fg house) (fg johnson)
-        ("Det", my) -> gf $
-          GDetCN (fg my) (fg house) -- unlikely, because of the order of stuff
-        ("Adv", on_the_hill) -> gf $
-          GAdvCN (fg house) (fg on_the_hill)
-        ("AP", haunted) -> gf $
-          GAdjCN (fg haunted) (fg house)
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      ("NP", the_customer) -> case complTyped of
-        ("CN", house) -> gf $
-          GGenModNP GNumSg (fg the_customer) (fg house)
-        ("NP", johnson) -> gf $
-          GApposNP (fg the_customer) (fg johnson)
-        ("Det", my) -> gf $
-          GApposNP (fg the_customer) (GDetNP (fg my))
-        ("Adv", on_the_hill) -> gf $
-          GAdvNP (fg the_customer) (fg on_the_hill)
-        ("AP", haunted) -> gf $
-           GApposNP (fg the_customer) (GAdjAsNP (fg haunted))
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      ("Det", any) -> case complTyped of
-        ("CN", house) -> gf $
-          GDetCN (fg any) (fg house)
-        ("NP", johnson) -> --gf $
-          undefined
-        ("Det", my) -> --gf $
-          undefined
-        ("Adv", on_the_hill) -> --gf $
-          undefined
-        ("AP", haunted) -> gf $
-          GAdjDAP (GDetDAP (fg any)) (fg haunted)
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      ("Adv", happily) -> case complTyped of
-        ("CN", house) -> gf $
-          GAdvCN (fg house) (fg happily)
-        ("NP", johnson) -> gf $
-          GAdvNP (fg johnson) (fg happily)
-        ("Det", my) -> --gf $
-          undefined
-        ("Adv", on_the_hill) -> --gf $
-          undefined
-        ("AP", haunted) -> gf $
-          GAdvAP (fg haunted) (fg happily)
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      ("AP", happy) -> case complTyped of
-        ("CN", house) -> gf $
-          GAdjCN (fg happy) (fg house)
-        ("NP", johnson) -> gf $
-          GApposNP (GAdjAsNP (fg happy)) (fg johnson)
-        ("Det", my) -> gf $
-          GAdjDAP (GDetDAP (fg my)) (fg happy)
-        ("Adv", on_the_hill) -> gf $
-          GAdvAP (fg happy) (fg on_the_hill)
-        ("AP", haunted) -> gf $
-          GAdvAP (fg happy) (GPositAdvAdj (fg haunted))
-        _ -> error ("combineExpr: can't find type for the complement " ++ showExpr complExpr)
-      _ -> error ("combineExpr: can't find type for the predicate " ++ showExpr predExpr)
+    advVP :: (String,Expr)
+    advVP = ("VP", gf $ GAdvVP (fg act) (fg mod))
+combineActionMods ("VP",act) (("RCl",mod):rest) = combineActionMods ("VP", resultVP) rest
+  where
+    -- Assumption: RCl doesn't modify the whole VP, but rather the object of the VP
+    resultVP = gf $ case fg act of
+      GComplVP vp np -> GComplVP vp (GRelNP np rs)
+      vp             -> GComplVP vp (GRelNP dummyNP rs)
+    rs = useRCl (fg mod)
+combineActionMods (tAct,_) ((tMods,_):_) = error $ "combineActionMods: not supported yet " ++ tAct ++ "+" ++ tMods
 
--- gfAP, gfAdv, gfNP, gfDet, gfCN}
-getTypeAndValue :: GFTrees -> (String, Expr)
-getTypeAndValue (GFTrees {gfAP=Just ap}) = ("AP", ap)
-getTypeAndValue (GFTrees {gfAdv=Just adv}) = ("Adv", adv)
-getTypeAndValue (GFTrees {gfNP=Just np}) = ("NP", np)
-getTypeAndValue (GFTrees {gfDet=Just det}) = ("Det", det)
-getTypeAndValue (GFTrees {gfCN=Just cn}) = ("CN", cn)
-getTypeAndValue (GFTrees {gfV=Just cn}) = ("V", cn)
-getTypeAndValue x = error $ "getTypeAndValue: not supported " ++ show x
+-- | Takes a KVsPair, parses the fields, puts them together into GF Expr
+kvspair2gf :: UDEnv -> KVsPair -> IO (String, Expr)
+kvspair2gf env (action,_) = case action of
+  pred :| []     -> getTypeAndValue `fmap` parseOut env pred
+  pred :| compls -> do
+    predUDS <- parseOut env pred
+    complUDS <- parseOut env (Text.unwords compls) -- TODO: or parse each item one by one?
+    return $ combineExpr predUDS complUDS
+
+-- | Takes two UDSs, puts them together, returns Expr and a string that tells which type the result is.
+--
+-- TODO: use GFTrees data structure for more type safety???
+combineExpr :: GUDS -> GUDS -> (String, Expr)
+combineExpr pred compl = result
+  where
+    predExpr = gf pred -- used for error msg
+    complExpr = gf compl -- used for error msg
+    predTyped = getTypeAndValue pred
+    complTyped = getTypeAndValue compl
+    result = case predTyped of
+      ("RP", for_which) ->
+        ("RCl", case complTyped of
+          ("Cl", you_work) -> gf $ GRelSlash (fg for_which) (GSlashCl (fg you_work))
+          ("VP", works)     -> gf $ GRelVP (fg for_which) (fg works)
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        )
+      ("Prep", under) ->
+        ("Adv", case complTyped of
+          ("CN", car)     -> gf $ GPrepNP (fg under) (GMassNP (fg car))
+          ("NP", johnson) -> gf $ GPrepNP (fg under) (fg johnson)
+          ("Det", my)     -> gf $ GPrepNP (fg under) (GDetNP (fg my))
+          -- ("Adv", quickly) -> gf $
+          --   GAdvVP (fg under) (fg quickly)
+          ("AP", haunted) -> gf $ GPrepNP (fg under) (GAdjAsNP (fg haunted))
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        )
+      ("VP", notify) ->
+        ("VP", case complTyped of
+          ("CN", car)     -> gf $ GComplVP (fg notify) (GMassNP (fg car))
+          ("NP", johnson) -> gf $ GComplVP (fg notify) (fg johnson)
+          ("Det", my)     -> gf $ GComplVP (fg notify) (GDetNP (fg my))
+          ("Adv", quickly)-> gf $ GAdvVP (fg notify) (fg quickly)
+          ("AP", haunted) -> gf $ GComplVP (fg notify) (GAdjAsNP (fg haunted))
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        )
+      ("CN", house) ->
+        ("CN", case complTyped of
+          ("CN", car)      -> gf $ GApposCN (fg house) (GMassNP (fg car))
+          ("NP", johnson)  -> gf $ GApposCN (fg house) (fg johnson)
+          ("Det", my)      -> gf $ GApposCN (fg house) (GDetNP (fg my))
+          ("Adv", quickly) -> gf $ GAdvCN (fg house) (fg quickly)
+          ("AP", haunted)  -> gf $  GAdjCN (fg haunted) (fg house)
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        )
+      ("NP", the_customer) ->
+        ("NP", case complTyped of
+          ("CN", house)    -> gf $ GGenModNP GNumSg (fg the_customer) (fg house)
+          ("NP", johnson)  -> gf $ GApposNP (fg the_customer) (fg johnson)
+          ("Det", my)      -> gf $ GApposNP (fg the_customer) (GDetNP (fg my))
+          ("Adv", quickly) -> gf $ GAdvNP (fg the_customer) (fg quickly)
+          ("AP", haunted)  -> gf $ GApposNP (fg the_customer) (GAdjAsNP (fg haunted))
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        )
+      ("Det", any) -> case complTyped of
+          ("CN", house)   -> ("NP", gf $ GDetCN (fg any) (fg house))
+          ("AP", haunted) -> ("DAP", gf $ GAdjDAP (GDetDAP (fg any)) (fg haunted))
+          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+      ("Adv", happily) -> case complTyped of
+        ("CN", house)   -> ("CN", gf $ GAdvCN (fg house) (fg happily))
+        ("NP", johnson) -> ("NP", gf $ GAdvNP (fg johnson) (fg happily))
+        ("AP", haunted) -> ("AP", gf $ GAdvAP (fg haunted) (fg happily))
+        _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+      ("AP", happy) -> case complTyped of
+        ("CN", house)    -> ("CN", gf $ GAdjCN (fg happy) (fg house))
+        ("NP", johnson)  -> ("NP", gf $ GApposNP (GAdjAsNP (fg happy)) (fg johnson))
+        ("Det", my)      -> ("DAP", gf $ GAdjDAP (GDetDAP (fg my)) (fg happy))
+        ("Adv", quickly) -> ("AP", gf $ GAdvAP (fg happy) (fg quickly))
+        ("AP", haunted)  -> ("AP", gf $ GAdvAP (fg happy) (GPositAdvAdj (fg haunted)))
+        _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+      -- ("Cl", you_work) -> case complTyped of
+      --   ("RP", for_which) -> ("RCl", gf $ GRelSlash (fg for_which) (GSlashCl (fg you_work)))
+      --   _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+      (typ, _) -> error ("combineExpr: can't find type " ++ typ ++ " for the predicate " ++ showExpr predExpr)
+
+-- | Takes a UDS, peels off the UD layer, returns a pair ("RGL type", the peeled off Expr)
+getTypeAndValue :: GUDS -> (String, Expr)
+getTypeAndValue uds = case groupByRGLtype (LexConj "") [uds] of
+  GFTrees {gfAP=Just ap}   -> ("AP", gf ap)
+  GFTrees {gfAdv=Just adv} -> ("Adv", gf adv)
+  GFTrees {gfNP=Just np}   -> ("NP", gf np)
+  GFTrees {gfDet=Just det} -> ("Det", gf det)
+  GFTrees {gfCN=Just cn}   -> ("CN", gf cn)
+  GFTrees {gfPrep=Just pr} -> ("Prep", gf pr)
+  GFTrees {gfRP=Just rp}   -> ("RP", gf rp)
+  GFTrees {gfCl=Just cl}   -> ("Cl", gf cl)
+  GFTrees {gfVP=Just v}    -> ("VP", gf v)
+  _ -> error $ "getTypeAndValue: not supported " ++ showExpr (gf uds)
 
 
 
@@ -462,7 +468,7 @@ bsr2gfAmb env bsr = case bsr of
     let checkWords = length $ Text.words access
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
-      _ -> singletonList $ parseOut env access
+      _ -> singletonList $ gf `fmap` parseOut env access
   -- In any other case, call the full bsr2gf
   _ -> singletonList $ bsr2gf env bsr
   where
@@ -474,7 +480,7 @@ bsr2gf env bsr = case bsr of
   -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
   AA.Leaf rp -> do
     let access = rp2text rp
-    parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
+    gf `fmap` parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
@@ -486,16 +492,30 @@ bsr2gf env bsr = case bsr of
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     -- 1) Parse the actual contents. This can be
     contentsUDS <- parseAndDisambiguate env access_use_copying
-    let listcn = GListCN $ mapMaybe cnFromUDS contentsUDS
+    let existingTrees = groupByRGLtype (LexConj "or_Conj") contentsUDS
     -- 2) Parse the premodifier
-    amodUDS <- parseOut env any_unauthorised
+    premodUDS <- parseOut env any_unauthorised
     -- 3) Parse the postmodifier
-    nmodUDS <- parseOut env of_personal_data
+    postmodUDS <- parseOut env of_personal_data
+    let tree = case (existingTrees, getTypeAndValue premodUDS, getTypeAndValue postmodUDS) of
+          (GFTrees {gfCN=Just cn}, ("AP", ap), ("NP", np)) ->
+            let listcn = case cn of
+                    GConjCN _ cns -> cns
+                    cn -> GListCN [cn, cn]
+                personal_data = fromMaybe dummyNP (npFromUDS postmodUDS)
+            in constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data premodUDS
+          (GFTrees {gfDet=Just det}, ("Cl", cl), ("CN", cn)) ->
+            let obj = GDetCN det (fg cn)
+            in case fg cl :: GCl of
+                  GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
+                  GGenericCl vp ->  gf $ GComplVP vp obj
+                  _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr cl
+          (_, (typPre,_), (typPost,_)) -> trace ("bsr2gf: can't handle the combination " ++ typPre ++ "+" ++ typPost) $ dummyExpr
     -- TODO: add more options, if the postmodifier is not a prepositional phrase
-    let personal_data = peelNP nmodUDS -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
+     -- TODO: actually check if (1) the adv is from PrepNP and (2) the Prep is "of"
 
     -- TODO: add more options in constructTree, depending on whether
-    let tree = constructTreeAPCNsOfNP listcn (LexConj "or_Conj") personal_data (fg amodUDS)
+
     return tree
 
   _ -> return dummyExpr
@@ -677,8 +697,11 @@ peelAP ap = fromMaybe dummyAP (apFromUDS $ fg ap)
 peelAdv :: Expr -> GAdv
 peelAdv adv = fromMaybe dummyAdv (advFromUDS $ fg adv)
 
--- peelDet :: Expr -> GDet
--- peelDet det = fromMaybe dummyDet (detFromUDS $ fg det)
+useRCl :: GRCl -> GRS
+useRCl = GUseRCl (GTTAnt GTPres GASimul) GPPos
+
+useCl :: GCl -> GS
+useCl = GUseCl (GTTAnt GTPres GASimul) GPPos
 
 -- Specialised version of npFromUDS: return Nothing if the NP is MassNP
 nonMassNpFromUDS :: GUDS -> Maybe GNP
@@ -686,11 +709,15 @@ nonMassNpFromUDS x = case npFromUDS x of
   Just (GMassNP _) -> Nothing
   _ -> npFromUDS x
 
+-- | Constructs a RGL NP from a UDS.
+-- If the UDS is like "kills a cat", the NP will be "a killed cat".
+--
+-- The functions cnFromUDS and nonMassNPfromUDS all rely on the UDS-matching done by npFromUDS.
 npFromUDS :: GUDS -> Maybe GNP
 npFromUDS x = case x of
   Groot_only (GrootN_ someNP) -> Just someNP
   Groot_only (GrootAdv_ (GPrepNP _ someNP)) -> Just someNP -- extract NP out of an Adv
-  Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP)
+  --Groot_nsubj (GrootV_ someVP) (Gnsubj_ someNP) -> Just $ GSentNP someNP (GEmbedVP someVP)
   Groot_aclRelcl (GrootN_ np) (GaclRelclUDS_ relcl) -> Just $ GRelNP np (udRelcl2rglRS relcl)
   Groot_nmod (GrootN_ rootNP) (Gnmod_ prep nmodNP) -> Just $ GAdvNP rootNP (GPrepNP prep nmodNP)
   Groot_nmod_nmod (GrootN_ service_NP) (Gnmod_ from_Prep provider_NP) (Gnmod_ to_Prep payer_NP) -> Just $ GAdvNP (GAdvNP service_NP (GPrepNP from_Prep provider_NP)) (GPrepNP to_Prep payer_NP)
@@ -711,8 +738,11 @@ udRelcl2rglRS uds = case uds of
     GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP ap))
     _ -> error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
   where
-    vp2rs vp = GUseRCl (GTTAnt GTPres GASimul) GPPos (GRelVP GIdRP vp)
+    vp2rs vp = useRCl (GRelVP GIdRP vp)
 
+-- | Takes the RGL NP returned by npFromUDS, and extracts a CN out of it.
+--
+-- All UD-to-RGL work happens in npFromUDS, this is just peeling off the layers of the RGL functions.
 cnFromUDS :: GUDS -> Maybe GCN
 cnFromUDS x = np2cn =<< npFromUDS x
   where
@@ -721,9 +751,9 @@ cnFromUDS x = np2cn =<< npFromUDS x
       GMassNP   cn          -> Just cn
       GDetCN    _det cn     -> Just cn
       GGenModNP _num _np cn -> Just cn
-      GExtAdvNP np   _adv   -> np2cn np
-      GAdvNP    np   _adv   -> np2cn np
-      GRelNP    np  _rs     -> np2cn np
+      GExtAdvNP np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
+      GAdvNP    np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
+      GRelNP    np   rs     -> fmap (`GRelCN` rs) (np2cn np)
       GPredetNP _pre np     -> np2cn np
       _                     -> Nothing
 

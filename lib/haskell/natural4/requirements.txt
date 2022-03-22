@@ -1,0 +1,4 @@
+spacy
+spacy_udpipe
+spacy_conll
+en-core-web-sm

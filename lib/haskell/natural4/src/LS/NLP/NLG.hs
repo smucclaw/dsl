@@ -508,9 +508,9 @@ data GFTrees = GFTrees {
   , gfNP   :: Maybe GNP
   , gfDet  :: Maybe GDet
   , gfCN   :: Maybe GCN
-  , gfV    :: Maybe GVP
   , gfPrep :: Maybe GPrep
   , gfRP   :: Maybe GRP
+  , gfVP   :: Maybe GVP
   , gfCl   :: Maybe GCl
    } deriving (Eq)
 
@@ -521,8 +521,8 @@ instance Show GFTrees where
 --
 -- alternative: catMaybes [gf <$> gfAP, gf <$> gfAdv, gf <$> gfNP, …]
 flattenGFTrees :: GFTrees -> [Expr]
-flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfV, gfPrep, gfRP, gfCl} =
-  gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfV <: gfPrep <: gfRP <: gfCl <: []
+flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
+  gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfPrep <: gfRP <: gfVP <: gfCl <: []
   where
     infixr 5 <:
     (<:) :: (Gf a) => Maybe a -> [Expr] -> [Expr]
@@ -531,7 +531,7 @@ flattenGFTrees GFTrees {gfAP, gfAdv, gfNP, gfDet, gfCN, gfV, gfPrep, gfRP, gfCl}
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> GFTrees
-groupByRGLtype conj contentsUDS = GFTrees treeAP treeAdv treeNP treeDet treeCN treeV treePrep treeRP treeCl
+groupByRGLtype conj contentsUDS = GFTrees treeAP treeAdv treeNP treeDet treeCN treePrep treeRP treeVP treeCl
   -- TODO: what if they are different types?
   where
     treeAdv :: Maybe GAdv
@@ -579,8 +579,8 @@ groupByRGLtype conj contentsUDS = GFTrees treeAP treeAdv treeNP treeDet treeCN t
                 [det] -> Just det
                 dets  -> Just $ GConjDet conj (GListDAP $ map GDetDAP dets)
 
-    treeV :: Maybe GVP
-    treeV = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
+    treeVP :: Maybe GVP
+    treeVP = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
                 []    -> Nothing
                 v:_  -> Just v --later: list instance for verbs?
 
@@ -701,14 +701,14 @@ npFromUDS x = case x of
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootN_ np:_ -> Just np
               _            -> Nothing
-
+-- | Constructs a RGL RS from a UDS.
 udRelcl2rglRS :: GUDS -> GRS
 udRelcl2rglRS uds = case uds of
   Groot_nsubj (GrootV_ vp) _ -> vp2rs vp -- TODO: check if nsubj contains something important
   _ -> case getRoot uds of
     GrootV_ vp:_ -> vp2rs vp
- {- GrootN_ np:_ -> vp2rs (GUseComp (GCompNP np)) -- TODO: add all the Comp funs into BareRG
-    GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP np)) -}
+    GrootN_ np:_ -> vp2rs (GUseComp (GCompNP np))
+    GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP ap))
     _ -> error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
   where
     vp2rs vp = GUseRCl (GTTAnt GTPres GASimul) GPPos (GRelVP GIdRP vp)
@@ -779,15 +779,56 @@ rpFromUDS x = case getRoot x of
   _             -> Nothing
 
 verbFromUDS :: GUDS -> Maybe GVP
-verbFromUDS x = case x of
-  Groot_obl (GrootV_ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
-  Groot_obl_obl (GrootV_ vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
-  Groot_obl_xcomp (GrootV_ vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
-  Groot_xcomp (GrootV_ vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
-  Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
-  _ -> case getRoot x of -- TODO: fill in other cases
-              GrootV_ vp:_ -> Just vp
-              _            -> Nothing
+verbFromUDS x = case getNsubj x of
+  (x:xs) -> Nothing  -- if the UDS has a subject, then it should be handled by clFromUDS instead
+  [] -> case x of    -- no nsubj, move on to pattern match UDS constructors
+    Groot_obl (GrootV_ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
+    Groot_obl_obl (GrootV_ vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
+    Groot_obl_xcomp (GrootV_ vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
+    Groot_xcomp (GrootV_ vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
+    Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
+    _ -> case getRoot x of -- TODO: fill in other cases
+                GrootV_ vp:_ -> Just vp
+                _            -> Nothing
+
+-- TODO: use composOp to grab all (finite) UD labels and put them together nicely
+clFromUDS :: GUDS -> Maybe GCl
+clFromUDS x = case getNsubj x of
+  [] -> Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
+  _ -> case x of
+    Groot_nsubj (GrootV_ vp) (Gnsubj_ np) -> Just $ GPredVP np vp
+    Groot_nsubj_advmod (GrootV_ vp) (Gnsubj_ np) (Gadvmod_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_advmod_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_advmod (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_advmod_obj_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_obj_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_obj_obl_advmod_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ _  -> Just $ GPredVP np vp
+    Groot_nsubj_aux_obj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_ccomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
+    Groot_nsubj_cop (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
+    Groot_nsubj_cop_aclRelcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_cop_advcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_cop_case_nmod_acl (GrootV_ vp) (Gnsubj_ np) _ _ _ _  -> Just $ GPredVP np vp
+    Groot_nsubj_cop_nmodPoss (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_obj (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
+    Groot_nsubj_obj_xcomp (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_obl (GrootV_ vp) (Gnsubj_ np) (Gobl_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubj_xcomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
+    Groot_nsubj_aux_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_auxPass (GrootV_ vp) (GnsubjPass_ np) _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_auxPass_advmod_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_auxPass_advmod_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_auxPass_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_aux_auxPass (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_aux_auxPass_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_aux_auxPass_obl_conj (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
+    Groot_nsubjPass_aux_auxPass_obl_obl_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
+    Groot_nsubjPass_aux_auxPass_obl_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
+    _ -> case verbFromUDS x of -- TODO: fill in other cases
+                Just vp -> Just $ GGenericCl vp
+                _       -> Nothing
 
 getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]
@@ -800,6 +841,10 @@ getRoot rt@(GrootAdA_ _) = [rt]
 getRoot rt@(GrootPrep_ _) = [rt]
 getRoot rt@(GrootRP_ _) = [rt]
 getRoot x = composOpMonoid getRoot x
+
+getNsubj :: Tree a -> [Gnsubj]
+getNsubj ns@(Gnsubj_ _) = [ns]
+getNsubj x = composOpMonoid getNsubj x
 
 -----------------------------------------------------------------------------
 -- AnnotatedRule, almost isomorphic to LS.Types.Rule

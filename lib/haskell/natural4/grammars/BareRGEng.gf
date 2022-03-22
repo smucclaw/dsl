@@ -137,6 +137,11 @@ concrete BareRGEng of BareRG =
        sp = \\_g,_b,npc => acard.s ! R.npcase2case npc ;
        n = acard.n ;
        hasNum = False} ;
+
+    PrepRP prep rp = rp ** {
+      s = \\c => prep.s ++ rp.s ! c
+      } ;
+
   lincat
     [Prep] = Co.ListX ;
 

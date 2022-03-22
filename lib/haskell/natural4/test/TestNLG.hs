@@ -32,7 +32,7 @@ nlgTests = do
 
     let treeAPComplex = unsafePerformIO (bsr2gf env testAPComplexBSR)
     it "Should return a complex adjective phrase" $ do
-        showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (BaseAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN (DetQuant DefArt NumSg) (UseN sky_N)) (UseComp (CompAP (PositA blue_A))))))))"
+        showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (ConsAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (BaseAP (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN (DetQuant DefArt NumSg) (UseN sky_N)) (UseComp (CompAP (PositA blue_A)))))) (AdvAP (ConjAP and_Conj (BaseAP (PositA pulpy_A) (PositA tentacled_A))) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (AdvCN (UseN head_N) (PrepNP to_Prep (DetCN (DetQuant DefArt NumPl) (AdjCN (PositA rudimentary_A) (UseN wing_N)))))))))))"
 
     let treeCN = unsafePerformIO (bsr2gf env testCNBSR)
     it "Should return a common noun" $ do
@@ -126,7 +126,7 @@ testAPBSR :: BoolStructR
 testAPBSR = testBSR ["harmful to the affected individual", "significant"]
 
 testAPComplexBSR :: BoolStructR
-testAPComplexBSR = testBSR ["dangerously lethal to the afflicted individual", "gravely disturbed", "happy that the sky is blue"]
+testAPComplexBSR = testBSR ["dangerously lethal to the afflicted individual", "gravely disturbed", "happy that the sky is blue", "pulpy and tentacled from its head to its rudimentary wings", "hopelessly diseased while spitting angrily"]
 
 testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]

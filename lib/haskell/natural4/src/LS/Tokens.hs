@@ -147,16 +147,24 @@ myEOL :: Parser ()
 myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
 pRuleLabel :: SLParser RuleLabel
-pRuleLabel = debugName "pRuleLabel" . slPretendEmpty $ do
+pRuleLabel = debugName "pRuleLabel" . slPretendEmpty . someUndeepersOrEOL $ do
   (RuleMarker i sym, actualLabel) <- (,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                      |>| pOtherVal
-                                     <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
+                                     -- <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
 
   return (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
+
+-- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
+-- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
+someUndeepersOrEOL :: SLParser a -> SLParser a
+someUndeepersOrEOL p = mkSL $ do
+  (x, n) <- runSL p
+  ((), m) <- runSL $ upToNUndeepers n <|> liftSL myEOL
+  return (x, n + m)
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
 liftedDBG = mapWhenDebug . liftRawPFun . dbg
@@ -660,10 +668,18 @@ infixl 4 ->|
 finishSL :: SLParser a -> Parser a
 finishSL p = p |<$ undeepers
 
+-- | Like `someUndeepers`, but only consumes up to n UnDeepers
+upToNUndeepers :: Int -> SLParser ()
+upToNUndeepers 0 = debugName "upToNUndeepers/done" $ return ()
+upToNUndeepers n = debugName "upToNUndeepers/undeeper" $ do
+  slUnDeeper *> upToNUndeepers (n-1) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
+
+
 -- consume all the UnDeepers that have been stacked off to the right
 -- which is to say, inside the snd of the Parser (_,Int)
 
 undeepers :: Int -> Parser ()
+undeepers n | n < 0 =  debugName "undeepers" $ fail "undeepers: negative number of undeepers"
 undeepers n = debugName "undeepers" $ do
   debugPrint $ "sameLine/undeepers: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
   _ <- count n (pToken UnDeeper)

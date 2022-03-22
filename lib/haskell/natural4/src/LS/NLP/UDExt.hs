@@ -5,6 +5,7 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
+
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -389,6 +390,7 @@ data Tree :: * -> * where
   LexCAdv :: String -> Tree GCAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GAdvCN :: GCN -> GAdv -> Tree GCN_
+  GApposCN :: GCN -> GNP -> Tree GCN_
   GCN_AP_Conj_CNs_of_NP :: GAP -> GConj -> GListCN -> GNP -> Tree GCN_
   GCN_CN_relating_to_NP :: GCN -> GNP -> Tree GCN_
   GCN_obligation_of_NP_to_VP :: GNP -> GVP -> Tree GCN_
@@ -479,7 +481,9 @@ data Tree :: * -> * where
   LexN2 :: String -> Tree GN2_
   GMkN3 :: GN -> GPrep -> GPrep -> Tree GN3_
   LexN3 :: String -> Tree GN3_
+  GAdjAsNP :: GAP -> Tree GNP_
   GAdvNP :: GNP -> GAdv -> Tree GNP_
+  GApposNP :: GNP -> GNP -> Tree GNP_
   GConjNP :: GConj -> GListNP -> Tree GNP_
   GDefPN :: GPN -> Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
@@ -807,6 +811,7 @@ data Tree :: * -> * where
   GAdVVP :: GAdV -> GVP -> Tree GVP_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
   GComplV :: GV -> GNP -> Tree GVP_
+  GComplVP :: GVP -> GNP -> Tree GVP_
   GPassV :: GV -> Tree GVP_
   GPassVAgent :: GV -> GNP -> Tree GVP_
   GProgrVP :: GVP -> Tree GVP_
@@ -964,6 +969,7 @@ instance Eq (Tree a) where
     (LexCAdv x,LexCAdv y) -> x == y
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvCN x1 x2,GAdvCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GApposCN x1 x2,GApposCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4,GCN_AP_Conj_CNs_of_NP y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GCN_CN_relating_to_NP x1 x2,GCN_CN_relating_to_NP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCN_obligation_of_NP_to_VP x1 x2,GCN_obligation_of_NP_to_VP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1054,7 +1060,9 @@ instance Eq (Tree a) where
     (LexN2 x,LexN2 y) -> x == y
     (GMkN3 x1 x2 x3,GMkN3 y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexN3 x,LexN3 y) -> x == y
+    (GAdjAsNP x1,GAdjAsNP y1) -> and [ x1 == y1 ]
     (GAdvNP x1 x2,GAdvNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GApposNP x1 x2,GApposNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjNP x1 x2,GConjNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDefPN x1,GDefPN y1) -> and [ x1 == y1 ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1382,6 +1390,7 @@ instance Eq (Tree a) where
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV x1 x2,GComplV y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GComplVP x1 x2,GComplVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPassV x1,GPassV y1) -> and [ x1 == y1 ]
     (GPassVAgent x1 x2,GPassVAgent y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
@@ -1644,6 +1653,7 @@ instance Gf GCAdv where
 instance Gf GCN where
   gf (GAdjCN x1 x2) = mkApp (mkCId "AdjCN") [gf x1, gf x2]
   gf (GAdvCN x1 x2) = mkApp (mkCId "AdvCN") [gf x1, gf x2]
+  gf (GApposCN x1 x2) = mkApp (mkCId "ApposCN") [gf x1, gf x2]
   gf (GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4) = mkApp (mkCId "CN_AP_Conj_CNs_of_NP") [gf x1, gf x2, gf x3, gf x4]
   gf (GCN_CN_relating_to_NP x1 x2) = mkApp (mkCId "CN_CN_relating_to_NP") [gf x1, gf x2]
   gf (GCN_obligation_of_NP_to_VP x1 x2) = mkApp (mkCId "CN_obligation_of_NP_to_VP") [gf x1, gf x2]
@@ -1662,6 +1672,7 @@ instance Gf GCN where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdjCN" -> GAdjCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "AdvCN" -> GAdvCN (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "ApposCN" -> GApposCN (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "CN_AP_Conj_CNs_of_NP" -> GCN_AP_Conj_CNs_of_NP (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "CN_CN_relating_to_NP" -> GCN_CN_relating_to_NP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "CN_obligation_of_NP_to_VP" -> GCN_obligation_of_NP_to_VP (fg x1) (fg x2)
@@ -2091,7 +2102,9 @@ instance Gf GN3 where
       _ -> error ("no N3 " ++ show t)
 
 instance Gf GNP where
+  gf (GAdjAsNP x1) = mkApp (mkCId "AdjAsNP") [gf x1]
   gf (GAdvNP x1 x2) = mkApp (mkCId "AdvNP") [gf x1, gf x2]
+  gf (GApposNP x1 x2) = mkApp (mkCId "ApposNP") [gf x1, gf x2]
   gf (GConjNP x1 x2) = mkApp (mkCId "ConjNP") [gf x1, gf x2]
   gf (GDefPN x1) = mkApp (mkCId "DefPN") [gf x1]
   gf (GDetCN x1 x2) = mkApp (mkCId "DetCN") [gf x1, gf x2]
@@ -2118,7 +2131,9 @@ instance Gf GNP where
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "AdjAsNP" -> GAdjAsNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "AdvNP" -> GAdvNP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "ApposNP" -> GApposNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjNP" -> GConjNP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "DefPN" -> GDefPN (fg x1)
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
@@ -2969,6 +2984,7 @@ instance Gf GVP where
   gf (GAdVVP x1 x2) = mkApp (mkCId "AdVVP") [gf x1, gf x2]
   gf (GAdvVP x1 x2) = mkApp (mkCId "AdvVP") [gf x1, gf x2]
   gf (GComplV x1 x2) = mkApp (mkCId "ComplV") [gf x1, gf x2]
+  gf (GComplVP x1 x2) = mkApp (mkCId "ComplVP") [gf x1, gf x2]
   gf (GPassV x1) = mkApp (mkCId "PassV") [gf x1]
   gf (GPassVAgent x1 x2) = mkApp (mkCId "PassVAgent") [gf x1, gf x2]
   gf (GProgrVP x1) = mkApp (mkCId "ProgrVP") [gf x1]
@@ -2985,6 +3001,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "AdVVP" -> GAdVVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "AdvVP" -> GAdvVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplV" -> GComplV (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "ComplVP" -> GComplVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PassV" -> GPassV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PassVAgent" -> GPassVAgent (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "ProgrVP" -> GProgrVP (fg x1)
@@ -3883,6 +3900,7 @@ instance Compos Tree where
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GAdvCN x1 x2 -> r GAdvCN `a` f x1 `a` f x2
+    GApposCN x1 x2 -> r GApposCN `a` f x1 `a` f x2
     GCN_AP_Conj_CNs_of_NP x1 x2 x3 x4 -> r GCN_AP_Conj_CNs_of_NP `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GCN_CN_relating_to_NP x1 x2 -> r GCN_CN_relating_to_NP `a` f x1 `a` f x2
     GCN_obligation_of_NP_to_VP x1 x2 -> r GCN_obligation_of_NP_to_VP `a` f x1 `a` f x2
@@ -3924,7 +3942,9 @@ instance Compos Tree where
     GComplN3 x1 x2 -> r GComplN3 `a` f x1 `a` f x2
     GUse3N3 x1 -> r GUse3N3 `a` f x1
     GMkN3 x1 x2 x3 -> r GMkN3 `a` f x1 `a` f x2 `a` f x3
+    GAdjAsNP x1 -> r GAdjAsNP `a` f x1
     GAdvNP x1 x2 -> r GAdvNP `a` f x1 `a` f x2
+    GApposNP x1 x2 -> r GApposNP `a` f x1 `a` f x2
     GConjNP x1 x2 -> r GConjNP `a` f x1 `a` f x2
     GDefPN x1 -> r GDefPN `a` f x1
     GDetCN x1 x2 -> r GDetCN `a` f x1 `a` f x2
@@ -4226,6 +4246,7 @@ instance Compos Tree where
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplV x1 x2 -> r GComplV `a` f x1 `a` f x2
+    GComplVP x1 x2 -> r GComplVP `a` f x1 `a` f x2
     GPassV x1 -> r GPassV `a` f x1
     GPassVAgent x1 x2 -> r GPassVAgent `a` f x1 `a` f x2
     GProgrVP x1 -> r GProgrVP `a` f x1

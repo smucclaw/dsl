@@ -5,7 +5,7 @@ concrete BareRGEng of BareRG =
     S, ExistS, ExistNP,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
-    N, CompoundN
+    N, CompoundN, ApposNP, AdjAsNP
   ],
 
   SentenceEng [
@@ -32,11 +32,10 @@ concrete BareRGEng of BareRG =
 
   NounEng - [
     CountNP,
-    PartNP,
-    ApposCN
+    PartNP
+ --   ,ApposCN -- no labels for this fun so won't be used in ud2gf
     ,UseN2, Use2N3
     ,PPartNP
---    ,IndefArt, DefArt
    ],
 
 
@@ -114,6 +113,7 @@ concrete BareRGEng of BareRG =
     SentNP np sc = AdvNP np <sc : Adv> ;
 
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
+    ComplVP vp np = ComplSlash (slashV vp) np ;
     -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
 
     -- : V -> VP ;       -- is affected (needs auxPass to trigger)

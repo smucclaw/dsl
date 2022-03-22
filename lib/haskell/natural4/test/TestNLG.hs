@@ -40,7 +40,7 @@ nlgTests = do
 
     let treeCNComplex = unsafePerformIO (bsr2gf env testCNComplexBSR)
     it "Should return a complex common noun" $ do
-        showExpr treeCNComplex `shouldBe` "(AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N))))"
+        showExpr treeCNComplex `shouldBe` "AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N)))"
 
 
     let treeNP = unsafePerformIO (bsr2gf env testNPBSR)

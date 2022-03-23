@@ -5,7 +5,6 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
-
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -626,6 +625,7 @@ data Tree :: * -> * where
   Groot_advcl_nsubj_cop_det_amod :: Groot -> Gadvcl -> Gnsubj -> Gcop -> Gdet -> Gamod -> Tree GUDS_
   Groot_advcl_nsubj_xcomp :: Groot -> Gadvcl -> Gnsubj -> Gxcomp -> Tree GUDS_
   Groot_advmod :: Groot -> Gadvmod -> Tree GUDS_
+  Groot_advmod_advcl :: Groot -> Gadvmod -> Gadvcl -> Tree GUDS_
   Groot_advmod_advmod_obl :: Groot -> Gadvmod -> Gadvmod -> Gobl -> Tree GUDS_
   Groot_advmod_amod :: Groot -> Gadvmod -> Gamod -> Tree GUDS_
   Groot_advmod_nsubj_cop :: Groot -> Gadvmod -> Gnsubj -> Gcop -> Tree GUDS_
@@ -829,6 +829,7 @@ data Tree :: * -> * where
   GaclRelclRS_ :: GRS -> Tree GaclRelcl_
   GaclRelclUDS_ :: GUDS -> Tree GaclRelcl_
   GpassRelcl_ :: Groot -> GRP -> GauxPass -> Tree GaclRelcl_
+  GadvclMarkUDS_ :: Gmark -> GUDS -> Tree Gadvcl_
   GadvclUDS_ :: GUDS -> Tree Gadvcl_
   Gadvcl_ :: GX -> Tree Gadvcl_
   Gadvmod_ :: GAdv -> Tree Gadvmod_
@@ -1205,6 +1206,7 @@ instance Eq (Tree a) where
     (Groot_advcl_nsubj_cop_det_amod x1 x2 x3 x4 x5 x6,Groot_advcl_nsubj_cop_det_amod y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
     (Groot_advcl_nsubj_xcomp x1 x2 x3 x4,Groot_advcl_nsubj_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_advmod x1 x2,Groot_advmod y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Groot_advmod_advcl x1 x2 x3,Groot_advmod_advcl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_advmod_advmod_obl x1 x2 x3 x4,Groot_advmod_advmod_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_advmod_amod x1 x2 x3,Groot_advmod_amod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_advmod_nsubj_cop x1 x2 x3 x4,Groot_advmod_nsubj_cop y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -1408,6 +1410,7 @@ instance Eq (Tree a) where
     (GaclRelclRS_ x1,GaclRelclRS_ y1) -> and [ x1 == y1 ]
     (GaclRelclUDS_ x1,GaclRelclUDS_ y1) -> and [ x1 == y1 ]
     (GpassRelcl_ x1 x2 x3,GpassRelcl_ y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GadvclMarkUDS_ x1 x2,GadvclMarkUDS_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GadvclUDS_ x1,GadvclUDS_ y1) -> and [ x1 == y1 ]
     (Gadvcl_ x1,Gadvcl_ y1) -> and [ x1 == y1 ]
     (Gadvmod_ x1,Gadvmod_ y1) -> and [ x1 == y1 ]
@@ -2580,6 +2583,7 @@ instance Gf GUDS where
   gf (Groot_advcl_nsubj_cop_det_amod x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_advcl_nsubj_cop_det_amod") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_advcl_nsubj_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_advcl_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_advmod x1 x2) = mkApp (mkCId "root_advmod") [gf x1, gf x2]
+  gf (Groot_advmod_advcl x1 x2 x3) = mkApp (mkCId "root_advmod_advcl") [gf x1, gf x2, gf x3]
   gf (Groot_advmod_advmod_obl x1 x2 x3 x4) = mkApp (mkCId "root_advmod_advmod_obl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_advmod_amod x1 x2 x3) = mkApp (mkCId "root_advmod_amod") [gf x1, gf x2, gf x3]
   gf (Groot_advmod_nsubj_cop x1 x2 x3 x4) = mkApp (mkCId "root_advmod_nsubj_cop") [gf x1, gf x2, gf x3, gf x4]
@@ -2786,6 +2790,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_advcl_nsubj_cop_det_amod" -> Groot_advcl_nsubj_cop_det_amod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_advcl_nsubj_xcomp" -> Groot_advcl_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_advmod" -> Groot_advmod (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_advmod_advcl" -> Groot_advmod_advcl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_advmod_advmod_obl" -> Groot_advmod_advmod_obl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_advmod_amod" -> Groot_advmod_amod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_advmod_nsubj_cop" -> Groot_advmod_nsubj_cop (fg x1) (fg x2) (fg x3) (fg x4)
@@ -3047,11 +3052,13 @@ instance Gf GaclRelcl where
       _ -> error ("no aclRelcl " ++ show t)
 
 instance Gf Gadvcl where
+  gf (GadvclMarkUDS_ x1 x2) = mkApp (mkCId "advclMarkUDS_") [gf x1, gf x2]
   gf (GadvclUDS_ x1) = mkApp (mkCId "advclUDS_") [gf x1]
   gf (Gadvcl_ x1) = mkApp (mkCId "advcl_") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "advclMarkUDS_" -> GadvclMarkUDS_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "advclUDS_" -> GadvclUDS_ (fg x1)
       Just (i,[x1]) | i == mkCId "advcl_" -> Gadvcl_ (fg x1)
 
@@ -4062,6 +4069,7 @@ instance Compos Tree where
     Groot_advcl_nsubj_cop_det_amod x1 x2 x3 x4 x5 x6 -> r Groot_advcl_nsubj_cop_det_amod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
     Groot_advcl_nsubj_xcomp x1 x2 x3 x4 -> r Groot_advcl_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_advmod x1 x2 -> r Groot_advmod `a` f x1 `a` f x2
+    Groot_advmod_advcl x1 x2 x3 -> r Groot_advmod_advcl `a` f x1 `a` f x2 `a` f x3
     Groot_advmod_advmod_obl x1 x2 x3 x4 -> r Groot_advmod_advmod_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_advmod_amod x1 x2 x3 -> r Groot_advmod_amod `a` f x1 `a` f x2 `a` f x3
     Groot_advmod_nsubj_cop x1 x2 x3 x4 -> r Groot_advmod_nsubj_cop `a` f x1 `a` f x2 `a` f x3 `a` f x4
@@ -4263,6 +4271,7 @@ instance Compos Tree where
     GaclRelclRS_ x1 -> r GaclRelclRS_ `a` f x1
     GaclRelclUDS_ x1 -> r GaclRelclUDS_ `a` f x1
     GpassRelcl_ x1 x2 x3 -> r GpassRelcl_ `a` f x1 `a` f x2 `a` f x3
+    GadvclMarkUDS_ x1 x2 -> r GadvclMarkUDS_ `a` f x1 `a` f x2
     GadvclUDS_ x1 -> r GadvclUDS_ `a` f x1
     Gadvcl_ x1 -> r Gadvcl_ `a` f x1
     Gadvmod_ x1 -> r Gadvmod_ `a` f x1

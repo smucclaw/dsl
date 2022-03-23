@@ -186,6 +186,7 @@ abstract UDCat = BareRG ** {
         aclUDSpastpart_ : UDS -> acl ; -- (an individual) affected by the breach
         aclUDSgerund_ : UDS -> acl ; -- (a message) obeying a certain format
         advclUDS_ : UDS -> advcl ;
+        advclMarkUDS_ : mark -> UDS -> advcl ;
 
         obl_    : Adv -> obl ;
 	    oblPrep_ : Prep -> obl ; -- sometimes empty preps are analysed as obl, e.g. "subject to"

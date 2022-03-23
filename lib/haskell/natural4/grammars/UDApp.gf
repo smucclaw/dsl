@@ -49,6 +49,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_advmod : root -> advmod -> UDS ;
 	--y == Scissors ;
 
+		root_advmod_advcl : root -> advmod -> advcl -> UDS ;
+
 		root_advmod_advmod_obl : root -> advmod -> advmod -> obl -> UDS ; -- VP -> Adv -> Adv -> Adv -> VP
 	--publicly available solely because of any data breach. ;
 

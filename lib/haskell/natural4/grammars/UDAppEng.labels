@@ -43,11 +43,11 @@
 #disable GenNP
 
 -- [my mother's]:Quant [hovercraft]:CN
-#auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss head[Number=Sing]
-#auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss head[Number=Plur]
+#auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=NOUN] head[Number=Sing]
+#auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss[POS=NOUN] head[Number=Plur]
 
 -- [my mother's]:Quant [5]:Num [hovercrafts]:CN
-#auxfun DetCNNumNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss nummod head
+#auxfun DetCNNumNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss[POS=NOUN] nummod head
 
 -- [one]:NP that processes data
 #auxfun CardNP_ card : Card -> root = rootN_ (DetNP (DetQuant IndefArt (NumCard card))) ; head

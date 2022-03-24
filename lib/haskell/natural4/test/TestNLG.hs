@@ -132,7 +132,7 @@ testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]
 
 testCNComplexBSR :: BoolStructR
-testCNComplexBSR = testBSR ["service from the provider to the payer", "great harm that she suffered" ]
+testCNComplexBSR = testBSR ["service from the provider to the payer", "great harm which she suffered" ]
 
 testNPBSR :: BoolStructR
 testNPBSR = testBSR ["all occurrences", "this assessment"]

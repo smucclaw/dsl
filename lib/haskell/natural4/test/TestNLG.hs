@@ -40,8 +40,7 @@ nlgTests = do
 
     it "Should return a complex common noun" $ do
         treeCNComplex <- bsr2gf env testCNComplexBSR
-        showExpr treeCNComplex `shouldBe` "AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N)))"
-
+        showExpr treeCNComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N)))) (RelNP (MassNP (AdjCN (PositA great_A) (UseN harm_N))) (RS_that_NP_VP (UsePron she_Pron) (UseV suffer_V))))"
 
     it "Should return a noun phrase" $ do
         treeNP <- bsr2gf env testNPBSR
@@ -132,7 +131,7 @@ testCNBSR :: BoolStructR
 testCNBSR = testBSR ["occurrence", "assessment"]
 
 testCNComplexBSR :: BoolStructR
-testCNComplexBSR = testBSR ["service from the provider to the payer", "great harm which she suffered" ]
+testCNComplexBSR = testBSR ["service from the provider to the payer", "great harm that she suffered" ]
 
 testNPBSR :: BoolStructR
 testNPBSR = testBSR ["all occurrences", "this assessment"]

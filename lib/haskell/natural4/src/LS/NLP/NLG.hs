@@ -715,6 +715,23 @@ nonMassNpFromUDS x = case npFromUDS x of
   Just (GMassNP _) -> Nothing
   _ -> npFromUDS x
 
+-- | Takes the RGL NP returned by npFromUDS, and extracts a CN out of it.
+--
+-- All UD-to-RGL work happens in npFromUDS, this is just peeling off the layers of the RGL functions.
+cnFromUDS :: GUDS -> Maybe GCN
+cnFromUDS x = np2cn =<< npFromUDS x
+
+np2cn :: GNP -> Maybe GCN
+np2cn np = case np of
+  GMassNP   cn          -> Just cn
+  GDetCN    _det cn     -> Just cn
+  GGenModNP _num _np cn -> Just cn
+  GExtAdvNP np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
+  GAdvNP    np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
+  GRelNP    np   rs     -> fmap (`GRelCN` rs) (np2cn np)
+  GPredetNP _pre np     -> np2cn np
+  _                     -> Nothing
+
 -- | Constructs a RGL NP from a UDS.
 -- If the UDS is like "kills a cat", the NP will be "a killed cat".
 --
@@ -732,6 +749,8 @@ npFromUDS x = case x of
   Groot_nmod_nmod (GrootN_ service_NP) (Gnmod_ from_Prep provider_NP) (Gnmod_ to_Prep payer_NP) -> Just $ GAdvNP (GAdvNP service_NP (GPrepNP from_Prep provider_NP)) (GPrepNP to_Prep payer_NP)
   -- great harm that she suffered
   Groot_acl (GrootN_ great_harm_NP) (GaclUDS_ (Groot_mark_nsubj (GrootV_ suffer_VP) _ (Gnsubj_ she_NP))) ->  Just $ GRelNP great_harm_NP (GRS_that_NP_VP she_NP suffer_VP)
+
+
   -- Groot_acl (GrootN_ (MassNP (AdjCN (PositA great_A) (UseN harm_N)))) (GaclUDS_ (Groot_mark_nsubj (GrootV_ (UseV suffer_V)) (Gmark_ that_Subj) (Gnsubj_ (UsePron she_Pron))))
 
   _ -> case getRoot x of -- TODO: fill in other cases
@@ -749,22 +768,6 @@ udRelcl2rglRS uds = case uds of
   where
     vp2rs vp = useRCl (GRelVP GIdRP vp)
 
--- | Takes the RGL NP returned by npFromUDS, and extracts a CN out of it.
---
--- All UD-to-RGL work happens in npFromUDS, this is just peeling off the layers of the RGL functions.
-cnFromUDS :: GUDS -> Maybe GCN
-cnFromUDS x = np2cn =<< npFromUDS x
-  where
-    np2cn :: GNP -> Maybe GCN
-    np2cn np = case np of
-      GMassNP   cn          -> Just cn
-      GDetCN    _det cn     -> Just cn
-      GGenModNP _num _np cn -> Just cn
-      GExtAdvNP np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
-      GAdvNP    np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
-      GRelNP    np   rs     -> fmap (`GRelCN` rs) (np2cn np)
-      GPredetNP _pre np     -> np2cn np
-      _                     -> Nothing
 
 pnFromUDS :: GUDS -> Maybe GPN
 pnFromUDS x = np2pn =<< npFromUDS x

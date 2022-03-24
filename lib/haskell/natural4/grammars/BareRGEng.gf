@@ -189,12 +189,17 @@ concrete BareRGEng of BareRG =
       let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
        in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
 
+    --  : NP -> VP -> RS ;
+    RS_that_NP_VP np vp =
+    let cl : Cl = mkCl np vp ;
+      in mkRS (mkRCl that_RP (SlashCl cl)) ;
+
     -- : [CN] -> NP -> NP ;
     NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
 
   {-  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
     Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
-    RS_that_NP_VP : NP -> VP -> RS ;
+
     RS_to_whom_NP_VP : NP -> VP -> RS ;
     VP_assesses__Adv__that_S : Adv -> S -> VP ;
     VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;

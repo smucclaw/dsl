@@ -48,8 +48,8 @@ myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
 
-dummyExpr :: PGF.Expr
-dummyExpr = fromJust $ readExpr "root_only (rootN_ (MassNP (UseN dummy_N)))" -- dummy expr
+dummyExpr :: String -> PGF.Expr
+dummyExpr msg = gf $ Groot_only (GrootN_ (GUsePN (GStrPN (GString msg)))) -- dummy expr
 
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
@@ -97,7 +97,8 @@ parseOut env txt = do
   -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
   --              Just e -> e
   --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
-  let expr = fromMaybe dummyExpr (parseConllu env lowerConll)
+  let expr = fromMaybe (dummyExpr $ "parseOut: fail to parse" ++ Text.unpack txt)(parseConllu env lowerConll)
+
   putStrLn $ showExpr expr
   return $ fg expr
 -----------------------------------------------------------------------------
@@ -208,7 +209,7 @@ parseFields env rl = case rl of
   TypeDecl {name, {-super, has,-} enums, given, upon} -> do
     nameA <- parseName env name
     --superA <- TODO: parse TypeSig
-    let superA = Just dummyExpr
+    let superA = Just (dummyExpr "parseField : does not parse TypeSig yet ")
     enumsA <- mapM (parseParamText env) enums
     givenA <- mapM (parseParamText env) given
     uponA <- mapM (parseParamText env) upon
@@ -325,7 +326,8 @@ kvspair2gf env (action,_) = case action of
       TG {gfRP=Just rp}   -> ("RP", gf rp)
       TG {gfCl=Just cl}   -> ("Cl", gf cl)
       TG {gfVP=Just v}    -> ("VP", gf v)
-      _ -> trace ("kvspair2gf: type of predicate not among " ++ acceptedRGLtypes) ("NP", dummyExpr)
+      _ -> ("NP", dummyExpr $ "kvspair2gf: type of predicate not among " ++ acceptedRGLtypes)
+
   pred :| compls -> do
     predUDS <- parseOut env pred
     complUDS <- parseOut env (Text.unwords compls) -- TODO: or parse each item one by one?
@@ -497,7 +499,7 @@ bsr2gf env bsr = case bsr of
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
     return $ case flattenGFTrees existingTrees of
-               []  -> trace ("bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)) dummyExpr
+               []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
@@ -516,10 +518,10 @@ bsr2gf env bsr = case bsr of
                   GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
                   GGenericCl vp ->  gf $ GComplVP vp obj
                   _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
-          _ -> trace ("bsr2gf: can't handle the combination " ++ showExpr (gf premodUDS) ++ "+" ++ showExpr (gf postmodUDS)) dummyExpr
+          _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf premodUDS) ++ "+" ++ showExpr (gf postmodUDS)
     return tree
 
-  _ -> return dummyExpr
+  _ -> return $ dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
 
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --
@@ -674,12 +676,12 @@ toUDS pgf e = case findType pgf e of
   "RCl" -> case fg e :: GRCl of
              GRelVP _rp vp -> toUDS pgf (gf vp)
              GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
-             _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
+             _ -> fg $ dummyExpr $"unable to convert to UDS: " ++ showExpr e
   "Cl" -> case fg e :: GCl of
             GPredVP np vp -> Groot_nsubj (GrootV_ vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
-            _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
-  _ -> trace ("unable to convert to UDS: " ++ showExpr e) (fg dummyExpr)
+            _ -> fg  $ dummyExpr $ ("unable to convert to UDS: " ++ showExpr e)
+  _ -> fg $ dummyExpr $ "unable to convert to UDS: " ++ showExpr e
 
 -----------------------------------------------------------------------------
 -- Manipulating GF trees

@@ -8,14 +8,7 @@ concrete BareRGEng of BareRG =
     N, CompoundN, ApposNP, AdjAsNP
   ],
 
-  SentenceEng [
-    S,QS,RS,Cl,RCl,QCl,NP,Temp,Tense,Ant,Pol,VP,Imp,Adv,
-    ImpVP ,      -- VP -> Imp ;                 -- walk / do not walk
-    AdvS ,
-    ExtAdvS
-    ,UseCl, UseRCl
-    ,EmbedVP,EmbedS -- used in UDExt
-  ],
+  SentenceEng,
 
   VerbEng [
    VP,AdV,Adv,AP,Comp,NP,V,Tense
@@ -28,12 +21,11 @@ concrete BareRGEng of BareRG =
   ,AdVVP
   ],
 
-  IdiomEng [ProgrVP],
+  IdiomEng [ProgrVP, GenericCl], -- Not used for parsing
 
   NounEng - [
     CountNP,
     PartNP
- --   ,ApposCN -- no labels for this fun so won't be used in ud2gf
     ,UseN2, Use2N3
     ,PPartNP
    ],
@@ -145,6 +137,11 @@ concrete BareRGEng of BareRG =
        sp = \\_g,_b,npc => acard.s ! R.npcase2case npc ;
        n = acard.n ;
        hasNum = False} ;
+
+    PrepRP prep rp = rp ** {
+      s = \\c => prep.s ++ rp.s ! c
+      } ;
+
   lincat
     [Prep] = Co.ListX ;
 
@@ -153,6 +150,7 @@ concrete BareRGEng of BareRG =
     ConsPrep = Co.consrSS Co.comma ;
     ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
     PredVPS np vp = mkS (mkCl np vp) ;
+    SlashCl cl = cl ** {c2=[]} ;
 
   oper
     slashV : VP -> VPSlash = \vp -> vp ** {

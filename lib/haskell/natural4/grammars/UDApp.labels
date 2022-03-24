@@ -105,6 +105,7 @@
 #fun ConjAdV 	cc head
 #fun ConjAdv 	cc head
 #fun PrepNP 	case head
+#fun PrepRP     case head
 #fun SubjS 	mark head
 #fun AdvCN 	head nmod
 #fun ComplN2 	head nmod
@@ -232,7 +233,7 @@
 #cat Pol X
 #cat Predet DET
 #cat Prep ADP primary
-#cat Pron PRON
+#cat Pron PRON primary
 #cat QCl X
 #cat QS X
 #cat QVP X
@@ -275,6 +276,7 @@
 #fun root_acl_nmod head acl nmod
 #fun root_advcl head advcl
 #fun root_advmod head advmod
+#fun root_advmod_advcl head advmod advcl
 #fun root_advmod_advmod_obl head advmod advmod obl
 #fun root_advmod_amod head advmod amod
 #fun root_advmod_nsubj_cop_obl head advmod nsubj cop obl
@@ -465,6 +467,8 @@
 --#fun root_nsubj_cop_det_amod_conj_conj_conj_conj_conj_conj head nsubj  cop  det  amod  conj  conj  conj  conj  conj  conj
 #fun root_nsubj_cop_obl_parataxis head nsubj  cop  obl  parataxis
 #fun root_nsubj_obj_advcl head nsubj  obj  advcl
+#fun advclMarkUDS_ mark head
+
 
 -- Maryam's annotations
 #fun root_advcl_nsubjPass_aux_auxPass_xcomp head advcl nsubj:pass aux aux:pass xcomp

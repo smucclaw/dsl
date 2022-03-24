@@ -207,6 +207,7 @@ lin
         if_it : NP = mkNP if_Predet it ;
      in root_nsubj_cop breach if_it is ;
 
+
   -- Two identical structures, just different cat but should be same lincat
 	-- : root -> mark -> nsubj -> cop -> obl -> UDS ;
 	--"when an organisation is aware of a data breach ;
@@ -231,7 +232,8 @@ lin
 -- acl, advcl
 
   -- : root -> acl -> UDS ;	--a message obeying a certain format ;
-	root_acl rt acl = onlyPred (advRoot rt acl) ;
+  -- : root -> advcl -> UDS ; --assess if it is a breach ;
+	root_advcl, root_acl = \rt,acl -> onlyPred (advRoot rt acl) ;
 
   	-- onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;
 
@@ -239,8 +241,7 @@ lin
   -- : root -> acl -> nmod -> UDS ;
 	root_acl_nmod rt acl nm = root_acl (mkRoot (mkVP rt.vp nm)) acl ;
 
-  -- : root -> advcl -> UDS ; --assess if it is a breach ;
-	root_advcl rt adv = root_acl rt adv ;
+	root_advmod_advcl rt am acl = root_acl_nmod rt am.adv acl ;
 
   -- : root -> aclRelcl -> UDS ; --any manner that is reasonable ;
 	root_aclRelcl rt rs = root_only (addRcl rt rs) ;

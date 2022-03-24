@@ -159,6 +159,8 @@ abstract UDCat = BareRG ** {
         rootDAP_ : DAP -> root ; -- any unauthorised
         rootQuant_ : Quant -> root ; -- the customer's
         rootAdA_ : AdA -> root ; -- much
+        rootPrep_ : Prep -> root ; -- under
+        rootRP_ : RP -> root ; -- for which
 
     -- GF NPs can have many UD labels
         nsubj_ : NP -> nsubj ; -- lexical cat can be NOUN, DET, PRON, …
@@ -186,6 +188,7 @@ abstract UDCat = BareRG ** {
         aclUDSpastpart_ : UDS -> acl ; -- (an individual) affected by the breach
         aclUDSgerund_ : UDS -> acl ; -- (a message) obeying a certain format
         advclUDS_ : UDS -> advcl ;
+        advclMarkUDS_ : mark -> UDS -> advcl ;
 
         obl_    : Adv -> obl ;
 	    oblPrep_ : Prep -> obl ; -- sometimes empty preps are analysed as obl, e.g. "subject to"

@@ -98,6 +98,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
     aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart uds} ;
     aclUDSgerund_ uds = lin Adv {s = "that" ++ linUDS uds} ; -- TODO: do we need actual gerund here? this is just to avoid "message obeys a certain format" when original is "… obeying …"
+    advclMarkUDS_ = \mark,uds -> lin Adv {s = mark.s ++ linUDS uds} ;
 
     expl_ = id Pron ;
     det_ = id Det ;

@@ -12,24 +12,52 @@ import Data.List (nub)
 import qualified Data.Text.Lazy as Text
 
 -- https://en.wikipedia.org/wiki/Ground_expression
-groundrules :: RunConfig -> [Rule] -> [MultiTerm]
+groundrules :: RunConfig -> [Rule] -> Grounds
 groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
                   | r@DefTypically{..} <- rs ]
 
-checklist :: RunConfig -> [Rule] -> [MultiTerm]
+checklist :: RunConfig -> [Rule] -> Grounds
 checklist rc rs = groundToChecklist <$> groundrules rc rs
 
-rulegrounds :: RunConfig -> [Rule] -> Rule -> [MultiTerm]
+rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
-  let whoGrounds  = (bsp2text subj :) <$> bsr2grounds who
-      condGrounds =                       bsr2grounds cond
+  let whoGrounds  = (bsp2text subj :) <$> bsr2grounds rc globalrules r who
+      condGrounds =                       bsr2grounds rc globalrules r cond
   in concat [whoGrounds, condGrounds]
-  where bsr2grounds = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
+
+rulegrounds rc globalrules r@Hornlike{..} =
+  let givenGrounds  = pt2grounds rc globalrules r <$> maybeToList given
+      uponGrounds   = pt2grounds rc globalrules r <$> maybeToList upon
+      clauseGrounds = [ rp2grounds  rc globalrules r (hHead clause) ++
+                        bsr2grounds rc globalrules r (hBody clause)
+                      | clause <- clauses ]
+
+  in concat $ concat [givenGrounds, uponGrounds, clauseGrounds]
 
 rulegrounds rc globalrules r = [ ]
+
+-- [TODO]: other forms of Rule need their ground terms expressed.
+-- [TODO]: also, we should return the terms as a plain BoolStruct (Item Text.Text) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item Text.
+
+
+-- [TODO] in future this will become
+-- type Grounds = AA.Item Text.Text
+type Grounds = [MultiTerm]
+
+bsr2grounds :: RunConfig -> [Rule] -> Rule -> Maybe BoolStructR -> Grounds
+bsr2grounds rc globalrules r = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
+
+pt2grounds :: RunConfig -> [Rule] -> Rule -> ParamText -> Grounds
+pt2grounds _rc _globalrules _r _pt = [["pt2grounds","unimplemented"]]
+
+rp2grounds :: RunConfig -> [Rule] -> Rule ->  RelationalPredicate -> Grounds
+rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
+rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
+rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
+rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds rc globalrules r (Just bsr)
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP rc globalrules r =

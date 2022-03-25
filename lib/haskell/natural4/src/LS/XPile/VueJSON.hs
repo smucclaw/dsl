@@ -85,9 +85,10 @@ groundToChecklist (subj : "is not" : y)     = groundToChecklist $ subj : "is" : 
 groundToChecklist (subj : "is"     : y)     = groundToChecklist $ "Is" : "the" : subj : quaero y -- ++ ["or not?"]
 groundToChecklist (subj : "has"    : y)     = groundToChecklist $ "Does" : "the" : subj : "have" : quaero y -- ++ ["or not?"]
 groundToChecklist ("the" : something1 : something2 : "occurs" : blahblah) = groundToChecklist $ "Did the" : something1 : something2 : "occur" : quaero blahblah
-groundToChecklist mts
-  | length mts == 1 = groundToChecklist $ concatMap Text.words mts
-  | otherwise = pure $ Text.unwords mts
+groundToChecklist [mt]
+  | mts@(_:_:_) <- Text.words mt = groundToChecklist mts -- Only loop if there are multiple words to prevent infinite loops
+groundToChecklist mts = pure $ Text.unwords mts
+
 
 quaero :: [Text.Text] -> [Text.Text]
 quaero xs = init xs ++ [last xs <> "?"]

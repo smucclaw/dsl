@@ -46,8 +46,15 @@
 #auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=NOUN] head[Number=Sing]
 #auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss[POS=NOUN] head[Number=Plur]
 
+-- [Sylvia's]:Quant [hovercraft]:CN
+#auxfun DetCNSgPNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=PROPN] head[Number=Sing]
+#auxfun DetCNPlPNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss[POS=PROPN] head[Number=Plur]
+
 -- [my mother's]:Quant [5]:Num [hovercrafts]:CN
 #auxfun DetCNNumNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss[POS=NOUN] nummod head
+
+-- [Sylvia's]:Quant [500]:Num [hovercraft]:CN
+#auxfun DetCNNumPNmod_ quant num cn : Quant -> Num -> CN -> NP = DetCN (DetQuant quant num) cn ; nmod:poss[POS=PROPN] nummod head
 
 -- [one]:NP that processes data
 #auxfun CardNP_ card : Card -> root = rootN_ (DetNP (DetQuant IndefArt (NumCard card))) ; head

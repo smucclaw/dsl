@@ -39,6 +39,13 @@ import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 
+import CPython.Simple as Py
+
+runCPython :: String -> String -> IO String
+runCPython pyFile input = do
+  Py.initialize
+  pure ""
+
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 

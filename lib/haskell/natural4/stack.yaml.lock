@@ -77,6 +77,13 @@ packages:
       sha256: 4082f112e4f3d6363df6d12906b24bdcc9ebd7ac2c683841fac1254324373f8f
   original:
     hackage: svg-builder-0.1.1
+- completed:
+    hackage: cpython-3.5.1@sha256:fb15b6778a14671d9bd2c7c76d24ca8ca08e206381e6b7770efae75ab1e0ff6c,2643
+    pantry-tree:
+      size: 2936
+      sha256: 28d718872befa93c44162ebb5b49139e5b24f3c4d3e2f8769f8ed5e43a3883c7
+  original:
+    hackage: cpython-3.5.1@sha256:fb15b6778a14671d9bd2c7c76d24ca8ca08e206381e6b7770efae75ab1e0ff6c,2643
 snapshots:
 - completed:
     size: 587393

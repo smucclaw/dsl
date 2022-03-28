@@ -28,6 +28,7 @@ dependencies:
 - hspec-megaparsec
 - mtl
 - cassava
+- cpython
 - vector
 - bytestring
 - pretty-simple

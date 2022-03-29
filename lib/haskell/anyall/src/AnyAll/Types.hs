@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -43,7 +46,7 @@ data Item' lbl a =
   | All (Maybe lbl) [Item' lbl a]
   | Any (Maybe lbl) [Item' lbl a]
   | Not             (Item' lbl a)
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 
 instance Semigroup (Item' a b) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)

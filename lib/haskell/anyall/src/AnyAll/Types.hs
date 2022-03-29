@@ -66,6 +66,28 @@ instance Semigroup (Item' a b) where
   -- all the other cases get ANDed together in the most straightforward way.
   (<>) l            r            = All Nothing [l, r]
 
+
+-- | prepend something to the Pre/Post label, shallowly
+shallowPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
+x `shallowPrependBSR` Leaf z    = Leaf (x <> " " <> z)
+x `shallowPrependBSR` All ml zs = All (prependToLabel x ml) zs
+x `shallowPrependBSR` Any ml zs = Any (prependToLabel x ml) zs
+x `shallowPrependBSR` Not z     = Not (x `shallowPrependBSR` z)
+
+-- | prepend something to the Pre/Post label, deeply
+deepPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
+x `deepPrependBSR` Leaf z    = x `shallowPrependBSR` Leaf z
+x `deepPrependBSR` All ml zs = All (prependToLabel x ml) (deepPrependBSR x <$> zs)
+x `deepPrependBSR` Any ml zs = Any (prependToLabel x ml) (deepPrependBSR x <$> zs)
+x `deepPrependBSR` Not z     = Not (x `deepPrependBSR` z)
+
+-- | utility function to assist with shallowPrependBSR
+prependToLabel :: (IsString a, Semigroup a) => a -> Maybe (Label a) -> Maybe (Label a)
+prependToLabel x Nothing              = Just $ Pre      x
+prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
+prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
+
+
 data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)

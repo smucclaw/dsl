@@ -56,6 +56,7 @@ rpLeafVal = debugName "rpLeafVal" $ do
 aaLeaves :: AA.Item RelationalPredicate -> [MultiTerm]
 aaLeaves = aaLeavesFilter (const True)
 
+-- | extract just the leaf values from a BoolStructR, discarding the any/all structure along the way.
 aaLeavesFilter :: (RelationalPredicate -> Bool) -> AA.Item RelationalPredicate -> [MultiTerm]
 aaLeavesFilter f (AA.All _ xs) = concatMap (aaLeavesFilter f) xs
 aaLeavesFilter f (AA.Any _ xs) = concatMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.

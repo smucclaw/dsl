@@ -25,8 +25,6 @@ data MyItem lbl a =
   deriving (Eq, Show)
   deriving (Functor)
 
-deriving instance Functor (AA.Item' a)
-
 type MyBoolStruct = MyItem MultiTerm
 
 pBoolStruct :: Parser BoolStruct

@@ -103,7 +103,7 @@
 #auxfun SuperlA_ a : A -> AP = AdjOrd (OrdSuperl a) ; head[Degree=Sup]
 #disable UseComparA OrdSuperl AdjOrd
 
-#auxfun ExtAdvS_ adv comma s : Adv -> Conj -> S -> S = ExtAdvS adv s ; advmod punct head
+#auxfun ExtAdvS_ adv comma s : Adv -> Conj -> S -> S = ExtAdvS adv s ; advmod punct[LEMMA=\,] head
 
 -----------------------
 -- Inari's additions --
@@ -264,7 +264,7 @@
 
 -- ** AP **
 -- fluffy and cute
-#auxfun CommaAP_ ap comma : AP -> Conj -> APComma =  ap ; head punct
+#auxfun CommaAP_ ap comma : AP -> Conj -> APComma =  ap ; head punct[LEMMA=\,]
 
 -- Pattern match, and the corresponding continuation-based syntax
 -- #auxfun AndCutePatternMatch_ and cute : Conj -> AP -> AP2AP = MkAP2AP and cute ; cc head
@@ -288,7 +288,7 @@
 
 -- ** NP **
 -- cat, horse, capybara and dog
-#auxfun CommaNP_ np comma : NP -> Conj -> NPComma = np ; head punct
+#auxfun CommaNP_ np comma : NP -> Conj -> NPComma = np ; head punct[LEMMA=\,]
 
 #auxfun AndDogPair_ and dog : Conj -> NP -> Pair_Conj_NP = MkPair_ and dog ; cc head
 
@@ -307,7 +307,7 @@
 #auxfun NPCompleteList_helper_ catHorse capybara and dog : PrefixNP -> NPComma -> Conj -> NP -> NP = ConjNP and (catHorse (BaseNP capybara dog)) ; head dummy dummy dummy
 
 -- ** Adv **
-#auxfun CommaAdv_ Adv comma : Adv -> Conj -> AdvComma = Adv ; head punct
+#auxfun CommaAdv_ Adv comma : Adv -> Conj -> AdvComma = Adv ; head punct[LEMMA=\,]
 
 #auxfun AndAdvPair_ and dog : Conj -> Adv -> Pair_Conj_Adv = MkPair_ and dog ; cc head
 
@@ -324,7 +324,7 @@
 #auxfun AdvCompleteList_helper_ catHorse capybara and dog : PrefixAdv -> AdvComma -> Conj -> Adv -> Adv = ConjAdv and (catHorse (BaseAdv capybara dog)) ; head dummy dummy dummy
 
 -- ** CN **
-#auxfun CommaCN_ cn comma : CN -> Conj -> CNComma = cn ; head punct
+#auxfun CommaCN_ cn comma : CN -> Conj -> CNComma = cn ; head punct[LEMMA=\,]
 
 #auxfun AndCNPair_ and dog : Conj -> CN -> Pair_Conj_CN = MkPair_ and dog ; cc head
 
@@ -341,7 +341,7 @@
 #auxfun CNCompleteList_helper_ catHorse capybara and dog : PrefixCN -> CNComma -> Conj -> CN -> CN = ConjCN and (catHorse (BaseCN capybara dog)) ; head dummy dummy dummy
 
 -- ** Prep **
-#auxfun CommaPrep_ prep comma : Prep -> Conj -> PrepComma = prep ; head punct
+#auxfun CommaPrep_ prep comma : Prep -> Conj -> PrepComma = prep ; head punct[LEMMA=\,]
 
 #auxfun AndPrepPair_ and dog : Conj -> Prep -> Pair_Conj_Prep = MkPair_ and dog ; cc head
 

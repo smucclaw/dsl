@@ -38,3 +38,10 @@
 3	's	's	PART	POS	_	2	case	_	_
 4	five	five	NUM	CD	NumType=Card	5	nummod	_	_
 5	cats	cat	NOUN	NNS	Number=Plur	0	root	_	_
+
+
+1	cute	cute	ADJ	JJ	Degree=Pos	0	root	_	FUN=cute_A
+2	,	,	PUNCT	,	_	3	punct	_	_
+3	fluffy	fluffy	ADJ	JJ	Degree=Pos	1	conj	_	FUN=fluffy_A
+4	and	and	CCONJ	CC	_	5	cc	_	FUN=and_Conj
+5	furry	furry	ADJ	JJ	Degree=Pos	1	conj	_	FUN=furry_A

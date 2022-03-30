@@ -29,3 +29,7 @@ LIN: it is Sylvia's 500 cats
 root_only (rootN_ (DetCN (DetQuant (GenNP (DetCN (DetQuant (PossPron i_Pron) NumSg) (UseN mother_N))) (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 (pot0 n5)))))))) (UseN cat_N)))
 
 LIN: it is my mother's five cats
+
+root_only (rootA_ (ConjAP and_Conj (ConsAP (PositA cute_A) (BaseAP (PositA fluffy_A) (PositA furry_A)))))
+
+LIN: it is cute , fluffy and furry

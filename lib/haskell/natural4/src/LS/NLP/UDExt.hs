@@ -81,6 +81,8 @@ type GDigit = Tree GDigit_
 data GDigit_
 type GDigits = Tree GDigits_
 data GDigits_
+type GGen = Tree GGen_
+data GGen_
 type GIAdv = Tree GIAdv_
 data GIAdv_
 type GIComp = Tree GIComp_
@@ -449,6 +451,7 @@ data Tree :: * -> * where
   Gn9 :: Tree GDigit_
   GIDig :: GDig -> Tree GDigits_
   GIIDig :: GDig -> GDigits -> Tree GDigits_
+  Gs_Gen :: Tree GGen_
   GAdvIAdv :: GIAdv -> GAdv -> Tree GIAdv_
   GConjIAdv :: GConj -> GListIAdv -> Tree GIAdv_
   GPrepIP :: GPrep -> GIP -> Tree GIAdv_
@@ -515,6 +518,7 @@ data Tree :: * -> * where
   GUsePron :: GPron -> Tree GNP_
   GWho :: GUDS -> GNP -> Tree GNP_
   Geuropean_NP :: Tree GNP_
+  Gone_NP :: Tree GNP_
   Gwhoever_NP :: Tree GNP_
   GNumCard :: GCard -> Tree GNum_
   GNumPl :: Tree GNum_
@@ -1047,6 +1051,7 @@ instance Eq (Tree a) where
     (Gn9,Gn9) -> and [ ]
     (GIDig x1,GIDig y1) -> and [ x1 == y1 ]
     (GIIDig x1 x2,GIIDig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gs_Gen,Gs_Gen) -> and [ ]
     (GAdvIAdv x1 x2,GAdvIAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjIAdv x1 x2,GConjIAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepIP x1 x2,GPrepIP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1113,6 +1118,7 @@ instance Eq (Tree a) where
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
     (GWho x1 x2,GWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Geuropean_NP,Geuropean_NP) -> and [ ]
+    (Gone_NP,Gone_NP) -> and [ ]
     (Gwhoever_NP,Gwhoever_NP) -> and [ ]
     (GNumCard x1,GNumCard y1) -> and [ x1 == y1 ]
     (GNumPl,GNumPl) -> and [ ]
@@ -1895,6 +1901,16 @@ instance Gf GDigits where
 
       _ -> error ("no Digits " ++ show t)
 
+instance Gf GGen where
+  gf Gs_Gen = mkApp (mkCId "'\'s_Gen'") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "'\'s_Gen'" -> Gs_Gen 
+
+
+      _ -> error ("no Gen " ++ show t)
+
 instance Gf GIAdv where
   gf (GAdvIAdv x1 x2) = mkApp (mkCId "AdvIAdv") [gf x1, gf x2]
   gf (GConjIAdv x1 x2) = mkApp (mkCId "ConjIAdv") [gf x1, gf x2]
@@ -2199,6 +2215,7 @@ instance Gf GNP where
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
   gf (GWho x1 x2) = mkApp (mkCId "Who") [gf x1, gf x2]
   gf Geuropean_NP = mkApp (mkCId "european_NP") []
+  gf Gone_NP = mkApp (mkCId "one_NP") []
   gf Gwhoever_NP = mkApp (mkCId "whoever_NP") []
 
   fg t =
@@ -2228,6 +2245,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Who" -> GWho (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP 
+      Just (i,[]) | i == mkCId "one_NP" -> Gone_NP 
       Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP 
 
 

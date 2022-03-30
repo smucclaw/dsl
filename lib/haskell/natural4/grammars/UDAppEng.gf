@@ -241,7 +241,8 @@ lin
   -- : root -> acl -> nmod -> UDS ;
 	root_acl_nmod rt acl nm = root_acl (mkRoot (mkVP rt.vp nm)) acl ;
 
-	root_advmod_advcl rt am acl = root_acl_nmod rt am.adv acl ;
+  -- : root -> advmod -> acl -> UDS ; -- heuristic: advmod is actually AdV
+	root_advmod_advcl rt am acl = root_acl (mkRoot (mkVP <am.adv : AdV> rt.vp)) acl ;
 
   -- : root -> aclRelcl -> UDS ; --any manner that is reasonable ;
 	root_aclRelcl rt rs = root_only (addRcl rt rs) ;
@@ -265,11 +266,8 @@ lin
     -- unstable hack, TODO fixme
     addRcl : Root -> RS -> Root = \rt,rs ->
       let dummyNP : NP = mkNP emptyNP rs ;
-      --     dummyVPSlash : VPSlash = root2vpslash rt ;
           RSasAdv : Adv = lin Adv (mkUtt dummyNP) ;
-       in rt ** {
-            vp = mkVP rt.vp RSasAdv
-          } ;
+       in advRoot rt RSasAdv ;
 
 	onlyPred = overload {
     onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;

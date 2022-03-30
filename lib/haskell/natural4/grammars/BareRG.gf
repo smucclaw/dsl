@@ -89,6 +89,8 @@ abstract BareRG =
     who_RP, that_RP : RP ;
     PrepRP : Prep -> RP -> RP ; -- for which
 
+    one_NP : NP ;
+
     XorMore : Card -> Det ; -- one/two/… or more
 
     CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings

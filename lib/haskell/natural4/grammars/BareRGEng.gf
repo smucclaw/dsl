@@ -28,6 +28,7 @@ concrete BareRGEng of BareRG =
     PartNP
     ,UseN2, Use2N3
     ,PPartNP
+    ,DefArt,IndefArt -- Changing the linearisation
    ],
 
 
@@ -77,6 +78,16 @@ concrete BareRGEng of BareRG =
     PPos = G.PPos ;
     PNeg = G.PNeg ;
 
+    -- Overriding DefArt and IndefArt, so they don't have
+    -- the strings "it", "they", "one" etc. in their sp fields
+    DefArt = NounEng.DefArt ** {
+      sp = \\_,_,_,_ => "the"
+    } ;
+    IndefArt = NounEng.IndefArt ** {
+      sp = \\_,_,_,_ => "a"
+    } ;
+
+    -- Shorthands for the common determiners
     theSg_Det = DetQuant DefArt NumSg ;
     thePl_Det = DetQuant DefArt NumPl ;
     aSg_Det = DetQuant IndefArt NumSg ;
@@ -130,6 +141,11 @@ concrete BareRGEng of BareRG =
       n = ResEng.Pl ;
     } ;
 
+    more_than_Quant = DefArt ** {
+      s = \\_,_ => "more than" ;
+      sp = \\_,_,_,_ => "more than"
+      } ;
+
     --  : ACard -> Det ;
     ACard2Det acard = every_Det **
       {s = acard.s ! R.Nom ;
@@ -142,6 +158,7 @@ concrete BareRGEng of BareRG =
       s = \\c => prep.s ++ rp.s ! c
       } ;
 
+    one_NP = DetNP (DetQuant IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))) ;
   lincat
     [Prep] = Co.ListX ;
 

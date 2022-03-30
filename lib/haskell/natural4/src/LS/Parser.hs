@@ -25,8 +25,6 @@ data MyItem lbl a =
   deriving (Eq, Show)
   deriving (Functor)
 
-deriving instance Functor (AA.Item' a)
-
 type MyBoolStruct = MyItem MultiTerm
 
 pBoolStruct :: Parser BoolStruct
@@ -197,7 +195,7 @@ withPreOnly basep = do -- debugName "withPreOnly" $ do
 
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct
--- 
+--
 -- suppose the input is:
 -- > | MEANS | each of the following | elements |       |  | apple   |
 -- > |       |                       |          |   OR  |  | banana  |

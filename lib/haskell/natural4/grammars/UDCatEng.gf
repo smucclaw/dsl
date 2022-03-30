@@ -96,8 +96,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     xcompA_ccomp_ ap cc = xcompA_ (mkAP ap cc) ;
     aclUDS_,
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
-    aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart uds} ;
-    aclUDSgerund_ uds = lin Adv {s = "that" ++ linUDS uds} ; -- TODO: do we need actual gerund here? this is just to avoid "message obeys a certain format" when original is "… obeying …"
+    aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart emptyNP uds} ;
+    aclUDSgerund_ uds = lin Adv {s = linUDS' PresPart emptyNP uds} ;
     advclMarkUDS_ = \mark,uds -> lin Adv {s = mark.s ++ linUDS uds} ;
 
     expl_ = id Pron ;
@@ -130,11 +130,15 @@ concrete UDCatEng of UDCat = BareRGEng **
          False => myVPS rt.vp
        }} ;
 
-    linUDS : LinUDS -> Str = linUDS' Finite ;
-    linUDS' : AclType -> LinUDS -> Str = \at,uds -> case at of {
-      Finite => (PredVPS uds.subj uds.pred.fin).s ;
-      PresPart => (cc2 (mkUtt uds.subj) (mkUtt uds.pred.presp)).s ;
-      PastPart => (cc2 (mkUtt uds.subj) (mkUtt uds.pred.pp)).s } ;
+--    linUDS = overload {
+      linUDS : LinUDS -> Str = \uds -> linUDS' Finite uds.subj uds ;
+    --  linUDS : NP -> LinUDS -> Str = \np,uds -> linUDS' Finite np uds
+  --  } ;
+
+    linUDS' : AclType ->  NP -> LinUDS -> Str = \at,subj,uds -> case at of {
+      Finite => (PredVPS subj uds.pred.fin).s ;
+      PresPart => (cc2 (mkUtt subj) (mkUtt uds.pred.presp)).s ;
+      PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s } ;
 
     myVPS = overload {
       myVPS : VP -> UDSPred = \vp -> defaultUDSPred ** {

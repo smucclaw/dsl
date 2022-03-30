@@ -224,7 +224,7 @@ lin
 
 	-- : root -> cop -> advmod -> UDS ; -- is not beer
   root_cop_advmod rt cp am = case am.isNot of {
-    True => applyNeg rt emptyNP ;
+    True => applyNeg rt it_NP ; -- TODO: keep it_NP or not???
     False => onlyPred (advRoot rt am.adv) -- TODO or should it be AdV instead of Adv? Does word order matter?
   } ;
 

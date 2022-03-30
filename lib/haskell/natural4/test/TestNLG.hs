@@ -28,11 +28,11 @@ nlgTests = do
 
     it "Should return an adjective phrase" $ do
         treeAP <- bsr2gf env testAPBSR
-        showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositA significant_A))"
+        showExpr treeAP `shouldBe` "ConjAP or_Conj (BaseAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN theSg_Det (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositA significant_A))"
 
     it "Should return a complex adjective phrase" $ do
         treeAPComplex <- bsr2gf env testAPComplexBSR
-        showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (ConsAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (BaseAP (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN (DetQuant DefArt NumSg) (UseN sky_N)) (UseComp (CompAP (PositA blue_A)))))) (AdvAP (ConjAP and_Conj (BaseAP (PositA pulpy_A) (PositA tentacled_A))) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (AdvCN (UseN head_N) (PrepNP to_Prep (DetCN (DetQuant DefArt NumPl) (AdjCN (PositA rudimentary_A) (UseN wing_N)))))))))))"
+        showExpr treeAPComplex `shouldBe` "ConjAP or_Conj (ConsAP (AdvAP (AdvAP (PositA lethal_A) (PrepNP to_Prep (DetCN theSg_Det (AdjCN (PastPartAP (UseV afflict_V)) (UseN individual_N))))) (PositAdvAdj dangerous_A)) (ConsAP (AdvAP (PastPartAP (UseV disturb_V)) (PositAdvAdj grave_A)) (ConsAP (AdvAP (PositA happy_A) (SubjS that_Subj (PredVPS (DetCN theSg_Det (UseN sky_N)) (UseComp (CompAP (PositA blue_A)))))) (BaseAP (AdvAP (ConjAP and_Conj (BaseAP (PositA pulpy_A) (PositA tentacled_A))) (PrepNP from_Prep (DetCN (DetQuant (PossPron it_Pron) NumSg) (AdvCN (UseN head_N) (PrepNP to_Prep (DetCN (DetQuant (PossPron it_Pron) NumPl) (AdjCN (PositA rudimentary_A) (UseN wing_N)))))))) (PositA diseased_A)))))"
 
     it "Should return a common noun" $ do
         treeCN <- bsr2gf env testCNBSR
@@ -40,7 +40,7 @@ nlgTests = do
 
     it "Should return a complex common noun" $ do
         treeCNComplex <- bsr2gf env testCNComplexBSR
-        showExpr treeCNComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN (DetQuant DefArt NumSg) (UseN provider_N)))) (PrepNP to_Prep (DetCN (DetQuant DefArt NumSg) (UseN payer_N)))) (RelNP (MassNP (AdjCN (PositA great_A) (UseN harm_N))) (RS_that_NP_VP (UsePron she_Pron) (UseV suffer_V))))"
+        showExpr treeCNComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (RelNP (MassNP (AdjCN (PositA great_A) (UseN harm_N))) (RS_that_NP_VP (UsePron she_Pron) (UseV suffer_V))))"
 
     it "Should return a noun phrase" $ do
         treeNP <- bsr2gf env testNPBSR
@@ -48,7 +48,7 @@ nlgTests = do
 
     it "Should return a noun phrase" $ do
         treeNPComplex <- bsr2gf env testNPComplexBSR
-        showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN (DetQuant DefArt NumSg) (UseN occurrence_N)) (PrepNP at_Prep (DetCN (DetQuant DefArt NumSg) (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
+        showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN theSg_Det (UseN occurrence_N)) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
     it "Should return a det as det" $ do
         treeDetsDet <- bsr2gf env testDetsAsDet
@@ -71,12 +71,12 @@ nlgTests = do
         convertToPredicate pub `shouldBe` Unary "publicAgency"
 
       -- "is not a public agency"
-      let Just notPub = readExpr "root_cop_advmod (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod"
+      let Just notPub = readExpr "root_cop_advmod (rootN_ (DetCN aSg_Det (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod"
       it "Should convert root_cop_advmod to a negated unary predicate" $ do
         convertToPredicate notPub `shouldBe` Not (Unary "publicAgency")
 
       -- "a data breach occurs"
-      let Just occurs = readExpr "root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))"
+      let Just occurs = readExpr "root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN aSg_Det (UseN (CompoundN data_N breach_N))))"
       it "Should convert root_mark_nsubj to a unary predicate" $ do
         convertToPredicate occurs `shouldBe` Unary "occur"
 
@@ -86,7 +86,7 @@ nlgTests = do
     --     convertToPredicate aware `shouldBe` Unary "becomeAware"
 
       -- "become aware that a data breach occurs"
-      let Just becomingAware = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
+      let Just becomingAware = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN aSg_Det (UseN (CompoundN data_N breach_N))))))"
       it "Should convert root_*_ccomp into a binary predicate" $ do
         convertToPredicate becomingAware `shouldBe` Binary "becomeAwareOccur" "dataBreach"
 
@@ -155,22 +155,22 @@ defaultRule = RegulativeA {
 
 whoRule :: AnnotatedRule
 whoRule = defaultRule {
-    whoA = readExpr "root_cop_advmod (rootN_ (DetCN (DetQuant IndefArt NumSg) (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod"
+    whoA = readExpr "root_cop_advmod (rootN_ (DetCN aSg_Det (AdjCN (PositA public_A) (UseN agency_N)))) be_cop not_advmod"
     }
 
 ndbRule :: AnnotatedRule
 ndbRule = whoRule {
-    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))"
+    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN aSg_Det (UseN (CompoundN data_N breach_N))))))"
     }
 
 ndbRule_correctXcomp :: AnnotatedRule
 ndbRule_correctXcomp = whoRule {
-    uponA = readExpr "root_xcomp (rootV_ (UseV become_V)) (xcompA_ccomp_ (PositA aware_A) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N)))))))"
+    uponA = readExpr "root_xcomp (rootV_ (UseV become_V)) (xcompA_ccomp_ (PositA aware_A) (ccomp_ (root_mark_nsubj (rootV_ (UseV occur_V)) (mark_ that_Subj) (nsubj_ (DetCN aSg_Det (UseN (CompoundN data_N breach_N)))))))"
 }
 
 nestedCcompRule :: AnnotatedRule
 nestedCcompRule = defaultRule {
-    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_nsubj_ccomp (rootV_ (UseV know_V)) (nsubj_ (MassNP (UseN lawyer_N))) (ccomp_ (root_nsubj (rootV_ (UseV occur_V)) (nsubj_ (DetCN (DetQuant IndefArt NumSg) (UseN (CompoundN data_N breach_N))))))))"
+    uponA = readExpr "root_xcomp_ccomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A)) (ccomp_ (root_nsubj_ccomp (rootV_ (UseV know_V)) (nsubj_ (MassNP (UseN lawyer_N))) (ccomp_ (root_nsubj (rootV_ (UseV occur_V)) (nsubj_ (DetCN aSg_Det (UseN (CompoundN data_N breach_N))))))))"
     }
 
 everyOrgNotPublicAg ::  Rule

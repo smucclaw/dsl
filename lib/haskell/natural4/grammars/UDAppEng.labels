@@ -38,7 +38,6 @@
 #auxfun PossNumPlNP_ pron num cn : Pron -> Num -> CN -> NP = DetCN (DetQuant (PossPron pron) num) cn ; nmod:poss[PronType=Prs] nummod head[Number=Plur]
 
 -- [my mother's]:Quant
-#auxcat Gen PART
 #auxfun GenNP_ np gen : NP -> Gen -> Quant = GenNP np ; head case
 #disable GenNP
 
@@ -67,9 +66,10 @@
 #auxfun DetCN_aPl cn : CN -> NP = DetCN aPl_Det cn ; head[Number=Plur]
 #disable MassNP aPl_Det NumPl
 
-#auxcat The DET
-#auxfun DetCN_theSg det cn : The -> CN -> NP = DetCN theSg_Det cn ; det[LEMMA=the] head[Number=Sing]
-#auxfun DetCN_thePl det cn : The -> CN -> NP = DetCN thePl_Det cn ; det[LEMMA=the] head[Number=Plur]
+
+-- Correct number agreement with the*_Det
+#auxfun DetCN_theSg det cn : Det -> CN -> NP = DetCN theSg_Det cn ; det[LEMMA=the] head[Number=Sing]
+#auxfun DetCN_thePl det cn : Det -> CN -> NP = DetCN thePl_Det cn ; det[LEMMA=the] head[Number=Plur]
 #disable theSg_Det thePl_Det
 
 -- Allow determiners with words that are erroneously parsed as PN
@@ -100,8 +100,7 @@
 #auxfun SuperlA_ a : A -> AP = AdjOrd (OrdSuperl a) ; head[Degree=Sup]
 #disable UseComparA OrdSuperl AdjOrd
 
-#auxcat Comma PUNCT
-#auxfun ExtAdvS_ adv comma s : Adv -> Comma -> S -> S = ExtAdvS adv s ; advmod punct head
+#auxfun ExtAdvS_ adv comma s : Adv -> Conj -> S -> S = ExtAdvS adv s ; advmod punct head
 
 -----------------------
 -- Inari's additions --
@@ -113,18 +112,13 @@
 
 -- Some multiwords
 -- ** more than **
-#auxcat More ADJ
-#auxcat Than ADP
-#auxfun MoreThan_ more than : More -> Than -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
-#disable than_Prep
+#auxfun MoreThan_ more than : Adv -> Prep -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
 
 #auxfun XorMore_ card or more : Card -> Conj -> Adv -> Det = XorMore card ; head fixed[LEMMA=or] fixed[FORM=more]
 #disable XorMore
 
 -- ** at least **
-#auxcat At ADV
-#auxfun AtLeast_ at least : At -> AdA -> AdN = at_least_AdN ; case[LEMMA=at] head[LEMMA=least] -- will likely match other things — need to match with words!
-#auxfun AtLeastAdv_ at least : Adv -> AdA -> AdN = at_least_AdN ; case[LEMMA=at] head[LEMMA=least] -- if At is recognised as at_Adv. still as overaccepting as the above version
+#auxfun AtLeast_ at least : Adv -> AdA -> AdN = at_least_AdN ; case[LEMMA=at] head[LEMMA=least]
 #auxfun InAccordanceWith_ in accordance with : Prep -> N -> Prep -> Prep = in_accordance_with_Prep ; head[LEMMA=in] fixed[LEMMA=accordance] fixed[LEMMA=with]
 
 -- ** 5 people **
@@ -181,12 +175,6 @@
 #auxfun CompoundCN_ unlimarea buildings : FakeCN -> N -> N = CompoundCN unlimarea buildings ; compound head
 
 #disable CompoundCN
-
--- This version is used only if the grammar doesn't have a RP with the string "whose"
--- Of course, labels files are per grammar, and for UDApp there is such an RP, but if someone copies this later for other grammar, and that grammar doesn't have who_RP, then you can use this
-#auxcat RelPron PRON
-#auxfun GenRP_Sg_auxcat_ dog whose : CN -> RelPron -> RP = GenRP NumSg dog ; head[Number=Sing] nmod:poss[Poss=Yes]
-#auxfun GenRP_Pl_auxcat_ dog whose : CN -> RelPron -> RP = GenRP NumPl dog ; head[Number=Plur] nmod:poss[Poss=Yes]
 
 -- the person [who is affected]:RS
 --#auxfun PassRelPres_ affected who is : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres]
@@ -273,8 +261,7 @@
 
 -- ** AP **
 -- fluffy and cute
-#auxcat Comma PUNCT
-#auxfun CommaAP_ ap comma : AP -> Comma -> APComma =  ap ; head punct
+#auxfun CommaAP_ ap comma : AP -> Conj -> APComma =  ap ; head punct
 
 -- Pattern match, and the corresponding continuation-based syntax
 -- #auxfun AndCutePatternMatch_ and cute : Conj -> AP -> AP2AP = MkAP2AP and cute ; cc head
@@ -298,7 +285,7 @@
 
 -- ** NP **
 -- cat, horse, capybara and dog
-#auxfun CommaNP_ np comma : NP -> Comma -> NPComma = np ; head punct
+#auxfun CommaNP_ np comma : NP -> Conj -> NPComma = np ; head punct
 
 #auxfun AndDogPair_ and dog : Conj -> NP -> Pair_Conj_NP = MkPair_ and dog ; cc head
 
@@ -317,7 +304,7 @@
 #auxfun NPCompleteList_helper_ catHorse capybara and dog : PrefixNP -> NPComma -> Conj -> NP -> NP = ConjNP and (catHorse (BaseNP capybara dog)) ; head dummy dummy dummy
 
 -- ** Adv **
-#auxfun CommaAdv_ Adv comma : Adv -> Comma -> AdvComma = Adv ; head punct
+#auxfun CommaAdv_ Adv comma : Adv -> Conj -> AdvComma = Adv ; head punct
 
 #auxfun AndAdvPair_ and dog : Conj -> Adv -> Pair_Conj_Adv = MkPair_ and dog ; cc head
 
@@ -334,7 +321,7 @@
 #auxfun AdvCompleteList_helper_ catHorse capybara and dog : PrefixAdv -> AdvComma -> Conj -> Adv -> Adv = ConjAdv and (catHorse (BaseAdv capybara dog)) ; head dummy dummy dummy
 
 -- ** CN **
-#auxfun CommaCN_ cn comma : CN -> Comma -> CNComma = cn ; head punct
+#auxfun CommaCN_ cn comma : CN -> Conj -> CNComma = cn ; head punct
 
 #auxfun AndCNPair_ and dog : Conj -> CN -> Pair_Conj_CN = MkPair_ and dog ; cc head
 
@@ -351,7 +338,7 @@
 #auxfun CNCompleteList_helper_ catHorse capybara and dog : PrefixCN -> CNComma -> Conj -> CN -> CN = ConjCN and (catHorse (BaseCN capybara dog)) ; head dummy dummy dummy
 
 -- ** Prep **
-#auxfun CommaPrep_ prep comma : Prep -> Comma -> PrepComma = prep ; head punct
+#auxfun CommaPrep_ prep comma : Prep -> Conj -> PrepComma = prep ; head punct
 
 #auxfun AndPrepPair_ and dog : Conj -> Prep -> Pair_Conj_Prep = MkPair_ and dog ; cc head
 

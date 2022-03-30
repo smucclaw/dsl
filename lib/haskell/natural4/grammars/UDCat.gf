@@ -68,9 +68,11 @@ abstract UDCat = BareRG ** {
         vocative ;
         xcomp ;
 
-	 -- coercion funs
-
+    cat Gen ; -- workaround to replace auxcats
+    fun '\'s_Gen' : Gen ;
 	cat X ; -- later: replace the Xs with actual cats
+
+     -- coercion funs
 	fun
         acl_ : X -> acl ;
         advcl_ : X -> advcl ;

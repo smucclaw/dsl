@@ -61,6 +61,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     is_cop,
     is_auxPass = ss "is" ;
     not_advmod = {adv = lin Adv (ss "not") ; isNot = True} ;
+    '\'s_Gen' = ss ("'s"|"’s") ;
 
     nsubj_,
     obj_,

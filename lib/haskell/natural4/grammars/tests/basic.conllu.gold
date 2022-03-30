@@ -2,7 +2,7 @@ root_only (rootN_ (DetCN (DetQuant IndefArt (NumCard (StrCard "500"))) (UseN peo
 
 LIN: it is 500 people
 
-root_only (rootN_ (DetCN (DetQuant IndefArt (NumCard (AdNum (AdnCAdv more_CAdv) (StrCard "500")))) (UseN people_N)))
+root_only (rootN_ (DetCN (DetQuant more_than_Quant (StrNum "500")) (UseN people_N)))
 
 LIN: it is more than 500 people
 

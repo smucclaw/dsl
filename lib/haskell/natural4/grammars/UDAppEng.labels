@@ -66,6 +66,9 @@
 #auxfun DetCN_aPl cn : CN -> NP = DetCN aPl_Det cn ; head[Number=Plur]
 #disable MassNP aPl_Det NumPl
 
+-- use aSg_Det just to fit in with the rest. This is just an aesthetic choice, shorter tree than DetQuant IndefArt NumSg
+#auxfun DetCN_a_ det cn : Det -> CN -> NP = DetCN aSg_Det cn ; det[LEMMA=a] head
+#auxfun DetCN_an_ det cn : Det -> CN -> NP = DetCN aSg_Det cn ; det[FORM=an] head
 
 -- Correct number agreement with the*_Det
 #auxfun DetCN_theSg det cn : Det -> CN -> NP = DetCN theSg_Det cn ; det[LEMMA=the] head[Number=Sing]

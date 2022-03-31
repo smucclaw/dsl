@@ -1,4 +1,6 @@
-# mp
+# Natural L4
+
+This repository contains a higher-level variant of the core language, called Natural L4. It is implemented in the form of spreadsheets, and read as CVS files.
 
 ## L4 handles Legal Spreadsheets
 

@@ -398,6 +398,7 @@ data Tree :: * -> * where
   GCN_obligation_of_NP_to_VP :: GNP -> GVP -> Tree GCN_
   GComplN2 :: GN2 -> GNP -> Tree GCN_
   GConjCN :: GConj -> GListCN -> Tree GCN_
+  GGerundCN :: GVP -> Tree GCN_
   GPossNP :: GCN -> GNP -> Tree GCN_
   GRelCN :: GCN -> GRS -> Tree GCN_
   GSentCN :: GCN -> GSC -> Tree GCN_
@@ -503,6 +504,7 @@ data Tree :: * -> * where
   GEvery :: GNP -> Tree GNP_
   GExtAdvNP :: GNP -> GAdv -> Tree GNP_
   GGenModNP :: GNum -> GNP -> GCN -> Tree GNP_
+  GGerundNP :: GVP -> Tree GNP_
   GIndefPN :: GPN -> Tree GNP_
   GMassNP :: GCN -> Tree GNP_
   GNP_all_the_CN_RS :: GCN -> GRS -> Tree GNP_
@@ -834,6 +836,7 @@ data Tree :: * -> * where
   GComplVP :: GVP -> GNP -> Tree GVP_
   GPassV :: GV -> Tree GVP_
   GPassVAgent :: GV -> GNP -> Tree GVP_
+  GPrepVP :: GVP -> GPrep -> Tree GVP_
   GProgrVP :: GVP -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   GUseV :: GV -> Tree GVP_
@@ -998,6 +1001,7 @@ instance Eq (Tree a) where
     (GCN_obligation_of_NP_to_VP x1 x2,GCN_obligation_of_NP_to_VP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplN2 x1 x2,GComplN2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjCN x1 x2,GConjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GGerundCN x1,GGerundCN y1) -> and [ x1 == y1 ]
     (GPossNP x1 x2,GPossNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelCN x1 x2,GRelCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSentCN x1 x2,GSentCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1103,6 +1107,7 @@ instance Eq (Tree a) where
     (GEvery x1,GEvery y1) -> and [ x1 == y1 ]
     (GExtAdvNP x1 x2,GExtAdvNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGenModNP x1 x2 x3,GGenModNP y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GGerundNP x1,GGerundNP y1) -> and [ x1 == y1 ]
     (GIndefPN x1,GIndefPN y1) -> and [ x1 == y1 ]
     (GMassNP x1,GMassNP y1) -> and [ x1 == y1 ]
     (GNP_all_the_CN_RS x1 x2,GNP_all_the_CN_RS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1434,6 +1439,7 @@ instance Eq (Tree a) where
     (GComplVP x1 x2,GComplVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPassV x1,GPassV y1) -> and [ x1 == y1 ]
     (GPassVAgent x1 x2,GPassVAgent y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GPrepVP x1 x2,GPrepVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
@@ -1703,6 +1709,7 @@ instance Gf GCN where
   gf (GCN_obligation_of_NP_to_VP x1 x2) = mkApp (mkCId "CN_obligation_of_NP_to_VP") [gf x1, gf x2]
   gf (GComplN2 x1 x2) = mkApp (mkCId "ComplN2") [gf x1, gf x2]
   gf (GConjCN x1 x2) = mkApp (mkCId "ConjCN") [gf x1, gf x2]
+  gf (GGerundCN x1) = mkApp (mkCId "GerundCN") [gf x1]
   gf (GPossNP x1 x2) = mkApp (mkCId "PossNP") [gf x1, gf x2]
   gf (GRelCN x1 x2) = mkApp (mkCId "RelCN") [gf x1, gf x2]
   gf (GSentCN x1 x2) = mkApp (mkCId "SentCN") [gf x1, gf x2]
@@ -1722,6 +1729,7 @@ instance Gf GCN where
       Just (i,[x1,x2]) | i == mkCId "CN_obligation_of_NP_to_VP" -> GCN_obligation_of_NP_to_VP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplN2" -> GComplN2 (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjCN" -> GConjCN (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "GerundCN" -> GGerundCN (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PossNP" -> GPossNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelCN" -> GRelCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentCN" -> GSentCN (fg x1) (fg x2)
@@ -2200,6 +2208,7 @@ instance Gf GNP where
   gf (GEvery x1) = mkApp (mkCId "Every") [gf x1]
   gf (GExtAdvNP x1 x2) = mkApp (mkCId "ExtAdvNP") [gf x1, gf x2]
   gf (GGenModNP x1 x2 x3) = mkApp (mkCId "GenModNP") [gf x1, gf x2, gf x3]
+  gf (GGerundNP x1) = mkApp (mkCId "GerundNP") [gf x1]
   gf (GIndefPN x1) = mkApp (mkCId "IndefPN") [gf x1]
   gf (GMassNP x1) = mkApp (mkCId "MassNP") [gf x1]
   gf (GNP_all_the_CN_RS x1 x2) = mkApp (mkCId "NP_all_the_CN_RS") [gf x1, gf x2]
@@ -2230,6 +2239,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "Every" -> GEvery (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ExtAdvNP" -> GExtAdvNP (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "GenModNP" -> GGenModNP (fg x1) (fg x2) (fg x3)
+      Just (i,[x1]) | i == mkCId "GerundNP" -> GGerundNP (fg x1)
       Just (i,[x1]) | i == mkCId "IndefPN" -> GIndefPN (fg x1)
       Just (i,[x1]) | i == mkCId "MassNP" -> GMassNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "NP_all_the_CN_RS" -> GNP_all_the_CN_RS (fg x1) (fg x2)
@@ -3107,6 +3117,7 @@ instance Gf GVP where
   gf (GComplVP x1 x2) = mkApp (mkCId "ComplVP") [gf x1, gf x2]
   gf (GPassV x1) = mkApp (mkCId "PassV") [gf x1]
   gf (GPassVAgent x1 x2) = mkApp (mkCId "PassVAgent") [gf x1, gf x2]
+  gf (GPrepVP x1 x2) = mkApp (mkCId "PrepVP") [gf x1, gf x2]
   gf (GProgrVP x1) = mkApp (mkCId "ProgrVP") [gf x1]
   gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
   gf (GUseV x1) = mkApp (mkCId "UseV") [gf x1]
@@ -3124,6 +3135,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "ComplVP" -> GComplVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PassV" -> GPassV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PassVAgent" -> GPassVAgent (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "PrepVP" -> GPrepVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "ProgrVP" -> GProgrVP (fg x1)
       Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
       Just (i,[x1]) | i == mkCId "UseV" -> GUseV (fg x1)
@@ -4000,6 +4012,7 @@ instance Compos Tree where
     GCN_obligation_of_NP_to_VP x1 x2 -> r GCN_obligation_of_NP_to_VP `a` f x1 `a` f x2
     GComplN2 x1 x2 -> r GComplN2 `a` f x1 `a` f x2
     GConjCN x1 x2 -> r GConjCN `a` f x1 `a` f x2
+    GGerundCN x1 -> r GGerundCN `a` f x1
     GPossNP x1 x2 -> r GPossNP `a` f x1 `a` f x2
     GRelCN x1 x2 -> r GRelCN `a` f x1 `a` f x2
     GSentCN x1 x2 -> r GSentCN `a` f x1 `a` f x2
@@ -4055,6 +4068,7 @@ instance Compos Tree where
     GEvery x1 -> r GEvery `a` f x1
     GExtAdvNP x1 x2 -> r GExtAdvNP `a` f x1 `a` f x2
     GGenModNP x1 x2 x3 -> r GGenModNP `a` f x1 `a` f x2 `a` f x3
+    GGerundNP x1 -> r GGerundNP `a` f x1
     GIndefPN x1 -> r GIndefPN `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
     GNP_all_the_CN_RS x1 x2 -> r GNP_all_the_CN_RS `a` f x1 `a` f x2
@@ -4359,6 +4373,7 @@ instance Compos Tree where
     GComplVP x1 x2 -> r GComplVP `a` f x1 `a` f x2
     GPassV x1 -> r GPassV `a` f x1
     GPassVAgent x1 x2 -> r GPassVAgent `a` f x1 `a` f x2
+    GPrepVP x1 x2 -> r GPrepVP `a` f x1 `a` f x2
     GProgrVP x1 -> r GProgrVP `a` f x1
     GUseComp x1 -> r GUseComp `a` f x1
     GUseV x1 -> r GUseV `a` f x1

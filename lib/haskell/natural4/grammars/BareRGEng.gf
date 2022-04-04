@@ -5,7 +5,8 @@ concrete BareRGEng of BareRG =
     S, ExistS, ExistNP,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
-    N, CompoundN, ApposNP, AdjAsNP
+    N, CompoundN,
+    ApposNP, AdjAsNP, GerundNP, GerundCN
   ],
 
   SentenceEng,
@@ -168,6 +169,7 @@ concrete BareRGEng of BareRG =
     ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
     PredVPS np vp = mkS (mkCl np vp) ;
     SlashCl cl = cl ** {c2=[]} ;
+    PrepVP vp prep = VPSlashPrep (slashV vp) prep ;
 
   oper
     slashV : VP -> VPSlash = \vp -> vp ** {

@@ -10,7 +10,7 @@ abstract BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN -- : N -> N -> N    -- control system
     -- these only for UDExt; not in labels file
-    ,ApposNP, AdjAsNP
+    ,ApposNP, AdjAsNP, GerundNP, GerundCN
   ],
 
   Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
@@ -109,6 +109,7 @@ abstract BareRG =
     -- JustWordsWordNet has no V2 etc
     ComplV : V -> NP -> VP ; -- eat pizza
     ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
+    PrepVP : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
     -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
     -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
 

@@ -22,6 +22,10 @@ nlgTests = do
         treeAdv <- bsr2gf env testAdvBSR
         showExpr treeAdv `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"
 
+    it "Should return a complex adverbial" $ do
+        treeAdvComplex <- bsr2gf env testAdvComplexBSR
+        showExpr treeAdvComplex `shouldBe` "Adv_Adv__but_in_any_case_Adv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))"
+
     it "Should return a det" $ do
         treeDet <- bsr2gf env testDetBSR
         showExpr treeDet `shouldBe` "ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))"
@@ -120,6 +124,9 @@ testDetBSR = testBSR ["this", "that"]
 
 testAdvBSR :: BoolStructR
 testAdvBSR = testBSR ["today", "tomorrow"]
+
+testAdvComplexBSR :: BoolStructR
+testAdvComplexBSR = testBSR ["once upon a time", "beyond the edge of forever"]
 
 testAPBSR :: BoolStructR
 testAPBSR = testBSR ["harmful to the affected individual", "significant"]

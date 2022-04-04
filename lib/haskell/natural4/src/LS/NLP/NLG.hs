@@ -349,20 +349,29 @@ combineExpr pred compl = result
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfPrep=Just under} ->
-        ("Adv", case complTyped of
-          TG {gfCN=Just car}     -> gf $ GPrepNP under (GMassNP car)
-          TG {gfNP=Just johnson} -> gf $ GPrepNP under johnson
-          TG {gfDet=Just my}     -> gf $ GPrepNP under (GDetNP my)
-          TG {gfAP=Just haunted} -> gf $ GPrepNP under (GAdjAsNP haunted)
+        case complTyped of
+          TG {gfAP=Just haunted} -> ("Adv", gf $ GPrepNP under (GAdjAsNP haunted))
+          -- TG {gfAdv=Just quickly} -> ???
+          TG {gfNP=Just johnson} -> ("Adv", gf $ GPrepNP under johnson)
+          TG {gfDet=Just my}     -> ("Adv", gf $ GPrepNP under (GDetNP my))
+          TG {gfCN=Just car}     -> ("Adv", gf $ GPrepNP under (GMassNP car))
+          TG {gfPrep=Just with}  -> ("Prep", gf $ GConjPrep andConj (GListPrep [under, with]))
+          TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
+          TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
+          -- TG {gfCl=Just you_see} -> ???
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
-        )
+
       TG {gfVP=Just notify} ->
         ("VP", case complTyped of
-          TG {gfCN=Just car}     -> gf $ GComplVP notify (GMassNP car)
+          TG {gfAP=Just haunted} -> gf $ GComplVP notify (GAdjAsNP haunted)
+          TG {gfAdv=Just quickly}-> gf $ GAdvVP   notify quickly
           TG {gfNP=Just johnson} -> gf $ GComplVP notify johnson
           TG {gfDet=Just my}     -> gf $ GComplVP notify (GDetNP my)
-          TG {gfAdv=Just quickly}-> gf $ GAdvVP   notify quickly
-          TG {gfAP=Just haunted} -> gf $ GComplVP notify (GAdjAsNP haunted)
+          TG {gfCN=Just car}     -> gf $ GComplVP notify (GMassNP car)
+          TG {gfPrep=Just with}  -> gf $ GPrepVP notify with
+          -- TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
+          -- TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
+          -- TG {gfCl=Just you_see} -> ???
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfCN=Just house} ->
@@ -695,8 +704,9 @@ dummyAP = GStrAP (GString [])
 dummyAdv :: GAdv
 dummyAdv = LexAdv "never_Adv"
 
-orConj :: GConj
+orConj, andConj :: GConj
 orConj = LexConj "or_Conj"
+andConj = LexConj "and_Conj"
 
 peelNP :: Expr -> GNP
 peelNP np = fromMaybe dummyNP (npFromUDS $ fg np)

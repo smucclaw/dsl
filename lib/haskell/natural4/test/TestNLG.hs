@@ -24,7 +24,7 @@ nlgTests = do
 
     it "Should return a complex adverbial" $ do
         treeAdvComplex <- bsr2gf env testAdvComplexBSR
-        showExpr treeAdvComplex `shouldBe` "Adv_Adv__but_in_any_case_Adv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))"
+        showExpr treeAdvComplex `shouldBe` "ConjAdv or_Conj (BaseAdv (Adv_Adv__but_in_any_case_Adv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))) (PrepNP in_Prep (DetCN aSg_Det (AdjCN (PositA low_A) (UseN voice_N)))))"
 
     it "Should return a det" $ do
         treeDet <- bsr2gf env testDetBSR
@@ -126,7 +126,7 @@ testAdvBSR :: BoolStructR
 testAdvBSR = testBSR ["today", "tomorrow"]
 
 testAdvComplexBSR :: BoolStructR
-testAdvComplexBSR = testBSR ["once upon a time", "beyond the edge of forever"]
+testAdvComplexBSR = testBSR ["once upon a time", "in a low voice", "beyond the edge of forever"]
 
 testAPBSR :: BoolStructR
 testAPBSR = testBSR ["harmful to the affected individual", "significant"]

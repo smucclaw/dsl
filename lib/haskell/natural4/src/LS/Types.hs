@@ -238,7 +238,9 @@ data Rule = Regulative
             }
           | Scenario
             { scgiven  :: [RelationalPredicate]
-            , expect   :: [HornClause2]      -- investment is savings when dependents is 5
+            , expect   :: [HornClause2]         -- investment is savings when dependents is 5
+--          , upon ?.... we want to say things like WHEN an event happens / THEN some state transition occurs
+--          , redrule  :: [Rule]                -- a test could return a reduction of existing rules
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -270,6 +272,10 @@ data Rule = Regulative
           -- }
           | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
+
+data Expect = ExpRP      RelationalPredicate
+            | ExpDeontic Rule -- regulative rule
+            deriving (Eq, Show, Generic)
 
 data HornClause2 = HC2
   { hHead :: RelationalPredicate

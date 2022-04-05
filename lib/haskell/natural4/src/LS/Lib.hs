@@ -439,6 +439,7 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
 
 
 
+-- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
 pScenarioRule = debugName "pScenarioRule" $ do
   rlabel <- finishSL $ optional pRuleLabel -- TODO: Handle the SL

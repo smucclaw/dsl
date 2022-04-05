@@ -68,7 +68,7 @@ r `shouldParse` v = case r of
         ++ errorBundlePrettyCustom e
   Right x -> x `shouldBe` v
 
-defaultReg, defaultCon, defaultHorn :: Rule
+defaultReg, defaultCon, defaultHorn, defaultScenario :: Rule
 defaultReg = Regulative
   { subj = mkLeaf "person"
   , rkeyword = REvery
@@ -114,6 +114,16 @@ defaultHorn = Hornlike
   , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
   , defaults = []
   , symtab   = []
+  }
+
+defaultScenario = Scenario
+  { scgiven = []
+  , expect = []
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , defaults = []
+  , symtab = []
   }
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
@@ -1480,6 +1490,17 @@ main = do
       filetest "boolstructp-3" "as checklist, extended"
         (parseWith asCList pRules) [ ["Is the person immortal?"]
                                    , ["Does the person have health insurance?"]]
+
+
+-- let's parse scenario rules!
+
+      filetest "scenario-units-1" "unit test 1 for scenarios"
+        (parseOther pScenarioRule )
+        ( defaultScenario
+        , []
+        )
+
+
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

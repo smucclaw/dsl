@@ -1,0 +1,13 @@
+,(AdvG p131),,§,SCENARIO,,Data breach involving multiple organisations,,,,,,for DEF and GHI,
+,,,,GIVEN,,Organisation's name,,,,IS,ONE OF,DEF,GHI
+,,,,GIVEN,,the data breach is in relation to any prescribed personal data or class of personal data relating to the individual,,,,,,,
+,,,,GIVEN,,unauthorised,,,disclosure,,of personal data,,occurred
+,,,,GIVEN,NOT,the data breach occurred only within an organisation,,,,,,,
+,,,,GIVEN,,the data breach relates to,,,,the individual's,,full name,
+,,,,GIVEN,,the data breach relates to,,,,"The number of any credit card, charge card or debit card issued to or in the name of the individual.",,,
+,,,,GIVEN,,PDPC instructs you not to notify them,,,,,,//,"""The organisations, in consultation with the Commission, agree that ABC is best positioned to notify the affected members"""
+,,,,EXPECT,,IT IS,,A Notifiable Data Breach,,,,,
+,,,,EXPECT,,Organisation,,MUST,,notify PDPC,,,
+,,,,EXPECT,NOT,Organisation,,MUST,,notify Affected Individuals,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,

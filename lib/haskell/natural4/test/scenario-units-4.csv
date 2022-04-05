@@ -1,0 +1,9 @@
+,(AdvG p139),,§,SCENARIO,,Theft of portable storage drive containing hotel guests’ details,,,,,,,,,
+,,,,GIVEN,,the prescribed number of affected individuals,,,,,,,IS,1000,
+,,,,GIVEN,,unauthorised,,,access,,of personal data,,occurred,,
+,,,,GIVEN,,the data breach relates to,,,,,the individual's,,,full name,
+,,,,GIVEN,,the data breach relates to,,,,,the individual's,,,identification number,"any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"
+,,,,GIVEN,,the data breach relates to,,,,,"The number of any credit card, charge card or debit card issued to or in the name of the individual.",,,,
+,,,,EXPECT,,IT IS,,A Notifiable Data Breach,,,,,,,
+,,,,EXPECT,,Organisation,,MUST,,notify PDPC,,,,,
+,,,,EXPECT,,Organisation,,MUST,,notify Affected Individuals,,,,,

@@ -2505,6 +2505,8 @@ what if we say
 |       | OR                                  | chugs |
 
 *** Scenarios
+
+**** mathematics
 :PROPERTIES:
 :TABLE_EXPORT_FILE: scenario-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2517,6 +2519,105 @@ what if we say
 | EXPECT |              | investment | IS | savings     | WHEN | dependents | IS | 5 |
 | "      |              | "          | "  | combination | "    | "          | "  | 3 |
 | "      |              | "          | "  | stocks      | "    | "          | "  | 0 |
+
+**** unit test 1: misplaced storage drive
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-units-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| § | SCENARIO |   | Misplaced storage drive                                                                                             |          |                                         |
+|   | GIVEN    |   | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                         |
+|   | GIVEN    |   | loss of storage medium on which personal data is stored in circumstances where the unauthorised                     | disposal | of the personal data is likely to occur |
+|   | GIVEN    |   | the data breach occurred only within an organisation                                                                |          |                                         |
+|   | EXPECT   |   | IT IS                                                                                                               | NOT      | A Notifiable Data Breach                |
+
+
+
+**** unit test 2-a: multiple organisations
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-units-2-a.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+
+|   | (AdvG p131) |   | § | SCENARIO |     | Data breach involving multiple organisations                                                                        |   |                          |            |                                                                                                      |                  | for ABC   |          |
+|   |             |   |   | GIVEN    |     | Organisation's name                                                                                                 |   |                          |            |                                                                                                      | IS               | ABC       |          |
+|   |             |   |   | GIVEN    |     | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |   |                          |            |                                                                                                      |                  |           |          |
+|   |             |   |   | GIVEN    |     | unauthorised                                                                                                        |   |                          | disclosure |                                                                                                      | of personal data |           | occurred |
+|   |             |   |   | GIVEN    | NOT | the data breach occurred only within an organisation                                                                |   |                          |            |                                                                                                      |                  |           |          |
+|   |             |   |   | GIVEN    |     | the data breach relates to                                                                                          |   |                          |            | the individual's                                                                                     |                  | full name |          |
+|   |             |   |   | GIVEN    |     | the data breach relates to                                                                                          |   |                          |            | The number of any credit card, charge card or debit card issued to or in the name of the individual. |                  |           |          |
+|   |             |   |   | EXPECT   |     | IT IS                                                                                                               |   | A Notifiable Data Breach |            |                                                                                                      |                  |           |          |
+|   |             |   |   | EXPECT   |     | Organisation                                                                                                        |   | MUST                     |            | notify PDPC                                                                                          |                  |           |          |
+|   |             |   |   | EXPECT   |     | Organisation                                                                                                        |   | MUST                     |            | notify Affected Individuals                                                                          |                  |           |          |
+|   |             |   |   |          |     |                                                                                                                     |   |                          |            |                                                                                                      |                  |           |          |
+
+
+
+**** unit test 2-b: multiple organisations
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-units-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+
+|   | (AdvG p131) |   | § | SCENARIO |     | Data breach involving multiple organisations                                                                        |   |                          |            |                                                                                                      |                  | for DEF and GHI |                                                                                                                            |
+|   |             |   |   | GIVEN    |     | Organisation's name                                                                                                 |   |                          |            | IS                                                                                                   | ONE OF           | DEF             | GHI                                                                                                                        |
+|   |             |   |   | GIVEN    |     | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |   |                          |            |                                                                                                      |                  |                 |                                                                                                                            |
+|   |             |   |   | GIVEN    |     | unauthorised                                                                                                        |   |                          | disclosure |                                                                                                      | of personal data |                 | occurred                                                                                                                   |
+|   |             |   |   | GIVEN    | NOT | the data breach occurred only within an organisation                                                                |   |                          |            |                                                                                                      |                  |                 |                                                                                                                            |
+|   |             |   |   | GIVEN    |     | the data breach relates to                                                                                          |   |                          |            | the individual's                                                                                     |                  | full name       |                                                                                                                            |
+|   |             |   |   | GIVEN    |     | the data breach relates to                                                                                          |   |                          |            | The number of any credit card, charge card or debit card issued to or in the name of the individual. |                  |                 |                                                                                                                            |
+|   |             |   |   | GIVEN    |     | PDPC instructs you not to notify them                                                                               |   |                          |            |                                                                                                      |                  | //              | "The organisations, in consultation with the Commission, agree that ABC is best positioned to notify the affected members" |
+|   |             |   |   | EXPECT   |     | IT IS                                                                                                               |   | A Notifiable Data Breach |            |                                                                                                      |                  |                 |                                                                                                                            |
+|   |             |   |   | EXPECT   |     | Organisation                                                                                                        |   | MUST                     |            | notify PDPC                                                                                          |                  |                 |                                                                                                                            |
+|   |             |   |   | EXPECT   | NOT | Organisation                                                                                                        |   | MUST                     |            | notify Affected Individuals                                                                          |                  |                 |                                                                                                                            |
+|   |             |   |   |          |     |                                                                                                                     |   |                          |            |                                                                                                      |                  |                 |                                                                                                                            |
+|   |             |   |   |          |     |                                                                                                                     |   |                          |            |                                                                                                      |                  |                 |                                                                                                                            |
+
+
+
+**** unit test 3: medical records
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-units-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+
+|   | (AdvG p138) |   | § | SCENARIO |   | Unauthorised access of patients’ medical records |   |                          |        |                             |                                                                                                                                            |          |                       |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the prescribed number of affected individuals    |   |                          |        |                             |                                                                                                                                            | IS       |                    50 |                                                                                                 |
+|   |             |   |   | GIVEN    |   | unauthorised                                     |   |                          | access |                             | of personal data                                                                                                                           | occurred |                       |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the data breach relates to                       |   |                          |        |                             | the individual's                                                                                                                           |          | identification number |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the data breach relates to                       |   |                          |        |                             | The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual: |          |                       | any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis; |
+|   |             |   |   | EXPECT   |   | IT IS                                            |   | A Notifiable Data Breach |        |                             |                                                                                                                                            |          |                       |                                                                                                 |
+|   |             |   |   | EXPECT   |   | Organisation                                     |   | MUST                     |        | notify PDPC                 |                                                                                                                                            |          |                       |                                                                                                 |
+|   |             |   |   | EXPECT   |   | Organisation                                     |   | MUST                     |        | notify Affected Individuals |                                                                                                                                            |          |                       |                                                                                                 |
+|   |             |   |   |          |   |                                                  |   |                          |        |                             |                                                                                                                                            |          |                       |                                                                                                 |
+|   |             |   |   |          |   |                                                  |   |                          |        |                             |                                                                                                                                            |          |                       |                                                                                                 |
+
+
+
+**** unit test 4: hotel
+:PROPERTIES:
+:TABLE_EXPORT_FILE: scenario-units-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+
+|   | (AdvG p139) |   | § | SCENARIO |   | Theft of portable storage drive containing hotel guests’ details |   |                          |        |                             |                                                                                                      |   |          |                       |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the prescribed number of affected individuals                    |   |                          |        |                             |                                                                                                      |   | IS       | 1000                  |                                                                                                 |
+|   |             |   |   | GIVEN    |   | unauthorised                                                     |   |                          | access |                             | of personal data                                                                                     |   | occurred |                       |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the data breach relates to                                       |   |                          |        |                             | the individual's                                                                                     |   |          | full name             |                                                                                                 |
+|   |             |   |   | GIVEN    |   | the data breach relates to                                       |   |                          |        |                             | the individual's                                                                                     |   |          | identification number | any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis; |
+|   |             |   |   | GIVEN    |   | the data breach relates to                                       |   |                          |        |                             | The number of any credit card, charge card or debit card issued to or in the name of the individual. |   |          |                       |                                                                                                 |
+|   |             |   |   | EXPECT   |   | IT IS                                                            |   | A Notifiable Data Breach |        |                             |                                                                                                      |   |          |                       |                                                                                                 |
+|   |             |   |   | EXPECT   |   | Organisation                                                     |   | MUST                     |        | notify PDPC                 |                                                                                                      |   |          |                       |                                                                                                 |
+|   |             |   |   | EXPECT   |   | Organisation                                                     |   | MUST                     |        | notify Affected Individuals |                                                                                                      |   |          |                       |                                                                                                 |
+
 
 *** Decide has a WHEN and AND on separate lines
 :PROPERTIES:

@@ -417,21 +417,6 @@ combineExpr pred compl = result
 getTypeAndValue :: GUDS -> TreeGroups
 getTypeAndValue uds = groupByRGLtype (LexConj "") [uds]
 
--- getTypeAndValue :: GUDS -> (String, Expr)
--- getTypeAndValue uds = case groupByRGLtype (LexConj "") [uds] of
---   TG {gfAP=Just ap}   -> ("AP", gf ap)
---   TG {gfAdv=Just adv} -> ("Adv", gf adv)
---   TG {gfNP=Just np}   -> ("NP", gf np)
---   TG {gfDet=Just det} -> ("Det", gf det)
---   TG {gfCN=Just cn}   -> ("CN", gf cn)
---   TG {gfPrep=Just pr} -> ("Prep", gf pr)
---   TG {gfRP=Just rp}   -> ("RP", gf rp)
---   TG {gfCl=Just cl}   -> ("Cl", gf cl)
---   TG {gfVP=Just v}    -> ("VP", gf v)
---   _ -> error $ "getTypeAndValue: not supported " ++ showExpr (gf uds)
-
-
-
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructR into a GF list
 -- First use case: "any unauthorised [access,use,…]  of personal data"
@@ -534,6 +519,9 @@ bsr2gf env bsr = case bsr of
 
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --
+-- A single UDS tree may become several of these; e.g. a root_nsubj sentence pattern could become
+-- a Cl, "a breach occurs", but also a NP, "an occurring breach".
+-- The different NLG functions make their decisions on how to combine phrases based on which fields are filled.
 data TreeGroups = TG {
     gfAP   :: Maybe GAP
   , gfAdv  :: Maybe GAdv
@@ -553,9 +541,7 @@ acceptedRGLtypes = "AP Adv NP Det CN Prep RP VP Cl"
 instance Show TreeGroups where
   show = unlines . map showExpr . flattenGFTrees
 
--- | workaround to get heterogeneous lists
---
--- alternative: catMaybes [gf <$> gfAP, gf <$> gfAdv, gf <$> gfNP, …]
+-- | Workaround to flatten TreeGroups into a list of Exprs.
 flattenGFTrees :: TreeGroups -> [Expr]
 flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
   gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfPrep <: gfRP <: gfVP <: gfCl <: []

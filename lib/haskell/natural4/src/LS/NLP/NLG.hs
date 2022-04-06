@@ -38,6 +38,7 @@ import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
+import UDPipe (loadModel, runPipeline)
 
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
@@ -58,8 +59,14 @@ gfPath x = "grammars/" ++ x
 udParse :: Text.Text -> IO String
 udParse txt = do
   let str = Text.unpack txt
-  conllRaw <- getPy str :: IO L8.ByteString
-  return $ mkConlluString $ unpack conllRaw
+  putStrLn "Loading UDPipe model..."
+  model <- loadModel "english-lines-ud-2.5-191206.udpipe"
+  putStrLn "Running UDPipe..."
+  result <- runPipeline (either error id model) str
+  putStrLn $ "UDPipe result: " ++ show result
+  return result
+  -- conllRaw <- getPy str :: IO L8.ByteString
+  -- return $ mkConlluString $ unpack conllRaw
 
 getPy :: Control.Monad.IO.Class.MonadIO m => String -> m L8.ByteString
 getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])

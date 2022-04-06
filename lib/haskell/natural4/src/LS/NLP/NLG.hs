@@ -38,9 +38,12 @@ import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
-import UDPipe (loadModel, runPipeline)
+import UDPipe (loadModel, runPipeline, ModelPtr)
 
-newtype NLGEnv = NLGEnv { udEnv :: UDEnv }
+data NLGEnv = NLGEnv 
+  { udEnv :: UDEnv 
+  , udpipeModel :: ModelPtr
+  }
 
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
@@ -48,7 +51,10 @@ showExpr = PGF.showExpr []
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
-  return $ NLGEnv {udEnv}
+  putStrLn "Loading UDPipe model..."
+  udpipeModel <- either error id <$> loadModel "english-lines-ud-2.5-191206.udpipe"
+  putStrLn "Running UDPipe..."
+  return $ NLGEnv {udEnv, udpipeModel}
 
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
@@ -60,13 +66,13 @@ gfPath :: String -> String
 gfPath x = "grammars/" ++ x
 
 -- Parsing text with udpipe via external Python process
-udParse :: Text.Text -> IO String
-udParse txt = do
+udParse :: NLGEnv -> Text.Text -> IO String
+udParse env txt = do
   let str = Text.unpack txt
-  putStrLn "Loading UDPipe model..."
-  model <- loadModel "english-lines-ud-2.5-191206.udpipe"
+  -- putStrLn "Loading UDPipe model..."
+  -- model <- loadModel "english-lines-ud-2.5-191206.udpipe"
   putStrLn "Running UDPipe..."
-  result <- runPipeline (either error id model) str
+  result <- runPipeline (udpipeModel env) str
   putStrLn $ "UDPipe result: " ++ show result
   return result
   -- conllRaw <- getPy str :: IO L8.ByteString
@@ -104,7 +110,7 @@ parseConllu env str = trace ("\nconllu:\n" ++ str) $
 parseOut :: NLGEnv -> Text.Text -> IO GUDS
 parseOut env txt = do
 --  conll <- udParse txt -- Initial parse
-  lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  lowerConll <- udParse env (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
   -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
   --              Just e -> e
   --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)

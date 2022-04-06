@@ -40,11 +40,15 @@ import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline)
 
+newtype NLGEnv = NLGEnv { udEnv :: UDEnv }
+
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
-myUDEnv :: IO UDEnv
-myUDEnv = getEnv (gfPath "UDApp") "Eng" "UDS"
+myNLGEnv :: IO NLGEnv
+myNLGEnv = do
+  udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
+  return $ NLGEnv {udEnv}
 
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
@@ -90,14 +94,14 @@ mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'
       rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
 
 
-parseConllu :: UDEnv -> String -> Maybe Expr
+parseConllu :: NLGEnv -> String -> Maybe Expr
 parseConllu env str = trace ("\nconllu:\n" ++ str) $
-  case getExprs [] env str of
+  case getExprs [] (udEnv env) str of
     (x : _xs) : _xss -> Just x
     _ -> Nothing
 
 
-parseOut :: UDEnv -> Text.Text -> IO GUDS
+parseOut :: NLGEnv -> Text.Text -> IO GUDS
 parseOut env txt = do
 --  conll <- udParse txt -- Initial parse
   lowerConll <- udParse (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
@@ -112,7 +116,7 @@ parseOut env txt = do
 
 nlg :: Rule -> IO Text.Text
 nlg rl = do
-   env <- myUDEnv
+   env <- myNLGEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF
@@ -185,10 +189,10 @@ applyMaybe name (Just expr) action = mkApp (mkCId name) [expr, action]
 mkApp2 :: String -> Expr -> Expr -> Expr
 mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 
-parseFields :: UDEnv -> Rule -> IO AnnotatedRule
+parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
-    let gr = pgfGrammar env
+    let gr = pgfGrammar $ udEnv env
     subjA <- (gf . toUDS gr) <$> bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
@@ -234,7 +238,7 @@ parseFields env rl = case rl of
   RegBreach -> return RegBreachA
   _ -> return RegBreachA
   where
-    parseHornClause :: UDEnv -> CId -> HornClause2 -> IO Expr
+    parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
     parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
     parseHornClause env fun (HC2 rp (Just bsr)) = do
       extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
@@ -245,7 +249,7 @@ parseFields env rl = case rl of
 
     -- TODO: switch to GUDS or GUDFragment? How can we know which type they return?
     -- Something a bit more typed than Expr would feel safer
-    parseRP :: UDEnv -> CId -> RelationalPredicate -> IO Expr
+    parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
     parseRP env _f (RPParamText pt) = parseParamText env pt
     parseRP env _f (RPMT txts) = parseMulti env txts
     parseRP env fun (RPConstraint sky is blue) = do
@@ -263,20 +267,20 @@ parseFields env rl = case rl of
       return $ mkApp rprel [skyNP, blueUDS]
 
     -- ConstitutiveName is [Text.Text]
-    parseMulti :: UDEnv -> [Text.Text] -> IO Expr
+    parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
     parseMulti env txt = gf `fmap` parseOut env (Text.unwords txt)
 
-    parseName :: UDEnv -> [Text.Text] -> IO Text.Text
+    parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
     parseName _env txt = return (Text.unwords txt)
 
-    parseParamText :: UDEnv -> ParamText -> IO Expr
+    parseParamText :: NLGEnv -> ParamText -> IO Expr
     parseParamText env pt = gf `fmap` (parseOut env $ pt2text pt)
 
     keyword2cid :: (Show a) => a -> CId
     keyword2cid = mkCId . show
 
     -- NB. we assume here only structure like "before 3 months", not "before the king sings"
-    parseTemporal :: UDEnv -> TemporalConstraint Text.Text -> IO Expr
+    parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
     parseTemporal env (TemporalConstraint keyword time tunit) = do
       uds <- parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
       let Just adv = advFromUDS uds
@@ -294,7 +298,7 @@ parseFields env rl = case rl of
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructP into a GF list
 -- First use case: "notify the PDPC in te form and manner specified at … with a notification msg and a list of individuals for whom …"
-bsp2gf :: UDEnv -> BoolStructP -> IO Expr
+bsp2gf :: NLGEnv -> BoolStructP -> IO Expr
 bsp2gf env bsp = case bsp of
   AA.Leaf (action :| mods) -> do
     actionExpr <- kvspair2gf env action  -- notify the PDPC
@@ -319,7 +323,7 @@ combineActionMods ("VP",act) (("RCl",mod):rest) = combineActionMods ("VP", resul
 combineActionMods (tAct,_) ((tMods,_):_) = error $ "combineActionMods: not supported yet " ++ tAct ++ "+" ++ tMods
 
 -- | Takes a KVsPair, parses the fields, puts them together into GF Expr
-kvspair2gf :: UDEnv -> KVsPair -> IO (String, Expr)
+kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)
 kvspair2gf env (action,_) = case action of
   pred :| []     -> do
     predUDS <- parseOut env pred
@@ -430,7 +434,7 @@ getTypeAndValue uds = groupByRGLtype (LexConj "") [uds]
 
 -- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
 -- mkApp :: CId -> [Expr] -> Expr
-parseLex :: UDEnv -> String -> [Expr]
+parseLex :: NLGEnv -> String -> [Expr]
 parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
   where
     lexicalCats :: [String]
@@ -441,8 +445,8 @@ parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
               , findType parsingGrammar expr `elem` lexicalCats
             ]
     morpho = buildMorpho parsingGrammar lang
-    parsingGrammar = pgfGrammar env -- use the parsing grammar, not extension grammar
-    lang = actLanguage env
+    parsingGrammar = pgfGrammar $ udEnv env -- use the parsing grammar, not extension grammar
+    lang = actLanguage $ udEnv env
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
@@ -475,7 +479,7 @@ disambiguateList pgf access_use_copying =
 
 -- Meant to be called from inside an Any or All
 -- If we encounter another Any or All, fall back to bsr2gf
-bsr2gfAmb :: UDEnv -> BoolStructR -> IO [PGF.Expr]
+bsr2gfAmb :: NLGEnv -> BoolStructR -> IO [PGF.Expr]
 bsr2gfAmb env bsr = case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
@@ -488,7 +492,7 @@ bsr2gfAmb env bsr = case bsr of
   where
     singletonList x = (:[]) `fmap` x
 
-bsr2gf :: UDEnv -> BoolStructR -> IO Expr
+bsr2gf :: NLGEnv -> BoolStructR -> IO Expr
 bsr2gf env bsr = case bsr of
   -- This happens only if the full BoolStructR is just a single Leaf
   -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
@@ -628,10 +632,10 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
                 []    -> Nothing
                 c:_  -> Just c
 
-parseAndDisambiguate :: UDEnv -> [BoolStructR] -> IO [GUDS]
+parseAndDisambiguate :: NLGEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
-  let parsingGrammar = pgfGrammar env -- here we use the parsing grammar, not extension grammar!
+  let parsingGrammar = pgfGrammar $ udEnv env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb
   return $ map (toUDS parsingGrammar) contents
 

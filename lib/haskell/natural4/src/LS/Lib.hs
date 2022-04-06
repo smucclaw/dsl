@@ -453,15 +453,12 @@ pScenarioRule = debugName "pScenarioRule" $ do
     , defaults = [], symtab   = []
     }
 
-pExpect :: Parser HornClause2
+pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
   (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
 
-  return $ HC2
-    { hHead = relPred
-    , hBody = whenpart
-    }
+  return $ ExpRP relPred
 
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" $ do

@@ -6,30 +6,30 @@
 packages:
 - completed:
     size: 3154513
-    subdir: .
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     name: baby-l4
     version: 0.1.0.0
     sha256: 47cd67b3ac089a683516a0c2d80042657296014a43eb2b0f4c1d7ba67b9d8e58
+    subdir: .
     pantry-tree:
       size: 9510
       sha256: 089527ee672549fc8dff442429abbc38529caf96d74a47f27af36f5ef744959c
   original:
-    subdir: .
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
+    subdir: .
 - completed:
     size: 3154513
-    subdir: baby-l4-core
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     name: baby-l4-core
     version: 0.1.0.0
     sha256: 47cd67b3ac089a683516a0c2d80042657296014a43eb2b0f4c1d7ba67b9d8e58
+    subdir: baby-l4-core
     pantry-tree:
       size: 650
       sha256: 0dd83c3143609fe9c63d25a1b193b77ff6479869d31aa1ecf2137f0dca21bfc8
   original:
-    subdir: baby-l4-core
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
+    subdir: baby-l4-core
 - completed:
     size: 1355402
     url: https://github.com/anka-213/gf-ud/archive/94448ba0b1c49735dd47dc2256c0b0f4e773914c.tar.gz
@@ -52,6 +52,17 @@ packages:
       sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
+- completed:
+    name: udpipe-hs
+    version: 0.1.0.0
+    git: https://github.com/anka-213/udpipe-hs.git
+    pantry-tree:
+      size: 46570
+      sha256: e1d742bcf1de3f08097c7659bafb3a26164acf8cf8fc5cc8348c15c5ea0c5173
+    commit: cfdcf8146718e700203d3e968e23e477c403a84e
+  original:
+    git: https://github.com/anka-213/udpipe-hs.git
+    commit: cfdcf8146718e700203d3e968e23e477c403a84e
 - completed:
     size: 3490407
     url: https://github.com/mengwong/gf-core/archive/38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86.tar.gz

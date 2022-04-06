@@ -59,6 +59,9 @@ extra-deps:
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
+- git: https://github.com/anka-213/udpipe-hs.git
+  commit: cfdcf8146718e700203d3e968e23e477c403a84e
+
 - github: mengwong/gf-core
   commit: 38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86
 

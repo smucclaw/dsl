@@ -235,7 +235,8 @@
 
 #auxfun RelVPGerund_cop_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj cop
 
-#disable ProgrVP
+#disable ProgrVP GerundNP CompNP
+-- GerundNP causes loops with CompNP
 
 -- NB: we don't want this currently, because we add the gerund in UDExt.
 -- If UDExt changes, then uncomment this.

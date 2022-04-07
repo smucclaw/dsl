@@ -38,11 +38,11 @@ import qualified Control.Monad.IO.Class
 import Control.Monad (join)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
-import UDPipe (loadModel, runPipeline, ModelPtr)
+import UDPipe (loadModel, runPipeline, Model)
 
 data NLGEnv = NLGEnv 
   { udEnv :: UDEnv 
-  , udpipeModel :: ModelPtr
+  , udpipeModel :: Model
   }
 
 showExpr :: Expr -> String

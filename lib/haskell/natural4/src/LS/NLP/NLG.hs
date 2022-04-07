@@ -114,7 +114,7 @@ parseOut env txt = do
   -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
   --              Just e -> e
   --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
-  let expr = fromMaybe (dummyExpr $ "parseOut: fail to parse" ++ Text.unpack txt)(parseConllu env lowerConll)
+  let expr = fromMaybe (dummyExpr $ "parseOut: fail to parse " ++ Text.unpack txt)(parseConllu env lowerConll)
 
   putStrLn $ showExpr expr
   return $ fg expr

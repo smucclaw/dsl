@@ -74,7 +74,7 @@ udParse env txt = do
   putStrLn "Running UDPipe..."
   result <- runPipeline (udpipeModel env) str
   putStrLn $ "UDPipe result: " ++ show result
-  return result
+  return $ either error id result
   -- conllRaw <- getPy str :: IO L8.ByteString
   -- return $ mkConlluString $ unpack conllRaw
 

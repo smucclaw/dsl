@@ -4,7 +4,13 @@ What questions do we need to ask the end user?
 
 How do we automatically build various transpilation targets?
 
-* Outputting to a State Graph
+* Outputting Constitutive Rules to a Visualization
+
+** Ladder Logic
+
+[[https://en.wikipedia.org/wiki/Programmable_logic_controller#Programming][ladder logic diagrams]] are reminiscent of [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8EBhYp/view?usp=sharing][Layman Allen's railroad diagrams]]
+
+* Outputting Regulative Rules to a State Graph
 
 See draft state graph at top right of the [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit?pli=1#gid=0][PDPA DBNO tab]]. 
 

@@ -41,7 +41,7 @@ timeIt = timeItNamed "CPU time"
 timeItShow :: (MonadIO m, Show a) => m a -> m a
 timeItShow ioa = do
     ((t, t'), a) <- timeItT ioa
-    liftIO $ printf (show a ++ ": %6.2fs, Wall time: %ss\n") t (show t')
+    liftIO $ printf (show a ++ ": %6.2fs, Wall time: %s\n") t (show t')
     return a
 
 -- | Like 'timeIt', but uses the 'String' as label for the timing.

@@ -52,7 +52,7 @@ myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   putStrLn "Loading UDPipe model..."
-  udpipeModel <- either error id <$> loadModel "english-lines-ud-2.5-191206.udpipe"
+  udpipeModel <- either error id <$> loadModel "english-ewt-ud-2.5-191206.udpipe"
   putStrLn "Running UDPipe..."
   return $ NLGEnv {udEnv, udpipeModel}
 

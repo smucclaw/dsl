@@ -54,7 +54,8 @@ extra-deps:
   - baby-l4-core
 
 - github: anka-213/gf-ud
-  commit: 94448ba0b1c49735dd47dc2256c0b0f4e773914c
+  commit: 0cadb5657fe00c41c364abb00dd69997d2a42288
+  # branch: all-changes
 
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646

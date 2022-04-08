@@ -40,7 +40,7 @@ lin
     root_nsubj_obj rt sub ob = mkUDS sub (dObjRoot rt ob) ;
 
     -- : root -> nsubj -> cop -> UDS ; -- the cat is small
-    root_nsubj_cop rt sub cp = root_nsubj rt sub ;
+    root_nsubj_cop rt sub _cp = root_nsubj rt sub ;
 
     -- UD has many names for Adv
     -- : root -> nsubj -> cop -> nmod/advmod/obl -> UDS ;
@@ -126,6 +126,17 @@ lin
     --  : root -> obl -> xcomp -> UDS ;
 	  -- for an adoption order to be made -- TODO: wrong UD parse
 		-- root_obl_xcomp
+
+-----------------------------------------------------------------------------
+-- csubj
+
+  -- "[it]:expl [is]:cop [critical]:root [to do an assessment]:csubj"
+  -- : root -> expl -> cop -> csubj -> UDS ;
+  root_expl_cop_csubj critical it _is to_do_assesment =
+    let critical_to_assess_Root : Root = scRoot critical to_do_assesment ;
+        it_NP : NP = mkNP it ; -- lincat of expl is Pron, so we need to make it into NP
+     in root_nsubj critical_to_assess_Root it_NP ;
+     -- we can call root_nsubj on these, because lincat of nsubj is NP
 
 -----------------------------------------------------------------------------
 -- No subject, only root

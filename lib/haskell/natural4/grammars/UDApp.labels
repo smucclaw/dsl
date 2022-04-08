@@ -358,6 +358,7 @@
 #fun root_mark_det_obj head mark det obj
 #fun root_mark_expl_cop_xcomp head mark expl cop xcomp
 #fun root_mark_expl_nsubj head mark expl nsubj
+#fun root_expl_cop_csubj head expl cop csubj
 #fun root_mark_nsubj head mark nsubj
 #fun root_mark_nsubjPass_auxPass_obl head mark nsubj:pass aux:pass obl
 #fun root_mark_nsubj_aux_advmod_obj head mark nsubj aux advmod obj

@@ -11,37 +11,23 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       rp2text, pt2text, bsr2text, KVsPair)
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, readExpr, buildMorpho, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
 import Data.Char (toLower)
-import Data.Void (Void)
--- import Data.List.NonEmpty (toList)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
-import Data.Maybe ( fromJust, fromMaybe, catMaybes, mapMaybe )
-import Data.List ( elemIndex, intercalate, group, sort, sortOn, nub )
+import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
+import Data.List ( group, sort, sortOn, nub )
 import Data.List.Extra (maximumOn)
-import Replace.Megaparsec ( sepCap )
-import Text.Megaparsec
-    ( (<|>), anySingle, match, parseMaybe, manyTill, Parsec )
-import Text.Megaparsec.Char (char)
-import Data.Either (rights)
-import Debug.Trace (trace)
-
--- typeprocess to run a python
-import System.IO ()
-import System.Process.Typed ( proc, readProcessStdout_ )
-import qualified Data.ByteString.Lazy.Char8 as L8
-import qualified Control.Monad.IO.Class
-import Control.Monad (join)
+--import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 
-data NLGEnv = NLGEnv 
-  { udEnv :: UDEnv 
+data NLGEnv = NLGEnv
+  { udEnv :: UDEnv
   , udpipeModel :: Model
   }
 
@@ -72,59 +58,34 @@ dummyExpr msg = gf $ Groot_only (GrootN_ (GUsePN (GStrPN (GString msg)))) -- dum
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
 
--- Parsing text with udpipe via external Python process
-udParse :: NLGEnv -> Text.Text -> IO String
-udParse env txt = do
-  let str = Text.unpack txt
-  -- putStrLn "Loading UDPipe model..."
-  -- model <- loadModel "english-lines-ud-2.5-191206.udpipe"
-  putStrLn "Running UDPipe..."
-  result <- runPipeline (udpipeModel env) str
-  putStrLn $ "UDPipe result: " ++ show result
-  return $ either error id result
-  -- conllRaw <- getPy str :: IO L8.ByteString
-  -- return $ mkConlluString $ unpack conllRaw
-
-getPy :: Control.Monad.IO.Class.MonadIO m => String -> m L8.ByteString
-getPy x = readProcessStdout_ (proc "python3" ["src/L4/sentence.py", x])
-
-unpack :: L8.ByteString -> String
-unpack x = drop (fromMaybe (-1) $ elemIndex '[' conll) conll
-  where conll = filter (not . (`elem` ("\n" :: String))) $ L8.unpack x
-
-mkConlluString :: String -> String
-mkConlluString txt = intercalate "\n" [ intercalate "\t" $ grabStrings ('\'','\'') l | l <- grabStrings ('[',']') txt ]
-  where
-    patterns :: (Char, Char) -> Parsec Void String String
-    patterns (a,b) = do
-      _ <- char a
-      join <$> manyTill
-              (fst <$> match (patterns (a,b)) <|> pure <$> anySingle)
-              (char b)
-
-    grabStrings :: (Char, Char) -> String -> [String]
-    grabStrings (a,b) txt =
-      rights $ fromJust $ parseMaybe (sepCap (patterns (a,b))) txt
-
-
-parseConllu :: NLGEnv -> String -> Maybe Expr
-parseConllu env str = trace ("\nconllu:\n" ++ str) $
-  case getExprs [] (udEnv env) str of
-    (x : _xs) : _xss -> Just x
-    _ -> Nothing
-
-
-parseOut :: NLGEnv -> Text.Text -> IO GUDS
-parseOut env txt = do
---  conll <- udParse txt -- Initial parse
-  lowerConll <- udParse env (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  -- let expr = case parseConllu env conll of -- env -> str -> [[expr]]
+-- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
+parseUD :: NLGEnv -> Text.Text -> IO GUDS
+parseUD env txt = do
+--  conll <- udpipe txt -- Initial parse
+  lowerConll <- udpipe (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  putStrLn $ "\nconllu:\n" ++ lowerConll
+  -- let expr = case ud2gf conll of
   --              Just e -> e
-  --              Nothing -> fromMaybe dummyExpr (parseConllu env lowerConll)
-  let expr = fromMaybe (dummyExpr $ "parseOut: fail to parse " ++ Text.unpack txt)(parseConllu env lowerConll)
-
+  --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
+  let expr = fromMaybe errorMsg (ud2gf lowerConll)
   putStrLn $ showExpr expr
   return $ fg expr
+  where
+    errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt
+
+    udpipe :: Text.Text -> IO String
+    udpipe txt = do
+      let str = Text.unpack txt
+      putStrLn "Running UDPipe..."
+      result <- runPipeline (udpipeModel env) str
+      putStrLn $ "UDPipe result: " ++ show result
+      return $ either error id result
+
+    ud2gf :: String -> Maybe Expr
+    ud2gf str = case getExprs [] (udEnv env) str of
+      (x : _xs) : _xss -> Just x
+      _ -> Nothing
+
 -----------------------------------------------------------------------------
 
 nlg :: Rule -> IO Text.Text
@@ -281,13 +242,13 @@ parseFields env rl = case rl of
 
     -- ConstitutiveName is [Text.Text]
     parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
-    parseMulti env txt = gf `fmap` parseOut env (Text.unwords txt)
+    parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
 
     parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
     parseName _env txt = return (Text.unwords txt)
 
     parseParamText :: NLGEnv -> ParamText -> IO Expr
-    parseParamText env pt = gf `fmap` (parseOut env $ pt2text pt)
+    parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
 
     keyword2cid :: (Show a) => a -> CId
     keyword2cid = mkCId . show
@@ -295,7 +256,7 @@ parseFields env rl = case rl of
     -- NB. we assume here only structure like "before 3 months", not "before the king sings"
     parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
     parseTemporal env (TemporalConstraint keyword time tunit) = do
-      uds <- parseOut env $ kw2txt keyword <> time2txt time <> " " <> tunit
+      uds <- parseUD env $ kw2txt keyword <> time2txt time <> " " <> tunit
       let Just adv = advFromUDS uds
       return $ gf adv
       where
@@ -339,7 +300,7 @@ combineActionMods (tAct,_) ((tMods,_):_) = error $ "combineActionMods: not suppo
 kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)
 kvspair2gf env (action,_) = case action of
   pred :| []     -> do
-    predUDS <- parseOut env pred
+    predUDS <- parseUD env pred
     return $ case getTypeAndValue predUDS of
       TG {gfAP=Just ap}   -> ("AP", gf ap)
       TG {gfAdv=Just adv} -> ("Adv", gf adv)
@@ -353,8 +314,8 @@ kvspair2gf env (action,_) = case action of
       _ -> ("NP", dummyExpr $ "kvspair2gf: type of predicate not among " ++ acceptedRGLtypes)
 
   pred :| compls -> do
-    predUDS <- parseOut env pred
-    complUDS <- parseOut env (Text.unwords compls) -- TODO: or parse each item one by one?
+    predUDS <- parseUD env pred
+    complUDS <- parseUD env (Text.unwords compls) -- TODO: or parse each item one by one?
     return $ combineExpr predUDS complUDS
 
 -- | Takes two UDSs, puts them together, returns Expr and a string that tells which type the result is.
@@ -498,7 +459,7 @@ bsr2gfAmb env bsr = case bsr of
     let checkWords = length $ Text.words access
     case checkWords of
       1 -> return $ parseLex env (Text.unpack access)
-      _ -> singletonList $ gf `fmap` parseOut env access
+      _ -> singletonList $ gf `fmap` parseUD env access
   -- In any other case, call the full bsr2gf
   _ -> singletonList $ bsr2gf env bsr
   where
@@ -510,7 +471,7 @@ bsr2gf env bsr = case bsr of
   -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
   AA.Leaf rp -> do
     let access = rp2text rp
-    gf `fmap` parseOut env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
+    gf `fmap` parseUD env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
@@ -521,8 +482,8 @@ bsr2gf env bsr = case bsr of
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     contentsUDS <- parseAndDisambiguate env access_use_copying
-    premodUDS <- parseOut env any_unauthorised
-    postmodUDS <- parseOut env of_personal_data
+    premodUDS <- parseUD env any_unauthorised
+    postmodUDS <- parseUD env of_personal_data
     let tree = case groupByRGLtype orConj <$> [contentsUDS, [premodUDS], [postmodUDS]] of
           [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
             let listcn = case cn of
@@ -814,8 +775,6 @@ apFromUDS x = case x of
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootA_ ap:_ -> Just ap
               _            -> Nothing
-
--- root_only (rootN_ (UsePN (StrPN "parseOut: fail to parsebeyond the edge of forever"))
 
 advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of

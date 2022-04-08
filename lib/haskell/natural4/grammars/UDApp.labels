@@ -19,6 +19,7 @@
 #fun nsubjPass_ head          -- NP -> nsubjPass
 #fun xcompA_ccomp_ head ccomp -- AP -> ccomp -> xcomp
 #fun xcompToBeN_ mark cop head -- mark -> cop -> NP -> xcomp
+#fun csubjMark_ mark head
 #fun punct_ head
 
 #fun root_nsubj head nsubj                         -- root -> nsubj -> UDS ;               -- the cat sleeps

@@ -71,6 +71,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     '\'s_Gen' = ss ("'s"|"’s") ;
 
     csubj_ uds = mkSC (uds2s uds) ;
+    csubjMark_ mark uds = -- assuming this is like "to assess the breach"
+      lin SC {s = mark.s ++ linUDS' Infinite emptyNP uds} ;
 
     nsubj_,
     obj_,

@@ -701,6 +701,7 @@ data Tree :: * -> * where
   Groot_csubj :: Groot -> Gcsubj -> Tree GUDS_
   Groot_csubj_aux_aux :: Groot -> Gcsubj -> Gaux -> Gaux -> Tree GUDS_
   Groot_discourse :: Groot -> Gdiscourse -> Tree GUDS_
+  Groot_expl_cop_csubj :: Groot -> Gexpl -> Gcop -> Gcsubj -> Tree GUDS_
   Groot_fixed :: Groot -> Gfixed -> Tree GUDS_
   Groot_goeswith :: Groot -> Ggoeswith -> Tree GUDS_
   Groot_goeswith_det_amod_nmod :: Groot -> Ggoeswith -> Gdet -> Gamod -> Gnmod -> Tree GUDS_
@@ -724,6 +725,7 @@ data Tree :: * -> * where
   Groot_mark_nsubj_nsubj_xcomp :: Groot -> Gmark -> Gnsubj -> Gnsubj -> Gxcomp -> Tree GUDS_
   Groot_mark_nsubj_obj :: Groot -> Gmark -> Gnsubj -> Gobj -> Tree GUDS_
   Groot_mark_nsubj_obl :: Groot -> Gmark -> Gnsubj -> Gobl -> Tree GUDS_
+  Groot_mark_nsubj_xcomp :: Groot -> Gmark -> Gnsubj -> Gxcomp -> Tree GUDS_
   Groot_mark_nummod :: Groot -> Gmark -> Gnummod -> Tree GUDS_
   Groot_nmod :: Groot -> Gnmod -> Tree GUDS_
   Groot_nmodPoss_advmod :: Groot -> GnmodPoss -> Gadvmod -> Tree GUDS_
@@ -886,7 +888,8 @@ data Tree :: * -> * where
   Gconj_ :: GX -> Tree Gconj_
   Gbe_cop :: Tree Gcop_
   Gis_cop :: Tree Gcop_
-  Gcsubj_ :: GX -> Tree Gcsubj_
+  GcsubjMark_ :: Gmark -> GUDS -> Tree Gcsubj_
+  Gcsubj_ :: GUDS -> Tree Gcsubj_
   GcsubjPass_ :: GX -> Tree GcsubjPass_
   Gdep_ :: GX -> Tree Gdep_
   Gdet_ :: GDet -> Tree Gdet_
@@ -1304,6 +1307,7 @@ instance Eq (Tree a) where
     (Groot_csubj x1 x2,Groot_csubj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_csubj_aux_aux x1 x2 x3 x4,Groot_csubj_aux_aux y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_discourse x1 x2,Groot_discourse y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Groot_expl_cop_csubj x1 x2 x3 x4,Groot_expl_cop_csubj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_fixed x1 x2,Groot_fixed y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_goeswith x1 x2,Groot_goeswith y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_goeswith_det_amod_nmod x1 x2 x3 x4 x5,Groot_goeswith_det_amod_nmod y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
@@ -1327,6 +1331,7 @@ instance Eq (Tree a) where
     (Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5,Groot_mark_nsubj_nsubj_xcomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
     (Groot_mark_nsubj_obj x1 x2 x3 x4,Groot_mark_nsubj_obj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_mark_nsubj_obl x1 x2 x3 x4,Groot_mark_nsubj_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (Groot_mark_nsubj_xcomp x1 x2 x3 x4,Groot_mark_nsubj_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_mark_nummod x1 x2 x3,Groot_mark_nummod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod x1 x2,Groot_nmod y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_nmodPoss_advmod x1 x2 x3,Groot_nmodPoss_advmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1489,6 +1494,7 @@ instance Eq (Tree a) where
     (Gconj_ x1,Gconj_ y1) -> and [ x1 == y1 ]
     (Gbe_cop,Gbe_cop) -> and [ ]
     (Gis_cop,Gis_cop) -> and [ ]
+    (GcsubjMark_ x1 x2,GcsubjMark_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gcsubj_ x1,Gcsubj_ y1) -> and [ x1 == y1 ]
     (GcsubjPass_ x1,GcsubjPass_ y1) -> and [ x1 == y1 ]
     (Gdep_ x1,Gdep_ y1) -> and [ x1 == y1 ]
@@ -2762,6 +2768,7 @@ instance Gf GUDS where
   gf (Groot_csubj x1 x2) = mkApp (mkCId "root_csubj") [gf x1, gf x2]
   gf (Groot_csubj_aux_aux x1 x2 x3 x4) = mkApp (mkCId "root_csubj_aux_aux") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_discourse x1 x2) = mkApp (mkCId "root_discourse") [gf x1, gf x2]
+  gf (Groot_expl_cop_csubj x1 x2 x3 x4) = mkApp (mkCId "root_expl_cop_csubj") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_fixed x1 x2) = mkApp (mkCId "root_fixed") [gf x1, gf x2]
   gf (Groot_goeswith x1 x2) = mkApp (mkCId "root_goeswith") [gf x1, gf x2]
   gf (Groot_goeswith_det_amod_nmod x1 x2 x3 x4 x5) = mkApp (mkCId "root_goeswith_det_amod_nmod") [gf x1, gf x2, gf x3, gf x4, gf x5]
@@ -2785,6 +2792,7 @@ instance Gf GUDS where
   gf (Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubj_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_mark_nsubj_obj x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_obj") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_mark_nsubj_obl x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_obl") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_mark_nsubj_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_mark_nummod x1 x2 x3) = mkApp (mkCId "root_mark_nummod") [gf x1, gf x2, gf x3]
   gf (Groot_nmod x1 x2) = mkApp (mkCId "root_nmod") [gf x1, gf x2]
   gf (Groot_nmodPoss_advmod x1 x2 x3) = mkApp (mkCId "root_nmodPoss_advmod") [gf x1, gf x2, gf x3]
@@ -2969,6 +2977,7 @@ instance Gf GUDS where
       Just (i,[x1,x2]) | i == mkCId "root_csubj" -> Groot_csubj (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_csubj_aux_aux" -> Groot_csubj_aux_aux (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_discourse" -> Groot_discourse (fg x1) (fg x2)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_expl_cop_csubj" -> Groot_expl_cop_csubj (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_fixed" -> Groot_fixed (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_goeswith" -> Groot_goeswith (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_goeswith_det_amod_nmod" -> Groot_goeswith_det_amod_nmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
@@ -2992,6 +3001,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubj_nsubj_xcomp" -> Groot_mark_nsubj_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_obj" -> Groot_mark_nsubj_obj (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_obl" -> Groot_mark_nsubj_obl (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_xcomp" -> Groot_mark_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_mark_nummod" -> Groot_mark_nummod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_nmod" -> Groot_nmod (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmodPoss_advmod" -> Groot_nmodPoss_advmod (fg x1) (fg x2) (fg x3)
@@ -3399,10 +3409,12 @@ instance Gf Gcop where
       _ -> error ("no cop " ++ show t)
 
 instance Gf Gcsubj where
+  gf (GcsubjMark_ x1 x2) = mkApp (mkCId "csubjMark_") [gf x1, gf x2]
   gf (Gcsubj_ x1) = mkApp (mkCId "csubj_") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "csubjMark_" -> GcsubjMark_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "csubj_" -> Gcsubj_ (fg x1)
 
 
@@ -4239,6 +4251,7 @@ instance Compos Tree where
     Groot_csubj x1 x2 -> r Groot_csubj `a` f x1 `a` f x2
     Groot_csubj_aux_aux x1 x2 x3 x4 -> r Groot_csubj_aux_aux `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_discourse x1 x2 -> r Groot_discourse `a` f x1 `a` f x2
+    Groot_expl_cop_csubj x1 x2 x3 x4 -> r Groot_expl_cop_csubj `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_fixed x1 x2 -> r Groot_fixed `a` f x1 `a` f x2
     Groot_goeswith x1 x2 -> r Groot_goeswith `a` f x1 `a` f x2
     Groot_goeswith_det_amod_nmod x1 x2 x3 x4 x5 -> r Groot_goeswith_det_amod_nmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
@@ -4262,6 +4275,7 @@ instance Compos Tree where
     Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5 -> r Groot_mark_nsubj_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
     Groot_mark_nsubj_obj x1 x2 x3 x4 -> r Groot_mark_nsubj_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_mark_nsubj_obl x1 x2 x3 x4 -> r Groot_mark_nsubj_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    Groot_mark_nsubj_xcomp x1 x2 x3 x4 -> r Groot_mark_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_mark_nummod x1 x2 x3 -> r Groot_mark_nummod `a` f x1 `a` f x2 `a` f x3
     Groot_nmod x1 x2 -> r Groot_nmod `a` f x1 `a` f x2
     Groot_nmodPoss_advmod x1 x2 x3 -> r Groot_nmodPoss_advmod `a` f x1 `a` f x2 `a` f x3
@@ -4410,6 +4424,7 @@ instance Compos Tree where
     GconjAdv_ x1 -> r GconjAdv_ `a` f x1
     GconjN_ x1 -> r GconjN_ `a` f x1
     Gconj_ x1 -> r Gconj_ `a` f x1
+    GcsubjMark_ x1 x2 -> r GcsubjMark_ `a` f x1 `a` f x2
     Gcsubj_ x1 -> r Gcsubj_ `a` f x1
     GcsubjPass_ x1 -> r GcsubjPass_ `a` f x1
     Gdep_ x1 -> r Gdep_ `a` f x1

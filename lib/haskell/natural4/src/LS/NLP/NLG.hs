@@ -27,6 +27,7 @@ import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import LS.NLP.Timer
 import UDPipe (loadModel, runPipeline, Model)
+import Data.Function ((&))
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -42,8 +43,10 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
+    & timeItNamed "getEnv"
   putStrLn "Loading UDPipe model..."
   udpipeModel <- either error id <$> loadModel modelFilePath
+    & timeItNamed "loadModel"
   putStrLn "Loaded UDPipe model"
   -- let
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
@@ -70,7 +73,8 @@ parseUD env txt = timeItNamed ("udParse: " ++ Text.unpack txt) $ do
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   let expr = fromMaybe errorMsg (ud2gf lowerConll)
-  putStrLn $ showExpr expr
+  putStrLn (showExpr expr)
+    & timeItNamed "parseOut: ud2gf"
   return $ fg expr
   where
     errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt

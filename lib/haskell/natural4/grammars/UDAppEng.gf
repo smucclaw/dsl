@@ -40,14 +40,13 @@ lin
     root_nsubj_obj rt sub ob = mkUDS sub (dObjRoot rt ob) ;
 
     -- : root -> nsubj -> cop -> UDS ; -- the cat is small
-    root_nsubj_cop rt sub cp = root_nsubj rt sub ;
+    root_nsubj_cop rt sub _cp = root_nsubj rt sub ;
 
     -- UD has many names for Adv
     -- : root -> nsubj -> cop -> nmod/advmod/obl -> UDS ;
-    root_nsubj_cop_advmod rt sub cop am =
-      case am.isNot of {
-        True => applyNeg rt sub ;
-        False => root_nsubj_cop_obl rt sub cop am.adv
+    root_nsubj_cop_advmod rt sub cop am = case am.isNot of {
+      True => mkUDS sub (applyNeg rt) ;
+      False => root_nsubj_cop_obl rt sub cop am.adv
       } ;
 
     root_nsubj_cop_obl,
@@ -56,24 +55,21 @@ lin
     root_nsubj_obl rt sub adv = mkUDS sub (advRoot rt adv) ;
 
     -- : root -> nsubj -> aux -> UDS ; --a data breach may occur
-		root_nsubj_aux occur breach may = {
-      subj = breach ;
-      pred = applyAux may occur.vp
-      } ;
+		root_nsubj_aux occur breach may = mkUDS breach (applyAux may occur.vp) ;
 
     -- : root -> nsubj -> aux -> aux -> UDS ; --a data breach may have occurred
-		root_nsubj_aux_aux occur breach may have = {
-      subj = breach ;
-      pred = applyAux2 may have occur.vp
-      } ;
+		root_nsubj_aux_aux occur breach may have = mkUDS breach (applyAux2 may have occur.vp) ;
 
     -- root_nsubj_* structure in a subordinate clause
-    -- We assume this doesn't appear in top level, so ignore mark
-    root_mark_nsubj rt _mark sub = root_nsubj rt sub ;
+    root_mark_nsubj rt mark sub = addMark mark (root_nsubj rt sub) ;
 
     -- : root -> mark -> nsubj -> aux -> aux -> UDS ; --that a data breach may have occurred
-		root_mark_nsubj_aux_aux rt _mark sub may have = root_nsubj_aux_aux rt sub may have ;
+		root_mark_nsubj_aux_aux rt mark sub may have = addMark mark (root_nsubj_aux_aux rt sub may have) ;
 
+    -- : root -> mark -> nsubj -> xcomp -> UDS ;
+	  root_mark_nsubj_xcomp goes if device missing =
+      let device_goes_missing : UDS = root_nsubj_xcomp goes device missing ;
+       in addMark if device_goes_missing ;
 
 -----------------------------------------------------------------------------
 -- Variations on root_obl_*
@@ -125,6 +121,17 @@ lin
 		-- root_obl_xcomp
 
 -----------------------------------------------------------------------------
+-- csubj
+
+  -- "[it]:expl [is]:cop [critical]:root [to do an assessment]:csubj"
+  -- : root -> expl -> cop -> csubj -> UDS ;
+  root_expl_cop_csubj critical it _is to_do_assesment =
+    let critical_to_assess_Root : Root = scRoot critical to_do_assesment ;
+        it_NP : NP = mkNP it ; -- lincat of expl is Pron, so we need to make it into NP
+     in root_nsubj critical_to_assess_Root it_NP ;
+     -- we can call root_nsubj on these, because lincat of nsubj is NP
+
+-----------------------------------------------------------------------------
 -- No subject, only root
    -- : root -> UDS ;  -- sing ;
     root_only rt = onlyPred rt ;
@@ -160,45 +167,50 @@ lin
        in root_nsubj_cop_aclRelcl root_obl sub cop rcl ;
 
     -- : root -> nsubjPass -> auxPass -> UDS ; -- everyone is notified
-    root_nsubjPass_auxPass rt nsubj aux = {
-      subj = nsubj ;
-      pred = myVPS (ExtendEng.PassVPSlash (root2vpslash rt)) ;
-    } ;
+    root_nsubjPass_auxPass rt nsubj aux =
+      mkUDS nsubj (myVPS (ExtendEng.PassVPSlash (root2vpslash rt))) ;
 
     -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- everyone should be notified
-    root_nsubjPass_aux_auxPass notified pdpa should auxpass = {
-      subj = pdpa ;
-      pred = applyAux should notified.vp -- TODO: has PassVP already been applied?
-    } ;
+    root_nsubjPass_aux_auxPass notified pdpa should auxpass =
+      mkUDS pdpa (applyAux should notified.vp) ; -- TODO: has PassVP already been applied?
 
     -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- garage should be considered a building
-    root_nsubjPass_aux_auxPass_xcomp considered garage should auxpass building = {
-      subj = garage ;
-      pred = applyAux should (mkVP considered.vp building) -- TODO: has PassVP already been applied?
-    } ;
+    root_nsubjPass_aux_auxPass_xcomp considered garage should auxpass building =
+      mkUDS garage (applyAux should (mkVP considered.vp building)) ; -- TODO: has PassVP already been applied?
 
     -- : root -> nsubjPass -> aux -> auxPass -> obl -> UDS ;
-    root_nsubjPass_aux_auxPass_obl notified pdpa should auxpass inAccWithSec10 = {
-      subj = pdpa ;
-      pred = applyAux should (mkVP notified.vp inAccWithSec10) -- TODO: has PassVP already been applied?
-    } ;
+    root_nsubjPass_aux_auxPass_obl notified pdpa should auxpass inAccWithSec10 =
+      mkUDS pdpa (applyAux should (mkVP notified.vp inAccWithSec10)) ; -- TODO: has PassVP already been applied?
+
+  -- : root -> nsubj -> ccomp -> UDS ;
+  root_nsubj_ccomp rt ns cc =
+    let rootCcomp : UDS = root_ccomp rt cc ;
+     in rootCcomp ** {subj = ns ; hasSubj = True} ;
+
+  root_nsubj_xcomp rt ns xc =
+    let rootXcomp : UDS = root_xcomp rt xc ;
+     in rootXcomp ** {subj = ns ; hasSubj = True} ;
+
+	-- : root -> xcomp ->  UDS ;	-- render unlikely ; go missing
+	root_xcomp render unlikely =
+	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
+	   in onlyPred render_unlikely ;
 
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
-	      that_result_harm : Adv = mkAdv that_Subj result_harm
+	      that_result_harm : Adv = mkAdv emptySubj result_harm
 	   in onlyPred (mkVP render_unlikely that_result_harm) ;
 
   -- : root -> ccomp -> UDS -- unlikely that X
   root_ccomp unlikely result_harm =
-    let that_result_harm : Adv = mkAdv that_Subj result_harm ;
+    let that_result_harm : Adv = mkAdv emptySubj result_harm ;
      in onlyPred (advRoot unlikely that_result_harm) ;
 
 	-- root_nsubj_aux_obl : root -> nsubj -> aux -> obl -> UDS ;
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;
-	root_nsubj_aux_obl result breach will in_harm = {
-      subj = breach ;
-      pred = applyAux will (mkVP result.vp in_harm) };
+	root_nsubj_aux_obl result breach will in_harm =
+      mkUDS breach (applyAux will (mkVP result.vp in_harm)) ;
 
   -- : root -> mark -> nsubj -> cop -> UDS ; -- if it is a breach
   root_advmod_nsubj_cop breach if it is = root_mark_nsubj_cop breach if.adv it is ; -- TODO: check if advmod is negation
@@ -224,7 +236,7 @@ lin
 
 	-- : root -> cop -> advmod -> UDS ; -- is not beer
   root_cop_advmod rt cp am = case am.isNot of {
-    True => applyNeg rt it_NP ; -- TODO: keep it_NP or not???
+    True => onlyPred (applyNeg rt) ;
     False => onlyPred (advRoot rt am.adv) -- TODO or should it be AdV instead of Adv? Does word order matter?
   } ;
 
@@ -234,9 +246,6 @@ lin
   -- : root -> acl -> UDS ;	--a message obeying a certain format ;
   -- : root -> advcl -> UDS ; --assess if it is a breach ;
 	root_advcl, root_acl = \rt,acl -> onlyPred (advRoot rt acl) ;
-
-  	-- onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;
-
 
   -- : root -> acl -> nmod -> UDS ;
 	root_acl_nmod rt acl nm = root_acl (mkRoot (mkVP rt.vp nm)) acl ;
@@ -269,25 +278,43 @@ lin
           RSasAdv : Adv = lin Adv (mkUtt dummyNP) ;
        in advRoot rt RSasAdv ;
 
-	onlyPred = overload {
-    onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;
-    onlyPred : Root -> UDS = \rt -> mkUDS it_NP rt
-  };
+    -- the lincat of mark is Subj (an RGL cat, short for subjunction—not "subject")
+    -- this is for stuff like "if", "that"… that goes before the subject
+    -- so this is a hack: we add it into the subj field of the LinUDS
+    addMark : Subj -> LinUDS -> LinUDS = \if,breachOccurs ->
+      let if_Predet : Predet = lin Predet if ; -- hack: Predet and Subj have the same lincat in English RG
+          breach_NP : NP = breachOccurs.subj ;
+       in breachOccurs ** {subj = mkNP if_Predet breach_NP} ;
+      {- The subj field is now "if breach", and the pred field is still "occurs".
+         Equivalent to writing
+          { subj = mkNP if_Predet breachOccurs.subj ;
+            pred = breachOccurs.pred } ;
+      -}
 
-  applyNeg : Root -> NP -> LinUDS = \root,subj -> {
-    subj = subj ;
-    pred = {fin = MkVPS (mkTemp presentTense simultaneousAnt) negativePol root.vp ;
-            pp =
-              let pp' : AP = BareRGEng.PastPartAP root.vp
-               in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
-            presp =
-              let pp' : AP = BareRGEng.PresPartAP root.vp
-               in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
-            inf =
-              let inf' : VPI = MkVPI root.vp
-               in inf' ** {s = \\typ,agr => "not" ++ inf'.s ! typ ! agr}
-           } ** defaultUDSPred;
+	onlyPred = overload {
+    onlyPred : VP -> LinUDS = \vp ->
+      let uds : LinUDS = mkUDS it_NP (mkRoot vp)
+       in uds ** {hasSubj = False} ;
+    onlyPred : Root -> LinUDS = \rt ->
+      let uds : LinUDS = mkUDS it_NP rt
+       in uds ** {hasSubj = False} ;
+    onlyPred : UDSPred -> LinUDS = \pr ->
+      let uds : LinUDS = mkUDS it_NP pr
+       in uds ** {hasSubj = False}
     } ;
+
+  applyNeg : Root -> UDSPred = \root -> {
+    fin = MkVPS (mkTemp presentTense simultaneousAnt) negativePol root.vp ;
+    pp =
+      let pp' : AP = BareRGEng.PastPartAP root.vp
+        in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
+    presp =
+      let pp' : AP = BareRGEng.PresPartAP root.vp
+        in pp' ** {s = \\x => "not" ++ pp'.s ! x} ;
+    inf =
+      let inf' : VPI = MkVPI root.vp
+        in inf' ** {s = \\typ,agr => "not" ++ inf'.s ! typ ! agr}
+    } ** defaultUDSPred ;
 
 
   applyAux : LinAux -> VP -> UDSPred = \will,sleep ->

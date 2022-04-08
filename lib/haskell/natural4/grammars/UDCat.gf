@@ -88,7 +88,6 @@ abstract UDCat = BareRG ** {
         compoundRedup_ : X -> compoundRedup ;
         compoundSvc_ : X -> compoundSvc ;
         conj_ : X -> conj ;
-        csubj_ : X -> csubj ;
         csubjPass_ : X -> csubjPass ;
         dep_ : X -> dep ;
         detNumgov_ : X -> detNumgov ;
@@ -109,10 +108,6 @@ abstract UDCat = BareRG ** {
         nmodTmod_ : X -> nmodTmod ;
         nummod_ : X -> nummod ;
         nummodGov_ : X -> nummodGov ;
-        oblAgent_ : Adv -> oblAgent ;
-        oblArg_ : Adv -> oblArg ;
-        oblLmod_ : Adv -> oblLmod ;
-        oblTmod_ : Adv -> oblTmod ;
         orphan_ : X -> orphan ;
         parataxis_ : X -> parataxis ;
         punct_ : X -> punct ;
@@ -148,7 +143,10 @@ abstract UDCat = BareRG ** {
 
         be_auxPass : auxPass ;
 
-        -- genS_case : case_ ; -- 's is treated as a separate token in UD
+        be_cop : cop ;
+        is_cop : cop ;
+        it_expl : expl ; -- render [it] unlikely that …
+        not_advmod : advmod ;
 
         -------
     fun
@@ -169,13 +167,6 @@ abstract UDCat = BareRG ** {
         obj_   : NP -> obj ;   -- but all become eventually NPs in GF
         iobj_  : NP -> iobj ;
 
-    -- Some UD words are syncategorematic in GF
-        be_cop : cop ;
-        is_cop : cop ;
-        it_expl : expl ; -- render [it] unlikely that …
-        not_advmod : advmod ;
-
-
         conjA_ : AP -> conj ;
         conjN_ : NP -> conj ;
         conjAdv_ : Adv -> conj ;
@@ -192,10 +183,17 @@ abstract UDCat = BareRG ** {
         advclUDS_ : UDS -> advcl ;
         advclMarkUDS_ : mark -> UDS -> advcl ;
 
+        csubj_ : UDS -> csubj ;
+        csubjMark_ : mark -> UDS -> csubj ;
+
         obl_    : Adv -> obl ;
 	    oblPrep_ : Prep -> obl ; -- sometimes empty preps are analysed as obl, e.g. "subject to"
 	    oblRP_ : Prep -> RP -> obl ; -- for which (the org does stuff)
         -- oblX_   : Prep -> X -> obl ;
+        oblAgent_ : Adv -> oblAgent ;
+        oblArg_ : Adv -> oblArg ;
+        oblLmod_ : Adv -> oblLmod ;
+        oblTmod_ : Adv -> oblTmod ;
 
         advmod_ : Adv -> advmod ;
         nmod_ : Prep -> NP -> nmod ; -- UD-specific version of PrepNP

@@ -214,6 +214,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_mark_nsubj_aux_aux : root -> mark -> nsubj -> aux -> aux -> UDS ;
 	--that a data breach may have occurred
 
+	    root_mark_nsubj_xcomp : root -> mark -> nsubj -> xcomp -> UDS ;
+    -- if the device goes missing
+
 		root_aclRelcl : root -> aclRelcl -> UDS ;
 	--any manner that is reasonable in the circumstances ;
 
@@ -304,6 +307,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_mark_expl_nsubj : root -> mark -> expl -> nsubj -> UDS ;
 	--"when there is a data breach ;
+
+		root_expl_cop_csubj	: root -> expl -> cop -> csubj -> UDS ;
+	--"[it]:expl [is]:cop [critical]:root [to do an assessment]:csubj"
 
 		root_mark_nsubj : root -> mark -> nsubj -> UDS ;
 	--whether or not the court has" ;

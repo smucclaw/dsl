@@ -29,9 +29,8 @@ concrete BareRGEng of BareRG =
     PartNP
     ,UseN2, Use2N3
     ,PPartNP
-    ,DefArt,IndefArt -- Changing the linearisation
+    ,DefArt,IndefArt,DetQuant -- Changing the linearisations
    ],
-
 
   AdjectiveEng [
     AP,AdA,A,Ord,
@@ -88,11 +87,18 @@ concrete BareRGEng of BareRG =
       sp = \\_,_,_,_ => "a"
     } ;
 
+    DetQuant quant num = NounEng.DetQuant quant num ** {
+      sp = \\g,hasAdj,c => case <num.hasCard,num.n> of {
+                             <False,_> => quant.sp ! g ! hasAdj ! num.n ! c ++ num.s  ! quant.isDef ! R.Nom ;
+                             _         => quant.s  !     True   ! num.n     ++ num.sp ! quant.isDef ! R.npcase2case c
+                           }
+      } ;
+
     -- Shorthands for the common determiners
-    theSg_Det = DetQuant DefArt NumSg ;
-    thePl_Det = DetQuant DefArt NumPl ;
-    aSg_Det = DetQuant IndefArt NumSg ;
-    aPl_Det = DetQuant IndefArt NumPl ;
+    theSg_Det = BareRGEng.DetQuant BareRGEng.DefArt NumSg ;
+    thePl_Det = BareRGEng.DetQuant BareRGEng.DefArt NumPl ;
+    aSg_Det = BareRGEng.DetQuant BareRGEng.IndefArt NumSg ;
+    aPl_Det = BareRGEng.DetQuant BareRGEng.IndefArt NumPl ;
 
     someSg_Det = mkDeterminerSpec P.singular "some" (variants {"someone"; "somebody"}) "something" False ;
     somePl_Det = mkDeterminerSpec P.plural "some" (variants {"someone"; "somebody"}) "something" False ;

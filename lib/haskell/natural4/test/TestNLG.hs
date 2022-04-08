@@ -9,14 +9,12 @@ import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA
-import Data.List.NonEmpty (NonEmpty((:|)))
-import UDAnnotations ( UDEnv(..), getEnv )
 import System.IO.Unsafe
 import qualified Data.Text.Lazy as Text
 
 nlgTests :: Spec
 nlgTests = do
-   let env = unsafePerformIO myUDEnv
+   let env = unsafePerformIO myNLGEnv
    describe "test bsr2gf" $ do
     it "Should return an adverbial" $ do
         treeAdv <- bsr2gf env testAdvBSR
@@ -86,7 +84,7 @@ nlgTests = do
 
      -- "become aware"
     --   let Just aware = readExpr "root_xcomp (rootV_ (UseV become_V)) (xcompA_ (PositA aware_A))"
-    --   it "Should convert root_xcomp to a unary predicate" $ do
+    --   it "Should convert root_xcomp to a unary predicate" $ do
     --     convertToPredicate aware `shouldBe` Unary "becomeAware"
 
       -- "become aware that a data breach occurs"

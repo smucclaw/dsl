@@ -13,6 +13,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     obj = NP ;
     iobj = NP ;
     ccomp = S ;
+    csubj = SC ;
     obl,
     nmod,
     xcomp = Adv ;
@@ -56,12 +57,22 @@ concrete UDCatEng of UDCat = BareRGEng **
     must_aux = mkAux "must" must_VV ;
     should_aux = mkAux "should" should_VV ;
     shall_aux = mkAux "shall" shall_VV ;
+
+    -- Why do we have be_cop and is_cop?
+    -- It is because ud2gf will look at both lemma and form, and we want it to
+    -- find the cop regardless which one it looks for.
+    -- We ignore all of the cops in linearisations always, because cop is always just is.
+    -- However, we don't ignore aux, because aux has lot of interesting information.
     be_cop,
     be_auxPass = ss "be" ;
     is_cop,
     is_auxPass = ss "is" ;
     not_advmod = {adv = lin Adv (ss "not") ; isNot = True} ;
     '\'s_Gen' = ss ("'s"|"’s") ;
+
+    csubj_ uds = mkSC (uds2s uds) ;
+    csubjMark_ mark uds = -- assuming this is like "to assess the breach"
+      lin SC {s = mark.s ++ linUDS' Infinite emptyNP uds} ;
 
     nsubj_,
     obj_,
@@ -99,7 +110,11 @@ concrete UDCatEng of UDCat = BareRGEng **
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
     aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart emptyNP uds} ;
     aclUDSgerund_ uds = lin Adv {s = linUDS' PresPart emptyNP uds} ;
-    advclMarkUDS_ = \mark,uds -> lin Adv {s = mark.s ++ linUDS uds} ;
+    advclMarkUDS_ = \mark,uds -> lin Adv {
+      s = case uds.hasSubj of {
+            True => mark.s ++ linUDS uds ;
+            False => mark.s ++ linUDS' Infinite emptyNP uds}
+      } ;
 
     expl_ = id Pron ;
     det_ = id Det ;
@@ -112,34 +127,51 @@ concrete UDCatEng of UDCat = BareRGEng **
     nsubjPass_ = id NP ;
 
   param
-    AclType = Finite | PastPart | PresPart ;
+    AclType = Finite | PastPart | PresPart | Infinite ;
 
   oper
-    UDSPred : Type = {fin : VPS ; pp, presp : AP ; inf : VPI ; np : NP ; isNP : Bool } ; -- because UDS can become an acl, either finite, gerund or past participle
+    UDSPred : Type = {  -- because UDS can become an acl, either finite, gerund or past participle
+      fin : VPS ; inf : VPI ;
+      pp, presp : AP ;
+      np : NP ; isNP : Bool
+      } ;
 
     defaultUDSPred : {np : NP ; isNP : Bool} = {
       np = emptyNP ;
       isNP = False
+      } ;
+
+    LinUDS : Type = {
+      subj : NP ; hasSubj : Bool ;
+      pred : UDSPred
+      } ;
+
+    mkUDS = overload {
+
+      mkUDS : NP -> Root -> LinUDS = \np,rt -> {
+        subj = np ; hasSubj = True ;
+        pred = case rt.isNP of {
+          True => myVPS rt.np ;
+          False => myVPS rt.vp }
+        } ;
+      mkUDS : NP -> UDSPred -> LinUDS = \np,pr -> {
+        subj = np ; hasSubj = True ;
+        pred = pr
+        }
     } ;
-
-    LinUDS : Type = {subj : NP ; pred : UDSPred} ;
-
-    mkUDS : NP -> Root -> LinUDS = \np,rt -> {
-       subj = np ;
-       pred = case rt.isNP of {
-         True => myVPS rt.np ;
-         False => myVPS rt.vp
-       }} ;
 
 --    linUDS = overload {
       linUDS : LinUDS -> Str = \uds -> linUDS' Finite uds.subj uds ;
     --  linUDS : NP -> LinUDS -> Str = \np,uds -> linUDS' Finite np uds
   --  } ;
 
+    uds2s : LinUDS -> S = \uds -> ExtendEng.PredVPS uds.subj uds.pred.fin ;
+
     linUDS' : AclType ->  NP -> LinUDS -> Str = \at,subj,uds -> case at of {
-      Finite => (PredVPS subj uds.pred.fin).s ;
+      Finite => (ExtendEng.PredVPS subj uds.pred.fin).s ;
       PresPart => (cc2 (mkUtt subj) (mkUtt uds.pred.presp)).s ;
-      PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s } ;
+      PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s ;
+      Infinite => (mkUtt subj).s ++ uds.pred.inf.s ! VVAux ! agrP3 Sg} ;
 
     myVPS = overload {
       myVPS : VP -> UDSPred = \vp -> defaultUDSPred ** {
@@ -167,12 +199,13 @@ concrete UDCatEng of UDCat = BareRGEng **
         isNP = True
       } ;
     } ;
-    --Aux : Type = {v : V ; isCop : Bool} ;
---   Root : Type = {vp : VP ; comp : Comp ; c2 : Str} ;
 
-    Root : Type = {np : NP ; isNP : Bool ; vp : VP ; c2 : Str } ;
-
-    -- alternative Root: {a : A ; n : N ; v : V ; adv : Adv ; whichFieldIsLegit : LegitField}
+    Root : Type = {
+      np : NP ;
+      isNP : Bool ;
+      vp : VP ;
+      c2 : Str
+      } ;
 
     mkRoot = overload {
        mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap ; adv = lin Adv (mkUtt ap)} ;
@@ -186,17 +219,28 @@ concrete UDCatEng of UDCat = BareRGEng **
        c2 = []
     } ;
 
+
+    -- Add an SC onto a Root, e.g.
+    -- (ready : Root) (to_sleep : SC) -> ready to sleep
+    scRoot : Root -> SC -> Root = \rt,sc -> advRoot rt <sc : Adv> ;
+
+    -- Add an Adv onto a Root, e.g.
+    -- (critical : Root) (always : Adv) -> always critical
+    -- (warm : Root) (by_nature : Adv) -> warm by nature
     advRoot : Root -> Adv -> Root = \rt,adv -> rt ** {
       vp = mkVP rt.vp adv ;
       np = N.AdvNP <rt.np:NP> <adv:Adv> ;
     } ;
 
+    -- Add a direct object onto a Root, e.g.
+    -- (eat : Root) (food : NP) -> eat food
     dObjRoot : Root -> NP -> Root = \rt,np -> rt ** {
       vp = mkVP (slashV rt.vp) np ;
       np = ApposNP rt.np np
     } ;
 
     emptyNP : NP = it_NP ** {s = \\_ => ""} ;
+    emptySubj : Subj = that_Subj ** {s = ""} ;
 
     should_VV : VV = lin VV {
       s = table {

@@ -110,7 +110,11 @@ concrete UDCatEng of UDCat = BareRGEng **
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
     aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart emptyNP uds} ;
     aclUDSgerund_ uds = lin Adv {s = linUDS' PresPart emptyNP uds} ;
-    advclMarkUDS_ = \mark,uds -> lin Adv {s = mark.s ++ linUDS uds} ;
+    advclMarkUDS_ = \mark,uds -> lin Adv {
+      s = case uds.hasSubj of {
+            True => mark.s ++ linUDS uds ;
+            False => mark.s ++ linUDS' Infinite emptyNP uds}
+      } ;
 
     expl_ = id Pron ;
     det_ = id Det ;
@@ -123,7 +127,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     nsubjPass_ = id NP ;
 
   param
-    AclType = Finite | PastPart | PresPart ;
+    AclType = Finite | PastPart | PresPart | Infinite ;
 
   oper
     UDSPred : Type = {  -- because UDS can become an acl, either finite, gerund or past participle
@@ -138,16 +142,23 @@ concrete UDCatEng of UDCat = BareRGEng **
       } ;
 
     LinUDS : Type = {
-      subj : NP ;
+      subj : NP ; hasSubj : Bool ;
       pred : UDSPred
       } ;
 
-    mkUDS : NP -> Root -> LinUDS = \np,rt -> {
-       subj = np ;
-       pred = case rt.isNP of {
-         True => myVPS rt.np ;
-         False => myVPS rt.vp
-       }} ;
+    mkUDS = overload {
+
+      mkUDS : NP -> Root -> LinUDS = \np,rt -> {
+        subj = np ; hasSubj = True ;
+        pred = case rt.isNP of {
+          True => myVPS rt.np ;
+          False => myVPS rt.vp }
+        } ;
+      mkUDS : NP -> UDSPred -> LinUDS = \np,pr -> {
+        subj = np ; hasSubj = True ;
+        pred = pr
+        }
+    } ;
 
 --    linUDS = overload {
       linUDS : LinUDS -> Str = \uds -> linUDS' Finite uds.subj uds ;
@@ -159,7 +170,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     linUDS' : AclType ->  NP -> LinUDS -> Str = \at,subj,uds -> case at of {
       Finite => (ExtendEng.PredVPS subj uds.pred.fin).s ;
       PresPart => (cc2 (mkUtt subj) (mkUtt uds.pred.presp)).s ;
-      PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s } ;
+      PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s ;
+      Infinite => (mkUtt subj).s ++ uds.pred.inf.s ! VVAux ! agrP3 Sg} ;
 
     myVPS = overload {
       myVPS : VP -> UDSPred = \vp -> defaultUDSPred ** {
@@ -228,6 +240,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     } ;
 
     emptyNP : NP = it_NP ** {s = \\_ => ""} ;
+    emptySubj : Subj = that_Subj ** {s = ""} ;
 
     should_VV : VV = lin VV {
       s = table {

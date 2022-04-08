@@ -50,7 +50,7 @@ timeItShow ioa = do
 timeItNamed :: MonadIO m => String -> m a -> m a
 timeItNamed name ioa = do
     ((t, t'), a) <- timeItT ioa
-    liftIO $ printf (name ++ ": %6.2fs, Wall time: %ss\n") t (show t')
+    liftIO $ printf (name ++ ": %6.2fs, Wall time: %s\n") t (show t')
     return a
 
 -- | Wrap a 'MonadIO' computation so that it returns execution time in seconds,

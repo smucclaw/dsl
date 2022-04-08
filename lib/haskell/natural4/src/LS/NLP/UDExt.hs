@@ -5,7 +5,6 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
-
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -378,6 +377,7 @@ data Tree :: * -> * where
   LexAdN :: String -> Tree GAdN_
   GConjAdV :: GConj -> GListAdV -> Tree GAdV_
   LexAdV :: String -> Tree GAdV_
+  GAdvAdv :: GAdv -> GAdv -> Tree GAdv_
   GAdv_Adv__but_in_any_case_Adv :: GAdv -> GAdv -> Tree GAdv_
   GAdv_at_the_time_NP_notifies_NP :: GNP -> GNP -> Tree GAdv_
   GComparAdvAdj :: GCAdv -> GA -> GNP -> Tree GAdv_
@@ -984,6 +984,7 @@ instance Eq (Tree a) where
     (LexAdN x,LexAdN y) -> x == y
     (GConjAdV x1 x2,GConjAdV y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (LexAdV x,LexAdV y) -> x == y
+    (GAdvAdv x1 x2,GAdvAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdv_Adv__but_in_any_case_Adv x1 x2,GAdv_Adv__but_in_any_case_Adv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdv_at_the_time_NP_notifies_NP x1 x2,GAdv_at_the_time_NP_notifies_NP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComparAdvAdj x1 x2 x3,GComparAdvAdj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1661,6 +1662,7 @@ instance Gf GAdV where
       _ -> error ("no AdV " ++ show t)
 
 instance Gf GAdv where
+  gf (GAdvAdv x1 x2) = mkApp (mkCId "AdvAdv") [gf x1, gf x2]
   gf (GAdv_Adv__but_in_any_case_Adv x1 x2) = mkApp (mkCId "Adv_Adv__but_in_any_case_Adv") [gf x1, gf x2]
   gf (GAdv_at_the_time_NP_notifies_NP x1 x2) = mkApp (mkCId "Adv_at_the_time_NP_notifies_NP") [gf x1, gf x2]
   gf (GComparAdvAdj x1 x2 x3) = mkApp (mkCId "ComparAdvAdj") [gf x1, gf x2, gf x3]
@@ -1673,6 +1675,7 @@ instance Gf GAdv where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "AdvAdv" -> GAdvAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Adv_Adv__but_in_any_case_Adv" -> GAdv_Adv__but_in_any_case_Adv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Adv_at_the_time_NP_notifies_NP" -> GAdv_at_the_time_NP_notifies_NP (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ComparAdvAdj" -> GComparAdvAdj (fg x1) (fg x2) (fg x3)
@@ -4008,6 +4011,7 @@ instance Compos Tree where
     GUseComparA x1 -> r GUseComparA `a` f x1
     GAdnCAdv x1 -> r GAdnCAdv `a` f x1
     GConjAdV x1 x2 -> r GConjAdV `a` f x1 `a` f x2
+    GAdvAdv x1 x2 -> r GAdvAdv `a` f x1 `a` f x2
     GAdv_Adv__but_in_any_case_Adv x1 x2 -> r GAdv_Adv__but_in_any_case_Adv `a` f x1 `a` f x2
     GAdv_at_the_time_NP_notifies_NP x1 x2 -> r GAdv_at_the_time_NP_notifies_NP `a` f x1 `a` f x2
     GComparAdvAdj x1 x2 x3 -> r GComparAdvAdj `a` f x1 `a` f x2 `a` f x3

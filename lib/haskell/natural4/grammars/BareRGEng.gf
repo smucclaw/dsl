@@ -166,6 +166,9 @@ concrete BareRGEng of BareRG =
       } ;
 
     one_NP = DetNP (DetQuant IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))) ;
+
+    AdvAdv a1 a2 = {s = a1.s ++ a2.s} ;
+
   lincat
     [Prep] = Co.ListX ;
 

@@ -22,7 +22,7 @@ nlgTests = do
 
     it "Should return a complex adverbial" $ do
         treeAdvComplex <- bsr2gf env testAdvComplexBSR
-        showExpr treeAdvComplex `shouldBe` "ConjAdv or_Conj (BaseAdv (Adv_Adv__but_in_any_case_Adv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))) (PrepNP in_Prep (DetCN aSg_Det (AdjCN (PositA low_A) (UseN voice_N)))))"
+        showExpr treeAdvComplex `shouldBe` "ConjAdv or_Conj (BaseAdv (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))) (PrepNP in_Prep (DetCN aSg_Det (AdjCN (PositA low_A) (UseN voice_N)))))"
 
     it "Should return a det" $ do
         treeDet <- bsr2gf env testDetBSR

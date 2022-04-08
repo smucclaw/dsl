@@ -120,6 +120,8 @@ abstract BareRG =
     PredVPS : NP -> VP -> S ;
     SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
 
+    AdvAdv : Adv -> Adv -> Adv ;
+
   cat
     [Prep]{2} ;
 

@@ -779,9 +779,9 @@ apFromUDS x = case x of
 advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
-  Groot_obl (GrootAdv_ someAdv) (Gobl_ (GPrepNP p (GDetCN d (GUseN n)))) -> Just $ GAdv_Adv__but_in_any_case_Adv someAdv (GPrepNP p (GDetCN d (GUseN n)))
-  Groot_only (GrootAdv_ (GPrepNP p (GDetCN d (GAdjCN (GPositA a) (GUseN n))))) -> Just $ GPrepNP p (GDetCN d (GAdjCN (GPositA a) (GUseN n)))
-  Groot_only (GrootAdv_ (GPrepNP p (GDetCN d (GAdvCN (GUseN e) someAdv)))) -> Just $ GPrepNP p (GDetCN d (GAdvCN (GUseN e) someAdv))
+  Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
+  -- Groot_only (GrootAdv_ (GPrepNP p (GDetCN d (GAdjCN (GPositA a) (GUseN n))))) -> Just $ GPrepNP p (GDetCN d (GAdjCN (GPositA a) (GUseN n)))
+  -- Groot_only (GrootAdv_ (GPrepNP p (GDetCN d (GAdvCN (GUseN e) someAdv)))) -> Just $ GPrepNP p (GDetCN d (GAdvCN (GUseN e) someAdv))
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootAdv_ adv:_ -> Just adv
               _               -> Nothing

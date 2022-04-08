@@ -43,7 +43,6 @@ import UDPipe (loadModel, runPipeline, Model)
 data NLGEnv = NLGEnv 
   { udEnv :: UDEnv 
   , udpipeModel :: Model
-  , gfMorpho :: PGF.Morpho
   }
 
 showExpr :: Expr -> String
@@ -58,11 +57,11 @@ myNLGEnv = do
   putStrLn "Loading UDPipe model..."
   udpipeModel <- either error id <$> loadModel modelFilePath
   putStrLn "Loaded UDPipe model"
-  let
-    parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
-    lang = actLanguage udEnv
-    gfMorpho = buildMorpho parsingGrammar lang
-  return $ NLGEnv {udEnv, gfMorpho, udpipeModel}
+  -- let
+  --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
+  --   lang = actLanguage udEnv
+  --   gfMorpho = buildMorpho parsingGrammar lang
+  return $ NLGEnv {udEnv, udpipeModel}
 
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
@@ -458,7 +457,7 @@ parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
               , let expr = mkApp cid []
               , findType parsingGrammar expr `elem` lexicalCats
             ]
-    morpho = gfMorpho env
+    morpho = morphology $ udEnv env
     parsingGrammar = pgfGrammar $ udEnv env -- use the parsing grammar, not extension grammar
 
 findType :: PGF -> PGF.Expr -> String

@@ -121,3 +121,7 @@ LIN: the provision of this code applicable to the aggregate building shall be ap
 root_acl (rootAdv_ (PrepNP at_Prep (DetCN theSg_Det (UseN time_N)))) (aclUDS_ (root_nsubj (rootV_ (ComplV notify_V (DetCN theSg_Det (ConjCN or_Conj (BaseCN (UseN commission_N) (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))))) (nsubj_ (UsePron it_Pron))))
 
 LIN: it is at the time it notifies the commission or affected individual
+
+root_expl_cop_csubj (rootA_ (PositA critical_A)) (expl_ it_Pron) be_cop (csubjMark_ to_mark (root_advcl (rootV_ (AdvVP (ComplV do_V (DetCN aSg_Det (AdjCN (PositA preliminary_A) (UseN assessment_N)))) (PrepNP upon_Prep (MassNP (AdvCN (UseN discovery_N) (PrepNP of_Prep (DetCN aSg_Det (UseN (CompoundN data_N breach_N))))))))) (advclMarkUDS_ to_mark (root_advcl (rootV_ (UseV see_V)) (advclMarkUDS_ (mark_ if_Subj) (root_nsubj (rootV_ (ComplV warrant_V (DetCN aSg_Det (UseN notification_N)))) (nsubj_ (UsePron it_Pron))))))))
+
+LIN: it is critical to do a preliminary assessment upon discovery of a data breach to see if it warrants a notification

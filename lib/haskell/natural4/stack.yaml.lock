@@ -58,11 +58,11 @@ packages:
     git: https://github.com/anka-213/udpipe-hs.git
     pantry-tree:
       size: 46505
-      sha256: 1926bfa8ecd11edd19dec7314b29558961aa3d04a920200814bef5c8ef587d6d
-    commit: 627581880aaa273e002fda9ffe78a482385d80ce
+      sha256: 113a9b2276e12a623dd8c5f58f2feb7d6383f1c5a3ce3ff5abbfc2dfe5bd802c
+    commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
   original:
     git: https://github.com/anka-213/udpipe-hs.git
-    commit: 627581880aaa273e002fda9ffe78a482385d80ce
+    commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 - completed:
     size: 3490407
     url: https://github.com/mengwong/gf-core/archive/38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86.tar.gz

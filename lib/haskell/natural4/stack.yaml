@@ -61,7 +61,7 @@ extra-deps:
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
 - git: https://github.com/anka-213/udpipe-hs.git
-  commit: 627581880aaa273e002fda9ffe78a482385d80ce
+  commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 
 - github: mengwong/gf-core
   commit: 38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86

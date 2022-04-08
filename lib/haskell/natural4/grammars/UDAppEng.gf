@@ -68,12 +68,15 @@ lin
       } ;
 
     -- root_nsubj_* structure in a subordinate clause
-    -- We assume this doesn't appear in top level, so ignore mark
-    root_mark_nsubj rt _mark sub = root_nsubj rt sub ;
+    root_mark_nsubj rt mark sub = addMark mark (root_nsubj rt sub) ;
 
     -- : root -> mark -> nsubj -> aux -> aux -> UDS ; --that a data breach may have occurred
-		root_mark_nsubj_aux_aux rt _mark sub may have = root_nsubj_aux_aux rt sub may have ;
+		root_mark_nsubj_aux_aux rt mark sub may have = addMark mark (root_nsubj_aux_aux rt sub may have) ;
 
+    -- : root -> mark -> nsubj -> xcomp -> UDS ;
+	  root_mark_nsubj_xcomp goes if device missing =
+      let device_goes_missing : UDS = root_nsubj_xcomp goes device missing ;
+       in addMark if device_goes_missing ;
 
 -----------------------------------------------------------------------------
 -- Variations on root_obl_*
@@ -183,6 +186,20 @@ lin
       pred = applyAux should (mkVP notified.vp inAccWithSec10) -- TODO: has PassVP already been applied?
     } ;
 
+  -- : root -> nsubj -> ccomp -> UDS ;
+  root_nsubj_ccomp rt ns cc =
+    let rootCcomp : UDS = root_ccomp rt cc ;
+     in rootCcomp ** {subj = ns} ;
+
+  root_nsubj_xcomp rt ns xc =
+    let rootXcomp : UDS = root_xcomp rt xc ;
+     in rootXcomp ** {subj = ns} ;
+
+	-- : root -> xcomp ->  UDS ;	-- render unlikely ; go missing
+	root_xcomp render unlikely =
+	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
+	   in onlyPred render_unlikely ;
+
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
@@ -268,6 +285,20 @@ lin
       let dummyNP : NP = mkNP emptyNP rs ;
           RSasAdv : Adv = lin Adv (mkUtt dummyNP) ;
        in advRoot rt RSasAdv ;
+
+    -- the lincat of mark is Subj (an RGL cat, short for subjunction—not "subject")
+    -- this is for stuff like "if", "that"… that goes before the subject
+    -- so this is a hack: we add it into the subj field of the LinUDS
+    addMark : Subj -> LinUDS -> LinUDS = \if,breachOccurs ->
+      let if_Predet : Predet = lin Predet if ; -- hack: Predet and Subj have the same lincat in English RG
+          breach_NP : NP = breachOccurs.subj ;
+       in breachOccurs ** {subj = mkNP if_Predet breach_NP} ;
+      {- The subj field is now "if breach", and the pred field is still "occurs".
+         Equivalent to writing
+          { subj = mkNP if_Predet breachOccurs.subj ;
+            pred = breachOccurs.pred } ;
+      -}
+
 
 	onlyPred = overload {
     onlyPred : VP -> UDS = \vp -> mkUDS it_NP (mkRoot vp) ;

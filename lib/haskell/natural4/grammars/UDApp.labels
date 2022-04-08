@@ -369,6 +369,7 @@
 #fun root_mark_nsubj_cop_obl head mark nsubj cop obl
 #fun root_mark_nsubj_obj head mark nsubj obj
 #fun root_mark_nsubj_obl head mark nsubj obl
+#fun root_mark_nsubj_xcomp head mark nsubj xcomp
 #fun root_mark_nummod head mark nummod
 #fun root_nmod head nmod
 #fun root_nmodPoss_advmod head nmod:poss advmod

@@ -49,11 +49,14 @@ data NLGEnv = NLGEnv
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
+modelFilePath :: FilePath
+modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
+
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   putStrLn "Loading UDPipe model..."
-  udpipeModel <- either error id <$> loadModel "english-ewt-ud-2.5-191206.udpipe"
+  udpipeModel <- either error id <$> loadModel modelFilePath
   putStrLn "Loaded UDPipe model"
   let
     parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar

@@ -408,6 +408,7 @@ data Tree :: * -> * where
   GNumNumeral :: GNumeral -> Tree GCard_
   GStrCard :: GString -> Tree GCard_
   LexCard :: String -> Tree GCard_
+  GExistsNP :: GNP -> Tree GCl_
   GGenericCl :: GVP -> Tree GCl_
   GPredSCVP :: GSC -> GVP -> Tree GCl_
   GPredVP :: GNP -> GVP -> Tree GCl_
@@ -973,6 +974,7 @@ instance Eq (Tree a) where
     (GNumNumeral x1,GNumNumeral y1) -> and [ x1 == y1 ]
     (GStrCard x1,GStrCard y1) -> and [ x1 == y1 ]
     (LexCard x,LexCard y) -> x == y
+    (GExistsNP x1,GExistsNP y1) -> and [ x1 == y1 ]
     (GGenericCl x1,GGenericCl y1) -> and [ x1 == y1 ]
     (GPredSCVP x1 x2,GPredSCVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVP x1 x2,GPredVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1677,12 +1679,14 @@ instance Gf GCard where
       _ -> error ("no Card " ++ show t)
 
 instance Gf GCl where
+  gf (GExistsNP x1) = mkApp (mkCId "ExistsNP") [gf x1]
   gf (GGenericCl x1) = mkApp (mkCId "GenericCl") [gf x1]
   gf (GPredSCVP x1 x2) = mkApp (mkCId "PredSCVP") [gf x1, gf x2]
   gf (GPredVP x1 x2) = mkApp (mkCId "PredVP") [gf x1, gf x2]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "ExistsNP" -> GExistsNP (fg x1)
       Just (i,[x1]) | i == mkCId "GenericCl" -> GGenericCl (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredSCVP" -> GPredSCVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVP" -> GPredVP (fg x1) (fg x2)
@@ -3867,6 +3871,7 @@ instance Compos Tree where
     GNumDigits x1 -> r GNumDigits `a` f x1
     GNumNumeral x1 -> r GNumNumeral `a` f x1
     GStrCard x1 -> r GStrCard `a` f x1
+    GExistsNP x1 -> r GExistsNP `a` f x1
     GGenericCl x1 -> r GGenericCl `a` f x1
     GPredSCVP x1 x2 -> r GPredSCVP `a` f x1 `a` f x2
     GPredVP x1 x2 -> r GPredVP `a` f x1 `a` f x2

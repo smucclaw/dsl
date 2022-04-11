@@ -403,6 +403,7 @@ combineExpr pred compl = result
       --   _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       tg -> error ("combineExpr: can't find type " ++ show tg ++ " for the predicate " ++ showExpr predExpr)
 
+
 -- | Takes a UDS, peels off the UD layer, returns a pair ("RGL type", the peeled off Expr)
 getTypeAndValue :: GUDS -> TreeGroups
 getTypeAndValue uds = groupByRGLtype (LexConj "") [uds]
@@ -481,6 +482,8 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
+    print ("qcl" :: [Char])
+    print $ gf $ getGQSFromTrees existingTrees
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -539,6 +542,12 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     (<:) :: (Gf a) => Maybe a -> [Expr] -> [Expr]
     Nothing <: exprs = exprs
     Just ap <: exprs = gf ap : exprs
+
+getGQSFromTrees :: TreeGroups -> GQCl
+getGQSFromTrees whichTG = case whichTG of
+  TG {gfCl = Just clGroup} -> GQuestCl clGroup
+  _ -> GQuestCl dummyCl
+
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups
@@ -678,6 +687,9 @@ dummyAP = GStrAP (GString [])
 
 dummyAdv :: GAdv
 dummyAdv = LexAdv "never_Adv"
+
+dummyCl :: GCl
+dummyCl = GExistsNP dummyNP
 
 orConj, andConj :: GConj
 orConj = LexConj "or_Conj"

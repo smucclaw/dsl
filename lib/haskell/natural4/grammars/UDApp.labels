@@ -60,6 +60,7 @@
 #fun AdvIP head advmod
 #fun FunRP case nsubj head
 #fun ExistS dep dep head
+#fun ExistNP head
 #fun GenRP nummod head
 
 -- numerals

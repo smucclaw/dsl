@@ -568,6 +568,11 @@ getGQSFromTrees whichTG = case whichTG of
 --   | adv `elem` [always_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
 --   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
 --   | otherwise = Gwhy_IAdv
+getGQSFromTrees :: TreeGroups -> GQCl
+getGQSFromTrees whichTG = case whichTG of
+  TG {gfCl = Just clGroup} -> GQuestCl clGroup
+  _ -> GQuestCl dummyCl
+
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups

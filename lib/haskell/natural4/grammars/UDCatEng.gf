@@ -33,6 +33,7 @@ concrete UDCatEng of UDCat = BareRGEng **
 
   linref
     UDS = linUDS ;
+    root = linRoot;
 
 
   param
@@ -206,6 +207,8 @@ concrete UDCatEng of UDCat = BareRGEng **
       vp : VP ;
       c2 : Str
       } ;
+
+    linRoot : Root -> Str = \rt -> (mkUtt rt.vp).s ; 
 
     mkRoot = overload {
        mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap ; adv = lin Adv (mkUtt ap)} ;

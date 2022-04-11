@@ -24,7 +24,6 @@ abstract UDCat = BareRG ** {
         compoundPrt ;
         compoundRedup ;
         compoundSvc ;
-        conj ;
         cop ;
         csubj ;
         csubjPass ;
@@ -87,7 +86,6 @@ abstract UDCat = BareRG ** {
         compoundPrt_ : X -> compoundPrt ;
         compoundRedup_ : X -> compoundRedup ;
         compoundSvc_ : X -> compoundSvc ;
-        conj_ : X -> conj ;
         csubjPass_ : X -> csubjPass ;
         dep_ : X -> dep ;
         detNumgov_ : X -> detNumgov ;
@@ -166,10 +164,6 @@ abstract UDCat = BareRG ** {
         nsubj_ : NP -> nsubj ; -- lexical cat can be NOUN, DET, PRON, …
         obj_   : NP -> obj ;   -- but all become eventually NPs in GF
         iobj_  : NP -> iobj ;
-
-        conjA_ : AP -> conj ;
-        conjN_ : NP -> conj ;
-        conjAdv_ : Adv -> conj ;
 
 		amod_ : AP -> amod ;
 

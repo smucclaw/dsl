@@ -25,7 +25,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	passRelcl_               : root -> RP -> auxPass -> aclRelcl ; -- [whose data]:RP is affected
 	root_nsubj_cop_advmod    : root -> nsubj -> cop -> advmod -> UDS ;
     root_nsubj_cop_nmod      : root -> nsubj -> cop -> nmod -> UDS ;
-    root_nsubj_cop_cc_conj   : root -> nsubj -> cop -> cc -> conj -> UDS ;
     root_nsubj_aux_aclRelcl  : root -> nsubj -> aux -> aclRelcl -> UDS ; -- [nsubj] is [root] that [aux] [aclRelcl]ed (aux for tense etc.)
     root_nsubj_aux_aclRelcl_obl : root -> nsubj -> aux -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [will]:aux disappear in the breach
     root_nsubj_cop_aclRelcl_obl : root -> nsubj -> cop -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [is]:cop affected by the breach
@@ -88,9 +87,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_case_amod_amod : root -> case_ -> amod -> amod -> UDS ;
 	--in other prescribed circumstances. ;
 
-		root_case_amod_conj_conj : root -> case_ -> amod -> conj -> conj -> UDS ;
-	--of temporary care and protection or place of safety or to the care of a fit ;
-
 		root_case_compound : root -> case_ -> compound -> UDS ;
 	--including drug addiction and" ;
 
@@ -99,9 +95,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_case_det_amod : root -> case_ -> det -> amod -> UDS ;
 	--of a significant scale" ;
-
-		root_case_det_compound_conj : root -> case_ -> det -> compound -> conj -> UDS ;
-	--such as an account name or number; ;
 
 		root_case_det_nmod : root -> case_ -> det -> nmod -> UDS ;
 	--to the PDPC about that ;
@@ -121,8 +114,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_cc_aux_cop_det_nmod : root -> cc -> aux -> cop -> det -> nmod -> UDS ;
 	--or had been the subject of an application for an adoption order; ;
 
-		root_cc_conj : root -> cc -> conj -> UDS ;
-	--or payment under ;
 
 		root_cc_cop_xcomp : root -> cc -> cop -> xcomp -> UDS ;
 	--or is likely to result in ;
@@ -160,38 +151,12 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_compound_compound_appos : root -> compound -> compound -> appos -> UDS ;
 	--Personal Data Protection Act — Data Breach Notification Obligation ;
 
-		root_compound_compound_conj : root -> compound -> compound -> conj -> UDS ;
-	--"(d) substance abuse and addiction ;
-
-		root_compound_conj_acl : root -> compound -> conj -> acl -> UDS ;
-	--child abuse or sexual abuse involving or alleged to involve" ;
-
 		root_compound_flat : root -> compound -> flat -> UDS ;
 	--(b) Human Immunodeficiency Virus Infection; ;
-
-		root_conj : root -> conj -> UDS ;
-	--funds or financial guarantees. ;
-
-		root_conj_acl : root -> conj -> acl -> UDS ;
-	--disorder or injury that the" ;
-
-		root_conj_appos : root -> conj -> appos -> UDS ;
-	--"individual or a vulnerable adult mentioned in sub-paragraph (a) ;
-
-		root_conj_case : root -> conj -> case_ -> UDS ;
-	--prevention or alleviation of" ;
-
-		root_conj_nmod : root -> conj -> nmod -> UDS ;
-	--protector or a police officer under the CYPA; ;
-
-		root_conj_parataxis : root -> conj -> parataxis -> UDS ;
-	--protection or place of safety; or ;
 
 		root_cop : root -> cop -> UDS ;
 	--"(c) is committed ;
 
-		root_cop_conj_conj : root -> cop -> conj -> conj -> UDS ;
-	--(e) is or was the subject of an order made by a court under the CYPA; or ;
 
 		root_cop_det_compound_amod : root -> cop -> det -> compound -> amod -> UDS ;
 	--"being a living organ donor ;
@@ -257,15 +222,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_det_compound_compound_nmod_appos : root -> det -> compound -> compound -> nmod -> appos -> UDS ;
 	--the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 ;
 
-		root_det_conj_acl : root -> det -> conj -> acl -> UDS ;
-	--the form and manner specified at www.pdpc.gov.sg ;
-
-		root_det_conj_nmod : root -> det -> conj -> nmod -> UDS ;
-	--the donation and removal of any" ;
-
-		root_det_conj_obj : root -> det -> conj -> obj -> UDS ;
-	--the suicide or attempted suicide of the" ;
-
 		root_det_nmod : root -> det -> nmod -> UDS ;
 	--the set of individuals affected by the NDB ;
 
@@ -326,9 +282,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_mark_nsubj_cop_case_det : root -> mark -> nsubj -> cop -> case_ -> det -> UDS ;
 	--"if the data breach is within an organisation ;
 
-		root_mark_nsubj_cop_det_amod_compound_conj : root -> mark -> nsubj -> cop -> det -> amod -> compound -> conj -> UDS ;
-	--whether the individual is a vulnerable adult experiencing or at risk of ;
-
 		root_mark_nsubj_cop_det_case : root -> mark -> nsubj -> cop -> det -> case_ -> UDS ;
 	--whether the individual is the person against or in" ;
 
@@ -387,9 +340,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nsubjPass_aux_auxPass_obl_advmod : root -> nsubjPass -> aux -> auxPass -> obl -> advmod -> UDS ;
 	--the Commission must be notified of the data breach as soon as practicable once the organisation assesses it to be a notifiable breach ;
 
-		root_nsubjPass_aux_auxPass_obl_conj : root -> nsubjPass -> aux -> auxPass -> obl -> conj -> UDS ;
-	--The notification under subsection (1) must be made in the form and submitted in the manner required by the Commission ;
-
 		root_nsubjPass_aux_auxPass_obl_obl_advcl : root -> nsubjPass -> aux -> auxPass -> obl -> obl -> advcl -> UDS ;
 	--the Commission must be notified of the data breach within 3 days once the organisation assesses it to be a notifiable breach ;
 
@@ -411,17 +361,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nsubj_aux_advmod_obj_advcl : root -> nsubj -> aux -> advmod -> obj -> advcl -> UDS ;
 	--the organisation must not notify the affected individual if a prescribed law enforcement agency so instructs ;
 
-		root_nsubj_aux_conj : root -> nsubj -> aux -> conj -> UDS ;
-	--individual has suffered or is suffering from; ;
-
-		root_nsubj_aux_conj_obl : root -> nsubj -> aux -> conj -> obl -> UDS ;
-	--(d) is attending or had attended a family programme in relation to an ;
-
 		root_nsubj_aux_obj : root -> nsubj -> aux -> obj -> UDS ;
 	--the organisation has taken any action ;
-
-		root_nsubj_aux_obj_conj_conj : root -> nsubj -> aux -> obj -> conj -> conj -> UDS ;
-	--"the organisation must notify the Commission or affected individual ;
 
 		root_nsubj_aux_obj_obl : root -> nsubj -> aux -> obj -> obl -> UDS ;
 	--you are processing personal data on behalf of and for the purposes of a public agency ;
@@ -434,12 +375,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubj_ccomp : root -> nsubj -> ccomp -> UDS ;
 	--your Organisation determined it was an NDB ;
-
-		root_nsubj_conj : root -> nsubj -> conj -> UDS ;
-	--including the amount of the moneys paid or the value of the" ;
-
-		root_nsubj_conj_obl : root -> nsubj -> conj -> obl -> UDS ;
-	--allowance or other remuneration paid or payable to the individual by any ;
 
 		root_nsubj_cop : root -> nsubj -> cop -> UDS ;
 	--observance is mandatory ;
@@ -461,12 +396,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubj_cop_det_compound : root -> nsubj -> cop -> det -> compound -> UDS ;
 	--your Organisation is a Public Agency ;
-
-		root_nsubj_cop_det_compound_conj : root -> nsubj -> cop -> det -> compound -> conj -> UDS ;
-	--individual is the policy owner or under which the individual is a ;
-
-		root_nsubj_cop_det_conj : root -> nsubj -> cop -> det -> conj -> UDS ;
-	--that is a bank or finance company. ;
 
 		root_nsubj_cop_det_nmod : root -> nsubj -> cop -> det -> nmod -> UDS ;
 	--"Data breach is the loss of any storage medium or device on which personal data is stored in circumstances where the unauthorised access ;
@@ -504,9 +433,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nummod_auxPass_cc_aux_auxPass_obl_obl : root -> nummod -> auxPass -> cc -> aux -> auxPass -> obl -> obl -> UDS ;
 	--(c) is or had been taken into care or custody by the Director-General of ;
 
-		root_nummod_conj : root -> nummod -> conj -> UDS ;
-	--(c) schizophrenia or delusional disorder; ;
-
 		root_nummod_cop_cc_aux_cop_det_nmod : root -> nummod -> cop -> cc -> aux -> cop -> det -> nmod -> UDS ;
 	--(a) is or had been the subject of any investigation under the CYPA; ;
 
@@ -518,15 +444,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nummod_det_amod : root -> nummod -> det -> amod -> UDS ;
 	--(c) the benefits payable to any beneficiary under the applicable policy; ;
-
-		root_nummod_det_amod_conj_conj : root -> nummod -> det -> amod -> conj -> conj -> UDS ;
-	--(b) any contraceptive operation or procedure or abortion. ;
-
-		root_nummod_det_conj_nmod : root -> nummod -> det -> conj -> nmod -> UDS ;
-	--(a) the terms and conditions of any accident and health policy or life ;
-
-		root_nummod_det_conj_nmod_cc : root -> nummod -> det -> conj -> nmod -> cc -> UDS ;
-	--(a) the donation or receipt of a human egg or human sperm; or ;
 
 		root_nummod_det_nmod : root -> nummod -> det -> nmod -> UDS ;
 	--(e) the identity of any person whose consent is necessary under that Act ;
@@ -603,18 +520,13 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	fun root_advcl_nsubj_aux_advcl : root -> advcl -> nsubj -> aux -> advcl -> UDS ;
 	fun root_advcl_nsubj_aux_advmod_obj : root -> advcl -> nsubj -> aux -> advmod -> obj -> UDS ;
 	fun root_advcl_nsubj_aux_ccomp : root -> advcl -> nsubj -> aux -> ccomp -> UDS ;
-	fun root_advcl_nsubj_aux_obj_advmod_conj : root -> advcl -> nsubj -> aux -> obj -> advmod -> conj -> UDS ;
 	fun root_advcl_nsubj_aux_obl_obj : root -> advcl -> nsubj -> aux -> obl -> obj -> UDS ;
-	fun root_advcl_nsubj_conj : root -> advcl -> nsubj -> conj -> UDS ;
 	fun root_advcl_nsubj_cop : root -> advcl -> nsubj -> cop -> UDS ;
 	fun root_advcl_nsubj_cop_case_amod_nmod : root -> advcl -> nsubj -> cop -> case_ -> amod -> nmod -> UDS ;
 	fun root_advcl_nsubj_cop_det_amod : root -> advcl -> nsubj -> cop -> det -> amod -> UDS ;
 	fun root_advcl_nsubj_xcomp : root -> advcl -> nsubj -> xcomp -> UDS ;
 	fun root_mark_nsubj_nsubj_xcomp : root -> mark -> nsubj -> nsubj -> xcomp -> UDS ;
-	fun root_nsubj_aux_obj_conj_parataxis : root -> nsubj -> aux -> obj -> conj -> parataxis -> UDS ;
-	fun root_nsubj_cop_advcl_conj : root -> nsubj -> cop -> advcl -> conj -> UDS ;
 	fun root_nsubj_cop_det_aclRelcl : root -> nsubj -> cop -> det -> aclRelcl -> UDS ;
-	fun root_nsubj_cop_det_amod_conj_conj_conj_conj_conj_conj : root -> nsubj -> cop -> det -> amod -> conj -> conj -> conj -> conj -> conj -> conj -> UDS ;
 	fun root_nsubj_cop_obl_parataxis : root -> nsubj -> cop -> obl -> parataxis -> UDS ;
 	fun root_nsubj_obj_advcl : root -> nsubj -> obj -> advcl -> UDS ;
 

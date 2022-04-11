@@ -18,7 +18,6 @@ concrete UDCatEng of UDCat = BareRGEng **
     nmod,
     xcomp = Adv ;
     advmod = LinAdvmod ;
---   conj = {s : Number => Str} ;
     cc = Conj ;
     aclRelcl = RS ; -- which is a breach
     acl,
@@ -98,9 +97,6 @@ concrete UDCatEng of UDCat = BareRGEng **
     rootAdA_ ada = rootAdv_ (mkAdv ada (P.mkAdv "")) ;
     nmod_ = PrepNP ;
 
-    conjA_ ap = mkUtt ap ; -- : AP -> conj ;
-    conjN_ np = mkUtt np ; -- : NP -> conj ;
-    conjAdv_ a = mkUtt a ; -- : Adv -> conj ;
     ccomp_ uds = lin S {s = linUDS uds} ;
     xcompAdv_ adv = adv ;
     xcompA_ ap = lin Adv (mkUtt ap) ;
@@ -208,7 +204,7 @@ concrete UDCatEng of UDCat = BareRGEng **
       c2 : Str
       } ;
 
-    linRoot : Root -> Str = \rt -> (mkUtt rt.vp).s ; 
+    linRoot : Root -> Str = \rt -> (mkUtt rt.vp).s ;
 
     mkRoot = overload {
        mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap ; adv = lin Adv (mkUtt ap)} ;

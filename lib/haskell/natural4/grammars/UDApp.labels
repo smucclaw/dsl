@@ -155,6 +155,7 @@
 #fun ComparAdvAdjS advmod head ccomp -- TODO check
 #fun UseRCl dep dep head
 #fun UseCl dep dep head
+#fun UseQCl dep dep head
 #fun ComplV head obj
 #fun ComplA2 head obl -- not used for now
 #fun AdvAP head obl

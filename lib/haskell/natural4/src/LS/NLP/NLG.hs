@@ -543,10 +543,12 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     Nothing <: exprs = exprs
     Just ap <: exprs = gf ap : exprs
 
-getGQSFromTrees :: TreeGroups -> GQCl
+-- UseQCl   : Temp -> Pol -> QCl -> QS ;
+
+getGQSFromTrees :: TreeGroups -> GQS
 getGQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just clGroup} -> GQuestCl clGroup
-  _ -> GQuestCl dummyCl
+  TG {gfCl = Just clGroup} -> useQCl $ GQuestCl clGroup
+  _ -> useQCl $ GQuestCl dummyCl
 
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
@@ -704,7 +706,9 @@ useRCl = GUseRCl (GTTAnt GTPres GASimul) GPPos
 useCl :: GCl -> GS
 useCl = GUseCl (GTTAnt GTPres GASimul) GPPos
 
-
+--     UseQCl   : Temp -> Pol -> QCl -> QS ;
+useQCl :: GQCl -> GQS
+useQCl = GUseQCl (GTTAnt GTPres GASimul) GPPos
 
 -- Specialised version of npFromUDS: return Nothing if the NP is MassNP
 nonMassNpFromUDS :: GUDS -> Maybe GNP

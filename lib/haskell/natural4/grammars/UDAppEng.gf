@@ -52,6 +52,11 @@ lin
     root_nsubj_cop_obl,
     root_nsubj_cop_nmod = \rt,sub,cop,adv -> mkUDS sub (advRoot rt adv) ;
 
+    root_nsubj_advmod rt sub advm = case advm.isNot of {
+      True => mkUDS sub (applyNeg rt) ;
+      False => root_nsubj_obl rt sub advm.adv
+      } ;
+
     root_nsubj_obl rt sub adv = mkUDS sub (advRoot rt adv) ;
 
     -- : root -> nsubj -> aux -> UDS ; --a data breach may occur

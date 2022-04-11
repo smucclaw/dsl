@@ -178,7 +178,7 @@ concrete BareRGEng of BareRG =
     ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
     PredVPS np vp = mkS (mkCl np vp) ;
     SlashCl cl = cl ** {c2=[]} ;
-    PrepVP vp prep = VPSlashPrep (slashV vp) prep ;
+    PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
 
   oper
     slashV : VP -> VPSlash = \vp -> vp ** {

@@ -848,7 +848,6 @@ clFromUDS x = case getNsubj x of
     Groot_nsubjPass_auxPass_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
     Groot_nsubjPass_aux_auxPass (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
     Groot_nsubjPass_aux_auxPass_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_conj (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
     Groot_nsubjPass_aux_auxPass_obl_obl_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
     Groot_nsubjPass_aux_auxPass_obl_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
     _ -> case verbFromUDS x of -- TODO: fill in other cases

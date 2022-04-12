@@ -1,1 +1,1 @@
---test=":main --rerun --rerun-all-on-success" --warn
+--test=":main --rerun-all-on-success" --warn

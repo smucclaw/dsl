@@ -258,6 +258,7 @@
 #fun root_advmod_advcl head advmod advcl
 #fun root_advmod_advmod_obl head advmod advmod obl
 #fun root_advmod_amod head advmod amod
+#fun root_advmod_nsubj_aux_advmod_obj head advmod nsubj aux advmod obj
 #fun root_advmod_nsubj_cop_obl head advmod nsubj cop obl
 #fun root_amod head amod
 #fun root_amod_nmod head amod nmod
@@ -343,6 +344,7 @@
 #fun root_nmod_acl head nmod acl
 #fun root_nsubj head nsubj
 #fun root_nsubjPass_auxPass head nsubj:pass aux:pass
+#fun root_nsubjPass_auxPass_advmod head nsubj:pass aux:pass advmod
 #fun root_nsubjPass_auxPass_advmod_advcl head nsubj:pass aux:pass advmod advcl
 #fun root_nsubjPass_auxPass_advmod_xcomp head nsubj:pass aux:pass advmod xcomp
 #fun root_nsubjPass_auxPass_xcomp head nsubj:pass aux:pass xcomp

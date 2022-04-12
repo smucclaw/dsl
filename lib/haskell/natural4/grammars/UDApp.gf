@@ -55,6 +55,10 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_advmod_amod : root -> advmod -> amod -> UDS ;
 	--not legal advice." ;
+
+		root_advmod_nsubj_aux_advmod_obj : root -> advmod -> nsubj -> aux -> advmod -> obj -> UDS ;
+	-- when in doubt, one should actively seek clarification
+
 		root_advmod_nsubj_cop : root -> advmod -> nsubj -> cop -> UDS ;
 		root_advmod_nsubj_cop_obl : root -> advmod -> nsubj -> cop -> obl -> UDS ;
 	--"[once]:advmod an [organisation]:nsubj is [aware]:root of a data [breach]:obl ;
@@ -324,6 +328,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubjPass_auxPass : root -> nsubjPass -> auxPass -> UDS ;
 	--Bob is estranged ;
+
+		root_nsubjPass_auxPass_advmod : root -> nsubjPass -> auxPass -> advmod -> UDS;
+	-- the updates are reviewed regularly
 
 		root_nsubjPass_auxPass_advmod_advcl : root -> nsubjPass -> auxPass -> advmod -> advcl -> UDS ;
 	--Notification is not required if the data breach is within an organisation ;

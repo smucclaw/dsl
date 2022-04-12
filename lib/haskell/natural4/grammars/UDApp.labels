@@ -61,6 +61,7 @@
 #fun FunRP case nsubj head
 #fun ExistS dep dep head
 #fun ExistNP head
+#fun ExistNPQS dep dep head
 #fun GenRP nummod head
 
 -- numerals

@@ -2,11 +2,12 @@ concrete BareRGEng of BareRG =
 
   ExtendEng [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistsNP,
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     ApposNP, AdjAsNP, GerundNP, GerundCN
+    ,ICompAP
   ],
 
   SentenceEng,

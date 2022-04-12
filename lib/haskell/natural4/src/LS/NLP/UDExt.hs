@@ -408,6 +408,7 @@ data Tree :: * -> * where
   GNumNumeral :: GNumeral -> Tree GCard_
   GStrCard :: GString -> Tree GCard_
   LexCard :: String -> Tree GCard_
+  GExistCN :: GCN -> Tree GCl_
   GExistsNP :: GNP -> Tree GCl_
   GGenericCl :: GVP -> Tree GCl_
   GPredSCVP :: GSC -> GVP -> Tree GCl_
@@ -460,6 +461,7 @@ data Tree :: * -> * where
   Gwhy_IAdv :: Tree GIAdv_
   GCompIAdv :: GIAdv -> Tree GIComp_
   GCompIP :: GIP -> Tree GIComp_
+  GICompAP :: GAP -> Tree GIComp_
   GIdetQuant :: GIQuant -> GNum -> Tree GIDet_
   GAdvIP :: GIP -> GAdv -> Tree GIP_
   GIdetCN :: GIDet -> GCN -> Tree GIP_
@@ -543,6 +545,7 @@ data Tree :: * -> * where
   GQuestQVP :: GIP -> GQVP -> Tree GQCl_
   GQuestSlash :: GIP -> GClSlash -> Tree GQCl_
   GQuestVP :: GIP -> GVP -> Tree GQCl_
+  GExistNPQS :: GTemp -> GPol -> GNP -> Tree GQS_
   GUseQCl :: GTemp -> GPol -> GQCl -> Tree GQS_
   GAddAdvQVP :: GQVP -> GIAdv -> Tree GQVP_
   GAdvQVP :: GVP -> GIAdv -> Tree GQVP_
@@ -974,6 +977,7 @@ instance Eq (Tree a) where
     (GNumNumeral x1,GNumNumeral y1) -> and [ x1 == y1 ]
     (GStrCard x1,GStrCard y1) -> and [ x1 == y1 ]
     (LexCard x,LexCard y) -> x == y
+    (GExistCN x1,GExistCN y1) -> and [ x1 == y1 ]
     (GExistsNP x1,GExistsNP y1) -> and [ x1 == y1 ]
     (GGenericCl x1,GGenericCl y1) -> and [ x1 == y1 ]
     (GPredSCVP x1 x2,GPredSCVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1026,6 +1030,7 @@ instance Eq (Tree a) where
     (Gwhy_IAdv,Gwhy_IAdv) -> and [ ]
     (GCompIAdv x1,GCompIAdv y1) -> and [ x1 == y1 ]
     (GCompIP x1,GCompIP y1) -> and [ x1 == y1 ]
+    (GICompAP x1,GICompAP y1) -> and [ x1 == y1 ]
     (GIdetQuant x1 x2,GIdetQuant y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvIP x1 x2,GAdvIP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GIdetCN x1 x2,GIdetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1109,6 +1114,7 @@ instance Eq (Tree a) where
     (GQuestQVP x1 x2,GQuestQVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestSlash x1 x2,GQuestSlash y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestVP x1 x2,GQuestVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GExistNPQS x1 x2 x3,GExistNPQS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GUseQCl x1 x2 x3,GUseQCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GAddAdvQVP x1 x2,GAddAdvQVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvQVP x1 x2,GAdvQVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1679,6 +1685,7 @@ instance Gf GCard where
       _ -> error ("no Card " ++ show t)
 
 instance Gf GCl where
+  gf (GExistCN x1) = mkApp (mkCId "ExistCN") [gf x1]
   gf (GExistsNP x1) = mkApp (mkCId "ExistsNP") [gf x1]
   gf (GGenericCl x1) = mkApp (mkCId "GenericCl") [gf x1]
   gf (GPredSCVP x1 x2) = mkApp (mkCId "PredSCVP") [gf x1, gf x2]
@@ -1686,6 +1693,7 @@ instance Gf GCl where
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "ExistCN" -> GExistCN (fg x1)
       Just (i,[x1]) | i == mkCId "ExistsNP" -> GExistsNP (fg x1)
       Just (i,[x1]) | i == mkCId "GenericCl" -> GGenericCl (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredSCVP" -> GPredSCVP (fg x1) (fg x2)
@@ -1867,11 +1875,13 @@ instance Gf GIAdv where
 instance Gf GIComp where
   gf (GCompIAdv x1) = mkApp (mkCId "CompIAdv") [gf x1]
   gf (GCompIP x1) = mkApp (mkCId "CompIP") [gf x1]
+  gf (GICompAP x1) = mkApp (mkCId "ICompAP") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "CompIAdv" -> GCompIAdv (fg x1)
       Just (i,[x1]) | i == mkCId "CompIP" -> GCompIP (fg x1)
+      Just (i,[x1]) | i == mkCId "ICompAP" -> GICompAP (fg x1)
 
 
       _ -> error ("no IComp " ++ show t)
@@ -2317,10 +2327,12 @@ instance Gf GQCl where
       _ -> error ("no QCl " ++ show t)
 
 instance Gf GQS where
+  gf (GExistNPQS x1 x2 x3) = mkApp (mkCId "ExistNPQS") [gf x1, gf x2, gf x3]
   gf (GUseQCl x1 x2 x3) = mkApp (mkCId "UseQCl") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2,x3]) | i == mkCId "ExistNPQS" -> GExistNPQS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "UseQCl" -> GUseQCl (fg x1) (fg x2) (fg x3)
 
 
@@ -3871,6 +3883,7 @@ instance Compos Tree where
     GNumDigits x1 -> r GNumDigits `a` f x1
     GNumNumeral x1 -> r GNumNumeral `a` f x1
     GStrCard x1 -> r GStrCard `a` f x1
+    GExistCN x1 -> r GExistCN `a` f x1
     GExistsNP x1 -> r GExistsNP `a` f x1
     GGenericCl x1 -> r GGenericCl `a` f x1
     GPredSCVP x1 x2 -> r GPredSCVP `a` f x1 `a` f x2
@@ -3897,6 +3910,7 @@ instance Compos Tree where
     GPrepIP x1 x2 -> r GPrepIP `a` f x1 `a` f x2
     GCompIAdv x1 -> r GCompIAdv `a` f x1
     GCompIP x1 -> r GCompIP `a` f x1
+    GICompAP x1 -> r GICompAP `a` f x1
     GIdetQuant x1 x2 -> r GIdetQuant `a` f x1 `a` f x2
     GAdvIP x1 x2 -> r GAdvIP `a` f x1 `a` f x2
     GIdetCN x1 x2 -> r GIdetCN `a` f x1 `a` f x2
@@ -3946,6 +3960,7 @@ instance Compos Tree where
     GQuestQVP x1 x2 -> r GQuestQVP `a` f x1 `a` f x2
     GQuestSlash x1 x2 -> r GQuestSlash `a` f x1 `a` f x2
     GQuestVP x1 x2 -> r GQuestVP `a` f x1 `a` f x2
+    GExistNPQS x1 x2 x3 -> r GExistNPQS `a` f x1 `a` f x2 `a` f x3
     GUseQCl x1 x2 x3 -> r GUseQCl `a` f x1 `a` f x2 `a` f x3
     GAddAdvQVP x1 x2 -> r GAddAdvQVP `a` f x1 `a` f x2
     GAdvQVP x1 x2 -> r GAdvQVP `a` f x1 `a` f x2

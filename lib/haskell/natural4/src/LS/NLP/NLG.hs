@@ -543,13 +543,20 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     Nothing <: exprs = exprs
     Just ap <: exprs = gf ap : exprs
 
--- UseQCl   : Temp -> Pol -> QCl -> QS ;
-
+--     ExistNPQS  : Temp -> Pol -> NP -> QS ;   -- was there a party
+-- ICompAP : AP -> IComp ;
+-- SQuestVPS  : NP   -> VPS -> QS ;
+-- get GQS from Trees
+--     ExistIPQS  : Temp -> Pol -> IP -> QS ;   -- what was there
+--     QuestVP     : IP -> VP -> QCl ;
 getGQSFromTrees :: TreeGroups -> GQS
 getGQSFromTrees whichTG = case whichTG of
   TG {gfCl = Just clGroup} -> useQCl $ GQuestCl clGroup
+  TG {gfNP = Just npGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos npGroup
+  TG {gfCN = Just cnGroup} -> useQCl $ GQuestCl $ GExistCN cnGroup
+  TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
+  -- TG {gfAP = Just apGroup} -> $ GIcompAP apGroup
   _ -> useQCl $ GQuestCl dummyCl
-
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups

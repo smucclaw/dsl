@@ -5,12 +5,13 @@ abstract BareRG =
 
   Extend [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistsNP,
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN -- : N -> N -> N    -- control system
     -- these only for UDExt; not in labels file
     ,ApposNP, AdjAsNP, GerundNP, GerundCN
+    ,ICompAP
   ],
 
   Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing

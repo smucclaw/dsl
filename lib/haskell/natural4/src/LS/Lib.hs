@@ -442,10 +442,10 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
 pScenarioRule = debugName "pScenarioRule" $ do
-  (rlabel,givens,expects) <- permute $ (,,)
-    <$$> pToken ScenarioTok *> someDeep pOtherVal
+  rlabel <- pToken ScenarioTok *> someDeep pOtherVal
+  (expects,givens) <- permute $ (,)
+    <$$> some (manyIndentation pExpect)
     <|?> ([], pretendEmpty $ pToken Given >> someIndentation pGivens)
-    <||> some (manyIndentation pExpect)
   return $ Scenario
     { scgiven = givens
     , expect  = expects

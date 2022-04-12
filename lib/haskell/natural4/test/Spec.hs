@@ -579,54 +579,54 @@ main = do
 
   -- defNameAlias should absorb the WHO limb
 
-    describe "megaparsing scenarios" $ do
-      filetest "scenario-1" "should handle labeled given/expect"
-        (parseR pRules)
-          [ Scenario
-            { scgiven =
-                [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
-                , RPConstraint
-                  [ "earnings"
-                  , "amount"
-                  ] RPis [ "25000" ]
-                , RPConstraint
-                  [ "earnings"
-                  , "steadiness"
-                  ] RPis [ "steady" ]
-                ]
-            , expect =
-              [ HC2
-                { hHead = RPConstraint [ "investment" ] RPis [ "savings" ]
-                , hBody = Just
-                              ( Leaf
-                                ( RPConstraint [ "dependents" ] RPis [ "5" ] )
-                              )
-                }
-              , HC2
-                { hHead = RPConstraint [ "investment" ] RPis [ "combination" ]
-                , hBody = Just
-                              ( Leaf
-                                ( RPConstraint [ "dependents" ] RPis [ "3" ] )
-                              )
-                }
-              , HC2
-                { hHead = RPConstraint [ "investment" ] RPis [ "stocks" ]
-                , hBody = Just
-                              ( Leaf
-                                ( RPConstraint [ "dependents" ] RPis [ "0" ] )
-                            )
-                }
-              ]
-            , rlabel = Just
-                       ( "§"
-                       , 1
-                       , "Scenario 1"
-                       )
-            , lsource = Nothing
-            , srcref = srcref defaultReg
-            , defaults = mempty, symtab = mempty
-            }
-          ]
+    -- describe "megaparsing scenarios" $ do
+    --   filetest "scenario-1" "should handle labeled given/expect"
+    --     (parseR pRules)
+    --       [ Scenario
+    --         { scgiven =
+    --             [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
+    --             , RPConstraint
+    --               [ "earnings"
+    --               , "amount"
+    --               ] RPis [ "25000" ]
+    --             , RPConstraint
+    --               [ "earnings"
+    --               , "steadiness"
+    --               ] RPis [ "steady" ]
+    --             ]
+    --         , expect =
+    --           [ HC2
+    --             { hHead = RPConstraint [ "investment" ] RPis [ "savings" ]
+    --             , hBody = Just
+    --                           ( Leaf
+    --                             ( RPConstraint [ "dependents" ] RPis [ "5" ] )
+    --                           )
+    --             }
+    --           , HC2
+    --             { hHead = RPConstraint [ "investment" ] RPis [ "combination" ]
+    --             , hBody = Just
+    --                           ( Leaf
+    --                             ( RPConstraint [ "dependents" ] RPis [ "3" ] )
+    --                           )
+    --             }
+    --           , HC2
+    --             { hHead = RPConstraint [ "investment" ] RPis [ "stocks" ]
+    --             , hBody = Just
+    --                           ( Leaf
+    --                             ( RPConstraint [ "dependents" ] RPis [ "0" ] )
+    --                         )
+    --             }
+    --           ]
+    --         , rlabel = Just
+    --                    ( "§"
+    --                    , 1
+    --                    , "Scenario 1"
+    --                    )
+    --         , lsource = Nothing
+    --         , srcref = srcref defaultReg
+    --         , defaults = mempty, symtab = mempty
+    --         }
+    --       ]
 
     -- describe "megaparsing DECIDE layouts" $ do
     --   it "should handle multiline" $ do

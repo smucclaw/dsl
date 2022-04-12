@@ -2504,6 +2504,32 @@ what if we say
 |       |                                     | sips  |
 |       | OR                                  | chugs |
 
+*** do rulelabels even work? standalone
+:PROPERTIES:
+:TABLE_EXPORT_FILE: prulelabel-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| § | My First Rule |
+
+*** do rulelabels even work? followed by some token
+:PROPERTIES:
+:TABLE_EXPORT_FILE: prulelabel-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §     | My First Rule |
+| GIVEN |               |
+
+*** do rulelabels even work? followed by some token indented
+:PROPERTIES:
+:TABLE_EXPORT_FILE: prulelabel-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| § | My First Rule |
+|   | GIVEN         |
+
 *** Scenarios
 
 **** mathematics
@@ -2526,11 +2552,11 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| § | SCENARIO |   | Misplaced storage drive                                                                                             |          |                                         |
-|   | GIVEN    |   | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                         |
-|   | GIVEN    |   | loss of storage medium on which personal data is stored in circumstances where the unauthorised                     | disposal | of the personal data is likely to occur |
-|   | GIVEN    |   | the data breach occurred only within an organisation                                                                |          |                                         |
-|   | EXPECT   |   | IT IS                                                                                                               | NOT      | A Notifiable Data Breach                |
+| § | SCENARIO | Misplaced storage drive                                                                                             |          |                                         |
+|   | GIVEN    | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                         |
+|   | GIVEN    | loss of storage medium on which personal data is stored in circumstances where the unauthorised                     | disposal | of the personal data is likely to occur |
+|   | GIVEN    | the data breach occurred only within an organisation                                                                |          |                                         |
+|   | EXPECT   | IT IS                                                                                                               | NOT      | A Notifiable Data Breach                |
 
 
 

@@ -273,6 +273,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_mark_nsubj : root -> mark -> nsubj -> UDS ;
 	--whether or not the court has" ;
+	
+		root_mark_nsubjPass_auxPass: root -> mark -> nsubjPass -> auxPass -> UDS ;
+	-- that the device that contains personal data is lost
 
 		root_mark_nsubjPass_auxPass_obl : root -> mark -> nsubjPass -> auxPass -> obl -> UDS ;
 	--"when an organisation is notified of a data breach ;

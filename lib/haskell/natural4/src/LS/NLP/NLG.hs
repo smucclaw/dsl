@@ -10,6 +10,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       Rule(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
+      Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
 import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
@@ -202,7 +203,7 @@ parseFields env rl = case rl of
   Scenario {scgiven, expect} -> do
     let fun = mkCId "RPis" -- TODO fix this properly
     scgivenA <- mapM (parseRP env fun) scgiven
-    expectA <- mapM (parseHornClause env fun) expect
+    expectA <- mapM (parseExpect env fun) expect
     return ScenarioA {scgivenA, expectA}
   DefNameAlias { name, detail, nlhint } -> do
     nameA <- parseName env name
@@ -220,6 +221,10 @@ parseFields env rl = case rl of
       db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
       let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
       return $ gf hornclause
+
+    parseExpect :: UDEnv -> CId -> Expect -> IO Expr
+    parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
+    parseExpect  env  f (ExpRP rp) = parseRP env f rp
 
     -- TODO: switch to GUDS or GUDFragment? How can we know which type they return?
     -- Something a bit more typed than Expr would feel safer

@@ -630,6 +630,7 @@ toToken "§§§§"      = pure $ RuleMarker   4  "§"
 toToken "§§§§§"     = pure $ RuleMarker   5  "§"
 toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
 
+toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
 toToken "=<"        = pure TokLTE

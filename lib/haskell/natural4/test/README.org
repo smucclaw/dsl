@@ -2552,11 +2552,11 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| § | SCENARIO | Misplaced storage drive                                                                                             |          |                                         |
-|   | GIVEN    | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                         |
-|   | GIVEN    | loss of storage medium on which personal data is stored in circumstances where the unauthorised                     | disposal | of the personal data is likely to occur |
-|   | GIVEN    | the data breach occurred only within an organisation                                                                |          |                                         |
-|   | EXPECT   | IT IS                                                                                                               | NOT      | A Notifiable Data Breach                |
+| SCENARIO | Misplaced storage drive                                                                                             |          |                                         |   |
+| GIVEN    | the data breach is in relation to any prescribed personal data or class of personal data relating to the individual |          |                                         |   |
+| GIVEN    | loss of storage medium on which personal data is stored in circumstances where the unauthorised                     | disposal | of the personal data is likely to occur |   |
+| GIVEN    | the data breach occurred only within an organisation                                                                |          |                                         |   |
+| EXPECT   | IT IS                                                                                                               | NOT      | A Notifiable Data Breach                |   |
 
 
 

@@ -49,7 +49,7 @@ data MyToken = Every | Party | TokAll
              | Typically -- to provide default values
              | Empty | EOL
              | RuleMarker Int Text.Text
-             | Expect
+             | Expect | ScenarioTok
              | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
              | Otherwise
              | SOF | EOF
@@ -161,6 +161,7 @@ showMyToken :: MyToken -> String
 showMyToken = renderToken
 
 renderToken :: MyToken -> String
+renderToken ScenarioTok = "SCENARIO"
 renderToken TokAll = "ALL"
 renderToken MPNot = "NOT"
 renderToken TokLT = "<"

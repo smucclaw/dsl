@@ -114,11 +114,11 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 
-pSrcRef :: SLParser (Maybe RuleLabel, Maybe SrcRef)
+pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
 pSrcRef = do
   rlabel' <- optional pRuleLabel
-  leftY  <- liftSL $ lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- liftSL $ lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
+  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
+  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
 
@@ -146,11 +146,12 @@ pNumAsText = debugName "pNumAsText" . label "number" $ do
 myEOL :: Parser ()
 myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
-pRuleLabel :: SLParser RuleLabel
-pRuleLabel = debugName "pRuleLabel" . slPretendEmpty . someUndeepersOrEOL $ do
+pRuleLabel :: Parser RuleLabel
+pRuleLabel = debugName "pRuleLabel" . pretendEmpty . someUndeepersOrEOL $ do
   (RuleMarker i sym, actualLabel) <- (,)
                                      $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
-                                     |>| pOtherVal
+                                    --  |>| pOtherVal
+                                     |*| (Text.unwords <$> manyLiftSL pOtherVal)
                                      -- <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
 
   return (sym, i, actualLabel)
@@ -172,11 +173,15 @@ pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStre
 
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
-someUndeepersOrEOL :: SLParser a -> SLParser a
-someUndeepersOrEOL p = mkSL $ do
+
+someUndeepersOrEOL :: SLParser a -> Parser a
+someUndeepersOrEOL p = do
   (x, n) <- runSL p
   ((), m) <- runSL $ upToNUndeepers n <|> liftSL myEOL
-  return (x, n + m)
+  let remaining = n + m
+  pos <- lookAhead pGetTokenPos
+  replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
+  return x
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
 liftedDBG = mapWhenDebug . liftRawPFun . dbg

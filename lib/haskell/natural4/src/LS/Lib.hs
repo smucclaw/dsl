@@ -395,7 +395,7 @@ pRule = debugName "pRule" $ do
     <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> (pScenarioRule <?> "scenario rule")
     <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
-    <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel |<$ undeepers <?> "standalone rule section heading")
+    <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
   return $ foundRule { srcref = Just srcref }
@@ -405,7 +405,7 @@ pRule = debugName "pRule" $ do
 
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
-  maybeLabel <- finishSL $ optional pRuleLabel -- TODO: Handle the SL
+  maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
     <$$> defineLimb
     <|?> (Nothing, givenLimb)
@@ -482,7 +482,7 @@ pGivens = debugName "pGivens" $ do
 
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
-  maybeLabel <- finishSL $ optional pRuleLabel -- TODO: Handle the SL
+  maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   tentative  <- (try pRegRuleSugary
                   <|> try pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)

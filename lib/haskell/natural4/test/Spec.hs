@@ -1495,13 +1495,13 @@ main = do
 -- let's parse scenario rules!
 
       filetest "prulelabel-1" "standalone rule label"
-        (parseOther (finishSL pRuleLabel) )
+        (parseOther pRuleLabel )
         ( ( "§", 1, "My First Rule" )
         , []
         )
 
       filetest "prulelabel-2" "rule label with just a simple token after"
-        (parseOther (finishSL pRuleLabel <* pToken Given ))
+        (parseOther (pRuleLabel <* pToken Given ))
         ( ( "§", 1, "My First Rule" )
         , []
         )

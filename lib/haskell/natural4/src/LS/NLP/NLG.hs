@@ -222,7 +222,7 @@ parseFields env rl = case rl of
       let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
       return $ gf hornclause
 
-    parseExpect :: UDEnv -> CId -> Expect -> IO Expr
+    parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
     parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
     parseExpect  env  f (ExpRP rp) = parseRP env f rp
 

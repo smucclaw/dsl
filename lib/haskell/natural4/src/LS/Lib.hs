@@ -456,9 +456,23 @@ pScenarioRule = debugName "pScenarioRule" $ do
 pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
-
+  (relPred, _whenpart) <- someIndentation relPredSamelineWhen
   return $ ExpRP relPred
+
+-- | we want to parse two syntaxes:
+-- @
+-- GIVEN   a
+--         b
+--         c
+-- @
+-- and the other syntax is
+-- @
+-- GIVEN   a
+-- GIVEN   b
+-- GIVEN   c
+-- @
+-- the caller uses pToken Given >> someIndentation pGivens, so that handles the first case
+-- I am going to guess the pretendEmpty helps to handle the second case.
 
 pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" $ do

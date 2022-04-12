@@ -158,6 +158,18 @@ pRuleLabel = debugName "pRuleLabel" . slPretendEmpty . someUndeepersOrEOL $ do
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
 
+refillDeepers :: Int -> Parser ()
+refillDeepers n = do
+  -- traceM $ "refillDeepers: " ++ show n
+  replicateM_ n $ pToken GoDeeper
+
+-- | push back a token into the stream.
+pushBackToken :: WithPos MyToken -> Parser ()
+pushBackToken tok = updateParserState (\s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput})
+
+pushTokenStream :: WithPos MyToken -> MyStream -> MyStream
+pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStream} 
+
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
 someUndeepersOrEOL :: SLParser a -> SLParser a

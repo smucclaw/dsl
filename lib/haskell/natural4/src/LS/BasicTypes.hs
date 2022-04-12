@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 module LS.BasicTypes where
 import Data.Proxy
@@ -148,7 +149,7 @@ data WithPos a = WithPos
   , endPos :: SourcePos
   , tokenLength :: Int
   , tokenVal :: a
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Functor)
 
 
 

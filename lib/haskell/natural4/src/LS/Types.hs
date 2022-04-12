@@ -661,6 +661,10 @@ whenDebug act = do
   isDebug <- asks debug
   when isDebug act
 
+pGetTokenPos :: Parser (WithPos ())
+pGetTokenPos = token test Set.empty <?> "token position"
+  where
+    test tok = Just (() <$ tok)
 
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"

@@ -179,8 +179,9 @@ someUndeepersOrEOL p = do
   (x, n) <- runSL p
   ((), m) <- runSL $ upToNUndeepers n <|> liftSL myEOL
   let remaining = n + m
-  pos <- lookAhead pGetTokenPos
-  replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
+  eof <|> do
+    pos <- lookAhead pGetTokenPos
+    replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
   return x
 
 liftedDBG :: Show a => String -> Parser a -> Parser a

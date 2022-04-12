@@ -662,7 +662,7 @@ whenDebug act = do
   when isDebug act
 
 pGetTokenPos :: Parser (WithPos ())
-pGetTokenPos = token test Set.empty <?> "token position"
+pGetTokenPos = token test Set.empty <?> "some token"
   where
     test tok = Just (() <$ tok)
 

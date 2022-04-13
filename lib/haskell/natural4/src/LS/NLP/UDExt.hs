@@ -453,6 +453,7 @@ data Tree :: * -> * where
   Gs_Gen :: Tree GGen_
   GAdvIAdv :: GIAdv -> GAdv -> Tree GIAdv_
   GConjIAdv :: GConj -> GListIAdv -> Tree GIAdv_
+  GIAdvAdv :: GAdv -> Tree GIAdv_
   GPrepIP :: GPrep -> GIP -> Tree GIAdv_
   Ghow_IAdv :: Tree GIAdv_
   Gwhen_IAdv :: Tree GIAdv_
@@ -539,12 +540,14 @@ data Tree :: * -> * where
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
   LexPrep :: String -> Tree GPrep_
   LexPron :: String -> Tree GPron_
+  GPredIAdvVP :: GIAdv -> GVP -> Tree GQCl_
   GQuestCl :: GCl -> Tree GQCl_
   GQuestIAdv :: GIAdv -> GCl -> Tree GQCl_
   GQuestIComp :: GIComp -> GNP -> Tree GQCl_
   GQuestQVP :: GIP -> GQVP -> Tree GQCl_
   GQuestSlash :: GIP -> GClSlash -> Tree GQCl_
   GQuestVP :: GIP -> GVP -> Tree GQCl_
+  GExistIPQS :: GTemp -> GPol -> GIP -> Tree GQS_
   GExistNPQS :: GTemp -> GPol -> GNP -> Tree GQS_
   GUseQCl :: GTemp -> GPol -> GQCl -> Tree GQS_
   GAddAdvQVP :: GQVP -> GIAdv -> Tree GQVP_
@@ -1022,6 +1025,7 @@ instance Eq (Tree a) where
     (Gs_Gen,Gs_Gen) -> and [ ]
     (GAdvIAdv x1 x2,GAdvIAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjIAdv x1 x2,GConjIAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GIAdvAdv x1,GIAdvAdv y1) -> and [ x1 == y1 ]
     (GPrepIP x1 x2,GPrepIP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Ghow_IAdv,Ghow_IAdv) -> and [ ]
     (Gwhen_IAdv,Gwhen_IAdv) -> and [ ]
@@ -1108,12 +1112,14 @@ instance Eq (Tree a) where
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (LexPrep x,LexPrep y) -> x == y
     (LexPron x,LexPron y) -> x == y
+    (GPredIAdvVP x1 x2,GPredIAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestCl x1,GQuestCl y1) -> and [ x1 == y1 ]
     (GQuestIAdv x1 x2,GQuestIAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestIComp x1 x2,GQuestIComp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestQVP x1 x2,GQuestQVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestSlash x1 x2,GQuestSlash y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GQuestVP x1 x2,GQuestVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GExistIPQS x1 x2 x3,GExistIPQS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GExistNPQS x1 x2 x3,GExistNPQS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GUseQCl x1 x2 x3,GUseQCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GAddAdvQVP x1 x2,GAddAdvQVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1851,6 +1857,7 @@ instance Gf GGen where
 instance Gf GIAdv where
   gf (GAdvIAdv x1 x2) = mkApp (mkCId "AdvIAdv") [gf x1, gf x2]
   gf (GConjIAdv x1 x2) = mkApp (mkCId "ConjIAdv") [gf x1, gf x2]
+  gf (GIAdvAdv x1) = mkApp (mkCId "IAdvAdv") [gf x1]
   gf (GPrepIP x1 x2) = mkApp (mkCId "PrepIP") [gf x1, gf x2]
   gf Ghow_IAdv = mkApp (mkCId "how_IAdv") []
   gf Gwhen_IAdv = mkApp (mkCId "when_IAdv") []
@@ -1862,6 +1869,7 @@ instance Gf GIAdv where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdvIAdv" -> GAdvIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjIAdv" -> GConjIAdv (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "IAdvAdv" -> GIAdvAdv (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepIP" -> GPrepIP (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv 
       Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv 
@@ -2307,6 +2315,7 @@ instance Gf GPron where
       _ -> error ("no Pron " ++ show t)
 
 instance Gf GQCl where
+  gf (GPredIAdvVP x1 x2) = mkApp (mkCId "PredIAdvVP") [gf x1, gf x2]
   gf (GQuestCl x1) = mkApp (mkCId "QuestCl") [gf x1]
   gf (GQuestIAdv x1 x2) = mkApp (mkCId "QuestIAdv") [gf x1, gf x2]
   gf (GQuestIComp x1 x2) = mkApp (mkCId "QuestIComp") [gf x1, gf x2]
@@ -2316,6 +2325,7 @@ instance Gf GQCl where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "PredIAdvVP" -> GPredIAdvVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "QuestCl" -> GQuestCl (fg x1)
       Just (i,[x1,x2]) | i == mkCId "QuestIAdv" -> GQuestIAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "QuestIComp" -> GQuestIComp (fg x1) (fg x2)
@@ -2327,11 +2337,13 @@ instance Gf GQCl where
       _ -> error ("no QCl " ++ show t)
 
 instance Gf GQS where
+  gf (GExistIPQS x1 x2 x3) = mkApp (mkCId "ExistIPQS") [gf x1, gf x2, gf x3]
   gf (GExistNPQS x1 x2 x3) = mkApp (mkCId "ExistNPQS") [gf x1, gf x2, gf x3]
   gf (GUseQCl x1 x2 x3) = mkApp (mkCId "UseQCl") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2,x3]) | i == mkCId "ExistIPQS" -> GExistIPQS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "ExistNPQS" -> GExistNPQS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "UseQCl" -> GUseQCl (fg x1) (fg x2) (fg x3)
 
@@ -3907,6 +3919,7 @@ instance Compos Tree where
     GIIDig x1 x2 -> r GIIDig `a` f x1 `a` f x2
     GAdvIAdv x1 x2 -> r GAdvIAdv `a` f x1 `a` f x2
     GConjIAdv x1 x2 -> r GConjIAdv `a` f x1 `a` f x2
+    GIAdvAdv x1 -> r GIAdvAdv `a` f x1
     GPrepIP x1 x2 -> r GPrepIP `a` f x1 `a` f x2
     GCompIAdv x1 -> r GCompIAdv `a` f x1
     GCompIP x1 -> r GCompIP `a` f x1
@@ -3954,12 +3967,14 @@ instance Compos Tree where
     GStrPN x1 -> r GStrPN `a` f x1
     GSymbPN x1 -> r GSymbPN `a` f x1
     GConjPrep x1 x2 -> r GConjPrep `a` f x1 `a` f x2
+    GPredIAdvVP x1 x2 -> r GPredIAdvVP `a` f x1 `a` f x2
     GQuestCl x1 -> r GQuestCl `a` f x1
     GQuestIAdv x1 x2 -> r GQuestIAdv `a` f x1 `a` f x2
     GQuestIComp x1 x2 -> r GQuestIComp `a` f x1 `a` f x2
     GQuestQVP x1 x2 -> r GQuestQVP `a` f x1 `a` f x2
     GQuestSlash x1 x2 -> r GQuestSlash `a` f x1 `a` f x2
     GQuestVP x1 x2 -> r GQuestVP `a` f x1 `a` f x2
+    GExistIPQS x1 x2 x3 -> r GExistIPQS `a` f x1 `a` f x2 `a` f x3
     GExistNPQS x1 x2 x3 -> r GExistNPQS `a` f x1 `a` f x2 `a` f x3
     GUseQCl x1 x2 x3 -> r GUseQCl `a` f x1 `a` f x2 `a` f x3
     GAddAdvQVP x1 x2 -> r GAddAdvQVP `a` f x1 `a` f x2

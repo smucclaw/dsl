@@ -57,6 +57,8 @@
 
 #fun UseV head
 
+#fun UseAdv head
+
 #fun AdvIP head advmod
 #fun FunRP case nsubj head
 #fun ExistS dep dep head

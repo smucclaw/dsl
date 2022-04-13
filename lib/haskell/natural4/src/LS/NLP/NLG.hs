@@ -484,6 +484,8 @@ bsr2gf env bsr = case bsr of
     let existingTrees = groupByRGLtype orConj contentsUDS
     print ("qcl" :: [Char])
     print $ gf $ getGQSFromTrees existingTrees
+    gr <- nlgExtPGF
+    print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -544,19 +546,28 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     Just ap <: exprs = gf ap : exprs
 
 --     ExistNPQS  : Temp -> Pol -> NP -> QS ;   -- was there a party
--- ICompAP : AP -> IComp ;
 -- SQuestVPS  : NP   -> VPS -> QS ;
 -- get GQS from Trees
 --     ExistIPQS  : Temp -> Pol -> IP -> QS ;   -- what was there
---     QuestVP     : IP -> VP -> QCl ;
+--     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
+--     ExistIP   : IP -> QCl ;       -- which houses are there
+
 getGQSFromTrees :: TreeGroups -> GQS
 getGQSFromTrees whichTG = case whichTG of
   TG {gfCl = Just clGroup} -> useQCl $ GQuestCl clGroup
   TG {gfNP = Just npGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos npGroup
   TG {gfCN = Just cnGroup} -> useQCl $ GQuestCl $ GExistCN cnGroup
   TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
-  -- TG {gfAP = Just apGroup} -> $ GIcompAP apGroup
+  TG {gfAP = Just apGroup} -> useQCl $ GQuestIComp (GICompAP apGroup) (GAdjAsNP apGroup)
+  TG {gfDet = Just detGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP detGroup
+  TG {gfAdv = Just advGroup} -> useQCl $ GPredIAdvVP (GIAdvAdv advGroup) (GUseComp $ GCompAdv advGroup)
   _ -> useQCl $ GQuestCl dummyCl
+
+-- checkIAdv :: GAdv -> GIAdv
+-- checkIAdv adv
+--   | adv `elem` [always_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
+--   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
+--   | otherwise = Gwhy_IAdv
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups

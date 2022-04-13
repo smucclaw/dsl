@@ -161,6 +161,10 @@
 -- [person]:CN [complying]:xcomp
 #auxfun PPresCN_xcomp_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head xcomp[Tense=Pres|VerbForm=Part]
 
+-- [is]:cop [gone]:V
+-- something is tagged as ADJ in UD, but parsed as V in GF, so we match a V that has morpho tags associated with ADJ, and then turn it into AP
+#auxfun BePastPartAP_ is gone : cop -> V -> AP = PastPartAP (UseV gone) ; cop head[Degree=Pos]
+
 #disable PresPartAP PastPartAP
 
 -- The construction "whose X" in the RGL is done using Extend.GenRP

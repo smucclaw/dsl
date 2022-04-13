@@ -546,11 +546,12 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     Just ap <: exprs = gf ap : exprs
 
 --     ExistNPQS  : Temp -> Pol -> NP -> QS ;   -- was there a party
--- ICompAP : AP -> IComp ;
 -- SQuestVPS  : NP   -> VPS -> QS ;
 -- get GQS from Trees
 --     ExistIPQS  : Temp -> Pol -> IP -> QS ;   -- what was there
---     QuestVP     : IP -> VP -> QCl ;
+--     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
+--     ExistIP   : IP -> QCl ;       -- which houses are there
+
 getGQSFromTrees :: TreeGroups -> GQS
 getGQSFromTrees whichTG = case whichTG of
   TG {gfCl = Just clGroup} -> useQCl $ GQuestCl clGroup
@@ -574,7 +575,15 @@ getGQSFromTrees whichTG = case whichTG of
 
 
   -- TG {gfAP = Just apGroup} -> $ GIcompAP apGroup
+=======
+>>>>>>> 6e76763 (add ap, det, adv and linearize questions in stack test)
   _ -> useQCl $ GQuestCl dummyCl
+
+-- checkIAdv :: GAdv -> GIAdv
+-- checkIAdv adv
+--   | adv `elem` [always_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
+--   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
+--   | otherwise = Gwhy_IAdv
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups

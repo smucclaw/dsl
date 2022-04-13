@@ -1,17 +1,20 @@
 {-# LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -Wno-all #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module LS.NLP.UDExt where
 
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
+import GHC.Stack (HasCallStack)
+
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
 
 class Gf a where
-  gf :: a -> Expr
-  fg :: Expr -> a
+  gf :: HasCallStack => a -> Expr
+  fg :: HasCallStack => Expr -> a
 
 instance Gf GString where
   gf (GString x) = mkStr x
@@ -960,6 +963,8 @@ data Tree :: * -> * where
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
+
+deriving instance Show (Tree a)
 
 instance Eq (Tree a) where
   i == j = case (i,j) of
@@ -2062,6 +2067,7 @@ instance Gf GListAdv where
 instance Gf GListCN where
   gf (GListCN [x1,x2]) = mkApp (mkCId "BaseCN") [gf x1, gf x2]
   gf (GListCN (x:xs)) = mkApp (mkCId "ConsCN") [gf x, gf (GListCN xs)]
+  gf (GListCN e) = error ("no ListCN: " ++ show e)
   fg t =
     GListCN (fgs t) where
      fgs t = case unApp t of

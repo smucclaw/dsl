@@ -30,6 +30,7 @@
 #fun root_nsubj_aux_obl head nsubj aux obl
 #fun root_advmod_xcomp head advmod xcomp
 #fun root_xcomp head xcomp
+#fun root_mark_nsubj_aux head mark nsubj aux
 #fun root_mark_nsubj_aux_aux head mark nsubj aux aux
 #fun root_nsubj_aux head nsubj aux
 #fun root_nsubj_aux_aclRelcl head nsubj aux acl:relcl

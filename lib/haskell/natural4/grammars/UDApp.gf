@@ -180,6 +180,9 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nsubj_aux_aux : root -> nsubj -> aux -> aux -> UDS ;
 	--a data breach may have occurred ;
 
+		root_mark_nsubj_aux : root -> mark -> nsubj -> aux -> UDS ;
+	--if device has gone
+
 		root_mark_nsubj_aux_aux : root -> mark -> nsubj -> aux -> aux -> UDS ;
 	--that a data breach may have occurred
 
@@ -273,7 +276,7 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_mark_nsubj : root -> mark -> nsubj -> UDS ;
 	--whether or not the court has" ;
-	
+
 		root_mark_nsubjPass_auxPass: root -> mark -> nsubjPass -> auxPass -> UDS ;
 	-- that the device that contains personal data is lost
 

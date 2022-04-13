@@ -235,8 +235,9 @@
 
 #auxfun RelVPGerund_cop_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj cop
 
-#disable ProgrVP GerundNP CompNP
+#disable ProgrVP GerundNP CompNP GerundCN
 -- GerundNP causes loops with CompNP
+-- GerundCN disabled, because otherwise GerundCN (UseV verb_V) takes priority over UseN nouning_N.
 
 -- NB: we don't want this currently, because we add the gerund in UDExt.
 -- If UDExt changes, then uncomment this.

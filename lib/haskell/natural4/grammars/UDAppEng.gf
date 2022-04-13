@@ -182,23 +182,23 @@ lin
     root_nsubjPass_auxPass rt nsubj aux =
       mkUDS nsubj (myVPS (ExtendEng.PassVPSlash (root2vpslash rt))) ;
 
-    -- : root -> nsubjPass -> auxPass -> advmod -> UDS; -- the updates are reviewed regularly
-    -- step 1: attach the adverbial to root OR if the advm is negation, apply applyNeg to the root
-   -- step 2; finad fun without the advmod part
-    root_nsubjPass_auxPass_advmod rt subj aux advm = case advm.isNot of {
-      False =>
-        let root_advm : Root = advRoot rt advm.adv ; -- new root: attached the advmod into the old root
-         in root_nsubjPass_auxPass root_advm subj aux;
+  --   -- : root -> nsubjPass -> auxPass -> advmod -> UDS; -- the updates are reviewed regularly
+  --   -- step 1: attach the adverbial to root OR if the advm is negation, apply applyNeg to the root
+  --  -- step 2; finad fun without the advmod part
+  --   root_nsubjPass_auxPass_advmod rt subj aux advm = case advm.isNot of {
+  --     False =>
+  --       let root_advm : Root = advRoot rt advm.adv ; -- new root: attached the advmod into the old root
+  --        in root_nsubjPass_auxPass root_advm subj aux;
 
-      True => -- advmod is the negation, so the adv field is just a dummy --- the real info is in that it's NEG
-              -- so we need to apply applyNeg at some point.
-              -- incidentally, this pattern also contains an auxiliary, which means that we need also applyAux
-              -- conclusion: this is not a simple case, Inari will refactor applyNeg and applyAux to allow them
-              -- to be used in the same UDS.
-        let root_neg : Root = applyNeg rt ;
-         in root_nsubjPass_auxPass root_neg subj aux
+  --     True => -- advmod is the negation, so the adv field is just a dummy --- the real info is in that it's NEG
+  --             -- so we need to apply applyNeg at some point.
+  --             -- incidentally, this pattern also contains an auxiliary, which means that we need also applyAux
+  --             -- conclusion: this is not a simple case, Inari will refactor applyNeg and applyAux to allow them
+  --             -- to be used in the same UDS.
+  --       let root_neg : Root = applyNeg rt ;
+  --        in root_nsubjPass_auxPass root_neg subj aux
 
-    };
+  --   };
 
 
     --mkUDS nsubj (myVPS (ExtendEng.PassVPSlash (root2vpslash rt))) ;

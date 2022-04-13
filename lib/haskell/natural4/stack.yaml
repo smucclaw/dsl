@@ -64,7 +64,9 @@ extra-deps:
   commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 
 - github: anka-213/gf-core
-  commit: 4ae29ba3a9b6b58ec13d7d939a1e64b785d3bb41
+  # commit: 4ae29ba3a9b6b58ec13d7d939a1e64b785d3bb41
+  commit: 4b6ba957e4cb92a7f5c1ce5c8edc1e7fccc941fc
+  # Use ShortByteString
   # branch: random-performance-improvements
 
 - prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105

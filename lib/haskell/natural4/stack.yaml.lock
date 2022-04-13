@@ -64,16 +64,16 @@ packages:
     git: https://github.com/anka-213/udpipe-hs.git
     commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 - completed:
-    size: 3491926
-    url: https://github.com/anka-213/gf-core/archive/4ae29ba3a9b6b58ec13d7d939a1e64b785d3bb41.tar.gz
+    size: 3491970
+    url: https://github.com/anka-213/gf-core/archive/4b6ba957e4cb92a7f5c1ce5c8edc1e7fccc941fc.tar.gz
     name: gf
     version: 3.11.0
-    sha256: eac94e11eb6812b2b3ec06fc763e7da90b37a289bb9e896a8ef346504a01e8f1
+    sha256: 07971d82f4688ff228a7b81ca718c36b56e76b8b8d11aea5d31516909652fd66
     pantry-tree:
       size: 67815
-      sha256: 63feebab35512af1ad22edcc73df90e55b58ad7ac16cb03ab3a2b8e545e87d8c
+      sha256: 2245d3c233aac6824c03cdd16f7eb6820d5c0e4ed4509aa38e2a924557b4f0bf
   original:
-    url: https://github.com/anka-213/gf-core/archive/4ae29ba3a9b6b58ec13d7d939a1e64b785d3bb41.tar.gz
+    url: https://github.com/anka-213/gf-core/archive/4b6ba957e4cb92a7f5c1ce5c8edc1e7fccc941fc.tar.gz
 - completed:
     hackage: prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
     pantry-tree:

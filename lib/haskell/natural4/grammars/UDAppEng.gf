@@ -68,6 +68,9 @@ lin
     -- root_nsubj_* structure in a subordinate clause
     root_mark_nsubj rt mark sub = addMark mark (root_nsubj rt sub) ;
 
+	  -- : root -> mark -> nsubj -> aux -> UDS ;--if device has gone
+    root_mark_nsubj_aux rt mark sub au = addMark mark (root_nsubj_aux rt sub au);
+
     -- : root -> mark -> nsubj -> aux -> aux -> UDS ; --that a data breach may have occurred
 		root_mark_nsubj_aux_aux rt mark sub may have = addMark mark (root_nsubj_aux_aux rt sub may have) ;
 

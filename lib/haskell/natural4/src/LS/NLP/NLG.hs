@@ -25,6 +25,7 @@ import Data.List.Extra (maximumOn)
 --import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
+import LS.NLP.Timer
 import UDPipe (loadModel, runPipeline, Model)
 
 data NLGEnv = NLGEnv
@@ -61,7 +62,7 @@ gfPath x = "grammars/" ++ x
 
 -- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
 parseUD :: NLGEnv -> Text.Text -> IO GUDS
-parseUD env txt = do
+parseUD env txt = timeItNamed ("udParse: " ++ Text.unpack txt) $ do
 --  conll <- udpipe txt -- Initial parse
   lowerConll <- udpipe (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
   putStrLn $ "\nconllu:\n" ++ lowerConll
@@ -458,12 +459,14 @@ disambiguateList pgf access_use_copying =
 -- Meant to be called from inside an Any or All
 -- If we encounter another Any or All, fall back to bsr2gf
 bsr2gfAmb :: NLGEnv -> BoolStructR -> IO [PGF.Expr]
-bsr2gfAmb env bsr = case bsr of
+bsr2gfAmb env bsr = timeItNamed ("bsr2gfAmb: " ++ Text.unpack (bsr2text bsr)) 
+-- bsr2gfAmb env bsr = timeItNamed ("bsr2gfAmb: " ++ (show bsr)) 
+  $ case bsr of
   AA.Leaf rp -> do
     let access = rp2text rp
     let checkWords = length $ Text.words access
     case checkWords of
-      1 -> return $ parseLex env (Text.unpack access)
+      1 -> timeItShow $ return $ parseLex env (Text.unpack access)
       _ -> singletonList $ gf `fmap` parseUD env access
   -- In any other case, call the full bsr2gf
   _ -> singletonList $ bsr2gf env bsr
@@ -478,7 +481,7 @@ bsr2gf env bsr = case bsr of
     let access = rp2text rp
     gf `fmap` parseUD env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
-  AA.Any Nothing contents -> do
+  AA.Any Nothing contents -> timeItNamed "bsr2gf: Any Nothing" $ do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
     return $ case flattenGFTrees existingTrees of
@@ -486,7 +489,13 @@ bsr2gf env bsr = case bsr of
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
+    startTimer "bsr2gf: Any (prepost)"
     contentsUDS <- parseAndDisambiguate env access_use_copying
+    -- tickTimer "bsr2gf: parseAndDisambiguate"
+    -- tickTimer "bsr2gf: parsed premodifier"
+    -- tickTimer "bsr2gf: parsed postmodifier"
+    -- print $ length $ show tree
+    -- tickTimer "bsr2gf: constructed tree"
     premodUDS <- parseUD env any_unauthorised
     postmodUDS <- parseUD env of_personal_data
     let tree = case groupByRGLtype orConj <$> [contentsUDS, [premodUDS], [postmodUDS]] of
@@ -611,7 +620,7 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
                 c:_  -> Just c
 
 parseAndDisambiguate :: NLGEnv -> [BoolStructR] -> IO [GUDS]
-parseAndDisambiguate env text = do
+parseAndDisambiguate env text = timeItNamed "parseAndDisambiguate" $ do
   contentsAmb <- mapM (bsr2gfAmb env) text
   let parsingGrammar = pgfGrammar $ udEnv env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb

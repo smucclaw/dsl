@@ -57,6 +57,7 @@ lin
       False => root_nsubj_obl rt sub advm.adv
       } ;
 
+    -- : root -> nsubj -> obl -> UDS
     root_nsubj_obl rt sub adv = mkUDS sub (advRoot rt adv) ;
 
     -- : root -> nsubj -> aux -> UDS ; --a data breach may occur
@@ -67,6 +68,9 @@ lin
 
     -- root_nsubj_* structure in a subordinate clause
     root_mark_nsubj rt mark sub = addMark mark (root_nsubj rt sub) ;
+
+    -- : root -> mark -> nsubjPass -> auxPass -> UDS ; -- that the device that contains personal data is lost
+    -- root_mark_nsubjPass_auxPass rt mark sub au = addMark mark (root_nsubjPass_auxPass rt sub au);
 
 	  -- : root -> mark -> nsubj -> aux -> UDS ;--if device has gone
     root_mark_nsubj_aux rt mark sub au = addMark mark (root_nsubj_aux rt sub au);
@@ -171,12 +175,33 @@ lin
 
     -- : root -> nsubj -> cop -> aclRelcl -> obl -> UDS ;  -- the person whose personal data is affected by the breach
     root_nsubj_cop_aclRelcl_obl rt sub cop rcl obl =
-      let root_obl : Root = rt ** {vp = mkVP rt.vp obl} ;
+      let root_obl : Root = advRoot rt obl ;
        in root_nsubj_cop_aclRelcl root_obl sub cop rcl ;
 
     -- : root -> nsubjPass -> auxPass -> UDS ; -- everyone is notified
     root_nsubjPass_auxPass rt nsubj aux =
       mkUDS nsubj (myVPS (ExtendEng.PassVPSlash (root2vpslash rt))) ;
+
+    -- : root -> nsubjPass -> auxPass -> advmod -> UDS; -- the updates are reviewed regularly
+    -- step 1: attach the adverbial to root OR if the advm is negation, apply applyNeg to the root
+   -- step 2; finad fun without the advmod part
+    root_nsubjPass_auxPass_advmod rt subj aux advm = case advm.isNot of {
+      False =>
+        let root_advm : Root = advRoot rt advm.adv ; -- new root: attached the advmod into the old root
+         in root_nsubjPass_auxPass root_advm subj aux;
+
+      True => -- advmod is the negation, so the adv field is just a dummy --- the real info is in that it's NEG
+              -- so we need to apply applyNeg at some point.
+              -- incidentally, this pattern also contains an auxiliary, which means that we need also applyAux
+              -- conclusion: this is not a simple case, Inari will refactor applyNeg and applyAux to allow them
+              -- to be used in the same UDS.
+        let root_neg : Root = applyNeg rt ;
+         in root_nsubjPass_auxPass root_neg subj aux
+
+    };
+
+
+    --mkUDS nsubj (myVPS (ExtendEng.PassVPSlash (root2vpslash rt))) ;
 
     -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- everyone should be notified
     root_nsubjPass_aux_auxPass notified pdpa should auxpass =
@@ -219,6 +244,10 @@ lin
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;
 	root_nsubj_aux_obl result breach will in_harm =
       mkUDS breach (applyAux will (mkVP result.vp in_harm)) ;
+
+
+	--: root -> advmod -> nsubj -> aux -> advmod -> obj -> UDS ;-- when in doubt, one should actively seek clarification
+  -- root_advmod_nsubj_aux_advmod_obj rt advm0 sub aux advm1 = root_mark_nsubj_aux
 
   -- : root -> mark -> nsubj -> cop -> UDS ; -- if it is a breach
   root_advmod_nsubj_cop breach if it is = root_mark_nsubj_cop breach if.adv it is ; -- TODO: check if advmod is negation

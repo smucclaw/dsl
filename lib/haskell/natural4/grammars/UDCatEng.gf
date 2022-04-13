@@ -207,10 +207,10 @@ concrete UDCatEng of UDCat = BareRGEng **
     linRoot : Root -> Str = \rt -> (mkUtt rt.vp).s ;
 
     mkRoot = overload {
-       mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap ; adv = lin Adv (mkUtt ap)} ;
-       mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; adv = lin Adv (mkUtt np) ; np = np ; isNP = True } ;
-       mkRoot : VP -> Root = \vp -> emptyRoot ** {vp = vp ; adv = lin Adv (mkUtt vp)} ; ---- ADV is bad
-       mkRoot : VPSlash -> Root = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2 ; adv = lin Adv (mkUtt <vp : VP>)}
+       mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap} ;
+       mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True } ;
+       mkRoot : VP -> Root = \vp -> emptyRoot ** {vp = vp} ;
+       mkRoot : VPSlash -> Root = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2 ;}
     } ;
 
     emptyRoot : Root = defaultUDSPred ** {

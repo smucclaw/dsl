@@ -247,7 +247,13 @@ lin
 
 
 	--: root -> advmod -> nsubj -> aux -> advmod -> obj -> UDS ;-- when in doubt, one should actively seek clarification
-  -- root_advmod_nsubj_aux_advmod_obj rt advm0 sub aux advm1 = root_mark_nsubj_aux
+  -- root_advmod_nsubj_aux_advmod_obj rt advm0 sub aux advm1 =
+  --  case <advm0.isNot, advm1.isNot> of {
+   }
+  -- case am1.isNot of {
+  --   True => mkUDS sub (applyNeg rt);
+  --   False => root_
+  -- }; TODO: Need to creat aux fun to handle the aux argument and the different combi of the 2 advmod first
 
   -- : root -> mark -> nsubj -> cop -> UDS ; -- if it is a breach
   root_advmod_nsubj_cop breach if it is = root_mark_nsubj_cop breach if.adv it is ; -- TODO: check if advmod is negation

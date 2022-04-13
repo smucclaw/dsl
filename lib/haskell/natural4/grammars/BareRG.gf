@@ -124,9 +124,11 @@ abstract BareRG =
 
   cat
     [Prep]{2} ;
+    [VP]{2} ;
 
   fun
     ConjPrep : Conj -> [Prep] -> Prep ;
+    ConjVP : Conj -> [VP] -> VP ;
 
 -- Aarne's additions
 fun

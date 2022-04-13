@@ -357,3 +357,20 @@
 
 #auxfun PrepCompleteList_ catHorse capybara and_dog : PrefixPrep -> PrepComma -> Pair_Conj_Prep -> Prep = UsePair_ (PrepCompleteList_helper_ catHorse capybara) and_dog ; head conj conj
 #auxfun PrepCompleteList_helper_ catHorse capybara and dog : PrefixPrep -> PrepComma -> Conj -> Prep -> Prep = ConjPrep and (catHorse (BasePrep capybara dog)) ; head dummy dummy dummy
+
+-- ** VP **
+#auxfun CommaVP_ VP comma : VP -> Conj -> VPComma = VP ; head punct[LEMMA=\,]
+
+#auxfun AndVPPair_ and sleeps : Conj -> VP -> Pair_Conj_VP = MkPair_ and sleeps ; cc head
+
+#auxfun VP2_ eats andSleeps : VP -> Pair_Conj_VP -> VP = UsePair_ (VP2_helper_ eats) andSleeps ; head conj
+#auxfun VP2_helper_ eats and sleeps :  VP -> Conj -> VP -> VP = ConjVP and (BaseVP eats sleeps) ; head dummy nonexistent
+
+-- type PrefixVP = ListVP -> ListVP
+
+#auxfun VPListHead_ eats : VP -> PrefixVP = ConsVP eats ; head
+
+#auxfun VPAddComma_ eats shoots : PrefixVP -> VPComma -> PrefixVP = Compose_ eats (ConsVP shoots) ; head conj
+
+#auxfun VPCompleteList_ eatsShoots leaves and_sleeps : PrefixVP -> VPComma -> Pair_Conj_VP -> VP = UsePair_ (VPCompleteList_helper_ eatsShoots leaves) and_sleeps ; head conj conj
+#auxfun VPCompleteList_helper_ eatsShoots leaves and sleeps : PrefixVP -> VPComma -> Conj -> VP -> VP = ConjVP and (eatsShoots (BaseVP leaves sleeps)) ; head dummy dummy dummy

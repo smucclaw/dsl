@@ -165,22 +165,92 @@ concrete BareRGEng of BareRG =
       s = \\c => prep.s ++ rp.s ! c
       } ;
 
-    one_NP = DetNP (DetQuant IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))) ;
+    one_NP = DetNP (BareRGEng.DetQuant BareRGEng.IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))) ;
 
     AdvAdv a1 a2 = {s = a1.s ++ a2.s} ;
 
   lincat
     [Prep] = Co.ListX ;
 
+    -- This relies on the fact that auxiliaries are a separate category in UD
+    -- So I can assume that all VPs we need to deal with in root are non-auxiliary verbs
+    -- Other C that become VP by (UseComp (CompC c)) already have list instance in RGL
+    [VP] = {
+        -- The common parts
+        p    : Str ;   -- verb particle
+        ad   : R.Agr => Str ; -- sentence adverb (can be Xself, hence Agr)
+        s2   : R.Agr => Str ; -- complement
+        ext  : Str ;        -- extreposed field such as S, QS, VP
+        prp1,prp  : Str ;   -- present participle
+        ptp1,ptp  : Str ;   -- past participle
+        inf1,inf  : Str ;   -- the infinitive form
+        isSimple : Bool ;   -- regulates the place of participle used as adjective
+
+        -- The variable parts, depending on whether the main verb of the VP is auxiliary or not
+        isAux : Bool ;
+        auxForms : {
+          past,
+          contr,
+          pres : R.Polarity => R.Agr => Str ;
+          } ;
+        nonAuxForms1,nonAuxForms : NonAuxForms ;
+      } ;
+  oper
+    NonAuxForms : Type = {  -- nonExist when isAux=True
+      pres : R.Agr => Str ; -- sing/sings ; can be streamlined into two forms if needed
+      past : Str ; --# notpresent
+      } ;
+
+
   lin
     BasePrep = Co.twoSS ;
     ConsPrep = Co.consrSS Co.comma ;
     ConjPrep co pps = Co.conjunctDistrSS co pps ** {isPre = True} ;
+
+    BaseVP vp1 vp2 = vp2 ** {
+      prp1 = linVPOnlyForListVP vp1.prp vp1 ;
+      ptp1 = linVPOnlyForListVP vp1.ptp vp1 ;
+      inf1 = linVPOnlyForListVP vp1.inf vp1 ;
+      nonAuxForms1 = {
+        pres = \\agr => linVPOnlyForListVP (vp1.nonAuxForms.pres ! agr) vp1 ;
+        past = linVPOnlyForListVP vp1.nonAuxForms.past vp1 } ;
+      } ;
+
+    ConsVP vp vps = vps ** {
+      prp1 = vp.prp ++ bindComma ++ vps.prp1 ;
+      ptp1 = vp.ptp ++ bindComma ++ vps.ptp1 ;
+      inf1 = vp.inf ++ bindComma ++ vps.inf1 ;
+      nonAuxForms = vps.nonAuxForms ** {
+        pres1 = \\agr => vp.nonAuxForms.pres ! agr ++ bindComma ++ vps.pres1 ! agr ;
+        past1 = vp.nonAuxForms.past ++ bindComma ++ vps.past1 } ;
+      } ;
+
+    ConjVP conj vps = vps ** {
+      prp = applyConj conj vps.prp1 vps.prp ;
+      ptp = applyConj conj vps.ptp1 vps.ptp ;
+      inf = applyConj conj vps.inf1 vps.inf ;
+      nonAuxForms = applyConjNAF conj vps.nonAuxForms1 vps.nonAuxForms ;
+    } ;
+
     PredVPS np vp = mkS (mkCl np vp) ;
     SlashCl cl = cl ** {c2=[]} ;
     PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
 
   oper
+    -- This is a hack, if you need to make a VP into Str in other places, use ResEng.infVP
+    linVPOnlyForListVP : Str -> VP -> Str = \form,vp ->
+      let a : R.Agr = R.agrP3 R.Sg
+       in vp.ad ! a ++ form ++ vp.p ++ vp.s2 ! a ++ vp.ext ;
+
+    applyConj : Conj -> (s1,s2 : Str)-> Str = \or,s1,s2 ->
+      or.s1 ++ s1 ++ or.s2 ++ s2 ;
+
+    applyConjNAF : Conj -> (_,_ : NonAuxForms) -> NonAuxForms = \or,naf1,naf2 -> {
+      pres = \\agr => or.s1 ++ naf1.pres ! agr ++ or.s2 ++ naf2.pres ! agr ;
+      past =  or.s1 ++ naf1.past ++ or.s2 ++ naf2.past ;
+    } ;
+
+
     slashV : VP -> VPSlash = \vp -> vp ** {
       c2 = [] ;
       gapInMiddle = True ;

@@ -249,7 +249,7 @@ lin
 	--: root -> advmod -> nsubj -> aux -> advmod -> obj -> UDS ;-- when in doubt, one should actively seek clarification
   -- root_advmod_nsubj_aux_advmod_obj rt advm0 sub aux advm1 =
   --  case <advm0.isNot, advm1.isNot> of {
-   }
+  --  }
   -- case am1.isNot of {
   --   True => mkUDS sub (applyNeg rt);
   --   False => root_
@@ -301,6 +301,10 @@ lin
 
   -- : root -> aclRelcl -> nmod -> UDS ; -- org for which you act as a DI ;
 	root_aclRelcl_nmod rt rs nmod = root_nmod (addRcl rt rs) nmod ;
+
+-- -- root -> advcl -> nsubj -> cop -> nsubj -> UDS ; where go it is warm
+  root_advcl_nsubj_cop_nsubj rt acl ns1 cop ns2 = root_acl rt acl ;
+
 
 ---------------------------------------------------------------------------
 -- Cases where GF and UD structures map less neatly to each other

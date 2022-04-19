@@ -260,40 +260,40 @@ concrete BareRGEng of BareRG =
 -- Aarne's additions
   lin
 
-    apply_concurrently_VP = mkVP (mkVP apply_V) concurrently_Adv ;
-    does_not_apply_to_V = P.mkV "do not apply to" "does not apply to" "did not apply to" "has not applied to" "is not applying to" ;
-    on_or_after_Prep = P.mkPrep "on or after" ;
-    prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
-    that_other_Det = mkDeterminer P.singular "that other" ;
+  --   apply_concurrently_VP = mkVP (mkVP apply_V) concurrently_Adv ;
+  --   does_not_apply_to_V = P.mkV "do not apply to" "does not apply to" "did not apply to" "has not applied to" "is not applying to" ;
+  --   on_or_after_Prep = P.mkPrep "on or after" ;
+  --   prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
+  --   that_other_Det = mkDeterminer P.singular "that other" ;
 
-   MkA2 a p = P.mkA2 a p ;
-   MkN3 n p q = P.mkN3 n p q;
-    -- : CN -> NP -> CN ;
-    CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
+  --  MkA2 a p = P.mkA2 a p ;
+  --  MkN3 n p q = P.mkN3 n p q;
+  --   -- : CN -> NP -> CN ;
+  --   CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
 
-    -- : NP -> VP -> CN ;
-    CN_obligation_of_NP_to_VP np vp = mkCN (mkCN (P.mkN2 obligation_N) np) vp ;
+  --   -- : NP -> VP -> CN ;
+  --   CN_obligation_of_NP_to_VP np vp = mkCN (mkCN (P.mkN2 obligation_N) np) vp ;
 
-    -- : CN -> RS -> NP ;
-    NP_all_the_CN_RS cn rs = mkNP all_Predet (mkNP thePl_Det (mkCN cn rs)) ;
-    NP_the_loss_of_any_CN_RS cn rs =
-      mkNP theSg_Det (
-        mkCN (P.mkN2 loss_N)
-          (mkNP anySg_Det (mkCN cn rs))
-        ) ;
+  --   -- : CN -> RS -> NP ;
+  --   NP_all_the_CN_RS cn rs = mkNP all_Predet (mkNP thePl_Det (mkCN cn rs)) ;
+  --   NP_the_loss_of_any_CN_RS cn rs =
+  --     mkNP theSg_Det (
+  --       mkCN (P.mkN2 loss_N)
+  --         (mkNP anySg_Det (mkCN cn rs))
+  --       ) ;
 
-    -- : CN -> NP -> NP ;
-    NP_the_unauthorised_N2_of_NP cn np =
-      let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
-       in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
+  --   -- : CN -> NP -> NP ;
+  --   NP_the_unauthorised_N2_of_NP cn np =
+  --     let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
+  --      in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
 
     --  : NP -> VP -> RS ;
     RS_that_NP_VP np vp =
     let cl : Cl = mkCl np vp ;
       in mkRS (mkRCl that_RP (SlashCl cl)) ;
 
-    -- : [CN] -> NP -> NP ;
-    NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
+    -- -- : [CN] -> NP -> NP ;
+    -- NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
 
   {-  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
     Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;

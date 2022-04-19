@@ -433,6 +433,7 @@
 #fun root_nsubjPass_aux_auxPass_xcomp head nsubj:pass aux aux:pass xcomp
 #fun root_nsubj_aux_cop_nmod head nsubj aux cop nmod
 #fun root_nsubj_nsubj_aux_advmod_obj head nsubj nsubj aux advmod obj
+#fun root_advcl_nsubj_cop_nsubj head advcl nsubj cop nsubj
 
 #fun MkA2 head case
 #fun Adv_Adv__but_in_any_case_Adv head TODO

@@ -74,7 +74,7 @@ abstract UDCat = BareRG ** {
      -- coercion funs
 	fun
         acl_ : X -> acl ;
-        advcl_ : X -> advcl ;
+        -- advcl_ : X -> advcl ;
         advmodEmph_ : X -> advmodEmph ;
         advmodLmod_ : X -> advmodLmod ;
         appos_ : X -> appos ;
@@ -192,5 +192,6 @@ abstract UDCat = BareRG ** {
         advmod_ : Adv -> advmod ;
         nmod_ : Prep -> NP -> nmod ; -- UD-specific version of PrepNP
         nsubjPass_ : NP -> nsubjPass ;
+        advcl_ : Adv -> advcl ;
 
 }

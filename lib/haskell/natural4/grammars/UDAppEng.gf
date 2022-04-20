@@ -84,12 +84,25 @@ lin
        in addMark if device_goes_missing ;
 
 -----------------------------------------------------------------------------
--- Variations on root_obl_*
+-- Variations on root_obl_* / root_nmod_*
 
     -- : root -> obl -> UDS ;
   	-- subject to X ;
     root_nmod,
 		root_obl = \subject, to_X -> onlyPred (mkVP subject.vp to_X) ;
+
+    -- : root -> nmod -> acl -> UDS ;
+    -- [any]:root [of the personal data]:nmod [relating to the individual]:acl
+		root_nmod_acl rt nm acl =  root_acl (advRoot rt nm) acl;
+
+    -- : root -> nmod -> aclRelcl -> UDS ;
+    -- [any manner]:root [in these circumstances]:nmod [that is reasonable]:acl:rcl ;
+    root_nmod_aclRelcl rt nmod rs = root_aclRelcl (advRoot rt nmod) rs;
+
+
+		-- root -> nmod -> nmod -> UDS ;
+	  -- [service]:root [from provider]:nmod [to payee]:nmod
+    root_nmod_nmod rt nmod1 nmod2 =  root_nmod (advRoot rt nmod1) nmod2 ;
 
     root_advmod rt adv = root_obl rt adv.adv ;
 
@@ -291,7 +304,8 @@ lin
 	root_advcl, root_acl = \rt,acl -> onlyPred (advRoot rt acl) ;
 
   -- : root -> acl -> nmod -> UDS ;
-	root_acl_nmod rt acl nm = root_acl (mkRoot (mkVP rt.vp nm)) acl ;
+  -- [policy]:root (called in this item the applicable policy):acl [of the company]:nmod ;
+	root_acl_nmod rt acl nm = root_nmod (advRoot rt acl) nm ;
 
   -- : root -> advmod -> acl -> UDS ; -- heuristic: advmod is actually AdV
 	root_advmod_advcl rt am acl = root_acl (mkRoot (mkVP <am.adv : AdV> rt.vp)) acl ;

@@ -411,6 +411,7 @@ data Tree :: * -> * where
   GExistCN :: GCN -> Tree GCl_
   GExistsNP :: GNP -> Tree GCl_
   GGenericCl :: GVP -> Tree GCl_
+  GImpersCl :: GVP -> Tree GCl_
   GPredSCVP :: GSC -> GVP -> Tree GCl_
   GPredVP :: GNP -> GVP -> Tree GCl_
   GAdvSlash :: GClSlash -> GAdv -> Tree GClSlash_
@@ -983,6 +984,7 @@ instance Eq (Tree a) where
     (GExistCN x1,GExistCN y1) -> and [ x1 == y1 ]
     (GExistsNP x1,GExistsNP y1) -> and [ x1 == y1 ]
     (GGenericCl x1,GGenericCl y1) -> and [ x1 == y1 ]
+    (GImpersCl x1,GImpersCl y1) -> and [ x1 == y1 ]
     (GPredSCVP x1 x2,GPredSCVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVP x1 x2,GPredVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvSlash x1 x2,GAdvSlash y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1694,6 +1696,7 @@ instance Gf GCl where
   gf (GExistCN x1) = mkApp (mkCId "ExistCN") [gf x1]
   gf (GExistsNP x1) = mkApp (mkCId "ExistsNP") [gf x1]
   gf (GGenericCl x1) = mkApp (mkCId "GenericCl") [gf x1]
+  gf (GImpersCl x1) = mkApp (mkCId "ImpersCl") [gf x1]
   gf (GPredSCVP x1 x2) = mkApp (mkCId "PredSCVP") [gf x1, gf x2]
   gf (GPredVP x1 x2) = mkApp (mkCId "PredVP") [gf x1, gf x2]
 
@@ -1702,6 +1705,7 @@ instance Gf GCl where
       Just (i,[x1]) | i == mkCId "ExistCN" -> GExistCN (fg x1)
       Just (i,[x1]) | i == mkCId "ExistsNP" -> GExistsNP (fg x1)
       Just (i,[x1]) | i == mkCId "GenericCl" -> GGenericCl (fg x1)
+      Just (i,[x1]) | i == mkCId "ImpersCl" -> GImpersCl (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredSCVP" -> GPredSCVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVP" -> GPredVP (fg x1) (fg x2)
 
@@ -3898,6 +3902,7 @@ instance Compos Tree where
     GExistCN x1 -> r GExistCN `a` f x1
     GExistsNP x1 -> r GExistsNP `a` f x1
     GGenericCl x1 -> r GGenericCl `a` f x1
+    GImpersCl x1 -> r GImpersCl `a` f x1
     GPredSCVP x1 x2 -> r GPredSCVP `a` f x1 `a` f x2
     GPredVP x1 x2 -> r GPredVP `a` f x1 `a` f x2
     GAdvSlash x1 x2 -> r GAdvSlash `a` f x1 `a` f x2

@@ -28,7 +28,7 @@ abstract BareRG =
    ,AdVVP
   ],
 
-  Idiom [ProgrVP, GenericCl], -- Not used for parsing
+  Idiom [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
 
    Noun - [
       CountNP,

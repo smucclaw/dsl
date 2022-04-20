@@ -24,7 +24,7 @@ concrete BareRGEng of BareRG =
   ,AdVVP
   ],
 
-  IdiomEng [ProgrVP, GenericCl], -- Not used for parsing
+  IdiomEng [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
 
   NounEng - [
     CountNP,

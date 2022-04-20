@@ -5,11 +5,15 @@ module LS.XPile.VueJSON where
 
 import LS
 import AnyAll.Types
+import LS.NLP.NLG
 
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (nub)
 import qualified Data.Text.Lazy as Text
+
+import PGF ( linearize, languages )
+import LS.NLP.UDExt (gf)
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds
@@ -19,8 +23,8 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
     globalrules = [ r
                   | r@DefTypically{..} <- rs ]
 
-checklist :: RunConfig -> [Rule] -> Grounds
-checklist rc rs = groundToChecklist <$> groundrules rc rs
+checklist :: RunConfig -> [Rule] -> IO Grounds
+checklist rc rs = groundToChecklist `mapM` groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
@@ -79,16 +83,25 @@ defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 -- to achieve the same goals.
 -- As a starting point, we begin with hard-coded conversion functions.
 
-groundToChecklist :: MultiTerm -> [Text.Text]
-groundToChecklist (subj : "is" : "not" : y) = groundToChecklist $ subj : "is" : y
-groundToChecklist (subj : "is not" : y)     = groundToChecklist $ subj : "is" : y
-groundToChecklist (subj : "is"     : y)     = groundToChecklist $ "Is" : "the" : subj : quaero y -- ++ ["or not?"]
-groundToChecklist (subj : "has"    : y)     = groundToChecklist $ "Does" : "the" : subj : "have" : quaero y -- ++ ["or not?"]
-groundToChecklist ("the" : something1 : something2 : "occurs" : blahblah) = groundToChecklist $ "Did the" : something1 : something2 : "occur" : quaero blahblah
-groundToChecklist [mt]
-  | mts@(_:_:_) <- Text.words mt = groundToChecklist mts -- Only loop if there are multiple words to prevent infinite loops
-groundToChecklist mts = pure $ Text.unwords mts
-
+groundToChecklist :: MultiTerm -> IO [Text.Text]
+-- groundToChecklist (subj : "is" : "not" : y) = groundToChecklist $ subj : "is" : y
+-- groundToChecklist (subj : "is not" : y)     = groundToChecklist $ subj : "is" : y
+-- groundToChecklist (subj : "is"     : y)     = groundToChecklist $ "Is" : "the" : subj : quaero y -- ++ ["or not?"]
+-- groundToChecklist (subj : "has"    : y)     = groundToChecklist $ "Does" : "the" : subj : "have" : quaero y -- ++ ["or not?"]
+-- groundToChecklist ("the" : something1 : something2 : "occurs" : blahblah) = groundToChecklist $ "Did the" : something1 : something2 : "occur" : quaero blahblah
+-- groundToChecklist [mt]
+--   | mts@(_:_:_) <- Text.words mt = groundToChecklist mts -- Only loop if there are multiple words to prevent infinite loops
+-- groundToChecklist mts = pure $ Text.unwords mts
+groundToChecklist mt = do
+  env <- myNLGEnv
+  guds <- parseUD env $ Text.unwords mt
+  let trees = udsToTreeGroups guds
+  let gqs = getGQSFromTrees trees
+  gr <- nlgExtPGF
+  return $ quaero $ map Text.pack [linearize gr (head $ languages gr) $ gf gqs]
 
 quaero :: [Text.Text] -> [Text.Text]
 quaero xs = init xs ++ [last xs <> "?"]
+
+-- quaero :: Text.Text -> Text.Text
+-- quaero xs = xs <> "?"

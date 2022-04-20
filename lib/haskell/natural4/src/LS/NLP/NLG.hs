@@ -306,7 +306,7 @@ kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)
 kvspair2gf env (action,_) = case action of
   pred :| []     -> do
     predUDS <- parseUD env pred
-    return $ case getTypeAndValue predUDS of
+    return $ case udsToTreeGroups predUDS of
       TG {gfAP=Just ap}   -> ("AP", gf ap)
       TG {gfAdv=Just adv} -> ("Adv", gf adv)
       TG {gfNP=Just np}   -> ("NP", gf np)
@@ -329,8 +329,8 @@ combineExpr pred compl = result
   where
     predExpr = gf pred -- used for error msg
     complExpr = gf compl -- used for error msg
-    predTyped = getTypeAndValue pred
-    complTyped = getTypeAndValue compl
+    predTyped = udsToTreeGroups pred
+    complTyped = udsToTreeGroups compl
     result = case predTyped of
       TG {gfRP=Just for_which} ->
         ("RCl", case complTyped of
@@ -405,8 +405,8 @@ combineExpr pred compl = result
 
 
 -- | Takes a UDS, peels off the UD layer, returns a pair ("RGL type", the peeled off Expr)
-getTypeAndValue :: GUDS -> TreeGroups
-getTypeAndValue uds = groupByRGLtype (LexConj "") [uds]
+udsToTreeGroups :: GUDS -> TreeGroups
+udsToTreeGroups uds = groupByRGLtype (LexConj "") [uds]
 
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructR into a GF list
@@ -483,7 +483,7 @@ bsr2gf env bsr = case bsr of
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
     print ("qcl" :: [Char])
-    print $ gf $ getGQSFromTrees existingTrees
+    putStrLn $ showExpr $ gf $ getGQSFromTrees existingTrees
     gr <- nlgExtPGF
     print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
@@ -560,12 +560,12 @@ getGQSFromTrees whichTG = case whichTG of
   TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
   TG {gfAP = Just apGroup} -> useQCl $ GQuestIComp (GICompAP apGroup) (GAdjAsNP apGroup)
   TG {gfDet = Just detGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP detGroup
-  TG {gfAdv = Just advGroup} -> useQCl $ GPredIAdvVP (GIAdvAdv advGroup) (GUseComp $ GCompAdv advGroup)
+  TG {gfAdv = Just advGroup} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv advGroup))
   _ -> useQCl $ GQuestCl dummyCl
 
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
---   | adv `elem` [always_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
+--   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
 --   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
 --   | otherwise = Gwhy_IAdv
 getGQSFromTrees :: TreeGroups -> GQCl

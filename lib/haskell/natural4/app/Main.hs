@@ -12,7 +12,7 @@ import LS.XPile.CoreL4
 -- import LS.XPile.Petri
 
 import qualified LS.XPile.Uppaal as Uppaal
-import LS.XPile.Prolog
+import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.NLP.NLG (nlg)
@@ -44,7 +44,8 @@ main = do
     pPrint $ groundrules rc rules
 
   when (SFL4.toChecklist rc) $ do
-    pPrint $ checklist rc rules
+    checkls <- checklist rc rules
+    print checkls
 
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules
@@ -52,7 +53,7 @@ main = do
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
--- file2rules opts 
+-- file2rules opts
 
 type Parser a = StateT String Maybe a
 

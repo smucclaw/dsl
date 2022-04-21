@@ -9,7 +9,7 @@ import LS.NLP.NLG
 
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
-import Data.List (nub)
+import Data.List (nub, groupBy)
 import qualified Data.Text.Lazy as Text
 
 import PGF ( linearize, languages )
@@ -25,7 +25,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
 
 checklist :: RunConfig -> [Rule] -> IO Grounds
 -- checklist rc rs = groundToChecklist `mapM` groundrules rc rs
-checklist rc rs = collectStragglers `mapM` groundrules rc rs
+checklist rc rs = groundsToChecklist $ groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
@@ -78,36 +78,38 @@ defaultInGlobals :: [Rule] -> RelationalPredicate -> Bool
 defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 
 
--- meng's crude natural language conversion
 -- this is to be read as an "external requirement interface"
--- the implementation is totally up to the NLG team who can make use of more sophisticated code
--- to achieve the same goals.
--- As a starting point, we begin with hard-coded conversion functions.
 
+groundsToChecklist :: Grounds -> IO Grounds
+groundsToChecklist mts = sequence [
+  case mtGroup of
+    [multiterm] -> groundToChecklist multiterm
+    _ -> return $ pickOneOf mtGroup
+  | mtGroup <- groupBy groupSingletons mts
+  ]
 groundToChecklist :: MultiTerm -> IO [Text.Text]
--- groundToChecklist (subj : "is" : "not" : y) = groundToChecklist $ subj : "is" : y
--- groundToChecklist (subj : "is not" : y)     = groundToChecklist $ subj : "is" : y
--- groundToChecklist (subj : "is"     : y)     = groundToChecklist $ "Is" : "the" : subj : quaero y -- ++ ["or not?"]
--- groundToChecklist (subj : "has"    : y)     = groundToChecklist $ "Does" : "the" : subj : "have" : quaero y -- ++ ["or not?"]
--- groundToChecklist ("the" : something1 : something2 : "occurs" : blahblah) = groundToChecklist $ "Did the" : something1 : something2 : "occur" : quaero blahblah
--- groundToChecklist [mt]
---   | mts@(_:_:_) <- Text.words mt = groundToChecklist mts -- Only loop if there are multiple words to prevent infinite loops
--- groundToChecklist mts = pure $ Text.unwords mts
 groundToChecklist mt = do
+  let txt = Text.unwords mt
   env <- myNLGEnv
-  guds <- parseUD env $ Text.unwords mt
-  let trees = udsToTreeGroups guds
+  uds <- parseUD env txt
+  let trees = udsToTreeGroups uds
   let gqs = getGQSFromTrees trees
   gr <- nlgExtPGF
-  return $ quaero $ map Text.pack [linearize gr (head $ languages gr) $ gf gqs]
+  let lin = linearize gr (head $ languages gr) $ gf gqs
+  let result = case words lin of
+        "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
+        _ -> Text.pack lin
+  return $ quaero $ [result]
 
--- collect lone mt stragglers
+pickOneOf :: [MultiTerm] -> MultiTerm
+pickOneOf mts = Text.pack "Does any of the following hold?" :
+  map (\[x] -> Text.pack "* " <> x) mts
 
-collectStragglers mt = case map checkLength mt of
-  [1] -> return mt
-  _ -> groundToChecklist mt
-  where
-    checkLength txt = length $ Text.words txt
+groupSingletons :: MultiTerm -> MultiTerm -> Bool
+groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
+                | [_t1] <- Text.words mt1
+                , [_t2] <- Text.words mt2 = True
+groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
 
 
 

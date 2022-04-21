@@ -557,7 +557,7 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
 
 getGQSFromTrees :: TreeGroups -> GQS
 getGQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just clGroup} -> useQCl $ GQuestCl clGroup
+  TG {gfCl = Just clGroup} -> useQCl $ GQuestCl (makeSubjectDefinite clGroup)
   TG {gfNP = Just npGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos npGroup
   TG {gfCN = Just cnGroup} -> useQCl $ GQuestCl $ GExistCN cnGroup
   TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
@@ -565,6 +565,12 @@ getGQSFromTrees whichTG = case whichTG of
   TG {gfDet = Just detGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP detGroup
   TG {gfAdv = Just advGroup} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv advGroup))
   _ -> useQCl $ GQuestCl dummyCl
+
+  where
+    makeSubjectDefinite :: GCl -> GCl
+    makeSubjectDefinite cl = case cl of
+      GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
+      _ -> cl
 
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv

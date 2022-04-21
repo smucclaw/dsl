@@ -111,10 +111,10 @@ groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1
                 , [_t2] <- Text.words mt2 = True
 groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
 
-
-
 quaero :: [Text.Text] -> [Text.Text]
-quaero xs = init xs ++ [last xs <> "?"]
+quaero [x] = [Text.unwords $ quaero $ Text.words x]
+quaero (x:xs) = Text.toTitle x : init xs ++ [last xs <> "?"]
+quaero xs = xs
 
 -- quaero :: Text.Text -> Text.Text
 -- quaero xs = xs <> "?"

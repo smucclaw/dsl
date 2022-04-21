@@ -782,14 +782,10 @@ npFromUDS x = case x of
 udRelcl2rglRS :: GUDS -> GRS
 udRelcl2rglRS uds = case uds of
   Groot_nsubj (GrootV_ vp) _ -> vp2rs vp -- TODO: check if nsubj contains something important
-  _ -> case getRoot uds of
-    GrootV_ vp:_ -> vp2rs vp
-    GrootN_ np:_ -> vp2rs (GUseComp (GCompNP np))
-    GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP ap))
-    _ -> error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
+  _ -> maybe err vp2rs (verbFromUDS uds)
   where
     vp2rs vp = useRCl (GRelVP GIdRP vp)
-
+    err = error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
 
 pnFromUDS :: GUDS -> Maybe GPN
 pnFromUDS x = np2pn =<< npFromUDS x
@@ -855,6 +851,9 @@ verbFromUDS x = case getNsubj x of
     Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
     _ -> case getRoot x of -- TODO: fill in other cases
                 GrootV_ vp:_ -> Just vp
+                GrootN_  np:_ -> Just $ GUseComp (GCompNP np)
+                GrootA_  ap:_ -> Just $ GUseComp (GCompAP ap)
+                GrootAdv_ a:_ -> Just $ GUseComp (GCompAdv a)
                 _            -> Nothing
 
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely
@@ -862,35 +861,42 @@ clFromUDS :: GUDS -> Maybe GCl
 clFromUDS x = case getNsubj x of
   [] -> Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   _ -> case x of
-    Groot_nsubj (GrootV_ vp) (Gnsubj_ np) -> Just $ GPredVP np vp
-    Groot_nsubj_advmod (GrootV_ vp) (Gnsubj_ np) (Gadvmod_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_advmod_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_advmod (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_advmod_obj_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl_advmod_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_ccomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_aclRelcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_advcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_case_nmod_acl (GrootV_ vp) (Gnsubj_ np) _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubj_cop_nmodPoss (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_obj (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_obj_xcomp (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_obl (GrootV_ vp) (Gnsubj_ np) (Gobl_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_xcomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass (GrootV_ vp) (GnsubjPass_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_advmod_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_advmod_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_obl_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
+    Groot_nsubj root (Gnsubj_ np) -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
+      vp <- verbFromUDS (Groot_only root)
+      Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obj root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
+      vp <- verbFromUDS (Groot_only root)
+      Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass root (GnsubjPass_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_advmod_advcl root (GnsubjPass_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_advmod_xcomp root (GnsubjPass_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_xcomp root (GnsubjPass_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass root (GnsubjPass_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_advmod root (GnsubjPass_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_obl_advcl root (GnsubjPass_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_obl_advmod root (GnsubjPass_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_advmod root (Gnsubj_ np) _cop Gnot_advmod -> -- TODO: can we address the negation?
+      GPredVP np <$> verbFromUDS (Groot_only root)
+
     _ -> case verbFromUDS x of -- TODO: fill in other cases
                 Just vp -> Just $ GGenericCl vp
                 _       -> Nothing

@@ -45,7 +45,7 @@ main = do
 
   when (SFL4.toChecklist rc) $ do
     checkls <- checklist rc rules
-    print checkls
+    pPrint checkls
 
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules

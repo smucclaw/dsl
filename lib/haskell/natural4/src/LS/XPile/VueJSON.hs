@@ -24,7 +24,8 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
                   | r@DefTypically{..} <- rs ]
 
 checklist :: RunConfig -> [Rule] -> IO Grounds
-checklist rc rs = groundToChecklist `mapM` groundrules rc rs
+-- checklist rc rs = groundToChecklist `mapM` groundrules rc rs
+checklist rc rs = collectStragglers `mapM` groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
@@ -99,6 +100,16 @@ groundToChecklist mt = do
   let gqs = getGQSFromTrees trees
   gr <- nlgExtPGF
   return $ quaero $ map Text.pack [linearize gr (head $ languages gr) $ gf gqs]
+
+-- collect lone mt stragglers
+
+collectStragglers mt = case map checkLength mt of
+  [1] -> return mt
+  _ -> groundToChecklist mt
+  where
+    checkLength txt = length $ Text.words txt
+
+
 
 quaero :: [Text.Text] -> [Text.Text]
 quaero xs = init xs ++ [last xs <> "?"]

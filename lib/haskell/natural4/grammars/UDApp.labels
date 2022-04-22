@@ -57,9 +57,13 @@
 
 #fun UseV head
 
+#fun UseAdv head
+
 #fun AdvIP head advmod
 #fun FunRP case nsubj head
 #fun ExistS dep dep head
+#fun ExistNP head
+#fun ExistNPQS dep dep head
 #fun GenRP nummod head
 
 -- numerals
@@ -154,6 +158,7 @@
 #fun ComparAdvAdjS advmod head ccomp -- TODO check
 #fun UseRCl dep dep head
 #fun UseCl dep dep head
+#fun UseQCl dep dep head
 #fun ComplV head obj
 #fun ComplA2 head obl -- not used for now
 #fun AdvAP head obl

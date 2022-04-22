@@ -2,11 +2,12 @@ concrete BareRGEng of BareRG =
 
   ExtendEng [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistNP,
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     ApposNP, AdjAsNP, GerundNP, GerundCN
+    ,ICompAP, IAdvAdv, PredIAdvVP
   ],
 
   SentenceEng,
@@ -18,11 +19,12 @@ concrete BareRGEng of BareRG =
   CompAP,
   CompAdv,
   CompNP
+  ,UseAdv
   ,AdvVP    -- VP -> Adv -> VP ;       -- sleep here
   ,AdVVP
   ],
 
-  IdiomEng [ProgrVP, GenericCl], -- Not used for parsing
+  IdiomEng [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
 
   NounEng - [
     CountNP,
@@ -52,7 +54,10 @@ concrete BareRGEng of BareRG =
     AdnCAdv        -- : CAdv -> AdN ;
   ],
 
-  StructuralEng [Prep, possess_Prep, by8agent_Prep],
+  StructuralEng [
+    Prep, possess_Prep, by8agent_Prep,
+    always_Adv
+  ],
   SymbolEng [
       Symb
     , SymbPN

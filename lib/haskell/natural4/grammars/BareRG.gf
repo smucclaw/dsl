@@ -5,12 +5,13 @@ abstract BareRG =
 
   Extend [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistNP,
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN -- : N -> N -> N    -- control system
     -- these only for UDExt; not in labels file
     ,ApposNP, AdjAsNP, GerundNP, GerundCN
+    ,ICompAP, IAdvAdv, PredIAdvVP
   ],
 
   Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
@@ -27,7 +28,7 @@ abstract BareRG =
    ,AdVVP
   ],
 
-  Idiom [ProgrVP, GenericCl], -- Not used for parsing
+  Idiom [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
 
    Noun - [
       CountNP,
@@ -57,7 +58,10 @@ abstract BareRG =
     AdnCAdv        -- : CAdv -> AdN ;
   ],
 
-  Structural [Prep, possess_Prep, by8agent_Prep],
+  Structural [
+    Prep, possess_Prep, by8agent_Prep,
+    always_Adv
+  ],
   Symbol [
       Symb
     , SymbPN

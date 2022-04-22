@@ -33,6 +33,7 @@ import Data.Maybe (isJust)
 import Control.Monad (when, replicateM, guard)
 import Data.Either (fromRight)
 import Data.Char
+import System.IO.Unsafe (unsafePerformIO)
 import LS.ParamText
 import qualified Data.Text.Lazy as T
 import Test.QuickCheck.Arbitrary.Generic
@@ -162,7 +163,7 @@ notOther (RuleMarker _ _) = False
 notOther _ = True
 
 prop_rendertoken :: MyToken -> Property
-prop_rendertoken token = 
+prop_rendertoken token =
   token `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther token ==>
   toToken (T.pack $ renderToken token) === [token]
 
@@ -1183,7 +1184,7 @@ main = do
                            |*| slMultiTerm
                            |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
             return (x,y)
-            
+
           aNLK :: Int -> SLParser ([Text.Text],MyToken)
           aNLK maxDepth = mkSL $ do
             (toreturn, n) <- runSL aboveNextLineKeyword
@@ -1194,7 +1195,7 @@ main = do
       -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
       -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
       -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
-      
+
       it "SLParser combinators 5 aboveNextLineKeyword" $ do
         parseOther ((,,)
                     $>| pOtherVal
@@ -1306,7 +1307,7 @@ main = do
                            "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
                            "of the personal data is likely to occur") inline_xs
           inline_4xs= Any Nothing [inline_pp, inline4_pp]
-      
+
           pInline1 = parseOther $ do
             let getLHS ((x,_),z) = (x,z)
             (,,)
@@ -1314,7 +1315,7 @@ main = do
               |<| pToken Means
               |-| debugName "made it to pBSR" pBSR
               |<$ undeepers
-            
+
       filetest "inline-1-c" "line crossing" pInline1 inline_1
       filetest "inline-1-d" "line crossing" pInline1 inline_1
       filetest "inline-1-e" "line crossing" pInline1 inline_1
@@ -1350,7 +1351,7 @@ main = do
 -- expected to fail
 --      filetest "multiterm-with-blanks-3" "sl, with blank, next line" (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
 
- 
+
 -- [ Hornlike
 --     { name = [ "Bad" ]
 --     , keyword = Means
@@ -1456,7 +1457,7 @@ main = do
         ( Any Nothing [Leaf (("thing1" :| [],Nothing) :| [])
                       ,All Nothing [Leaf (("thing2" :| [],Nothing) :| [])
                                    ,Leaf (("thing3" :| [],Nothing) :| [])]]  , [] )
-  
+
 
       filetest "boolstructp-3" "boolstruct including typically"
         (parseR pRules )
@@ -1478,8 +1479,9 @@ main = do
       -- let's see if the groundrules function outputs the right things
       let grNormal = groundrules runConfig_
           grExtend = groundrules runConfig_ { extendedGrounds = True }
-          asCList  = checklist   runConfig_ { extendedGrounds = True }
-      
+          asCList  = unsafePerformIO .
+                       checklist runConfig_ { extendedGrounds = True }
+
       filetest "boolstructp-3" "groundrules, non-extended"
         (parseWith grNormal pRules) [["person","has","health insurance"]]
 

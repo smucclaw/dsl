@@ -16,7 +16,7 @@ import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorph
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower)
+import Data.Char (toLower, isUpper)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
@@ -26,10 +26,13 @@ import Data.List.Extra (maximumOn)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
+import Control.Monad (when)
+import System.Environment (lookupEnv)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
   , udpipeModel :: Model
+  , verbose :: Bool
   }
 
 showExpr :: Expr -> String
@@ -41,14 +44,16 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
-  putStrLn "Loading UDPipe model..."
+  mpn <- lookupEnv "MP_NLG"
+  let verbose = maybe False (read :: String -> Bool) mpn
+  when verbose $ putStrLn "Loading UDPipe model..."
   udpipeModel <- either error id <$> loadModel modelFilePath
-  putStrLn "Loaded UDPipe model"
+  when verbose $ putStrLn "Loaded UDPipe model"
   -- let
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
   --   lang = actLanguage udEnv
   --   gfMorpho = buildMorpho parsingGrammar lang
-  return $ NLGEnv {udEnv, udpipeModel}
+  return $ NLGEnv {udEnv, udpipeModel, verbose}
 
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
@@ -62,14 +67,16 @@ gfPath x = "grammars/" ++ x
 -- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
 parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
+  when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
+    putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
 --  conll <- udpipe txt -- Initial parse
-  lowerConll <- udpipe (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  putStrLn $ "\nconllu:\n" ++ lowerConll
+  lowerConll <- udpipe (lowerButPreserveAllCaps txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   -- let expr = case ud2gf conll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   let expr = fromMaybe errorMsg (ud2gf lowerConll)
-  putStrLn $ showExpr expr
+  when (verbose env) $ putStrLn $ showExpr expr
   return $ fg expr
   where
     errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt
@@ -77,15 +84,23 @@ parseUD env txt = do
     udpipe :: Text.Text -> IO String
     udpipe txt = do
       let str = Text.unpack txt
-      putStrLn "Running UDPipe..."
+      when (verbose env) $ putStrLn "Running UDPipe..."
       result <- runPipeline (udpipeModel env) str
-      putStrLn $ "UDPipe result: " ++ show result
+      -- when (verbose env) $ putStrLn ("UDPipe result: " ++ show result) -- this is a bit extra verbose
       return $ either error id result
 
     ud2gf :: String -> Maybe Expr
     ud2gf str = case getExprs [] (udEnv env) str of
       (x : _xs) : _xss -> Just x
       _ -> Nothing
+
+    lowerButPreserveAllCaps :: Text.Text -> Text.Text
+    lowerButPreserveAllCaps txt = Text.unwords
+      [ if all isUpper (Text.unpack wd)
+          then wd
+          else Text.map toLower wd
+      | wd <- Text.words txt
+      ]
 
 -----------------------------------------------------------------------------
 
@@ -103,7 +118,7 @@ nlg rl = do
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
-                                  (name,Just expr) <- [("Cond", fmap (gf . toUDS gr) condA),
+                                  (name,Just expr) <- [("Cond", gf . toUDS gr <$> condA),
                                                        ("Temporal", temporalA),
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
@@ -168,7 +183,7 @@ parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
     let gr = pgfGrammar $ udEnv env
-    subjA <- (gf . toUDS gr) <$> bsp2gf env subj
+    subjA <- gf . toUDS gr <$> bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
     condA <- mapM (bsr2gf env) cond
@@ -306,7 +321,7 @@ kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)
 kvspair2gf env (action,_) = case action of
   pred :| []     -> do
     predUDS <- parseUD env pred
-    return $ case getTypeAndValue predUDS of
+    return $ case udsToTreeGroups predUDS of
       TG {gfAP=Just ap}   -> ("AP", gf ap)
       TG {gfAdv=Just adv} -> ("Adv", gf adv)
       TG {gfNP=Just np}   -> ("NP", gf np)
@@ -329,8 +344,8 @@ combineExpr pred compl = result
   where
     predExpr = gf pred -- used for error msg
     complExpr = gf compl -- used for error msg
-    predTyped = getTypeAndValue pred
-    complTyped = getTypeAndValue compl
+    predTyped = udsToTreeGroups pred
+    complTyped = udsToTreeGroups compl
     result = case predTyped of
       TG {gfRP=Just for_which} ->
         ("RCl", case complTyped of
@@ -403,9 +418,10 @@ combineExpr pred compl = result
       --   _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       tg -> error ("combineExpr: can't find type " ++ show tg ++ " for the predicate " ++ showExpr predExpr)
 
+
 -- | Takes a UDS, peels off the UD layer, returns a pair ("RGL type", the peeled off Expr)
-getTypeAndValue :: GUDS -> TreeGroups
-getTypeAndValue uds = groupByRGLtype (LexConj "") [uds]
+udsToTreeGroups :: GUDS -> TreeGroups
+udsToTreeGroups uds = groupByRGLtype (LexConj "") [uds]
 
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructR into a GF list
@@ -455,17 +471,20 @@ disambiguateList pgf access_use_copying =
     isSingleton [_] = True
     isSingleton _ = False
 
--- Meant to be called from inside an Any or All
+-- Meant to be called from inside an Any or All, via parseAndDisambiguate
 -- If we encounter another Any or All, fall back to bsr2gf
 bsr2gfAmb :: NLGEnv -> BoolStructR -> IO [PGF.Expr]
 bsr2gfAmb env bsr = case bsr of
+  -- If it's a leaf, parse the contents
   AA.Leaf rp -> do
     let access = rp2text rp
-    let checkWords = length $ Text.words access
-    case checkWords of
-      1 -> return $ parseLex env (Text.unpack access)
+    case Text.words access of
+      -- If the leaf is a single word, do a lexicon lookup
+      [_] -> return $ parseLex env (Text.unpack access)
+      -- If the leaf is multiple words, parse with udpipe
       _ -> singletonList $ gf `fmap` parseUD env access
-  -- In any other case, call the full bsr2gf
+
+  -- If it's not a leaf, call bsr2gf
   _ -> singletonList $ bsr2gf env bsr
   where
     singletonList x = (:[]) `fmap` x
@@ -481,6 +500,10 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
+    -- print ("qcl" :: [Char])
+    -- putStrLn $ showExpr $ gf $ getGQSFromTrees existingTrees
+    gr <- nlgExtPGF
+    -- print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -539,6 +562,36 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
     (<:) :: (Gf a) => Maybe a -> [Expr] -> [Expr]
     Nothing <: exprs = exprs
     Just ap <: exprs = gf ap : exprs
+
+--     ExistNPQS  : Temp -> Pol -> NP -> QS ;   -- was there a party
+-- SQuestVPS  : NP   -> VPS -> QS ;
+-- get GQS from Trees
+--     ExistIPQS  : Temp -> Pol -> IP -> QS ;   -- what was there
+--     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
+--     ExistIP   : IP -> QCl ;       -- which houses are there
+
+getGQSFromTrees :: TreeGroups -> GQS
+getGQSFromTrees whichTG = case whichTG of
+  TG {gfCl = Just clGroup} -> useQCl $ GQuestCl (makeSubjectDefinite clGroup)
+  TG {gfNP = Just npGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos npGroup
+  TG {gfCN = Just cnGroup} -> useQCl $ GQuestCl $ GExistCN cnGroup
+  TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
+  TG {gfAP = Just apGroup} -> useQCl $ GQuestIComp (GICompAP apGroup) (GAdjAsNP apGroup)
+  TG {gfDet = Just detGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP detGroup
+  TG {gfAdv = Just advGroup} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv advGroup))
+  _ -> useQCl $ GQuestCl dummyCl
+
+  where
+    makeSubjectDefinite :: GCl -> GCl
+    makeSubjectDefinite cl = case cl of
+      GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
+      _ -> cl
+
+-- checkIAdv :: GAdv -> GIAdv
+-- checkIAdv adv
+--   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
+--   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
+--   | otherwise = Gwhy_IAdv
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups
@@ -660,11 +713,11 @@ toUDS pgf e = case findType pgf e of
   "RCl" -> case fg e :: GRCl of
              GRelVP _rp vp -> toUDS pgf (gf vp)
              GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
-             _ -> fg $ dummyExpr $"unable to convert to UDS: " ++ showExpr e
+             _ -> fg $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
   "Cl" -> case fg e :: GCl of
             GPredVP np vp -> Groot_nsubj (GrootV_ vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
-            _ -> fg  $ dummyExpr $ ("unable to convert to UDS: " ++ showExpr e)
+            _ -> fg  $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
   _ -> fg $ dummyExpr $ "unable to convert to UDS: " ++ showExpr e
 
 -----------------------------------------------------------------------------
@@ -679,6 +732,9 @@ dummyAP = GStrAP (GString [])
 dummyAdv :: GAdv
 dummyAdv = LexAdv "never_Adv"
 
+dummyCl :: GCl
+dummyCl = GExistsNP dummyNP
+
 orConj, andConj :: GConj
 orConj = LexConj "or_Conj"
 andConj = LexConj "and_Conj"
@@ -692,7 +748,9 @@ useRCl = GUseRCl (GTTAnt GTPres GASimul) GPPos
 useCl :: GCl -> GS
 useCl = GUseCl (GTTAnt GTPres GASimul) GPPos
 
-
+--     UseQCl   : Temp -> Pol -> QCl -> QS ;
+useQCl :: GQCl -> GQS
+useQCl = GUseQCl (GTTAnt GTPres GASimul) GPPos
 
 -- Specialised version of npFromUDS: return Nothing if the NP is MassNP
 nonMassNpFromUDS :: GUDS -> Maybe GNP
@@ -745,14 +803,10 @@ npFromUDS x = case x of
 udRelcl2rglRS :: GUDS -> GRS
 udRelcl2rglRS uds = case uds of
   Groot_nsubj (GrootV_ vp) _ -> vp2rs vp -- TODO: check if nsubj contains something important
-  _ -> case getRoot uds of
-    GrootV_ vp:_ -> vp2rs vp
-    GrootN_ np:_ -> vp2rs (GUseComp (GCompNP np))
-    GrootA_ ap:_ -> vp2rs (GUseComp (GCompAP ap))
-    _ -> error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
+  _ -> maybe err vp2rs (verbFromUDS uds)
   where
     vp2rs vp = useRCl (GRelVP GIdRP vp)
-
+    err = error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
 
 pnFromUDS :: GUDS -> Maybe GPN
 pnFromUDS x = np2pn =<< npFromUDS x
@@ -818,6 +872,9 @@ verbFromUDS x = case getNsubj x of
     Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
     _ -> case getRoot x of -- TODO: fill in other cases
                 GrootV_ vp:_ -> Just vp
+                GrootN_  np:_ -> Just $ GUseComp (GCompNP np)
+                GrootA_  ap:_ -> Just $ GUseComp (GCompAP ap)
+                GrootAdv_ a:_ -> Just $ GUseComp (GCompAdv a)
                 _            -> Nothing
 
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely
@@ -825,35 +882,42 @@ clFromUDS :: GUDS -> Maybe GCl
 clFromUDS x = case getNsubj x of
   [] -> Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   _ -> case x of
-    Groot_nsubj (GrootV_ vp) (Gnsubj_ np) -> Just $ GPredVP np vp
-    Groot_nsubj_advmod (GrootV_ vp) (Gnsubj_ np) (Gadvmod_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_advmod_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_advmod (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_advmod_obj_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl_advmod_advcl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_ccomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_aclRelcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_advcl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_cop_case_nmod_acl (GrootV_ vp) (Gnsubj_ np) _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubj_cop_nmodPoss (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_obj (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_obj_xcomp (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_obl (GrootV_ vp) (Gnsubj_ np) (Gobl_ adv) -> Just $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_obl_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubj_xcomp (GrootV_ vp) (Gnsubj_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubj_aux_obl (GrootV_ vp) (Gnsubj_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass (GrootV_ vp) (GnsubjPass_ np) _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_advmod_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_advmod_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_auxPass_xcomp (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass (GrootV_ vp) (GnsubjPass_ np) _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_obl_advcl (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
-    Groot_nsubjPass_aux_auxPass_obl_obl_advmod (GrootV_ vp) (GnsubjPass_ np) _ _ _ _ _  -> Just $ GPredVP np vp
+    Groot_nsubj root (Gnsubj_ np) -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
+      vp <- verbFromUDS (Groot_only root)
+      Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obj root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
+      vp <- verbFromUDS (Groot_only root)
+      Just $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass root (GnsubjPass_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_advmod_advcl root (GnsubjPass_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_advmod_xcomp root (GnsubjPass_ np) _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_auxPass_xcomp root (GnsubjPass_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass root (GnsubjPass_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_advmod root (GnsubjPass_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_obl_advcl root (GnsubjPass_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubjPass_aux_auxPass_obl_obl_advmod root (GnsubjPass_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDS (Groot_only root)
+    Groot_nsubj_cop_advmod root (Gnsubj_ np) _cop Gnot_advmod -> -- TODO: can we address the negation?
+      GPredVP np <$> verbFromUDS (Groot_only root)
+
     _ -> case verbFromUDS x of -- TODO: fill in other cases
                 Just vp -> Just $ GGenericCl vp
                 _       -> Nothing

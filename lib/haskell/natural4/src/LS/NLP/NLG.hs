@@ -118,7 +118,7 @@ nlg rl = do
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
-                                  (name,Just expr) <- [("Cond", fmap (gf . toUDS gr) condA),
+                                  (name,Just expr) <- [("Cond", gf . toUDS gr <$> condA),
                                                        ("Temporal", temporalA),
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
@@ -183,7 +183,7 @@ parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
     let gr = pgfGrammar $ udEnv env
-    subjA <- (gf . toUDS gr) <$> bsp2gf env subj
+    subjA <- gf . toUDS gr <$> bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
     condA <- mapM (bsr2gf env) cond
@@ -471,17 +471,20 @@ disambiguateList pgf access_use_copying =
     isSingleton [_] = True
     isSingleton _ = False
 
--- Meant to be called from inside an Any or All
+-- Meant to be called from inside an Any or All, via parseAndDisambiguate
 -- If we encounter another Any or All, fall back to bsr2gf
 bsr2gfAmb :: NLGEnv -> BoolStructR -> IO [PGF.Expr]
 bsr2gfAmb env bsr = case bsr of
+  -- If it's a leaf, parse the contents
   AA.Leaf rp -> do
     let access = rp2text rp
-    let checkWords = length $ Text.words access
-    case checkWords of
-      1 -> return $ parseLex env (Text.unpack access)
+    case Text.words access of
+      -- If the leaf is a single word, do a lexicon lookup
+      [_] -> return $ parseLex env (Text.unpack access)
+      -- If the leaf is multiple words, parse with udpipe
       _ -> singletonList $ gf `fmap` parseUD env access
-  -- In any other case, call the full bsr2gf
+
+  -- If it's not a leaf, call bsr2gf
   _ -> singletonList $ bsr2gf env bsr
   where
     singletonList x = (:[]) `fmap` x
@@ -710,11 +713,11 @@ toUDS pgf e = case findType pgf e of
   "RCl" -> case fg e :: GRCl of
              GRelVP _rp vp -> toUDS pgf (gf vp)
              GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
-             _ -> fg $ dummyExpr $"unable to convert to UDS: " ++ showExpr e
+             _ -> fg $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
   "Cl" -> case fg e :: GCl of
             GPredVP np vp -> Groot_nsubj (GrootV_ vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
-            _ -> fg  $ dummyExpr $ ("unable to convert to UDS: " ++ showExpr e)
+            _ -> fg  $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
   _ -> fg $ dummyExpr $ "unable to convert to UDS: " ++ showExpr e
 
 -----------------------------------------------------------------------------

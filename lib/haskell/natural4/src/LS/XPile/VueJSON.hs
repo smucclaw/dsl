@@ -115,6 +115,3 @@ quaero :: [Text.Text] -> [Text.Text]
 quaero [x] = [Text.unwords $ quaero $ Text.words x]
 quaero (x:xs) = Text.toTitle x : init xs ++ [last xs <> "?"]
 quaero xs = xs
-
--- quaero :: Text.Text -> Text.Text
--- quaero xs = xs <> "?"

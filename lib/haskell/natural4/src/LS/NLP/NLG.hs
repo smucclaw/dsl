@@ -16,7 +16,7 @@ import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorph
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower)
+import Data.Char (toLower, isUpper)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
@@ -70,7 +70,7 @@ parseUD env txt = do
   when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
 --  conll <- udpipe txt -- Initial parse
-  lowerConll <- udpipe (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  lowerConll <- udpipe (lowerButPreserveAllCaps txt) -- fallback: if parse fails with og text, try parsing all lowercase
   when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   -- let expr = case ud2gf conll of
   --              Just e -> e
@@ -93,6 +93,14 @@ parseUD env txt = do
     ud2gf str = case getExprs [] (udEnv env) str of
       (x : _xs) : _xss -> Just x
       _ -> Nothing
+
+    lowerButPreserveAllCaps :: Text.Text -> Text.Text
+    lowerButPreserveAllCaps txt = Text.unwords
+      [ if all isUpper (Text.unpack wd)
+          then wd
+          else Text.map toLower wd
+      | wd <- Text.words txt
+      ]
 
 -----------------------------------------------------------------------------
 

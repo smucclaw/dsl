@@ -27,12 +27,13 @@ import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when)
+import System.Environment (lookupEnv)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
   , udpipeModel :: Model
+  , verbose :: Bool
   }
-verbose = False
 
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
@@ -43,6 +44,8 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
+  mpn <- lookupEnv "MP_NLG"
+  let verbose = maybe False (read :: String -> Bool) mpn
   when verbose $ putStrLn "Loading UDPipe model..."
   udpipeModel <- either error id <$> loadModel modelFilePath
   when verbose $ putStrLn "Loaded UDPipe model"
@@ -50,7 +53,7 @@ myNLGEnv = do
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
   --   lang = actLanguage udEnv
   --   gfMorpho = buildMorpho parsingGrammar lang
-  return $ NLGEnv {udEnv, udpipeModel}
+  return $ NLGEnv {udEnv, udpipeModel, verbose}
 
 nlgExtPGF :: IO PGF
 nlgExtPGF = readPGF (gfPath "UDExt.pgf")
@@ -64,15 +67,16 @@ gfPath x = "grammars/" ++ x
 -- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
 parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
-  putStrLn $ "NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\""
+  when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
+    putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
 --  conll <- udpipe txt -- Initial parse
   lowerConll <- udpipe (Text.map toLower txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  when verbose $ putStrLn ("\nconllu:\n" ++ lowerConll)
+  when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   -- let expr = case ud2gf conll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   let expr = fromMaybe errorMsg (ud2gf lowerConll)
-  when verbose $ putStrLn $ showExpr expr
+  when (verbose env) $ putStrLn $ showExpr expr
   return $ fg expr
   where
     errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt
@@ -80,9 +84,9 @@ parseUD env txt = do
     udpipe :: Text.Text -> IO String
     udpipe txt = do
       let str = Text.unpack txt
-      when verbose $ putStrLn "Running UDPipe..."
+      when (verbose env) $ putStrLn "Running UDPipe..."
       result <- runPipeline (udpipeModel env) str
-      when verbose $ putStrLn ("UDPipe result: " ++ show result)
+      -- when (verbose env) $ putStrLn ("UDPipe result: " ++ show result) -- this is a bit extra verbose
       return $ either error id result
 
     ud2gf :: String -> Maybe Expr
@@ -485,10 +489,10 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
-    print ("qcl" :: [Char])
-    putStrLn $ showExpr $ gf $ getGQSFromTrees existingTrees
+    -- print ("qcl" :: [Char])
+    -- putStrLn $ showExpr $ gf $ getGQSFromTrees existingTrees
     gr <- nlgExtPGF
-    print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
+    -- print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories

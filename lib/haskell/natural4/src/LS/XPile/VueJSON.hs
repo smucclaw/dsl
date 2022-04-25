@@ -11,6 +11,7 @@ import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (nub, groupBy)
 import qualified Data.Text.Lazy as Text
+import Control.Monad (when)
 
 import PGF ( linearize, languages )
 import LS.NLP.UDExt (gf)
@@ -92,14 +93,15 @@ groundToChecklist mt = do
   let txt = Text.unwords mt
   env <- myNLGEnv
   uds <- parseUD env txt
-  let trees = udsToTreeGroups uds
-  let gqs = getGQSFromTrees trees
+  let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
+  -- Debug output: print the AST of the question generated in getQSFromTrees
+  when (verbose env) $ putStrLn ("The generated QS from the UDApp tree:\n" ++ showExpr qs)
   gr <- nlgExtPGF
-  let lin = linearize gr (head $ languages gr) $ gf gqs
+  let lin = linearize gr (head $ languages gr) qs
   let result = case words lin of
         "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
         _ -> Text.pack lin
-  return $ quaero $ [result]
+  return $ quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
 pickOneOf mts = Text.pack "Does any of the following hold?" :

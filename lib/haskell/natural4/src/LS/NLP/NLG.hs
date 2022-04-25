@@ -46,7 +46,7 @@ myNLGEnv = do
   udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
-  when verbose $ putStrLn "Loading UDPipe model..."
+  when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
   udpipeModel <- either error id <$> loadModel modelFilePath
   when verbose $ putStrLn "Loaded UDPipe model"
   -- let
@@ -76,7 +76,7 @@ parseUD env txt = do
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   let expr = fromMaybe errorMsg (ud2gf lowerConll)
-  when (verbose env) $ putStrLn $ showExpr expr
+  when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ showExpr expr)
   return $ fg expr
   where
     errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt
@@ -501,9 +501,9 @@ bsr2gf env bsr = case bsr of
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
     -- print ("qcl" :: [Char])
-    -- putStrLn $ showExpr $ gf $ getGQSFromTrees existingTrees
+    -- putStrLn $ showExpr $ gf $ getQSFromTrees existingTrees
     gr <- nlgExtPGF
-    -- print (linearize gr (head $ languages gr) $ gf $ getGQSFromTrees existingTrees)
+    -- print (linearize gr (head $ languages gr) $ gf $ getQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -570,15 +570,15 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
-getGQSFromTrees :: TreeGroups -> GQS
-getGQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just clGroup} -> useQCl $ GQuestCl (makeSubjectDefinite clGroup)
-  TG {gfNP = Just npGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos npGroup
-  TG {gfCN = Just cnGroup} -> useQCl $ GQuestCl $ GExistCN cnGroup
-  TG {gfVP = Just vpGroup} -> useQCl $ GQuestVP Gwhat_IP vpGroup -- how to get what or who?
-  TG {gfAP = Just apGroup} -> useQCl $ GQuestIComp (GICompAP apGroup) (GAdjAsNP apGroup)
-  TG {gfDet = Just detGroup} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP detGroup
-  TG {gfAdv = Just advGroup} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv advGroup))
+getQSFromTrees :: TreeGroups -> GQS
+getQSFromTrees whichTG = case whichTG of
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl)
+  TG {gfNP = Just np} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos (makeSubjectIndefinite np)
+  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
+  TG {gfVP = Just vp} -> useQCl $ GQuestVP Gwhat_IP vp -- how to get what or who?
+  TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)
+  TG {gfDet = Just det} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP det
+  TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
   _ -> useQCl $ GQuestCl dummyCl
 
   where
@@ -587,11 +587,24 @@ getGQSFromTrees whichTG = case whichTG of
       GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
       _ -> cl
 
+    makeSubjectIndefinite :: GNP -> GNP
+    makeSubjectIndefinite np = case np of
+      GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
+      _ -> np
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
 --   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
 --   | adv `elem` [Geverywhere_Adv, Ghere_Adv, Gsomewhere_Adv, Gthere_Adv] = Gwhere_IAdv
 --   | otherwise = Gwhy_IAdv
+
+
+{- the ultimate refactoring goal
+makeNPHaveArticle :: GDet -> GNP -> GNP
+makeNPHaveArticle det ogNP = case ogNP of
+  GMassNP cn -> GDetCN det cn
+  _ -> ogNP
+
+  -}
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups

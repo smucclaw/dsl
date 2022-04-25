@@ -1,30 +1,3 @@
-#word is   be  Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin
-#word are  be  Mood=Ind|Tense=Pres|VerbForm=Fin
-#word am   be  Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin
-#word was  be  Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin
-#word were be  Mood=Ind|Tense=Past|VerbForm=Fin
-#word been be  Tense=Past|VerbForm=Part
-#word be   be  VerbForm=Inf
-#word has  have  Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin
-#word have have  VerbForm=Inf
-#word had  have  Mood=Ind|Tense=Past|VerbForm=Fin
-#word does  do  Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin
-#word do do  VerbForm=Inf
-#word did  do  Mood=Ind|Tense=Past|VerbForm=Fin
-#word would would  VerbForm=Fin
-#word will  will   VerbForm=Fin
-#word to to _
-#word that that _
-#word there there _
-#word not not Polarity=Neg
-#word n't not Polarity=Neg
-#word 's 's _
-#word ' ' _
-#word , , _
-
-#lemma DEFAULT_ be cop cop head
-
-
 -------------------------------------------------------------------
 -- Exceptions and special cases, when UD structure doesn't match GF
 
@@ -62,7 +35,7 @@
 -- #auxfun PossGenmodSgPl_ np cn : NP -> CN -> NP = GenModNP NumPl np cn ; nmod:poss head[Number=Plur]
 
 -- disable plurals as mass terms
-#auxfun MassNP_sg cn : CN -> NP = MassNP cn ; head[Number=Sing]
+#auxfun MassNP_sg cn : CN -> NP = MassNP        cn ; head[Number=Sing]
 #auxfun DetCN_aPl cn : CN -> NP = DetCN aPl_Det cn ; head[Number=Plur]
 #disable MassNP aPl_Det NumPl
 
@@ -93,6 +66,8 @@
 -- #auxfun PrepNP_theSg prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN the_Det cn) ; case det head[Number=Sing]
 -- #auxfun PrepNP_thePl prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN thePl_Det cn) ; case det head[Number=Plur]
 
+#auxfun PrepN_ doubt in : N -> Prep -> NP = PrepNP in (MassNP (UseN doubt)) ; head case
+
 -- ** don't use ImpVP if there's no [Mood=Imp] **
 #auxfun UttImpSg_Pos vp : VP -> Utt = UttImpSg PPos (ImpVP vp) ; head[Mood=Imp]
 #auxfun UttImpSg_Neg do neg vp : Do -> Neg -> VP -> Utt = UttImpSg PNeg (ImpVP vp) ; aux[VerbForm=Inf] advmod head[VerbForm=Inf]
@@ -105,6 +80,25 @@
 
 #auxfun ExtAdvS_ adv comma s : Adv -> Conj -> S -> S = ExtAdvS adv s ; advmod punct[LEMMA=\,] head
 
+-- I ate the cake , smiling
+ExtAdvS i_ate_cake_S smiling_Adv
+
+-- I ate the cake smiling
+AdvS i_ate_cake_S smiling_Adv
+
+ExtAdvS : S -> Adv -> S ;
+   AdvS : S -> Adv -> S ;
+
+
+lincat Adv, S = {s : Str} ;
+
+ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
+   AdvS sent adv = {s = sent.s ++        adv.s} ;
+
+
+-- NOT like this:
+-- ExtAdvS : S -> Punct -> Adv -> S ;
+-- ExtAdvS sent comma adv = {s = sent.s ++ comma.s ++ adv.s} ;
 -----------------------
 -- Inari's additions --
 -----------------------
@@ -239,7 +233,7 @@
 
 #auxfun RelVPGerund_cop_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj cop
 
-#disable ProgrVP GerundNP CompNP GerundCN
+#disable ProgrVP GerundNP CompNP GerundCN GerundAdv
 -- GerundNP causes loops with CompNP
 -- GerundCN disabled, because otherwise GerundCN (UseV verb_V) takes priority over UseN nouning_N.
 

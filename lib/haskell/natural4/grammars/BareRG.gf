@@ -10,7 +10,7 @@ abstract BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN -- : N -> N -> N    -- control system
     -- these only for UDExt; not in labels file
-    ,ApposNP, AdjAsNP, GerundNP, GerundCN
+    ,ApposNP, AdjAsNP, GerundNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
   ],
 

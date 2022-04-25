@@ -382,6 +382,7 @@ data Tree :: * -> * where
   GComparAdvAdj :: GCAdv -> GA -> GNP -> Tree GAdv_
   GComparAdvAdjS :: GCAdv -> GA -> GS -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
+  GGerundAdv :: GVP -> Tree GAdv_
   GPositAdvAdj :: GA -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GSubjS :: GSubj -> GS -> Tree GAdv_
@@ -925,6 +926,7 @@ instance Eq (Tree a) where
     (GComparAdvAdj x1 x2 x3,GComparAdvAdj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GComparAdvAdjS x1 x2 x3,GComparAdvAdjS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GGerundAdv x1,GGerundAdv y1) -> and [ x1 == y1 ]
     (GPositAdvAdj x1,GPositAdvAdj y1) -> and [ x1 == y1 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1539,6 +1541,7 @@ instance Gf GAdv where
   gf (GComparAdvAdj x1 x2 x3) = mkApp (mkCId "ComparAdvAdj") [gf x1, gf x2, gf x3]
   gf (GComparAdvAdjS x1 x2 x3) = mkApp (mkCId "ComparAdvAdjS") [gf x1, gf x2, gf x3]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
+  gf (GGerundAdv x1) = mkApp (mkCId "GerundAdv") [gf x1]
   gf (GPositAdvAdj x1) = mkApp (mkCId "PositAdvAdj") [gf x1]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
   gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
@@ -1550,6 +1553,7 @@ instance Gf GAdv where
       Just (i,[x1,x2,x3]) | i == mkCId "ComparAdvAdj" -> GComparAdvAdj (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "ComparAdvAdjS" -> GComparAdvAdjS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "GerundAdv" -> GGerundAdv (fg x1)
       Just (i,[x1]) | i == mkCId "PositAdvAdj" -> GPositAdvAdj (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
@@ -3762,6 +3766,7 @@ instance Compos Tree where
     GComparAdvAdj x1 x2 x3 -> r GComparAdvAdj `a` f x1 `a` f x2 `a` f x3
     GComparAdvAdjS x1 x2 x3 -> r GComparAdvAdjS `a` f x1 `a` f x2 `a` f x3
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
+    GGerundAdv x1 -> r GGerundAdv `a` f x1
     GPositAdvAdj x1 -> r GPositAdvAdj `a` f x1
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2

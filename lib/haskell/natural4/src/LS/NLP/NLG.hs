@@ -502,7 +502,7 @@ bsr2gf env bsr = case bsr of
     let existingTrees = groupByRGLtype orConj contentsUDS
     -- print ("qcl" :: [Char])
     -- putStrLn $ showExpr $ gf $ getQSFromTrees existingTrees
-    gr <- nlgExtPGF
+    -- gr <- nlgExtPGF
     -- print (linearize gr (head $ languages gr) $ gf $ getQSFromTrees existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
@@ -883,11 +883,30 @@ verbFromUDS x = case getNsubj x of
     Groot_obl_xcomp (GrootV_ vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
     Groot_xcomp (GrootV_ vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
     Groot_advmod (GrootV_ vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
+
+    {- -- version 1: explicit pattern match, brittle, specialised for 1 case
+    Groot_acl_nmod (GrootN_ np) _                      (Gnmod_ nmod) ->
+      Just $ GAdvVP (GUseComp (GCompNP np)) nmod
+    Groot_acl_nmod (GrootA_ ap) _                      (Gnmod_ nmod) ->
+      Just $ GAdvVP (GUseComp (GCompAP ap)) nmod
+    Groot_acl_nmod (GrootV_ vp) _                      (Gnmod_ nmod) ->
+      Just $ GAdvVP vp nmod -}
+
+    -- version 2: general solution, recursion
+    Groot_acl_nmod root         (GaclUDSgerund_ uds) (Gnmod_ prep np) -> do
+      vp <- verbFromUDS (Groot_only root) -- recursively calling verbFromUDS, now with a UDS that is guaranteed to go to the _ case below, and getRoot will be called, and a VP will be constructed
+      vpToBecomeGerund <- verbFromUDS uds -- :: GVP
+      let gerundAdv = GGerundAdv vpToBecomeGerund -- :: GAdv
+      let nmodAdv = GPrepNP prep np
+      return $ GAdvVP (GAdvVP vp gerundAdv) nmodAdv
+
     _ -> case getRoot x of -- TODO: fill in other cases
                 GrootV_ vp:_ -> Just vp
                 GrootN_  np:_ -> Just $ GUseComp (GCompNP np)
                 GrootA_  ap:_ -> Just $ GUseComp (GCompAP ap)
                 GrootAdv_ a:_ -> Just $ GUseComp (GCompAdv a)
+                -- TODO: add cases for
+                -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
                 _            -> Nothing
 
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely

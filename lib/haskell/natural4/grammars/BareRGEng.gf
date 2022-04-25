@@ -6,7 +6,10 @@ concrete BareRGEng of BareRG =
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
-    ApposNP, AdjAsNP, GerundNP, GerundCN
+    ApposNP, AdjAsNP,
+    GerundNP, -- : VP -> NP
+     GerundCN,-- : VP -> CN
+     GerundAdv-- : VP -> Adv
     ,ICompAP, IAdvAdv, PredIAdvVP
   ],
 

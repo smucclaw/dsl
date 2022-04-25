@@ -48,6 +48,14 @@ nlgTests = do
         treeNP <- bsr2gf env testNPBSR
         showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
 
+    it "Should return a adverbial for root_nmod_acl phrase" $ do
+        testNPRootNmodAcl <- bsr2gf env testNPRootNmodAclBSR
+        showExpr testNPRootNmodAcl `shouldBe` "TODO"
+
+    it "Should return a adverbial for root_nmod_aclRelcl phrase" $ do
+        testNPRootNmodAclRelcl <- bsr2gf env testNPRootNmodAclRelclBSR
+        showExpr testNPRootNmodAclRelcl `shouldBe` "TODO"
+
     it "Should return a noun phrase" $ do
         treeNPComplex <- bsr2gf env testNPComplexBSR
         showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN theSg_Det (UseN occurrence_N)) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
@@ -144,6 +152,18 @@ testNPBSR = testBSR ["all occurrences", "this assessment"]
 
 testNPComplexBSR :: BoolStructR
 testNPComplexBSR = testBSR ["the occurrence at the beach", "this assessment that sucks"]
+
+testNPRootNmodAclBSR :: BoolStructR
+testNPRootNmodAclBSR  = testBSR [
+  -- "any of the personal data relating to the individual", "all of the mysteries centering around the principal",
+  "none of the submitted proposals focusing on this topic"
+  --,"all of her savings invested in this technology fund", "policy (called in this item the applicable policy) of the company"
+  ]
+
+testNPRootNmodAclRelclBSR :: BoolStructR
+testNPRootNmodAclRelclBSR = testBSR [
+  --"any manner in these circumstances that is reasonable", "any motive of the suspect which was ruled out", "a kind word from her friend she relies on"
+  "every suggestion on this matter that is plausible"]
 
 defaultRule :: AnnotatedRule
 defaultRule = RegulativeA {

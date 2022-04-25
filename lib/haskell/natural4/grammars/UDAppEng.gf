@@ -305,6 +305,7 @@ lin
 
   -- : root -> acl -> nmod -> UDS ;
   -- [policy]:root (called in this item the applicable policy):acl [of the company]:nmod ;
+  -- [none]: root [focusing on this topic]: acl [of the submitted proposals]: nmod
 	root_acl_nmod rt acl nm = root_nmod (advRoot rt acl) nm ;
 
   -- : root -> advmod -> acl -> UDS ; -- heuristic: advmod is actually AdV

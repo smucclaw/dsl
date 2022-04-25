@@ -79,6 +79,7 @@
 #disable UseComparA OrdSuperl AdjOrd
 
 #auxfun ExtAdvS_ adv comma s : Adv -> Conj -> S -> S = ExtAdvS adv s ; advmod punct[LEMMA=\,] head
+-- s is the head (i ate cake)
 
 -- I ate the cake , smiling
 ExtAdvS i_ate_cake_S smiling_Adv
@@ -99,6 +100,11 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- NOT like this:
 -- ExtAdvS : S -> Punct -> Adv -> S ;
 -- ExtAdvS sent comma adv = {s = sent.s ++ comma.s ++ adv.s} ;
+
+-- ** handle parentheses
+
+#auxfun UDSInParentheses_ uds lrb rrb : UDS ->  Adv -> Adv -> UDS = uds ; head punct[LEMMA=\(] punct[LEMMA=\)]
+
 -----------------------
 -- Inari's additions --
 -----------------------

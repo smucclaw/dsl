@@ -50,7 +50,7 @@ nlgTests = do
 
     it "Should return a adverbial for root_nmod_acl phrase" $ do
         testNPRootNmodAcl <- bsr2gf env testNPRootNmodAclBSR
-        showExpr testNPRootNmodAcl `shouldBe` "TODO"
+        showExpr testNPRootNmodAcl `shouldBe` "ConjCN or_Conj (BaseCN (UseN none_N) (UseN policy_N))" -- incomplete TODO but suffice for now until UDApp develops more
 
     it "Should return a adverbial for root_nmod_aclRelcl phrase" $ do
         testNPRootNmodAclRelcl <- bsr2gf env testNPRootNmodAclRelclBSR
@@ -157,7 +157,8 @@ testNPRootNmodAclBSR :: BoolStructR
 testNPRootNmodAclBSR  = testBSR [
   -- "any of the personal data relating to the individual", "all of the mysteries centering around the principal",
   "none of the submitted proposals focusing on this topic"
-  --,"all of her savings invested in this technology fund", "policy (called in this item the applicable policy) of the company"
+  --,"all of her savings invested in this technology fund"
+  , "policy (called the applicable policy) of the company"
   ]
 
 testNPRootNmodAclRelclBSR :: BoolStructR

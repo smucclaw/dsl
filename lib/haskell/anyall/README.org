@@ -27,9 +27,21 @@ Run the javascript to produce JSON:
   node ts/example.js
 #+end_src
 
-Feed the JSON into the Haskell executable:
+Let's output to the ~out/~ directory:
 #+begin_src bash
-  node ts/example.js | stack run
+  mkdir -p out
+#+end_src
+
+Feed the JSON into the Haskell executable:
+
+#+begin_src bash
+  node ts/example.js | stack run -- --only svg | tee out/example.svg
+#+end_src
+
+Now you can view the SVG:
+
+#+begin_src bash
+  open -a 'Google Chrome' out/example.svg
 #+end_src
 
 * Usage (Library)

@@ -56,7 +56,7 @@ import Data.Either (rights)
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist | json"
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
                    , file :: w ::: NoLabel [String] <?> "filename..."
@@ -87,7 +87,7 @@ getConfig o = do
         , oldDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
-        , asJSON = maybe False (read :: String -> Bool) mpj
+        , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
         , toProlog  = only o == "prolog"

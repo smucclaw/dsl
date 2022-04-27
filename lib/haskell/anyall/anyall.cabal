@@ -28,7 +28,7 @@ library
       AnyAll
       AnyAll.PP
       AnyAll.Relevance
-      AnyAll.SVG
+      AnyAll.SVGLadder
       AnyAll.Types
   other-modules:
       Paths_anyall

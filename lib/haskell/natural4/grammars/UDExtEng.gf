@@ -99,7 +99,7 @@ concrete UDExtEng of UDExt = UDAppEng ** open
   oper
     applyDeontic : VV -> LinUDS -> LinUDS = \may,king_sing ->
       let may_sing : VP = ComplVPIVV may king_sing.pred.inf ;
-          king_may_sing : LinUDS = king_sing ** {pred = myVPS may_sing} ;
+          king_may_sing : LinUDS = king_sing ** {pred = mkUDSPred may_sing} ;
        in king_may_sing ;
      --in {s = linUDS king_may_sing} ;
 

@@ -31,7 +31,7 @@ main = do
 
   when (SFL4.asJSON rc) $
     putStrLn $ toString $ encodePretty rules
-  when (SFL4.toNLG rc) $ do
+  when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
     naturalLangSents <- mapM nlg rules
     mapM_ (putStrLn . Text.unpack) naturalLangSents
   when (SFL4.toBabyL4 rc) $ do

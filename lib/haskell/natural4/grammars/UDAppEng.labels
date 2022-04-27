@@ -14,6 +14,12 @@
 #auxfun GenNP_ np gen : NP -> Gen -> Quant = GenNP np ; head case
 #disable GenNP
 
+-- recovering a misparse of root_case_nmod misparsed as root_mark_acl
+-- e.g day of mourning
+#auxfun OfMourningVP_ of mourn : Prep -> VP -> Adv = PrepNP of_Prep (GerundNP ( mourn)) ; mark[LEMMA=of] head[VerbForm=Ger]
+-- #auxfun OfMourningN_ of mourning : Prep -> CN -> obl = obl_ (PrepNP of_Prep (MassNP mourning)) ; mark[LEMMA=of] head[VerbForm=Ger]
+
+
 -- [my mother's]:Quant [hovercraft]:CN
 #auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=NOUN] head[Number=Sing]
 #auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss[POS=NOUN] head[Number=Plur]
@@ -250,7 +256,7 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #auxfun aclGerund_   uds : UDS -> acl = aclUDSgerund_   uds ; head[VerbForm=Ger]
 #auxfun aclPastPart_ uds : UDS -> acl = aclUDSpastpart_ uds ; head[Tense=Past|VerbForm=Part]
 #auxfun aclFinite_   uds : UDS -> acl = aclUDS_         uds ; head[VerbForm=Fin]
-#disable aclUDSGerund_ aclUDS_ aclUDSpastpart_
+#disable aclUDSgerund_ aclUDS_ aclUDSpastpart_
 
 -- ** ExtAdvNP **
 -- #auxfun … TODO: only allow ExtAdvNP with commas

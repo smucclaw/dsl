@@ -52,9 +52,25 @@ lin
     root_nsubj_cop_obl,
     root_nsubj_cop_nmod = \rt,sub,cop,adv -> mkUDS sub (advRoot rt adv) ;
 
-    root_nsubj_advmod rt sub advm = case advm.isNot of {
-      True => mkUDS sub (applyNeg rt) ;
-      False => root_nsubj_obl rt sub advm.adv
+    {- The lincat of advmod is {adv : Adv ; isNot : Bool} (from UDCatEng.gf)
+       The two constructors for advmod are: (found in UDCat.gf)
+         1) advmod_    : Adv -> advmod
+         2) not_advmod : advmod
+       They create the following kinds of advmods: (found in UDCatEng.gf)
+         1) advmod_ adv = {adv = adv ; isNot = False} ;
+         2) not_advmod  = {adv = lin Adv (ss "not") ; isNot = True} ;
+    -}
+    root_nsubj_advmod rt sub advm =
+      -- We pattern match the advmod's isNot field:
+      case advm.isNot of {
+        True =>  -- the advmod is not_advmod: the only one where isNot=True
+          mkUDS sub (applyNeg rt) ; -- so we make the whole UDS into negative
+
+        False => -- the advmod comes from advmod_ : Adv -> advmod
+          root_nsubj_obl rt sub advm.adv -- so we use the advmod's adv field
+          -- we can reuse the function root_nsubj_obl,
+          -- because obl's lincat is Adv (found in UDCatEng.gf)
+          -- and that's the same type that is in advmod's adv field (also in UDCatEng.gf)
       } ;
 
     -- : root -> nsubj -> obl -> UDS
@@ -376,8 +392,8 @@ lin
     inf =
       let inf' : VPI = MkVPI root.vp
         in inf' ** {s = \\typ,agr => "not" ++ inf'.s ! typ ! agr}
+        -- TODO: VVInf becomes "not to <verb>", fix later
     } ** defaultUDSPred ;
-
 
   applyAux : LinAux -> VP -> UDSPred = \will,sleep ->
     case will.auxType of {

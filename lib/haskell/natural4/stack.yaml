@@ -53,8 +53,8 @@ extra-deps:
   - .
   - baby-l4-core
 
-- github: anka-213/gf-ud
-  commit: 0cadb5657fe00c41c364abb00dd69997d2a42288
+- github: GrammaticalFramework/gf-ud
+  commit: 163490b25951f1cdaa58962db00a08960df991c0
   # branch: all-changes
 
 - github: anka-213/haskell-wordnet

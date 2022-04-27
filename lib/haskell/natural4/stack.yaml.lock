@@ -6,41 +6,41 @@
 packages:
 - completed:
     size: 3154513
+    subdir: .
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     name: baby-l4
     version: 0.1.0.0
     sha256: 47cd67b3ac089a683516a0c2d80042657296014a43eb2b0f4c1d7ba67b9d8e58
-    subdir: .
     pantry-tree:
       size: 9510
       sha256: 089527ee672549fc8dff442429abbc38529caf96d74a47f27af36f5ef744959c
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     subdir: .
+    url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
 - completed:
     size: 3154513
+    subdir: baby-l4-core
     url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     name: baby-l4-core
     version: 0.1.0.0
     sha256: 47cd67b3ac089a683516a0c2d80042657296014a43eb2b0f4c1d7ba67b9d8e58
-    subdir: baby-l4-core
     pantry-tree:
       size: 650
       sha256: 0dd83c3143609fe9c63d25a1b193b77ff6479869d31aa1ecf2137f0dca21bfc8
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
     subdir: baby-l4-core
+    url: https://github.com/smucclaw/baby-l4/archive/c757e61613b419940d1acc2c632d066bef2406b7.tar.gz
 - completed:
-    size: 1355674
-    url: https://github.com/anka-213/gf-ud/archive/0cadb5657fe00c41c364abb00dd69997d2a42288.tar.gz
+    size: 1355771
+    url: https://github.com/GrammaticalFramework/gf-ud/archive/163490b25951f1cdaa58962db00a08960df991c0.tar.gz
     name: gf-ud
     version: 0.1.0.0
-    sha256: 69b35dac25ea53dff40b863205dce131991c6cc4c59d93dd445242fc31454fe3
+    sha256: ee35853730864fddd6fea0ecb252b3f0aff6b36cb71befd32f8718d68b8c8539
     pantry-tree:
       size: 6579
-      sha256: df5b4869e41a8654d7f8ad02239f0376c8c267fd8933054d8203929af093cd2a
+      sha256: ab991e0f2064f714d0fd098e75603a66d9aaec39dd5b35fccb71e655f0eb718b
   original:
-    url: https://github.com/anka-213/gf-ud/archive/0cadb5657fe00c41c364abb00dd69997d2a42288.tar.gz
+    url: https://github.com/GrammaticalFramework/gf-ud/archive/163490b25951f1cdaa58962db00a08960df991c0.tar.gz
 - completed:
     size: 16398419
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz

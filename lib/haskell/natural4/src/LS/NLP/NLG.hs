@@ -22,6 +22,7 @@ import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
 import Data.List ( group, sort, sortOn, nub )
 import Data.List.Extra (maximumOn)
+import Data.Either (partitionEithers)
 --import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
@@ -78,11 +79,13 @@ parseUD env txt = do
   -- let expr = case ud2gf conll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
-  let expr = fromMaybe errorMsg (ud2gf lowerConll)
+  expr <- either errorMsg pure (ud2gf lowerConll)
   when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ showExpr expr)
   return $ fg expr
   where
-    errorMsg = dummyExpr $ "parseUD: fail to parse " ++ Text.unpack txt
+    errorMsg msg = do
+      putStrLn $ "parseUD: fail to parse " ++ Text.unpack txt ++ " with error message\n" ++ msg
+      return $ dummyExpr ("not parsed: " ++ Text.unpack txt)
 
     udpipe :: Text.Text -> IO String
     udpipe txt = do
@@ -92,10 +95,13 @@ parseUD env txt = do
       -- when (verbose env) $ putStrLn ("UDPipe result: " ++ show result) -- this is a bit extra verbose
       return $ either error id result
 
-    ud2gf :: String -> Maybe Expr
-    ud2gf str = case getExprs [] (udEnv env) str of
-      (x : _xs) : _xss -> Just x
-      _ -> Nothing
+    ud2gf :: String -> Either String Expr
+    ud2gf str = case getExprs ["no-backups"] (udEnv env) str of
+      xs : _ -> case partitionEithers xs of
+                  (_,  (r:rs)) -> Right r
+                  ((l:ls), []) -> Left l
+                  ([]  ,   []) -> Left "ud2gf: no results given for input"
+      [] -> Left "ud2gf: tried parsing an empty input"
 
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords

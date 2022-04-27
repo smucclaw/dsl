@@ -28,6 +28,9 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when)
 import System.Environment (lookupEnv)
+import Data.Vector.Internal.Check (doChecks)
+import Data.Aeson (SumEncoding(contentsFieldName))
+import Text.Megaparsec (pos1)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -471,6 +474,28 @@ disambiguateList pgf access_use_copying =
     isSingleton [_] = True
     isSingleton _ = False
 
+treePre conj contents pre =
+  case map flattenGFTrees trees of
+    []  -> dummyExpr $ "bsr2gf: failed parsing " ++ showExpr (gf pre)
+    x:_ -> head x -- return the first one---TODO later figure out how to deal with different categories
+    where trees = groupByRGLtype conj <$> [contents, [pre]]
+
+treePrePost conj contents pre post =
+  case groupByRGLtype conj <$> [contents, [pre], [post]] of
+          [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
+            let listcn = case cn of
+                  GConjCN _ cns -> cns
+                  _ -> GListCN [cn, cn]
+            in constructTreeAPCNsOfNP listcn conj personal_data pre
+          [TG {gfDet=Just det}, TG {gfCl=Just cl}, TG {gfCN=Just cn}] ->
+            let obj = GDetCN det cn
+            in case cl of
+                  GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
+                  GGenericCl vp ->  gf $ GComplVP vp obj
+                  _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
+          _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf pre) ++ "+" ++ showExpr (gf post)
+
+
 -- Meant to be called from inside an Any or All, via parseAndDisambiguate
 -- If we encounter another Any or All, fall back to bsr2gf
 bsr2gfAmb :: NLGEnv -> BoolStructR -> IO [PGF.Expr]
@@ -497,6 +522,10 @@ bsr2gf env bsr = case bsr of
     let access = rp2text rp
     gf `fmap` parseUD env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
+  AA.Not rp -> do
+    let not = bsr2text rp
+    gf `fmap` parseUD env not
+
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
@@ -508,24 +537,48 @@ bsr2gf env bsr = case bsr of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
 
+  AA.All Nothing contents -> do
+    contentsUDS <- parseAndDisambiguate env contents
+    let existingTrees = groupByRGLtype andConj contentsUDS
+    return $ case flattenGFTrees existingTrees of
+               []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
+               x:_ -> x
+
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     contentsUDS <- parseAndDisambiguate env access_use_copying
     premodUDS <- parseUD env any_unauthorised
     postmodUDS <- parseUD env of_personal_data
-    let tree = case groupByRGLtype orConj <$> [contentsUDS, [premodUDS], [postmodUDS]] of
-          [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
-            let listcn = case cn of
-                  GConjCN _ cns -> cns
-                  _ -> GListCN [cn, cn]
-            in constructTreeAPCNsOfNP listcn orConj personal_data premodUDS
-          [TG {gfDet=Just det}, TG {gfCl=Just cl}, TG {gfCN=Just cn}] ->
-            let obj = GDetCN det cn
-            in case cl of
-                  GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
-                  GGenericCl vp ->  gf $ GComplVP vp obj
-                  _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
-          _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf premodUDS) ++ "+" ++ showExpr (gf postmodUDS)
-    return tree
+    return $ treePrePost orConj contentsUDS premodUDS postmodUDS
+    -- let tree = case groupByRGLtype orConj <$> [contentsUDS, [premodUDS], [postmodUDS]] of
+    --       [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
+    --         let listcn = case cn of
+    --               GConjCN _ cns -> cns
+    --               _ -> GListCN [cn, cn]
+    --         in constructTreeAPCNsOfNP listcn orConj personal_data premodUDS
+    --       [TG {gfDet=Just det}, TG {gfCl=Just cl}, TG {gfCN=Just cn}] ->
+    --         let obj = GDetCN det cn
+    --         in case cl of
+    --               GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
+    --               GGenericCl vp ->  gf $ GComplVP vp obj
+    --               _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
+    --       _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf premodUDS) ++ "+" ++ showExpr (gf postmodUDS)
+    -- return tree
+
+  AA.Any (Just (AA.Pre p1)) contents -> do
+    contentsUDS <- parseAndDisambiguate env contents
+    premodUDS <- parseUD env p1
+    return $ treePre orConj contentsUDS premodUDS
+
+  AA.All (Just (AA.Pre p1)) contents -> do
+    contentsUDS <- parseAndDisambiguate env contents
+    premodUDS <- parseUD env p1
+    return $ treePre andConj contentsUDS premodUDS
+
+  AA.All (Just (AA.PrePost p1 p2)) contents -> do
+    contentsUDS <- parseAndDisambiguate env contents
+    premodUDS <- parseUD env p1
+    postmodUDS <- parseUD env p2
+    return $ treePrePost andConj contentsUDS premodUDS postmodUDS
 
   _ -> return $ dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
 

@@ -133,10 +133,17 @@ concrete UDCatEng of UDCat = BareRGEng **
       np : NP ; isNP : Bool
       } ;
 
-    defaultUDSPred : {np : NP ; isNP : Bool} = {
+    defaultRoot : {np : NP ; isNP : Bool} = {
       np = emptyNP ;
       isNP = False
       } ;
+
+    defaultUDSPred : CatEng.VP -> UDSPred = \vp -> defaultRoot ** {
+      fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
+      pp = BareRGEng.PastPartAP vp ;
+      presp = BareRGEng.PresPartAP vp ;
+      inf = ExtendEng.MkVPI vp
+    } ;
 
     LinUDS : Type = {
       subj : NP ; hasSubj : Bool ;
@@ -148,8 +155,8 @@ concrete UDCatEng of UDCat = BareRGEng **
       mkUDS : NP -> Root -> LinUDS = \np,rt -> {
         subj = np ; hasSubj = True ;
         pred = case rt.isNP of {
-          True => myVPS rt.np ;
-          False => myVPS rt.vp }
+          True => mkUDSPred rt.np ;
+          False => mkUDSPred rt.vp }
         } ;
       mkUDS : NP -> UDSPred -> LinUDS = \np,pr -> {
         subj = np ; hasSubj = True ;
@@ -170,31 +177,35 @@ concrete UDCatEng of UDCat = BareRGEng **
       PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s ;
       Infinite => (mkUtt subj).s ++ uds.pred.inf.s ! VVAux ! agrP3 Sg} ;
 
-    myVPS = overload {
-      myVPS : VP -> UDSPred = \vp -> defaultUDSPred ** {
-        fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp ;
-        presp = BareRGEng.PresPartAP vp ;
-        inf = ExtendEng.MkVPI vp } ;
-      myVPS : Tense -> VP -> UDSPred = \tns,vp -> defaultUDSPred ** {
-        fin = MkVPS (mkTemp tns simultaneousAnt) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp ;
-        presp = BareRGEng.PresPartAP vp ;
-        inf = ExtendEng.MkVPI vp } ;
-      myVPS : Ant -> VP -> UDSPred = \ant,vp -> defaultUDSPred ** {
-        fin = MkVPS (mkTemp presentTense ant) positivePol vp ;
-        pp = BareRGEng.PastPartAP vp ;
-        presp = BareRGEng.PresPartAP vp ;
-        inf = ExtendEng.MkVPI vp } ;
-      myVPS : NP -> UDSPred = \np ->
-        let vp:VP = mkVP np in {
+    mkUDSPred = overload {
+      mkUDSPred : CatEng.VP -> UDSPred = defaultUDSPred ;
+      mkUDSPred : CatEng.Tense -> CatEng.VP -> UDSPred = \tns,vp -> defaultUDSPred vp ** {
+        fin = MkVPS (mkTemp tns simultaneousAnt) positivePol vp } ;
+      mkUDSPred : Ant -> CatEng.VP -> UDSPred = \ant,vp -> defaultUDSPred vp ** {
+        fin = MkVPS (mkTemp presentTense ant) positivePol vp } ;
+      mkUDSPred : CatEng.Tense -> Ant -> CatEng.Pol -> CatEng.VP -> UDSPred = \tns,ant,pol,vp ->
+        let neg : Str = case pol.p of {CPos => [] ; _ => "not"}
+         in defaultUDSPred vp ** {
+              fin = MkVPS (mkTemp tns ant) pol vp ;
+              pp =
+                let pp' : AP = BareRGEng.PastPartAP vp
+                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+              presp =
+                let pp' : AP = BareRGEng.PresPartAP vp
+                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+              inf =
+                let inf' : VPI = MkVPI vp
+                  in inf' ** {s = \\typ,agr => neg ++ inf'.s ! typ ! agr}
+            } ; -- TODO: VVInf becomes "not to <verb>", fix later
+      mkUDSPred : NP -> UDSPred = \np ->
+        let vp : CatEng.VP = mkVP np in {
         fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
         pp = BareRGEng.PastPartAP vp ;
         presp = BareRGEng.PresPartAP vp ;
         inf = ExtendEng.MkVPI vp ;
         np = np ;
         isNP = True
-      } ;
+      }
     } ;
 
     Root : Type = {
@@ -209,11 +220,11 @@ concrete UDCatEng of UDCat = BareRGEng **
     mkRoot = overload {
        mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap} ;
        mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True } ;
-       mkRoot : VP -> Root = \vp -> emptyRoot ** {vp = vp} ;
+       mkRoot : CatEng.VP -> Root = \vp -> emptyRoot ** {vp = vp} ;
        mkRoot : VPSlash -> Root = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2 ;}
     } ;
 
-    emptyRoot : Root = defaultUDSPred ** {
+    emptyRoot : Root = defaultRoot ** {
        vp = mkVP (P.mkN "dummy") ;
        c2 = []
     } ;

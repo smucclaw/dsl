@@ -317,3 +317,9 @@
 19	warrants	warrant	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	16	advcl	_	FUN=warrantVBZ
 20	a	a	DET	DT	Definite=Ind|PronType=Art	21	det	_	FUN=a_Det
 21	notification	notification	NOUN	NN	Number=Sing	19	obj	_	FUN=notification_N
+
+# Test for recovering from misparse
+1	day	day	NOUN	NN	Number=Sing	0	root	_	_
+2	of	of	SCONJ	IN	_	3	mark	_	_
+3	mourning	mourning	VERB	VBG	VerbForm=Ger	1	acl	_	SpacesAfter=\n
+

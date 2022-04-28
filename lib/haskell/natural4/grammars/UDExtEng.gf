@@ -1,11 +1,111 @@
 
 
-concrete UDExtEng of UDExt = UDAppEng ** open
+concrete UDExtEng of UDExt = UDAppEng,
+  ExtendEng [
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
+    ,ApposNP, AdjAsNP, GerundCN, GerundAdv
+    ,ICompAP, IAdvAdv, PredIAdvVP
+  ],
+  IdiomEng [
+    GenericCl, ImpersCl
+  ]
+ ** open
   Prelude,
   SyntaxEng, (P=ParadigmsEng), ExtendEng,
+  (R=ResEng), MorphoEng,
   (Se=SentenceEng),
   (Ex=ExtraEng) in {
 
+--------------------------------------------------------------------------------------------
+-- This set of functions used to live in BareRG, but they weren't actually used for parsing
+-- They look more like extensions to the RGL, so add them here.
+  lin
+    -- : NP -> VP -> S ;
+    PredVPS np vp = mkS (mkCl np vp) ;
+
+    -- : Cl -> ClSlash ; -- make a full Cl into ClSlash
+    SlashCl cl = cl ** {c2=[]} ;
+
+    -- : Adv -> Adv -> Adv ;
+    AdvAdv a1 a2 = {s = a1.s ++ a2.s} ;
+
+    --  : ACard -> Det ;
+    ACard2Det acard = SyntaxEng.every_Det **
+      {s = acard.s ! R.Nom ;
+       -- sp : Gender => Bool => NPCase => Str
+       sp = \\_g,_b,npc => acard.s ! R.npcase2case npc ;
+       n = acard.n ;
+       hasNum = False} ;
+
+    -- : NP -> SC -> NP ;     -- to get "a data breach occurred" to become a NP
+    SentNP np sc = AdvNP np <sc : Adv> ;
+
+    -- : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
+    ComplVP vp np = ComplSlash (slashV vp) np ;
+    -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
+    -- : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
+    PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
+
+    -- : A -> Prep -> A2 ;
+    MkA2 a p = P.mkA2 a p ;
+
+    -- : N -> Prep -> Prep -> N3;
+    MkN3 n p q = P.mkN3 n p q;
+
+
+-- Aarne's additions
+
+    -- : NP -> VP -> RS ;
+    RS_that_NP_VP np vp =
+    let cl : Cl = mkCl np vp ;
+      in mkRS (mkRCl that_RP (SlashCl cl)) ;
+
+    apply_concurrently_VP = mkVP (mkVP apply_V) concurrently_Adv ;
+    does_not_apply_to_V = P.mkV "do not apply to" "does not apply to" "did not apply to" "has not applied to" "is not applying to" ;
+    on_or_after_Prep = P.mkPrep "on or after" ;
+    prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
+    that_other_Det = mkDeterminer P.singular "that other" ;
+
+    -- : CN -> NP -> CN ;
+    CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
+
+    -- : NP -> VP -> CN ;
+    CN_obligation_of_NP_to_VP np vp = mkCN (mkCN (P.mkN2 obligation_N) np) vp ;
+
+    -- : CN -> RS -> NP ;
+    NP_all_the_CN_RS cn rs = mkNP all_Predet (mkNP thePl_Det (mkCN cn rs)) ;
+    NP_the_loss_of_any_CN_RS cn rs =
+      mkNP BareRGEng.theSg_Det (
+        mkCN (P.mkN2 loss_N)
+          (mkNP anySg_Det (mkCN cn rs))
+        ) ;
+
+    -- : CN -> NP -> NP ;
+    NP_the_unauthorised_N2_of_NP cn np =
+      let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
+       in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
+
+
+
+    -- : [CN] -> NP -> NP ;
+    NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
+
+  {-  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
+    Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
+
+    RS_to_whom_NP_VP : NP -> VP -> RS ;
+    VP_assesses__Adv__that_S : Adv -> S -> VP ;
+    VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
+    VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
+    VP_notify_NP_of_NP : NP -> NP -> VP ;
+  -}
+  oper
+    relating_to_Prep : Prep = P.mkPrep "relating to" ;
+    concurrently_Adv : Adv = P.mkAdv "concurrently" ;
+
+--------------------------------------------------------------------------------------------
+-- This set of functions is for the more high-level NLG stuff
+-- They mimic more the structure of the Natural L4 abstract syntax
 
   lincat
     UDFragment = S ;

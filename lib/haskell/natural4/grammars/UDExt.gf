@@ -1,7 +1,64 @@
 
 
-abstract UDExt = UDApp ** {
+abstract UDExt = UDApp ,
+  Extend [
+    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
+    ,ApposNP, AdjAsNP, GerundCN, GerundAdv
+    ,ICompAP, IAdvAdv, PredIAdvVP
+  ],
+  Idiom [
+    GenericCl, ImpersCl
+  ]
+  ** {
 
+--------------------------------------------------------------------------------------------
+-- This set of functions used to live in BareRG, but they weren't actually used for parsing
+-- They look more like extensions to the RGL, so add them here.
+
+  fun
+    PredVPS : NP -> VP -> S ;
+
+    SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
+
+    AdvAdv : Adv -> Adv -> Adv ;
+
+    ACard2Det : ACard -> Det ;
+
+    SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
+
+    ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
+    PrepVP : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
+    -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
+    -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
+
+    MkA2 : A -> Prep -> A2 ;
+    MkN3 : N -> Prep -> Prep -> N3;
+
+-- Aarne's additions
+  RS_that_NP_VP : NP -> VP -> RS ;
+{-  apply_concurrently_VP : VP ;
+  does_not_apply_to_V : V ;
+  on_or_after_Prep : Prep ;
+  prior_to_the_occurrence_of_Prep : Prep ;
+  that_other_Det : Det ;
+
+  CN_CN_relating_to_NP : CN -> NP -> CN ;
+  CN_obligation_of_NP_to_VP : NP -> VP -> CN ;
+  NP_all_the_CN_RS : CN -> RS -> NP ;
+  NP_the_loss_of_any_CN_RS : CN -> RS -> NP ;
+  NP_the_unauthorised_N2_of_NP : CN -> NP -> NP ;
+  NP_the_unauthorised_ConjN2_of_NP : [CN] -> NP -> NP ;
+  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
+  Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
+  RS_to_whom_NP_VP : NP -> VP -> RS ;
+  VP_assesses__Adv__that_S : Adv -> S -> VP ;
+  VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
+  VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
+  VP_notify_NP_of_NP : NP -> NP -> VP ; -}
+
+--------------------------------------------------------------------------------------------
+-- This set of functions is for the more high-level NLG stuff
+-- They mimic more the structure of the Natural L4 abstract syntax
   cat
     UDFragment ;
     [UDFragment]{2};

@@ -2,15 +2,10 @@ concrete BareRGEng of BareRG =
 
   ExtendEng [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
-    ApposNP, AdjAsNP,
-    GerundNP, -- : VP -> NP
-     GerundCN,-- : VP -> CN
-     GerundAdv-- : VP -> Adv
-    ,ICompAP, IAdvAdv, PredIAdvVP
+    GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
   ],
 
   SentenceEng,
@@ -27,7 +22,7 @@ concrete BareRGEng of BareRG =
   ,AdVVP
   ],
 
-  IdiomEng [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
+  IdiomEng [ProgrVP], -- ProgrVP only used via auxfun, disabled in labels
 
   NounEng - [
     CountNP,
@@ -79,6 +74,9 @@ concrete BareRGEng of BareRG =
     (E=ExtendEng),
     (Co=Coordination),
     (R=ResEng),
+    SymbolicEng,
+    (SyE=SymbolEng),
+    (N=NounEng),
     JustWordsWordNetEng
     in {
 
@@ -127,12 +125,7 @@ concrete BareRGEng of BareRG =
       a = R.RNoAg
       } ;
 
-    -- : NP -> SC -> NP ;     -- to get "a data breach occurred" to become a NP
-    SentNP np sc = AdvNP np <sc : Adv> ;
-
     ComplV v np = ComplSlash (slashV (UseV v)) np ;
-    ComplVP vp np = ComplSlash (slashV vp) np ;
-    -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
 
     -- : V -> VP ;       -- is affected (needs auxPass to trigger)
     PassV v = PassV2 (P.mkV2 v) ;
@@ -156,18 +149,11 @@ concrete BareRGEng of BareRG =
       n = ResEng.Pl ;
     } ;
 
-    more_than_Quant = DefArt ** {
+    more_than_Quant = BareRGEng.DefArt ** {
       s = \\_,_ => "more than" ;
       sp = \\_,_,_,_ => "more than"
       } ;
 
-    --  : ACard -> Det ;
-    ACard2Det acard = every_Det **
-      {s = acard.s ! R.Nom ;
-       -- sp : Gender => Bool => NPCase => Str
-       sp = \\_g,_b,npc => acard.s ! R.npcase2case npc ;
-       n = acard.n ;
-       hasNum = False} ;
 
     PrepRP prep rp = rp ** {
       s = \\c => prep.s ++ rp.s ! c
@@ -175,7 +161,18 @@ concrete BareRGEng of BareRG =
 
     one_NP = DetNP (BareRGEng.DetQuant BareRGEng.IndefArt (NumCard (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01))))))) ;
 
-    AdvAdv a1 a2 = {s = a1.s ++ a2.s} ;
+-- fallback for unknown vocabulary
+    StrPN str = {s = \\_ => str.s ; g = P.human} ;
+    StrN str = {s = \\_,_  => str.s ; g = P.human} ;
+    StrA str = <P.mkA "dummy" : A> ** {s = \\_ => str.s ; isMost=True};
+    StrAP str = <mkAP (P.mkA "dummy") : AP> ** {s = \\_ => str.s};
+    StrCard str = symb (mkSymb str.s) ;
+    StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
+    StrSymb = SyE.MkSymb ; -- String -> Symb
+    SymbNP x = symb x ;
+
+    DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
+    IndefPN pn = N.PredetNP (lin Predet {s= "a"}) (N.UsePN pn) ;
 
   lincat
     [Prep] = Co.ListX ;
@@ -240,9 +237,6 @@ concrete BareRGEng of BareRG =
       nonAuxForms = applyConjNAF conj vps.nonAuxForms1 vps.nonAuxForms ;
     } ;
 
-    PredVPS np vp = mkS (mkCl np vp) ;
-    SlashCl cl = cl ** {c2=[]} ;
-    PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
 
   oper
     -- This is a hack, if you need to make a VP into Str in other places, use ResEng.infVP
@@ -258,61 +252,10 @@ concrete BareRGEng of BareRG =
       past =  or.s1 ++ naf1.past ++ or.s2 ++ naf2.past ;
     } ;
 
-
     slashV : VP -> VPSlash = \vp -> vp ** {
       c2 = [] ;
       gapInMiddle = True ;
       missingAdv = False
       } ;
 
--- Aarne's additions
-  lin
-
-  --   apply_concurrently_VP = mkVP (mkVP apply_V) concurrently_Adv ;
-  --   does_not_apply_to_V = P.mkV "do not apply to" "does not apply to" "did not apply to" "has not applied to" "is not applying to" ;
-  --   on_or_after_Prep = P.mkPrep "on or after" ;
-  --   prior_to_the_occurrence_of_Prep = P.mkPrep "prior to the occurrence of" ;
-  --   that_other_Det = mkDeterminer P.singular "that other" ;
-
-  --  MkA2 a p = P.mkA2 a p ;
-  --  MkN3 n p q = P.mkN3 n p q;
-  --   -- : CN -> NP -> CN ;
-  --   CN_CN_relating_to_NP cn np = mkCN cn (mkAdv relating_to_Prep np) ;
-
-  --   -- : NP -> VP -> CN ;
-  --   CN_obligation_of_NP_to_VP np vp = mkCN (mkCN (P.mkN2 obligation_N) np) vp ;
-
-  --   -- : CN -> RS -> NP ;
-  --   NP_all_the_CN_RS cn rs = mkNP all_Predet (mkNP thePl_Det (mkCN cn rs)) ;
-  --   NP_the_loss_of_any_CN_RS cn rs =
-  --     mkNP theSg_Det (
-  --       mkCN (P.mkN2 loss_N)
-  --         (mkNP anySg_Det (mkCN cn rs))
-  --       ) ;
-
-  --   -- : CN -> NP -> NP ;
-  --   NP_the_unauthorised_N2_of_NP cn np =
-  --     let n2_of_np : CN = mkCN (P.mkN2 cn possess_Prep) np ;
-  --      in mkNP theSg_Det (mkCN unauthorized_A n2_of_np) ;
-
-    --  : NP -> VP -> RS ;
-    RS_that_NP_VP np vp =
-    let cl : Cl = mkCl np vp ;
-      in mkRS (mkRCl that_RP (SlashCl cl)) ;
-
-    -- -- : [CN] -> NP -> NP ;
-    -- NP_the_unauthorised_ConjN2_of_NP n2s np = NP_the_unauthorised_N2_of_NP (ConjCN and_Conj n2s) np ;
-
-  {-  Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
-    Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
-
-    RS_to_whom_NP_VP : NP -> VP -> RS ;
-    VP_assesses__Adv__that_S : Adv -> S -> VP ;
-    VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
-    VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
-    VP_notify_NP_of_NP : NP -> NP -> VP ;
-  --}
-    oper
-    relating_to_Prep : Prep = P.mkPrep "relating to" ;
-    concurrently_Adv : Adv = P.mkAdv "concurrently" ;
 }

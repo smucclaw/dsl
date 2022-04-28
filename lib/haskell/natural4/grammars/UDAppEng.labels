@@ -1,9 +1,4 @@
 -------------------------------------------------------------------
--- TODO: UDApp grammar must be cleaned up. Remove all funs that are not used for parsing from BareRG, and move them into UDExt.
--- Meanwhile, just disabling some funs that are not used for parsing.
-#disable ExistCN GenericCl ImpersCl
-
--------------------------------------------------------------------
 -- Exceptions and special cases, when UD structure doesn't match GF
 
 -- To handle "my hovercraft": i_Pron is not by default parsed as Det
@@ -236,6 +231,10 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 
 
 -- be notified -- TODO: is this rule used on its own?
+-- Alternative is to turn VP into passive in all UDApp sentence pattern funs that have auxPass, subjPass etc.
+-- and then apply PassV in NLG.hs whenever an auxPass is found in the sentence
+-- TODO investigate: which one is more reliable in udpipe, [Voice=Pass] morpho analysis or aux:pass relation
+-- if former, use auxfun PassV_, if latter, probably better to use the alternative.
 #auxfun PassV_ v : V -> VP = PassV v ; head[Voice=Pass]
 
 #disable PassV
@@ -258,9 +257,8 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 
 #auxfun RelVPGerund_cop_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj cop
 
-#disable ProgrVP GerundNP CompNP GerundCN GerundAdv
+#disable ProgrVP GerundNP CompNP
 -- GerundNP causes loops with CompNP
--- GerundCN disabled, because otherwise GerundCN (UseV verb_V) takes priority over UseN nouning_N.
 
 -- NB: we don't want this currently, because we add the gerund in UDExt.
 -- If UDExt changes, then uncomment this.
@@ -272,7 +270,7 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #disable aclUDSgerund_ aclUDS_ aclUDSpastpart_
 
 -- ** ExtAdvNP **
--- #auxfun … TODO: only allow ExtAdvNP with commas
+#auxfun ExtAdvNP_ adv comma np : Adv -> Conj -> S -> S = ExtAdvNP np adv ; advmod punct[LEMMA=\,] head
 #disable ExtAdvNP
 
 -----------------

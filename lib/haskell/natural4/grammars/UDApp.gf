@@ -7,19 +7,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 	fun
 
-	StrPN : String -> PN ;
-	StrN : String -> N ;
-	StrA : String -> A ;
-	StrAP : String -> AP ;
-	StrCard : String -> Card ;
-	StrNum : String -> Num ;
- 	StrSymb : String -> Symb ; -- e.g. URLs
--- 	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
-
- -- for e.g. abbreviations/defined terms that are erroneously parsed as PNs; "the NDB", "a DI"
-	DefPN : PN -> NP ;
-	IndefPN : PN -> NP ;
-
 	-- from the first test corpus, full sentences
 	root_cop_advmod          : root -> cop -> advmod -> UDS ; -- is not a breach
 	passRelcl_               : root -> RP -> auxPass -> aclRelcl ; -- [whose data]:RP is affected

@@ -5,13 +5,11 @@ abstract BareRG =
 
   Extend [
     Temp, Pol, NP, Tense,
-    S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
-    N, CompoundN -- : N -> N -> N    -- control system
-    -- these only for UDExt; not in labels file
-    ,ApposNP, AdjAsNP, GerundNP, GerundCN, GerundAdv
-    ,ICompAP, IAdvAdv, PredIAdvVP
+    N, CompoundN, -- : N -> N -> N    -- control system
+    GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
+
   ],
 
   Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
@@ -28,7 +26,7 @@ abstract BareRG =
    ,AdVVP
   ],
 
-  Idiom [ProgrVP, GenericCl, ImpersCl], -- Not used for parsing
+  Idiom [ProgrVP],
 
    Noun - [
       CountNP,
@@ -99,8 +97,6 @@ abstract BareRG =
 
     CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
 
-    SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
-
   -- passives
     PassV : V -> VP ;             -- is:auxPass affected
     PassVAgent : V -> NP -> VP ;  -- is:auxPass affected by the breach
@@ -112,19 +108,20 @@ abstract BareRG =
 
     -- JustWordsWordNet has no V2 etc
     ComplV : V -> NP -> VP ; -- eat pizza
-    ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
-    PrepVP : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
-    -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
-    -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
 
-    MkA2 : A -> Prep -> A2 ;
-    MkN3 : N -> Prep -> Prep -> N3;
-    ACard2Det : ACard -> Det ;
+-- fallback for unknown vocabulary
+    StrPN : String -> PN ;
+    StrN : String -> N ;
+    StrA : String -> A ;
+    StrAP : String -> AP ;
+    StrCard : String -> Card ;
+    StrNum : String -> Num ;
+    StrSymb : String -> Symb ; -- e.g. URLs
+  -- 	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
 
-    PredVPS : NP -> VP -> S ;
-    SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
-
-    AdvAdv : Adv -> Adv -> Adv ;
+  -- for e.g. abbreviations/defined terms that are erroneously parsed as PNs; "the NDB", "a DI"
+    DefPN : PN -> NP ;
+    IndefPN : PN -> NP ;
 
   cat
     [Prep]{2} ;
@@ -133,30 +130,6 @@ abstract BareRG =
   fun
     ConjPrep : Conj -> [Prep] -> Prep ;
     ConjVP : Conj -> [VP] -> VP ;
-
--- Aarne's additions
-fun
-  -- apply_concurrently_VP : VP ;
-  -- does_not_apply_to_V : V ;
-  -- on_or_after_Prep : Prep ;
-  -- prior_to_the_occurrence_of_Prep : Prep ;
-  -- that_other_Det : Det ;
-
-  -- CN_CN_relating_to_NP : CN -> NP -> CN ;
-  -- CN_obligation_of_NP_to_VP : NP -> VP -> CN ;
-  -- NP_all_the_CN_RS : CN -> RS -> NP ;
-  -- NP_the_loss_of_any_CN_RS : CN -> RS -> NP ;
-  -- NP_the_unauthorised_N2_of_NP : CN -> NP -> NP ;
-  -- NP_the_unauthorised_ConjN2_of_NP : [CN] -> NP -> NP ;
-  -- Adv_Adv__but_in_any_case_Adv : Adv -> Adv -> Adv ;
-  -- Adv_at_the_time_NP_notifies_NP : NP -> NP -> Adv ;
-  -- RS_to_whom_NP_VP : NP -> VP -> RS ;
-  -- VP_assesses__Adv__that_S : Adv -> S -> VP ;
-  -- VP_may__SeqAdv__VP : [Adv] -> VP -> VP ;
-  -- VP_must__SeqAdv__VP : [Adv] -> VP -> VP ;
-  -- VP_notify_NP_of_NP : NP -> NP -> VP ;
-
-  RS_that_NP_VP : NP -> VP -> RS ;
 
 
   }

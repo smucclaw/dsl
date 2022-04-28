@@ -2,24 +2,11 @@
 
 concrete UDAppEng of UDApp =
   UDCatEng, JustWordsWordNetEng - [some_Quant, some_Det, any_Det] **
-  open Prelude, SyntaxEng, IrregEng, ExtendEng, SymbolicEng, (SyE=SymbolEng),
-    (PE=ParseExtendEng), -- from WordNet
-    (N=NounEng), (P=ParadigmsEng) in {
+  open Prelude, SyntaxEng, IrregEng, ExtendEng,
+    (PE=ParseExtendEng) -- from WordNet
+    in {
 
 lin
-
-  StrPN str = {s = \\_ => str.s ; g = P.human} ;
-  StrN str = {s = \\_,_  => str.s ; g = P.human} ;
-	StrA str = <P.mkA "dummy" : A> ** {s = \\_ => str.s ; isMost=True};
-  StrAP str = <mkAP (P.mkA "dummy") : AP> ** {s = \\_ => str.s};
-	StrCard str = symb (mkSymb str.s) ;
-	StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
-  StrSymb = SyE.MkSymb ; -- String -> Symb
-  SymbNP x = symb x ;
-
-  DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
-  IndefPN pn = N.PredetNP (lin Predet {s= "a"}) (N.UsePN pn) ;
-
 -- The concrete syntax is sketchy on purpose.
 -- One could say that it doesn't even have to bother to linearise properly,
 -- but we do it for the sake of ud2gf: checking linearisations against the original.

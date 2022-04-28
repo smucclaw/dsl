@@ -46,7 +46,8 @@ main = do
   when (only opts == "tree") $
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
   when (only opts == "svg") $
-    print $ makeSvg $ renderItem $ andOrTree myright
+    let myConfig = defaultConfig
+    print $ makeSvg' myConfig $ renderItem $ andOrTree myright
   
 maindemo :: IO ()
 maindemo = do

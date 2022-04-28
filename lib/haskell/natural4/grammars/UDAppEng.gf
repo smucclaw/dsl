@@ -220,15 +220,15 @@ lin
 
     True => -- advmod is the negation, so the adv field is just a dummy --- the real info is in that it's NEG
             -- NB. auxPass is not a real Aux, it's just a sign to passivate the verb, so we don't call applyAux
-      let passVP : VP = ExtendEng.PassVPSlash (root2vpslash rt) ; -- TODO: are we doing this here or calling BareRG.PassV in auxfuns?
+      let passVP : VP = rt.vp ; -- ExtendEng.PassVPSlash (root2vpslash rt) ; -- TODO: are we doing this here or calling BareRG.PassV in auxfuns?
           pred : UDSPred = applyNeg (mkRoot passVP) ;
         in mkUDS subj pred
   } ;
 
   -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- everyone should be notified
   root_nsubjPass_aux_auxPass notified pdpa should auxpass =
-    let passVP : VP = ExtendEng.PassVPSlash (root2vpslash notified)
-    in mkUDS pdpa (applyAux positivePol should passVP) ;  -- TODO: are we doing this here or calling BareRG.PassV in auxfuns?
+    let passVP : VP = notified.vp  ; -- ExtendEng.PassVPSlash (root2vpslash notified)  -- TODO: are we doing this here or calling BareRG.PassV in auxfuns?
+    in mkUDS pdpa (applyAux positivePol should passVP) ;
 
   -- : root -> nsubjPass -> aux -> auxPass -> UDS ; -- garage should be considered a building
   root_nsubjPass_aux_auxPass_xcomp considered garage should auxpass building =

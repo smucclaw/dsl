@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+-- TODO: UDApp grammar must be cleaned up. Remove all funs that are not used for parsing from BareRG, and move them into UDExt.
+-- Meanwhile, just disabling some funs that are not used for parsing.
+#disable ExistCN GenericCl ImpersCl
+
+-------------------------------------------------------------------
 -- Exceptions and special cases, when UD structure doesn't match GF
 
 -- To handle "my hovercraft": i_Pron is not by default parsed as Det
@@ -14,11 +19,19 @@
 #auxfun GenNP_ np gen : NP -> Gen -> Quant = GenNP np ; head case
 #disable GenNP
 
--- recovering a misparse of root_case_nmod misparsed as root_mark_acl
--- e.g day of mourning
-#auxfun OfMourningVP_ of mourn : Prep -> VP -> Adv = PrepNP of_Prep (GerundNP ( mourn)) ; mark[LEMMA=of] head[VerbForm=Ger]
--- #auxfun OfMourningN_ of mourning : Prep -> CN -> obl = obl_ (PrepNP of_Prep (MassNP mourning)) ; mark[LEMMA=of] head[VerbForm=Ger]
+-- recovering a "root case nmod" misparsed as "root mark acl", e.g day of mourning:
+-- "mourning" is analysed as verb, even though it should be noun, and "of" is analysed as conjunction, should be adposition.
+-- We do it in two steps:
+-- 1) Create a fake type for the result of "of mourning"
+-- 2) Connect "day" to that result of that fake type
 
+-- Step 1: create a result of this fake type NmodMisparsedAsAcl, give it a value that is actually a nmod
+#auxfun OfMourning_ of mourn : Prep -> VP -> NmodMisparsedAsAcl = nmod_ of_Prep (GerundNP mourn) ; mark[LEMMA=of] head[VerbForm=Ger]
+
+-- Step 2: connect the nmod with the fake type NmodMisparsedAsAcl to a CN.
+-- NB. the label must be acl—this is critical! the whole point is that udpipe has mistakenly applied the acl relation,
+-- so if we want to recover the proper relation, we must match acl in the auxfun.
+#auxfun DayOfMourning_ day of_mourning : NP -> NmodMisparsedAsAcl -> UDS = root_nmod (rootN_ day) of_mourning ; head acl
 
 -- [my mother's]:Quant [hovercraft]:CN
 #auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=NOUN] head[Number=Sing]

@@ -88,6 +88,10 @@ prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
 prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
 
+-- | The andOrTree is defined in L4; we think of it as an "immutable" given.
+--   The marking comes from user input, and it "changes" at runtime,
+--   which is to say that whenever we get new input from the user we regenerate everything.
+--   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)

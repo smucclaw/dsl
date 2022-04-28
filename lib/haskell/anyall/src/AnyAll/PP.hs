@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.PP (ppQTree) where
+module AnyAll.PP (ppQTree, hardnormal) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance

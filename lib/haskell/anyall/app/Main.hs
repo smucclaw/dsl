@@ -46,9 +46,12 @@ main = do
   when (only opts == "tree") $
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
   when (only opts == "svg") $
-    let myConfig = defaultConfig
-    print $ makeSvg' myConfig $ renderItem $ andOrTree myright
-  
+    print $ q2svg defaultConfig $ hardnormal (marking myright) (andOrTree myright) 
+  where
+    -- | every item in the and/or tree should be marked with some explicit value, whether user-provided or computed
+    
+
+
 maindemo :: IO ()
 maindemo = do
   forM_

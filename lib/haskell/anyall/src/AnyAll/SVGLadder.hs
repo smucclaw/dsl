@@ -12,6 +12,7 @@ import Graphics.Svg
 import qualified Data.Text as T
 import qualified Data.Text.Lazy       as TL
 import qualified Data.Map as Map
+import Data.Tree
 
 type Height = Double
 type Width  = Double
@@ -53,6 +54,61 @@ makeSvg :: (BBox, Element) -> Element
 makeSvg ((width, height), geom) =
      doctype
   <> with (svg11_ geom) [Version_ <<- "1.1", Height_ <<-* height]
+
+
+q2svg :: Config -> QTree TL.Text -> Element
+q2svg c qt = snd $ q2svg' c qt
+
+q2svg' :: Config -> QTree TL.Text -> (BBox, Element)
+q2svg' c (Node (Q _ ao prepost mark) children) = itemBox c 0 0 ao mark children False
+
+type Boolean = Bool
+
+itemBox :: Config
+        -> Double          -- | x top left
+        -> Double          -- | y top left
+        -> AndOr TL.Text   -- | Item, recast as an AndOr Text for display
+        -> Default Bool    -- | mark for the box
+        -> [QTree TL.Text] -- | children
+        -> Bool            -- | did we get here because we were contained by a Neg?
+        -> (BBox, Element)
+itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
+itemBox c x y (Simply t)  m cs amNot
+  | cscale c  == Tiny  = (,) (10,10) $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ] )
+-- [TODO] small
+  | cscale c  == Full  = (,) (fromIntegral $ TL.length t * 3, 25) $ g_ [] ( rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ] <>
+                                                                            text_ [ X_ <<-* (x + 3), Y_ <<-* (y + 3) ] (toElement t) )
+  
+  -- [TODO]: for And and Or, recurse into children, and move them around, and update current bounding box.
+  where cs = colorScheme c m amNot
+
+data ColorScheme = ColorScheme
+  { bs -- | box stroke
+  , bf -- | box fill
+  , tf -- | text fill
+  , ll -- | left  "negation" line -- the marking is False
+  , rl -- | right "negation" line -- we are drawing a Not element
+  , tl -- | top "truth" line -- drawn if the value is true, or if the marking is false and the item is a Not
+    :: T.Text
+  }
+
+-- | the color scheme depends on the marking
+colorScheme :: Config
+            -> Default Bool
+            -> Boolean   -- | iff we got here via a Not, this value is True
+            -> ColorScheme
+colorScheme c m amNot = case m of
+                          Default (Right (Just b@True )) -> ColorScheme "none" "none" "black" "none"  notLine (topLine b) -- user says true, or computed to true
+                          Default (Right (Just b@False)) -> ColorScheme "none" "none" "black" "black" notLine (topLine b) -- user says false, or computed to false
+                          Default (Right (Nothing     )) -> ColorScheme "none" "none" "black" "black" notLine "none"      -- user says explicitly they don't know
+                          Default (Left  (Just b@True )) -> ColorScheme "none" "grey" "white" "none"  notLine (topLine b) -- no user input, default is true
+                          Default (Left  (Just b@False)) -> ColorScheme "none" "grey" "white" "black" notLine (topLine b) -- no user input, default is false
+                          Default (Left  Nothing      )  -> ColorScheme "none" "grey" "white" "black" notLine "none"      -- no user input, no default
+  where
+    notLine   = if amNot                   then "black" else "none"
+    topLine b = if          amNot && not b then "black"
+                else if not amNot &&     b then "black" else "none"
+  
 
 box :: Config -> Double -> Double -> Double -> Double -> Element
 box c x y w h =

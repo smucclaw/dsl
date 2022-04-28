@@ -208,3 +208,15 @@ getViewsJSON = encode . getViews
 getForUI :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
 getForUI qt = encode (Map.fromList [("view" :: TL.Text, getViews qt)
                                    ,("ask" :: TL.Text, getAsks qt)])
+
+markingLabel :: Item TL.Text -> TL.Text
+markingLabel (Not x)  = markingLabel x
+markingLabel (Leaf x) = x
+markingLabel (Any (Just (Pre     p1   )) _) = p1
+markingLabel (All (Just (Pre     p1   )) _) = p1
+markingLabel (Any (Just (PrePost p1 p2)) _) = p1
+markingLabel (All (Just (PrePost p1 p2)) _) = p1
+markingLabel (Any Nothing                _) = "any of" -- to do -- add a State autoincrement to distinguish
+markingLabel (All Nothing                _) = "all of" -- to do -- add a State autoincrement to distinguish
+
+

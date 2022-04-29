@@ -575,6 +575,7 @@ data Tree :: * -> * where
   GConjS :: GConj -> GListS -> Tree GS_
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GExtAdvS :: GAdv -> GS -> Tree GS_
+  GPostAdvS :: GS -> GAdv -> Tree GS_
   GPredVPS :: GNP -> GVP -> Tree GS_
   GRelS :: GS -> GRS -> Tree GS_
   GSSubjS :: GS -> GSubj -> GS -> Tree GS_
@@ -1119,6 +1120,7 @@ instance Eq (Tree a) where
     (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GExtAdvS x1 x2,GExtAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GPostAdvS x1 x2,GPostAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelS x1 x2,GRelS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSSubjS x1 x2 x3,GSSubjS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -2379,6 +2381,7 @@ instance Gf GS where
   gf (GConjS x1 x2) = mkApp (mkCId "ConjS") [gf x1, gf x2]
   gf (GExistS x1 x2 x3) = mkApp (mkCId "ExistS") [gf x1, gf x2, gf x3]
   gf (GExtAdvS x1 x2) = mkApp (mkCId "ExtAdvS") [gf x1, gf x2]
+  gf (GPostAdvS x1 x2) = mkApp (mkCId "PostAdvS") [gf x1, gf x2]
   gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
   gf (GRelS x1 x2) = mkApp (mkCId "RelS") [gf x1, gf x2]
   gf (GSSubjS x1 x2 x3) = mkApp (mkCId "SSubjS") [gf x1, gf x2, gf x3]
@@ -2390,6 +2393,7 @@ instance Gf GS where
       Just (i,[x1,x2]) | i == mkCId "ConjS" -> GConjS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ExistS" -> GExistS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ExtAdvS" -> GExtAdvS (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "PostAdvS" -> GPostAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelS" -> GRelS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "SSubjS" -> GSSubjS (fg x1) (fg x2) (fg x3)
@@ -3886,6 +3890,7 @@ instance Compos Tree where
     GConjS x1 x2 -> r GConjS `a` f x1 `a` f x2
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
     GExtAdvS x1 x2 -> r GExtAdvS `a` f x1 `a` f x2
+    GPostAdvS x1 x2 -> r GPostAdvS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
     GRelS x1 x2 -> r GRelS `a` f x1 `a` f x2
     GSSubjS x1 x2 x3 -> r GSSubjS `a` f x1 `a` f x2 `a` f x3

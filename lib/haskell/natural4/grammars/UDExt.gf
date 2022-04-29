@@ -34,6 +34,8 @@ abstract UDExt = UDApp ,
     MkA2 : A -> Prep -> A2 ;
     MkN3 : N -> Prep -> Prep -> N3;
 
+    PostAdvS : S -> Adv -> S ; -- [we go [where it's warm]:Adv ]:S
+
 -- Aarne's additions
   RS_that_NP_VP : NP -> VP -> RS ;
 {-  apply_concurrently_VP : VP ;

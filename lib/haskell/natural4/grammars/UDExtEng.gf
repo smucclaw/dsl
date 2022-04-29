@@ -52,6 +52,8 @@ concrete UDExtEng of UDExt = UDAppEng,
     -- : N -> Prep -> Prep -> N3;
     MkN3 n p q = P.mkN3 n p q;
 
+    -- : S -> Adv -> S ; -- [we go [where it's warm]:Adv ]:S
+    PostAdvS s adv = cc2 s adv ;
 
 -- Aarne's additions
 

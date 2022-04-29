@@ -273,6 +273,13 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #auxfun ExtAdvNP_ adv comma np : Adv -> Conj -> S -> S = ExtAdvNP np adv ; advmod punct[LEMMA=\,] head
 #disable ExtAdvNP
 
+-- the data breach occurs
+#auxfun theDataBreachOccursXmas_ the data breach occurs nmod : Det -> N -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootV_ occurs) (nsubj_ (DetCN the (UseN (CompoundN data breach)))) (obl_ nmod) ; det compound compound head[Number=Plur] nmod
+
+-- the data breach occurs
+#auxfun theDatasBreachOccursXmas_ the_data breach occurs nmod : Quant -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootV_ occurs) (nsubj_ (DetCN (DetQuant the_data NumSg) (UseN (breach)))) (obl_ nmod) ; nmod:poss compound head[Number=Plur] nmod
+
+
 -----------------
 -- Handling lists
 -- This has to be repeated for every category

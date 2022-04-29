@@ -82,7 +82,7 @@ parseUD env txt = do
   expr <- either errorMsg pure (ud2gf lowerConll)
   when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ showExpr expr)
   let uds = toUDS (pgfGrammar $ udEnv env) expr
-  when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
+  -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
   where
     errorMsg msg = do
@@ -913,10 +913,21 @@ advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
   Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
-  -- Groot_advcl (GrootAdv_ rt) (Gadvcl_ adv) -> Just $ GAdvAdv rt adv
-  _ -> case getRoot x of -- TODO: fill in other cases
-              GrootAdv_ adv:_ -> Just adv
-              _               -> Nothing
+  -- very much overfitted to catch "unless we go where it's warm"
+  Groot_advcl (GrootAdv_ whereItsWarm) (GadvclMarkUDS_ (Gmark_ subj) uds) -> do
+    weGo <- useCl <$> clFromUDS uds
+    let weGoWarm = GPostAdvS weGo whereItsWarm
+    return $ GSubjS subj weGoWarm
+  _ -> case [ adv | GrootAdv_ adv <- getRoot x] of
+         adv:_ -> Just adv
+         []    -> trace errorMsg Nothing
+  where
+    uds = showExpr (gf x)
+    errorMsg = unlines $
+      [ "advFromUDS: caught " ++ uds ++ ", couldn't turn it into an Adv."
+      , "getRoot " ++ uds ++ " returns:"]
+      ++ (showExpr . gf <$> getRoot x)
+
 
 detFromUDS :: GUDS -> Maybe GDet
 detFromUDS x = case x of
@@ -1023,6 +1034,7 @@ getRoot rt@(GrootDet_ _) = [rt]
 getRoot rt@(GrootDAP_ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]
 getRoot rt@(GrootAdA_ _) = [rt]
+getRoot rt@(GrootAdv_ _) = [rt]
 getRoot rt@(GrootPrep_ _) = [rt]
 getRoot rt@(GrootRP_ _) = [rt]
 getRoot x = composOpMonoid getRoot x

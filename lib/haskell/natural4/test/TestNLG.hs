@@ -22,7 +22,7 @@ nlgTests = do
 
     it "Should return a complex adverbial" $ do
         treeAdvComplex <- bsr2gf env testAdvComplexBSR
-        showExpr treeAdvComplex `shouldBe` "ConjAdv or_Conj (BaseAdv (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))) (PrepNP over_Prep (DetCN theSg_Det (UseN (CompoundN monochrome_N rainbow_N)))))"
+        showExpr treeAdvComplex `shouldBe` "ConjAdv or_Conj (ConsAdv (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N)))) (BaseAdv (SubjS unless_Subj (PostAdvS (UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron we_Pron) (UseV go_V))) (SubjS where_Subj (UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron it_Pron) (UseComp (CompAP (PositA warm_A)))))))) (PrepNP over_Prep (DetCN theSg_Det (UseN (CompoundN monochrome_N rainbow_N))))))"
 
     it "Should return a det" $ do
         treeDet <- bsr2gf env testDetBSR
@@ -134,7 +134,7 @@ testAdvBSR = testBSR ["today", "tomorrow"]
 testAdvComplexBSR :: BoolStructR
 testAdvComplexBSR = testBSR ["once upon a time",
 -- "in a low voice",
---"unless we go where it is warm",
+  "unless we go where it is warm",
 -- "after the funeral",
  "over the monochrome rainbow"]
 -- "beyond the edge of forever"]
@@ -159,9 +159,7 @@ testNPComplexBSR = testBSR ["the occurrence at the beach", "this assessment that
 
 testNPRootNmodAclBSR :: BoolStructR
 testNPRootNmodAclBSR  = testBSR [
-  -- "any of the personal data relating to the individual", "all of the mysteries centering around the principal",
   "none of the submitted proposals focusing on this topic"
-  --,"all of her savings invested in this technology fund"
   , "policy (called the applicable policy) of the company"
   ]
 

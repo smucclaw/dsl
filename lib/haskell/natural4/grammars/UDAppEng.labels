@@ -14,20 +14,6 @@
 #auxfun GenNP_ np gen : NP -> Gen -> Quant = GenNP np ; head case
 #disable GenNP
 
--- recovering a "root case nmod" misparsed as "root mark acl", e.g day of mourning:
--- "mourning" is analysed as verb, even though it should be noun, and "of" is analysed as conjunction, should be adposition.
--- We do it in two steps:
--- 1) Create a fake type for the result of "of mourning"
--- 2) Connect "day" to that result of that fake type
-
--- Step 1: create a result of this fake type NmodMisparsedAsAcl, give it a value that is actually a nmod
-#auxfun OfMourning_ of mourn : Prep -> VP -> NmodMisparsedAsAcl = nmod_ of_Prep (GerundNP mourn) ; mark[LEMMA=of] head[VerbForm=Ger]
-
--- Step 2: connect the nmod with the fake type NmodMisparsedAsAcl to a CN.
--- NB. the label must be acl—this is critical! the whole point is that udpipe has mistakenly applied the acl relation,
--- so if we want to recover the proper relation, we must match acl in the auxfun.
-#auxfun DayOfMourning_ day of_mourning : NP -> NmodMisparsedAsAcl -> UDS = root_nmod (rootN_ day) of_mourning ; head acl
-
 -- [my mother's]:Quant [hovercraft]:CN
 #auxfun DetCNSgNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumSg) cn ; nmod:poss[POS=NOUN] head[Number=Sing]
 #auxfun DetCNPlNmod_ quant cn : Quant -> CN -> NP = DetCN (DetQuant quant NumPl) cn ; nmod:poss[POS=NOUN] head[Number=Plur]
@@ -115,9 +101,27 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- ExtAdvS : S -> Punct -> Adv -> S ;
 -- ExtAdvS sent comma adv = {s = sent.s ++ comma.s ++ adv.s} ;
 
--- ** handle parentheses
-
+-- ** handle parentheses **
 #auxfun UDSInParentheses_ uds lrb rrb : UDS ->  Adv -> Adv -> UDS = uds ; head punct[LEMMA=\(] punct[LEMMA=\)]
+
+-- ** recover from udpipe misparses **
+
+-- recovering a "root case nmod" misparsed as "root mark acl", e.g day of mourning:
+-- "mourning" is analysed as verb, even though it should be noun, and "of" is analysed as conjunction, should be adposition.
+-- We do it in two steps:
+-- 1) Create a fake type for the result of "of mourning"
+-- 2) Connect "day" to that result of that fake type
+
+-- Step 1: create a result of this fake type NmodMisparsedAsAcl, give it a value that is actually a nmod
+#auxfun OfMourning_ of mourn : Prep -> VP -> NmodMisparsedAsAcl = nmod_ of_Prep (GerundNP mourn) ; mark[LEMMA=of] head[VerbForm=Ger]
+
+-- Step 2: connect the nmod with the fake type NmodMisparsedAsAcl to a CN.
+-- NB. the label must be acl—this is critical! the whole point is that udpipe has mistakenly applied the acl relation,
+-- so if we want to recover the proper relation, we must match acl in the auxfun.
+#auxfun DayOfMourning_ day of_mourning : NP -> NmodMisparsedAsAcl -> UDS = root_nmod (rootN_ day) of_mourning ; head acl
+
+-- where it is warm
+#auxfun WhereItIsWarm_ where it is warm : IAdv -> Pron -> cop -> Comp -> Adv = SubjS where_Subj (UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron it) (UseComp warm))) ; head[LEMMA=where] nsubj cop nsubj
 
 -----------------------
 -- Inari's additions --

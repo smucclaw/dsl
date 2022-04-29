@@ -81,7 +81,9 @@ parseUD env txt = do
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   expr <- either errorMsg pure (ud2gf lowerConll)
   when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ showExpr expr)
-  return $ fg expr
+  let uds = toUDS (pgfGrammar $ udEnv env) expr
+  when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
+  return uds
   where
     errorMsg msg = do
       putStrLn $ "parseUD: fail to parse " ++ Text.unpack txt ++ " with error message\n" ++ msg

@@ -46,19 +46,33 @@ Now you can view the SVG:
 
 * Usage (Library)
 
+Suppose you want to be able to ~import AnyAll as AA~
+
+
 In ~package.yaml~ say ~dependencies: - anyall~
+
+** Local
+If you're using this within the ~dsl~ repo, say within ~dsl/lib/haskell/natural4~,
+
+In ~stack.yaml~ under ~extra-deps:~ say
+
+#+begin_src yaml
+  - ../anyall
+#+end_src
+
+** Remote
+If you're using this outside the ~dsl~ repo,
 
 In ~stack.yaml~ under ~extra-deps:~ say
 
 #+begin_src yaml
   - github: smucclaw/dsl
-    commit: d561043fed8abfd8333318af5882713b6da13c6b
+    commit: 10ed7be2775740badcb87a389d6acd578155d53d
     subdirs:
     - lib/haskell/anyall
-  - svg-builder-0.1.1
 #+end_src
 
-Then in your code you can ~import AnyAll as AA~
+(The commit hash will need to update to whatever commit you're up to in main.)
 
 * CLI Documentation
 

@@ -33,7 +33,7 @@ concrete BareRGEng of BareRG =
    ],
 
   AdjectiveEng [
-    AP,AdA,A,Ord,
+    AP,ParentheticalAP,AdA,A,Ord,
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
@@ -138,6 +138,14 @@ concrete BareRGEng of BareRG =
 
     -- : VP -> NP -> AP ; -- affected by breach, no auxPass (Extend.PastPartAP takes a VPSlash)
     PastPartAgentAP vp = E.PastPartAgentAP (slashV vp) ;
+
+    -- : AP -> AP ;
+    ParentheticalAP ap =  ap ** {
+      -- s = table {agr => "(" ++ ap.s!agr ++ ")" }
+      -- short for table with one case
+      s = \\agr => "(" ++ ap.s!agr ++ ")"
+    };
+--    AP = {s : Agr => Str ; isPre : Bool} ;
 
     CompoundCN = CompoundN ;
 

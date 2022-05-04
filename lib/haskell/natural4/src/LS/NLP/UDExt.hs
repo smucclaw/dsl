@@ -367,6 +367,7 @@ data Tree :: * -> * where
   GAdvAP :: GAP -> GAdv -> Tree GAP_
   GComplA2 :: GA2 -> GNP -> Tree GAP_
   GConjAP :: GConj -> GListAP -> Tree GAP_
+  GParentheticalAP :: GAP -> Tree GAP_
   GPastPartAP :: GVP -> Tree GAP_
   GPastPartAgentAP :: GVP -> GNP -> Tree GAP_
   GPositA :: GA -> Tree GAP_
@@ -792,6 +793,7 @@ data Tree :: * -> * where
   GUseV :: GV -> Tree GVP_
   GaclUDS_ :: GUDS -> Tree Gacl_
   GaclUDSgerund_ :: GUDS -> Tree Gacl_
+  GaclUDSpastpartParens_ :: GUDS -> Tree Gacl_
   GaclUDSpastpart_ :: GUDS -> Tree Gacl_
   Gacl_ :: GX -> Tree Gacl_
   GaclRelclRS_ :: GRS -> Tree GaclRelcl_
@@ -912,6 +914,7 @@ instance Eq (Tree a) where
     (GAdvAP x1 x2,GAdvAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplA2 x1 x2,GComplA2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjAP x1 x2,GConjAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GParentheticalAP x1,GParentheticalAP y1) -> and [ x1 == y1 ]
     (GPastPartAP x1,GPastPartAP y1) -> and [ x1 == y1 ]
     (GPastPartAgentAP x1 x2,GPastPartAgentAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
@@ -1337,6 +1340,7 @@ instance Eq (Tree a) where
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
     (GaclUDS_ x1,GaclUDS_ y1) -> and [ x1 == y1 ]
     (GaclUDSgerund_ x1,GaclUDSgerund_ y1) -> and [ x1 == y1 ]
+    (GaclUDSpastpartParens_ x1,GaclUDSpastpartParens_ y1) -> and [ x1 == y1 ]
     (GaclUDSpastpart_ x1,GaclUDSpastpart_ y1) -> and [ x1 == y1 ]
     (Gacl_ x1,Gacl_ y1) -> and [ x1 == y1 ]
     (GaclRelclRS_ x1,GaclRelclRS_ y1) -> and [ x1 == y1 ]
@@ -1483,6 +1487,7 @@ instance Gf GAP where
   gf (GAdvAP x1 x2) = mkApp (mkCId "AdvAP") [gf x1, gf x2]
   gf (GComplA2 x1 x2) = mkApp (mkCId "ComplA2") [gf x1, gf x2]
   gf (GConjAP x1 x2) = mkApp (mkCId "ConjAP") [gf x1, gf x2]
+  gf (GParentheticalAP x1) = mkApp (mkCId "ParentheticalAP") [gf x1]
   gf (GPastPartAP x1) = mkApp (mkCId "PastPartAP") [gf x1]
   gf (GPastPartAgentAP x1 x2) = mkApp (mkCId "PastPartAgentAP") [gf x1, gf x2]
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
@@ -1497,6 +1502,7 @@ instance Gf GAP where
       Just (i,[x1,x2]) | i == mkCId "AdvAP" -> GAdvAP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplA2" -> GComplA2 (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjAP" -> GConjAP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "ParentheticalAP" -> GParentheticalAP (fg x1)
       Just (i,[x1]) | i == mkCId "PastPartAP" -> GPastPartAP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PastPartAgentAP" -> GPastPartAgentAP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
@@ -2935,6 +2941,7 @@ instance Gf GVP where
 instance Gf Gacl where
   gf (GaclUDS_ x1) = mkApp (mkCId "aclUDS_") [gf x1]
   gf (GaclUDSgerund_ x1) = mkApp (mkCId "aclUDSgerund_") [gf x1]
+  gf (GaclUDSpastpartParens_ x1) = mkApp (mkCId "aclUDSpastpartParens_") [gf x1]
   gf (GaclUDSpastpart_ x1) = mkApp (mkCId "aclUDSpastpart_") [gf x1]
   gf (Gacl_ x1) = mkApp (mkCId "acl_") [gf x1]
 
@@ -2942,6 +2949,7 @@ instance Gf Gacl where
     case unApp t of
       Just (i,[x1]) | i == mkCId "aclUDS_" -> GaclUDS_ (fg x1)
       Just (i,[x1]) | i == mkCId "aclUDSgerund_" -> GaclUDSgerund_ (fg x1)
+      Just (i,[x1]) | i == mkCId "aclUDSpastpartParens_" -> GaclUDSpastpartParens_ (fg x1)
       Just (i,[x1]) | i == mkCId "aclUDSpastpart_" -> GaclUDSpastpart_ (fg x1)
       Just (i,[x1]) | i == mkCId "acl_" -> Gacl_ (fg x1)
 
@@ -3758,6 +3766,7 @@ instance Compos Tree where
     GAdvAP x1 x2 -> r GAdvAP `a` f x1 `a` f x2
     GComplA2 x1 x2 -> r GComplA2 `a` f x1 `a` f x2
     GConjAP x1 x2 -> r GConjAP `a` f x1 `a` f x2
+    GParentheticalAP x1 -> r GParentheticalAP `a` f x1
     GPastPartAP x1 -> r GPastPartAP `a` f x1
     GPastPartAgentAP x1 x2 -> r GPastPartAgentAP `a` f x1 `a` f x2
     GPositA x1 -> r GPositA `a` f x1
@@ -4098,6 +4107,7 @@ instance Compos Tree where
     GUseV x1 -> r GUseV `a` f x1
     GaclUDS_ x1 -> r GaclUDS_ `a` f x1
     GaclUDSgerund_ x1 -> r GaclUDSgerund_ `a` f x1
+    GaclUDSpastpartParens_ x1 -> r GaclUDSpastpartParens_ `a` f x1
     GaclUDSpastpart_ x1 -> r GaclUDSpastpart_ `a` f x1
     Gacl_ x1 -> r Gacl_ `a` f x1
     GaclRelclRS_ x1 -> r GaclRelclRS_ `a` f x1

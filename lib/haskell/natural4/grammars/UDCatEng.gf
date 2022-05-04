@@ -105,7 +105,8 @@ concrete UDCatEng of UDCat = BareRGEng **
     xcompA_ccomp_ ap cc = xcompA_ (mkAP ap cc) ;
     aclUDS_,
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
-    aclUDSpastpart_ uds = lin Adv {s = linUDS' PastPart emptyNP uds} ;
+    aclUDSpastpart_ uds       = lin Adv {s =        linUDS' PastPart emptyNP uds        } ;
+    aclUDSpastpartParens_ uds = lin Adv {s = "(" ++ linUDS' PastPart emptyNP uds ++ ")" } ;
     aclUDSgerund_ uds = lin Adv {s = linUDS' PresPart emptyNP uds} ;
     advclMarkUDS_ = \mark,uds -> lin Adv {
       s = case uds.hasSubj of {

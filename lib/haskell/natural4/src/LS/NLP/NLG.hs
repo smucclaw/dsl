@@ -23,7 +23,7 @@ import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
 import Data.List ( group, sort, sortOn, nub )
 import Data.List.Extra (maximumOn)
 import Data.Either (partitionEithers)
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)

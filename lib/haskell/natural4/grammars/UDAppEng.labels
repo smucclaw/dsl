@@ -296,6 +296,14 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- the data breach occurs
 #auxfun theDatasBreachOccursXmas_ the_data breach occurs nmod : Quant -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootV_ occurs) (nsubj_ (DetCN (DetQuant the_data NumSg) (UseN (breach)))) (obl_ nmod) ; nmod:poss compound head[Number=Plur] nmod
 
+-----------------
+-- csubj + mark
+
+#auxfun CsubjMarkFinite_ that stuff_does_thing : mark -> UDS -> csubj = csubjMarkFinite_ that stuff_does_thing ; mark head[VerbForm=Fin]
+
+#auxfun CsubjMarkInfinite_ to do_a_thing : mark -> UDS -> csubj = csubjMarkInfinite_ to do_a_thing ; mark[LEMMA=to] head
+
+#disable csubjMarkInfinite_ csubjMarkFinite_
 
 -----------------
 -- Handling lists

@@ -986,10 +986,19 @@ clFromUDS :: GUDS -> Maybe GCl
 clFromUDS x = case getNsubj x of
   [] -> Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   _ -> case x of
+    Groot_expl_cop_csubj root _expl _cop csubj -> do
+      vp <- verbFromUDS (Groot_only root)
+      let pred = GAdvVP vp (Gcsubj2Adv csubj)
+      pure $ GImpersCl pred
     Groot_nsubj root (Gnsubj_ np) -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
       vp <- verbFromUDS (Groot_only root)
-      Just $ GPredVP np (GAdvVP vp adv)
+      pure $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_obj_advcl root (Gnsubj_ subj) (Gobj_ obj) advcl -> do
+      vp <- verbFromUDS (Groot_only root)
+      let adv = Gadvcl2Adv advcl
+          pred = GAdvVP (GComplVP vp obj) adv
+      pure $ GPredVP subj pred
     Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
@@ -1007,7 +1016,7 @@ clFromUDS x = case getNsubj x of
     Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
       vp <- verbFromUDS (Groot_only root)
-      Just $ GPredVP np (GAdvVP vp adv)
+      pure $ GPredVP np (GAdvVP vp adv)
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDS (Groot_only root)
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDS (Groot_only root)

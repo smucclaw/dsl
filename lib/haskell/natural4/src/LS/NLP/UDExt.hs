@@ -387,6 +387,10 @@ data Tree :: * -> * where
   GPositAdvAdj :: GA -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GSubjS :: GSubj -> GS -> Tree GAdv_
+  Gacl2Adv :: Gacl -> Tree GAdv_
+  Gadvcl2Adv :: Gadvcl -> Tree GAdv_
+  Gcsubj2Adv :: Gcsubj -> Tree GAdv_
+  Gxcomp2Adv :: Gxcomp -> Tree GAdv_
   LexAdv :: String -> Tree GAdv_
   GAAnter :: Tree GAnt_
   GASimul :: Tree GAnt_
@@ -829,7 +833,8 @@ data Tree :: * -> * where
   GcompoundSvc_ :: GX -> Tree GcompoundSvc_
   Gbe_cop :: Tree Gcop_
   Gis_cop :: Tree Gcop_
-  GcsubjMark_ :: Gmark -> GUDS -> Tree Gcsubj_
+  GcsubjMarkFinite_ :: Gmark -> GUDS -> Tree Gcsubj_
+  GcsubjMarkInfinite_ :: Gmark -> GUDS -> Tree Gcsubj_
   Gcsubj_ :: GUDS -> Tree Gcsubj_
   GcsubjPass_ :: GX -> Tree GcsubjPass_
   Gdep_ :: GX -> Tree Gdep_
@@ -934,6 +939,10 @@ instance Eq (Tree a) where
     (GPositAdvAdj x1,GPositAdvAdj y1) -> and [ x1 == y1 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gacl2Adv x1,Gacl2Adv y1) -> and [ x1 == y1 ]
+    (Gadvcl2Adv x1,Gadvcl2Adv y1) -> and [ x1 == y1 ]
+    (Gcsubj2Adv x1,Gcsubj2Adv y1) -> and [ x1 == y1 ]
+    (Gxcomp2Adv x1,Gxcomp2Adv y1) -> and [ x1 == y1 ]
     (LexAdv x,LexAdv y) -> x == y
     (GAAnter,GAAnter) -> and [ ]
     (GASimul,GASimul) -> and [ ]
@@ -1376,7 +1385,8 @@ instance Eq (Tree a) where
     (GcompoundSvc_ x1,GcompoundSvc_ y1) -> and [ x1 == y1 ]
     (Gbe_cop,Gbe_cop) -> and [ ]
     (Gis_cop,Gis_cop) -> and [ ]
-    (GcsubjMark_ x1 x2,GcsubjMark_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GcsubjMarkFinite_ x1 x2,GcsubjMarkFinite_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GcsubjMarkInfinite_ x1 x2,GcsubjMarkInfinite_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gcsubj_ x1,Gcsubj_ y1) -> and [ x1 == y1 ]
     (GcsubjPass_ x1,GcsubjPass_ y1) -> and [ x1 == y1 ]
     (Gdep_ x1,Gdep_ y1) -> and [ x1 == y1 ]
@@ -1553,6 +1563,10 @@ instance Gf GAdv where
   gf (GPositAdvAdj x1) = mkApp (mkCId "PositAdvAdj") [gf x1]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
   gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
+  gf (Gacl2Adv x1) = mkApp (mkCId "acl2Adv") [gf x1]
+  gf (Gadvcl2Adv x1) = mkApp (mkCId "advcl2Adv") [gf x1]
+  gf (Gcsubj2Adv x1) = mkApp (mkCId "csubj2Adv") [gf x1]
+  gf (Gxcomp2Adv x1) = mkApp (mkCId "xcomp2Adv") [gf x1]
   gf (LexAdv x) = mkApp (mkCId x) []
 
   fg t =
@@ -1565,6 +1579,10 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "PositAdvAdj" -> GPositAdvAdj (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "acl2Adv" -> Gacl2Adv (fg x1)
+      Just (i,[x1]) | i == mkCId "advcl2Adv" -> Gadvcl2Adv (fg x1)
+      Just (i,[x1]) | i == mkCId "csubj2Adv" -> Gcsubj2Adv (fg x1)
+      Just (i,[x1]) | i == mkCId "xcomp2Adv" -> Gxcomp2Adv (fg x1)
 
       Just (i,[]) -> LexAdv (showCId i)
       _ -> error ("no Adv " ++ show t)
@@ -3175,12 +3193,14 @@ instance Gf Gcop where
       _ -> error ("no cop " ++ show t)
 
 instance Gf Gcsubj where
-  gf (GcsubjMark_ x1 x2) = mkApp (mkCId "csubjMark_") [gf x1, gf x2]
+  gf (GcsubjMarkFinite_ x1 x2) = mkApp (mkCId "csubjMarkFinite_") [gf x1, gf x2]
+  gf (GcsubjMarkInfinite_ x1 x2) = mkApp (mkCId "csubjMarkInfinite_") [gf x1, gf x2]
   gf (Gcsubj_ x1) = mkApp (mkCId "csubj_") [gf x1]
 
   fg t =
     case unApp t of
-      Just (i,[x1,x2]) | i == mkCId "csubjMark_" -> GcsubjMark_ (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "csubjMarkFinite_" -> GcsubjMarkFinite_ (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "csubjMarkInfinite_" -> GcsubjMarkInfinite_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "csubj_" -> Gcsubj_ (fg x1)
 
 
@@ -3783,6 +3803,10 @@ instance Compos Tree where
     GPositAdvAdj x1 -> r GPositAdvAdj `a` f x1
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
+    Gacl2Adv x1 -> r Gacl2Adv `a` f x1
+    Gadvcl2Adv x1 -> r Gadvcl2Adv `a` f x1
+    Gcsubj2Adv x1 -> r Gcsubj2Adv `a` f x1
+    Gxcomp2Adv x1 -> r Gxcomp2Adv `a` f x1
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GAdvCN x1 x2 -> r GAdvCN `a` f x1 `a` f x2
     GApposCN x1 x2 -> r GApposCN `a` f x1 `a` f x2
@@ -4131,7 +4155,8 @@ instance Compos Tree where
     GcompoundPrt_ x1 -> r GcompoundPrt_ `a` f x1
     GcompoundRedup_ x1 -> r GcompoundRedup_ `a` f x1
     GcompoundSvc_ x1 -> r GcompoundSvc_ `a` f x1
-    GcsubjMark_ x1 x2 -> r GcsubjMark_ `a` f x1 `a` f x2
+    GcsubjMarkFinite_ x1 x2 -> r GcsubjMarkFinite_ `a` f x1 `a` f x2
+    GcsubjMarkInfinite_ x1 x2 -> r GcsubjMarkInfinite_ `a` f x1 `a` f x2
     Gcsubj_ x1 -> r Gcsubj_ `a` f x1
     GcsubjPass_ x1 -> r GcsubjPass_ `a` f x1
     Gdep_ x1 -> r Gdep_ `a` f x1

@@ -102,7 +102,10 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- ExtAdvS sent comma adv = {s = sent.s ++ comma.s ++ adv.s} ;
 
 -- ** handle parentheses **
-#auxfun UDSInParentheses_ uds lrb rrb : UDS ->  Adv -> Adv -> UDS = uds ; head punct[LEMMA=\(] punct[LEMMA=\)]
+-- original
+-- #auxfun UDSInParentheses_ uds lrb rrb : UDS ->  Adv -> Adv -> UDS = uds ; head punct[LEMMA=\(] punct[LEMMA=\)]
+#auxfun UDSInParentheses_ uds lrb rrb : UDS ->  Adv -> Adv -> acl = aclUDSpastpartParens_ uds ; head punct[LEMMA=\(] punct[LEMMA=\)]
+#disable aclUDSpastpartParens_
 
 -- ** recover from udpipe misparses **
 
@@ -123,6 +126,19 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- where it is warm
 #auxfun WhereItIsWarm_ where it is warm : IAdv -> Pron -> cop -> Comp -> Adv = SubjS where_Subj (UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron it) (UseComp warm))) ; head[LEMMA=where] nsubj cop nsubj
 
+-- Word order stuff
+-- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
+#auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
+#auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
+#auxfun NmodAmod_ provision the ofThisCode applicable : CN -> Det -> Adv -> AP -> NP = DetCN the (AdjCN applicable (AdvCN provision ofThisCode)) ; head det nmod amod
+-- recognise "Section 10" as an apposition
+
+-- Special case for NmodAcl with parentheses
+
+-- Step 1: find a VP surrounded by parens, return a fake type
+#auxfun VPInParentheses_ vp lrb rrb : VP -> Adv -> Adv -> VPInParens = vp ; head punct[LEMMA=\(] punct[LEMMA=\)]
+-- Step 2: detect that VP surrounded by parens
+#auxfun NmodAclPartWithParens_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VPInParens -> NP = DetCN each (PPartCN_acl_parens_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
 -----------------------
 -- Inari's additions --
 -----------------------
@@ -145,13 +161,6 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- ** 5 people **
 #auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
 
--- Word order stuff
--- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
-#auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
-#auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
-#auxfun NmodAmod_ provision the ofThisCode applicable : CN -> Det -> Adv -> AP -> NP = DetCN the (AdjCN applicable (AdvCN provision ofThisCode)) ; head det nmod amod
--- recognise "Section 10" as an apposition
-
 -- Label variants of various
 -- This relation is nmod head, and default AdNum is advmod head
 #auxfun AdNumNmod_ atLeast five : AdN -> Card -> Card = AdNum atLeast five ; nmod head
@@ -166,6 +175,10 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- ** acl & amod for participles **
 -- [personal data]:CN [stored in electronic formats]:acl
 #auxfun PPartCN_acl_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head acl[Tense=Past|VerbForm=Part]
+
+-- [policy]:CN [( called the applicable policy )]:acl
+#auxfun PPartCN_acl_parens_ cn vp : CN -> VP -> CN = AdjCN (ParentheticalAP (PastPartAP vp)) cn ; head acl[Tense=Past|VerbForm=Part]
+#disable ParentheticalAP
 
 -- [data breach]:CN [affecting 500 people]:acl
 #auxfun PPresCN_acl_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head acl[VerbForm=Ger]

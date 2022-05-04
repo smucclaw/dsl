@@ -172,6 +172,7 @@ abstract UDCat = BareRG ** {
 		aclRelclUDS_ : UDS -> aclRelcl ; -- TODO figure out how this works properly, maybe needs some more auxfuns
 		aclRelclRS_ : RS -> aclRelcl ;
         aclUDS_ : UDS -> acl ; -- (the issues) as he sees them -- TODO: how is "as" tagged?
+        aclUDSpastpartParens_ : UDS -> acl ;
         aclUDSpastpart_ : UDS -> acl ; -- (an individual) affected by the breach
         aclUDSgerund_ : UDS -> acl ; -- (a message) obeying a certain format
         advclUDS_ : UDS -> advcl ;

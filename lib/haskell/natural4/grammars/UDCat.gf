@@ -179,7 +179,8 @@ abstract UDCat = BareRG ** {
         advclMarkUDS_ : mark -> UDS -> advcl ;
 
         csubj_ : UDS -> csubj ;
-        csubjMark_ : mark -> UDS -> csubj ;
+        csubjMarkFinite_ : mark -> UDS -> csubj ; -- that X does something (full UDS, finite)
+        csubjMarkInfinite_ : mark -> UDS -> csubj ; -- to do something (only VP, infinite)
 
         obl_    : Adv -> obl ;
 	    oblPrep_ : Prep -> obl ; -- sometimes empty preps are analysed as obl, e.g. "subject to"

@@ -36,6 +36,13 @@ abstract UDExt = UDApp ,
 
     PostAdvS : S -> Adv -> S ; -- [we go [where it's warm]:Adv ]:S
 
+    -- Make the UDS categories that have Adv as a lincat, but aren't constructed from Adv, into Adv
+    -- the rest can just peel off the constructor, e.g. obl with `obl_ : Adv -> obl`
+    advcl2Adv : advcl -> Adv ;
+    acl2Adv : acl -> Adv ;
+    xcomp2Adv : xcomp -> Adv ;
+    csubj2Adv : csubj -> Adv ; -- TODO also add csubj2SC?
+
 -- Aarne's additions
   RS_that_NP_VP : NP -> VP -> RS ;
 {-  apply_concurrently_VP : VP ;

@@ -70,9 +70,11 @@ concrete UDCatEng of UDCat = BareRGEng **
     not_advmod = {adv = lin Adv (ss "not") ; isNot = True} ;
     '\'s_Gen' = ss ("'s"|"’s") ;
 
-    csubj_ uds = mkSC (uds2s uds) ;
-    csubjMark_ mark uds = -- assuming this is like "to assess the breach"
+    csubj_ uds = lin SC (uds2s uds) ;
+    csubjMarkInfinite_ mark uds = -- assuming this is like "to assess the breach"
       lin SC {s = mark.s ++ linUDS' Infinite emptyNP uds} ;
+    csubjMarkFinite_ mark uds = -- assuming this is like "to assess the breach"
+      lin SC {s = mark.s ++ linUDS uds} ;
 
     nsubj_,
     obj_,
@@ -102,7 +104,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     xcompA_ ap = lin Adv (mkUtt ap) ;
     xcompN_ np = lin Adv (mkUtt np) ;
     xcompToBeN_ to be np = lin Adv (cc3 to be (mkUtt np)) ;
-    xcompA_ccomp_ ap cc = xcompA_ (mkAP ap cc) ;
+    xcompA_ccomp_ ap cc = xcompA_ (AdvAP ap <cc : Adv>) ; -- need to treat cc as Adv, otherwise mkAP would put an extra "that"
     aclUDS_,
     advclUDS_ = \uds -> lin Adv {s = linUDS uds} ;
     aclUDSpastpart_ uds       = lin Adv {s =        linUDS' PastPart emptyNP uds        } ;

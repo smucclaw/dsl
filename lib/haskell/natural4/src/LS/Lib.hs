@@ -187,7 +187,7 @@ asBoxes _rs =
 asCSV :: ByteString -> Either String RawStanza
 asCSV s =
   let decoded = Cassava.decode Cassava.NoHeader s :: Either String RawStanza
-  in preprocess decoded
+  in equalizeLines <$> preprocess decoded
   where
     preprocess :: Either String RawStanza -> Either String RawStanza
     preprocess x = do
@@ -210,6 +210,16 @@ asCSV s =
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
 -- [TODO]: left trim all blank columns
+
+-- | Make sure all lines have the same length
+equalizeLines :: RawStanza -> RawStanza
+equalizeLines stanza = fmap (pad maxLen) stanza
+  where
+    maxLen = maximum $ fmap length stanza
+
+pad :: Int -> V.Vector Text.Text -> V.Vector Text.Text
+pad n v = v <> V.replicate (n - V.length v) ""
+
 
 rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt

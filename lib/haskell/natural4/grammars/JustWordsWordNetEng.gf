@@ -1,4 +1,4 @@
-concrete JustWordsWordNetEng of JustWordsWordNet = CatEng ** open (WN=WordNetEng), (R=ResEng), Prelude in {
+concrete JustWordsWordNetEng of JustWordsWordNet = CatEng ** open (WN=WordNetEng), (R=ResEng), Prelude, ParadigmsEng in {
 
 oper vvV : VV -> V = \vv -> lin V (vv ** {s = \\vf => vv.s ! R.VVF vf ; isRefl = False}) ;
 lin a_A = WN.a_posteriori_1_A ;
@@ -13515,6 +13515,7 @@ lin degrade_V = WN.degrade_3_V ;
 lin degrading_A = WN.degrading_1_A ;
 lin degree_N = WN.degree_1_N ;
 lin degressive_A = WN.degressive_A ;
+lin degustate_V = mkV "degustate" ;
 lin dehiscence_N = WN.dehiscence_N ;
 lin dehiscent_A = WN.dehiscent_A ;
 lin dehorn_V = WN.dehorn_1_V2 ;

@@ -785,8 +785,8 @@ manyIndentation' p =
 
 myindented :: (Show a) => Parser a -> Parser a
 myindented = between
-             (debugName "myindented: consuming GoDeeper" $ pToken GoDeeper)
-             (debugName "myindented: consuming UnDeeper" $ pToken UnDeeper)
+             (debugName "myindented-GoDeeper" $ pToken GoDeeper)
+             (debugName "myindented-UnDeeper" $ pToken UnDeeper)
 
 myindented' :: Parser a -> Parser a
 myindented' = between

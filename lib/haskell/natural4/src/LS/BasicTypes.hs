@@ -111,9 +111,10 @@ instance VisualStream MyStream where
   tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 showTokenWithContext :: WithPos MyToken -> String
-showTokenWithContext WithPos {parserCtx = Nothing, tokenVal = t} = showMyToken t
-showTokenWithContext WithPos {parserCtx = Just ctx, tokenVal = t}
-  = "\n    " ++ showMyToken t ++ "\t: " ++ intercalate " - " (reverse ctx)
+showTokenWithContext WithPos {tokenVal = t} = showMyToken t
+-- showTokenWithContext WithPos {parserCtx = Nothing, tokenVal = t} = showMyToken t
+-- showTokenWithContext WithPos {parserCtx = Just ctx, tokenVal = t}
+--   = "\n    " ++ showMyToken t ++ "\t: " ++ intercalate " - " (reverse ctx)
   -- = "\n    " ++ intercalate " -> " (reverse ctx) ++ " -> " ++ showMyToken t
 
 instance TraversableStream MyStream where

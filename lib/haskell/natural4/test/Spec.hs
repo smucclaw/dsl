@@ -253,7 +253,7 @@ parserTests nlgEnv runConfig_ = do
 
       it "should parse dummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ srccol1 <$> srcrow2 $ defaultReg {
+          `shouldParse` [ srccol2 <$> srcrow2 $ defaultReg {
                             who = Just (All Nothing
                                          [ mkLeafR "walks"
                                          , mkLeafR "runs"
@@ -279,7 +279,7 @@ parserTests nlgEnv runConfig_ = do
 
       it "should parse indentedDummySing" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` (srccol1 <$> srcrow2 <$> imbibeRule)
+          `shouldParse` (srccol2 <$> srcrow2 <$> imbibeRule)
 
       filetest "indented-1" "parse indented-1.csv (inline boolean expression)"
         (parseR pRules) (srcrow2 <$> imbibeRule)

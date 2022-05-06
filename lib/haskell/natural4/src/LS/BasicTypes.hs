@@ -16,6 +16,7 @@ import qualified Data.Vector as V
 import Data.Aeson (ToJSON)
 import GHC.Generics
 import Data.Char (toUpper)
+import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -111,7 +112,9 @@ instance VisualStream MyStream where
 
 showTokenWithContext :: WithPos MyToken -> String
 showTokenWithContext WithPos {parserCtx = Nothing, tokenVal = t} = showMyToken t
-showTokenWithContext WithPos {parserCtx = Just ctx, tokenVal = t} = "\n    " ++ show ctx ++ showMyToken t
+showTokenWithContext WithPos {parserCtx = Just ctx, tokenVal = t}
+  = "\n    " ++ showMyToken t ++ "\t: " ++ intercalate " - " (reverse ctx)
+  -- = "\n    " ++ intercalate " -> " (reverse ctx) ++ " -> " ++ showMyToken t
 
 instance TraversableStream MyStream where
   reachOffset o PosState {..} =

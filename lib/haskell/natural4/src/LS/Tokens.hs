@@ -44,10 +44,13 @@ pNumber = token test Set.empty <?> "number"
 
 -- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text
-pOtherVal = token test Set.empty <?> "Other text"
+-- pOtherVal = token test Set.empty <?> "Other text"
+pOtherVal = getOther <$> pTokenMatch test (pure $ Other "Other text")
   where
-    test WithPos {tokenVal = Other t} = Just t
-    test _ = Nothing
+    test (Other _) = True
+    test _ = False
+    getOther (Other t) = t
+    getOther _ = error "getOther: not an Other"
 
 getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
@@ -124,8 +127,9 @@ pSrcRef = do
 
 
 pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" . label "number" $ do
-  (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
+-- pNumAsText = debugName "pNumAsText" . label "number" $ do
+pNumAsText = debugName "pNumAsText" $ do
+  (TNumber n) <- pTokenMatch isNumber (pure $ Other "number")
   return (Text.pack $ show n)
   where
     isNumber (TNumber _) = True
@@ -263,7 +267,7 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 
 pNumOrText :: Parser Text.Text
-pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
+pNumOrText = pOtherVal <|> pNumAsText -- <?> "other text or number"
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]

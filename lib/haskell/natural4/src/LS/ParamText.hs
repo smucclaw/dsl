@@ -37,10 +37,14 @@ pBoolStructPT :: Parser BoolStructP
 pBoolStructPT = prePostParse pParamText
 
 pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $
+pParamText = debugName "pParamText" $ (<* pToken EOL) $
   (:|)
-  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka
-  <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues" (manyIndentation (sameMany pKeyValuesAka))
+  <$> ((,)
+      <$> ((:|) <$> pOtherVal <*> pure [])
+      <*> pure Nothing)
+  <*> pure []
+  -- <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka
+  -- <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues" (manyIndentation (sameMany pKeyValuesAka))
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do

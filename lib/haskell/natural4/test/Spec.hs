@@ -235,11 +235,11 @@ parserTests nlgEnv runConfig_ = do
                                                , deontic = DMust
                                                } ]
 
-{-
-
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [srcrow2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
+
+{-
 
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")

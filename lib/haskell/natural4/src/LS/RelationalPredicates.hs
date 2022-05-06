@@ -164,7 +164,6 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
-  _ <- dnl
   return (condWord, ands)
 
 
@@ -262,10 +261,11 @@ whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pTok
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-  try       ( debugName "nested simpleHorn"  nestedHorn )
-    <|> try ( debugName "RPConstraint"  rpConstraint )
-    <|> try ( debugName "RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "RPMT"          rpMT )
+  -- try       ( debugName "nested simpleHorn"  nestedHorn )
+  --   <|> try ( debugName "RPConstraint"  rpConstraint )
+  --   <|> try ( debugName "RPBoolStructR" rpBoolStructR )
+  --   <|>
+     try ( debugName "RPMT"          rpMT )
 
 -- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad
 nestedHorn :: SLParser RelationalPredicate
@@ -291,7 +291,7 @@ nestedHorn = do
 
 
 rpMT :: SLParser RelationalPredicate
-rpMT          = RPMT          $*| slAKA slMultiTerm id
+rpMT          = RPMT          <$> slAKA slMultiTerm id <* liftSL dnl
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 

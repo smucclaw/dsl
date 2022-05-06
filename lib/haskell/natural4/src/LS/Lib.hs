@@ -406,7 +406,8 @@ pRule = debugName "pRule" $ do
   srcurl <- asks sourceURL
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
-  foundRule <- (pRegRule <?> "regulative rule")
+  -- foundRule <- (pRegRule <?> "regulative rule")
+  foundRule <- pRegRule
     <|> (pTypeDefinition   <?> "ontology definition")
     <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> (pScenarioRule <?> "scenario rule")

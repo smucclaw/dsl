@@ -461,7 +461,7 @@ findType pgf e = case inferExpr pgf e of
 -- [[access_V, access_N], [use_V, use_N], [copying_N, copy_V], [disclosure_N]]
 -- return a disambiguated list: [access_N, use_N, copying_N, disclosure_N]
 disambiguateList :: PGF -> [[PGF.Expr]] -> [PGF.Expr]
-disambiguateList pgf access_use_copying =
+disambiguateList pgf access_use_copying_raw =
   if all isSingleton access_use_copying
     then concat access_use_copying
     else [ w | ws <- access_use_copying
@@ -469,14 +469,37 @@ disambiguateList pgf access_use_copying =
          , findType pgf w == unambiguousType (map (map (findType pgf)) access_use_copying)
     ]
   where
-    unambiguousType :: [[String]]-> String
+    access_use_copying = map (map $ mkPhrasal pgf) access_use_copying_raw
+    mkPhrasal :: PGF -> Expr -> Expr
+    mkPhrasal pgf e = case findType pgf e of
+      "N"  -> gf (GMassNP (GUseN (fg e)))
+      "A"  -> gf (GPositA (fg e))
+      "V"  -> gf (GUseV (fg e))
+      _ -> e
+    unambiguousType :: [[String]] -> String
     unambiguousType access_use_copying
       | not (any isSingleton access_use_copying) =
          -- all wordlists are either empty or >1: take the most frequent cat
-         head $ maximumOn length $ Data.List.group $ Data.List.sort $ concat access_use_copying
+         mostFrequentCat access_use_copying
       | otherwise =
          -- Some list has exactly 1 cat, use it to disambiguate the rest
          head $ head $ sortOn length access_use_copying
+
+    mostFrequentCat :: [[String]] -> String
+    mostFrequentCat cats = bestGuess
+      where                                              -- cats = [["N","A"],["A","N","V"],["A","V","N"]]
+        groups = Data.List.group $ Data.List.sort $ concat cats -- [["A","A","A"],["N","N","N"],["V","V"]]
+        bestGuess = case head $ groupOn length groups of
+          [(cat:_)] -> cat
+          catss     -> preferCat "VP" catss -- TODO: instead of hardcoding some cat here, later put in NLGEnv the category we are currently parsing
+
+    preferCat :: String -> [[String]] -> String
+    preferCat _ [[]] = error $ "disambiguateList: failed with arguments=" ++ show access_use_copying
+    preferCat heuristicBestCat frequentCats =
+      if heuristicBestCat `elem` map head frequentCats
+        then heuristicBestCat -- if there are equally many of the best guess & other cats, might as well choose our best guess
+        else head $ head frequentCats
+
 
     isSingleton [_] = True
     isSingleton _ = False

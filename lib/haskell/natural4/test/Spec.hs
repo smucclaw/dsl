@@ -431,7 +431,7 @@ parserTests nlgEnv runConfig_ = do
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing})) ]
 
       let if_king_wishes_singer_nextline = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing

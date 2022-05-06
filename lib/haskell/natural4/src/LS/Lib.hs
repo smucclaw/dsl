@@ -408,10 +408,7 @@ pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
 
-  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
+  srcref <- pJustSrcRef
 
   -- foundRule <- (pRegRule <?> "regulative rule")
   foundRule <- pRegRule
@@ -422,7 +419,7 @@ pRule = debugName "pRule" $ do
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
-  return $ foundRule { srcref = Just srcref }
+  return $ foundRule { srcref }
 
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 

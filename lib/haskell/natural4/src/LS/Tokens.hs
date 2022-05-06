@@ -118,12 +118,15 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = do
-  rlabel' <- optional pRuleLabel
+pSrcRef = (,) <$> optional pRuleLabel <*> pJustSrcRef
+
+pJustSrcRef :: Parser (Maybe SrcRef)
+pJustSrcRef = do
+  -- WithPos{pos=SourcePos{sourceColumn, sourceLine}}  <- lookAhead pGetTokenPos
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
-  return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
+  return $ Just SrcRef {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
 
 pNumAsText :: Parser Text.Text

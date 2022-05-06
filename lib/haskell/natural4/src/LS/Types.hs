@@ -49,7 +49,7 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 -- $phrasetypes
 
 -- | @ParamText@ contains /parameterized text/.
--- 
+--
 -- Suppose we want to say, "pay the Vendor the amount of $10, by bank transfer".
 --
 -- Conceptually, that has the structure of a function call with both positional and named arguments.
@@ -65,14 +65,14 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 -- > |     |     | by         | bank transfer |    |   |               |
 --
 -- Parsed into a ParamText, we have a 'NonEmpty' list of 'TypedMulti', which are themselves a `NonEmpty Text` tupled with a `Maybe TypeSig`.
--- 
+--
 -- > action = (      "pay"    :| ["the Vendor"]       , Nothing )
 -- >          :| [ ( "amount" :| ["$10"] )            , SimpleType TOne "Consideration" )
 -- >             , ( "by"     :| ["bank transfer"] )  , Nothing )
 -- >             ] )
--- 
+--
 -- Linguistically, the first word ("pay") must always be a verb. If it is a transitive verb, the direct object follows on the same line. If it is an intransitive verb, the rest of the line can be blank. On subsequent lines, we give optional attributes: a "prepositional" keyword, followed by one or more optional parameters to that keyword.
--- 
+--
 -- 'ParamText' is primarily used in `Rule.action` keywords, which take a 'BoolStructP', whose base type is @ParamText@. That means that multiple ParamTexts can be connected together using @AND@ and @OR@ keywords.
 --
 -- In the simplest case, a ParamText could be simply a single intransitive verb, e.g. "walk", with no further arguments.
@@ -669,18 +669,18 @@ pGetTokenPos = token test Set.empty <?> "some token"
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"
   where
-    test (WithPos (SourcePos _ _y x) _ _ _) = Just (unPos x)
+    test (WithPos (SourcePos _ _y x) _ _) = Just (unPos x)
 
 pYLocation :: Parser Depth
 pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
-    test (WithPos (SourcePos _ y _x) _ _ _) = Just (unPos y)
+    test (WithPos (SourcePos _ y _x) _ _) = Just (unPos y)
 
 
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
 pTokenMatch f c = token test (Set.singleton . Tokens . fmap liftMyToken $ c)
   where
-    test (WithPos _ _ _ x) =
+    test (WithPos _ _ x) =
       if f x
         then Just x
         else Nothing

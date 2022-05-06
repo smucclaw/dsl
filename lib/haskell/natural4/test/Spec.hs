@@ -231,13 +231,13 @@ parserTests nlgEnv runConfig_ = do
 
       it "should parse an unconditional" $ do
         parseR pRules "" (exampleStream ",EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
-          `shouldParse` [ srcrow2 $ defaultReg { subj = mkLeaf "person"
+          `shouldParse` [ srccol2 $ defaultReg { subj = mkLeaf "person"
                                                , deontic = DMust
                                                } ]
 
       it "should parse a rule label" $ do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
-          `shouldParse` [srcrow2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
+          `shouldParse` [srccol2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
 
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
@@ -280,10 +280,10 @@ parserTests nlgEnv runConfig_ = do
           `shouldParse` (srccol2 <$> srcrow2 <$> imbibeRule)
 
       filetest "indented-1" "parse indented-1.csv (inline boolean expression)"
-        (parseR pRules) (srcrow2 <$> imbibeRule)
+        (parseR pRules) (srccol2 <$> imbibeRule)
 
       filetest "indented-1-checkboxes" "should parse indented-1-checkboxes.csv (with checkboxes)"
-        (parseR pRules) (srcrow2 <$> imbibeRule)
+        (parseR pRules) (srccol2 <$> imbibeRule)
 
       let degustates = defaultHorn
             { name = ["degustates"]
@@ -298,10 +298,10 @@ parserTests nlgEnv runConfig_ = do
             }
 
       filetest "simple-constitutive-1" "should parse a simple constitutive rule"
-        (parseR pRules) [srcrow2 degustates]
+        (parseR pRules) [srccol2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 5, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -329,7 +329,7 @@ parserTests nlgEnv runConfig_ = do
 
 {-
 
-      filetest "indented-3" "defined names in natural positions" (parseR pRules) $ [Regulative {subj = Leaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT ["walks"]),Leaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = Leaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [Leaf (RPMT ["drinks"]),Any Nothing [Leaf (RPMT ["swallows"]),Leaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [Leaf (RPMT ["eats"]),Leaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "indented-3" "defined names in natural positions" (parseR pRules) $ [Regulative {subj = Leaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT ["walks"]),Leaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = Leaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [Leaf (RPMT ["drinks"]),Any Nothing [Leaf (RPMT ["swallows"]),Leaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 3, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [Leaf (RPMT ["eats"]),Leaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")

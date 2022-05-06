@@ -17,13 +17,14 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import LS.BasicTypes (MyStream , myStreamInput, MyToken, WithPos)
+import LS.BasicTypes (MyStream (unMyStream) , myStreamInput, MyToken, WithPos (tokenVal), renderToken)
 import Data.Vector (imap, foldl', foldl1')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))
 import Data.Void (Void)
 import qualified Data.Set as Set
 import qualified Data.Vector as V
+import Text.Pretty.Simple (pStringNoColor)
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::
@@ -67,9 +68,17 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
           <> parseErrorTextPretty e
           <> "\n"
           <> boxRepresentation <> "\n"
+          <> "\nStream:\n"
+          <> xpRenderStream (pstateInput pst)
 
 ----------------------------------------------------------------------------
 -- Helpers
+
+xrenderStream :: MyStream -> String
+xrenderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
+
+xpRenderStream :: MyStream -> String
+xpRenderStream = Text.unpack . pStringNoColor . xrenderStream
 
 -- | Pretty-print an 'ErrorItem'.
 showErrorItem :: VisualStream s => Proxy s -> ErrorItem (Token s) -> String
@@ -117,7 +126,7 @@ onelineErrorMsg (TrivialError _ (Just ei) set) = "Unexpected " <>
   onelineErrorItem ei <> " Expecting: " <>
   unwords (map onelineErrorItem $ Set.toList set)
 onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
-  where 
+  where
     showFancy :: ErrorFancy Void -> String
     showFancy (ErrorFail s) = "Fail: " <> s
     showFancy (ErrorIndentation ord pos pos') = "Indent error: " <> show pos <> " should be " <> show ord <> show pos'

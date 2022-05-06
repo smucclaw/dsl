@@ -21,7 +21,7 @@ import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
 import Data.List ( group, sort, sortOn, nub )
-import Data.List.Extra (maximumOn)
+import Data.List.Extra (groupOn)
 import Data.Either (partitionEithers)
 import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
@@ -31,7 +31,6 @@ import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Data.Vector.Internal.Check (doChecks)
 import Data.Aeson (SumEncoding(contentsFieldName))
-import Text.Megaparsec (pos1)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -100,8 +99,8 @@ parseUD env txt = do
     ud2gf :: String -> Either String Expr
     ud2gf str = case getExprs ["no-backups"] (udEnv env) str of
       xs : _ -> case partitionEithers xs of
-                  (_,  (r:rs)) -> Right r
-                  ((l:ls), []) -> Left l
+                  (_,  (r:_r)) -> Right r
+                  ((l:_l), []) -> Left l
                   ([]  ,   []) -> Left "ud2gf: no results given for input"
       [] -> Left "ud2gf: tried parsing an empty input"
 
@@ -125,7 +124,7 @@ nlg rl = do
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
-            subjWho = applyMaybe "Who" whoA (gf $ peelNP subjA)
+            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
@@ -482,12 +481,14 @@ disambiguateList pgf access_use_copying =
     isSingleton [_] = True
     isSingleton _ = False
 
+treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre =
   case map flattenGFTrees trees of
     []  -> dummyExpr $ "bsr2gf: failed parsing " ++ showExpr (gf pre)
     x:_ -> head x -- return the first one---TODO later figure out how to deal with different categories
     where trees = groupByRGLtype conj <$> [contents, [pre]]
 
+treePrePost :: GConj -> [GUDS] -> GUDS -> GUDS -> Expr
 treePrePost conj contents pre post =
   case groupByRGLtype conj <$> [contents, [pre], [post]] of
           [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
@@ -557,20 +558,6 @@ bsr2gf env bsr = case bsr of
     premodUDS <- parseUD env any_unauthorised
     postmodUDS <- parseUD env of_personal_data
     return $ treePrePost orConj contentsUDS premodUDS postmodUDS
-    -- let tree = case groupByRGLtype orConj <$> [contentsUDS, [premodUDS], [postmodUDS]] of
-    --       [TG {gfCN=Just cn}, _, TG {gfAdv=Just (GPrepNP _of personal_data)}] ->
-    --         let listcn = case cn of
-    --               GConjCN _ cns -> cns
-    --               _ -> GListCN [cn, cn]
-    --         in constructTreeAPCNsOfNP listcn orConj personal_data premodUDS
-    --       [TG {gfDet=Just det}, TG {gfCl=Just cl}, TG {gfCN=Just cn}] ->
-    --         let obj = GDetCN det cn
-    --         in case cl of
-    --               GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
-    --               GGenericCl vp ->  gf $ GComplVP vp obj
-    --               _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
-    --       _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf premodUDS) ++ "+" ++ showExpr (gf postmodUDS)
-    -- return tree
 
   AA.Any (Just (AA.Pre p1)) contents -> do
     contentsUDS <- parseAndDisambiguate env contents
@@ -587,8 +574,6 @@ bsr2gf env bsr = case bsr of
     premodUDS <- parseUD env p1
     postmodUDS <- parseUD env p2
     return $ treePrePost andConj contentsUDS premodUDS postmodUDS
-
-  _ -> return $ dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
 
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --
@@ -636,7 +621,7 @@ getQSFromTrees whichTG = case whichTG of
   TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl)
   TG {gfNP = Just np} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos (makeSubjectIndefinite np)
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
-  TG {gfVP = Just vp} -> useQCl $ GQuestVP Gwhat_IP vp -- how to get what or who?
+  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)
   TG {gfDet = Just det} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP det
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
@@ -767,7 +752,6 @@ constructTreeAPCNsOfNP cns conj nmod qualUDS = finalTree
     finalTree = gf $ case maybedet of
       Nothing -> GMassNP cn
       Just det -> GDetCN det cn
-
 
 toUDS :: PGF -> Expr -> GUDS
 toUDS pgf e = case findType pgf e of
@@ -923,14 +907,15 @@ advFromUDS x = case x of
     return $ GSubjS subj weGoWarm
   _ -> case [ adv | GrootAdv_ adv <- getRoot x] of
          adv:_ -> Just adv
-         []    -> trace errorMsg Nothing
+         []    -> Nothing
+{-         []    -> trace errorMsg Nothing
   where
     uds = showExpr (gf x)
     errorMsg = unlines $
       [ "advFromUDS: caught " ++ uds ++ ", couldn't turn it into an Adv."
       , "getRoot " ++ uds ++ " returns:"]
       ++ (showExpr . gf <$> getRoot x)
-
+-}
 
 detFromUDS :: GUDS -> Maybe GDet
 detFromUDS x = case x of

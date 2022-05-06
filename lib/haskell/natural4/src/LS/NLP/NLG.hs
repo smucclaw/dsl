@@ -639,10 +639,36 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
+qsWho :: TreeGroups -> GQS
+qsCond :: TreeGroups -> GQS
+qsHaving :: TreeGroups -> GQS
+
+qsWho whichTG = case whichTG of
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
+  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (makeSubjectIndefinite np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
+  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- do you eat cat food?
+  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompAP ap))
+  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetNP det)))
+  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp $ GCompAdv adv)
+  _ -> useQCl $ GQuestCl dummyCl
+
+qsCond whichTG = case whichTG of
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np) -- is there a cat?
+  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
+  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
+  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
+  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
+  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
+  _ -> useQCl $ GQuestCl dummyCl
+
+qsHaving = undefined
+
 getQSFromTrees :: TreeGroups -> GQS
 getQSFromTrees whichTG = case whichTG of
   TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl)
-  TG {gfNP = Just np} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos (makeSubjectIndefinite np)
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np)
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)

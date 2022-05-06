@@ -676,20 +676,19 @@ getQSFromTrees whichTG = case whichTG of
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)
-  TG {gfDet = Just det} -> GExistNPQS (GTTAnt GTPres GASimul) GPPos $ GDetNP det
+  TG {gfDet = Just det} -> GExistNPQS presSimul GPPos $ GDetNP det
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
   _ -> useQCl $ GQuestCl dummyCl
 
-  where
-    makeSubjectDefinite :: GCl -> GCl
-    makeSubjectDefinite cl = case cl of
-      GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
-      _ -> cl
+makeSubjectDefinite :: GCl -> GCl
+makeSubjectDefinite cl = case cl of
+  GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
+  _ -> cl
 
-    makeSubjectIndefinite :: GNP -> GNP
-    makeSubjectIndefinite np = case np of
-      GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
-      _ -> np
+makeSubjectIndefinite :: GNP -> GNP
+makeSubjectIndefinite np = case np of
+  GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
+  _ -> np
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
 --   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
@@ -857,14 +856,17 @@ peelNP :: Expr -> GNP
 peelNP np = fromMaybe dummyNP (npFromUDS $ fg np)
 
 useRCl :: GRCl -> GRS
-useRCl = GUseRCl (GTTAnt GTPres GASimul) GPPos
+useRCl = GUseRCl presSimul GPPos
 
 useCl :: GCl -> GS
-useCl = GUseCl (GTTAnt GTPres GASimul) GPPos
+useCl = GUseCl presSimul GPPos
 
 --     UseQCl   : Temp -> Pol -> QCl -> QS ;
 useQCl :: GQCl -> GQS
-useQCl = GUseQCl (GTTAnt GTPres GASimul) GPPos
+useQCl = GUseQCl presSimul GPPos
+
+presSimul :: GTemp
+presSimul = GTTAnt GTPres GASimul
 
 -- Specialised version of npFromUDS: return Nothing if the NP is MassNP
 nonMassNpFromUDS :: GUDS -> Maybe GNP

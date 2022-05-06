@@ -326,8 +326,13 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , let paren = [GoDeeper | y < V.length vvt - 1 && toToken (vvt ! (y+1) ! x) `elem` map pure indentSensitiveKeywords]
-             , tokenVal <- toToken rawToken ++ paren
+             , let paren = [GoDeeper
+                           | x > 0
+                           , y < V.length vvt - 1
+                           , let idskl = map pure indentSensitiveKeywords
+                           , toToken (vvt ! (y+1) ! (x - 1)) `elem` idskl
+                           , toToken (vvt ! y     ! (x - 1)) `notElem` idskl]
+             , tokenVal <- paren ++ toToken rawToken
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
   where
@@ -349,7 +354,7 @@ stanzaAsStream rs =
     insertParens parens (a : xs)
       | tokenVal a == GoDeeper = a : insertParens (a:parens) xs
       -- Close an open parenthesis when we are to the left of it
-      | (par:pars) <- parens, col par > col a = (UnDeeper <$ a) : insertParens pars (a:xs)
+      | (par:pars) <- parens, col par > col a, tokenVal a `notElem` indentSensitiveKeywords = (UnDeeper <$ a) : insertParens pars (a:xs)
     insertParens parens (a : xs@(b : _))
       | tokenVal a /= SOF
       , col a < col b

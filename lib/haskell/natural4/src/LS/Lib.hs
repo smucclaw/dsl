@@ -351,7 +351,7 @@ stanzaAsStream rs =
       | tokenVal a /= SOF
       , col a < col b
       , lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
-                        a : (EOL <$ a) : goDp : insertParens (goDp : parens) xs
+                        a : eolToken : goDp : insertParens (goDp : parens) xs
         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
         --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
@@ -361,10 +361,11 @@ stanzaAsStream rs =
 
       --- | col a > col b = a                                     --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
       ---                   : (unDp <$> [1 .. (col a - col b)])   --- | bar |     | -> | foo ) bar |
-      | lin a < lin b =  a : (EOL <$ a) : insertParens parens xs
+      | lin a < lin b =  a : eolToken : insertParens parens xs
 
       where
         goDp = GoDeeper <$ b
+        eolToken = a { tokenVal = EOL, pos = (pos a) { sourceColumn = mkPos $ col a + 1 } }
     insertParens parens (a : xs) = a : insertParens parens xs
 
 -- MyStream is the primary input for our Parsers below.

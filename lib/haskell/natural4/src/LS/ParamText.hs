@@ -92,7 +92,7 @@ pOneOf = pToken OneOf *> someIndentation pParamText
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
+pMultiTermAka = debugName "pMultiTermAka" $ pAKA (liftSL pMultiTerm) id
 
 -- head of nonempty list
 pSingleTermAka :: Parser KVsPair
@@ -143,10 +143,14 @@ slOneOf = do
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<$ undeepers
+pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA (liftSL pKeyValues) (toList . fst)
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
+pKeyValues = debugName "pKeyValues" $ do
+             (lhs, typesig)   <- (,)
+                                 <$> some pNumOrText
+                                 <*> optional pTypeSig
+             return (fromList lhs, typesig)
 
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do

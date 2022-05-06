@@ -36,6 +36,8 @@ abstract UDExt = UDApp ,
 
     PostAdvS : S -> Adv -> S ; -- [we go [where it's warm]:Adv ]:S
 
+    You : NP ; -- Many of the rules talk about a You, so just add it here.
+
     -- Make the UDS categories that have Adv as a lincat, but aren't constructed from Adv, into Adv
     -- the rest can just peel off the constructor, e.g. obl with `obl_ : Adv -> obl`
     advcl2Adv : advcl -> Adv ;

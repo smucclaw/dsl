@@ -106,8 +106,12 @@ instance VisualStream MyStream where
   -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
   showTokens Proxy xs = unwords
     . NE.toList
-    . fmap (showMyToken . tokenVal) $ xs
+    . fmap showTokenWithContext $ xs
   tokensLength Proxy xs = sum (tokenLength <$> xs)
+
+showTokenWithContext :: WithPos MyToken -> String
+showTokenWithContext WithPos {parserCtx = Nothing, tokenVal = t} = showMyToken t
+showTokenWithContext WithPos {parserCtx = Just ctx, tokenVal = t} = "\n    " ++ show ctx ++ showMyToken t
 
 instance TraversableStream MyStream where
   reachOffset o PosState {..} =

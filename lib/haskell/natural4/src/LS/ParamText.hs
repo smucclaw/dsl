@@ -174,6 +174,7 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
+  srcref' <- liftSL getSrcRef
   (base, entityalias, typicalval) <- (,,)
                          $*| debugName "slAKA base" baseParser
                          |*| debugName "slAKA optional akapart"   ((|?|) akapart)
@@ -183,7 +184,6 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
   let detail' = toMultiTerm base
 
   debugPrint $ "pAKA: entityalias = " ++ show entityalias
-  srcref' <- liftSL getSrcRef
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
   liftSL $ tell defalias
   liftSL $ writeTypically detail' typicalval

@@ -354,9 +354,11 @@ stanzaAsStream rs =
     insertParens parens (a : xs)
       | tokenVal a == GoDeeper = a : insertParens (a:parens) xs
       -- Close an open parenthesis when we are to the left of it
-      | (par:pars) <- parens, col par > col a, tokenVal a `notElem` indentSensitiveKeywords = (UnDeeper <$ a) : insertParens pars (a:xs)
+      | (par:pars) <- parens, col par > col a
+      , tokenVal a `notElem` indentSensitiveKeywords = (UnDeeper <$ a) : insertParens pars (a:xs)
     insertParens parens (a : xs@(b : _))
       | tokenVal a /= SOF
+      , tokenVal b /= EOL
       , col a < col b
       , lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
                         a : eolToken : goDp : insertParens (goDp : parens) xs

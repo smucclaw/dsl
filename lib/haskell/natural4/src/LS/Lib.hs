@@ -639,7 +639,6 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
   entitytype   <- pNameParens
-  skipNewlines
   let boolEntity = AA.Leaf $ multiterm2pt entitytype
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule

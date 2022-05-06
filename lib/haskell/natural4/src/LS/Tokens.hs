@@ -920,6 +920,3 @@ iRunOnErrors f pt = MPInternal.ParsecT $ \s cok cerr eok eerr ->
         eerr' err s' = f MPInternal.Virgin err s' (eerr err s')
     in
     MPInternal.unParser pt s cok cerr' eok eerr'
-
-skipNewlines :: Parser ()
-skipNewlines = void $ many $ pToken EOL

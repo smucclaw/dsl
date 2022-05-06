@@ -326,11 +326,13 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , let paren = [GoDeeper | y < V.length vvt - 1 && toToken (vvt ! (y+1) ! x) `elem` map pure [And, Or]]
+             , let paren = [GoDeeper | y < V.length vvt - 1 && toToken (vvt ! (y+1) ! x) `elem` map pure indentSensitiveKeywords]
              , tokenVal <- toToken rawToken ++ paren
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
   where
+    indentSensitiveKeywords :: [MyToken]
+    indentSensitiveKeywords = [And, Or]
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
       tail $ insertParens [] (withSOF : mys ++ [withEOF])
@@ -357,11 +359,6 @@ stanzaAsStream rs =
         --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
 
-      --- | col a < col b = a                                     --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
-      ---                   : (goDp <$> [1 .. (col b - col a)])
-
-      --- | col a > col b = a                                     --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
-      ---                   : (unDp <$> [1 .. (col a - col b)])   --- | bar |     | -> | foo ) bar |
       | lin a < lin b =  a : eolToken : insertParens parens xs
 
       where

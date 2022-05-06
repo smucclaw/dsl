@@ -720,12 +720,15 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
     treeVP :: Maybe GVP
     treeVP = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
                 []    -> Nothing
-                v:_  -> Just v --later: list instance for verbs?
+                [vp]  -> Just vp
+                vps   -> Just $ GConjVP conj (GListVP vps)
 
     treePrep :: Maybe GPrep
     treePrep = case mapMaybe prepFromUDS contentsUDS :: [GPrep] of
-                []    -> Nothing
-                v:_  -> Just v
+                []     -> Nothing
+                [prep] -> Just prep
+                preps  -> Just $ GConjPrep conj (GListPrep preps)
+
 
     treeRP :: Maybe GRP
     treeRP = case mapMaybe rpFromUDS contentsUDS :: [GRP] of

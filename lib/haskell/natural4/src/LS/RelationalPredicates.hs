@@ -261,11 +261,10 @@ whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pTok
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-  -- try       ( debugName "nested simpleHorn"  nestedHorn )
-  --   <|> try ( debugName "RPConstraint"  rpConstraint )
-  --   <|> try ( debugName "RPBoolStructR" rpBoolStructR )
-  --   <|>
-     try ( debugName "RPMT"          rpMT )
+  try       ( debugName "nested simpleHorn"  nestedHorn )
+    <|> try ( debugName "RPConstraint"  rpConstraint )
+    <|> try ( debugName "RPBoolStructR" rpBoolStructR )
+    <|> try ( debugName "RPMT"          rpMT )
 
 -- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad
 nestedHorn :: SLParser RelationalPredicate

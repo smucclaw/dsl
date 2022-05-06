@@ -566,7 +566,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
-                   <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
+                   <*> optional (preambleBoolStructR [Who,Which,Whose])
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest

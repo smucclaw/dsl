@@ -712,7 +712,7 @@ permutationsReg keynamewho =
   try  ( debugName "regulative permutation with deontic-action" $ nopermute ( mkRBfromDA
             !<$$> keynamewho
             !<||> pDA
-            !<|?> (Nothing, pTemporal)
+            !<|?> (Nothing, pTemporal <* dnl)
             <&&> whatnot
           ) )
   where

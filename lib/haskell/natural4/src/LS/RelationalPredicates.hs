@@ -151,7 +151,7 @@ pBoolConnector = debugName "pBoolConnector" $ do
 -- support name-like expressions tagged with AKA, which means "also known as"
 -- sometimes we want a plain Text.Text
 pNameParens :: Parser RuleName
-pNameParens = pMultiTermAka
+pNameParens = pMultiTermAka <* dnl -- TODO: Move the dnl inside the appropriate parser
 
 -- sometimes we want a ParamText -- single line -- with possibility of an AKA on the right hand side
 pPTParens :: Parser ParamText
@@ -164,6 +164,7 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
   condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
+  _ <- dnl
   return (condWord, ands)
 
 

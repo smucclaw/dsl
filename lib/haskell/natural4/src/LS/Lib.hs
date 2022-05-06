@@ -330,8 +330,22 @@ stanzaAsStream rs =
                            | x > 0
                            , y < V.length vvt - 1
                            , let idskl = map pure indentSensitiveKeywords
-                           , toToken (vvt ! (y+1) ! (x - 1)) `elem` idskl
-                           , toToken (vvt ! y     ! (x - 1)) `notElem` idskl]
+                           ,  -- When the next line has an "And" or "Or" in the previous col
+                             --- | foo | bar |      | foo | ( bar |
+                             --- | And | baz |  =>  | And | baz   |
+                             --- | Or  | biz |      | Or  | biz ) |
+                              toToken (vvt ! (y+1) ! (x - 1)) `elem` idskl
+                           && toToken (vvt ! y     ! (x - 1)) `notElem` idskl
+                           || -- When the next line is indented to the curent level, add a paren
+                             --- | foo | bar |  =>  | foo | ( bar |
+                             --- |     | baz |      |     | baz ) |
+                              -- TODO: Handle rule markers better
+                              -- TODO: Handle empty lines properly (should behave same if an empty line is added)
+                              toToken (vvt ! y     ! (x - 1)) `notElem` [[Empty], [Checkbox],[RuleMarker 1 "§"]]
+                           && all (`elem` [[Empty], [Checkbox]]) (V.take x $ fmap toToken (vvt ! (y+1)) )
+                           && not (all (`elem` [[Empty], [Checkbox]]) (fmap toToken (vvt ! (y+1)) ))
+                           ]
+
              , tokenVal <- paren ++ toToken rawToken
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]

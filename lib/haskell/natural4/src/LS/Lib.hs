@@ -501,8 +501,9 @@ pGivens = debugName "pGivens" $ do
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
-  tentative  <- try pRegRuleSugary
-                  <|> try pRegRuleNormal
+  tentative  <- pRegRuleNormal
+  -- tentative  <- try pRegRuleSugary
+  --                 <|> try pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
 

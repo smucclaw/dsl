@@ -55,6 +55,8 @@ concrete UDExtEng of UDExt = UDAppEng,
     -- : S -> Adv -> S ; -- [we go [where it's warm]:Adv ]:S
     PostAdvS s adv = cc2 s adv ;
 
+    You = you_NP ;
+
     -- All of their lincat is already Adv
     -- : advcl/acl/xcomp -> Adv ;
     advcl2Adv,

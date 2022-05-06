@@ -213,7 +213,7 @@ asCSV s =
 
 -- | Make sure all lines have the same length
 equalizeLines :: RawStanza -> RawStanza
-equalizeLines stanza = fmap (pad maxLen) stanza
+equalizeLines stanza = fmap (pad $ succ maxLen) stanza -- <> V.singleton V.empty
   where
     maxLen = maximum $ fmap length stanza
 
@@ -333,12 +333,13 @@ stanzaAsStream rs =
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      tail $ insertParens [] (withSOF : mys)
+      tail $ insertParens [] (withSOF : mys ++ [withEOF])
     sofPos = SourcePos "" pos1 pos1
     lastLine = V.length rs - 1
     lastCol  = V.length (rs ! lastLine) - 1
     eofPos = SourcePos "" (mkPos $ lastLine + 1) (mkPos $ lastCol + 1)
     withSOF = WithPos sofPos 1 Nothing SOF
+    withEOF = WithPos eofPos 1 Nothing EOL
     col = unPos . sourceColumn . pos
     lin = unPos . sourceLine   . pos
 

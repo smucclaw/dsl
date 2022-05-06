@@ -77,6 +77,8 @@ abstract UDExt = UDApp ,
 
   fun
 
+    UDS2Fragment : UDS -> UDFragment ;
+
     -- Compositional,
     -- Add a UDS as an adverbial
     Cond : UDS -> UDFragment -> UDFragment ; -- the king must sing if the prime minister is happy

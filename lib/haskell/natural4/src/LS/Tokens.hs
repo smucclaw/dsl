@@ -26,10 +26,10 @@ import Data.Functor.Identity (Identity)
 import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
-dnl :: Parser MyToken
+dnl :: Parser ()
 -- -- dnl = many $ pToken EOL
-dnl = pToken EOL
--- dnl = some $ pToken EOL
+-- dnl = pToken EOL
+dnl = void $ some $ pToken EOL
 
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)

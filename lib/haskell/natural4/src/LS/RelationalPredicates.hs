@@ -98,7 +98,8 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
     manyIndentation $ permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
-  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
+  let srcref' =  SrcRef
+        {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
   return $ Constitutive
     { name = namep

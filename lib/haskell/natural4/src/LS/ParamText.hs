@@ -164,7 +164,7 @@ getSrcRef = do
   leftY  <- lookAhead pYLocation
   leftX  <- lookAhead pXLocation
   srcurl <- asks sourceURL
-  return $ SrcRef srcurl srcurl leftX leftY Nothing
+  return SrcRef {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
 
 -- utility function for the above

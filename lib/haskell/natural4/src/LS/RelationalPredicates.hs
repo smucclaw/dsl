@@ -151,7 +151,7 @@ pBoolConnector = debugName "pBoolConnector" $ do
 -- support name-like expressions tagged with AKA, which means "also known as"
 -- sometimes we want a plain Text.Text
 pNameParens :: Parser RuleName
-pNameParens = pMultiTermAka <* dnl -- TODO: Move the dnl inside the appropriate parser
+pNameParens = pMultiTermAka
 
 -- sometimes we want a ParamText -- single line -- with possibility of an AKA on the right hand side
 pPTParens :: Parser ParamText
@@ -290,7 +290,7 @@ nestedHorn = do
 
 
 rpMT :: SLParser RelationalPredicate
-rpMT          = RPMT          <$> slAKA slMultiTerm id <* liftSL dnl
+rpMT          = RPMT          <$> slAKA slMultiTerm id
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 

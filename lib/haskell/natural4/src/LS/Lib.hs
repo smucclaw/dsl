@@ -744,8 +744,9 @@ permutationsReg keynamewho =
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
 pDT = debugName "pDT" $ do
   (pd,pt) <- (,)
-    $>| pDeontic
-    |>< optional pTemporal
+    <$> pDeontic
+    <*> optional pTemporal
+    <* pToken EOL
   return (pd, join pt)
 
 -- the Deontic/Action/Temporal form

@@ -147,6 +147,7 @@ instance TraversableStream MyStream where
 data WithPos a = WithPos
   { pos :: SourcePos
   , tokenLength :: Int
+  , parserCtx :: Maybe [String]
   , tokenVal :: a
   } deriving (Eq, Ord, Show, Functor)
 
@@ -186,7 +187,7 @@ renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 renderToken tok = map toUpper (show tok)
 
 
-liftMyToken :: MyToken -> WithPos MyToken
-liftMyToken = WithPos pos 0
+liftMyToken :: [String] -> MyToken -> WithPos MyToken
+liftMyToken = WithPos pos 0 . Just
   where
     pos = initialPos ""

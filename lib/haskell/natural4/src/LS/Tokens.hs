@@ -39,25 +39,25 @@ pDeontic = (pToken Must  >> return DMust)
 pNumber :: Parser Integer
 pNumber = token test Set.empty <?> "number"
   where
-    test (WithPos _ _ (TNumber n)) = Just n
+    test WithPos {tokenVal = TNumber n} = Just n
     test _ = Nothing
 
 -- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
-    test (WithPos _ _ (Other t)) = Just t
+    test WithPos {tokenVal = Other t} = Just t
     test _ = Nothing
 
 getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
   where
-    test (WithPos _ _ tok) = Just tok
+    test WithPos {tokenVal = tok} = Just tok
 
 getWithPos :: Parser String
 getWithPos = token test Set.empty <?> "any token"
   where
-    test wp@(WithPos _ _ tok)
+    test wp@WithPos {tokenVal = tok}
       | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
       | otherwise                            = showpos wp
     showpos wp = Just $
@@ -81,15 +81,15 @@ myTraceM x = whenDebug $ do
 getTokenNonDeep :: Parser MyToken
 getTokenNonDeep = token test Set.empty <?> "any token except GoDeeper / UnDeeper"
   where
-    test (WithPos _ _ GoDeeper) = Nothing
-    test (WithPos _ _ UnDeeper) = Nothing
-    test (WithPos _ _ tok) = Just tok
+    test WithPos {tokenVal = GoDeeper} = Nothing
+    test WithPos {tokenVal = UnDeeper} = Nothing
+    test WithPos {tokenVal = tok} = Just tok
 
 getTokenNonEOL :: Parser MyToken
 getTokenNonEOL = token test Set.empty <?> "any token except EOL"
   where
-    test (WithPos _ _ EOL) = Nothing
-    test (WithPos _ _ tok) = Just tok
+    test WithPos {tokenVal = EOL} = Nothing
+    test WithPos {tokenVal = tok} = Just tok
 
 
 -- pInt :: Parser Int
@@ -885,6 +885,7 @@ tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 pToken :: MyToken -> Parser MyToken
 pToken c = pTokenMatch (== c) (pure c)
 
+-- | Parse tokens that are not MyToken
 pTokenish :: HasToken a => a -> Parser a
 pTokenish c = c <$ pTokenMatch (== tok) (pure tok)
   where tok = tokenOf c

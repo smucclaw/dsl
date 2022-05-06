@@ -239,8 +239,6 @@ parserTests nlgEnv runConfig_ = do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [srcrow2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
 
-{-
-
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
           `shouldParse` [Hornlike {name = ["something"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["something"] RPis (Leaf (RPMT ["something"])), hBody = Nothing}], rlabel = Just ("\167",1,"Hello"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
@@ -265,6 +263,8 @@ parserTests nlgEnv runConfig_ = do
                                            ]
                                          ])
                             } ]
+
+{-
 
       let imbibeRule = [ defaultReg {
                            who = Just (Any Nothing

@@ -347,11 +347,11 @@ stanzaAsStream rs =
       | tokenVal a == GoDeeper = a : insertParens (a:parens) xs
       -- Close an open parenthesis when we are to the left of it
       | (par:pars) <- parens, col par > col a = (UnDeeper <$ a) : insertParens pars (a:xs)
-    insertParens parens (a : b : xs)
-      | tokenVal a /= SOF &&
-        col a < col b &&
-        lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
-                        a : (EOL <$ a) : goDp : insertParens (goDp : parens) (b:xs)
+    insertParens parens (a : xs@(b : _))
+      | tokenVal a /= SOF
+      , col a < col b
+      , lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
+                        a : (EOL <$ a) : goDp : insertParens (goDp : parens) xs
         --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
         --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
@@ -361,6 +361,7 @@ stanzaAsStream rs =
 
       --- | col a > col b = a                                     --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
       ---                   : (unDp <$> [1 .. (col a - col b)])   --- | bar |     | -> | foo ) bar |
+      | lin a < lin b =  a : (EOL <$ a) : insertParens parens xs
 
       where
         goDp = GoDeeper <$ b
@@ -500,11 +501,11 @@ pGivens = debugName "pGivens" $ do
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
-  tentative  <- (try pRegRuleSugary
+  tentative  <- try pRegRuleSugary
                   <|> try pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
-                )
+
   return $ tentative { rlabel = maybeLabel }
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:

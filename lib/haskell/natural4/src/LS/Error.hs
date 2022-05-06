@@ -17,7 +17,7 @@ import qualified Text.PrettyPrint.Boxes as Box
 import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
-import LS.BasicTypes (MyStream (unMyStream) , myStreamInput, MyToken, WithPos (tokenVal), renderToken)
+import LS.BasicTypes (MyStream (unMyStream, MyStream) , myStreamInput, MyToken (Other), WithPos (tokenVal, pos), renderToken)
 import Data.Vector (imap, foldl', foldl1')
 import qualified Data.Text.Lazy as Text
 import Control.Arrow ((>>>))
@@ -69,7 +69,14 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
           <> "\n"
           <> boxRepresentation <> "\n"
           <> "\nStream:\n"
-          <> xpRenderStream (pstateInput pst)
+          <> xpRenderStream (insertStarAt epos $ pstateInput pst)
+
+insertStarAt :: SourcePos -> MyStream -> MyStream
+insertStarAt sp (MyStream vec wps) = MyStream vec (concatMap insertIt wps)
+  where
+    insertIt :: WithPos MyToken -> [WithPos MyToken]
+    insertIt t | pos t == sp = [Other "✳" <$ t, t]
+               | otherwise = [t]
 
 ----------------------------------------------------------------------------
 -- Helpers

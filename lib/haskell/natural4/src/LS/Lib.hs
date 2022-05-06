@@ -727,16 +727,17 @@ permutationsReg keynamewho =
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>
     -- Disable permutations
-    -- (!<||>) = (<||>)
-    (!<||>) = (<*>)
+    (!<||>) = (<||>)
+    -- (!<||>) = (<*>)
     infixl 1 !<||>
-    -- (!<|?>) = (<|?>)
-    x !<|?> (a,b) = x <*> (b <|> pure a)
+    (!<|?>) p = (<|?>) p
+    -- x !<|?> (a,b) = x <*> (b <|> pure a)
     infixl 1 !<|?>
-    (!<$$>) = (<$>)
+    -- (!<$$>) = (<$>)
+    (!<$$>) = (<$$>)
     infixl 2 !<$$>
-    nopermute = id
-    -- nopermute = permute
+    -- nopermute = id
+    nopermute = permute
 
 -- the Deontic/temporal/action form
 -- MAY EVENTUALLY

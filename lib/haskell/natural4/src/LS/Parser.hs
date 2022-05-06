@@ -54,21 +54,21 @@ toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pr
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table)
 term p = debugName "term p" $ do
-  try (debugName "term p/1a:label directly above" $ do
-        (lbl, inner) <- (,)
-          $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
-          |>< expr p
-        debugPrint $ "got label, then inner immediately below: " ++ show lbl
-        debugPrint $ "got inner: " <> show inner
-        return $ MyLabel lbl Nothing inner)
-    <|>
-    try (debugName "term p/b:label to the left of line below, with EOL" $ do
-        lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
-        debugPrint $ "got label then EOL: " ++ show lbl
-        inner <- expr p
-        debugPrint $ "got inner: " ++ show inner
-        return $ MyLabel lbl Nothing inner)
-    <|>
+  -- try (debugName "term p/1a:label directly above" $ do
+  --       (lbl, inner) <- (,)
+  --         $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
+  --         |>< expr p
+  --       debugPrint $ "got label, then inner immediately below: " ++ show lbl
+  --       debugPrint $ "got inner: " <> show inner
+  --       return $ MyLabel lbl Nothing inner)
+  --   <|>
+  --   try (debugName "term p/b:label to the left of line below, with EOL" $ do
+  --       lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
+  --       debugPrint $ "got label then EOL: " ++ show lbl
+  --       inner <- expr p
+  --       debugPrint $ "got inner: " ++ show inner
+  --       return $ MyLabel lbl Nothing inner)
+  --   <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)
 
 
@@ -147,7 +147,7 @@ plain p = MyLeaf <$> p
 
 ppp :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 ppp base = -- local (\rc -> rc { debug = True }) $
-  try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
+  try noPrePost -- <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
   where
     noPrePost = debugName "ppp inner" base
 

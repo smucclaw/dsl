@@ -520,6 +520,7 @@ data Tree :: * -> * where
   GPredetNP :: GPredet -> GNP -> Tree GNP_
   GRelNP :: GNP -> GRS -> Tree GNP_
   GSentNP :: GNP -> GSC -> Tree GNP_
+  GSomeone :: Tree GNP_
   GTokAll :: GNP -> Tree GNP_
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
@@ -1073,6 +1074,7 @@ instance Eq (Tree a) where
     (GPredetNP x1 x2,GPredetNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSentNP x1 x2,GSentNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSomeone,GSomeone) -> and [ ]
     (GTokAll x1,GTokAll y1) -> and [ x1 == y1 ]
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
@@ -2143,6 +2145,7 @@ instance Gf GNP where
   gf (GPredetNP x1 x2) = mkApp (mkCId "PredetNP") [gf x1, gf x2]
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
   gf (GSentNP x1 x2) = mkApp (mkCId "SentNP") [gf x1, gf x2]
+  gf GSomeone = mkApp (mkCId "Someone") []
   gf (GTokAll x1) = mkApp (mkCId "TokAll") [gf x1]
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
@@ -2171,6 +2174,7 @@ instance Gf GNP where
       Just (i,[x1,x2]) | i == mkCId "PredetNP" -> GPredetNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentNP" -> GSentNP (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "Someone" -> GSomeone 
       Just (i,[x1]) | i == mkCId "TokAll" -> GTokAll (fg x1)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)

@@ -124,6 +124,10 @@ concrete UDExtEng of UDExt = UDAppEng,
     [UDFragment] = [S];
 
   lin
+
+    -- : UDS -> UDFragment ;
+    UDS2Fragment = uds2s ;
+
     -- : UDS -> UDFragment -> UDFragment ;
     Upon upon action =
       let upon_Adv : Adv = SyntaxEng.mkAdv upon_Prep (AdjAsNP upon.pred.presp) ;

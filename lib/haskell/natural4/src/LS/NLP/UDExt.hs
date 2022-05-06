@@ -632,6 +632,7 @@ data Tree :: * -> * where
   GRPnotElem :: GNP -> GUDS -> Tree GUDFragment_
   GTemporal :: GAdv -> GUDFragment -> Tree GUDFragment_
   GTemporalStandalone :: GUDS -> Tree GUDFragment_
+  GUDS2Fragment :: GUDS -> Tree GUDFragment_
   GUpon :: GUDS -> GUDFragment -> Tree GUDFragment_
   GUponStandalone :: GUDS -> Tree GUDFragment_
   GsubjAction :: GNP -> GUDS -> Tree GUDFragment_
@@ -1186,6 +1187,7 @@ instance Eq (Tree a) where
     (GRPnotElem x1 x2,GRPnotElem y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTemporal x1 x2,GTemporal y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTemporalStandalone x1,GTemporalStandalone y1) -> and [ x1 == y1 ]
+    (GUDS2Fragment x1,GUDS2Fragment y1) -> and [ x1 == y1 ]
     (GUpon x1 x2,GUpon y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUponStandalone x1,GUponStandalone y1) -> and [ x1 == y1 ]
     (GsubjAction x1 x2,GsubjAction y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -2584,6 +2586,7 @@ instance Gf GUDFragment where
   gf (GRPnotElem x1 x2) = mkApp (mkCId "RPnotElem") [gf x1, gf x2]
   gf (GTemporal x1 x2) = mkApp (mkCId "Temporal") [gf x1, gf x2]
   gf (GTemporalStandalone x1) = mkApp (mkCId "TemporalStandalone") [gf x1]
+  gf (GUDS2Fragment x1) = mkApp (mkCId "UDS2Fragment") [gf x1]
   gf (GUpon x1 x2) = mkApp (mkCId "Upon") [gf x1, gf x2]
   gf (GUponStandalone x1) = mkApp (mkCId "UponStandalone") [gf x1]
   gf (GsubjAction x1 x2) = mkApp (mkCId "subjAction") [gf x1, gf x2]
@@ -2610,6 +2613,7 @@ instance Gf GUDFragment where
       Just (i,[x1,x2]) | i == mkCId "RPnotElem" -> GRPnotElem (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Temporal" -> GTemporal (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "TemporalStandalone" -> GTemporalStandalone (fg x1)
+      Just (i,[x1]) | i == mkCId "UDS2Fragment" -> GUDS2Fragment (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Upon" -> GUpon (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UponStandalone" -> GUponStandalone (fg x1)
       Just (i,[x1,x2]) | i == mkCId "subjAction" -> GsubjAction (fg x1) (fg x2)
@@ -3973,6 +3977,7 @@ instance Compos Tree where
     GRPnotElem x1 x2 -> r GRPnotElem `a` f x1 `a` f x2
     GTemporal x1 x2 -> r GTemporal `a` f x1 `a` f x2
     GTemporalStandalone x1 -> r GTemporalStandalone `a` f x1
+    GUDS2Fragment x1 -> r GUDS2Fragment `a` f x1
     GUpon x1 x2 -> r GUpon `a` f x1 `a` f x2
     GUponStandalone x1 -> r GUponStandalone `a` f x1
     GsubjAction x1 x2 -> r GsubjAction `a` f x1 `a` f x2

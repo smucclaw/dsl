@@ -242,17 +242,21 @@ parseFields env rl = case rl of
     parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
     parseHornClause env fun (HC2 rp (Just bsr)) = do
       extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
-      db_is_NDB_UDFragment <- fg `fmap` parseRP env fun rp -- TODO: dangerous assumption, not all parseRPs return UDFragment
+      db_is_NDB_UDFragment <- parseRPforHC env fun rp
       db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
       let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
       return $ gf hornclause
+
+    -- A wrapper for ensuring same return type for parseRP
+    parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
+    parseRPforHC env _f (RPParamText pt) = (GUDS2Fragment . fg) <$> parseParamText env pt
+    parseRPforHC env _f (RPMT txts) = (GUDS2Fragment . fg) <$> parseMulti env txts
+    parseRPforHC env f rp = fg <$> parseRP env f rp
 
     parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
     parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
     parseExpect  env  f (ExpRP rp) = parseRP env f rp
 
-    -- TODO: switch to GUDS or GUDFragment? How can we know which type they return?
-    -- Something a bit more typed than Expr would feel safer
     parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
     parseRP env _f (RPParamText pt) = parseParamText env pt
     parseRP env _f (RPMT txts) = parseMulti env txts

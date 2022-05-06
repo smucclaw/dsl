@@ -233,9 +233,9 @@ concrete BareRGEng of BareRG =
       prp1 = vp.prp ++ bindComma ++ vps.prp1 ;
       ptp1 = vp.ptp ++ bindComma ++ vps.ptp1 ;
       inf1 = vp.inf ++ bindComma ++ vps.inf1 ;
-      nonAuxForms = vps.nonAuxForms ** {
-        pres1 = \\agr => vp.nonAuxForms.pres ! agr ++ bindComma ++ vps.pres1 ! agr ;
-        past1 = vp.nonAuxForms.past ++ bindComma ++ vps.past1 } ;
+      nonAuxForms1 = {
+        pres = \\agr => linVPOnlyForListVP (vp.nonAuxForms.pres ! agr) vp ++ bindComma ++ vps.nonAuxForms1.pres ! agr ;
+        past = linVPOnlyForListVP vp.nonAuxForms.past vp ++ bindComma ++ vps.nonAuxForms1.past } ;
       } ;
 
     ConjVP conj vps = vps ** {

@@ -52,7 +52,7 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
-expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
+expr p = ppp $ debugName "expression" (makeExprParser (term p) table)
 term p = debugName "term p" $ do
   try (debugName "term p/1a:label directly above" $ do
         (lbl, inner) <- (,)
@@ -74,7 +74,7 @@ term p = debugName "term p" $ do
 
 notLabelTerm p =
   try (debugName "term p/2:someIndentation expr p" (someIndentation (expr p)))
-  <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
+  <|> try (debugName "term p/3:plain p" (plain p))
 
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]

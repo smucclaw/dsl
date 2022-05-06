@@ -401,8 +401,8 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = debugName "pRule" $ do
-  -- _ <- many dnl
-  -- notFollowedBy eof
+  _ <- many dnl
+  notFollowedBy eof
 
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.

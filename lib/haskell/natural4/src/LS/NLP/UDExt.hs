@@ -524,6 +524,7 @@ data Tree :: * -> * where
   GUsePN :: GPN -> Tree GNP_
   GUsePron :: GPron -> Tree GNP_
   GWho :: GUDS -> GNP -> Tree GNP_
+  GYou :: Tree GNP_
   Geuropean_NP :: Tree GNP_
   Gone_NP :: Tree GNP_
   Gwhoever_NP :: Tree GNP_
@@ -1076,6 +1077,7 @@ instance Eq (Tree a) where
     (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
     (GUsePron x1,GUsePron y1) -> and [ x1 == y1 ]
     (GWho x1 x2,GWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GYou,GYou) -> and [ ]
     (Geuropean_NP,Geuropean_NP) -> and [ ]
     (Gone_NP,Gone_NP) -> and [ ]
     (Gwhoever_NP,Gwhoever_NP) -> and [ ]
@@ -2145,6 +2147,7 @@ instance Gf GNP where
   gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
   gf (GUsePron x1) = mkApp (mkCId "UsePron") [gf x1]
   gf (GWho x1 x2) = mkApp (mkCId "Who") [gf x1, gf x2]
+  gf GYou = mkApp (mkCId "You") []
   gf Geuropean_NP = mkApp (mkCId "european_NP") []
   gf Gone_NP = mkApp (mkCId "one_NP") []
   gf Gwhoever_NP = mkApp (mkCId "whoever_NP") []
@@ -2172,6 +2175,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Who" -> GWho (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "You" -> GYou 
       Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP 
       Just (i,[]) | i == mkCId "one_NP" -> Gone_NP 
       Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP 

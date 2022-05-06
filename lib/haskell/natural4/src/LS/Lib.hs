@@ -326,40 +326,46 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , tokenVal <- toToken rawToken
+             , let paren = [GoDeeper | y < V.length vvt - 1 && toToken (vvt ! (y+1) ! x) `elem` map pure [And, Or]]
+             , tokenVal <- toToken rawToken ++ paren
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
-    eofPos = SourcePos "" pos1 pos1
-    withEOF = WithPos eofPos 1 Nothing EOF
-    withSOF = WithPos eofPos 1 Nothing SOF
-    insertParen a@WithPos { pos = aPos }
-                b@WithPos { pos = bPos }
+      tail $ insertParens [] (withSOF : mys)
+    sofPos = SourcePos "" pos1 pos1
+    lastLine = V.length rs - 1
+    lastCol  = V.length (rs ! lastLine) - 1
+    eofPos = SourcePos "" (mkPos $ lastLine + 1) (mkPos $ lastCol + 1)
+    withSOF = WithPos sofPos 1 Nothing SOF
+    col = unPos . sourceColumn . pos
+    lin = unPos . sourceLine   . pos
+
+    insertParens pars [] = replicate (length pars) (WithPos eofPos 1 Nothing UnDeeper)
+    insertParens parens (a : xs)
+      | tokenVal a == GoDeeper = a : insertParens (a:parens) xs
+      -- Close an open parenthesis when we are to the left of it
+      | (par:pars) <- parens, col par > col a = (UnDeeper <$ a) : insertParens pars (a:xs)
+    insertParens parens (a : b : xs)
       | tokenVal a /= SOF &&
-        aCol <  bCol &&
-        aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
-                        a : a { tokenVal = EOL }            --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
-                        : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
+        col a < col b &&
+        lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
+                        a : (EOL <$ a) : goDp : insertParens (goDp : parens) (b:xs)
+        --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
+        --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
-      | aCol <  bCol =  a                                   --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
-                        : (goDp <$> [1 .. (bCol - aCol)])
 
-      | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
-                        : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
+      --- | col a < col b = a                                     --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
+      ---                   : (goDp <$> [1 .. (col b - col a)])
 
-      | otherwise    = [a]
+      --- | col a > col b = a                                     --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
+      ---                   : (unDp <$> [1 .. (col a - col b)])   --- | bar |     | -> | foo ) bar |
+
       where
-        aCol = unPos . sourceColumn $ aPos
-        bCol = unPos . sourceColumn $ bPos
-        aLin = unPos . sourceLine   $ aPos
-        bLin = unPos . sourceLine   $ bPos
-        goDp n = let newPos = aPos { sourceColumn = mkPos (aCol + n) }
-                 in b { tokenVal = GoDeeper, pos = newPos }
-        unDp n = let newPos = bPos { sourceColumn = mkPos (bCol + n) }
-                 in a { tokenVal = UnDeeper, pos = newPos }
+        goDp = GoDeeper <$ b
+    insertParens parens (a : xs) = a : insertParens parens xs
+
 -- MyStream is the primary input for our Parsers below.
 --
 

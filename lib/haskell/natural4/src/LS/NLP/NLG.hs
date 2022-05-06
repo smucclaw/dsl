@@ -114,6 +114,59 @@ parseUD env txt = do
 
 -----------------------------------------------------------------------------
 
+nlgQuestion :: Rule -> IO [Text.Text]
+nlgQuestion rl = do
+  env <- myNLGEnv
+  annotatedRule <- parseFields env rl
+  -- TODO: here let's do some actual NLG
+  gr <- nlgExtPGF
+  let lang = head $ languages gr
+  case annotatedRule of
+    RegulativeA {whoA = Just who} -> do
+      let whoAsTG = udsToTreeGroups (toUDS gr who)
+          whoQuestions  = mkQs qsWho gr lang 2 whoAsTG
+      return $ map Text.pack whoQuestions
+--          condQuestions =
+    HornlikeA {clausesA = cls} -> do
+      let udfrags = map fg cls
+          hcQuestions = concatMap (mkHCQs gr lang 0) udfrags
+      return $ map Text.pack hcQuestions
+    _ -> do
+      statement <- nlg rl
+      -- putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
+      return mempty --
+
+  where
+    mkHCQs :: PGF -> CId -> Int -> GUDFragment -> [String]
+    mkHCQs gr lang indentation udfrag = case udfrag of
+      GHornClause2 _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
+      GMeans _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
+      _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+
+    mkQs :: (TreeGroups -> GQS) -> PGF -> CId -> Int -> TreeGroups -> [String]
+    mkQs qfun gr lang indentation tg = case tg of
+      TG {gfCl = Just cl} -> lin indentation (qfun $ clTG cl)
+      TG {gfNP = Just np} -> case np of
+        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4)) (npTG <$> nps)
+        _ -> lin indentation (qfun $ npTG np)
+      -- TG {gfCN = Just cn} ->
+      TG {gfVP = Just vp} -> case vp of
+        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4)) (vpTG <$> vps)
+        _ -> lin indentation (qfun $ vpTG vp)
+      -- TG {gfAP = Just ap} ->
+      -- TG {gfDet = Just det} ->
+      -- TG {gfAdv = Just adv} ->
+      _ -> []
+
+      where
+        {-
+        space :: Char
+        space = ' '
+        lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
+        -}
+        lin indentation x = [linearize gr lang (gf x)]
+
+
 nlg :: Rule -> IO Text.Text
 nlg rl = do
    env <- myNLGEnv
@@ -164,8 +217,8 @@ nlg rl = do
       DefNameAliasA { nameA, detailA, nlhintA } -> do
         let tree = maybe detailA gf (npFromUDS $ fg detailA)
             linText = linearize gr lang tree
-            linTree = showExpr tree
-        return $ Text.pack (Text.unpack nameA ++ " AKA " ++ linText ++ "\n" ++ linTree ++ "\n")
+            --linTree = showExpr tree
+        return $ Text.pack (Text.unpack nameA ++ " AKA " ++ linText) -- ++ "\n" ++ linTree ++ "\n")
       RegBreachA -> return "IT'S A BREACH >:( >:( >:("
       RegFulfilledA -> return "FULFILLED \\:D/ \\:D/ \\:D/"
 
@@ -608,23 +661,37 @@ bsr2gf env bsr = case bsr of
 -- a Cl, "a breach occurs", but also a NP, "an occurring breach".
 -- The different NLG functions make their decisions on how to combine phrases based on which fields are filled.
 data TreeGroups = TG {
-    gfAP   :: Maybe GAP
-  , gfAdv  :: Maybe GAdv
-  , gfNP   :: Maybe GNP
-  , gfDet  :: Maybe GDet
-  , gfCN   :: Maybe GCN
-  , gfPrep :: Maybe GPrep
-  , gfRP   :: Maybe GRP
-  , gfVP   :: Maybe GVP
-  , gfCl   :: Maybe GCl
+    gfAP   :: Maybe GAP  -- 1
+  , gfAdv  :: Maybe GAdv -- 2
+  , gfNP   :: Maybe GNP  -- 3
+  , gfDet  :: Maybe GDet -- 4
+  , gfCN   :: Maybe GCN  -- 5
+  , gfPrep :: Maybe GPrep -- 6
+  , gfRP   :: Maybe GRP  -- 7
+  , gfVP   :: Maybe GVP  -- 8
+  , gfCl   :: Maybe GCl  -- 9
    } deriving (Eq)
+
+emptyTG :: TreeGroups
+emptyTG = TG Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+
+npTG :: GNP -> TreeGroups
+npTG np = emptyTG {gfNP = Just np}
+
+vpTG :: GVP -> TreeGroups
+vpTG vp = emptyTG {gfVP = Just vp}
+
+clTG :: GCl -> TreeGroups
+clTG cl = emptyTG {gfCl = Just cl}
 
 -- | for documentation: which RGL types are accepted currently
 acceptedRGLtypes :: String
 acceptedRGLtypes = "AP Adv NP Det CN Prep RP VP Cl"
 
 instance Show TreeGroups where
-  show = unlines . map showExpr . flattenGFTrees
+  show tg = case flattenGFTrees tg of
+             [] -> "the TreeGroups is empty"
+             xs -> unlines $ map showExpr xs
 
 -- | Workaround to flatten TreeGroups into a list of Exprs.
 flattenGFTrees :: TreeGroups -> [Expr]
@@ -775,13 +842,16 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
     treeCl :: Maybe GCl
     treeCl = case mapMaybe clFromUDS contentsUDS :: [GCl] of
                 []    -> Nothing
-                c:_  -> Just c
+                c:_  -> Just c -- TODO: start using VPS and the S, and use list for S
 
 parseAndDisambiguate :: NLGEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
   let parsingGrammar = pgfGrammar $ udEnv env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb
+  -- putStrLn ("parseAndDisambiguate.contentsAmb = " ++ show (map (map showExpr) contentsAmb))
+  -- putStrLn ("parseAndDisambiguate.contents = " ++ unwords (map showExpr contents))
+  -- putStrLn ("parseAndDisambiguate: map toUDS contents = " ++ (unwords (map (showExpr . gf . toUDS parsingGrammar) contents)))
   return $ map (toUDS parsingGrammar) contents
 
 constructTreeAPCNsOfNP :: GListCN -> GConj -> GNP -> GUDS -> Expr
@@ -1107,6 +1177,7 @@ getRoot x = composOpMonoid getRoot x
 
 getNsubj :: Tree a -> [Gnsubj]
 getNsubj ns@(Gnsubj_ _) = [ns]
+getNsubj (GadvclMarkUDS_ _ _) = []
 getNsubj x = composOpMonoid getNsubj x
 
 -----------------------------------------------------------------------------

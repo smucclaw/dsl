@@ -662,8 +662,7 @@ pAction = debugName "pAction calling dBoolStructP" dBoolStructP
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
 
-mkRBfromDT :: BoolStructP
-           -> ((RegKeywords, BoolStructP )  -- every person
+mkRBfromDT :: ((RegKeywords, BoolStructP )  -- every person
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> [(Preamble, BoolStructR)] -- positive  -- IF / WHEN
@@ -672,13 +671,14 @@ mkRBfromDT :: BoolStructP
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
            -> [Rule]
+           -> BoolStructP
            -> RuleBody
-mkRBfromDT rba (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere =
+mkRBfromDT (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere rba  =
   RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
-mkRBfromDA :: (Deontic, BoolStructP)
-           -> ((RegKeywords, BoolStructP ) -- every person or thing
+mkRBfromDA :: ((RegKeywords, BoolStructP ) -- every person or thing
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
+           -> (Deontic, BoolStructP)
            -> Maybe (TemporalConstraint Text.Text)
            -> [(Preamble, BoolStructR)] -- whenif
            -> [(Preamble, BoolStructR)] -- unless
@@ -687,7 +687,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> Maybe ParamText         -- having
            -> [Rule]
            -> RuleBody
-mkRBfromDA (rbd,rba) (rbkn,rbwho) rbt rbpb rbpbneg rbu rbg rbh rbwhere
+mkRBfromDA (rbkn,rbwho) (rbd,rba) rbt rbpb rbpbneg rbu rbg rbh rbwhere
   = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
 
@@ -701,30 +701,41 @@ permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStru
                 -> Parser RuleBody
 permutationsReg keynamewho =
   debugName "permutationsReg" $ do
-  try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
-            <$$> pDoAction
-            <||> keynamewho
-            <||> try pDT
+  try ( debugName "regulative permutation with deontic-temporal" $ nopermute ( mkRBfromDT
+            !<$$> keynamewho
+            !<||> try pDT
             <&&> whatnot
+            !<||> pDoAction
           ) )
   <|>
-  try ( debugName "regulative permutation with deontic-action" $ permute ( mkRBfromDA
-            <$$> try pDA
-            <||> keynamewho
-            <|?> (Nothing, pTemporal)
+  try  ( debugName "regulative permutation with deontic-action" $ nopermute ( mkRBfromDA
+            !<$$> keynamewho
+            !<||> pDA
+            !<|?> (Nothing, pTemporal)
             <&&> whatnot
           ) )
   where
     whatnot x = x
-                <|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
-                <|?> ([], some $ preambleBoolStructR [Unless]) -- unless
-                <|?> ([], some $ preambleParamText [Upon])   -- upon
-                <|?> ([], some $ preambleParamText [Given])  -- given
-                <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
-                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
+                !<|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
+                !<|?> ([], some $ preambleBoolStructR [Unless]) -- unless
+                !<|?> ([], some $ preambleParamText [Upon])   -- upon
+                !<|?> ([], some $ preambleParamText [Given])  -- given
+                !<|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
+                !<|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>
+    -- Disable permutations
+    -- (!<||>) = (<||>)
+    (!<||>) = (<*>)
+    infixl 1 !<||>
+    -- (!<|?>) = (<|?>)
+    x !<|?> (a,b) = x <*> (b <|> pure a)
+    infixl 1 !<|?>
+    (!<$$>) = (<$>)
+    infixl 2 !<$$>
+    nopermute = id
+    -- nopermute = permute
 
 -- the Deontic/temporal/action form
 -- MAY EVENTUALLY

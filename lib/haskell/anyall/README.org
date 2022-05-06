@@ -392,7 +392,7 @@ Elements on the canvas can be laid out left-to-right (LR), top-to-bottom (TB), o
 
 An AnyAll Item is represented as a 2d box, typically connected to the rest of the diagram with a pair of lines.
 
-If the user has not given a truth value to the proposition, it is in an "unknown" state -- ~Maybe Bool~.
+If the user has not given a truth value to the proposition, it is in an "unknown" state -- ~Nothing :: Maybe Bool~.
 
 Typographically, we represent unknown values as white text on gray background. The ASCII art below doesn't show it, but the PNG examples elsewhere do.
 
@@ -439,6 +439,8 @@ TB:
 
 **** Conjunction
 
+In an "and" tree, a proposition is true if ~all~ of its sub-propositions are true.
+
 LR:
 #+begin_example
       all of the following
@@ -455,9 +457,12 @@ TB:
    |
    |   there must be
    |
-   +---  offer, ----- acceptance, ----- capacity, ----- and consideration -----
+   +---  offer, ----- acceptance, ----- capacity, ----- and consideration -----+
+                                                                               |
+      for the contract to be valid                                             |
+                                                                               |
+   +---------------------------------------------------------------------------+
    |
-   |   for the contract to be valid
    |
 #+end_example
 
@@ -465,15 +470,15 @@ TB:
 
 Suppose the legal logic says: "If ... you are not a public agency ... then ..."
 
-The question is phrased as ~Not (Leaf "you are a public agency")~ to allow a more natural interview with the end-user.
+The question is encoded as ~Not (Leaf "you are a public agency")~ to allow a more natural interview with the end-user.
 
-We draw a solid line at the end of the box.
+We draw a solid line at the end of the box to indicate the NOT.
 
 LR:
 #+begin_example
-                     |
-  ---- proposition 9 |----
-                     |
+                               |
+  ---- you are a public agency |----
+                               |
 #+end_example
 
 TB:
@@ -484,7 +489,7 @@ TB:
         |
 #+end_example
 
-If the user answers "yes" to the question the overall value becomes "no", and vice-versa.
+If the user answers "yes" to the question the overall value becomes "no", and vice-versa: see below diagrams.
 
 *** Known states where user has given input
 

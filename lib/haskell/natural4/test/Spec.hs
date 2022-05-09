@@ -575,6 +575,7 @@ main = do
         --     `shouldParse` [ defaultCon
         --                   ]
     nlgTests
+    --nlgTests2
 
   -- upgrade single OR group to bypass the top level AND group
 

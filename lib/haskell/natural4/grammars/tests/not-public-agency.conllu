@@ -1,0 +1,5 @@
+1	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	cop	_	FUN=UseComp
+2	not	not	PART	RB	_	5	advmod	_	_
+3	a	a	DET	DT	Definite=Ind|PronType=Art	5	det	_	FUN=a_Det
+4	public	public	ADJ	JJ	Degree=Pos	5	amod	_	FUN=public_A
+5	agency	agency	NOUN	NN	Number=Sing	0	root	_	FUN=agency_N

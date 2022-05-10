@@ -53,8 +53,8 @@ extra-deps:
   - .
   - baby-l4-core
 
-- github: GrammaticalFramework/gf-ud
-  commit: 163490b25951f1cdaa58962db00a08960df991c0
+- github: anka-213/gf-ud # Upstream: GrammaticalFramework/gf-ud
+  commit: 9a3a89f1e2896a26ab1671405f2af2b3facfc893
   # branch: all-changes
 
 - github: anka-213/haskell-wordnet
@@ -63,8 +63,9 @@ extra-deps:
 - git: https://github.com/anka-213/udpipe-hs.git
   commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 
-- github: mengwong/gf-core
-  commit: 38dd4b7dff07ec3c68d7f0c1f1c3de54a7ff4a86
+- github: anka-213/gf-core # Upstream: GrammaticalFramework/gf-core
+  commit: 04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89
+  # branch: random-performance-improvements
 
 - prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 
@@ -73,7 +74,7 @@ extra-deps:
 # - MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
 # - simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
 # - network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
-
+- compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
 
 allow-newer: true
 

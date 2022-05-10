@@ -1,6 +1,9 @@
+interface myEither<T> {
+  Right?: T,
+  Left?: T
+}
 interface withDefault<T> {
-  byDefault?: T,
-  fromUser?: T
+  getDefault: myEither<T>,
 }
 export default interface StdinSchema {
   marking: {

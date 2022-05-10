@@ -24,19 +24,20 @@ data Scale = Tiny  -- @ ---o---
            | Full  -- @ --- the first item ---
            deriving (Show, Eq)
 
-data Direction = LR -- | left-to-right
-               | TB -- | top-to-bottom
+-- | how is a particular widget to be laid out?
+data Direction = LR -- ^ left-to-right
+               | TB -- ^ top-to-bottom
                deriving (Show, Eq)
 
-data Config = Config
+data AAVConfig = AAVConfig
   { cscale       :: Scale
   , cdirection   :: Direction
   , cgetMark     :: Marking TL.Text
   }
   deriving (Show, Eq)
 
-defaultConfig :: Config
-defaultConfig = Config
+defaultAAVConfig :: AAVConfig
+defaultAAVConfig = AAVConfig
   { cscale = Tiny
   , cdirection = LR
   , cgetMark = Marking Map.empty
@@ -47,37 +48,103 @@ type ItemStyle = Maybe Bool
 (<<-*) :: Show a => AttrTag -> a -> Attribute
 (<<-*) tag a = bindAttr tag (T.pack (show a))
 
-makeSvg' :: Config -> (BBox, Element) -> Element
+makeSvg' :: AAVConfig -> (BBox, Element) -> Element
 makeSvg' c = makeSvg
 
 makeSvg :: (BBox, Element) -> Element
 makeSvg ((width, height), geom) =
      doctype
-  <> with (svg11_ geom) [Version_ <<- "1.1", Height_ <<-* height]
+  <> with (svg11_ geom) [Version_ <<- "1.1" ]
 
 
-q2svg :: Config -> QTree TL.Text -> Element
+data LineHeight = NoLine | HalfLine | FullLine
+  deriving (Eq, Show)
+
+q2svg :: AAVConfig -> QTree TL.Text -> Element
 q2svg c qt = snd $ q2svg' c qt
 
-q2svg' :: Config -> QTree TL.Text -> (BBox, Element)
-q2svg' c (Node (Q _ ao prepost mark) children) = itemBox c 0 0 ao mark children False
+-- need to add a param if the parent was a Not
+q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
+q2svg' c qt@(Node q childqs) =
+  drawItem c qt 22 20 22 20 120 44 leftLine rightLine topLine confidence
+  where
+    (leftLine, rightLine, topLine, confidence) = case mark q of
+      -- [TODO] all of this gets modified by whether the parent was a Not ... if it was, we have to add a right line.
+      Default (Right (Just True))  -> (HalfLine, HalfLine, True , True)
+      Default (Right (Just False)) -> (FullLine,   NoLine, False, True)
+      Default (Right Nothing     ) -> (  NoLine,   NoLine, False, True)
+      Default (Left  (Just True))  -> (HalfLine, HalfLine, False, True)
+      Default (Left  (Just False)) -> (FullLine,   NoLine, False, False)
+      Default (Left  Nothing     ) -> (  NoLine,   NoLine, False, False)
+
+
+drawItem :: AAVConfig -> QTree TL.Text
+         -> Int -- ^    topMargin
+         -> Int -- ^  rightMargin
+         -> Int -- ^ bottomMargin
+         -> Int -- ^   leftMargin
+         -> Int -- ^    boxWidth
+         -> Int -- ^    boxHeight
+         -> LineHeight -- ^ left-side line
+         -> LineHeight -- ^ right-side line
+         -> Bool       -- ^ top-side line -- does the overall proposition evaluate to true?
+         -> Bool       -- ^ "confidence level" -- user input becomes black on white, otherwise white on gray
+         -> (BBox, Element)
+drawItem c qt@(Node q childqs)
+  topMargin rightMargin bottomMargin leftMargin
+  boxWidth boxHeight
+  leftline rightline topline confidence =
+  let (boxStroke, boxFill, textFill) = case confidence of
+        True  -> ("none", "none", "black")
+        False -> ("none", "lightgrey", "white")
+      mytext = case andOr q of
+        (Simply txt) -> fromString (TL.unpack txt)
+        (Neg)        -> "neg..."
+        (And)        -> "and..."
+        (Or)         -> "or..."
+        _            -> "unsupported"
+  in
+  (,) (10,10) $
+     rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
+  <> (text_ [ X_      <<-* (boxWidth  `div` 2 + leftMargin) , Y_      <<-* (boxHeight `div` 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line in on the left
+  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line out on the right
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                                , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                                , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == FullLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
+  <> (if topline               then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* topMargin                       , Stroke_ <<- "black" ] else mempty)
+
+
+
+
+  -- itemBox c 0 0 ao mark children False
+
+
+
+
+
 
 type Boolean = Bool
 
-itemBox :: Config
-        -> Double          -- | x top left
-        -> Double          -- | y top left
-        -> AndOr TL.Text   -- | Item, recast as an AndOr Text for display
-        -> Default Bool    -- | mark for the box
-        -> [QTree TL.Text] -- | children
-        -> Bool            -- | did we get here because we were contained by a Neg?
+itemBox :: AAVConfig
+        -> Double          -- ^ x top left
+        -> Double          -- ^ y top left
+        -> AndOr TL.Text   -- ^ Item, recast as an AndOr Text for display
+        -> Default Bool    -- ^ mark for the box
+        -> [QTree TL.Text] -- ^ children
+        -> Bool            -- ^ did we get here because we were contained by a Neg?
         -> (BBox, Element)
 itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
 itemBox c x y (Simply t)  m cs amNot
-  | cscale c  == Tiny  = (,) (10,10) $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ] )
+  | cscale c  == Tiny  = (,) (10,10) $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
 -- [TODO] small
-  | cscale c  == Full  = (,) (fromIntegral $ TL.length t * 3, 25) $ g_ [] ( rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ] <>
-                                                                            text_ [ X_ <<-* (x + 3), Y_ <<-* (y + 3) ] (toElement t) )
+  | cscale c  `elem` [Full,Small]  = (,) (fromIntegral $ TL.length t * 3, 25) $ g_ [] (
+      rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ]
+        <> mempty ) -- some text
+itemBox c x y andor m cs amNot = (,) (fromIntegral $ 25, 25) $ g_ [] (
+  rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ]
+    <> mempty) -- some text
   
   -- [TODO]: for And and Or, recurse into children, and move them around, and update current bounding box.
   where cs = colorScheme c m amNot
@@ -93,7 +160,7 @@ data ColorScheme = ColorScheme
   }
 
 -- | the color scheme depends on the marking
-colorScheme :: Config
+colorScheme :: AAVConfig
             -> Default Bool
             -> Boolean   -- | iff we got here via a Not, this value is True
             -> ColorScheme
@@ -110,7 +177,7 @@ colorScheme c m amNot = case m of
                 else if not amNot &&     b then "black" else "none"
   
 
-box :: Config -> Double -> Double -> Double -> Double -> Element
+box :: AAVConfig -> Double -> Double -> Double -> Double -> Element
 box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
@@ -120,7 +187,7 @@ line (x1, y1) (x2, y2) =
   line_ [ X1_ <<-* x1, X2_ <<-* x2, Y1_ <<-* y1, Y2_ <<-* y2
         , Stroke_ <<- "grey" ]
 
-item :: ToElement a => Config -> Double -> Double -> a -> Element
+item :: ToElement a => AAVConfig -> Double -> Double -> a -> Element
 item c x y desc =
   let w = 20
   in
@@ -131,7 +198,7 @@ move :: (Double, Double) -> Element -> Element
 move (x, y) geoms =
   with geoms [Transform_ <<- translate x y]
 
-renderChain :: Config -> [(BBox, Element)] -> Element
+renderChain :: AAVConfig -> [(BBox, Element)] -> Element
 renderChain c [] = mempty
 renderChain c [(_,g)] = g
 renderChain c (((w,h),g):hgs) =
@@ -139,13 +206,13 @@ renderChain c (((w,h),g):hgs) =
         <> line (10, 20) (10, h)
         <> move (0, h) (renderChain c hgs)  )
 
-renderLeaf :: (ToElement a) => Config -> a -> (BBox, Element)
+renderLeaf :: (ToElement a) => AAVConfig -> a -> (BBox, Element)
 renderLeaf c desc =
   let height = 25
       geom = item c 0 0 desc
   in ((25,height), geom)
 
-renderNot :: (ToElement a) => Config -> [Item a] -> (BBox, Element)
+renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (BBox, Element)
 renderNot c children =
   let
       ((w,h), g) = renderItem c $ head children
@@ -158,14 +225,14 @@ renderNot c children =
   in ((w,height), geom)
 
 
-renderSuffix :: (ToElement a) => Config -> Double -> Double -> a -> (BBox, Element)
+renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (BBox, Element)
 renderSuffix c x y desc =
   let h = 20 -- h/w of imaginary box
       geom :: Element
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in ((25,h), geom)
 
-renderAll :: (ToElement a) => Config -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
+renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
 renderAll c Nothing childnodes = renderAll c allof childnodes
 renderAll c (Just (Pre prefix)) childnodes =
   let
@@ -202,7 +269,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
-renderAny :: (ToElement a) => Config -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
+renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
 renderAny c Nothing childnodes = renderAny c (Just (Pre "any of:")) childnodes
 renderAny c (Just (Pre prefix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -243,14 +310,14 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
   in ((width, height), geom)
 
 
-renderItem :: (ToElement a) => Config -> Item a -> (BBox, Element)
+renderItem :: (ToElement a) => AAVConfig -> Item a -> (BBox, Element)
 renderItem c (Leaf label)     = renderLeaf c label
 renderItem c (Not       args) = renderNot c      [args]
 renderItem c (All label args) = renderAll c label args
 renderItem c (Any label args) = renderAny c label args
 
 toy :: (BBox, Element)
-toy = renderItem defaultConfig $
+toy = renderItem defaultAAVConfig $
   All (Just $ PrePost "You need all of" ("to survive." :: TL.Text))
       [ Leaf ("Item 1;" :: TL.Text)
       , Leaf "Item 2;"

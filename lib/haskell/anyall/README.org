@@ -380,7 +380,7 @@ Initially we visualized the and/or tree like this:
 
 [[./out/Screenshot 2022-05-03 at 1.42.26 PM.png]]
 
-After re-reading [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8EBhYp/view?usp=sharing][Layman Allen]] and considering the [[https://en.wikipedia.org/wiki/Ladder_logic][ladder logic used in PLC controllers]], we tried a new design.
+After re-reading [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8EBhYp/view?usp=sharing][Layman Allen]] and considering circuit diagrams, particularly the [[https://en.wikipedia.org/wiki/Ladder_logic][ladder logic used in PLC controllers]], we tried a new design.
 
 ** Principles
 

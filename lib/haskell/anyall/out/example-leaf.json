@@ -27,11 +27,11 @@
     },
     "drink": {
       "getDefault": {
-        "Right": false
+        "Left": true
       }
     }
   },
   "andOrTree": {
-    "leaf": "myleaf"
+    "leaf": "drink"
   }
 }

@@ -68,13 +68,20 @@ q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
 q2svg' c qt@(Node q childqs) =
   drawItem c qt 
 
-drawItem :: AAVConfig
+drawItem, drawItemTiny, drawItemFull :: AAVConfig
          -> QTree TL.Text
          -> (BBox, Element)
-drawItem c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             22 20 22 20 120 44 False
-drawItem c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 True
-drawItem c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False
-drawItem c qt@(Node (Q _sv ao@Or            pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False
+drawItem c qt
+  | cscale c == Tiny = drawItemTiny c qt
+  | otherwise        = drawItemFull c qt
+
+drawItemTiny c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             6  10  6 10   8  8 False
+drawItemTiny c qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawLeaf c (head childqs) 6  10  6 10   8  8 True
+drawItemTiny c qt                                              = drawItemFull c qt
+drawItemFull c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             22 20 22 20 120 44 False
+drawItemFull c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 True
+drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
+drawItemFull c qt@(Node (Q _sv ao@Or            pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
 
 drawLeaf :: AAVConfig -> QTree TL.Text
          -> Int -- ^    topMargin
@@ -97,7 +104,6 @@ drawLeaf c qt@(Node q childqs)
         (Neg)        -> "neg..."
         (And)        -> "and..."
         (Or)         -> "or..."
-        _            -> "unsupported"
       notLine x = if negContext then FullLine else x
       (leftline, rightline, topline, confidence) = case mark q of
         Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)
@@ -106,10 +112,13 @@ drawLeaf c qt@(Node q childqs)
         Default (Left  (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, False)
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
+      boxContents = if cscale c == Tiny
+                    then          (circle_ [Cx_  <<-* (boxWidth  `div` 2 + leftMargin) ,Cy_      <<-* (boxHeight `div` 2 + topMargin) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ] )
+                    else            (text_ [ X_  <<-* (boxWidth  `div` 2 + leftMargin) , Y_      <<-* (boxHeight `div` 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) (10,10) $
+  (,) (fromIntegral $ leftMargin + boxWidth + rightMargin, fromIntegral $ topMargin + boxHeight + bottomMargin) $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
-  <> (text_ [ X_      <<-* (boxWidth  `div` 2 + leftMargin) , Y_      <<-* (boxHeight `div` 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+  <> boxContents
   <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line in on the left
   <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line out on the right
   <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                                , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)

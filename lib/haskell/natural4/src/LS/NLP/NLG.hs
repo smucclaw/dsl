@@ -31,6 +31,7 @@ import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Data.Vector.Internal.Check (doChecks)
 import Data.Aeson (SumEncoding(contentsFieldName))
+import Data.Typeable (typeOf)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -122,37 +123,41 @@ nlgQuestion rl = do
   gr <- nlgExtPGF
   let lang = head $ languages gr
   case annotatedRule of
-    RegulativeA {whoA = Just who} -> do
+    RegulativeA {subjA = subj, whoA = Just who} -> do
       let whoAsTG = udsToTreeGroups (toUDS gr who)
-          whoQuestions  = mkQs qsWho gr lang 2 whoAsTG
+          whoQuestions  = mkQs qsWho gr lang 2 subj whoAsTG
+      print $ udsToTreeGroups (toUDS gr subj)
+      print "flattened who"
+      print $ map showExpr $ flattenGFTrees whoAsTG
       return $ map Text.pack whoQuestions
 --          condQuestions =
     HornlikeA {clausesA = cls} -> do
       let udfrags = map fg cls
-          hcQuestions = concatMap (mkHCQs gr lang 0) udfrags
+          emptyExpr = gf (GString "")
+          hcQuestions = concatMap (mkHCQs gr lang 0 (emptyExpr)) udfrags
       return $ map Text.pack hcQuestions
     _ -> do
       statement <- nlg rl
-      -- putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
+      putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
       return mempty --
 
   where
-    mkHCQs :: PGF -> CId -> Int -> GUDFragment -> [String]
-    mkHCQs gr lang indentation udfrag = case udfrag of
-      GHornClause2 _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
-      GMeans _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
+    mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
+    mkHCQs gr lang indentation emptE udfrag = case udfrag of
+      GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+      GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
-    mkQs :: (TreeGroups -> GQS) -> PGF -> CId -> Int -> TreeGroups -> [String]
-    mkQs qfun gr lang indentation tg = case tg of
-      TG {gfCl = Just cl} -> lin indentation (qfun $ clTG cl)
+    mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
+    mkQs qfun gr lang indentation s tg  = case tg of
+      TG {gfCl = Just cl} -> lin indentation (qfun s $ clTG cl)
       TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4)) (npTG <$> nps)
-        _ -> lin indentation (qfun $ npTG np)
+        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
+        _ -> lin indentation (qfun s $ npTG np)
       -- TG {gfCN = Just cn} ->
       TG {gfVP = Just vp} -> case vp of
-        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4)) (vpTG <$> vps)
-        _ -> lin indentation (qfun $ vpTG vp)
+        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+        _ -> lin indentation (qfun s $ vpTG vp)
       -- TG {gfAP = Just ap} ->
       -- TG {gfDet = Just det} ->
       -- TG {gfAdv = Just adv} ->
@@ -169,6 +174,10 @@ nlgQuestion rl = do
 
 nlg :: Rule -> IO Text.Text
 nlg rl = do
+   print ("nlgQuestion")
+   nlgquest <- nlgQuestion rl
+   print $ Text.unwords $ nlgquest
+   print ("---")
    env <- myNLGEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
@@ -710,21 +719,22 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
-qsWho :: TreeGroups -> GQS
-qsCond :: TreeGroups -> GQS
-qsHaving :: TreeGroups -> GQS
+qsWho :: Expr -> TreeGroups -> GQS
+qsCond :: Expr -> TreeGroups -> GQS
+qsHaving :: Expr -> TreeGroups -> GQS
 
-qsWho whichTG = case whichTG of
+qsWho subj whichTG = case whichTG of
   TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
-  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (makeSubjectIndefinite np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
-  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- do you eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompAP ap))
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetNP det)))
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp $ GCompAdv adv)
+  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (makeSubjectIndefinite np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
+  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
+  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
+  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
+  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
   _ -> useQCl $ GQuestCl dummyCl
+  where sub = makeSubjectIndefinite $ peelNP subj
 
-qsCond whichTG = case whichTG of
+qsCond sub whichTG = case whichTG of
   TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
   TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np) -- is there a cat?
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
@@ -756,6 +766,7 @@ makeSubjectIndefinite :: GNP -> GNP
 makeSubjectIndefinite np = case np of
   GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
   _ -> np
+
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
 --   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv

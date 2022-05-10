@@ -63,10 +63,8 @@ data LineHeight = NoLine | HalfLine | FullLine
 q2svg :: AAVConfig -> QTree TL.Text -> Element
 q2svg c qt = snd $ q2svg' c qt
 
--- need to add a param if the parent was a Not
 q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
-q2svg' c qt@(Node q childqs) =
-  drawItem c qt 
+q2svg' c qt@(Node q childqs) = drawItem c qt 
 
 drawItem, drawItemTiny, drawItemFull :: AAVConfig
          -> QTree TL.Text
@@ -77,20 +75,20 @@ drawItem c qt
 
 drawItemTiny c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             6  10  6 10   8  8 False
 drawItemTiny c qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawLeaf c (head childqs) 6  10  6 10   8  8 True
-drawItemTiny c qt                                              = drawItemFull c qt
+drawItemTiny c qt                                              = drawItemFull c qt                                  -- [TODO]
 drawItemFull c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             22 20 22 20 120 44 False
 drawItemFull c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 True
 drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
 drawItemFull c qt@(Node (Q _sv ao@Or            pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
 
 drawLeaf :: AAVConfig -> QTree TL.Text
-         -> Int -- ^    topMargin
-         -> Int -- ^  rightMargin
-         -> Int -- ^ bottomMargin
-         -> Int -- ^   leftMargin
-         -> Int -- ^    boxWidth
-         -> Int -- ^    boxHeight
-         -> Bool       -- ^ are we in a Neg context? i.e. parent was Negging to us
+         -> Int  -- ^    topMargin
+         -> Int  -- ^  rightMargin
+         -> Int  -- ^ bottomMargin
+         -> Int  -- ^   leftMargin
+         -> Int  -- ^    boxWidth
+         -> Int  -- ^    boxHeight
+         -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> (BBox, Element)
 drawLeaf c qt@(Node q childqs)
   topMargin rightMargin bottomMargin leftMargin

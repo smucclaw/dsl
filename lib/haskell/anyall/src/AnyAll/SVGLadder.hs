@@ -66,34 +66,29 @@ q2svg c qt = snd $ q2svg' c qt
 -- need to add a param if the parent was a Not
 q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
 q2svg' c qt@(Node q childqs) =
-  drawItem c qt 22 20 22 20 120 44 leftLine rightLine topLine confidence
-  where
-    (leftLine, rightLine, topLine, confidence) = case mark q of
-      -- [TODO] all of this gets modified by whether the parent was a Not ... if it was, we have to add a right line.
-      Default (Right (Just True))  -> (HalfLine, HalfLine, True , True)
-      Default (Right (Just False)) -> (FullLine,   NoLine, False, True)
-      Default (Right Nothing     ) -> (  NoLine,   NoLine, False, True)
-      Default (Left  (Just True))  -> (HalfLine, HalfLine, False, True)
-      Default (Left  (Just False)) -> (FullLine,   NoLine, False, False)
-      Default (Left  Nothing     ) -> (  NoLine,   NoLine, False, False)
+  drawItem c qt 
 
+drawItem :: AAVConfig
+         -> QTree TL.Text
+         -> (BBox, Element)
+drawItem c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             22 20 22 20 120 44 False
+drawItem c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 True
+drawItem c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False
+drawItem c qt@(Node (Q _sv ao@Or            pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False
 
-drawItem :: AAVConfig -> QTree TL.Text
+drawLeaf :: AAVConfig -> QTree TL.Text
          -> Int -- ^    topMargin
          -> Int -- ^  rightMargin
          -> Int -- ^ bottomMargin
          -> Int -- ^   leftMargin
          -> Int -- ^    boxWidth
          -> Int -- ^    boxHeight
-         -> LineHeight -- ^ left-side line
-         -> LineHeight -- ^ right-side line
-         -> Bool       -- ^ top-side line -- does the overall proposition evaluate to true?
-         -> Bool       -- ^ "confidence level" -- user input becomes black on white, otherwise white on gray
+         -> Bool       -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> (BBox, Element)
-drawItem c qt@(Node q childqs)
+drawLeaf c qt@(Node q childqs)
   topMargin rightMargin bottomMargin leftMargin
   boxWidth boxHeight
-  leftline rightline topline confidence =
+  negContext=
   let (boxStroke, boxFill, textFill) = case confidence of
         True  -> ("none", "none", "black")
         False -> ("none", "lightgrey", "white")
@@ -103,6 +98,14 @@ drawItem c qt@(Node q childqs)
         (And)        -> "and..."
         (Or)         -> "or..."
         _            -> "unsupported"
+      notLine x = if negContext then FullLine else x
+      (leftline, rightline, topline, confidence) = case mark q of
+        Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)
+        Default (Right (Just False)) -> (FullLine,  notLine NoLine,       negContext, True)
+        Default (Right Nothing     ) -> (  NoLine,  notLine NoLine,            False, True)
+        Default (Left  (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, False)
+        Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
+        Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
   in
   (,) (10,10) $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]

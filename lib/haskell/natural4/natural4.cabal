@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
@@ -98,7 +98,7 @@ executable natural4-exe
       Paths_natural4
   hs-source-dirs:
       app
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -H500M -qg
+  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
       QuickCheck
     , aeson
@@ -148,7 +148,7 @@ test-suite natural4-test
       Paths_natural4
   hs-source-dirs:
       test
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -H500M -qg
+  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
       QuickCheck
     , aeson

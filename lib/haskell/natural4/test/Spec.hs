@@ -33,11 +33,13 @@ import Data.Maybe (isJust)
 import Control.Monad (when, replicateM, guard)
 import Data.Either (fromRight)
 import Data.Char
-import System.IO.Unsafe (unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO, unsafeInterleaveIO)
 import LS.ParamText
 import qualified Data.Text.Lazy as T
 import Test.QuickCheck.Arbitrary.Generic
 import LS.Types (MyToken(Distinct, GoDeeper, UnDeeper, TypeSeparator, RuleMarker))
+import LS.NLP.NLG (myNLGEnv)
+import Control.Concurrent.Async (async)
 -- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
@@ -174,6 +176,7 @@ prop_rendertoken token =
 
 main :: IO ()
 main = do
+  putStrLn "Launch missiles..."
   mpd <- lookupEnv "MP_DEBUG"
   let runConfig_ = RC
         { debug = isJust mpd
@@ -192,20 +195,12 @@ main = do
         , toVue = False
         , extendedGrounds = False
         , toChecklist = False
+        , printstream = False
         }
-  let runConfig = runConfig_ { sourceURL = "test/Spec" }
-      runConfigDebug = runConfig { debug = True }
-  let combine (a,b) = a ++ b
-  let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
-  let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
-  let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
-  let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-  let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-  let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-  let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
-  hspec $ do
+  nlgEnv <- async myNLGEnv
+  hspec $ parallel $ do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
         property prop_gerundcheck
@@ -215,7 +210,22 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
+    describe "Parser tests" $ parserTests runConfig_
+    describe "NLG tests" $ nlgTests nlgEnv
 
+
+parserTests :: RunConfig -> Spec
+parserTests runConfig_ = do
+    let runConfig = runConfig_ { sourceURL = "test/Spec" }
+        runConfigDebug = runConfig { debug = True }
+    let combine (a,b) = a ++ b
+    let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
+    let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
+    let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
+    let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
+    let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
+    let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
+    let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
     describe "megaparsing" $ do
 
 
@@ -574,7 +584,6 @@ main = do
         --   parseR pRules testfile stream
         --     `shouldParse` [ defaultCon
         --                   ]
-    nlgTests
 
   -- upgrade single OR group to bypass the top level AND group
 

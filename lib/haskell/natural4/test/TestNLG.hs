@@ -11,10 +11,11 @@ import Data.Maybe
 import qualified AnyAll as AA
 import System.IO.Unsafe
 import qualified Data.Text.Lazy as Text
+import Control.Concurrent.Async (Async, wait)
 
-nlgTests :: Spec
-nlgTests = do
-   let env = unsafePerformIO myNLGEnv
+nlgTests :: Async NLGEnv -> Spec
+nlgTests aenv = do
+   let env = unsafePerformIO $ wait aenv
    describe "test bsr2gf" $ do
     it "Should return an adverbial" $ do
         treeAdv <- bsr2gf env testAdvBSR

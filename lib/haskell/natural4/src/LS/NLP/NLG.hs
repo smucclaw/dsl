@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs, NamedFieldPuns, FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 module LS.NLP.NLG where
 
@@ -724,19 +725,19 @@ qsCond :: Expr -> TreeGroups -> GQS
 qsHaving :: Expr -> TreeGroups -> GQS
 
 qsWho subj whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
-  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (makeSubjectIndefinite np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
   TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
   TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
   _ -> useQCl $ GQuestCl dummyCl
-  where sub = makeSubjectIndefinite $ peelNP subj
+  where sub = definiteNP $ peelNP subj
 
 qsCond sub whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np) -- is there a cat?
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
   TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
@@ -757,15 +758,20 @@ getQSFromTrees whichTG = case whichTG of
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
   _ -> useQCl $ GQuestCl dummyCl
 
-makeSubjectDefinite :: GCl -> GCl
-makeSubjectDefinite cl = case cl of
-  GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
-  _ -> cl
+definiteNP :: forall a . Tree a -> Tree a
+definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
+definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
+definiteNP np@(GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP np@(GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP x = composOp definiteNP x
 
-makeSubjectIndefinite :: GNP -> GNP
-makeSubjectIndefinite np = case np of
-  GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
-  _ -> np
+
+indefiniteNP :: forall a . Tree a -> Tree a
+indefiniteNP np@(GDetCN (LexDet "aSg_Det") _) = np
+indefiniteNP np@(GDetCN (LexDet "aPl_Det") _) = np
+indefiniteNP np@(GDetCN _ cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP np@(GMassNP cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP x = composOp indefiniteNP x
 
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
@@ -1190,6 +1196,7 @@ getNsubj :: Tree a -> [Gnsubj]
 getNsubj ns@(Gnsubj_ _) = [ns]
 getNsubj (GadvclMarkUDS_ _ _) = []
 getNsubj x = composOpMonoid getNsubj x
+
 
 -----------------------------------------------------------------------------
 -- AnnotatedRule, almost isomorphic to LS.Types.Rule

@@ -211,7 +211,7 @@ main = do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
     describe "Parser tests" $ parserTests nlgEnv runConfig_
-    describe "NLG tests" $ nlgTests nlgEnv
+    -- describe "NLG tests" $ nlgTests nlgEnv
 
 
 parserTests :: NLGEnv -> RunConfig -> Spec

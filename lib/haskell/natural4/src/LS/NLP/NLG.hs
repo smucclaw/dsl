@@ -33,6 +33,7 @@ import System.Environment (lookupEnv)
 import Data.Vector.Internal.Check (doChecks)
 import Data.Aeson (SumEncoding(contentsFieldName))
 import Data.Typeable (typeOf)
+import Control.Concurrent.Async (concurrently)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -48,12 +49,15 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
-  udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
-  when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
-  udpipeModel <- either error id <$> loadModel modelFilePath
-  when verbose $ putStrLn "Loaded UDPipe model"
+  (udEnv,udpipeModel) <- concurrently (
+      getEnv (gfPath "UDApp") "Eng" "UDS"
+    ) $ do
+    when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
+    udpipeModel <- either error id <$> loadModel modelFilePath
+    when verbose $ putStrLn "Loaded UDPipe model"
+    pure udpipeModel
   -- let
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
   --   lang = actLanguage udEnv

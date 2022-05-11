@@ -57,6 +57,7 @@ dependencies:
 - QuickCheck
 - generic-arbitrary
 - udpipe-hs
+- async
 
 ghc-options: -Wall
 

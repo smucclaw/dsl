@@ -169,7 +169,6 @@ prop_rendertoken token =
 
 main :: IO ()
 main = do
-  putStrLn "Launch missiles..."
   mpd <- lookupEnv "MP_DEBUG"
   let runConfig_ = RC
         { debug = isJust mpd

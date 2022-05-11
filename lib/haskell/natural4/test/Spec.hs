@@ -38,8 +38,8 @@ import LS.ParamText
 import qualified Data.Text.Lazy as T
 import Test.QuickCheck.Arbitrary.Generic
 import LS.Types (MyToken(Distinct, GoDeeper, UnDeeper, TypeSeparator, RuleMarker))
-import LS.NLP.NLG (myNLGEnv)
-import Control.Concurrent.Async (async)
+import LS.NLP.NLG (NLGEnv, myNLGEnv, bsr2gf, showExpr)
+import Control.Concurrent.Async (async, wait)
 -- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
@@ -199,7 +199,8 @@ main = do
         }
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
-  nlgEnv <- async myNLGEnv
+  asyncNlgEnv <- async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
+  let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
   hspec $ parallel $ do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
@@ -210,12 +211,12 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-    describe "Parser tests" $ parserTests runConfig_
+    describe "Parser tests" $ parserTests nlgEnv runConfig_
     describe "NLG tests" $ nlgTests nlgEnv
 
 
-parserTests :: RunConfig -> Spec
-parserTests runConfig_ = do
+parserTests :: NLGEnv -> RunConfig -> Spec
+parserTests nlgEnv runConfig_ = do
     let runConfig = runConfig_ { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let combine (a,b) = a ++ b
@@ -1489,7 +1490,7 @@ parserTests runConfig_ = do
       let grNormal = groundrules runConfig_
           grExtend = groundrules runConfig_ { extendedGrounds = True }
           asCList  = unsafePerformIO .
-                       checklist runConfig_ { extendedGrounds = True }
+                       checklist nlgEnv runConfig_ { extendedGrounds = True }
 
       filetest "boolstructp-3" "groundrules, non-extended"
         (parseWith grNormal pRules) [["person","has","health insurance"]]

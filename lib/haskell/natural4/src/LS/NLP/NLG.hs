@@ -120,9 +120,8 @@ parseUD env txt = do
 
 -----------------------------------------------------------------------------
 
-nlgQuestion :: Rule -> IO [Text.Text]
-nlgQuestion rl = do
-  env <- myNLGEnv
+nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion env rl = do
   annotatedRule <- parseFields env rl
   -- TODO: here let's do some actual NLG
   gr <- nlgExtPGF
@@ -142,7 +141,7 @@ nlgQuestion rl = do
           hcQuestions = concatMap (mkHCQs gr lang 0 (emptyExpr)) udfrags
       return $ map Text.pack hcQuestions
     _ -> do
-      statement <- nlg rl
+      statement <- nlg env rl
       putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
       return mempty --
 
@@ -177,13 +176,12 @@ nlgQuestion rl = do
         lin indentation x = [linearize gr lang (gf x)]
 
 
-nlg :: Rule -> IO Text.Text
-nlg rl = do
+nlg :: NLGEnv -> Rule -> IO Text.Text
+nlg env rl = do
    print ("nlgQuestion")
-   nlgquest <- nlgQuestion rl
+   nlgquest <- nlgQuestion env rl
    print $ Text.unwords $ nlgquest
    print ("---")
-   env <- myNLGEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF

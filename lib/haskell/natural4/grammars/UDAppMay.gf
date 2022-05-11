@@ -2,8 +2,7 @@
 
 concrete UDAppMay of UDApp =
   UDCatMay, JustWordsWordNetMay - [some_Quant, some_Det, any_Det] **
-  open Prelude, SyntaxMay, IrregMay, ExtendMay,
-    (PE=ParseExtendMay) -- from WordNet
+  open Prelude, SyntaxMay, ExtendMay
     in {
 
 lin

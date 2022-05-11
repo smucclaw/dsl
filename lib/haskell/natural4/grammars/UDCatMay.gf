@@ -1,7 +1,7 @@
 
 
 concrete UDCatMay of UDCat = BareRGMay **
-  open SyntaxMay, Prelude, (P=ParadigmsMay), (E=ExtraMay), ResMay, ExtendMay, (N=NounMay), SymbolicMay in {
+  open SyntaxMay, Prelude, (P=ParadigmsMay), ResMay, ExtendMay, (N=NounMay), SymbolicMay in {
 
   lincat
     UDS = LinUDS ;
@@ -48,13 +48,13 @@ concrete UDCatMay of UDCat = BareRGMay **
       mkAux : Str -> VV -> LinAux = \str,vv -> {
           s = str ; vv = vv ; auxType = RealAux } ;
       mkAux : Str -> AuxType -> LinAux = \str,at -> {
-          s = str ; vv = must_VV ; auxType = at } -- dummy vv, not used
+          s = str ; vv = should_VV ; auxType = at } -- dummy vv, not used
     } ;
 
   lin
     do_aux = mkAux "do" TenseAux ;
     be_aux = mkAux "be" TenseAux ;
-    may_aux = mkAux "may" E.may_VV ;
+    may_aux = mkAux "may" TenseAux ;
     have_aux = mkAux "have" TenseAux ;
     will_aux = mkAux "will" TenseAux ;
     can_aux = mkAux "can" can_VV ;
@@ -104,7 +104,7 @@ concrete UDCatMay of UDCat = BareRGMay **
     rootN_ np = mkRoot np ;
     rootAdv_ adv = mkRoot (mkVP adv) ;
     rootDet_ det = mkRoot (N.DetNP det) ;
-    rootDAP_ dap = mkRoot (UseDAP dap) ;
+    -- rootDAP_ dap = mkRoot (UseDAP dap) ;
     rootQuant_ det = mkRoot (N.DetNP (N.DetQuant det N.NumSg)) ;
     rootAdA_ ada = rootAdv_ (mkAdv ada (P.mkAdv "")) ;
     nmod_ = PrepNP ;
@@ -196,7 +196,7 @@ concrete UDCatMay of UDCat = BareRGMay **
       Finite => (ExtendMay.PredVPS subj uds.pred.fin).s ;
       PresPart => (cc2 (mkUtt subj) (mkUtt uds.pred.presp)).s ;
       PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s ;
-      Infinite => (mkUtt subj).s ++ uds.pred.inf.s ! VVAux ! agrP3 Sg} ;
+      Infinite => (mkUtt subj).s ++ uds.pred.inf.s} ;
 
     mkUDSPred = overload {
       mkUDSPred : LinRoot -> UDSPred = \rt -> defaultUDSPred rt.vp ** {
@@ -212,13 +212,13 @@ concrete UDCatMay of UDCat = BareRGMay **
               fin = MkVPS temp pol vp ;
               pp =
                 let pp' : AP = BareRGMay.PastPartAP vp
-                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+                  in pp' ** {s = neg ++ pp'.s} ;
               presp =
                 let pp' : AP = BareRGMay.PresPartAP vp
-                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+                  in pp' ** {s = neg ++ pp'.s } ;
               inf =
                 let inf' : VPI = MkVPI vp
-                  in inf' ** {s = \\typ,agr => neg ++ inf'.s ! typ ! agr}
+                  in inf' ** {s = neg ++ inf'.s }
             } ; -- TODO: VVInf becomes "not to <verb>", fix later
       mkUDSPred : NP -> UDSPred = \np ->
         let vp : CatMay.VP = mkVP np in {
@@ -249,7 +249,7 @@ concrete UDCatMay of UDCat = BareRGMay **
        mkRoot : AP -> LinRoot = \ap -> emptyRoot ** {vp = mkVP ap} ;
        mkRoot : NP -> LinRoot = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True} ;
        mkRoot : CatMay.VP -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
-       mkRoot : VPSlash -> LinRoot = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2} ;
+       mkRoot : VPSlash -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
        mkRoot : Temp -> Pol -> CatMay.VP -> LinRoot = \t,p,vp ->
         emptyRoot ** {temp = t ; pol = p ; vp = vp}
     } ;
@@ -263,8 +263,6 @@ concrete UDCatMay of UDCat = BareRGMay **
 
     presSimulTemp : Temp = mkTemp presentTense simultaneousAnt ;
 
-    aclRelclRS_ : RS -> Adv = \rs -> lin Adv {s = embedInCommas (rs.s ! agrP3 Sg)} ;
-
     -- Add an SC onto a LinRoot, e.g.
     -- (ready : LinRoot) (to_sleep : SC) -> ready to sleep
     scRoot : LinRoot -> SC -> LinRoot = \rt,sc -> advRoot rt <sc : Adv> ;
@@ -274,7 +272,7 @@ concrete UDCatMay of UDCat = BareRGMay **
     -- (warm : LinRoot) (by_nature : Adv) -> warm by nature
     advRoot : LinRoot -> Adv -> LinRoot = \rt,adv -> rt ** {
       vp = mkVP rt.vp adv ;
-      np = N.AdvNP <rt.np:NP> <adv:Adv> ;
+      np = mkNP <rt.np:NP> <adv:Adv> ;
     } ;
 
     -- Add a direct object onto a LinRoot, e.g.
@@ -291,56 +289,22 @@ concrete UDCatMay of UDCat = BareRGMay **
 
     } ;
 
-    UttAccNP : NP -> Utt = \np -> ss (np.s ! NPAcc) ;
+    UttAccNP : NP -> Utt = \np -> ss (np.s ! Bare ) ;
 
     emptyNP : NP = it_NP ** {s = \\_ => ""} ;
     emptySubj : Subj = that_Subj ** {s = ""} ;
 
-    should_VV : VV = lin VV {
-      s = table {
-        VVF VInf => ["be obliged to"] ;
-        VVF VPres => "should" ;
-        VVF VPPart => ["been obliged to"] ;
-        VVF VPresPart => ["being obliged to"] ;
-        VVF VPast => "should" ;
-        VVPastNeg => "should not" ;
-        VVPresNeg => "shouldn't"
-        } ;
-      p = [] ;
-      typ = VVAux
-    } ;
+    should_VV : VV = variants {} ;
 
-    shall_VV : VV = lin VV {
-      s = table {
-        VVF VInf => ["be obliged to"] ;
-        VVF VPres => "shall" ;
-        VVF VPPart => ["been obliged to"] ;
-        VVF VPresPart => ["being obliged to"] ;
-        VVF VPast => "shall" ;
-        VVPastNeg => "shall not" ;
-        VVPresNeg => "shan't"
-        } ;
-      p = [] ;
-      typ = VVAux
-    } ;
+    shall_VV : VV = variants {} ;
 
 
-    rp2np : RP -> NP = \rp -> rp ** {
-      s = \\c => rp.s ! RC Neutr c ;
-      a = ragr2agr rp.a
+    rp2np : RP -> NP = \rp -> emptyNP ** {
+      s = \\_ => rp.s ;
       } ;
 
-    ragr2agr : ResMay.RAgr -> ResMay.Agr = \ra -> case ra of {
-      ResMay.RAg a => a ;
-      ResMay.RNoAg => agrP3 Sg
-    } ;
-
-    -- copied this from ParseExtendMay, easier to duplicate code than to introduce new dependency?
+       -- copied this from ParseExtendMay, easier to duplicate code than to introduce new dependency?
     ParseExtendComplVV : VV -> Ant -> Pol -> VP -> VP ;
-    ParseExtendComplVV v ant pol vp =
-      insertObj (variants {\\agr => ant.s ++ pol.s ++
-                                    infVP v.typ vp True  ant.a pol.p agr;
-                           \\agr => ant.s ++ pol.s ++
-                                    infVP v.typ vp False ant.a pol.p agr})
-                (predVV v) ;
+    ParseExtendComplVV v ant pol vp = vp ;
+
 }

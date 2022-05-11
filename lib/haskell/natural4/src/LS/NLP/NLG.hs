@@ -749,8 +749,8 @@ qsHaving = undefined
 
 getQSFromTrees :: TreeGroups -> GQS
 getQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl)
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np)
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl)
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np)
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)

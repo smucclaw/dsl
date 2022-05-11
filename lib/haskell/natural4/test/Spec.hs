@@ -18,27 +18,20 @@ import TestNLG
 import Test.QuickCheck
 import LS.NLP.WordNet
 
-import LS.XPile.Prolog
-import LS.XPile.Petri
-import LS.XPile.SVG
 import LS.XPile.VueJSON
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
-import Debug.Trace (traceShowM, traceM)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Debug.Trace (traceM)
 import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
-import Control.Monad (when, replicateM, guard)
-import Data.Either (fromRight)
-import Data.Char
-import System.IO.Unsafe (unsafePerformIO, unsafeInterleaveIO)
-import LS.ParamText
+import Control.Monad (when, guard)
+import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Text.Lazy as T
 import Test.QuickCheck.Arbitrary.Generic
-import LS.Types (MyToken(Distinct, GoDeeper, UnDeeper, TypeSeparator, RuleMarker))
-import LS.NLP.NLG (NLGEnv, myNLGEnv, bsr2gf, showExpr)
+import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
 -- import LS.BasicTypes (MyToken)
 

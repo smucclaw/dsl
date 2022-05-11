@@ -24,9 +24,9 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
     globalrules = [ r
                   | r@DefTypically{..} <- rs ]
 
-checklist :: RunConfig -> [Rule] -> IO Grounds
+checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
 -- checklist rc rs = groundToChecklist `mapM` groundrules rc rs
-checklist rc rs = groundsToChecklist $ groundrules rc rs
+checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
@@ -81,17 +81,16 @@ defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 
 -- this is to be read as an "external requirement interface"
 
-groundsToChecklist :: Grounds -> IO Grounds
-groundsToChecklist mts = sequence [
+groundsToChecklist :: NLGEnv -> Grounds -> IO Grounds
+groundsToChecklist env mts = sequence [
   case mtGroup of
-    [multiterm] -> groundToChecklist multiterm
+    [multiterm] -> groundToChecklist env multiterm
     _ -> return $ pickOneOf mtGroup
   | mtGroup <- groupBy groupSingletons mts
   ]
-groundToChecklist :: MultiTerm -> IO [Text.Text]
-groundToChecklist mt = do
+groundToChecklist :: NLGEnv -> MultiTerm -> IO [Text.Text]
+groundToChecklist env mt = do
   let txt = Text.unwords mt
-  env <- myNLGEnv
   uds <- parseUD env txt
   let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
   -- Debug output: print the AST of the question generated in getQSFromTrees

@@ -9,13 +9,10 @@ import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA
-import System.IO.Unsafe
 import qualified Data.Text.Lazy as Text
-import Control.Concurrent.Async (Async, wait)
 
-nlgTests :: Async NLGEnv -> Spec
-nlgTests aenv = do
-   let env = unsafePerformIO $ wait aenv
+nlgTests :: NLGEnv -> Spec
+nlgTests env = do
    describe "test bsr2gf" $ do
     it "Should return an adverbial" $ do
         treeAdv <- bsr2gf env testAdvBSR

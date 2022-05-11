@@ -57,6 +57,7 @@ library
     , aeson
     , aeson-pretty
     , anyall
+    , async
     , baby-l4-core
     , base >=4.7 && <5
     , boxes
@@ -104,6 +105,7 @@ executable natural4-exe
     , aeson
     , aeson-pretty
     , anyall
+    , async
     , baby-l4-core
     , base >=4.7 && <5
     , boxes
@@ -154,6 +156,7 @@ test-suite natural4-test
     , aeson
     , aeson-pretty
     , anyall
+    , async
     , baby-l4-core
     , base >=4.7 && <5
     , boxes

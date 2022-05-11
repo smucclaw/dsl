@@ -33,6 +33,7 @@ import System.Environment (lookupEnv)
 import Data.Vector.Internal.Check (doChecks)
 import Data.Aeson (SumEncoding(contentsFieldName))
 import Data.Typeable (typeOf)
+import Control.Concurrent.Async (concurrently)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -48,12 +49,15 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
-  udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
-  when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
-  udpipeModel <- either error id <$> loadModel modelFilePath
-  when verbose $ putStrLn "Loaded UDPipe model"
+  (udEnv,udpipeModel) <- concurrently (
+      getEnv (gfPath "UDApp") "Eng" "UDS"
+    ) $ do
+    when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
+    udpipeModel <- either error id <$> loadModel modelFilePath
+    when verbose $ putStrLn "Loaded UDPipe model"
+    pure udpipeModel
   -- let
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
   --   lang = actLanguage udEnv
@@ -116,9 +120,8 @@ parseUD env txt = do
 
 -----------------------------------------------------------------------------
 
-nlgQuestion :: Rule -> IO [Text.Text]
-nlgQuestion rl = do
-  env <- myNLGEnv
+nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion env rl = do
   annotatedRule <- parseFields env rl
   -- TODO: here let's do some actual NLG
   gr <- nlgExtPGF
@@ -138,7 +141,7 @@ nlgQuestion rl = do
           hcQuestions = concatMap (mkHCQs gr lang 0 (emptyExpr)) udfrags
       return $ map Text.pack hcQuestions
     _ -> do
-      statement <- nlg rl
+      statement <- nlg env rl
       putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
       return mempty --
 
@@ -173,13 +176,12 @@ nlgQuestion rl = do
         lin indentation x = [linearize gr lang (gf x)]
 
 
-nlg :: Rule -> IO Text.Text
-nlg rl = do
+nlg :: NLGEnv -> Rule -> IO Text.Text
+nlg env rl = do
    print ("nlgQuestion")
-   nlgquest <- nlgQuestion rl
+   nlgquest <- nlgQuestion env rl
    print $ Text.unwords $ nlgquest
    print ("---")
-   env <- myNLGEnv
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF

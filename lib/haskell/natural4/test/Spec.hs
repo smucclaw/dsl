@@ -191,9 +191,10 @@ main = do
         }
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
+  -- nlgEnv <- putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
   asyncNlgEnv <- async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
   let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
-  hspec $ parallel $ do
+  hspec $ do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
         property prop_gerundcheck

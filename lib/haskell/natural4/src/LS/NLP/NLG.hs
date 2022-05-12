@@ -13,7 +13,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
-import PGF ( readPGF, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
@@ -30,9 +30,6 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when)
 import System.Environment (lookupEnv)
-import Data.Vector.Internal.Check (doChecks)
-import Data.Aeson (SumEncoding(contentsFieldName))
-import Data.Typeable (typeOf)
 import Control.Concurrent.Async (concurrently)
 
 data NLGEnv = NLGEnv
@@ -130,9 +127,9 @@ nlgQuestion env rl = do
     RegulativeA {subjA = subj, whoA = Just who} -> do
       let whoAsTG = udsToTreeGroups (toUDS gr who)
           whoQuestions  = mkQs qsWho gr lang 2 subj whoAsTG
-      print $ udsToTreeGroups (toUDS gr subj)
-      print "flattened who"
-      print $ map showExpr $ flattenGFTrees whoAsTG
+      -- print $ udsToTreeGroups (toUDS gr subj)
+      -- print "flattened who"
+      -- print $ map showExpr $ flattenGFTrees whoAsTG
       return $ map Text.pack whoQuestions
 --          condQuestions =
     HornlikeA {clausesA = cls} -> do
@@ -178,14 +175,16 @@ nlgQuestion env rl = do
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do
-   print ("nlgQuestion")
-   nlgquest <- nlgQuestion env rl
-   print $ Text.unwords $ nlgquest
-   print ("---")
+  --  print ("nlgQuestion")
+  --  nlgquest <- nlgQuestion env rl
+  --  print $ Text.unwords $ nlgquest
+  --  print ("---")
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF
    let lang = head $ languages gr
+   let Just eng = readLanguage "UDExtEng"
+   let Just may = readLanguage "UDExtMay"
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
@@ -207,7 +206,9 @@ nlg env rl = do
         let linTrees_exprs = Text.unlines [
               Text.pack (linText ++ "\n" ++ linTree)
               | tree <- clausesA
-              , let linText = linearize gr lang tree
+              , let linText = unlines [
+                                linearize gr eng tree
+                              , linearize gr may tree ]
               , let linTree = showExpr tree ]
 
         return linTrees_exprs
@@ -630,11 +631,7 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
-    putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
-    -- print ("qcl" :: [Char])
-    -- putStrLn $ showExpr $ gf $ getQSFromTrees existingTrees
-    -- gr <- nlgExtPGF
-    -- print (linearize gr (head $ languages gr) $ gf $ getQSFromTrees existingTrees)
+    --putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
@@ -642,7 +639,7 @@ bsr2gf env bsr = case bsr of
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype andConj contentsUDS
-    putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
+    --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ case flattenGFTrees existingTrees of
                []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
                x:_ -> x
@@ -739,7 +736,7 @@ qsWho subj whichTG = case whichTG of
   _ -> useQCl $ GQuestCl dummyCl
   where sub = definiteNP $ peelNP subj
 
-qsCond sub whichTG = case whichTG of
+qsCond _sub whichTG = case whichTG of
   TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
   TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
@@ -765,16 +762,17 @@ getQSFromTrees whichTG = case whichTG of
 definiteNP :: forall a . Tree a -> Tree a
 definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
 definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
-definiteNP np@(GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
-definiteNP np@(GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP t@(GComplVP _ _) = t -- don't change objects
+definiteNP (GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP (GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP x = composOp definiteNP x
 
 
 indefiniteNP :: forall a . Tree a -> Tree a
 indefiniteNP np@(GDetCN (LexDet "aSg_Det") _) = np
 indefiniteNP np@(GDetCN (LexDet "aPl_Det") _) = np
-indefiniteNP np@(GDetCN _ cn) = GDetCN (LexDet "aSg_Det") cn
-indefiniteNP np@(GMassNP cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP (GDetCN _ cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP (GMassNP cn) = GDetCN (LexDet "aSg_Det") cn
 indefiniteNP x = composOp indefiniteNP x
 
 -- checkIAdv :: GAdv -> GIAdv
@@ -1049,22 +1047,20 @@ advFromUDS x = case x of
   Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
   -- very much overfitted to catch "unless we go where it's warm"
   Groot_advcl (GrootAdv_ whereItsWarm) (GadvclMarkUDS_ (Gmark_ subj) uds) -> do
-    weGoVP <- verbFromUDS uds
-    --let weGo = useCl $ fromMaybe (GImpersCl weGoVP) (clFromUDS uds)
     weGo <- useCl <$> clFromUDS uds
     let weGoWarm = GPostAdvS weGo whereItsWarm
     pure $ GSubjS subj weGoWarm
   _ -> case [ adv | GrootAdv_ adv <- getRoot x] of
          adv:_ -> Just adv
          []    -> Nothing
-         -- []    -> trace errorMsg Nothing
+{-         []    -> trace errorMsg Nothing
   where
     uds = showExpr (gf x)
     errorMsg = unlines $
       [ "advFromUDS: caught " ++ uds ++ ", couldn't turn it into an Adv."
       , "getRoot " ++ uds ++ " returns:"]
       ++ (showExpr . gf <$> getRoot x)
-
+-}
 
 detFromUDS :: GUDS -> Maybe GDet
 detFromUDS x = case x of
@@ -1095,6 +1091,7 @@ verbFromUDS' verbose x = case getNsubj x of
 --  (_:_) -> Nothing  -- if the UDS has a subject, then it should be handled by clFromUDS instead
   [] -> case x of    -- no nsubj, move on to pattern match UDS constructors
     Groot_obl (GrootV_ _ _ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
+    Groot_obj (GrootV_ _ _ vp) (Gobj_ np) -> Just $ GComplVP vp np
     Groot_obl_obl (GrootV_ _t _p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
     Groot_obl_xcomp (GrootV_ _t _p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
     Groot_xcomp (GrootV_ _t _p vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
@@ -1160,7 +1157,7 @@ clFromUDS x = case getNsubj x of
     Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
     Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
     Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_obj root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_obj root (Gnsubj_ np) obj -> GPredVP np <$> verbFromUDSVerbose (Groot_obj root obj)
     Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
       vp <- verbFromUDSVerbose (Groot_only root)

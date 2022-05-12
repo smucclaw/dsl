@@ -5,6 +5,7 @@ concrete UDExtMay of UDExt = UDAppMay,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
+    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
   ],
   IdiomMay [
     GenericCl, ImpersCl
@@ -19,9 +20,6 @@ concrete UDExtMay of UDExt = UDAppMay,
 -- This set of functions used to live in BareRG, but they weren't actually used for parsing
 -- They look more like extensions to the RGL, so add them here.
   lin
-    -- : NP -> VP -> S ;
-    PredVPS np vp = mkS (mkCl np vp) ;
-
     -- : Cl -> ClSlash ; -- make a full Cl into ClSlash
     -- SlashCl cl = cl ** {c2=[]} ;
     SlashCl cl = cl ** {c2 = R.mkPrep ""} ;

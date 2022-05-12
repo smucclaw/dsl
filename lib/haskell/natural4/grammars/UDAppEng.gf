@@ -155,7 +155,7 @@ lin
 
 		-- : root -> obj -> UDS ;
     --eat potato ;
-    root_obj rt obj = onlyPred (mkVP (root2vpslash rt) obj) ;
+    root_obj rt obj = onlyPred (dObjRoot rt obj) ;
 
     -- : root -> obj -> ccomp -> UDS ;
     --includes a [number] assigned to any account the individual [has]:ccomp with an organisation that is a bank or finance company. ;
@@ -270,8 +270,6 @@ lin
 -- Needed to add special funs that are not the top-level/application layer
 
   oper
-    root2vpslash : LinRoot -> VPSlash = \root -> slashV root.vp ;
-
     -- unstable hack, TODO fixme
     addRcl : LinRoot -> Adv -> LinRoot = \rt,rs ->
       let dummyNP : NP = mkNP emptyNP rs ;

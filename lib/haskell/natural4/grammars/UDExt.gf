@@ -5,6 +5,7 @@ abstract UDExt = UDApp ,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
+    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
   ],
   Idiom [
     GenericCl, ImpersCl
@@ -16,8 +17,6 @@ abstract UDExt = UDApp ,
 -- They look more like extensions to the RGL, so add them here.
 
   fun
-    PredVPS : NP -> VP -> S ;
-
     SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
 
     AdvAdv : Adv -> Adv -> Adv ;

@@ -123,6 +123,8 @@ type GListUDS = Tree GListUDS_
 data GListUDS_
 type GListVP = Tree GListVP_
 data GListVP_
+type GListVPS = Tree GListVPS_
+data GListVPS_
 type GN = Tree GN_
 data GN_
 type GN2 = Tree GN2_
@@ -494,6 +496,7 @@ data Tree :: * -> * where
   GListUDFragment :: [GUDFragment] -> Tree GListUDFragment_
   GListUDS :: [GUDS] -> Tree GListUDS_
   GListVP :: [GVP] -> Tree GListVP_
+  GListVPS :: [GVPS] -> Tree GListVPS_
   GCompoundCN :: GCN -> GN -> Tree GN_
   GCompoundN :: GN -> GN -> Tree GN_
   GStrN :: GString -> Tree GN_
@@ -585,7 +588,7 @@ data Tree :: * -> * where
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GExtAdvS :: GAdv -> GS -> Tree GS_
   GPostAdvS :: GS -> GAdv -> Tree GS_
-  GPredVPS :: GNP -> GVP -> Tree GS_
+  GPredVPS :: GNP -> GVPS -> Tree GS_
   GRelS :: GS -> GRS -> Tree GS_
   GSSubjS :: GS -> GSubj -> GS -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
@@ -729,6 +732,7 @@ data Tree :: * -> * where
   Groot_obj :: Groot -> Gobj -> Tree GUDS_
   Groot_obj_ccomp :: Groot -> Gobj -> Gccomp -> Tree GUDS_
   Groot_obj_nmod :: Groot -> Gobj -> Gnmod -> Tree GUDS_
+  Groot_obj_obl :: Groot -> Gobj -> Gobl -> Tree GUDS_
   Groot_obj_obl_advcl :: Groot -> Gobj -> Gobl -> Gadvcl -> Tree GUDS_
   Groot_obl :: Groot -> Gobl -> Tree GUDS_
   Groot_obl_appos :: Groot -> Gobl -> Gappos -> Tree GUDS_
@@ -753,6 +757,7 @@ data Tree :: * -> * where
   GProgrVP :: GVP -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   GUseV :: GV -> Tree GVP_
+  GConjVPS :: GConj -> GListVPS -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   GaclUDS_ :: GUDS -> Tree Gacl_
   GaclUDSgerund_ :: GUDS -> Tree Gacl_
@@ -1003,6 +1008,7 @@ instance Eq (Tree a) where
     (GListUDFragment x1,GListUDFragment y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListUDS x1,GListUDS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListVP x1,GListVP y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListVPS x1,GListVPS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GCompoundCN x1 x2,GCompoundCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GCompoundN x1 x2,GCompoundN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GStrN x1,GStrN y1) -> and [ x1 == y1 ]
@@ -1238,6 +1244,7 @@ instance Eq (Tree a) where
     (Groot_obj x1 x2,Groot_obj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_obj_ccomp x1 x2 x3,Groot_obj_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obj_nmod x1 x2 x3,Groot_obj_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (Groot_obj_obl x1 x2 x3,Groot_obj_obl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obj_obl_advcl x1 x2 x3 x4,Groot_obj_obl_advcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_obl x1 x2,Groot_obl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_obl_appos x1 x2 x3,Groot_obl_appos y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1262,6 +1269,7 @@ instance Eq (Tree a) where
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
+    (GConjVPS x1 x2,GConjVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GaclUDS_ x1,GaclUDS_ y1) -> and [ x1 == y1 ]
     (GaclUDSgerund_ x1,GaclUDSgerund_ y1) -> and [ x1 == y1 ]
@@ -1998,6 +2006,18 @@ instance Gf GListVP where
 
       _ -> error ("no ListVP " ++ show t)
 
+instance Gf GListVPS where
+  gf (GListVPS [x1,x2]) = mkApp (mkCId "BaseVPS") [gf x1, gf x2]
+  gf (GListVPS (x:xs)) = mkApp (mkCId "ConsVPS") [gf x, gf (GListVPS xs)]
+  fg t =
+    GListVPS (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseVPS" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsVPS" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListVPS " ++ show t)
+
 instance Gf GN where
   gf (GCompoundCN x1 x2) = mkApp (mkCId "CompoundCN") [gf x1, gf x2]
   gf (GCompoundN x1 x2) = mkApp (mkCId "CompoundN") [gf x1, gf x2]
@@ -2633,6 +2653,7 @@ instance Gf GUDS where
   gf (Groot_obj x1 x2) = mkApp (mkCId "root_obj") [gf x1, gf x2]
   gf (Groot_obj_ccomp x1 x2 x3) = mkApp (mkCId "root_obj_ccomp") [gf x1, gf x2, gf x3]
   gf (Groot_obj_nmod x1 x2 x3) = mkApp (mkCId "root_obj_nmod") [gf x1, gf x2, gf x3]
+  gf (Groot_obj_obl x1 x2 x3) = mkApp (mkCId "root_obj_obl") [gf x1, gf x2, gf x3]
   gf (Groot_obj_obl_advcl x1 x2 x3 x4) = mkApp (mkCId "root_obj_obl_advcl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_obl x1 x2) = mkApp (mkCId "root_obl") [gf x1, gf x2]
   gf (Groot_obl_appos x1 x2 x3) = mkApp (mkCId "root_obl_appos") [gf x1, gf x2, gf x3]
@@ -2739,6 +2760,7 @@ instance Gf GUDS where
       Just (i,[x1,x2]) | i == mkCId "root_obj" -> Groot_obj (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_ccomp" -> Groot_obj_ccomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_nmod" -> Groot_obj_nmod (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_obj_obl" -> Groot_obj_obl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_obj_obl_advcl" -> Groot_obj_obl_advcl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_obl" -> Groot_obl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_appos" -> Groot_obl_appos (fg x1) (fg x2) (fg x3)
@@ -2795,10 +2817,12 @@ instance Gf GVP where
       _ -> error ("no VP " ++ show t)
 
 instance Gf GVPS where
+  gf (GConjVPS x1 x2) = mkApp (mkCId "ConjVPS") [gf x1, gf x2]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjVPS" -> GConjVPS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
 
 
@@ -3889,6 +3913,7 @@ instance Compos Tree where
     Groot_obj x1 x2 -> r Groot_obj `a` f x1 `a` f x2
     Groot_obj_ccomp x1 x2 x3 -> r Groot_obj_ccomp `a` f x1 `a` f x2 `a` f x3
     Groot_obj_nmod x1 x2 x3 -> r Groot_obj_nmod `a` f x1 `a` f x2 `a` f x3
+    Groot_obj_obl x1 x2 x3 -> r Groot_obj_obl `a` f x1 `a` f x2 `a` f x3
     Groot_obj_obl_advcl x1 x2 x3 x4 -> r Groot_obj_obl_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_obl x1 x2 -> r Groot_obl `a` f x1 `a` f x2
     Groot_obl_appos x1 x2 x3 -> r Groot_obl_appos `a` f x1 `a` f x2 `a` f x3
@@ -3912,6 +3937,7 @@ instance Compos Tree where
     GProgrVP x1 -> r GProgrVP `a` f x1
     GUseComp x1 -> r GUseComp `a` f x1
     GUseV x1 -> r GUseV `a` f x1
+    GConjVPS x1 x2 -> r GConjVPS `a` f x1 `a` f x2
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GaclUDS_ x1 -> r GaclUDS_ `a` f x1
     GaclUDSgerund_ x1 -> r GaclUDSgerund_ `a` f x1
@@ -4009,6 +4035,7 @@ instance Compos Tree where
     GListUDFragment x1 -> r GListUDFragment `a` foldr (a . a (r (:)) . f) (r []) x1
     GListUDS x1 -> r GListUDS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListVP x1 -> r GListVP `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListVPS x1 -> r GListVPS `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
 
 class Compos t where

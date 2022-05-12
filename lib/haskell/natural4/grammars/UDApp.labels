@@ -395,7 +395,8 @@
 #fun root_obl_appos head obl appos
 #fun root_obl_aux head obl aux
 #fun root_obl_case head obl case
-#fun root_obl_obj head obl obj
+#fun root_obj_obl head obj obl
+-- #fun root_obl_obj head obl obj -- commented out because ud2gf chooses this in favour of the more common root_obj_obl
 #fun root_obl_obl head obl obl
 #fun root_obl_obl_obl_cc head obl obl obl
 #fun root_obl_xcomp head obl xcomp

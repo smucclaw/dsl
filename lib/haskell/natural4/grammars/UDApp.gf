@@ -199,6 +199,7 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_obj_obl_advcl : root -> obj -> obl -> advcl -> UDS ;
 	-- [do]:root [an assessment]:obj [upon discovery]:obl [to see if it's NDB]:advcl
 
+		root_obj_obl : root -> obj -> obl -> UDS ;
 
 		root_nsubj_obj : root -> nsubj -> obj -> UDS ;
 	--Data breach includes the loss of any storage medium or device with personal data. ;

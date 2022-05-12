@@ -58,6 +58,7 @@ dependencies:
 - generic-arbitrary
 - udpipe-hs
 - async
+- purescript-bridge
 
 ghc-options: -Wall
 

@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
+-- {-# LANGUAGE PolyKinds #-}
 
 module Main where
 import qualified LS as SFL4
@@ -20,10 +22,31 @@ import qualified Data.Text.Lazy as Text
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
+import Language.PureScript.Bridge
+import Data.Proxy (Proxy (Proxy))
+import AnyAll (Item')
+import System.Exit (exitSuccess)
 
+
+-- data Foo = Foo { a  } deriving (Eq, Generic)
+-- data Bar = A | B | C deriving (Eq, Ord, Generic)
+-- data Baz = ... deriving (Generic)
+
+-- | All types will have a `Generic` instance produced in Purescript.
+myTypes :: [SumType 'Haskell]
+myTypes =
+  [
+    let p = (Proxy :: Proxy (Item' () ())) in equal p (mkSumType p)  -- Also produce a `Eq` instance.
+  -- , let p = (Proxy :: Proxy Bar) in order p (mkSumType p)  -- Produce both `Eq` and `Ord`.
+  -- , mkSumType (Proxy :: Proxy (Item' () ()))  -- Just produce a `Generic` instance.
+  ]
 main :: IO ()
 main = do
   opts <- unwrapRecord "mp"
+  when (SFL4.only opts == "purescript-bridge") $ do
+    writePSTypes "purescript-source" (buildBridge defaultBridge) myTypes
+    exitSuccess
+
   rc <- SFL4.getConfig opts
   nlgEnv <- unsafeInterleaveIO myNLGEnv -- Only load the NLG environment if we need it.
 

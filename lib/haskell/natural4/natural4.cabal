@@ -82,6 +82,7 @@ library
     , parsers
     , pretty-simple
     , prolog
+    , purescript-bridge
     , replace-megaparsec
     , split
     , stm
@@ -131,6 +132,7 @@ executable natural4-exe
     , parsers
     , pretty-simple
     , prolog
+    , purescript-bridge
     , replace-megaparsec
     , split
     , stm
@@ -182,6 +184,7 @@ test-suite natural4-test
     , parsers
     , pretty-simple
     , prolog
+    , purescript-bridge
     , replace-megaparsec
     , split
     , stm

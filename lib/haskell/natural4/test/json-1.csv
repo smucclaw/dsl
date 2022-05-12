@@ -1,0 +1,7 @@
+DECIDE,d
+IS,x
+IF,a
+AND,b
+OR,c
+
+//,if a and (b or c) then d

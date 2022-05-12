@@ -124,14 +124,15 @@ nlgQuestion env rl = do
   gr <- nlgExtPGF
   let lang = head $ languages gr
   case annotatedRule of
-    RegulativeA {subjA = subj, whoA = Just who} -> do
+    RegulativeA {subjA = subj, whoA = Just who, condA = Just cond} -> do
       let whoAsTG = udsToTreeGroups (toUDS gr who)
-          whoQuestions  = mkQs qsWho gr lang 2 subj whoAsTG
+          whoQuestions = mkQs qsWho gr lang 2 subj whoAsTG
       -- print $ udsToTreeGroups (toUDS gr subj)
       -- print "flattened who"
       -- print $ map showExpr $ flattenGFTrees whoAsTG
-      return $ map Text.pack whoQuestions
---          condQuestions =
+          condAsTG = udsToTreeGroups  (toUDS gr cond)
+          condQuestions = mkQs qsCond gr lang 2 subj condAsTG
+      return $ map Text.pack $ whoQuestions ++ condQuestions
     HornlikeA {clausesA = cls} -> do
       let udfrags = map fg cls
           emptyExpr = gf (GString "")
@@ -1092,6 +1093,7 @@ verbFromUDS' verbose x = case getNsubj x of
   [] -> case x of    -- no nsubj, move on to pattern match UDS constructors
     Groot_obl (GrootV_ _ _ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
     Groot_obj (GrootV_ _ _ vp) (Gobj_ np) -> Just $ GComplVP vp np
+    Groot_obl_obj (GrootV_ _ _ vp) (Gobl_ adv) (Gobj_ obj) -> Just $ GAdvVP (GComplVP vp obj) adv
     Groot_obl_obl (GrootV_ _t _p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
     Groot_obl_xcomp (GrootV_ _t _p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
     Groot_xcomp (GrootV_ _t _p vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv

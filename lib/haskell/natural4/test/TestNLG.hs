@@ -9,13 +9,12 @@ import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA
-import System.IO.Unsafe
 import qualified Data.Text.Lazy as Text
 
-nlgTests :: Spec
-nlgTests = do
-  let env = unsafePerformIO myNLGEnv
-  describe "test bsr2gf" $ do
+
+nlgTests :: NLGEnv -> Spec
+nlgTests env = do
+   describe "test bsr2gf" $ do
     it "Should return an adverbial" $ do
         treeAdv <- bsr2gf env testAdvBSR
         showExpr treeAdv `shouldBe` "ConjAdv or_Conj (BaseAdv today_Adv tomorrow_Adv)"

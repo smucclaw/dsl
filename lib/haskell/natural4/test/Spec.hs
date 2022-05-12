@@ -18,26 +18,21 @@ import TestNLG
 import Test.QuickCheck
 import LS.NLP.WordNet
 
-import LS.XPile.Prolog
-import LS.XPile.Petri
-import LS.XPile.SVG
 import LS.XPile.VueJSON
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
-import Debug.Trace (traceShowM, traceM)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Debug.Trace (traceM)
 import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
-import Control.Monad (when, replicateM, guard)
-import Data.Either (fromRight)
-import Data.Char
+import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
-import LS.ParamText
 import qualified Data.Text.Lazy as T
 import Test.QuickCheck.Arbitrary.Generic
-import LS.Types (MyToken(Distinct, GoDeeper, UnDeeper, TypeSeparator, RuleMarker))
+import LS.NLP.NLG (NLGEnv, myNLGEnv)
+import Control.Concurrent.Async (async, wait)
 -- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
@@ -192,19 +187,13 @@ main = do
         , toVue = False
         , extendedGrounds = False
         , toChecklist = False
+        , printstream = False
         }
-  let runConfig = runConfig_ { sourceURL = "test/Spec" }
-      runConfigDebug = runConfig { debug = True }
-  let combine (a,b) = a ++ b
-  let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
-  let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
-  let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
-  let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-  let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-  let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-  let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
+  -- nlgEnv <- putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
+  asyncNlgEnv <- async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
+  let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
   hspec $ do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
@@ -215,7 +204,22 @@ main = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
+    describe "Parser tests" $ parserTests nlgEnv runConfig_
+    describe "NLG tests" $ nlgTests nlgEnv
 
+
+parserTests :: NLGEnv -> RunConfig -> Spec
+parserTests nlgEnv runConfig_ = do
+    let runConfig = runConfig_ { sourceURL = "test/Spec" }
+        runConfigDebug = runConfig { debug = True }
+    let combine (a,b) = a ++ b
+    let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
+    let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
+    let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
+    let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
+    let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
+    let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
+    let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
     describe "megaparsing" $ do
 
 
@@ -574,8 +578,6 @@ main = do
         --   parseR pRules testfile stream
         --     `shouldParse` [ defaultCon
         --                   ]
-    nlgTests
-    --nlgTests2
 
   -- upgrade single OR group to bypass the top level AND group
 
@@ -1481,7 +1483,7 @@ main = do
       let grNormal = groundrules runConfig_
           grExtend = groundrules runConfig_ { extendedGrounds = True }
           asCList  = unsafePerformIO .
-                       checklist runConfig_ { extendedGrounds = True }
+                       checklist nlgEnv runConfig_ { extendedGrounds = True }
 
       filetest "boolstructp-3" "groundrules, non-extended"
         (parseWith grNormal pRules) [["person","has","health insurance"]]

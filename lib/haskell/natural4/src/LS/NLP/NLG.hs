@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GADTs, NamedFieldPuns, FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 module LS.NLP.NLG where
 
@@ -31,6 +32,8 @@ import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Data.Vector.Internal.Check (doChecks)
 import Data.Aeson (SumEncoding(contentsFieldName))
+import Data.Typeable (typeOf)
+import Control.Concurrent.Async (concurrently)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -46,12 +49,15 @@ modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
-  udEnv <- getEnv (gfPath "UDApp") "Eng" "UDS"
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
-  when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
-  udpipeModel <- either error id <$> loadModel modelFilePath
-  when verbose $ putStrLn "Loaded UDPipe model"
+  (udEnv,udpipeModel) <- concurrently (
+      getEnv (gfPath "UDApp") "Eng" "UDS"
+    ) $ do
+    when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
+    udpipeModel <- either error id <$> loadModel modelFilePath
+    when verbose $ putStrLn "Loaded UDPipe model"
+    pure udpipeModel
   -- let
   --   parsingGrammar = pgfGrammar udEnv -- use the parsing grammar, not extension grammar
   --   lang = actLanguage udEnv
@@ -114,45 +120,48 @@ parseUD env txt = do
 
 -----------------------------------------------------------------------------
 
-nlgQuestion :: Rule -> IO [Text.Text]
-nlgQuestion rl = do
-  env <- myNLGEnv
+nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion env rl = do
   annotatedRule <- parseFields env rl
   -- TODO: here let's do some actual NLG
   gr <- nlgExtPGF
   let lang = head $ languages gr
   case annotatedRule of
-    RegulativeA {whoA = Just who} -> do
+    RegulativeA {subjA = subj, whoA = Just who} -> do
       let whoAsTG = udsToTreeGroups (toUDS gr who)
-          whoQuestions  = mkQs qsWho gr lang 2 whoAsTG
+          whoQuestions  = mkQs qsWho gr lang 2 subj whoAsTG
+      print $ udsToTreeGroups (toUDS gr subj)
+      print "flattened who"
+      print $ map showExpr $ flattenGFTrees whoAsTG
       return $ map Text.pack whoQuestions
 --          condQuestions =
     HornlikeA {clausesA = cls} -> do
       let udfrags = map fg cls
-          hcQuestions = concatMap (mkHCQs gr lang 0) udfrags
+          emptyExpr = gf (GString "")
+          hcQuestions = concatMap (mkHCQs gr lang 0 (emptyExpr)) udfrags
       return $ map Text.pack hcQuestions
     _ -> do
-      statement <- nlg rl
-      -- putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
+      statement <- nlg env rl
+      putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
       return mempty --
 
   where
-    mkHCQs :: PGF -> CId -> Int -> GUDFragment -> [String]
-    mkHCQs gr lang indentation udfrag = case udfrag of
-      GHornClause2 _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
-      GMeans _ uds -> mkQs qsCond gr lang indentation (udsToTreeGroups uds)
+    mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
+    mkHCQs gr lang indentation emptE udfrag = case udfrag of
+      GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+      GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
-    mkQs :: (TreeGroups -> GQS) -> PGF -> CId -> Int -> TreeGroups -> [String]
-    mkQs qfun gr lang indentation tg = case tg of
-      TG {gfCl = Just cl} -> lin indentation (qfun $ clTG cl)
+    mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
+    mkQs qfun gr lang indentation s tg  = case tg of
+      TG {gfCl = Just cl} -> lin indentation (qfun s $ clTG cl)
       TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4)) (npTG <$> nps)
-        _ -> lin indentation (qfun $ npTG np)
+        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
+        _ -> lin indentation (qfun s $ npTG np)
       -- TG {gfCN = Just cn} ->
       TG {gfVP = Just vp} -> case vp of
-        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4)) (vpTG <$> vps)
-        _ -> lin indentation (qfun $ vpTG vp)
+        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+        _ -> lin indentation (qfun s $ vpTG vp)
       -- TG {gfAP = Just ap} ->
       -- TG {gfDet = Just det} ->
       -- TG {gfAdv = Just adv} ->
@@ -167,9 +176,12 @@ nlgQuestion rl = do
         lin indentation x = [linearize gr lang (gf x)]
 
 
-nlg :: Rule -> IO Text.Text
-nlg rl = do
-   env <- myNLGEnv
+nlg :: NLGEnv -> Rule -> IO Text.Text
+nlg env rl = do
+   print ("nlgQuestion")
+   nlgquest <- nlgQuestion env rl
+   print $ Text.unwords $ nlgquest
+   print ("---")
    annotatedRule <- parseFields env rl
    -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF
@@ -712,23 +724,24 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
-qsWho :: TreeGroups -> GQS
-qsCond :: TreeGroups -> GQS
-qsHaving :: TreeGroups -> GQS
+qsWho :: Expr -> TreeGroups -> GQS
+qsCond :: Expr -> TreeGroups -> GQS
+qsHaving :: Expr -> TreeGroups -> GQS
 
-qsWho whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
-  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (makeSubjectIndefinite np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
-  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- do you eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompAP ap))
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp (GCompNP (GDetNP det)))
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GYou (GUseComp $ GCompAdv adv)
+qsWho subj whichTG = case whichTG of
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
+  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
+  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
+  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
+  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
   _ -> useQCl $ GQuestCl dummyCl
+  where sub = definiteNP $ peelNP subj
 
-qsCond whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl) -- is the cat cute?
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np) -- is there a cat?
+qsCond sub whichTG = case whichTG of
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
   TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
@@ -740,8 +753,8 @@ qsHaving = undefined
 
 getQSFromTrees :: TreeGroups -> GQS
 getQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (makeSubjectDefinite cl)
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (makeSubjectIndefinite np)
+  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl)
+  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np)
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
   TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)
@@ -749,15 +762,21 @@ getQSFromTrees whichTG = case whichTG of
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
   _ -> useQCl $ GQuestCl dummyCl
 
-makeSubjectDefinite :: GCl -> GCl
-makeSubjectDefinite cl = case cl of
-  GPredVP (GMassNP cn) vp -> GPredVP (GDetCN (LexDet "theSg_Det") cn) vp
-  _ -> cl
+definiteNP :: forall a . Tree a -> Tree a
+definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
+definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
+definiteNP np@(GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP np@(GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
+definiteNP x = composOp definiteNP x
 
-makeSubjectIndefinite :: GNP -> GNP
-makeSubjectIndefinite np = case np of
-  GAdvNP (GMassNP cn) adv -> GAdvNP (GDetCN (LexDet "aSg_Det") cn) adv
-  _ -> np
+
+indefiniteNP :: forall a . Tree a -> Tree a
+indefiniteNP np@(GDetCN (LexDet "aSg_Det") _) = np
+indefiniteNP np@(GDetCN (LexDet "aPl_Det") _) = np
+indefiniteNP np@(GDetCN _ cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP np@(GMassNP cn) = GDetCN (LexDet "aSg_Det") cn
+indefiniteNP x = composOp indefiniteNP x
+
 -- checkIAdv :: GAdv -> GIAdv
 -- checkIAdv adv
 --   | adv `elem` [Galways_Adv, Gnever_Adv, Gsometimes_Adv] = Gwhen_IAdv
@@ -1176,6 +1195,7 @@ getNsubj :: Tree a -> [Gnsubj]
 getNsubj ns@(Gnsubj_ _) = [ns]
 getNsubj (GadvclMarkUDS_ _ _) = []
 getNsubj x = composOpMonoid getNsubj x
+
 
 -----------------------------------------------------------------------------
 -- AnnotatedRule, almost isomorphic to LS.Types.Rule

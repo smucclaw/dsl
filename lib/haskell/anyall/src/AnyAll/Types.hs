@@ -43,8 +43,8 @@ type Item a = Item' (Label TL.Text) a
 
 data Item' lbl a =
     Leaf                       a
-  | All (Maybe lbl) [Item' lbl a]
-  | Any (Maybe lbl) [Item' lbl a]
+  | All {itemLbl :: (Maybe lbl), itemsAll :: [Item' lbl a]}
+  | Any {itemLbl :: (Maybe lbl), itemsAny :: [Item' lbl a]}
   | Not             (Item' lbl a)
   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 
@@ -101,6 +101,7 @@ instance FromJSON (StdinSchema TL.Text) where
     return $ StdinSchema (fromJust marking :: Marking TL.Text) (fromJust aotree)
 
 instance   ToJSON a =>   ToJSON (Item a)
+  -- where toJSON = genericToJSON defaultOptions { sumEncoding = ObjectWithSingleField }
 instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
   parseJSON = withObject "andOrTree" $ \o -> do
     leaf      <- o .:? "leaf"

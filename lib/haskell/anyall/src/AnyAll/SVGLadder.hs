@@ -93,7 +93,7 @@ drawLeaf :: AAVConfig -> QTree TL.Text
 drawLeaf c qt@(Node q childqs)
   topMargin rightMargin bottomMargin leftMargin
   boxWidth boxHeight
-  negContext=
+  negContext =
   let (boxStroke, boxFill, textFill) = case confidence of
         True  -> ("none", "none", "black")
         False -> ("none", "lightgrey", "white")
@@ -102,7 +102,7 @@ drawLeaf c qt@(Node q childqs)
         (Neg)        -> "neg..."
         (And)        -> "and..."
         (Or)         -> "or..."
-      notLine x = if negContext then FullLine else x
+      notLine = if negContext then const FullLine else id
       (leftline, rightline, topline, confidence) = case mark q of
         Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)
         Default (Right (Just False)) -> (FullLine,  notLine NoLine,       negContext, True)
@@ -117,13 +117,13 @@ drawLeaf c qt@(Node q childqs)
   (,) (fromIntegral $ leftMargin + boxWidth + rightMargin, fromIntegral $ topMargin + boxHeight + bottomMargin) $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
-  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line in on the left
-  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_     <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_    <<- "black" ] -- LR: line out on the right
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                                , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                                , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)                   , Y2_ <<-* topMargin                       , Stroke_ <<- "black" ] else mempty)
+  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_ <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] -- LR: line in on the left
+  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_ <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] -- LR: line out on the right
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == FullLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
+  <> (if topline               then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* topMargin                       , Stroke_ <<- "black" ] else mempty)
 
 
 

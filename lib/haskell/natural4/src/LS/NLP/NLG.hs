@@ -152,13 +152,13 @@ nlgQuestion env rl = do
 
     mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
     mkQs qfun gr lang indentation s tg  = case tg of
-      TG {gfCl = Just cl} -> lin indentation (qfun s $ clTG cl)
+      TG {gfS = Just cl} -> lin indentation (qfun s $ sTG cl)
       TG {gfNP = Just np} -> case np of
         GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
         _ -> lin indentation (qfun s $ npTG np)
       -- TG {gfCN = Just cn} ->
       TG {gfVP = Just vp} -> case vp of
-        GConjVP _conj (GListVP vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+        GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
         _ -> lin indentation (qfun s $ vpTG vp)
       -- TG {gfAP = Just ap} ->
       -- TG {gfDet = Just det} ->
@@ -384,17 +384,28 @@ bsp2gf env bsp = case bsp of
 -- | Takes the main action, a list of modifiers, and combines them into one Expr
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
 combineActionMods (_, expr) [] = expr
-combineActionMods ("VP",act) (("Adv",mod):rest) = combineActionMods advVP rest
+combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
-    advVP :: (String,Expr)
-    advVP = ("VP", gf $ GAdvVP (fg act) (fg mod))
-combineActionMods ("VP",act) (("RCl",mod):rest) = combineActionMods ("VP", resultVP) rest
+    resultVP :: GVPS
+    resultVP = advVPS (fg act) (fg mod)
+
+    advVPS :: GVPS -> GAdv -> GVPS
+    advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
+combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     -- Assumption: RCl doesn't modify the whole VP, but rather the object of the VP
-    resultVP = gf $ case fg act of
-      GComplVP vp np -> GComplVP vp (GRelNP np rs)
-      vp             -> GComplVP vp (GRelNP dummyNP rs)
-    rs = useRCl (fg mod)
+    resultVP :: GVPS
+    resultVP = rsVPS (fg act) (fg mod)
+
+    rsVPS :: GVPS -> GRS -> GVPS
+    rsVPS vps rs = case vps of
+      GMkVPS t p vp -> case vp of
+        GComplV   v  np -> GMkVPS t p $ GComplV v   (GRelNP np rs)
+        GComplVP vp' np -> GMkVPS t p $ complVP vp' (GRelNP np rs)
+        GUseComp (GCompNP np) -> GMkVPS t p $ GUseComp $ GCompNP (GRelNP np rs)
+        _               -> GMkVPS t p $ complVP vp (GRelNP dummyNP rs)
+      _ -> error $ "combineActionMods: expected VPS, got something else" -- ++ showExpr act
+
 combineActionMods (tAct,_) ((tMods,_):_) = error $ "combineActionMods: not supported yet " ++ tAct ++ "+" ++ tMods
 
 -- | Takes a KVsPair, parses the fields, puts them together into GF Expr
@@ -410,7 +421,7 @@ kvspair2gf env (action,_) = case action of
       TG {gfCN=Just cn}   -> ("CN", gf cn)
       TG {gfPrep=Just pr} -> ("Prep", gf pr)
       TG {gfRP=Just rp}   -> ("RP", gf rp)
-      TG {gfCl=Just cl}   -> ("Cl", gf cl)
+      TG {gfS=Just cl}   -> ("Cl", gf cl)
       TG {gfVP=Just v}    -> ("VP", gf v)
       _ -> ("NP", dummyExpr $ "kvspair2gf: type of predicate not among " ++ acceptedRGLtypes)
 
@@ -429,9 +440,9 @@ combineExpr pred compl = result
     complTyped = udsToTreeGroups compl
     result = case predTyped of
       TG {gfRP=Just for_which} ->
-        ("RCl", case complTyped of
-          TG {gfCl= Just you_work} -> gf $ GRelSlash for_which (GSlashCl you_work)
-          TG {gfVP= Just works}    -> gf $ GRelVP for_which works
+        ("RS", case complTyped of
+          TG {gfS= Just (GUseCl t p you_work)} -> gf $ GUseRCl t p $ GRelSlash for_which (GSlashCl you_work)
+          TG {gfVP= Just (GMkVPS t p works)}   -> gf $ GUseRCl t p $ GRelVP for_which works
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfPrep=Just under} ->
@@ -443,21 +454,21 @@ combineExpr pred compl = result
           TG {gfCN=Just car}     -> ("Adv", gf $ GPrepNP under (GMassNP car))
           TG {gfPrep=Just with}  -> ("Prep", gf $ GConjPrep andConj (GListPrep [under, with]))
           TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
-          TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
-          -- TG {gfCl=Just you_see} -> ???
+          TG {gfVP=Just (GMkVPS _t _p haunt)}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
+          -- TG {gfS=Just you_see} -> ???
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
 
-      TG {gfVP=Just notify} ->
-        ("VP", case complTyped of
-          TG {gfAP=Just haunted} -> gf $ GComplVP notify (GAdjAsNP haunted)
-          TG {gfAdv=Just quickly}-> gf $ GAdvVP   notify quickly
-          TG {gfNP=Just johnson} -> gf $ GComplVP notify johnson
-          TG {gfDet=Just my}     -> gf $ GComplVP notify (GDetNP my)
-          TG {gfCN=Just car}     -> gf $ GComplVP notify (GMassNP car)
-          TG {gfPrep=Just with}  -> gf $ GPrepVP notify with
+      TG {gfVP=Just (GMkVPS t p notify)} ->
+        ("VPS", case complTyped of
+          TG {gfAP=Just haunted} -> gf $ GMkVPS t p $ complVP notify (GAdjAsNP haunted)
+          TG {gfAdv=Just quickly}-> gf $ GMkVPS t p $ GAdvVP   notify quickly
+          TG {gfNP=Just johnson} -> gf $ GMkVPS t p $ complVP notify johnson
+          TG {gfDet=Just my}     -> gf $ GMkVPS t p $ complVP notify (GDetNP my)
+          TG {gfCN=Just car}     -> gf $ GMkVPS t p $ complVP notify (GMassNP car)
+          TG {gfPrep=Just with}  -> gf $ GMkVPS t p $ GPrepVP notify with
           -- TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
           -- TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
-          -- TG {gfCl=Just you_see} -> ???
+          -- TG {gfS=Just you_see} -> ???
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfCN=Just house} ->
@@ -495,7 +506,7 @@ combineExpr pred compl = result
         TG {gfAP=Just (GPositA haunted)} -> ("AP", gf $ GAdvAP happy (GPositAdvAdj haunted))
         _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       -- ("Cl", you_work) -> case complTyped of
-      --   ("RP", for_which) -> ("RCl", gf $ GRelSlash (fg for_which) (GSlashCl (fg you_work)))
+      --   ("RP", for_which) -> ("RS", gf $ GRelSlash (fg for_which) (GSlashCl (fg you_work)))
       --   _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       tg -> error ("combineExpr: can't find type " ++ show tg ++ " for the predicate " ++ showExpr predExpr)
 
@@ -590,11 +601,11 @@ treePrePost conj contents pre post =
                   GConjCN _ cns -> cns
                   _ -> GListCN [cn, cn]
             in constructTreeAPCNsOfNP listcn conj personal_data pre
-          [TG {gfDet=Just det}, TG {gfCl=Just cl}, TG {gfCN=Just cn}] ->
+          [TG {gfDet=Just det}, TG {gfS=Just (GUseCl t p cl)}, TG {gfCN=Just cn}] ->
             let obj = GDetCN det cn
             in case cl of
-                  GPredVP np vp ->  gf $ GPredVP np (GComplVP vp obj)
-                  GGenericCl vp ->  gf $ GComplVP vp obj
+                  GPredVP np vp -> gf $ GUseCl t p $ GPredVP np (complVP vp obj)
+                  GGenericCl vp -> gf $ GUseCl t p $ GGenericCl (complVP vp obj)
                   _ -> error $ "bsr2gf: can't handle the Cl " ++ showExpr (gf cl)
           _ -> dummyExpr $ "bsr2gf: can't handle the combination " ++ showExpr (gf pre) ++ "+" ++ showExpr (gf post)
 
@@ -670,7 +681,7 @@ bsr2gf env bsr = case bsr of
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --
 -- A single UDS tree may become several of these; e.g. a root_nsubj sentence pattern could become
--- a Cl, "a breach occurs", but also a NP, "an occurring breach".
+-- a S, "a breach occurs", but also a NP, "an occurring breach".
 -- The different NLG functions make their decisions on how to combine phrases based on which fields are filled.
 data TreeGroups = TG {
     gfAP   :: Maybe GAP  -- 1
@@ -680,8 +691,8 @@ data TreeGroups = TG {
   , gfCN   :: Maybe GCN  -- 5
   , gfPrep :: Maybe GPrep -- 6
   , gfRP   :: Maybe GRP  -- 7
-  , gfVP   :: Maybe GVP  -- 8
-  , gfCl   :: Maybe GCl  -- 9
+  , gfVP   :: Maybe GVPS  -- 8
+  , gfS    :: Maybe GS  -- 9
    } deriving (Eq)
 
 emptyTG :: TreeGroups
@@ -690,15 +701,15 @@ emptyTG = TG Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Not
 npTG :: GNP -> TreeGroups
 npTG np = emptyTG {gfNP = Just np}
 
-vpTG :: GVP -> TreeGroups
+vpTG :: GVPS -> TreeGroups
 vpTG vp = emptyTG {gfVP = Just vp}
 
-clTG :: GCl -> TreeGroups
-clTG cl = emptyTG {gfCl = Just cl}
+sTG :: GS -> TreeGroups
+sTG s = emptyTG {gfS = Just s}
 
 -- | for documentation: which RGL types are accepted currently
 acceptedRGLtypes :: String
-acceptedRGLtypes = "AP Adv NP Det CN Prep RP VP Cl"
+acceptedRGLtypes = "AP Adv NP Det CN Prep RP VPS S"
 
 instance Show TreeGroups where
   show tg = case flattenGFTrees tg of
@@ -707,8 +718,8 @@ instance Show TreeGroups where
 
 -- | Workaround to flatten TreeGroups into a list of Exprs.
 flattenGFTrees :: TreeGroups -> [Expr]
-flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfCl} =
-  gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfPrep <: gfRP <: gfVP <: gfCl <: []
+flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfS} =
+  gfAP <: gfAdv <: gfNP <: gfCN <: gfDet <: gfPrep <: gfRP <: gfVP <: gfS <: []
   where
     infixr 5 <:
     (<:) :: (Gf a) => Maybe a -> [Expr] -> [Expr]
@@ -727,21 +738,22 @@ qsCond :: Expr -> TreeGroups -> GQS
 qsHaving :: Expr -> TreeGroups -> GQS
 
 qsWho subj whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
   TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
-  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
+  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
   TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
   TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
   _ -> useQCl $ GQuestCl dummyCl
   where sub = definiteNP $ peelNP subj
 
+
 qsCond _sub whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
   TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
-  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
+  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
   TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
   TG {gfDet = Just det} -> useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
@@ -751,10 +763,10 @@ qsHaving = undefined
 
 getQSFromTrees :: TreeGroups -> GQS
 getQSFromTrees whichTG = case whichTG of
-  TG {gfCl = Just cl} -> useQCl $ GQuestCl (definiteNP cl)
+  TG {gfS = Just (GUseCl t p cl)} -> GUseQCl t p $ GQuestCl (definiteNP cl)
   TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np)
   TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn
-  TG {gfVP = Just vp} -> useQCl $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
+  TG {gfVP = Just (GMkVPS t p vp)} -> GUseQCl t p $ GQuestCl $ GPredVP GYou vp -- how to get what or who?
   TG {gfAP = Just ap} -> useQCl $ GQuestIComp (GICompAP ap) (GAdjAsNP ap)
   TG {gfDet = Just det} -> GExistNPQS presSimul GPPos $ GDetNP det
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl (GImpersCl (GUseComp $ GCompAdv adv))
@@ -763,7 +775,7 @@ getQSFromTrees whichTG = case whichTG of
 definiteNP :: forall a . Tree a -> Tree a
 definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
 definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
-definiteNP t@(GComplVP _ _) = t -- don't change objects
+definiteNP t@(GComplV _ _) = t -- don't change objects
 definiteNP (GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP (GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP x = composOp definiteNP x
@@ -793,7 +805,7 @@ makeNPHaveArticle det ogNP = case ogNP of
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
 groupByRGLtype :: GConj -> [GUDS] -> TreeGroups
-groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePrep treeRP treeVP treeCl
+groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePrep treeRP treeVP treeS
   -- TODO: what if they are different types?
   where
     treeAdv :: Maybe GAdv
@@ -841,11 +853,11 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
                 [det] -> Just det
                 dets  -> Just $ GConjDet conj (GListDAP $ map GDetDAP dets)
 
-    treeVP :: Maybe GVP
-    treeVP = case mapMaybe verbFromUDS contentsUDS :: [GVP] of
+    treeVP :: Maybe GVPS
+    treeVP = case mapMaybe verbFromUDS contentsUDS :: [GVPS] of
                 []    -> Nothing
                 [vp]  -> Just vp
-                vps   -> Just $ GConjVP conj (GListVP vps)
+                vps   -> Just $ GConjVPS conj (GListVPS vps)
 
     treePrep :: Maybe GPrep
     treePrep = case mapMaybe prepFromUDS contentsUDS :: [GPrep] of
@@ -859,10 +871,11 @@ groupByRGLtype conj contentsUDS = TG treeAP treeAdv treeNP treeDet treeCN treePr
                 []    -> Nothing
                 r:_  -> Just r
 
-    treeCl :: Maybe GCl
-    treeCl = case mapMaybe clFromUDS contentsUDS :: [GCl] of
-                []    -> Nothing
-                c:_  -> Just c -- TODO: start using VPS and the S, and use list for S
+    treeS :: Maybe GS
+    treeS = case mapMaybe sFromUDS contentsUDS :: [GS] of
+                []  -> Nothing
+                [s] -> Just s
+                ss  -> Just $ GConjS conj (GListS ss)
 
 parseAndDisambiguate :: NLGEnv -> [BoolStructR] -> IO [GUDS]
 parseAndDisambiguate env text = do
@@ -904,6 +917,7 @@ toUDS pgf e = case findType pgf e of
   "AP" -> Groot_only (GrootA_          (fg e))
   "A"  -> Groot_only (GrootA_ (GPositA (fg e)))
   "VP" -> Groot_only (GrootV_ presSimul GPPos (fg e))
+  "VPS" -> vps2uds (fg e)
   "V"  -> Groot_only (GrootV_ presSimul GPPos (GUseV (fg e)))
   "Adv"-> Groot_only (GrootAdv_ (fg e))
   "Det"-> Groot_only (GrootDet_ (fg e))
@@ -922,6 +936,10 @@ toUDS pgf e = case findType pgf e of
             GGenericCl vp -> toUDS pgf (gf vp)
             _ -> fg  $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
   _ -> fg $ dummyExpr $ "unable to convert to UDS: " ++ showExpr e
+  where
+    vps2uds :: GVPS -> GUDS
+    vps2uds (GMkVPS t p vp) = Groot_only (GrootV_ t p vp)
+    vps2uds vps = Groot_only (GrootV_ presSimul GPPos (vps2vp vps))
 
 -----------------------------------------------------------------------------
 -- Manipulating GF trees
@@ -949,7 +967,7 @@ useRCl :: GRCl -> GRS
 useRCl = GUseRCl presSimul GPPos
 
 useCl :: GCl -> GS
-useCl cl = trace ("useCl: got " ++ showExpr (gf cl)) GUseCl presSimul GPPos cl
+useCl = GUseCl presSimul GPPos
 
 --     UseQCl   : Temp -> Pol -> QCl -> QS ;
 useQCl :: GQCl -> GQS
@@ -1005,10 +1023,12 @@ npFromUDS x = case x of
 -- | Constructs a RGL RS from a UDS.
 udRelcl2rglRS :: GUDS -> GRS
 udRelcl2rglRS uds = case uds of
-  Groot_nsubj (GrootV_ _ _ vp) _ -> vp2rs vp -- TODO: check if nsubj contains something important
+  Groot_nsubj (GrootV_ t p vp) _ -> vp2rs (GMkVPS t p vp) -- TODO: check if nsubj contains something important
   _ -> maybe err vp2rs (verbFromUDS uds)
   where
-    vp2rs vp = useRCl (GRelVP GIdRP vp)
+    vp2rs :: GVPS -> GRS
+    vp2rs (GMkVPS t p vp) = GUseRCl t p (GRelVP GIdRP vp)
+    vp2rs vps = useRCl (GRelVP GIdRP (vps2vp vps))
     err = error ("udRelcl2rglRCl: doesn't handle yet " ++ showExpr (gf uds))
 
 pnFromUDS :: GUDS -> Maybe GPN
@@ -1034,10 +1054,8 @@ apFromUDS x = case x of
   Groot_advmod (GrootA_ ap) (Gadvmod_ adv) -> Just $ GAdvAP ap adv
   Groot_advmod (GrootV_ _ _ v) (Gadvmod_ adv) -> Just $ GAdvAP (GPastPartAP v) adv
   Groot_ccomp (GrootA_ ap) (GccompMarkUDS_ (Gmark_ subj) uds) -> do
-    sent <- useCl <$> clFromUDS uds
+    sent <- sFromUDS uds
     pure $ GAdvAP ap (GSubjS subj sent)
-
---  Groot_ccomp (GrootA_ a1) (Gccomp_ (Groot_mark_nsubj_cop (GrootA_ a2) (Gmark_ m) (Gnsubj_ n) Gbe_cop)) -> Just $ GAdvAP a1 (GSubjS m (GPredVPS n (GUseComp (GCompAP a2))))
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootA_ ap:_ -> Just ap
               _            -> Nothing
@@ -1048,7 +1066,7 @@ advFromUDS x = case x of
   Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
   -- very much overfitted to catch "unless we go where it's warm"
   Groot_advcl (GrootAdv_ whereItsWarm) (GadvclMarkUDS_ (Gmark_ subj) uds) -> do
-    weGo <- useCl <$> clFromUDS uds
+    weGo <- sFromUDS uds
     let weGoWarm = GPostAdvS weGo whereItsWarm
     pure $ GSubjS subj weGoWarm
   _ -> case [ adv | GrootAdv_ adv <- getRoot x] of
@@ -1080,24 +1098,25 @@ rpFromUDS x = case getRoot x of
   GrootRP_ rp:_ -> Just rp
   _             -> Nothing
 
-verbFromUDS :: GUDS -> Maybe GVP
-verbFromUDS = verbFromUDS' False
+verbFromUDS :: GUDS -> Maybe GVPS
+verbFromUDS = verbFromUDS' True --False
 
-verbFromUDS' :: Bool -> GUDS -> Maybe GVP
+verbFromUDS' :: Bool -> GUDS -> Maybe GVPS
 verbFromUDS' verbose x = case getNsubj x of
   (_:_) ->
     if verbose
       then trace ("\n\n **** vpFromUDS: has a nsubj in " ++ showExpr (gf x)) Nothing
       else Nothing
---  (_:_) -> Nothing  -- if the UDS has a subject, then it should be handled by clFromUDS instead
+--  (_:_) -> Nothing  -- if the UDS has a subject, then it should be handled by sFromUDS instead
   [] -> case x of    -- no nsubj, move on to pattern match UDS constructors
-    Groot_obl (GrootV_ _ _ vp) (Gobl_ adv) -> Just $ GAdvVP vp adv
-    Groot_obj (GrootV_ _ _ vp) (Gobj_ np) -> Just $ GComplVP vp np
-    Groot_obl_obj (GrootV_ _ _ vp) (Gobl_ adv) (Gobj_ obj) -> Just $ GAdvVP (GComplVP vp obj) adv
-    Groot_obl_obl (GrootV_ _t _p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GAdvVP (GAdvVP vp obl1) obl2
-    Groot_obl_xcomp (GrootV_ _t _p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GAdvVP (GAdvVP vp obl) xc
-    Groot_xcomp (GrootV_ _t _p vp) (GxcompAdv_ adv) -> Just $ GAdvVP vp adv
-    Groot_advmod (GrootV_ _t _p vp) (Gadvmod_ adv) -> Just $ GAdvVP vp adv
+    Groot_obl (GrootV_ t p vp) (Gobl_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
+    Groot_obj (GrootV_ t p vp) (Gobj_ np) -> Just $ GMkVPS t p $ complVP vp np
+    Groot_obl_obj (GrootV_ t p vp) (Gobl_ adv) (Gobj_ obj) -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) adv
+    Groot_obj_obl (GrootV_ t p vp) (Gobj_ obj) (Gobl_ adv) -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) adv
+    Groot_obl_obl (GrootV_ t p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl1) obl2
+    Groot_obl_xcomp (GrootV_ t p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl) xc
+    Groot_xcomp (GrootV_ t p vp) (GxcompAdv_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
+    Groot_advmod (GrootV_ t p vp) (Gadvmod_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
 
     {- -- version 1: explicit pattern match, brittle, specialised for 1 case
     Groot_acl_nmod (GrootN_ np) _                      (Gnmod_ nmod) ->
@@ -1109,17 +1128,18 @@ verbFromUDS' verbose x = case getNsubj x of
 
     -- version 2: general solution, recursion
     Groot_acl_nmod root         (GaclUDSgerund_ uds) (Gnmod_ prep np) -> do
-      vp <- verbFromUDS (Groot_only root) -- recursively calling verbFromUDS, now with a UDS that is guaranteed to go to the _ case below, and getRoot will be called, and a VP will be constructed
-      vpToBecomeGerund <- verbFromUDS uds -- :: GVP
+      GMkVPS t p vp <- verbFromUDS (Groot_only root) -- recursively calling verbFromUDS, now with a UDS that is guaranteed to go to the _ case below, and getRoot will be called, and a VP will be constructed
+      GMkVPS _ _ vpToBecomeGerund <- verbFromUDS uds -- :: GVPS
       let gerundAdv = GGerundAdv vpToBecomeGerund -- :: GAdv
       let nmodAdv = GPrepNP prep np
-      return $ GAdvVP (GAdvVP vp gerundAdv) nmodAdv
+      return $ GMkVPS t p $ GAdvVP (GAdvVP vp gerundAdv) nmodAdv
 
     _ -> case getRoot x of -- TODO: fill in other cases
-                GrootV_ _t _p vp:_ -> Just vp
-                GrootN_  np:_ -> Just $ GUseComp (GCompNP np)
-                GrootA_  ap:_ -> Just $ GUseComp (GCompAP ap)
-                GrootAdv_ a:_ -> Just $ GUseComp (GCompAdv a)
+                GrootV_ t p vp:_ -> Just $ GMkVPS t p vp
+                GrootVaux_ t p _aux vp:_ -> Just $ GMkVPS t p vp ; -- TODO: apply aux to VP!
+                GrootN_  np:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompNP np)
+                GrootA_  ap:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAP ap)
+                GrootAdv_ a:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAdv a)
                 -- TODO: add cases for
                 -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
 --                _            -> Nothing
@@ -1128,52 +1148,52 @@ verbFromUDS' verbose x = case getNsubj x of
                       else Nothing
 
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely
-clFromUDS :: GUDS -> Maybe GCl
-clFromUDS x = case getNsubj x of
-  --[] -> trace ("\n\n **** clFromUDS: no nsubj in " ++ showExpr (gf x)) Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
+sFromUDS :: GUDS -> Maybe GS
+sFromUDS x = case getNsubj x of
+  --[] -> trace ("\n\n **** sFromUDS: no nsubj in " ++ showExpr (gf x)) Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   [] -> Nothing
   _ -> case x of
     Groot_expl_cop_csubj root _expl _cop csubj -> do
-      vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
-      pure $ GImpersCl pred
-    Groot_nsubj root (Gnsubj_ np) -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
+      pure $ GUseCl t p $ GImpersCl pred
+    Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
     Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
-      vp <- verbFromUDSVerbose (Groot_only root)
-      pure $ GPredVP np (GAdvVP vp adv)
+      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
     Groot_nsubj_obj_advcl root (Gnsubj_ subj) (Gobj_ obj) advcl -> do
-      vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
       let adv = Gadvcl2Adv advcl
-          pred = GAdvVP (GComplVP vp obj) adv
-      pure $ GPredVP subj pred
-    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_obj root (Gnsubj_ np) obj -> GPredVP np <$> verbFromUDSVerbose (Groot_obj root obj)
-    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
+          pred = GAdvVP (complVP vp obj) adv
+      pure $ GUseCl t p $ GPredVP subj pred
+    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_cop root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_obj root (Gnsubj_ np) obj -> predVPS np <$> verbFromUDSVerbose (Groot_obj root obj)
+    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
-      vp <- verbFromUDSVerbose (Groot_only root)
-      pure $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> GPredVP np <$> verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
+    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
 --    Groot_nsubj_cop_advmod root (Gnsubj_ np) _cop Gnot_advmod -> -- TODO: can we address the negation?
---      GPredVP np <$> verbFromUDSVerbose (Groot_only root)
+--      predVPS np <$> verbFromUDSVerbose (Groot_only root)
 
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
-                Just vp -> Just $ GGenericCl vp
-                _       -> Nothing
-                -- _    -> trace ("\n\n **** clFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
+                Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp
+                --_       -> Nothing
+                _    -> trace ("\n\n **** sFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
     where
       verbFromUDSVerbose = verbFromUDS' True
 
@@ -1181,6 +1201,7 @@ getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]
 getRoot rt@(GrootN_ _) = [rt]
 getRoot rt@(GrootV_ _ _ _) = [rt]
+getRoot rt@(GrootVaux_ _ _ _ _) = [rt]
 getRoot rt@(GrootDet_ _) = [rt]
 getRoot rt@(GrootDAP_ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]
@@ -1195,6 +1216,22 @@ getNsubj ns@(Gnsubj_ _) = [ns]
 getNsubj (GadvclMarkUDS_ _ _) = []
 getNsubj x = composOpMonoid getNsubj x
 
+predVPS :: GNP -> GVPS -> GS
+predVPS np (GMkVPS t p vp) = GUseCl t p (GPredVP np vp)
+predVPS np vps = useCl $ GPredVP np $ vps2vp vps
+
+vps2vp :: GVPS -> GVP
+vps2vp (GMkVPS _t _p vp) = vp
+vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
+
+complVP :: GVP -> GNP -> GVP
+complVP (GUseV v) np = GComplV v np
+complVP (GAdvVP vp adv) np = GAdvVP (complVP vp np) adv
+complVP (GAdVVP adv vp) np = GAdVVP adv (complVP vp np)
+complVP (GProgrVP vp) np = GProgrVP (complVP vp np)
+complVP (GPassV v) np = GPassVAgent v np
+complVP vp@(GUseComp _) np = GComplVP vp np -- last resort, probably something's misparsed somewhere
+complVP vp _ = error $ "complVP: doesn't handle argument " ++ showExpr (gf vp)
 
 -----------------------------------------------------------------------------
 -- AnnotatedRule, almost isomorphic to LS.Types.Rule

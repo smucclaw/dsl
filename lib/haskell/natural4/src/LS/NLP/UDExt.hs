@@ -131,6 +131,8 @@ type GN3 = Tree GN3_
 data GN3_
 type GNP = Tree GNP_
 data GNP_
+type GNeg = Tree GNeg_
+data GNeg_
 type GNum = Tree GNum_
 data GNum_
 type GNumeral = Tree GNumeral_
@@ -193,6 +195,8 @@ type GV = Tree GV_
 data GV_
 type GVP = Tree GVP_
 data GVP_
+type GVPS = Tree GVPS_
+data GVPS_
 type Gacl = Tree Gacl_
 data Gacl_
 type GaclRelcl = Tree GaclRelcl_
@@ -211,10 +215,6 @@ type Gappos = Tree Gappos_
 data Gappos_
 type Gaux = Tree Gaux_
 data Gaux_
-type GauxPass = Tree GauxPass_
-data GauxPass_
-type Gcc = Tree Gcc_
-data Gcc_
 type GccPreconj = Tree GccPreconj_
 data GccPreconj_
 type Gccomp = Tree Gccomp_
@@ -283,8 +283,6 @@ type GnmodTmod = Tree GnmodTmod_
 data GnmodTmod_
 type Gnsubj = Tree Gnsubj_
 data Gnsubj_
-type GnsubjPass = Tree GnsubjPass_
-data GnsubjPass_
 type Gnummod = Tree Gnummod_
 data Gnummod_
 type GnummodGov = Tree GnummodGov_
@@ -349,6 +347,8 @@ type GX = Tree GX_
 data GX_
 type Gcase_ = Tree Gcase__
 data Gcase__
+type Gcc = Tree Gcc_
+data Gcc_
 type GString = Tree GString_
 data GString_
 type GInt = Tree GInt_
@@ -519,6 +519,7 @@ data Tree :: * -> * where
   GParty :: GNP -> Tree GNP_
   GPredetNP :: GPredet -> GNP -> Tree GNP_
   GRelNP :: GNP -> GRS -> Tree GNP_
+  GRelclNP :: GNP -> GaclRelcl -> Tree GNP_
   GSentNP :: GNP -> GSC -> Tree GNP_
   GSomeone :: Tree GNP_
   GTokAll :: GNP -> Tree GNP_
@@ -529,6 +530,7 @@ data Tree :: * -> * where
   Geuropean_NP :: Tree GNP_
   Gone_NP :: Tree GNP_
   Gwhoever_NP :: Tree GNP_
+  Gnot_Neg :: Tree GNeg_
   GNumCard :: GCard -> Tree GNum_
   GNumPl :: Tree GNum_
   GNumSg :: Tree GNum_
@@ -644,8 +646,6 @@ data Tree :: * -> * where
   Groot_aclRelcl_nmod :: Groot -> GaclRelcl -> Gnmod -> Tree GUDS_
   Groot_acl_nmod :: Groot -> Gacl -> Gnmod -> Tree GUDS_
   Groot_advcl :: Groot -> Gadvcl -> Tree GUDS_
-  Groot_advcl_nsubjPass_auxPass :: Groot -> Gadvcl -> GnsubjPass -> GauxPass -> Tree GUDS_
-  Groot_advcl_nsubjPass_aux_auxPass_xcomp :: Groot -> Gadvcl -> GnsubjPass -> Gaux -> GauxPass -> Gxcomp -> Tree GUDS_
   Groot_advcl_nsubj_aux_advcl :: Groot -> Gadvcl -> Gnsubj -> Gaux -> Gadvcl -> Tree GUDS_
   Groot_advcl_nsubj_aux_advmod_obj :: Groot -> Gadvcl -> Gnsubj -> Gaux -> Gadvmod -> Gobj -> Tree GUDS_
   Groot_advcl_nsubj_aux_ccomp :: Groot -> Gadvcl -> Gnsubj -> Gaux -> Gccomp -> Tree GUDS_
@@ -665,7 +665,6 @@ data Tree :: * -> * where
   Groot_amod_nmod :: Groot -> Gamod -> Gnmod -> Tree GUDS_
   Groot_appos :: Groot -> Gappos -> Tree GUDS_
   Groot_appos_advmod :: Groot -> Gappos -> Gadvmod -> Tree GUDS_
-  Groot_auxPass :: Groot -> GauxPass -> Tree GUDS_
   Groot_case :: Groot -> Gcase_ -> Tree GUDS_
   Groot_case_amod :: Groot -> Gcase_ -> Gamod -> Tree GUDS_
   Groot_case_amod_amod :: Groot -> Gcase_ -> Gamod -> Gamod -> Tree GUDS_
@@ -673,19 +672,7 @@ data Tree :: * -> * where
   Groot_case_nummod :: Groot -> Gcase_ -> Gnummod -> Tree GUDS_
   Groot_case_nummod_acl :: Groot -> Gcase_ -> Gnummod -> Gacl -> Tree GUDS_
   Groot_case_nummod_nummod :: Groot -> Gcase_ -> Gnummod -> Gnummod -> Tree GUDS_
-  Groot_cc :: Groot -> Gcc -> Tree GUDS_
-  Groot_cc_cop_xcomp :: Groot -> Gcc -> Gcop -> Gxcomp -> Tree GUDS_
-  Groot_cc_nmod :: Groot -> Gcc -> Gnmod -> Tree GUDS_
-  Groot_cc_obj :: Groot -> Gcc -> Gobj -> Tree GUDS_
   Groot_ccomp :: Groot -> Gccomp -> Tree GUDS_
-  Groot_compound :: Groot -> Gcompound -> Tree GUDS_
-  Groot_compoundPrt_compoundPrt :: Groot -> GcompoundPrt -> GcompoundPrt -> Tree GUDS_
-  Groot_compound_acl :: Groot -> Gcompound -> Gacl -> Tree GUDS_
-  Groot_compound_amod :: Groot -> Gcompound -> Gamod -> Tree GUDS_
-  Groot_compound_appos :: Groot -> Gcompound -> Gappos -> Tree GUDS_
-  Groot_compound_compound :: Groot -> Gcompound -> Gcompound -> Tree GUDS_
-  Groot_compound_compound_appos :: Groot -> Gcompound -> Gcompound -> Gappos -> Tree GUDS_
-  Groot_compound_flat :: Groot -> Gcompound -> Gflat -> Tree GUDS_
   Groot_cop :: Groot -> Gcop -> Tree GUDS_
   Groot_cop_advmod :: Groot -> Gcop -> Gadvmod -> Tree GUDS_
   Groot_csubj :: Groot -> Gcsubj -> Tree GUDS_
@@ -695,41 +682,11 @@ data Tree :: * -> * where
   Groot_fixed :: Groot -> Gfixed -> Tree GUDS_
   Groot_goeswith :: Groot -> Ggoeswith -> Tree GUDS_
   Groot_goeswith_goeswith :: Groot -> Ggoeswith -> Ggoeswith -> Tree GUDS_
-  Groot_mark :: Groot -> Gmark -> Tree GUDS_
-  Groot_mark_cc_mark_obj :: Groot -> Gmark -> Gcc -> Gmark -> Gobj -> Tree GUDS_
-  Groot_mark_expl_cop_xcomp :: Groot -> Gmark -> Gexpl -> Gcop -> Gxcomp -> Tree GUDS_
-  Groot_mark_expl_nsubj :: Groot -> Gmark -> Gexpl -> Gnsubj -> Tree GUDS_
-  Groot_mark_nsubj :: Groot -> Gmark -> Gnsubj -> Tree GUDS_
-  Groot_mark_nsubjPass_auxPass :: Groot -> Gmark -> GnsubjPass -> GauxPass -> Tree GUDS_
-  Groot_mark_nsubjPass_auxPass_obl :: Groot -> Gmark -> GnsubjPass -> GauxPass -> Gobl -> Tree GUDS_
-  Groot_mark_nsubj_aux :: Groot -> Gmark -> Gnsubj -> Gaux -> Tree GUDS_
-  Groot_mark_nsubj_aux_advmod_obj :: Groot -> Gmark -> Gnsubj -> Gaux -> Gadvmod -> Gobj -> Tree GUDS_
-  Groot_mark_nsubj_aux_aux :: Groot -> Gmark -> Gnsubj -> Gaux -> Gaux -> Tree GUDS_
-  Groot_mark_nsubj_cop :: Groot -> Gmark -> Gnsubj -> Gcop -> Tree GUDS_
-  Groot_mark_nsubj_cop_obl :: Groot -> Gmark -> Gnsubj -> Gcop -> Gobl -> Tree GUDS_
-  Groot_mark_nsubj_nsubj_xcomp :: Groot -> Gmark -> Gnsubj -> Gnsubj -> Gxcomp -> Tree GUDS_
-  Groot_mark_nsubj_obj :: Groot -> Gmark -> Gnsubj -> Gobj -> Tree GUDS_
-  Groot_mark_nsubj_obl :: Groot -> Gmark -> Gnsubj -> Gobl -> Tree GUDS_
-  Groot_mark_nsubj_xcomp :: Groot -> Gmark -> Gnsubj -> Gxcomp -> Tree GUDS_
-  Groot_mark_nummod :: Groot -> Gmark -> Gnummod -> Tree GUDS_
   Groot_nmod :: Groot -> Gnmod -> Tree GUDS_
   Groot_nmod_acl :: Groot -> Gnmod -> Gacl -> Tree GUDS_
   Groot_nmod_aclRelcl :: Groot -> Gnmod -> GaclRelcl -> Tree GUDS_
   Groot_nmod_nmod :: Groot -> Gnmod -> Gnmod -> Tree GUDS_
   Groot_nsubj :: Groot -> Gnsubj -> Tree GUDS_
-  Groot_nsubjPass_auxPass :: Groot -> GnsubjPass -> GauxPass -> Tree GUDS_
-  Groot_nsubjPass_auxPass_advmod :: Groot -> GnsubjPass -> GauxPass -> Gadvmod -> Tree GUDS_
-  Groot_nsubjPass_auxPass_advmod_advcl :: Groot -> GnsubjPass -> GauxPass -> Gadvmod -> Gadvcl -> Tree GUDS_
-  Groot_nsubjPass_auxPass_advmod_xcomp :: Groot -> GnsubjPass -> GauxPass -> Gadvmod -> Gxcomp -> Tree GUDS_
-  Groot_nsubjPass_auxPass_xcomp :: Groot -> GnsubjPass -> GauxPass -> Gxcomp -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_advcl_advcl :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gadvcl -> Gadvcl -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_advmod :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gadvmod -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_obl :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gobl -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_obl_advmod :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gobl -> Gadvmod -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_obl_obl_advcl :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gobl -> Gobl -> Gadvcl -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_obl_obl_advmod :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gobl -> Gobl -> Gadvmod -> Tree GUDS_
-  Groot_nsubjPass_aux_auxPass_xcomp :: Groot -> GnsubjPass -> Gaux -> GauxPass -> Gxcomp -> Tree GUDS_
   Groot_nsubj_advmod :: Groot -> Gnsubj -> Gadvmod -> Tree GUDS_
   Groot_nsubj_advmod_obj :: Groot -> Gnsubj -> Gadvmod -> Gobj -> Tree GUDS_
   Groot_nsubj_aux :: Groot -> Gnsubj -> Gaux -> Tree GUDS_
@@ -744,6 +701,7 @@ data Tree :: * -> * where
   Groot_nsubj_aux_obj_obl_advmod_advcl :: Groot -> Gnsubj -> Gaux -> Gobj -> Gobl -> Gadvmod -> Gadvcl -> Tree GUDS_
   Groot_nsubj_aux_obj_obl_obl :: Groot -> Gnsubj -> Gaux -> Gobj -> Gobl -> Gobl -> Tree GUDS_
   Groot_nsubj_aux_obl :: Groot -> Gnsubj -> Gaux -> Gobl -> Tree GUDS_
+  Groot_nsubj_aux_xcomp :: Groot -> Gnsubj -> Gaux -> Gxcomp -> Tree GUDS_
   Groot_nsubj_ccomp :: Groot -> Gnsubj -> Gccomp -> Tree GUDS_
   Groot_nsubj_cop :: Groot -> Gnsubj -> Gcop -> Tree GUDS_
   Groot_nsubj_cop_aclRelcl :: Groot -> Gnsubj -> Gcop -> GaclRelcl -> Tree GUDS_
@@ -756,31 +714,28 @@ data Tree :: * -> * where
   Groot_nsubj_cop_obl :: Groot -> Gnsubj -> Gcop -> Gobl -> Tree GUDS_
   Groot_nsubj_cop_obl_parataxis :: Groot -> Gnsubj -> Gcop -> Gobl -> Gparataxis -> Tree GUDS_
   Groot_nsubj_nsubj_aux_advmod_obj :: Groot -> Gnsubj -> Gnsubj -> Gaux -> Gadvmod -> Gobj -> Tree GUDS_
+  Groot_nsubj_nsubj_xcomp :: Groot -> Gnsubj -> Gnsubj -> Gxcomp -> Tree GUDS_
   Groot_nsubj_obj :: Groot -> Gnsubj -> Gobj -> Tree GUDS_
   Groot_nsubj_obj_advcl :: Groot -> Gnsubj -> Gobj -> Gadvcl -> Tree GUDS_
+  Groot_nsubj_obj_obl :: Groot -> Gnsubj -> Gobj -> Gobl -> Tree GUDS_
   Groot_nsubj_obj_xcomp :: Groot -> Gnsubj -> Gobj -> Gxcomp -> Tree GUDS_
   Groot_nsubj_obl :: Groot -> Gnsubj -> Gobl -> Tree GUDS_
   Groot_nsubj_obl_obl :: Groot -> Gnsubj -> Gobl -> Gobl -> Tree GUDS_
   Groot_nsubj_xcomp :: Groot -> Gnsubj -> Gxcomp -> Tree GUDS_
   Groot_nummod :: Groot -> Gnummod -> Tree GUDS_
   Groot_nummod_appos :: Groot -> Gnummod -> Gappos -> Tree GUDS_
-  Groot_nummod_auxPass_cc_aux_auxPass_obl_obl :: Groot -> Gnummod -> GauxPass -> Gcc -> Gaux -> GauxPass -> Gobl -> Gobl -> Tree GUDS_
-  Groot_nummod_mark_obj :: Groot -> Gnummod -> Gmark -> Gobj -> Tree GUDS_
-  Groot_nummod_mark_obj_cc :: Groot -> Gnummod -> Gmark -> Gobj -> Gcc -> Tree GUDS_
   Groot_nummod_nmod :: Groot -> Gnummod -> Gnmod -> Tree GUDS_
-  Groot_nummod_nsubjPass_nsubjPass_auxPass_cc :: Groot -> Gnummod -> GnsubjPass -> GnsubjPass -> GauxPass -> Gcc -> Tree GUDS_
   Groot_nummod_obl :: Groot -> Gnummod -> Gobl -> Tree GUDS_
-  Groot_nummod_obl_cc :: Groot -> Gnummod -> Gobl -> Gcc -> Tree GUDS_
   Groot_obj :: Groot -> Gobj -> Tree GUDS_
   Groot_obj_ccomp :: Groot -> Gobj -> Gccomp -> Tree GUDS_
   Groot_obj_nmod :: Groot -> Gobj -> Gnmod -> Tree GUDS_
+  Groot_obj_obl_advcl :: Groot -> Gobj -> Gobl -> Gadvcl -> Tree GUDS_
   Groot_obl :: Groot -> Gobl -> Tree GUDS_
   Groot_obl_appos :: Groot -> Gobl -> Gappos -> Tree GUDS_
   Groot_obl_aux :: Groot -> Gobl -> Gaux -> Tree GUDS_
   Groot_obl_case :: Groot -> Gobl -> Gcase_ -> Tree GUDS_
   Groot_obl_obj :: Groot -> Gobl -> Gobj -> Tree GUDS_
   Groot_obl_obl :: Groot -> Gobl -> Gobl -> Tree GUDS_
-  Groot_obl_obl_obl_cc :: Groot -> Gobl -> Gobl -> Gobl -> Tree GUDS_
   Groot_obl_xcomp :: Groot -> Gobl -> Gxcomp -> Tree GUDS_
   Groot_only :: Groot -> Tree GUDS_
   Groot_parataxis :: Groot -> Gparataxis -> Tree GUDS_
@@ -798,19 +753,18 @@ data Tree :: * -> * where
   GProgrVP :: GVP -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   GUseV :: GV -> Tree GVP_
+  GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   GaclUDS_ :: GUDS -> Tree Gacl_
   GaclUDSgerund_ :: GUDS -> Tree Gacl_
   GaclUDSpastpartParens_ :: GUDS -> Tree Gacl_
   GaclUDSpastpart_ :: GUDS -> Tree Gacl_
   Gacl_ :: GX -> Tree Gacl_
-  GaclRelclRS_ :: GRS -> Tree GaclRelcl_
+  GaclRelclUDSRP_ :: GRP -> GUDS -> Tree GaclRelcl_
   GaclRelclUDS_ :: GUDS -> Tree GaclRelcl_
-  GpassRelcl_ :: Groot -> GRP -> GauxPass -> Tree GaclRelcl_
   GadvclMarkUDS_ :: Gmark -> GUDS -> Tree Gadvcl_
   GadvclUDS_ :: GUDS -> Tree Gadvcl_
   Gadvcl_ :: GAdv -> Tree Gadvcl_
   Gadvmod_ :: GAdv -> Tree Gadvmod_
-  Gnot_advmod :: Tree Gadvmod_
   GadvmodEmph_ :: GX -> Tree GadvmodEmph_
   GadvmodLmod_ :: GX -> Tree GadvmodLmod_
   Gamod_ :: GAP -> Tree Gamod_
@@ -818,15 +772,15 @@ data Tree :: * -> * where
   Gaux_ :: GX -> Tree Gaux_
   Gbe_aux :: Tree Gaux_
   Gcan_aux :: Tree Gaux_
+  Gdo_aux :: Tree Gaux_
   Ghave_aux :: Tree Gaux_
   Gmay_aux :: Tree Gaux_
   Gmust_aux :: Tree Gaux_
   Gshall_aux :: Tree Gaux_
   Gshould_aux :: Tree Gaux_
   Gwill_aux :: Tree Gaux_
-  Gbe_auxPass :: Tree GauxPass_
-  Gcc_ :: GConj -> Tree Gcc_
   GccPreconj_ :: GX -> Tree GccPreconj_
+  GccompMarkUDS_ :: Gmark -> GUDS -> Tree Gccomp_
   Gccomp_ :: GUDS -> Tree Gccomp_
   Gclf_ :: GX -> Tree Gclf_
   Gcompound_ :: GX -> Tree Gcompound_
@@ -865,7 +819,6 @@ data Tree :: * -> * where
   GnmodPoss_ :: GX -> Tree GnmodPoss_
   GnmodTmod_ :: GX -> Tree GnmodTmod_
   Gnsubj_ :: GNP -> Tree Gnsubj_
-  GnsubjPass_ :: GNP -> Tree GnsubjPass_
   Gnummod_ :: GX -> Tree Gnummod_
   GnummodGov_ :: GX -> Tree GnummodGov_
   Gobj_ :: GNP -> Tree Gobj_
@@ -889,7 +842,8 @@ data Tree :: * -> * where
   GrootPrep_ :: GPrep -> Tree Groot_
   GrootQuant_ :: GQuant -> Tree Groot_
   GrootRP_ :: GRP -> Tree Groot_
-  GrootV_ :: GVP -> Tree Groot_
+  GrootV_ :: GTemp -> GPol -> GVP -> Tree Groot_
+  GrootVaux_ :: GTemp -> GPol -> Gaux -> GVP -> Tree Groot_
   Gvocative_ :: GNP -> Tree Gvocative_
   GxcompA_ :: GAP -> Tree Gxcomp_
   GxcompA_ccomp_ :: GAP -> Gccomp -> Tree Gxcomp_
@@ -1074,6 +1028,7 @@ instance Eq (Tree a) where
     (GParty x1,GParty y1) -> and [ x1 == y1 ]
     (GPredetNP x1 x2,GPredetNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRelNP x1 x2,GRelNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRelclNP x1 x2,GRelclNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSentNP x1 x2,GSentNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSomeone,GSomeone) -> and [ ]
     (GTokAll x1,GTokAll y1) -> and [ x1 == y1 ]
@@ -1084,6 +1039,7 @@ instance Eq (Tree a) where
     (Geuropean_NP,Geuropean_NP) -> and [ ]
     (Gone_NP,Gone_NP) -> and [ ]
     (Gwhoever_NP,Gwhoever_NP) -> and [ ]
+    (Gnot_Neg,Gnot_Neg) -> and [ ]
     (GNumCard x1,GNumCard y1) -> and [ x1 == y1 ]
     (GNumPl,GNumPl) -> and [ ]
     (GNumSg,GNumSg) -> and [ ]
@@ -1199,8 +1155,6 @@ instance Eq (Tree a) where
     (Groot_aclRelcl_nmod x1 x2 x3,Groot_aclRelcl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_acl_nmod x1 x2 x3,Groot_acl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_advcl x1 x2,Groot_advcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_advcl_nsubjPass_auxPass x1 x2 x3 x4,Groot_advcl_nsubjPass_auxPass y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_advcl_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5 x6,Groot_advcl_nsubjPass_aux_auxPass_xcomp y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
     (Groot_advcl_nsubj_aux_advcl x1 x2 x3 x4 x5,Groot_advcl_nsubj_aux_advcl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
     (Groot_advcl_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6,Groot_advcl_nsubj_aux_advmod_obj y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
     (Groot_advcl_nsubj_aux_ccomp x1 x2 x3 x4 x5,Groot_advcl_nsubj_aux_ccomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
@@ -1220,7 +1174,6 @@ instance Eq (Tree a) where
     (Groot_amod_nmod x1 x2 x3,Groot_amod_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_appos x1 x2,Groot_appos y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_appos_advmod x1 x2 x3,Groot_appos_advmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_auxPass x1 x2,Groot_auxPass y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_case x1 x2,Groot_case y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_case_amod x1 x2 x3,Groot_case_amod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_case_amod_amod x1 x2 x3 x4,Groot_case_amod_amod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -1228,19 +1181,7 @@ instance Eq (Tree a) where
     (Groot_case_nummod x1 x2 x3,Groot_case_nummod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_case_nummod_acl x1 x2 x3 x4,Groot_case_nummod_acl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_case_nummod_nummod x1 x2 x3 x4,Groot_case_nummod_nummod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_cc x1 x2,Groot_cc y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_cc_cop_xcomp x1 x2 x3 x4,Groot_cc_cop_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_cc_nmod x1 x2 x3,Groot_cc_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_cc_obj x1 x2 x3,Groot_cc_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_ccomp x1 x2,Groot_ccomp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_compound x1 x2,Groot_compound y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_compoundPrt_compoundPrt x1 x2 x3,Groot_compoundPrt_compoundPrt y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_compound_acl x1 x2 x3,Groot_compound_acl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_compound_amod x1 x2 x3,Groot_compound_amod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_compound_appos x1 x2 x3,Groot_compound_appos y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_compound_compound x1 x2 x3,Groot_compound_compound y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_compound_compound_appos x1 x2 x3 x4,Groot_compound_compound_appos y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_compound_flat x1 x2 x3,Groot_compound_flat y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_cop x1 x2,Groot_cop y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_cop_advmod x1 x2 x3,Groot_cop_advmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_csubj x1 x2,Groot_csubj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1250,41 +1191,11 @@ instance Eq (Tree a) where
     (Groot_fixed x1 x2,Groot_fixed y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_goeswith x1 x2,Groot_goeswith y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_goeswith_goeswith x1 x2 x3,Groot_goeswith_goeswith y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_mark x1 x2,Groot_mark y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_mark_cc_mark_obj x1 x2 x3 x4 x5,Groot_mark_cc_mark_obj y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_expl_cop_xcomp x1 x2 x3 x4 x5,Groot_mark_expl_cop_xcomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_expl_nsubj x1 x2 x3 x4,Groot_mark_expl_nsubj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubj x1 x2 x3,Groot_mark_nsubj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_mark_nsubjPass_auxPass x1 x2 x3 x4,Groot_mark_nsubjPass_auxPass y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubjPass_auxPass_obl x1 x2 x3 x4 x5,Groot_mark_nsubjPass_auxPass_obl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_nsubj_aux x1 x2 x3 x4,Groot_mark_nsubj_aux y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6,Groot_mark_nsubj_aux_advmod_obj y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
-    (Groot_mark_nsubj_aux_aux x1 x2 x3 x4 x5,Groot_mark_nsubj_aux_aux y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_nsubj_cop x1 x2 x3 x4,Groot_mark_nsubj_cop y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubj_cop_obl x1 x2 x3 x4 x5,Groot_mark_nsubj_cop_obl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5,Groot_mark_nsubj_nsubj_xcomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_mark_nsubj_obj x1 x2 x3 x4,Groot_mark_nsubj_obj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubj_obl x1 x2 x3 x4,Groot_mark_nsubj_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nsubj_xcomp x1 x2 x3 x4,Groot_mark_nsubj_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_mark_nummod x1 x2 x3,Groot_mark_nummod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod x1 x2,Groot_nmod y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_nmod_acl x1 x2 x3,Groot_nmod_acl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod_aclRelcl x1 x2 x3,Groot_nmod_aclRelcl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nmod_nmod x1 x2 x3,Groot_nmod_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj x1 x2,Groot_nsubj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Groot_nsubjPass_auxPass x1 x2 x3,Groot_nsubjPass_auxPass y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_nsubjPass_auxPass_advmod x1 x2 x3 x4,Groot_nsubjPass_auxPass_advmod y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5,Groot_nsubjPass_auxPass_advmod_advcl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_nsubjPass_auxPass_advmod_xcomp x1 x2 x3 x4 x5,Groot_nsubjPass_auxPass_advmod_xcomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_nsubjPass_auxPass_xcomp x1 x2 x3 x4,Groot_nsubjPass_auxPass_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_nsubjPass_aux_auxPass x1 x2 x3 x4,Groot_nsubjPass_aux_auxPass y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_nsubjPass_aux_auxPass_advcl_advcl x1 x2 x3 x4 x5 x6,Groot_nsubjPass_aux_auxPass_advcl_advcl y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
-    (Groot_nsubjPass_aux_auxPass_advmod x1 x2 x3 x4 x5,Groot_nsubjPass_aux_auxPass_advmod y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_nsubjPass_aux_auxPass_obl x1 x2 x3 x4 x5,Groot_nsubjPass_aux_auxPass_obl y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
-    (Groot_nsubjPass_aux_auxPass_obl_advmod x1 x2 x3 x4 x5 x6,Groot_nsubjPass_aux_auxPass_obl_advmod y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
-    (Groot_nsubjPass_aux_auxPass_obl_obl_advcl x1 x2 x3 x4 x5 x6 x7,Groot_nsubjPass_aux_auxPass_obl_obl_advcl y1 y2 y3 y4 y5 y6 y7) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 , x7 == y7 ]
-    (Groot_nsubjPass_aux_auxPass_obl_obl_advmod x1 x2 x3 x4 x5 x6 x7,Groot_nsubjPass_aux_auxPass_obl_obl_advmod y1 y2 y3 y4 y5 y6 y7) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 , x7 == y7 ]
-    (Groot_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5,Groot_nsubjPass_aux_auxPass_xcomp y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
     (Groot_nsubj_advmod x1 x2 x3,Groot_nsubj_advmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj_advmod_obj x1 x2 x3 x4,Groot_nsubj_advmod_obj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_aux x1 x2 x3,Groot_nsubj_aux y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1299,6 +1210,7 @@ instance Eq (Tree a) where
     (Groot_nsubj_aux_obj_obl_advmod_advcl x1 x2 x3 x4 x5 x6 x7,Groot_nsubj_aux_obj_obl_advmod_advcl y1 y2 y3 y4 y5 y6 y7) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 , x7 == y7 ]
     (Groot_nsubj_aux_obj_obl_obl x1 x2 x3 x4 x5 x6,Groot_nsubj_aux_obj_obl_obl y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
     (Groot_nsubj_aux_obl x1 x2 x3 x4,Groot_nsubj_aux_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (Groot_nsubj_aux_xcomp x1 x2 x3 x4,Groot_nsubj_aux_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_ccomp x1 x2 x3,Groot_nsubj_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj_cop x1 x2 x3,Groot_nsubj_cop y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj_cop_aclRelcl x1 x2 x3 x4,Groot_nsubj_cop_aclRelcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -1311,31 +1223,28 @@ instance Eq (Tree a) where
     (Groot_nsubj_cop_obl x1 x2 x3 x4,Groot_nsubj_cop_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_cop_obl_parataxis x1 x2 x3 x4 x5,Groot_nsubj_cop_obl_parataxis y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
     (Groot_nsubj_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6,Groot_nsubj_nsubj_aux_advmod_obj y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
+    (Groot_nsubj_nsubj_xcomp x1 x2 x3 x4,Groot_nsubj_nsubj_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_obj x1 x2 x3,Groot_nsubj_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj_obj_advcl x1 x2 x3 x4,Groot_nsubj_obj_advcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (Groot_nsubj_obj_obl x1 x2 x3 x4,Groot_nsubj_obj_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_obj_xcomp x1 x2 x3 x4,Groot_nsubj_obj_xcomp y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_obl x1 x2 x3,Groot_nsubj_obl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nsubj_obl_obl x1 x2 x3 x4,Groot_nsubj_obl_obl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_nsubj_xcomp x1 x2 x3,Groot_nsubj_xcomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_nummod x1 x2,Groot_nummod y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_nummod_appos x1 x2 x3,Groot_nummod_appos y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_nummod_auxPass_cc_aux_auxPass_obl_obl x1 x2 x3 x4 x5 x6 x7 x8,Groot_nummod_auxPass_cc_aux_auxPass_obl_obl y1 y2 y3 y4 y5 y6 y7 y8) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 , x7 == y7 , x8 == y8 ]
-    (Groot_nummod_mark_obj x1 x2 x3 x4,Groot_nummod_mark_obj y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (Groot_nummod_mark_obj_cc x1 x2 x3 x4 x5,Groot_nummod_mark_obj_cc y1 y2 y3 y4 y5) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 ]
     (Groot_nummod_nmod x1 x2 x3,Groot_nummod_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_nummod_nsubjPass_nsubjPass_auxPass_cc x1 x2 x3 x4 x5 x6,Groot_nummod_nsubjPass_nsubjPass_auxPass_cc y1 y2 y3 y4 y5 y6) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 , x5 == y5 , x6 == y6 ]
     (Groot_nummod_obl x1 x2 x3,Groot_nummod_obl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_nummod_obl_cc x1 x2 x3 x4,Groot_nummod_obl_cc y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_obj x1 x2,Groot_obj y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_obj_ccomp x1 x2 x3,Groot_obj_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obj_nmod x1 x2 x3,Groot_obj_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (Groot_obj_obl_advcl x1 x2 x3 x4,Groot_obj_obl_advcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_obl x1 x2,Groot_obl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_obl_appos x1 x2 x3,Groot_obl_appos y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl_aux x1 x2 x3,Groot_obl_aux y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl_case x1 x2 x3,Groot_obl_case y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl_obj x1 x2 x3,Groot_obl_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl_obl x1 x2 x3,Groot_obl_obl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_obl_obl_obl_cc x1 x2 x3 x4,Groot_obl_obl_obl_cc y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Groot_obl_xcomp x1 x2 x3,Groot_obl_xcomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_only x1,Groot_only y1) -> and [ x1 == y1 ]
     (Groot_parataxis x1 x2,Groot_parataxis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1353,19 +1262,18 @@ instance Eq (Tree a) where
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
+    (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GaclUDS_ x1,GaclUDS_ y1) -> and [ x1 == y1 ]
     (GaclUDSgerund_ x1,GaclUDSgerund_ y1) -> and [ x1 == y1 ]
     (GaclUDSpastpartParens_ x1,GaclUDSpastpartParens_ y1) -> and [ x1 == y1 ]
     (GaclUDSpastpart_ x1,GaclUDSpastpart_ y1) -> and [ x1 == y1 ]
     (Gacl_ x1,Gacl_ y1) -> and [ x1 == y1 ]
-    (GaclRelclRS_ x1,GaclRelclRS_ y1) -> and [ x1 == y1 ]
+    (GaclRelclUDSRP_ x1 x2,GaclRelclUDSRP_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GaclRelclUDS_ x1,GaclRelclUDS_ y1) -> and [ x1 == y1 ]
-    (GpassRelcl_ x1 x2 x3,GpassRelcl_ y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GadvclMarkUDS_ x1 x2,GadvclMarkUDS_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GadvclUDS_ x1,GadvclUDS_ y1) -> and [ x1 == y1 ]
     (Gadvcl_ x1,Gadvcl_ y1) -> and [ x1 == y1 ]
     (Gadvmod_ x1,Gadvmod_ y1) -> and [ x1 == y1 ]
-    (Gnot_advmod,Gnot_advmod) -> and [ ]
     (GadvmodEmph_ x1,GadvmodEmph_ y1) -> and [ x1 == y1 ]
     (GadvmodLmod_ x1,GadvmodLmod_ y1) -> and [ x1 == y1 ]
     (Gamod_ x1,Gamod_ y1) -> and [ x1 == y1 ]
@@ -1373,15 +1281,15 @@ instance Eq (Tree a) where
     (Gaux_ x1,Gaux_ y1) -> and [ x1 == y1 ]
     (Gbe_aux,Gbe_aux) -> and [ ]
     (Gcan_aux,Gcan_aux) -> and [ ]
+    (Gdo_aux,Gdo_aux) -> and [ ]
     (Ghave_aux,Ghave_aux) -> and [ ]
     (Gmay_aux,Gmay_aux) -> and [ ]
     (Gmust_aux,Gmust_aux) -> and [ ]
     (Gshall_aux,Gshall_aux) -> and [ ]
     (Gshould_aux,Gshould_aux) -> and [ ]
     (Gwill_aux,Gwill_aux) -> and [ ]
-    (Gbe_auxPass,Gbe_auxPass) -> and [ ]
-    (Gcc_ x1,Gcc_ y1) -> and [ x1 == y1 ]
     (GccPreconj_ x1,GccPreconj_ y1) -> and [ x1 == y1 ]
+    (GccompMarkUDS_ x1 x2,GccompMarkUDS_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gccomp_ x1,Gccomp_ y1) -> and [ x1 == y1 ]
     (Gclf_ x1,Gclf_ y1) -> and [ x1 == y1 ]
     (Gcompound_ x1,Gcompound_ y1) -> and [ x1 == y1 ]
@@ -1420,7 +1328,6 @@ instance Eq (Tree a) where
     (GnmodPoss_ x1,GnmodPoss_ y1) -> and [ x1 == y1 ]
     (GnmodTmod_ x1,GnmodTmod_ y1) -> and [ x1 == y1 ]
     (Gnsubj_ x1,Gnsubj_ y1) -> and [ x1 == y1 ]
-    (GnsubjPass_ x1,GnsubjPass_ y1) -> and [ x1 == y1 ]
     (Gnummod_ x1,Gnummod_ y1) -> and [ x1 == y1 ]
     (GnummodGov_ x1,GnummodGov_ y1) -> and [ x1 == y1 ]
     (Gobj_ x1,Gobj_ y1) -> and [ x1 == y1 ]
@@ -1444,7 +1351,8 @@ instance Eq (Tree a) where
     (GrootPrep_ x1,GrootPrep_ y1) -> and [ x1 == y1 ]
     (GrootQuant_ x1,GrootQuant_ y1) -> and [ x1 == y1 ]
     (GrootRP_ x1,GrootRP_ y1) -> and [ x1 == y1 ]
-    (GrootV_ x1,GrootV_ y1) -> and [ x1 == y1 ]
+    (GrootV_ x1 x2 x3,GrootV_ y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GrootVaux_ x1 x2 x3 x4,GrootVaux_ y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (Gvocative_ x1,Gvocative_ y1) -> and [ x1 == y1 ]
     (GxcompA_ x1,GxcompA_ y1) -> and [ x1 == y1 ]
     (GxcompA_ccomp_ x1 x2,GxcompA_ccomp_ y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -2146,6 +2054,7 @@ instance Gf GNP where
   gf (GParty x1) = mkApp (mkCId "Party") [gf x1]
   gf (GPredetNP x1 x2) = mkApp (mkCId "PredetNP") [gf x1, gf x2]
   gf (GRelNP x1 x2) = mkApp (mkCId "RelNP") [gf x1, gf x2]
+  gf (GRelclNP x1 x2) = mkApp (mkCId "RelclNP") [gf x1, gf x2]
   gf (GSentNP x1 x2) = mkApp (mkCId "SentNP") [gf x1, gf x2]
   gf GSomeone = mkApp (mkCId "Someone") []
   gf (GTokAll x1) = mkApp (mkCId "TokAll") [gf x1]
@@ -2175,6 +2084,7 @@ instance Gf GNP where
       Just (i,[x1]) | i == mkCId "Party" -> GParty (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredetNP" -> GPredetNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RelclNP" -> GRelclNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentNP" -> GSentNP (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "Someone" -> GSomeone 
       Just (i,[x1]) | i == mkCId "TokAll" -> GTokAll (fg x1)
@@ -2188,6 +2098,16 @@ instance Gf GNP where
 
 
       _ -> error ("no NP " ++ show t)
+
+instance Gf GNeg where
+  gf Gnot_Neg = mkApp (mkCId "not_Neg") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "not_Neg" -> Gnot_Neg 
+
+
+      _ -> error ("no Neg " ++ show t)
 
 instance Gf GNum where
   gf (GNumCard x1) = mkApp (mkCId "NumCard") [gf x1]
@@ -2630,8 +2550,6 @@ instance Gf GUDS where
   gf (Groot_aclRelcl_nmod x1 x2 x3) = mkApp (mkCId "root_aclRelcl_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_acl_nmod x1 x2 x3) = mkApp (mkCId "root_acl_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_advcl x1 x2) = mkApp (mkCId "root_advcl") [gf x1, gf x2]
-  gf (Groot_advcl_nsubjPass_auxPass x1 x2 x3 x4) = mkApp (mkCId "root_advcl_nsubjPass_auxPass") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_advcl_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_advcl_nsubjPass_aux_auxPass_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_advcl_nsubj_aux_advcl x1 x2 x3 x4 x5) = mkApp (mkCId "root_advcl_nsubj_aux_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_advcl_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_advcl_nsubj_aux_advmod_obj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_advcl_nsubj_aux_ccomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_advcl_nsubj_aux_ccomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
@@ -2651,7 +2569,6 @@ instance Gf GUDS where
   gf (Groot_amod_nmod x1 x2 x3) = mkApp (mkCId "root_amod_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_appos x1 x2) = mkApp (mkCId "root_appos") [gf x1, gf x2]
   gf (Groot_appos_advmod x1 x2 x3) = mkApp (mkCId "root_appos_advmod") [gf x1, gf x2, gf x3]
-  gf (Groot_auxPass x1 x2) = mkApp (mkCId "root_auxPass") [gf x1, gf x2]
   gf (Groot_case x1 x2) = mkApp (mkCId "root_case") [gf x1, gf x2]
   gf (Groot_case_amod x1 x2 x3) = mkApp (mkCId "root_case_amod") [gf x1, gf x2, gf x3]
   gf (Groot_case_amod_amod x1 x2 x3 x4) = mkApp (mkCId "root_case_amod_amod") [gf x1, gf x2, gf x3, gf x4]
@@ -2659,19 +2576,7 @@ instance Gf GUDS where
   gf (Groot_case_nummod x1 x2 x3) = mkApp (mkCId "root_case_nummod") [gf x1, gf x2, gf x3]
   gf (Groot_case_nummod_acl x1 x2 x3 x4) = mkApp (mkCId "root_case_nummod_acl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_case_nummod_nummod x1 x2 x3 x4) = mkApp (mkCId "root_case_nummod_nummod") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_cc x1 x2) = mkApp (mkCId "root_cc") [gf x1, gf x2]
-  gf (Groot_cc_cop_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_cc_cop_xcomp") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_cc_nmod x1 x2 x3) = mkApp (mkCId "root_cc_nmod") [gf x1, gf x2, gf x3]
-  gf (Groot_cc_obj x1 x2 x3) = mkApp (mkCId "root_cc_obj") [gf x1, gf x2, gf x3]
   gf (Groot_ccomp x1 x2) = mkApp (mkCId "root_ccomp") [gf x1, gf x2]
-  gf (Groot_compound x1 x2) = mkApp (mkCId "root_compound") [gf x1, gf x2]
-  gf (Groot_compoundPrt_compoundPrt x1 x2 x3) = mkApp (mkCId "root_compoundPrt_compoundPrt") [gf x1, gf x2, gf x3]
-  gf (Groot_compound_acl x1 x2 x3) = mkApp (mkCId "root_compound_acl") [gf x1, gf x2, gf x3]
-  gf (Groot_compound_amod x1 x2 x3) = mkApp (mkCId "root_compound_amod") [gf x1, gf x2, gf x3]
-  gf (Groot_compound_appos x1 x2 x3) = mkApp (mkCId "root_compound_appos") [gf x1, gf x2, gf x3]
-  gf (Groot_compound_compound x1 x2 x3) = mkApp (mkCId "root_compound_compound") [gf x1, gf x2, gf x3]
-  gf (Groot_compound_compound_appos x1 x2 x3 x4) = mkApp (mkCId "root_compound_compound_appos") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_compound_flat x1 x2 x3) = mkApp (mkCId "root_compound_flat") [gf x1, gf x2, gf x3]
   gf (Groot_cop x1 x2) = mkApp (mkCId "root_cop") [gf x1, gf x2]
   gf (Groot_cop_advmod x1 x2 x3) = mkApp (mkCId "root_cop_advmod") [gf x1, gf x2, gf x3]
   gf (Groot_csubj x1 x2) = mkApp (mkCId "root_csubj") [gf x1, gf x2]
@@ -2681,41 +2586,11 @@ instance Gf GUDS where
   gf (Groot_fixed x1 x2) = mkApp (mkCId "root_fixed") [gf x1, gf x2]
   gf (Groot_goeswith x1 x2) = mkApp (mkCId "root_goeswith") [gf x1, gf x2]
   gf (Groot_goeswith_goeswith x1 x2 x3) = mkApp (mkCId "root_goeswith_goeswith") [gf x1, gf x2, gf x3]
-  gf (Groot_mark x1 x2) = mkApp (mkCId "root_mark") [gf x1, gf x2]
-  gf (Groot_mark_cc_mark_obj x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_cc_mark_obj") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_expl_cop_xcomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_expl_cop_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_expl_nsubj x1 x2 x3 x4) = mkApp (mkCId "root_mark_expl_nsubj") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubj x1 x2 x3) = mkApp (mkCId "root_mark_nsubj") [gf x1, gf x2, gf x3]
-  gf (Groot_mark_nsubjPass_auxPass x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubjPass_auxPass") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubjPass_auxPass_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubjPass_auxPass_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_nsubj_aux x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_aux") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_mark_nsubj_aux_advmod_obj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
-  gf (Groot_mark_nsubj_aux_aux x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubj_aux_aux") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_nsubj_cop x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_cop") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubj_cop_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubj_cop_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_mark_nsubj_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_mark_nsubj_obj x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_obj") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubj_obl x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_obl") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nsubj_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_mark_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_mark_nummod x1 x2 x3) = mkApp (mkCId "root_mark_nummod") [gf x1, gf x2, gf x3]
   gf (Groot_nmod x1 x2) = mkApp (mkCId "root_nmod") [gf x1, gf x2]
   gf (Groot_nmod_acl x1 x2 x3) = mkApp (mkCId "root_nmod_acl") [gf x1, gf x2, gf x3]
   gf (Groot_nmod_aclRelcl x1 x2 x3) = mkApp (mkCId "root_nmod_aclRelcl") [gf x1, gf x2, gf x3]
   gf (Groot_nmod_nmod x1 x2 x3) = mkApp (mkCId "root_nmod_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj x1 x2) = mkApp (mkCId "root_nsubj") [gf x1, gf x2]
-  gf (Groot_nsubjPass_auxPass x1 x2 x3) = mkApp (mkCId "root_nsubjPass_auxPass") [gf x1, gf x2, gf x3]
-  gf (Groot_nsubjPass_auxPass_advmod x1 x2 x3 x4) = mkApp (mkCId "root_nsubjPass_auxPass_advmod") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_auxPass_advmod_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_nsubjPass_auxPass_advmod_xcomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_auxPass_advmod_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_nsubjPass_auxPass_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_nsubjPass_auxPass_xcomp") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_nsubjPass_aux_auxPass x1 x2 x3 x4) = mkApp (mkCId "root_nsubjPass_aux_auxPass") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_nsubjPass_aux_auxPass_advcl_advcl x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubjPass_aux_auxPass_advcl_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
-  gf (Groot_nsubjPass_aux_auxPass_advmod x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_aux_auxPass_advmod") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_nsubjPass_aux_auxPass_obl x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl") [gf x1, gf x2, gf x3, gf x4, gf x5]
-  gf (Groot_nsubjPass_aux_auxPass_obl_advmod x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_advmod") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
-  gf (Groot_nsubjPass_aux_auxPass_obl_obl_advcl x1 x2 x3 x4 x5 x6 x7) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_obl_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7]
-  gf (Groot_nsubjPass_aux_auxPass_obl_obl_advmod x1 x2 x3 x4 x5 x6 x7) = mkApp (mkCId "root_nsubjPass_aux_auxPass_obl_obl_advmod") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7]
-  gf (Groot_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubjPass_aux_auxPass_xcomp") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nsubj_advmod x1 x2 x3) = mkApp (mkCId "root_nsubj_advmod") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_advmod_obj x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_advmod_obj") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_aux x1 x2 x3) = mkApp (mkCId "root_nsubj_aux") [gf x1, gf x2, gf x3]
@@ -2730,6 +2605,7 @@ instance Gf GUDS where
   gf (Groot_nsubj_aux_obj_obl_advmod_advcl x1 x2 x3 x4 x5 x6 x7) = mkApp (mkCId "root_nsubj_aux_obj_obl_advmod_advcl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7]
   gf (Groot_nsubj_aux_obj_obl_obl x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubj_aux_obj_obl_obl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_nsubj_aux_obl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_obl") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_nsubj_aux_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_aux_xcomp") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_ccomp x1 x2 x3) = mkApp (mkCId "root_nsubj_ccomp") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_cop x1 x2 x3) = mkApp (mkCId "root_nsubj_cop") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_cop_aclRelcl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_cop_aclRelcl") [gf x1, gf x2, gf x3, gf x4]
@@ -2742,31 +2618,28 @@ instance Gf GUDS where
   gf (Groot_nsubj_cop_obl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_cop_obl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_cop_obl_parataxis x1 x2 x3 x4 x5) = mkApp (mkCId "root_nsubj_cop_obl_parataxis") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nsubj_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nsubj_nsubj_aux_advmod_obj") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
+  gf (Groot_nsubj_nsubj_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_nsubj_xcomp") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_obj x1 x2 x3) = mkApp (mkCId "root_nsubj_obj") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_obj_advcl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_obj_advcl") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_nsubj_obj_obl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_obj_obl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_obj_xcomp x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_obj_xcomp") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_obl x1 x2 x3) = mkApp (mkCId "root_nsubj_obl") [gf x1, gf x2, gf x3]
   gf (Groot_nsubj_obl_obl x1 x2 x3 x4) = mkApp (mkCId "root_nsubj_obl_obl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_nsubj_xcomp x1 x2 x3) = mkApp (mkCId "root_nsubj_xcomp") [gf x1, gf x2, gf x3]
   gf (Groot_nummod x1 x2) = mkApp (mkCId "root_nummod") [gf x1, gf x2]
   gf (Groot_nummod_appos x1 x2 x3) = mkApp (mkCId "root_nummod_appos") [gf x1, gf x2, gf x3]
-  gf (Groot_nummod_auxPass_cc_aux_auxPass_obl_obl x1 x2 x3 x4 x5 x6 x7 x8) = mkApp (mkCId "root_nummod_auxPass_cc_aux_auxPass_obl_obl") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6, gf x7, gf x8]
-  gf (Groot_nummod_mark_obj x1 x2 x3 x4) = mkApp (mkCId "root_nummod_mark_obj") [gf x1, gf x2, gf x3, gf x4]
-  gf (Groot_nummod_mark_obj_cc x1 x2 x3 x4 x5) = mkApp (mkCId "root_nummod_mark_obj_cc") [gf x1, gf x2, gf x3, gf x4, gf x5]
   gf (Groot_nummod_nmod x1 x2 x3) = mkApp (mkCId "root_nummod_nmod") [gf x1, gf x2, gf x3]
-  gf (Groot_nummod_nsubjPass_nsubjPass_auxPass_cc x1 x2 x3 x4 x5 x6) = mkApp (mkCId "root_nummod_nsubjPass_nsubjPass_auxPass_cc") [gf x1, gf x2, gf x3, gf x4, gf x5, gf x6]
   gf (Groot_nummod_obl x1 x2 x3) = mkApp (mkCId "root_nummod_obl") [gf x1, gf x2, gf x3]
-  gf (Groot_nummod_obl_cc x1 x2 x3 x4) = mkApp (mkCId "root_nummod_obl_cc") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_obj x1 x2) = mkApp (mkCId "root_obj") [gf x1, gf x2]
   gf (Groot_obj_ccomp x1 x2 x3) = mkApp (mkCId "root_obj_ccomp") [gf x1, gf x2, gf x3]
   gf (Groot_obj_nmod x1 x2 x3) = mkApp (mkCId "root_obj_nmod") [gf x1, gf x2, gf x3]
+  gf (Groot_obj_obl_advcl x1 x2 x3 x4) = mkApp (mkCId "root_obj_obl_advcl") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_obl x1 x2) = mkApp (mkCId "root_obl") [gf x1, gf x2]
   gf (Groot_obl_appos x1 x2 x3) = mkApp (mkCId "root_obl_appos") [gf x1, gf x2, gf x3]
   gf (Groot_obl_aux x1 x2 x3) = mkApp (mkCId "root_obl_aux") [gf x1, gf x2, gf x3]
   gf (Groot_obl_case x1 x2 x3) = mkApp (mkCId "root_obl_case") [gf x1, gf x2, gf x3]
   gf (Groot_obl_obj x1 x2 x3) = mkApp (mkCId "root_obl_obj") [gf x1, gf x2, gf x3]
   gf (Groot_obl_obl x1 x2 x3) = mkApp (mkCId "root_obl_obl") [gf x1, gf x2, gf x3]
-  gf (Groot_obl_obl_obl_cc x1 x2 x3 x4) = mkApp (mkCId "root_obl_obl_obl_cc") [gf x1, gf x2, gf x3, gf x4]
   gf (Groot_obl_xcomp x1 x2 x3) = mkApp (mkCId "root_obl_xcomp") [gf x1, gf x2, gf x3]
   gf (Groot_only x1) = mkApp (mkCId "root_only") [gf x1]
   gf (Groot_parataxis x1 x2) = mkApp (mkCId "root_parataxis") [gf x1, gf x2]
@@ -2783,8 +2656,6 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_aclRelcl_nmod" -> Groot_aclRelcl_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_acl_nmod" -> Groot_acl_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_advcl" -> Groot_advcl (fg x1) (fg x2)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_advcl_nsubjPass_auxPass" -> Groot_advcl_nsubjPass_auxPass (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_advcl_nsubjPass_aux_auxPass_xcomp" -> Groot_advcl_nsubjPass_aux_auxPass_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_advcl_nsubj_aux_advcl" -> Groot_advcl_nsubj_aux_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_advcl_nsubj_aux_advmod_obj" -> Groot_advcl_nsubj_aux_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_advcl_nsubj_aux_ccomp" -> Groot_advcl_nsubj_aux_ccomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
@@ -2804,7 +2675,6 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_amod_nmod" -> Groot_amod_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_appos" -> Groot_appos (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_appos_advmod" -> Groot_appos_advmod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2]) | i == mkCId "root_auxPass" -> Groot_auxPass (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_case" -> Groot_case (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_case_amod" -> Groot_case_amod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_case_amod_amod" -> Groot_case_amod_amod (fg x1) (fg x2) (fg x3) (fg x4)
@@ -2812,19 +2682,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_case_nummod" -> Groot_case_nummod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_case_nummod_acl" -> Groot_case_nummod_acl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_case_nummod_nummod" -> Groot_case_nummod_nummod (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2]) | i == mkCId "root_cc" -> Groot_cc (fg x1) (fg x2)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_cc_cop_xcomp" -> Groot_cc_cop_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_cc_nmod" -> Groot_cc_nmod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_cc_obj" -> Groot_cc_obj (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_ccomp" -> Groot_ccomp (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "root_compound" -> Groot_compound (fg x1) (fg x2)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compoundPrt_compoundPrt" -> Groot_compoundPrt_compoundPrt (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compound_acl" -> Groot_compound_acl (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compound_amod" -> Groot_compound_amod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compound_appos" -> Groot_compound_appos (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compound_compound" -> Groot_compound_compound (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_compound_compound_appos" -> Groot_compound_compound_appos (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_compound_flat" -> Groot_compound_flat (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_cop" -> Groot_cop (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_cop_advmod" -> Groot_cop_advmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_csubj" -> Groot_csubj (fg x1) (fg x2)
@@ -2834,41 +2692,11 @@ instance Gf GUDS where
       Just (i,[x1,x2]) | i == mkCId "root_fixed" -> Groot_fixed (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_goeswith" -> Groot_goeswith (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_goeswith_goeswith" -> Groot_goeswith_goeswith (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2]) | i == mkCId "root_mark" -> Groot_mark (fg x1) (fg x2)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_cc_mark_obj" -> Groot_mark_cc_mark_obj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_expl_cop_xcomp" -> Groot_mark_expl_cop_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_expl_nsubj" -> Groot_mark_expl_nsubj (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_mark_nsubj" -> Groot_mark_nsubj (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubjPass_auxPass" -> Groot_mark_nsubjPass_auxPass (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubjPass_auxPass_obl" -> Groot_mark_nsubjPass_auxPass_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_aux" -> Groot_mark_nsubj_aux (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_mark_nsubj_aux_advmod_obj" -> Groot_mark_nsubj_aux_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubj_aux_aux" -> Groot_mark_nsubj_aux_aux (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_cop" -> Groot_mark_nsubj_cop (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubj_cop_obl" -> Groot_mark_nsubj_cop_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_mark_nsubj_nsubj_xcomp" -> Groot_mark_nsubj_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_obj" -> Groot_mark_nsubj_obj (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_obl" -> Groot_mark_nsubj_obl (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_mark_nsubj_xcomp" -> Groot_mark_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_mark_nummod" -> Groot_mark_nummod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_nmod" -> Groot_nmod (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_acl" -> Groot_nmod_acl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_aclRelcl" -> Groot_nmod_aclRelcl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nmod_nmod" -> Groot_nmod_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_nsubj" -> Groot_nsubj (fg x1) (fg x2)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_nsubjPass_auxPass" -> Groot_nsubjPass_auxPass (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubjPass_auxPass_advmod" -> Groot_nsubjPass_auxPass_advmod (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_auxPass_advmod_advcl" -> Groot_nsubjPass_auxPass_advmod_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_auxPass_advmod_xcomp" -> Groot_nsubjPass_auxPass_advmod_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubjPass_auxPass_xcomp" -> Groot_nsubjPass_auxPass_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubjPass_aux_auxPass" -> Groot_nsubjPass_aux_auxPass (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubjPass_aux_auxPass_advcl_advcl" -> Groot_nsubjPass_aux_auxPass_advcl_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_aux_auxPass_advmod" -> Groot_nsubjPass_aux_auxPass_advmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_aux_auxPass_obl" -> Groot_nsubjPass_aux_auxPass_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_advmod" -> Groot_nsubjPass_aux_auxPass_obl_advmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
-      Just (i,[x1,x2,x3,x4,x5,x6,x7]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_obl_advcl" -> Groot_nsubjPass_aux_auxPass_obl_obl_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7)
-      Just (i,[x1,x2,x3,x4,x5,x6,x7]) | i == mkCId "root_nsubjPass_aux_auxPass_obl_obl_advmod" -> Groot_nsubjPass_aux_auxPass_obl_obl_advmod (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubjPass_aux_auxPass_xcomp" -> Groot_nsubjPass_aux_auxPass_xcomp (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_advmod" -> Groot_nsubj_advmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_advmod_obj" -> Groot_nsubj_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_aux" -> Groot_nsubj_aux (fg x1) (fg x2) (fg x3)
@@ -2883,6 +2711,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4,x5,x6,x7]) | i == mkCId "root_nsubj_aux_obj_obl_advmod_advcl" -> Groot_nsubj_aux_obj_obl_advmod_advcl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubj_aux_obj_obl_obl" -> Groot_nsubj_aux_obj_obl_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_obl" -> Groot_nsubj_aux_obl (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_aux_xcomp" -> Groot_nsubj_aux_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_ccomp" -> Groot_nsubj_ccomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_cop" -> Groot_nsubj_cop (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_cop_aclRelcl" -> Groot_nsubj_cop_aclRelcl (fg x1) (fg x2) (fg x3) (fg x4)
@@ -2895,31 +2724,28 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_cop_obl" -> Groot_nsubj_cop_obl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nsubj_cop_obl_parataxis" -> Groot_nsubj_cop_obl_parataxis (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nsubj_nsubj_aux_advmod_obj" -> Groot_nsubj_nsubj_aux_advmod_obj (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_nsubj_xcomp" -> Groot_nsubj_nsubj_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_obj" -> Groot_nsubj_obj (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_obj_advcl" -> Groot_nsubj_obj_advcl (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_obj_obl" -> Groot_nsubj_obj_obl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_obj_xcomp" -> Groot_nsubj_obj_xcomp (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_obl" -> Groot_nsubj_obl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nsubj_obl_obl" -> Groot_nsubj_obl_obl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nsubj_xcomp" -> Groot_nsubj_xcomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_nummod" -> Groot_nummod (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nummod_appos" -> Groot_nummod_appos (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4,x5,x6,x7,x8]) | i == mkCId "root_nummod_auxPass_cc_aux_auxPass_obl_obl" -> Groot_nummod_auxPass_cc_aux_auxPass_obl_obl (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6) (fg x7) (fg x8)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nummod_mark_obj" -> Groot_nummod_mark_obj (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3,x4,x5]) | i == mkCId "root_nummod_mark_obj_cc" -> Groot_nummod_mark_obj_cc (fg x1) (fg x2) (fg x3) (fg x4) (fg x5)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nummod_nmod" -> Groot_nummod_nmod (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4,x5,x6]) | i == mkCId "root_nummod_nsubjPass_nsubjPass_auxPass_cc" -> Groot_nummod_nsubjPass_nsubjPass_auxPass_cc (fg x1) (fg x2) (fg x3) (fg x4) (fg x5) (fg x6)
       Just (i,[x1,x2,x3]) | i == mkCId "root_nummod_obl" -> Groot_nummod_obl (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_nummod_obl_cc" -> Groot_nummod_obl_cc (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_obj" -> Groot_obj (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_ccomp" -> Groot_obj_ccomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_nmod" -> Groot_obj_nmod (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_obj_obl_advcl" -> Groot_obj_obl_advcl (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "root_obl" -> Groot_obl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_appos" -> Groot_obl_appos (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_aux" -> Groot_obl_aux (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_case" -> Groot_obl_case (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_obj" -> Groot_obl_obj (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_obl" -> Groot_obl_obl (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "root_obl_obl_obl_cc" -> Groot_obl_obl_obl_cc (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_xcomp" -> Groot_obl_xcomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "root_only" -> Groot_only (fg x1)
       Just (i,[x1,x2]) | i == mkCId "root_parataxis" -> Groot_parataxis (fg x1) (fg x2)
@@ -2968,6 +2794,16 @@ instance Gf GVP where
 
       _ -> error ("no VP " ++ show t)
 
+instance Gf GVPS where
+  gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
+
+
+      _ -> error ("no VPS " ++ show t)
+
 instance Gf Gacl where
   gf (GaclUDS_ x1) = mkApp (mkCId "aclUDS_") [gf x1]
   gf (GaclUDSgerund_ x1) = mkApp (mkCId "aclUDSgerund_") [gf x1]
@@ -2987,15 +2823,13 @@ instance Gf Gacl where
       _ -> error ("no acl " ++ show t)
 
 instance Gf GaclRelcl where
-  gf (GaclRelclRS_ x1) = mkApp (mkCId "aclRelclRS_") [gf x1]
+  gf (GaclRelclUDSRP_ x1 x2) = mkApp (mkCId "aclRelclUDSRP_") [gf x1, gf x2]
   gf (GaclRelclUDS_ x1) = mkApp (mkCId "aclRelclUDS_") [gf x1]
-  gf (GpassRelcl_ x1 x2 x3) = mkApp (mkCId "passRelcl_") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "aclRelclRS_" -> GaclRelclRS_ (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "aclRelclUDSRP_" -> GaclRelclUDSRP_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "aclRelclUDS_" -> GaclRelclUDS_ (fg x1)
-      Just (i,[x1,x2,x3]) | i == mkCId "passRelcl_" -> GpassRelcl_ (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no aclRelcl " ++ show t)
@@ -3016,12 +2850,10 @@ instance Gf Gadvcl where
 
 instance Gf Gadvmod where
   gf (Gadvmod_ x1) = mkApp (mkCId "advmod_") [gf x1]
-  gf Gnot_advmod = mkApp (mkCId "not_advmod") []
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "advmod_" -> Gadvmod_ (fg x1)
-      Just (i,[]) | i == mkCId "not_advmod" -> Gnot_advmod 
 
 
       _ -> error ("no advmod " ++ show t)
@@ -3070,6 +2902,7 @@ instance Gf Gaux where
   gf (Gaux_ x1) = mkApp (mkCId "aux_") [gf x1]
   gf Gbe_aux = mkApp (mkCId "be_aux") []
   gf Gcan_aux = mkApp (mkCId "can_aux") []
+  gf Gdo_aux = mkApp (mkCId "do_aux") []
   gf Ghave_aux = mkApp (mkCId "have_aux") []
   gf Gmay_aux = mkApp (mkCId "may_aux") []
   gf Gmust_aux = mkApp (mkCId "must_aux") []
@@ -3082,6 +2915,7 @@ instance Gf Gaux where
       Just (i,[x1]) | i == mkCId "aux_" -> Gaux_ (fg x1)
       Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux 
       Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux 
+      Just (i,[]) | i == mkCId "do_aux" -> Gdo_aux 
       Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux 
       Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux 
       Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux 
@@ -3091,26 +2925,6 @@ instance Gf Gaux where
 
 
       _ -> error ("no aux " ++ show t)
-
-instance Gf GauxPass where
-  gf Gbe_auxPass = mkApp (mkCId "be_auxPass") []
-
-  fg t =
-    case unApp t of
-      Just (i,[]) | i == mkCId "be_auxPass" -> Gbe_auxPass 
-
-
-      _ -> error ("no auxPass " ++ show t)
-
-instance Gf Gcc where
-  gf (Gcc_ x1) = mkApp (mkCId "cc_") [gf x1]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1]) | i == mkCId "cc_" -> Gcc_ (fg x1)
-
-
-      _ -> error ("no cc " ++ show t)
 
 instance Gf GccPreconj where
   gf (GccPreconj_ x1) = mkApp (mkCId "ccPreconj_") [gf x1]
@@ -3123,10 +2937,12 @@ instance Gf GccPreconj where
       _ -> error ("no ccPreconj " ++ show t)
 
 instance Gf Gccomp where
+  gf (GccompMarkUDS_ x1 x2) = mkApp (mkCId "ccompMarkUDS_") [gf x1, gf x2]
   gf (Gccomp_ x1) = mkApp (mkCId "ccomp_") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ccompMarkUDS_" -> GccompMarkUDS_ (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "ccomp_" -> Gccomp_ (fg x1)
 
 
@@ -3462,16 +3278,6 @@ instance Gf Gnsubj where
 
       _ -> error ("no nsubj " ++ show t)
 
-instance Gf GnsubjPass where
-  gf (GnsubjPass_ x1) = mkApp (mkCId "nsubjPass_") [gf x1]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1]) | i == mkCId "nsubjPass_" -> GnsubjPass_ (fg x1)
-
-
-      _ -> error ("no nsubjPass " ++ show t)
-
 instance Gf Gnummod where
   gf (Gnummod_ x1) = mkApp (mkCId "nummod_") [gf x1]
 
@@ -3606,7 +3412,8 @@ instance Gf Groot where
   gf (GrootPrep_ x1) = mkApp (mkCId "rootPrep_") [gf x1]
   gf (GrootQuant_ x1) = mkApp (mkCId "rootQuant_") [gf x1]
   gf (GrootRP_ x1) = mkApp (mkCId "rootRP_") [gf x1]
-  gf (GrootV_ x1) = mkApp (mkCId "rootV_") [gf x1]
+  gf (GrootV_ x1 x2 x3) = mkApp (mkCId "rootV_") [gf x1, gf x2, gf x3]
+  gf (GrootVaux_ x1 x2 x3 x4) = mkApp (mkCId "rootVaux_") [gf x1, gf x2, gf x3, gf x4]
 
   fg t =
     case unApp t of
@@ -3619,7 +3426,8 @@ instance Gf Groot where
       Just (i,[x1]) | i == mkCId "rootPrep_" -> GrootPrep_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootQuant_" -> GrootQuant_ (fg x1)
       Just (i,[x1]) | i == mkCId "rootRP_" -> GrootRP_ (fg x1)
-      Just (i,[x1]) | i == mkCId "rootV_" -> GrootV_ (fg x1)
+      Just (i,[x1,x2,x3]) | i == mkCId "rootV_" -> GrootV_ (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "rootVaux_" -> GrootVaux_ (fg x1) (fg x2) (fg x3) (fg x4)
 
 
       _ -> error ("no root " ++ show t)
@@ -3789,6 +3597,14 @@ instance Gf Gcase_ where
 
 
 
+
+instance Gf Gcc where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
 instance Compos Tree where
   compos r a f t = case t of
     GStrA x1 -> r GStrA `a` f x1
@@ -3892,6 +3708,7 @@ instance Compos Tree where
     GParty x1 -> r GParty `a` f x1
     GPredetNP x1 x2 -> r GPredetNP `a` f x1 `a` f x2
     GRelNP x1 x2 -> r GRelNP `a` f x1 `a` f x2
+    GRelclNP x1 x2 -> r GRelclNP `a` f x1 `a` f x2
     GSentNP x1 x2 -> r GSentNP `a` f x1 `a` f x2
     GTokAll x1 -> r GTokAll `a` f x1
     GUsePN x1 -> r GUsePN `a` f x1
@@ -3989,8 +3806,6 @@ instance Compos Tree where
     Groot_aclRelcl_nmod x1 x2 x3 -> r Groot_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_acl_nmod x1 x2 x3 -> r Groot_acl_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_advcl x1 x2 -> r Groot_advcl `a` f x1 `a` f x2
-    Groot_advcl_nsubjPass_auxPass x1 x2 x3 x4 -> r Groot_advcl_nsubjPass_auxPass `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_advcl_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5 x6 -> r Groot_advcl_nsubjPass_aux_auxPass_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
     Groot_advcl_nsubj_aux_advcl x1 x2 x3 x4 x5 -> r Groot_advcl_nsubj_aux_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
     Groot_advcl_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6 -> r Groot_advcl_nsubj_aux_advmod_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
     Groot_advcl_nsubj_aux_ccomp x1 x2 x3 x4 x5 -> r Groot_advcl_nsubj_aux_ccomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
@@ -4010,7 +3825,6 @@ instance Compos Tree where
     Groot_amod_nmod x1 x2 x3 -> r Groot_amod_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_appos x1 x2 -> r Groot_appos `a` f x1 `a` f x2
     Groot_appos_advmod x1 x2 x3 -> r Groot_appos_advmod `a` f x1 `a` f x2 `a` f x3
-    Groot_auxPass x1 x2 -> r Groot_auxPass `a` f x1 `a` f x2
     Groot_case x1 x2 -> r Groot_case `a` f x1 `a` f x2
     Groot_case_amod x1 x2 x3 -> r Groot_case_amod `a` f x1 `a` f x2 `a` f x3
     Groot_case_amod_amod x1 x2 x3 x4 -> r Groot_case_amod_amod `a` f x1 `a` f x2 `a` f x3 `a` f x4
@@ -4018,19 +3832,7 @@ instance Compos Tree where
     Groot_case_nummod x1 x2 x3 -> r Groot_case_nummod `a` f x1 `a` f x2 `a` f x3
     Groot_case_nummod_acl x1 x2 x3 x4 -> r Groot_case_nummod_acl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_case_nummod_nummod x1 x2 x3 x4 -> r Groot_case_nummod_nummod `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_cc x1 x2 -> r Groot_cc `a` f x1 `a` f x2
-    Groot_cc_cop_xcomp x1 x2 x3 x4 -> r Groot_cc_cop_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_cc_nmod x1 x2 x3 -> r Groot_cc_nmod `a` f x1 `a` f x2 `a` f x3
-    Groot_cc_obj x1 x2 x3 -> r Groot_cc_obj `a` f x1 `a` f x2 `a` f x3
     Groot_ccomp x1 x2 -> r Groot_ccomp `a` f x1 `a` f x2
-    Groot_compound x1 x2 -> r Groot_compound `a` f x1 `a` f x2
-    Groot_compoundPrt_compoundPrt x1 x2 x3 -> r Groot_compoundPrt_compoundPrt `a` f x1 `a` f x2 `a` f x3
-    Groot_compound_acl x1 x2 x3 -> r Groot_compound_acl `a` f x1 `a` f x2 `a` f x3
-    Groot_compound_amod x1 x2 x3 -> r Groot_compound_amod `a` f x1 `a` f x2 `a` f x3
-    Groot_compound_appos x1 x2 x3 -> r Groot_compound_appos `a` f x1 `a` f x2 `a` f x3
-    Groot_compound_compound x1 x2 x3 -> r Groot_compound_compound `a` f x1 `a` f x2 `a` f x3
-    Groot_compound_compound_appos x1 x2 x3 x4 -> r Groot_compound_compound_appos `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_compound_flat x1 x2 x3 -> r Groot_compound_flat `a` f x1 `a` f x2 `a` f x3
     Groot_cop x1 x2 -> r Groot_cop `a` f x1 `a` f x2
     Groot_cop_advmod x1 x2 x3 -> r Groot_cop_advmod `a` f x1 `a` f x2 `a` f x3
     Groot_csubj x1 x2 -> r Groot_csubj `a` f x1 `a` f x2
@@ -4040,41 +3842,11 @@ instance Compos Tree where
     Groot_fixed x1 x2 -> r Groot_fixed `a` f x1 `a` f x2
     Groot_goeswith x1 x2 -> r Groot_goeswith `a` f x1 `a` f x2
     Groot_goeswith_goeswith x1 x2 x3 -> r Groot_goeswith_goeswith `a` f x1 `a` f x2 `a` f x3
-    Groot_mark x1 x2 -> r Groot_mark `a` f x1 `a` f x2
-    Groot_mark_cc_mark_obj x1 x2 x3 x4 x5 -> r Groot_mark_cc_mark_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_expl_cop_xcomp x1 x2 x3 x4 x5 -> r Groot_mark_expl_cop_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_expl_nsubj x1 x2 x3 x4 -> r Groot_mark_expl_nsubj `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubj x1 x2 x3 -> r Groot_mark_nsubj `a` f x1 `a` f x2 `a` f x3
-    Groot_mark_nsubjPass_auxPass x1 x2 x3 x4 -> r Groot_mark_nsubjPass_auxPass `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubjPass_auxPass_obl x1 x2 x3 x4 x5 -> r Groot_mark_nsubjPass_auxPass_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_nsubj_aux x1 x2 x3 x4 -> r Groot_mark_nsubj_aux `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6 -> r Groot_mark_nsubj_aux_advmod_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
-    Groot_mark_nsubj_aux_aux x1 x2 x3 x4 x5 -> r Groot_mark_nsubj_aux_aux `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_nsubj_cop x1 x2 x3 x4 -> r Groot_mark_nsubj_cop `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubj_cop_obl x1 x2 x3 x4 x5 -> r Groot_mark_nsubj_cop_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_nsubj_nsubj_xcomp x1 x2 x3 x4 x5 -> r Groot_mark_nsubj_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_mark_nsubj_obj x1 x2 x3 x4 -> r Groot_mark_nsubj_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubj_obl x1 x2 x3 x4 -> r Groot_mark_nsubj_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nsubj_xcomp x1 x2 x3 x4 -> r Groot_mark_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_mark_nummod x1 x2 x3 -> r Groot_mark_nummod `a` f x1 `a` f x2 `a` f x3
     Groot_nmod x1 x2 -> r Groot_nmod `a` f x1 `a` f x2
     Groot_nmod_acl x1 x2 x3 -> r Groot_nmod_acl `a` f x1 `a` f x2 `a` f x3
     Groot_nmod_aclRelcl x1 x2 x3 -> r Groot_nmod_aclRelcl `a` f x1 `a` f x2 `a` f x3
     Groot_nmod_nmod x1 x2 x3 -> r Groot_nmod_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj x1 x2 -> r Groot_nsubj `a` f x1 `a` f x2
-    Groot_nsubjPass_auxPass x1 x2 x3 -> r Groot_nsubjPass_auxPass `a` f x1 `a` f x2 `a` f x3
-    Groot_nsubjPass_auxPass_advmod x1 x2 x3 x4 -> r Groot_nsubjPass_auxPass_advmod `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_nsubjPass_auxPass_advmod_advcl x1 x2 x3 x4 x5 -> r Groot_nsubjPass_auxPass_advmod_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_nsubjPass_auxPass_advmod_xcomp x1 x2 x3 x4 x5 -> r Groot_nsubjPass_auxPass_advmod_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_nsubjPass_auxPass_xcomp x1 x2 x3 x4 -> r Groot_nsubjPass_auxPass_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_nsubjPass_aux_auxPass x1 x2 x3 x4 -> r Groot_nsubjPass_aux_auxPass `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_nsubjPass_aux_auxPass_advcl_advcl x1 x2 x3 x4 x5 x6 -> r Groot_nsubjPass_aux_auxPass_advcl_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
-    Groot_nsubjPass_aux_auxPass_advmod x1 x2 x3 x4 x5 -> r Groot_nsubjPass_aux_auxPass_advmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_nsubjPass_aux_auxPass_obl x1 x2 x3 x4 x5 -> r Groot_nsubjPass_aux_auxPass_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
-    Groot_nsubjPass_aux_auxPass_obl_advmod x1 x2 x3 x4 x5 x6 -> r Groot_nsubjPass_aux_auxPass_obl_advmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
-    Groot_nsubjPass_aux_auxPass_obl_obl_advcl x1 x2 x3 x4 x5 x6 x7 -> r Groot_nsubjPass_aux_auxPass_obl_obl_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6 `a` f x7
-    Groot_nsubjPass_aux_auxPass_obl_obl_advmod x1 x2 x3 x4 x5 x6 x7 -> r Groot_nsubjPass_aux_auxPass_obl_obl_advmod `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6 `a` f x7
-    Groot_nsubjPass_aux_auxPass_xcomp x1 x2 x3 x4 x5 -> r Groot_nsubjPass_aux_auxPass_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
     Groot_nsubj_advmod x1 x2 x3 -> r Groot_nsubj_advmod `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj_advmod_obj x1 x2 x3 x4 -> r Groot_nsubj_advmod_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_aux x1 x2 x3 -> r Groot_nsubj_aux `a` f x1 `a` f x2 `a` f x3
@@ -4089,6 +3861,7 @@ instance Compos Tree where
     Groot_nsubj_aux_obj_obl_advmod_advcl x1 x2 x3 x4 x5 x6 x7 -> r Groot_nsubj_aux_obj_obl_advmod_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6 `a` f x7
     Groot_nsubj_aux_obj_obl_obl x1 x2 x3 x4 x5 x6 -> r Groot_nsubj_aux_obj_obl_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
     Groot_nsubj_aux_obl x1 x2 x3 x4 -> r Groot_nsubj_aux_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    Groot_nsubj_aux_xcomp x1 x2 x3 x4 -> r Groot_nsubj_aux_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_ccomp x1 x2 x3 -> r Groot_nsubj_ccomp `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj_cop x1 x2 x3 -> r Groot_nsubj_cop `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj_cop_aclRelcl x1 x2 x3 x4 -> r Groot_nsubj_cop_aclRelcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
@@ -4101,31 +3874,28 @@ instance Compos Tree where
     Groot_nsubj_cop_obl x1 x2 x3 x4 -> r Groot_nsubj_cop_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_cop_obl_parataxis x1 x2 x3 x4 x5 -> r Groot_nsubj_cop_obl_parataxis `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
     Groot_nsubj_nsubj_aux_advmod_obj x1 x2 x3 x4 x5 x6 -> r Groot_nsubj_nsubj_aux_advmod_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
+    Groot_nsubj_nsubj_xcomp x1 x2 x3 x4 -> r Groot_nsubj_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_obj x1 x2 x3 -> r Groot_nsubj_obj `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj_obj_advcl x1 x2 x3 x4 -> r Groot_nsubj_obj_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    Groot_nsubj_obj_obl x1 x2 x3 x4 -> r Groot_nsubj_obj_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_obj_xcomp x1 x2 x3 x4 -> r Groot_nsubj_obj_xcomp `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_obl x1 x2 x3 -> r Groot_nsubj_obl `a` f x1 `a` f x2 `a` f x3
     Groot_nsubj_obl_obl x1 x2 x3 x4 -> r Groot_nsubj_obl_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_nsubj_xcomp x1 x2 x3 -> r Groot_nsubj_xcomp `a` f x1 `a` f x2 `a` f x3
     Groot_nummod x1 x2 -> r Groot_nummod `a` f x1 `a` f x2
     Groot_nummod_appos x1 x2 x3 -> r Groot_nummod_appos `a` f x1 `a` f x2 `a` f x3
-    Groot_nummod_auxPass_cc_aux_auxPass_obl_obl x1 x2 x3 x4 x5 x6 x7 x8 -> r Groot_nummod_auxPass_cc_aux_auxPass_obl_obl `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6 `a` f x7 `a` f x8
-    Groot_nummod_mark_obj x1 x2 x3 x4 -> r Groot_nummod_mark_obj `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    Groot_nummod_mark_obj_cc x1 x2 x3 x4 x5 -> r Groot_nummod_mark_obj_cc `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5
     Groot_nummod_nmod x1 x2 x3 -> r Groot_nummod_nmod `a` f x1 `a` f x2 `a` f x3
-    Groot_nummod_nsubjPass_nsubjPass_auxPass_cc x1 x2 x3 x4 x5 x6 -> r Groot_nummod_nsubjPass_nsubjPass_auxPass_cc `a` f x1 `a` f x2 `a` f x3 `a` f x4 `a` f x5 `a` f x6
     Groot_nummod_obl x1 x2 x3 -> r Groot_nummod_obl `a` f x1 `a` f x2 `a` f x3
-    Groot_nummod_obl_cc x1 x2 x3 x4 -> r Groot_nummod_obl_cc `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_obj x1 x2 -> r Groot_obj `a` f x1 `a` f x2
     Groot_obj_ccomp x1 x2 x3 -> r Groot_obj_ccomp `a` f x1 `a` f x2 `a` f x3
     Groot_obj_nmod x1 x2 x3 -> r Groot_obj_nmod `a` f x1 `a` f x2 `a` f x3
+    Groot_obj_obl_advcl x1 x2 x3 x4 -> r Groot_obj_obl_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_obl x1 x2 -> r Groot_obl `a` f x1 `a` f x2
     Groot_obl_appos x1 x2 x3 -> r Groot_obl_appos `a` f x1 `a` f x2 `a` f x3
     Groot_obl_aux x1 x2 x3 -> r Groot_obl_aux `a` f x1 `a` f x2 `a` f x3
     Groot_obl_case x1 x2 x3 -> r Groot_obl_case `a` f x1 `a` f x2 `a` f x3
     Groot_obl_obj x1 x2 x3 -> r Groot_obl_obj `a` f x1 `a` f x2 `a` f x3
     Groot_obl_obl x1 x2 x3 -> r Groot_obl_obl `a` f x1 `a` f x2 `a` f x3
-    Groot_obl_obl_obl_cc x1 x2 x3 x4 -> r Groot_obl_obl_obl_cc `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Groot_obl_xcomp x1 x2 x3 -> r Groot_obl_xcomp `a` f x1 `a` f x2 `a` f x3
     Groot_only x1 -> r Groot_only `a` f x1
     Groot_parataxis x1 x2 -> r Groot_parataxis `a` f x1 `a` f x2
@@ -4142,14 +3912,14 @@ instance Compos Tree where
     GProgrVP x1 -> r GProgrVP `a` f x1
     GUseComp x1 -> r GUseComp `a` f x1
     GUseV x1 -> r GUseV `a` f x1
+    GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GaclUDS_ x1 -> r GaclUDS_ `a` f x1
     GaclUDSgerund_ x1 -> r GaclUDSgerund_ `a` f x1
     GaclUDSpastpartParens_ x1 -> r GaclUDSpastpartParens_ `a` f x1
     GaclUDSpastpart_ x1 -> r GaclUDSpastpart_ `a` f x1
     Gacl_ x1 -> r Gacl_ `a` f x1
-    GaclRelclRS_ x1 -> r GaclRelclRS_ `a` f x1
+    GaclRelclUDSRP_ x1 x2 -> r GaclRelclUDSRP_ `a` f x1 `a` f x2
     GaclRelclUDS_ x1 -> r GaclRelclUDS_ `a` f x1
-    GpassRelcl_ x1 x2 x3 -> r GpassRelcl_ `a` f x1 `a` f x2 `a` f x3
     GadvclMarkUDS_ x1 x2 -> r GadvclMarkUDS_ `a` f x1 `a` f x2
     GadvclUDS_ x1 -> r GadvclUDS_ `a` f x1
     Gadvcl_ x1 -> r Gadvcl_ `a` f x1
@@ -4159,8 +3929,8 @@ instance Compos Tree where
     Gamod_ x1 -> r Gamod_ `a` f x1
     Gappos_ x1 -> r Gappos_ `a` f x1
     Gaux_ x1 -> r Gaux_ `a` f x1
-    Gcc_ x1 -> r Gcc_ `a` f x1
     GccPreconj_ x1 -> r GccPreconj_ `a` f x1
+    GccompMarkUDS_ x1 x2 -> r GccompMarkUDS_ `a` f x1 `a` f x2
     Gccomp_ x1 -> r Gccomp_ `a` f x1
     Gclf_ x1 -> r Gclf_ `a` f x1
     Gcompound_ x1 -> r Gcompound_ `a` f x1
@@ -4195,7 +3965,6 @@ instance Compos Tree where
     GnmodPoss_ x1 -> r GnmodPoss_ `a` f x1
     GnmodTmod_ x1 -> r GnmodTmod_ `a` f x1
     Gnsubj_ x1 -> r Gnsubj_ `a` f x1
-    GnsubjPass_ x1 -> r GnsubjPass_ `a` f x1
     Gnummod_ x1 -> r Gnummod_ `a` f x1
     GnummodGov_ x1 -> r GnummodGov_ `a` f x1
     Gobj_ x1 -> r Gobj_ `a` f x1
@@ -4219,7 +3988,8 @@ instance Compos Tree where
     GrootPrep_ x1 -> r GrootPrep_ `a` f x1
     GrootQuant_ x1 -> r GrootQuant_ `a` f x1
     GrootRP_ x1 -> r GrootRP_ `a` f x1
-    GrootV_ x1 -> r GrootV_ `a` f x1
+    GrootV_ x1 x2 x3 -> r GrootV_ `a` f x1 `a` f x2 `a` f x3
+    GrootVaux_ x1 x2 x3 x4 -> r GrootVaux_ `a` f x1 `a` f x2 `a` f x3 `a` f x4
     Gvocative_ x1 -> r Gvocative_ `a` f x1
     GxcompA_ x1 -> r GxcompA_ `a` f x1
     GxcompA_ccomp_ x1 x2 -> r GxcompA_ccomp_ `a` f x1 `a` f x2

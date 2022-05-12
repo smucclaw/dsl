@@ -1,0 +1,7 @@
+1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
+2	form	form	NOUN	NN	Number=Sing	0	root	_	FUN=form_N
+3	and	and	CCONJ	CC	_	4	cc	_	FUN=and_Conj
+4	manner	manner	NOUN	NN	Number=Sing	2	conj	_	FUN=manner_N
+5	specified	specify	VERB	VBN	Tense=Past|VerbForm=Part	2	acl	_	FUN=specifyVBN
+6	at	at	ADP	IN	_	7	case	_	_
+7	www.pdpc.gov.sg	www.pdpc.gov.sg	X	ADD	_	5	obl	_	_

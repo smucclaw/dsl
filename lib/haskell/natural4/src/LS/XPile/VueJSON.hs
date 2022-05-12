@@ -120,3 +120,7 @@ quaero :: [Text.Text] -> [Text.Text]
 quaero [x] = [Text.unwords $ quaero $ Text.words x]
 quaero (x:xs) = Text.toTitle x : init xs ++ [last xs <> "?"]
 quaero xs = xs
+
+toVueRules :: [Rule] -> BoolStructR
+toVueRules [Hornlike {clauses=[HC2 {hBody=Just t}]}] = t
+toVueRules _ = error "toVueRules cannot handle a list of more than one rule"

@@ -61,7 +61,7 @@ nlgTests env = do
 
     it "Should return a det as det" $ do
         treeDetsDet <- bsr2gf env testDetsAsDet
-        showExpr treeDetsDet `shouldBe` "PredVP (UsePron i_Pron) (ComplVP (UseV like_V) (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N)))"
+        showExpr treeDetsDet `shouldBe` "UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron i_Pron) (ComplV like_V (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N))))"
 
 nlgTests2 :: Spec
 nlgTests2 = do

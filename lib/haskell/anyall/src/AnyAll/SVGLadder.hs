@@ -43,6 +43,24 @@ defaultAAVConfig = AAVConfig
   , cgetMark = Marking Map.empty
   }
 
+data AAVScale = AAVScale
+  ( Width  -- ^ box width
+  , Height -- ^ box height
+  , Width  -- ^ left margin
+  , Width  -- ^ top margin
+  , Width  -- ^ right margin
+  , Width  -- ^ bottom margin
+  , Width  -- ^ LR: vertical gap between vertical elements
+  ) deriving (Show, Eq)
+
+getScale :: Scale -> AAVScale
+getScale Full  = AAVScale (120, 44, 22, 20, 22, 20, 10)
+getScale Small = AAVScale ( 44, 30, 11, 14, 11, 14,  7)
+getScale Tiny  = AAVScale (  8,  8,  6, 10,  6, 10,  5)
+
+getColors True = ("none", "none", "black")
+getColors False = ("none", "lightgrey", "white")
+
 type ItemStyle = Maybe Bool
 
 (<<-*) :: Show a => AttrTag -> a -> Attribute
@@ -73,30 +91,54 @@ drawItem c qt
   | cscale c == Tiny = drawItemTiny c qt
   | otherwise        = drawItemFull c qt
 
-drawItemTiny c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             6  10  6 10   8  8 False
-drawItemTiny c qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawLeaf c (head childqs) 6  10  6 10   8  8 True
-drawItemTiny c qt                                              = drawItemFull c qt                                  -- [TODO]
-drawItemFull c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             22 20 22 20 120 44 False
-drawItemFull c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 True
-drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
-drawItemFull c qt@(Node (Q _sv ao@Or            pp m) childqs) = drawLeaf c (head childqs) 22 20 22 20 120 44 False -- [TODO]
+drawItemTiny c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             False
+drawItemTiny c qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawLeaf c (head childqs) True
+drawItemTiny c qt                                              = drawItemFull c qt               -- [TODO]
+drawItemFull c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             False
+drawItemFull c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) True
+drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) False -- [TODO]
+drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
+  -- in a LR layout, each of the ORs gets a row below.
+  -- we max up the bounding boxes and return that as our own bounding box.
+  let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
+      (boxStroke, boxFill, textFill) = getColors True
+      oneRowHeight = boxHeight + topMargin + bottomMargin + lrVgap
+      drawnChildren = vDistribute $ drawItemFull c <$> childqs
+      leftLineLength = fromIntegral (length drawnChildren) * lrVgap + (snd . fst $ drawnChildren)
+  in
+    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + oneRowHeight)
+    ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
+      <> move (leftMargin, oneRowHeight) (snd drawnChildren)
+      <> line_ [ X1_ <<-* 0,          Y1_ <<-* (topMargin + boxHeight / 2), X2_ <<-* leftMargin, Y2_ <<-* (topMargin + boxHeight / 2), Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* (topMargin + boxHeight / 2), X2_ <<-* leftMargin, Y2_ <<-* leftLineLength             , Stroke_ <<- "black" ]
+    )
+     
+    where
+      topText (Just (Pre x      )) = x
+      topText (Just (PrePost x _)) = x
+      topText Nothing              = ""
 
-drawLeaf :: AAVConfig -> QTree TL.Text
-         -> Int  -- ^    topMargin
-         -> Int  -- ^  rightMargin
-         -> Int  -- ^ bottomMargin
-         -> Int  -- ^   leftMargin
-         -> Int  -- ^    boxWidth
-         -> Int  -- ^    boxHeight
+
+      -- if we used the diagrams package all of this would be calculated automatically for us.
+      vDistribute, vD :: [((Width, Height), Element)] -> ((Width,Height),Element)
+      vDistribute = vD . reverse
+
+      vD [] = ((0,0),mempty)
+      vD [((w,h),x)]    = ((w,h),x)
+      vD (((w,h),x):xs) = let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
+                              vds = vD xs
+                          in ((max w (fst . fst $ vds)
+                              ,max h (snd . fst $ vds))
+                              , x <> move (0,h + lrVgap) (snd vds))
+                              -- [FIXME] accidentallyQuadratic
+      
+drawLeaf :: AAVConfig
+         -> QTree TL.Text -- ^ the tree to draw
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> (BBox, Element)
-drawLeaf c qt@(Node q childqs)
-  topMargin rightMargin bottomMargin leftMargin
-  boxWidth boxHeight
-  negContext =
-  let (boxStroke, boxFill, textFill) = case confidence of
-        True  -> ("none", "none", "black")
-        False -> ("none", "lightgrey", "white")
+drawLeaf c qt@(Node q childqs) negContext =
+  let (boxStroke, boxFill, textFill) = getColors confidence
+      AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
       mytext = case andOr q of
         (Simply txt) -> fromString (TL.unpack txt)
         (Neg)        -> "neg..."
@@ -111,16 +153,16 @@ drawLeaf c qt@(Node q childqs)
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
-                    then          (circle_ [Cx_  <<-* (boxWidth  `div` 2 + leftMargin) ,Cy_      <<-* (boxHeight `div` 2 + topMargin) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ] )
-                    else            (text_ [ X_  <<-* (boxWidth  `div` 2 + leftMargin) , Y_      <<-* (boxHeight `div` 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+                    then          (circle_ [Cx_  <<-* (boxWidth  / 2 + leftMargin) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
+                    else            (text_ [ X_  <<-* (boxWidth  / 2 + leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) (fromIntegral $ leftMargin + boxWidth + rightMargin, fromIntegral $ topMargin + boxHeight + bottomMargin) $
+  (,) (leftMargin + boxWidth + rightMargin, topMargin + boxHeight + bottomMargin) $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
-  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_ <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] -- LR: line in on the left
-  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight `div` 2) , X2_ <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] -- LR: line out on the right
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight `div` 2) , Stroke_ <<- "black" ] else mempty)
+  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight / 2) , X2_ <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] -- LR: line in on the left
+  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight / 2) , X2_ <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] -- LR: line out on the right
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
   <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
   <> (if rightline == FullLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* topMargin                       , Stroke_ <<- "black" ] else mempty)

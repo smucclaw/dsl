@@ -8,6 +8,7 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	fun
 
 	RelclNP : NP -> aclRelcl -> NP ; -- RelNP but for aclRelcl instead. Too annoying to build RS here, instead going via UDS.
+	AclNP : NP -> acl -> NP ;        -- same but for gerunds etc
 
 	-- from the first test corpus, full sentences
 	root_cop_advmod          : root -> cop -> advmod -> UDS ; -- is not a breach
@@ -269,6 +270,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_xcomp_ccomp : root -> xcomp -> ccomp -> UDS ;
 	--render it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
+
+        root_xcomp_obj : root -> xcomp -> obj -> UDS ; -- probably misparse??
 
 		root_nsubj_aux_obl : root -> nsubj -> aux -> obl -> UDS ;
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;

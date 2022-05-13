@@ -6,7 +6,7 @@ root_nsubj_obj (rootV_ (TTAnt TPres ASimul) PPos (UseV cover_V)) (nsubj_ (DetCN 
 
 LIN: the PDPA covers personal data stored in electronic and non-electronic formats
 
-root_nsubj_cop (rootN_ (DetCN aSg_Det (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (nsubj_ (DetCN aSg_Det (AdjCN (PresPartAP (ComplV affect_V (DetCN (DetQuant more_than_Quant (StrNum "500")) (UseN people_N)))) (UseN (CompoundN data_N breach_N))))) be_cop
+root_nsubj_cop (rootN_ (DetCN aSg_Det (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (nsubj_ (AclNP (DetCN aSg_Det (UseN (CompoundN data_N breach_N))) (aclUDSgerund_ (root_obj (rootV_ (TTAnt TPres ASimul) PPos (UseV affect_V)) (obj_ (DetCN (DetQuant more_than_Quant (StrNum "500")) (UseN people_N))))))) be_cop
 
 LIN: a data breach affecting more than 500 people is a notifiable data breach
 
@@ -118,7 +118,7 @@ root_nsubj_aux_obl (rootV_ (TTAnt TPres ASimul) PPos (PassV design_V)) (nsubj_ (
 
 LIN: the height of unlimited area buildings shall be designed in accordance with 10 sections
 
-root_nsubj_aux_xcomp (rootV_ (TTAnt TPres ASimul) PPos (PassV consider_V)) (nsubj_ (DetCN each_Det (AdjCN (PastPartAP (AdvVP (UseV separate_V) (PrepNP by8agent_Prep (DetCN (XorMore (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01)))))) (AdjCN (PresPartAP (AdvVP (UseV comply_V) (PrepNP with_Prep (DetCN (DetQuant IndefArt (NumCard (StrCard "10"))) (UseN section_N))))) (UseN (CompoundN fire_N wall_N))))))) (AdvCN (UseN portion_N) (PrepNP of_Prep (DetCN aSg_Det (UseN building_N))))))) shall_aux (xcompToBeN_ to_mark be_cop (DetCN aSg_Det (AdjCN (PositA separate_A) (UseN building_N))))
+root_nsubj_aux_xcomp (rootV_ (TTAnt TPres ASimul) PPos (PassV consider_V)) (nsubj_ (DetCN each_Det (AdjCN (PastPartAP (AdvVP (UseV separate_V) (PrepNP by8agent_Prep (AclNP (DetCN (XorMore (NumNumeral (num (pot2as3 (pot1as2 (pot0as1 pot01)))))) (UseN (CompoundN fire_N wall_N))) (aclUDSgerund_ (root_only (rootV_ (TTAnt TPres ASimul) PPos (AdvVP (UseV comply_V) (PrepNP with_Prep (DetCN (DetQuant IndefArt (NumCard (StrCard "10"))) (UseN section_N))))))))))) (AdvCN (UseN portion_N) (PrepNP of_Prep (DetCN aSg_Det (UseN building_N))))))) shall_aux (xcompToBeN_ to_mark be_cop (DetCN aSg_Det (AdjCN (PositA separate_A) (UseN building_N))))
 
 LIN: each portion of a building separated by one or more fire walls complying with 10 sections shall be considered to be a separate building
 

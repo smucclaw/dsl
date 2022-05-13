@@ -12,7 +12,9 @@ abstract BareRG =
     ,VPS, MkVPS
   ],
 
-  Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
+  Sentence [
+    PredVP, UseCl, UseRCl, UseQCl
+    ],
 
   Verb [
      VP,AdV,Adv,AP,Comp,NP,V,Tense

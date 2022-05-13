@@ -9,7 +9,10 @@ concrete BareRGEng of BareRG =
     ,VPS,MkVPS
   ],
 
-  SentenceEng,
+  SentenceEng [
+    PredVP, UseCl, UseRCl, UseQCl
+    ],
+
 
   VerbEng [
    VP,AdV,Adv,AP,Comp,NP,V,Tense

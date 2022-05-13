@@ -136,6 +136,7 @@
 #fun PredetNP 	det head
 #fun RelNP 	head acl:*
 #fun RelclNP head acl:relcl
+#fun AclNP head acl
 #fun OrdNumeralSuperl 	nummod head  -- quite wrong; cannot find relevant details in the documentation; but most probably head lies outside the score of this function
 #fun QuestIAdv 	advmod head		-- "where does John sleep" cf. AdvVP
 #fun QuestIComp 	head nsubj	-- "where is John": John is clearly nsubj, but is where the head?
@@ -402,6 +403,7 @@
 #fun root_obl_xcomp head obl xcomp
 #fun root_parataxis head parataxis
 #fun root_xcomp_ccomp head xcomp ccomp
+#fun root_xcomp_obj head xcomp obj
 #fun root_advcl_det_compound_amod_advcl head advcl  det  compound  amod  advcl
 #fun root_advcl_nsubjPass_auxPass head advcl  nsubj:pass  aux:pass
 #fun root_advcl_nsubj_aux_advcl head advcl  nsubj:*  aux  advcl

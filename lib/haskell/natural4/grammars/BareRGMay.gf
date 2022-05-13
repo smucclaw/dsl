@@ -9,7 +9,10 @@ concrete BareRGMay of BareRG =
     ,VPS,MkVPS
   ],
 
-  SentenceMay,
+  SentenceMay [
+    PredVP, UseCl, UseRCl, UseQCl
+    ],
+
 
   VerbMay [
    VP,AdV,Adv,AP,Comp,NP,V,Tense

@@ -3,6 +3,7 @@
 concrete UDAppEng of UDApp =
   UDCatEng, JustWordsWordNetEng - [some_Quant, some_Det, any_Det] **
   open Prelude, SyntaxEng, IrregEng, ExtendEng,
+    SymbolicEng,
     (PE=ParseExtendEng) -- from WordNet
     in {
 
@@ -19,6 +20,8 @@ lin
 
 	-- : NP -> aclRelcl -> NP ; -- RelNP but for aclRelcl instead. Too annoying to build RS here, instead going via UDS.
   RelclNP np rcl = mkNP np rcl ;
+  -- : NP -> acl -> NP ;        -- same but for gerunds etc
+	AclNP np acl = mkNP np acl ;
 
 -----------------------------------------------------------------------------
 -- Variations on root_nsubj_*
@@ -146,6 +149,10 @@ lin
      in root_nsubj critical_to_assess_Root it_NP ;
      -- we can call root_nsubj on these, because lincat of nsubj is NP
 
+  -- this is probably a misparse, tailoring it for the particular case of
+  -- [becoming aware a breach]:csubj [may have occurred]:root
+  root_csubj rt cs = root_nsubj rt (symb cs) ;
+
 -----------------------------------------------------------------------------
 -- No subject, only root
    -- : root -> UDS ;  -- sing ;
@@ -197,6 +204,9 @@ lin
 	root_xcomp render unlikely =
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
 	   in onlyPred render_unlikely ;
+
+  -- : root -> xcomp -> obj -> UDS ;
+  root_xcomp_obj rt xc obj = root_obj (advRoot rt xc) obj ;
 
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =

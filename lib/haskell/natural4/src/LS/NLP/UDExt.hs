@@ -93,8 +93,6 @@ type GIP = Tree GIP_
 data GIP_
 type GIQuant = Tree GIQuant_
 data GIQuant_
-type GImp = Tree GImp_
-data GImp_
 type GInterj = Tree GInterj_
 data GInterj_
 type GListAP = Tree GListAP_
@@ -171,8 +169,6 @@ type GS = Tree GS_
 data GS_
 type GSC = Tree GSC_
 data GSC_
-type GSSlash = Tree GSSlash_
-data GSSlash_
 type GSub10 = Tree GSub10_
 data GSub10_
 type GSub100 = Tree GSub100_
@@ -315,8 +311,12 @@ type Gvocative = Tree Gvocative_
 data Gvocative_
 type Gxcomp = Tree Gxcomp_
 data Gxcomp_
+type GImp = Tree GImp_
+data GImp_
 type GPhr = Tree GPhr_
 data GPhr_
+type GSSlash = Tree GSSlash_
+data GSSlash_
 type GText = Tree GText_
 data GText_
 type GUtt = Tree GUtt_
@@ -423,11 +423,7 @@ data Tree :: * -> * where
   GImpersCl :: GVP -> Tree GCl_
   GPredSCVP :: GSC -> GVP -> Tree GCl_
   GPredVP :: GNP -> GVP -> Tree GCl_
-  GAdvSlash :: GClSlash -> GAdv -> Tree GClSlash_
   GSlashCl :: GCl -> Tree GClSlash_
-  GSlashPrep :: GCl -> GPrep -> Tree GClSlash_
-  GSlashVP :: GNP -> GVPSlash -> Tree GClSlash_
-  GSlashVS :: GNP -> GVS -> GSSlash -> Tree GClSlash_
   GCompAP :: GAP -> Tree GComp_
   GCompAdv :: GAdv -> Tree GComp_
   GCompNP :: GNP -> Tree GComp_
@@ -480,8 +476,6 @@ data Tree :: * -> * where
   Gwhat_IP :: Tree GIP_
   Gwho_IP :: Tree GIP_
   Gwhich_IQuant :: Tree GIQuant_
-  GAdvImp :: GAdv -> GImp -> Tree GImp_
-  GImpVP :: GVP -> Tree GImp_
   LexInterj :: String -> Tree GInterj_
   GListAP :: [GAP] -> Tree GListAP_
   GListAdV :: [GAdV] -> Tree GListAdV_
@@ -506,6 +500,7 @@ data Tree :: * -> * where
   LexN2 :: String -> Tree GN2_
   GMkN3 :: GN -> GPrep -> GPrep -> Tree GN3_
   LexN3 :: String -> Tree GN3_
+  GAclNP :: GNP -> Gacl -> Tree GNP_
   GAdjAsNP :: GAP -> Tree GNP_
   GAdvNP :: GNP -> GAdv -> Tree GNP_
   GApposNP :: GNP -> GNP -> Tree GNP_
@@ -583,19 +578,14 @@ data Tree :: * -> * where
   GConjRS :: GConj -> GListRS -> Tree GRS_
   GRS_that_NP_VP :: GNP -> GVP -> Tree GRS_
   GUseRCl :: GTemp -> GPol -> GRCl -> Tree GRS_
-  GAdvS :: GAdv -> GS -> Tree GS_
   GConjS :: GConj -> GListS -> Tree GS_
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
-  GExtAdvS :: GAdv -> GS -> Tree GS_
   GPostAdvS :: GS -> GAdv -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
-  GRelS :: GS -> GRS -> Tree GS_
-  GSSubjS :: GS -> GSubj -> GS -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
   GEmbedQS :: GQS -> Tree GSC_
   GEmbedS :: GS -> Tree GSC_
   GEmbedVP :: GVP -> Tree GSC_
-  GUseSlash :: GTemp -> GPol -> GClSlash -> Tree GSSlash_
   Gpot0 :: GDigit -> Tree GSub10_
   Gpot01 :: Tree GSub10_
   Gpot0as1 :: GSub10 -> Tree GSub100_
@@ -745,11 +735,13 @@ data Tree :: * -> * where
   Groot_parataxis :: Groot -> Gparataxis -> Tree GUDS_
   Groot_xcomp :: Groot -> Gxcomp -> Tree GUDS_
   Groot_xcomp_ccomp :: Groot -> Gxcomp -> Gccomp -> Tree GUDS_
+  Groot_xcomp_obj :: Groot -> Gxcomp -> Gobj -> Tree GUDS_
   LexV :: String -> Tree GV_
   GAdVVP :: GAdV -> GVP -> Tree GVP_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
   GComplV :: GV -> GNP -> Tree GVP_
   GComplVP :: GVP -> GNP -> Tree GVP_
+  GComplVV :: GVV -> GAnt -> GPol -> GVP -> Tree GVP_
   GConjVP :: GConj -> GListVP -> Tree GVP_
   GPassV :: GV -> Tree GVP_
   GPassVAgent :: GV -> GNP -> Tree GVP_
@@ -935,11 +927,7 @@ instance Eq (Tree a) where
     (GImpersCl x1,GImpersCl y1) -> and [ x1 == y1 ]
     (GPredSCVP x1 x2,GPredSCVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVP x1 x2,GPredVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GAdvSlash x1 x2,GAdvSlash y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSlashCl x1,GSlashCl y1) -> and [ x1 == y1 ]
-    (GSlashPrep x1 x2,GSlashPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GSlashVP x1 x2,GSlashVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GSlashVS x1 x2 x3,GSlashVS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GCompAP x1,GCompAP y1) -> and [ x1 == y1 ]
     (GCompAdv x1,GCompAdv y1) -> and [ x1 == y1 ]
     (GCompNP x1,GCompNP y1) -> and [ x1 == y1 ]
@@ -992,8 +980,6 @@ instance Eq (Tree a) where
     (Gwhat_IP,Gwhat_IP) -> and [ ]
     (Gwho_IP,Gwho_IP) -> and [ ]
     (Gwhich_IQuant,Gwhich_IQuant) -> and [ ]
-    (GAdvImp x1 x2,GAdvImp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GImpVP x1,GImpVP y1) -> and [ x1 == y1 ]
     (LexInterj x,LexInterj y) -> x == y
     (GListAP x1,GListAP y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListAdV x1,GListAdV y1) -> and [x == y | (x,y) <- zip x1 y1]
@@ -1018,6 +1004,7 @@ instance Eq (Tree a) where
     (LexN2 x,LexN2 y) -> x == y
     (GMkN3 x1 x2 x3,GMkN3 y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexN3 x,LexN3 y) -> x == y
+    (GAclNP x1 x2,GAclNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdjAsNP x1,GAdjAsNP y1) -> and [ x1 == y1 ]
     (GAdvNP x1 x2,GAdvNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GApposNP x1 x2,GApposNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1095,19 +1082,14 @@ instance Eq (Tree a) where
     (GConjRS x1 x2,GConjRS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRS_that_NP_VP x1 x2,GRS_that_NP_VP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseRCl x1 x2 x3,GUseRCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (GAdvS x1 x2,GAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (GExtAdvS x1 x2,GExtAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPostAdvS x1 x2,GPostAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GRelS x1 x2,GRelS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GSSubjS x1 x2 x3,GSSubjS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GUseCl x1 x2 x3,GUseCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GEmbedQS x1,GEmbedQS y1) -> and [ x1 == y1 ]
     (GEmbedS x1,GEmbedS y1) -> and [ x1 == y1 ]
     (GEmbedVP x1,GEmbedVP y1) -> and [ x1 == y1 ]
-    (GUseSlash x1 x2 x3,GUseSlash y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Gpot0 x1,Gpot0 y1) -> and [ x1 == y1 ]
     (Gpot01,Gpot01) -> and [ ]
     (Gpot0as1 x1,Gpot0as1 y1) -> and [ x1 == y1 ]
@@ -1257,11 +1239,13 @@ instance Eq (Tree a) where
     (Groot_parataxis x1 x2,Groot_parataxis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp x1 x2,Groot_xcomp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp_ccomp x1 x2 x3,Groot_xcomp_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (Groot_xcomp_obj x1 x2 x3,Groot_xcomp_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexV x,LexV y) -> x == y
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV x1 x2,GComplV y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVP x1 x2,GComplVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GComplVV x1 x2 x3 x4,GComplVV y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjVP x1 x2,GConjVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPassV x1,GPassV y1) -> and [ x1 == y1 ]
     (GPassVAgent x1 x2,GPassVAgent y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1606,19 +1590,11 @@ instance Gf GCl where
       _ -> error ("no Cl " ++ show t)
 
 instance Gf GClSlash where
-  gf (GAdvSlash x1 x2) = mkApp (mkCId "AdvSlash") [gf x1, gf x2]
   gf (GSlashCl x1) = mkApp (mkCId "SlashCl") [gf x1]
-  gf (GSlashPrep x1 x2) = mkApp (mkCId "SlashPrep") [gf x1, gf x2]
-  gf (GSlashVP x1 x2) = mkApp (mkCId "SlashVP") [gf x1, gf x2]
-  gf (GSlashVS x1 x2 x3) = mkApp (mkCId "SlashVS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
-      Just (i,[x1,x2]) | i == mkCId "AdvSlash" -> GAdvSlash (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "SlashCl" -> GSlashCl (fg x1)
-      Just (i,[x1,x2]) | i == mkCId "SlashPrep" -> GSlashPrep (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "SlashVP" -> GSlashVP (fg x1) (fg x2)
-      Just (i,[x1,x2,x3]) | i == mkCId "SlashVS" -> GSlashVS (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no ClSlash " ++ show t)
@@ -1828,18 +1804,6 @@ instance Gf GIQuant where
 
 
       _ -> error ("no IQuant " ++ show t)
-
-instance Gf GImp where
-  gf (GAdvImp x1 x2) = mkApp (mkCId "AdvImp") [gf x1, gf x2]
-  gf (GImpVP x1) = mkApp (mkCId "ImpVP") [gf x1]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1,x2]) | i == mkCId "AdvImp" -> GAdvImp (fg x1) (fg x2)
-      Just (i,[x1]) | i == mkCId "ImpVP" -> GImpVP (fg x1)
-
-
-      _ -> error ("no Imp " ++ show t)
 
 instance Gf GInterj where
   gf (LexInterj x) = mkApp (mkCId x) []
@@ -2058,6 +2022,7 @@ instance Gf GN3 where
       _ -> error ("no N3 " ++ show t)
 
 instance Gf GNP where
+  gf (GAclNP x1 x2) = mkApp (mkCId "AclNP") [gf x1, gf x2]
   gf (GAdjAsNP x1) = mkApp (mkCId "AdjAsNP") [gf x1]
   gf (GAdvNP x1 x2) = mkApp (mkCId "AdvNP") [gf x1, gf x2]
   gf (GApposNP x1 x2) = mkApp (mkCId "ApposNP") [gf x1, gf x2]
@@ -2088,6 +2053,7 @@ instance Gf GNP where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "AclNP" -> GAclNP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "AdjAsNP" -> GAdjAsNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "AdvNP" -> GAdvNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ApposNP" -> GApposNP (fg x1) (fg x2)
@@ -2351,26 +2317,18 @@ instance Gf GRS where
       _ -> error ("no RS " ++ show t)
 
 instance Gf GS where
-  gf (GAdvS x1 x2) = mkApp (mkCId "AdvS") [gf x1, gf x2]
   gf (GConjS x1 x2) = mkApp (mkCId "ConjS") [gf x1, gf x2]
   gf (GExistS x1 x2 x3) = mkApp (mkCId "ExistS") [gf x1, gf x2, gf x3]
-  gf (GExtAdvS x1 x2) = mkApp (mkCId "ExtAdvS") [gf x1, gf x2]
   gf (GPostAdvS x1 x2) = mkApp (mkCId "PostAdvS") [gf x1, gf x2]
   gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
-  gf (GRelS x1 x2) = mkApp (mkCId "RelS") [gf x1, gf x2]
-  gf (GSSubjS x1 x2 x3) = mkApp (mkCId "SSubjS") [gf x1, gf x2, gf x3]
   gf (GUseCl x1 x2 x3) = mkApp (mkCId "UseCl") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
-      Just (i,[x1,x2]) | i == mkCId "AdvS" -> GAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjS" -> GConjS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ExistS" -> GExistS (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2]) | i == mkCId "ExtAdvS" -> GExtAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PostAdvS" -> GPostAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "RelS" -> GRelS (fg x1) (fg x2)
-      Just (i,[x1,x2,x3]) | i == mkCId "SSubjS" -> GSSubjS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "UseCl" -> GUseCl (fg x1) (fg x2) (fg x3)
 
 
@@ -2389,16 +2347,6 @@ instance Gf GSC where
 
 
       _ -> error ("no SC " ++ show t)
-
-instance Gf GSSlash where
-  gf (GUseSlash x1 x2 x3) = mkApp (mkCId "UseSlash") [gf x1, gf x2, gf x3]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1,x2,x3]) | i == mkCId "UseSlash" -> GUseSlash (fg x1) (fg x2) (fg x3)
-
-
-      _ -> error ("no SSlash " ++ show t)
 
 instance Gf GSub10 where
   gf (Gpot0 x1) = mkApp (mkCId "pot0") [gf x1]
@@ -2666,6 +2614,7 @@ instance Gf GUDS where
   gf (Groot_parataxis x1 x2) = mkApp (mkCId "root_parataxis") [gf x1, gf x2]
   gf (Groot_xcomp x1 x2) = mkApp (mkCId "root_xcomp") [gf x1, gf x2]
   gf (Groot_xcomp_ccomp x1 x2 x3) = mkApp (mkCId "root_xcomp_ccomp") [gf x1, gf x2, gf x3]
+  gf (Groot_xcomp_obj x1 x2 x3) = mkApp (mkCId "root_xcomp_obj") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
@@ -2773,6 +2722,7 @@ instance Gf GUDS where
       Just (i,[x1,x2]) | i == mkCId "root_parataxis" -> Groot_parataxis (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_xcomp" -> Groot_xcomp (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_xcomp_ccomp" -> Groot_xcomp_ccomp (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_xcomp_obj" -> Groot_xcomp_obj (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no UDS " ++ show t)
@@ -2791,6 +2741,7 @@ instance Gf GVP where
   gf (GAdvVP x1 x2) = mkApp (mkCId "AdvVP") [gf x1, gf x2]
   gf (GComplV x1 x2) = mkApp (mkCId "ComplV") [gf x1, gf x2]
   gf (GComplVP x1 x2) = mkApp (mkCId "ComplVP") [gf x1, gf x2]
+  gf (GComplVV x1 x2 x3 x4) = mkApp (mkCId "ComplVV") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjVP x1 x2) = mkApp (mkCId "ConjVP") [gf x1, gf x2]
   gf (GPassV x1) = mkApp (mkCId "PassV") [gf x1]
   gf (GPassVAgent x1 x2) = mkApp (mkCId "PassVAgent") [gf x1, gf x2]
@@ -2805,6 +2756,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "AdvVP" -> GAdvVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplV" -> GComplV (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVP" -> GComplVP (fg x1) (fg x2)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "ComplVV" -> GComplVV (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "ConjVP" -> GConjVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PassV" -> GPassV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PassVAgent" -> GPassVAgent (fg x1) (fg x2)
@@ -3486,7 +3438,23 @@ instance Gf Gxcomp where
 
 
 
+instance Gf GImp where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
+
 instance Gf GPhr where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
+
+instance Gf GSSlash where
   gf _ = undefined
   fg _ = undefined
 
@@ -3680,11 +3648,7 @@ instance Compos Tree where
     GImpersCl x1 -> r GImpersCl `a` f x1
     GPredSCVP x1 x2 -> r GPredSCVP `a` f x1 `a` f x2
     GPredVP x1 x2 -> r GPredVP `a` f x1 `a` f x2
-    GAdvSlash x1 x2 -> r GAdvSlash `a` f x1 `a` f x2
     GSlashCl x1 -> r GSlashCl `a` f x1
-    GSlashPrep x1 x2 -> r GSlashPrep `a` f x1 `a` f x2
-    GSlashVP x1 x2 -> r GSlashVP `a` f x1 `a` f x2
-    GSlashVS x1 x2 x3 -> r GSlashVS `a` f x1 `a` f x2 `a` f x3
     GCompAP x1 -> r GCompAP `a` f x1
     GCompAdv x1 -> r GCompAdv `a` f x1
     GCompNP x1 -> r GCompNP `a` f x1
@@ -3708,14 +3672,13 @@ instance Compos Tree where
     GAdvIP x1 x2 -> r GAdvIP `a` f x1 `a` f x2
     GIdetCN x1 x2 -> r GIdetCN `a` f x1 `a` f x2
     GIdetIP x1 -> r GIdetIP `a` f x1
-    GAdvImp x1 x2 -> r GAdvImp `a` f x1 `a` f x2
-    GImpVP x1 -> r GImpVP `a` f x1
     GCompoundCN x1 x2 -> r GCompoundCN `a` f x1 `a` f x2
     GCompoundN x1 x2 -> r GCompoundN `a` f x1 `a` f x2
     GStrN x1 -> r GStrN `a` f x1
     GComplN3 x1 x2 -> r GComplN3 `a` f x1 `a` f x2
     GUse3N3 x1 -> r GUse3N3 `a` f x1
     GMkN3 x1 x2 x3 -> r GMkN3 `a` f x1 `a` f x2 `a` f x3
+    GAclNP x1 x2 -> r GAclNP `a` f x1 `a` f x2
     GAdjAsNP x1 -> r GAdjAsNP `a` f x1
     GAdvNP x1 x2 -> r GAdvNP `a` f x1 `a` f x2
     GApposNP x1 x2 -> r GApposNP `a` f x1 `a` f x2
@@ -3772,19 +3735,14 @@ instance Compos Tree where
     GConjRS x1 x2 -> r GConjRS `a` f x1 `a` f x2
     GRS_that_NP_VP x1 x2 -> r GRS_that_NP_VP `a` f x1 `a` f x2
     GUseRCl x1 x2 x3 -> r GUseRCl `a` f x1 `a` f x2 `a` f x3
-    GAdvS x1 x2 -> r GAdvS `a` f x1 `a` f x2
     GConjS x1 x2 -> r GConjS `a` f x1 `a` f x2
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
-    GExtAdvS x1 x2 -> r GExtAdvS `a` f x1 `a` f x2
     GPostAdvS x1 x2 -> r GPostAdvS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
-    GRelS x1 x2 -> r GRelS `a` f x1 `a` f x2
-    GSSubjS x1 x2 x3 -> r GSSubjS `a` f x1 `a` f x2 `a` f x3
     GUseCl x1 x2 x3 -> r GUseCl `a` f x1 `a` f x2 `a` f x3
     GEmbedQS x1 -> r GEmbedQS `a` f x1
     GEmbedS x1 -> r GEmbedS `a` f x1
     GEmbedVP x1 -> r GEmbedVP `a` f x1
-    GUseSlash x1 x2 x3 -> r GUseSlash `a` f x1 `a` f x2 `a` f x3
     Gpot0 x1 -> r Gpot0 `a` f x1
     Gpot0as1 x1 -> r Gpot0as1 `a` f x1
     Gpot1 x1 -> r Gpot1 `a` f x1
@@ -3926,10 +3884,12 @@ instance Compos Tree where
     Groot_parataxis x1 x2 -> r Groot_parataxis `a` f x1 `a` f x2
     Groot_xcomp x1 x2 -> r Groot_xcomp `a` f x1 `a` f x2
     Groot_xcomp_ccomp x1 x2 x3 -> r Groot_xcomp_ccomp `a` f x1 `a` f x2 `a` f x3
+    Groot_xcomp_obj x1 x2 x3 -> r Groot_xcomp_obj `a` f x1 `a` f x2 `a` f x3
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplV x1 x2 -> r GComplV `a` f x1 `a` f x2
     GComplVP x1 x2 -> r GComplVP `a` f x1 `a` f x2
+    GComplVV x1 x2 x3 x4 -> r GComplVV `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjVP x1 x2 -> r GConjVP `a` f x1 `a` f x2
     GPassV x1 -> r GPassV `a` f x1
     GPassVAgent x1 x2 -> r GPassVAgent `a` f x1 `a` f x2

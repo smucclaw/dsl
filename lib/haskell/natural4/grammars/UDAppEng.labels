@@ -270,17 +270,7 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 
 ------------------------------------------------
 -- Limiting the use of PresPartAP and PastPartAP
-
--- Step 1: form the VP
--- Unreliable tagging by udpipe: sometimes it's Ger and sometimes Pres Part
--- hence need to duplicate the auxfuns
-#auxfun PPresGer_ComplV_ v np : V -> NP -> VPtobeAP = ComplV v np ; head[VerbForm=Ger] obj
-#auxfun PPresGerVP_ vp : VP -> VPtobeAP = vp ; head[VerbForm=Ger]
-#auxfun PPresVP_    vp : VP -> VPtobeAP = vp ; head[Tense=Pres|VerbForm=Part]
-
--- Step 2: use the VPtobeAP in context
--- [data breach]:CN [affecting 500 people]:acl
-#auxfun PPresCN_acl_ cn vp : CN -> VPtobeAP -> CN = AdjCN (PresPartAP vp) cn ; head acl[VerbForm=Ger]
+-- Only when the relation is amod—for acl, acl:relcl, use AclNP and RelclNP
 
 -- [qualifying]:amod [person]:CN
 #auxfun PPresCN_amod_ cn vp : CN -> VPtobeAP -> CN = AdjCN (PresPartAP vp) cn ; head amod[VerbForm=Ger]
@@ -288,8 +278,12 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- [qualified]:amod [person]:CN
 #auxfun PPartCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head amod[Tense=Past|VerbForm=Part]
 
--- [person]:CN [complying]:xcomp
-#auxfun PPresCN_xcomp_ cn vp : CN -> VPtobeAP -> CN = AdjCN (PresPartAP vp) cn ; head xcomp[Tense=Pres|VerbForm=Part]
+-- mistagged acl as xcomp — xcomp shouldn't be child of NP?
+#auxfun AclNPXcompGer_ np vp : NP -> VP -> NP = AclNP np (aclGerund_ (root_only (rootVProgrSingle_ vp))) ; head xcomp[VerbForm=Ger]
+#auxfun AclNPXcompPrP_ np vp : NP -> VP -> NP = AclNP np (aclGerund_ (root_only (rootVProgrSingle_ vp))) ; head xcomp[Tense=Pres|VerbForm=Part]
+
+-- very ad hoc, recovering misparse
+#auxfun AwareBreachInvolving_ aware breach : AP -> NP -> xcomp = xcompA_ccomp_ aware (ccomp_ (root_only (rootN_ breach))) ; head obj
 
 -- [is]:cop [gone]:V
 -- something is tagged as ADJ in UD, but parsed as V in GF, so we match a V that has morpho tags associated with ADJ, and then turn it into AP

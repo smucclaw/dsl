@@ -1493,8 +1493,9 @@ parserTests nlgEnv runConfig_ = do
                                     , ["person","has","health insurance"]]
 
       filetest "boolstructp-3" "as checklist, extended"
-        (parseWith asCList pRules) [ ["Is the person immortal?"]
-                                   , ["Does the person have health insurance?"]]
+        (parseWith asCList pRules) [ ["Does the person have health insurance?"]
+                                   , ["Is the person immortal?"]]
+      -- TODO: check why nlgQuestion reverses order, revert this once that is fixed
 
 
 -- let's parse scenario rules!

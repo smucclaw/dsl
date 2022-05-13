@@ -149,21 +149,32 @@ nlgQuestion env rl = do
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
     mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
-    mkWhoQs gr lang subj e = mkQs qsWho gr lang 2 subj (udsToTreeGroups (toUDS gr e))
+    mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
+      where
+        tg = case findType gr e of
+              "VPS" -> vpTG $ fg e
+              _     -> udsToTreeGroups (toUDS gr e)
 
     mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
 
     mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
-    mkQs qfun gr lang indentation s tg  = case tg of
-      TG {gfS = Just cl} -> qnPunct $ lin indentation (qfun s $ sTG cl)
-      TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> qnPunct $ concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
-        _ -> qnPunct $ lin indentation (qfun s $ npTG np)
-      -- TG {gfCN = Just cn} ->
+    mkQs qfun gr lang indentation s tg = case tg of
+      TG {gfS = Just sent} -> case sent of
+        GConjS _conj (GListS ss) -> concatMap (mkQs qfun gr lang (indentation+4) s) (sTG <$> ss)
+        _ -> qnPunct $ lin indentation (qfun s $ sTG sent)
       TG {gfVP = Just vp} -> case vp of
-        GConjVPS _conj (GListVPS vps) -> qnPunct $ concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+        GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
         _ -> qnPunct $ lin indentation (qfun s $ vpTG vp)
-      -- TG {gfAP = Just ap} ->
+      TG {gfNP = Just np} -> case np of
+        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
+        _ -> qnPunct $ lin indentation (qfun s $ npTG np)
+      TG {gfCN = Just cn} -> case cn of
+        GConjCN _conj (GListCN cns) -> concatMap (mkQs qfun gr lang (indentation+4) s) (cnTG <$> cns)
+        _ -> qnPunct $ lin indentation (qfun s $ cnTG cn)
+      TG {gfAP = Just ap} -> case ap of
+        GConjAP _conj (GListAP aps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (apTG <$> aps)
+        _ -> qnPunct $ lin indentation (qfun s $ apTG ap)
+
       -- TG {gfDet = Just det} ->
       -- TG {gfAdv = Just adv} ->
       _ -> []
@@ -705,6 +716,12 @@ emptyTG = TG Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Not
 
 npTG :: GNP -> TreeGroups
 npTG np = emptyTG {gfNP = Just np}
+
+apTG :: GAP -> TreeGroups
+apTG ap = emptyTG {gfAP = Just ap}
+
+cnTG :: GCN -> TreeGroups
+cnTG cn = emptyTG {gfCN = Just cn}
 
 vpTG :: GVPS -> TreeGroups
 vpTG vp = emptyTG {gfVP = Just vp}

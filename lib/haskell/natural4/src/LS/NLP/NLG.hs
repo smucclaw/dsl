@@ -124,14 +124,12 @@ nlgQuestion env rl = do
   gr <- nlgExtPGF
   let lang = head $ languages gr
   case annotatedRule of
-    RegulativeA {subjA = subj, whoA = Just who, condA = Just cond} -> do
-      let whoAsTG = udsToTreeGroups (toUDS gr who)
-          whoQuestions = mkQs qsWho gr lang 2 subj whoAsTG
+    RegulativeA {subjA, whoA, condA, uponA} -> do
+      let whoQuestions = concatMap (mkWhoQs gr lang subjA) $ catMaybes [whoA]
       -- print $ udsToTreeGroups (toUDS gr subj)
       -- print "flattened who"
       -- print $ map showExpr $ flattenGFTrees whoAsTG
-          condAsTG = udsToTreeGroups  (toUDS gr cond)
-          condQuestions = mkQs qsCond gr lang 2 subj condAsTG
+          condQuestions = concatMap (mkCondQs gr lang subjA) $ catMaybes [condA, uponA]
       return $ map Text.pack $ whoQuestions ++ condQuestions
     HornlikeA {clausesA = cls} -> do
       let udfrags = map fg cls
@@ -149,6 +147,11 @@ nlgQuestion env rl = do
       GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
       GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+
+    mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
+    mkWhoQs gr lang subj e = mkQs qsWho gr lang 2 subj (udsToTreeGroups (toUDS gr e))
+
+    mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
 
     mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
     mkQs qfun gr lang indentation s tg  = case tg of
@@ -1147,6 +1150,13 @@ verbFromUDS' verbose x = case getNsubj x of
                       then trace ("\n\n **** verbFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
                       else Nothing
 
+scFromUDS :: GUDS -> Maybe GSC
+scFromUDS x = case sFromUDS x of
+  Just s -> pure $ GEmbedS s
+  _ -> case verbFromUDS x of
+    Just (GMkVPS t p vp) -> pure $ GEmbedVP vp
+    _ -> error $ "scFromUDS: can't handle " ++ showExpr (gf x)
+
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely
 sFromUDS :: GUDS -> Maybe GS
 sFromUDS x = case getNsubj x of
@@ -1158,6 +1168,10 @@ sFromUDS x = case getNsubj x of
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
       pure $ GUseCl t p $ GImpersCl pred
     Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_csubj root (Gcsubj_ cs) -> do
+      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      sc <- scFromUDS cs
+      pure $ GUseCl t p $ GPredSCVP sc vp
     Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
       GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
       pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)

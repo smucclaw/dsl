@@ -602,12 +602,33 @@ disambiguateList pgf access_use_copying_raw =
     isSingleton [_] = True
     isSingleton _ = False
 
+-- this function is only to keep track of preferred order
+-- if it can be parsed as S, use the S
+-- if not, then try VP, if not, then try AP, etc.
+treeContents :: GConj -> [GUDS] -> Expr
+treeContents conj contents = case groupByRGLtype conj contents of
+  TG {gfS    = Just x} -> gf x
+--  TG {gfVP   = Just x, gfAP = Nothing , gfCN = Nothing , gfNP = Nothing, gfAdv = Nothing} -> gf x
+  -- TODO match
+  TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompAP x)))} -> gf x
+  TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompNP x)))} -> gf x
+  -- TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompCN x)))} -> gf x
+  TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompAdv x)))} -> gf x
+  TG {gfVP   = Just x , gfAP = Just y} -> gf $ GConjVPS conj (GListVPS [x, GMkVPS presSimul GPPos (GUseComp (GCompAP y))])
+  TG {gfVP   = Just x} -> gf x
+  TG {gfAdv  = Just x} -> gf x
+  TG {gfAP   = Just x} -> gf x
+  TG {gfNP   = Just x} -> gf x
+  TG {gfCN   = Just x} -> gf x
+  TG {gfDet  = Just x} -> gf x
+  TG {gfRP   = Just x} -> gf x
+  TG {gfPrep = Just x} -> gf x
+
 treePre :: GConj -> [GUDS] -> GUDS -> Expr
-treePre conj contents pre =
-  case map flattenGFTrees trees of
-    []  -> dummyExpr $ "bsr2gf: failed parsing " ++ showExpr (gf pre)
-    x:_ -> head x -- return the first one---TODO later figure out how to deal with different categories
-    where trees = groupByRGLtype conj <$> [contents, [pre]]
+treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
+  [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
+  _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
+           $ treeContents conj contents
 
 treePrePost :: GConj -> [GUDS] -> GUDS -> GUDS -> Expr
 treePrePost conj contents pre post =
@@ -659,18 +680,14 @@ bsr2gf env bsr = case bsr of
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype orConj contentsUDS
-    --putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
-    return $ case flattenGFTrees existingTrees of
-               []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
-               x:_ -> x -- return the first one---TODO later figure out how to deal with different categories
+    putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
+    return $ treeContents orConj contentsUDS
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
     let existingTrees = groupByRGLtype andConj contentsUDS
     --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
-    return $ case flattenGFTrees existingTrees of
-               []  -> dummyExpr $ "bsr2gf: failed parsing " ++ Text.unpack (bsr2text bsr)
-               x:_ -> x
+    return $ treeContents andConj contentsUDS
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
     contentsUDS <- parseAndDisambiguate env access_use_copying
@@ -961,7 +978,7 @@ toUDS pgf e = case findType pgf e of
   where
     vps2uds :: GVPS -> GUDS
     vps2uds (GMkVPS t p vp) = Groot_only (GrootV_ t p vp)
-    vps2uds vps = Groot_only (GrootV_ presSimul GPPos (vps2vp vps))
+    vps2uds vps = Groot_only (GrootV_ presSimul GPPos (vps2vp vps)) -- This causes trouble in other places TODO investigate
 
 -----------------------------------------------------------------------------
 -- Manipulating GF trees
@@ -1121,7 +1138,7 @@ rpFromUDS x = case getRoot x of
   _             -> Nothing
 
 verbFromUDS :: GUDS -> Maybe GVPS
-verbFromUDS = verbFromUDS' True --False
+verbFromUDS = verbFromUDS' False
 
 verbFromUDS' :: Bool -> GUDS -> Maybe GVPS
 verbFromUDS' verbose x = case getNsubj x of
@@ -1159,9 +1176,9 @@ verbFromUDS' verbose x = case getNsubj x of
     _ -> case getRoot x of -- TODO: fill in other cases
                 GrootV_ t p vp:_ -> Just $ GMkVPS t p vp
                 GrootVaux_ t p _aux vp:_ -> Just $ GMkVPS t p vp ; -- TODO: apply aux to VP!
-                GrootN_  np:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompNP np)
-                GrootA_  ap:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAP ap)
-                GrootAdv_ a:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAdv a)
+                -- GrootN_  np:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompNP np)
+                -- GrootA_  ap:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAP ap)
+                -- GrootAdv_ a:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAdv a)
                 -- TODO: add cases for
                 -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
 --                _            -> Nothing
@@ -1173,7 +1190,7 @@ scFromUDS :: GUDS -> Maybe GSC
 scFromUDS x = case sFromUDS x of
   Just s -> pure $ GEmbedS s
   _ -> case verbFromUDS x of
-    Just (GMkVPS t p vp) -> pure $ GEmbedVP vp
+    Just (GMkVPS _t _p vp) -> pure $ GEmbedVP vp
     _ -> error $ "scFromUDS: can't handle " ++ showExpr (gf x)
 
 -- TODO: use composOp to grab all (finite) UD labels and put them together nicely
@@ -1228,7 +1245,8 @@ sFromUDS x = case getNsubj x of
                 --_       -> Nothing
                 _    -> trace ("\n\n **** sFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
     where
-      verbFromUDSVerbose = verbFromUDS' True
+      verbFromUDSVerbose = verbFromUDS
+      -- verbFromUDSVerbose = verbFromUDS' True -- uncomment when you want really verbose debug output
 
 getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]

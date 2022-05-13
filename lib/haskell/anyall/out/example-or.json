@@ -27,13 +27,13 @@
     },
     "drink": {
       "getDefault": {
-        "Right": false
+        "Left": true
       }
     }
   },
   "andOrTree": {
-    "nodetype": "all",
-    "pre": "all of",
+    "nodetype": "any",
+    "pre": "any of",
     "children": [
       {
         "leaf": "walk"
@@ -56,8 +56,8 @@
         ]
       },
       {
-        "nodetype": "all",
-        "pre": "both",
+        "nodetype": "any",
+        "pre": "any",
         "children": [
           {
             "leaf": "eat"

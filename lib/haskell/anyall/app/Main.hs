@@ -46,7 +46,7 @@ main = do
   when (only opts == "tree") $
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
   when (only opts == "svg") $
-    print $ makeSvg $ q2svg' (defaultAAVConfig { cscale = Tiny }) $ hardnormal (marking myright) (andOrTree myright) 
+    print $ makeSvg $ q2svg' (defaultAAVConfig { cscale = Full }) $ hardnormal (marking myright) (andOrTree myright) 
   where
     -- | every item in the and/or tree should be marked with some explicit value, whether user-provided or computed
     

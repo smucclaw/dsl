@@ -17,7 +17,7 @@ import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCI
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower, isUpper)
+import Data.Char (toLower, isUpper, toUpper)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
@@ -155,14 +155,14 @@ nlgQuestion env rl = do
 
     mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
     mkQs qfun gr lang indentation s tg  = case tg of
-      TG {gfS = Just cl} -> lin indentation (qfun s $ sTG cl)
+      TG {gfS = Just cl} -> qnPunct $ lin indentation (qfun s $ sTG cl)
       TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
-        _ -> lin indentation (qfun s $ npTG np)
+        GConjNP _conj (GListNP nps) -> qnPunct $ concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
+        _ -> qnPunct $ lin indentation (qfun s $ npTG np)
       -- TG {gfCN = Just cn} ->
       TG {gfVP = Just vp} -> case vp of
-        GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
-        _ -> lin indentation (qfun s $ vpTG vp)
+        GConjVPS _conj (GListVPS vps) -> qnPunct $ concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+        _ -> qnPunct $ lin indentation (qfun s $ vpTG vp)
       -- TG {gfAP = Just ap} ->
       -- TG {gfDet = Just det} ->
       -- TG {gfAdv = Just adv} ->
@@ -175,7 +175,9 @@ nlgQuestion env rl = do
         lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
         -}
         lin indentation x = [linearize gr lang (gf x)]
-
+        qnPunct :: [String] -> [String]
+        qnPunct (l:[]) = [(toUpper (head l) :( tail l ++ "?"))]
+        qnPunct (l:ls) = (toUpper (head l) : tail l) : (concat (init ls : [[concat ((last ls), "?")]]))
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

@@ -25,7 +25,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
                   | r@DefTypically{..} <- rs ]
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
--- checklist env _cfg rs = nlgQuestion env `mapM` rs -- Use this as soon as tests pass
+checklist env _cfg rs = nlgQuestion env `mapM` rs -- Use this as soon as tests pass
 checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds

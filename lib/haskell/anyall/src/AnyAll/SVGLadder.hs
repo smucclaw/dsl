@@ -102,18 +102,23 @@ drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (hea
 drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
-  let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
+  let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+      topMargin = min 0 topMargin_
+      bottomMargin = topMargin
       (boxStroke, boxFill, textFill) = getColors True
       oneRowHeight = boxHeight + lrVgap
       drawnChildren = vDistribute $ drawItemFull c <$> childqs
-      leftLineLength = fromIntegral (length drawnChildren) * lrVgap + (snd . fst $ drawnChildren)
+      childLineLength = (snd . fst $ drawnChildren)
       y1 = (topMargin + boxHeight / 2)
+      x2 = leftMargin + (fst . fst $ drawnChildren)
   in
-    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + boxHeight)
+    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + boxHeight + lrVgap)
     ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
       <> move (leftMargin, boxHeight) (snd drawnChildren)
       <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1, Stroke_ <<- "black" ]
-      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1 + leftLineLength             , Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1 + childLineLength             , Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1              , Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2, Y2_ <<-* y1 + childLineLength             , Stroke_ <<- "black" ]
     )
      
     where
@@ -141,7 +146,9 @@ drawLeaf :: AAVConfig
          -> (BBox, Element)
 drawLeaf c qt@(Node q childqs) negContext =
   let (boxStroke, boxFill, textFill) = getColors confidence
-      AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
+      AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+      topMargin = min 0 topMargin_
+      bottomMargin = topMargin
       mytext = case andOr q of
         (Simply txt) -> fromString (TL.unpack txt)
         (Neg)        -> "neg..."

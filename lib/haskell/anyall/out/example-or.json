@@ -33,40 +33,14 @@
   },
   "andOrTree": {
     "nodetype": "any",
-    "pre": "any of",
+    "pre": "any",
     "children": [
       {
-        "leaf": "walk"
-      },
+      "leaf": "eat"
+    },
       {
-        "nodetype": "not",
-        "children": [
-          {
-            "nodetype": "any",
-            "pre": "either",
-            "children": [
-              {
-                "leaf": "sink"
-              },
-              {
-                "leaf": "swim"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "nodetype": "any",
-        "pre": "any",
-        "children": [
-          {
-            "leaf": "eat"
-          },
-          {
-            "leaf": "drink"
-          }
-        ]
-      }
+      "leaf": "drink"
+    }
     ]
   }
 }

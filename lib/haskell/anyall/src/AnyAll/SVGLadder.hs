@@ -84,22 +84,23 @@ q2svg :: AAVConfig -> QTree TL.Text -> Element
 q2svg c qt = snd $ q2svg' c qt
 
 q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
-q2svg' c qt@(Node q childqs) = drawItem c qt 
+q2svg' c qt@(Node q childqs) = drawItem c False qt 
 
 drawItem, drawItemTiny, drawItemFull :: AAVConfig
-         -> QTree TL.Text
-         -> (BBox, Element)
-drawItem c qt
-  | cscale c == Tiny = drawItemTiny c qt
-  | otherwise        = drawItemFull c qt
+                                     -> Bool
+                                     -> QTree TL.Text
+                                     -> (BBox, Element)
+drawItem c negContext qt
+  | cscale c == Tiny = drawItemTiny c negContext qt
+  | otherwise        = drawItemFull c negContext qt
 
-drawItemTiny c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             False
-drawItemTiny c qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawLeaf c (head childqs) True
-drawItemTiny c qt                                              = drawItemFull c qt               -- [TODO]
-drawItemFull c qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf c qt             False
-drawItemFull c qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawLeaf c (head childqs) True
-drawItemFull c qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf c (head childqs) False -- [TODO]
-drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
+drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
+drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
+drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
+drawItemFull c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext   qt
+drawItemFull c negContext qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawItemFull c (not negContext) (head childqs)
+drawItemFull c negContext qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf     c      negContext  (head childqs)  -- [TODO]
+drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
   let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
@@ -107,12 +108,12 @@ drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
       bottomMargin = topMargin
       (boxStroke, boxFill, textFill) = getColors True
       oneRowHeight = boxHeight + lrVgap
-      drawnChildren = vDistribute $ drawItemFull c <$> childqs
+      drawnChildren = vDistribute $ drawItemFull c negContext <$> childqs
       childLineLength = (snd . fst $ drawnChildren)
       y1 = (topMargin + boxHeight / 2)
-      x2 = leftMargin + (fst . fst $ drawnChildren)
+      x2 = (fst . fst $ drawnChildren) + leftMargin
   in
-    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + boxHeight + lrVgap)
+    (,) (leftMargin + rightMargin + (fst.fst $ drawnChildren), (snd.fst $ drawnChildren) + boxHeight + lrVgap)
     ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
       <> move (leftMargin, boxHeight) (snd drawnChildren)
       <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1, Stroke_ <<- "black" ]
@@ -141,10 +142,10 @@ drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
                               -- [FIXME] accidentallyQuadratic
       
 drawLeaf :: AAVConfig
-         -> QTree TL.Text -- ^ the tree to draw
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
+         -> QTree TL.Text -- ^ the tree to draw
          -> (BBox, Element)
-drawLeaf c qt@(Node q childqs) negContext =
+drawLeaf c negContext qt@(Node q childqs) =
   let (boxStroke, boxFill, textFill) = getColors confidence
       AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
       topMargin = min 0 topMargin_

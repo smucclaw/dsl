@@ -66,6 +66,8 @@ type ItemStyle = Maybe Bool
 (<<-*) :: Show a => AttrTag -> a -> Attribute
 (<<-*) tag a = bindAttr tag (T.pack (show a))
 
+infix 4 <<-*
+
 makeSvg' :: AAVConfig -> (BBox, Element) -> Element
 makeSvg' c = makeSvg
 
@@ -102,15 +104,16 @@ drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
   -- we max up the bounding boxes and return that as our own bounding box.
   let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
       (boxStroke, boxFill, textFill) = getColors True
-      oneRowHeight = boxHeight + topMargin + bottomMargin + lrVgap
+      oneRowHeight = boxHeight + lrVgap
       drawnChildren = vDistribute $ drawItemFull c <$> childqs
       leftLineLength = fromIntegral (length drawnChildren) * lrVgap + (snd . fst $ drawnChildren)
+      y1 = (topMargin + boxHeight / 2)
   in
-    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + oneRowHeight)
+    (,) (fst.fst $ drawnChildren, (snd.fst $ drawnChildren) + boxHeight)
     ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
-      <> move (leftMargin, oneRowHeight) (snd drawnChildren)
-      <> line_ [ X1_ <<-* 0,          Y1_ <<-* (topMargin + boxHeight / 2), X2_ <<-* leftMargin, Y2_ <<-* (topMargin + boxHeight / 2), Stroke_ <<- "black" ]
-      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* (topMargin + boxHeight / 2), X2_ <<-* leftMargin, Y2_ <<-* leftLineLength             , Stroke_ <<- "black" ]
+      <> move (leftMargin, boxHeight) (snd drawnChildren)
+      <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1, Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1 + leftLineLength             , Stroke_ <<- "black" ]
     )
      
     where
@@ -128,7 +131,7 @@ drawItemFull c qt@(Node (Q sv ao@Or            pp m) childqs) =
       vD (((w,h),x):xs) = let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
                               vds = vD xs
                           in ((max w (fst . fst $ vds)
-                              ,max h (snd . fst $ vds))
+                              , h + lrVgap + (snd . fst $ vds))
                               , x <> move (0,h + lrVgap) (snd vds))
                               -- [FIXME] accidentallyQuadratic
       

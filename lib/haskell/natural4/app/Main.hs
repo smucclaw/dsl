@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 -- {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
 import qualified LS as SFL4
@@ -39,10 +40,10 @@ myTypes :: [SumType 'Haskell]
 myTypes =
   [
     -- let p = (Proxy :: Proxy (Item' TypeParams.A TypeParams.B)) in equal p (mkSumType p)  -- Also produce a `Eq` instance.
-    let p = (Proxy :: Proxy (Item' TypeParams.A TypeParams.B)) in mkSumType p  -- Also produce a `Eq` instance.
-    , let p = (Proxy :: Proxy SFL4.RelationalPredicate) in mkSumType p
-    , let p = (Proxy :: Proxy (NonEmpty TypeParams.A)) in mkSumType p
-    , let p = (Proxy :: Proxy SFL4.TypeSig) in mkSumType p
+    let p = (Proxy @(Item' TypeParams.A TypeParams.B)) in mkSumType p  -- Also produce a `Eq` instance.
+    , let p = (Proxy @SFL4.RelationalPredicate) in mkSumType p
+    , let p = (Proxy @(NonEmpty TypeParams.A)) in mkSumType p
+    , let p = (Proxy @SFL4.TypeSig) in mkSumType p
   -- , let p = (Proxy :: Proxy Bar) in order p (mkSumType p)  -- Produce both `Eq` and `Ord`.
   -- , mkSumType (Proxy :: Proxy (Item' () ()))  -- Just produce a `Generic` instance.
   ]

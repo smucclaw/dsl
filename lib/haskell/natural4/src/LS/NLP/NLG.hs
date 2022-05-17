@@ -187,8 +187,8 @@ nlgQuestion env rl = do
         -}
         lin indentation x = [linearize gr lang (gf x)]
         qnPunct :: [String] -> [String]
-        qnPunct (l:[]) = [(toUpper (head l) :( tail l ++ "?"))]
-        qnPunct (l:ls) = (toUpper (head l) : tail l) : (concat (init ls : [[concat ((last ls), "?")]]))
+        qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
+        qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

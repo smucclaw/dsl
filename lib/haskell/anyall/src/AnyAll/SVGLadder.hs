@@ -5,6 +5,8 @@
 
 module AnyAll.SVGLadder where
 
+import Data.List (foldl')
+
 import AnyAll.Types hiding ((<>))
 
 import Data.String
@@ -20,16 +22,18 @@ type Width  = Double
 data BBox = BBox
   { bbw :: Width
   , bbh :: Height
-  , bblm :: Width
-  , bbrm :: Width
+  , bblm, bbtm, bbrm, bbbm :: Width -- left, top, right, bottom margins
   }
   deriving (Eq, Show)
 
+-- | default bounding box
 defaultBBox = BBox
   { bbw = 0
   , bbh = 0
   , bblm = 0
+  , bbtm = 0
   , bbrm = 0
+  , bbbm = 0
   }
 
 -- | how compact should the output be?
@@ -111,9 +115,9 @@ drawItem c negContext qt
 -- | item drawing proceeds in the following stages:
 -- - draw all children -- just the boxes, no port connectors yet. if the children are themselves complex, we trust in the bounding boxes returned.
 -- - for each child, position horizontally, centered or left/right aligned appropriately.
--- - position children vertically. usually this means spreading them out, with a gap between them.
--- - attach input and output horizontal lines to ports.
--- - connect 
+-- - position children vertically. usually this means spreading them out, with a gap between them. we do this by adding a topmargin to each bounding box
+-- - flatten all the children into a single element. attach input and output horizontal lines to ports.
+-- - return adjusted bounding box to caller.
 
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
@@ -128,15 +132,14 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
       topMargin = min 0 topMargin_
       bottomMargin = topMargin
       (boxStroke, boxFill, textFill) = getColors True
-      oneRowHeight = boxHeight + lrVgap
-      drawnChildren = vDistribute $ drawItemFull c negContext <$> childqs
+      drawnChildren = addLines c $ vDistribute c $ hDistribute c $ drawItemFull c negContext <$> childqs
       childLineLength = (bbh . fst $ drawnChildren)
       y1 = (topMargin + boxHeight / 2)
       x2 = (bbw . fst $ drawnChildren) + leftMargin
   in
     (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
                     , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
-    ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
+    ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
       <> move (leftMargin, boxHeight) (snd drawnChildren)
       <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
       <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- right horizontal
@@ -150,35 +153,39 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
       topText Nothing              = ""
 
       -- if we used the diagrams package all of this would be calculated automatically for us.
-      vDistribute :: [(BBox, Element)] -> (BBox,Element)
-      vDistribute elems =
+      hDistribute :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
+      hDistribute c elems =
         let alignX = maximum $ bbw . fst <$> elems
-            alignY = maximum $ bbh . fst <$> elems
-        in vD alignX alignY (reverse elems)
+        in hD alignX <$> elems
+        where hD :: Width -> (BBox, Element) -> (BBox, Element)
+              hD ax (bb,x) = (bb { bblm = (ax - bbw bb) / 2, bbrm = (ax - bbw bb) / 2 }, x) -- [TODO] later, left/center/right-align based on the value of x
+        
+      vDistribute :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
+      vDistribute c = fmap (vD c)
+        where vD :: AAVConfig -> (BBox, Element) -> (BBox, Element)
+              vD c (bb,x) = (bb { bbtm = lrVgap }, x)
+                where
+                  AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
 
-      -- [TODO] -- consider moving the Width/Height here into a reader monad; does that end up with a less or more verbose version of the following?
-      vD :: Width -> Height -> [(BBox, Element)] -> (BBox, Element)
-      vD ax ay [] = (defaultBBox,mempty)
-      vD ax ay [(bbox,x)] =
-        let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
-        in ( bbox
-           , x
-             <> (move (0,boxHeight / 2)
-                  (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - (bbw bbox) / 2 , Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ]
-                  <>
-                  (line_ [ X1_ <<-* leftMargin + ax , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - (bbw bbox) / 2 + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
-                  )
+      addLines :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
+      addLines c elems =
+        let (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
+        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
+        where
+          AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+          layout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
+          layout (bbold,old) (bbnew,new) =
+            (defaultBBox { bbh = bbh bbold + bbh bbnew + lrVgap
+                         , bbw = max (bbw bbold) (bbw bbnew)
+                         }
+            , old <>
+              ( move (0, bbh bbold + lrVgap) $ (move (leftMargin + bblm bbnew, 0) new) <>
+                (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ]
+                 <>
+                  (line_ [ X1_ <<-* leftMargin + bblm bbnew + bbw bbnew , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew + bbw bbnew + bbrm bbnew + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
                 )
-           )
-      vD ax ay ((bbox,x):xs) =
-        let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
-            vds = trace ("calling vD ax=" ++ show ax ++ " ay=" ++ show ay)
-                  $ vD ax ay xs
-        in (defaultBBox { bbw = max (bbw bbox) (bbw . fst $ vds)
-                        , bbh = bbh bbox + lrVgap + (bbh . fst $ vds) }
-           , x
-             <> move (0,(bbh bbox) + lrVgap) (snd vds)
-           )
+              )
+            )
       
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
@@ -203,17 +210,17 @@ drawLeaf c negContext qt@(Node q childqs) =
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
-                    then (circle_ [Cx_  <<-* (boxWidth  / 2 + leftMargin) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
-                    else   (text_ [ X_  <<-* (boxWidth  / 2 + leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+                    then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
+                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) defaultBBox { bbw = boxWidth, bbh = topMargin + boxHeight + bottomMargin } $
-     rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
+  (,) defaultBBox { bbw = boxWidth, bbh = boxHeight } $
+     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* topMargin                       , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* (boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* (boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* (boxHeight)     , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* (boxHeight)     , Stroke_ <<- "black" ] else mempty)
+  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0               , Stroke_ <<- "black" ] else mempty)
 
 
 

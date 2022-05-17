@@ -13,6 +13,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy       as TL
 import qualified Data.Map as Map
 import Data.Tree
+import Debug.Trace
 
 type Height = Double
 type Width  = Double
@@ -116,10 +117,10 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
     (,) (leftMargin + rightMargin + (fst.fst $ drawnChildren), (snd.fst $ drawnChildren) + boxHeight + lrVgap)
     ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
       <> move (leftMargin, boxHeight) (snd drawnChildren)
-      <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1, Stroke_ <<- "black" ]
-      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin, Y2_ <<-* y1 + childLineLength             , Stroke_ <<- "black" ]
-      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1              , Stroke_ <<- "black" ]
-      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2, Y2_ <<-* y1 + childLineLength             , Stroke_ <<- "black" ]
+      <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
+      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- right horizontal
+      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- left vertical
+      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
     )
      
     where
@@ -127,19 +128,34 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
       topText (Just (PrePost x _)) = x
       topText Nothing              = ""
 
-
       -- if we used the diagrams package all of this would be calculated automatically for us.
-      vDistribute, vD :: [((Width, Height), Element)] -> ((Width,Height),Element)
-      vDistribute = vD . reverse
+      vDistribute :: [((Width, Height), Element)] -> ((Width,Height),Element)
+      vDistribute elems =
+        let alignX = maximum $ fst . fst <$> elems
+            alignY = maximum $ snd . fst <$> elems
+        in vD alignX alignY (reverse elems)
 
-      vD [] = ((0,0),mempty)
-      vD [((w,h),x)]    = ((w,h),x)
-      vD (((w,h),x):xs) = let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
-                              vds = vD xs
-                          in ((max w (fst . fst $ vds)
-                              , h + lrVgap + (snd . fst $ vds))
-                              , x <> move (0,h + lrVgap) (snd vds))
-                              -- [FIXME] accidentallyQuadratic
+      -- [TODO] -- consider moving the Width/Height here into a reader monad; does that end up with a less or more verbose version of the following?
+      vD :: Width -> Height -> [((Width, Height), Element)] -> ((Width, Height), Element)
+      vD ax ay [] = ((0,0),mempty)
+      vD ax ay [((w,h),x)] =
+        let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+        in ((w,h),x
+                  <> (move (0,boxHeight / 2)
+                       (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - w / 2 , Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ])
+                       <>
+                       (line_ [ X1_ <<-* leftMargin + ax , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - w / 2 + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
+                     )
+           )
+      vD ax ay (((w,h),x):xs) =
+        let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
+            vds = trace ("calling vD ax=" ++ show ax ++ " ay=" ++ show ay)
+                  $ vD ax ay xs
+        in ((max w (fst . fst $ vds)
+            , h + lrVgap + (snd . fst $ vds))
+           , x
+             <> move (0,h + lrVgap) (snd vds)
+           )
       
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
@@ -164,14 +180,12 @@ drawLeaf c negContext qt@(Node q childqs) =
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
-                    then          (circle_ [Cx_  <<-* (boxWidth  / 2 + leftMargin) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
-                    else            (text_ [ X_  <<-* (boxWidth  / 2 + leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+                    then (circle_ [Cx_  <<-* (boxWidth  / 2 + leftMargin) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
+                    else   (text_ [ X_  <<-* (boxWidth  / 2 + leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) (leftMargin + boxWidth + rightMargin, topMargin + boxHeight + bottomMargin) $
+  (,) (boxWidth, topMargin + boxHeight + bottomMargin) $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
-  <>                                line_ [ X1_ <<-* 0                       , Y1_ <<-* (topMargin + boxHeight / 2) , X2_ <<-* leftMargin ,                            Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] -- LR: line in on the left
-  <>                                line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* (topMargin + boxHeight / 2) , X2_ <<-* (leftMargin + boxWidth + rightMargin) , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] -- LR: line out on the right
   <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
   <> (if rightline == HalfLine then line_ [ X1_ <<-* (leftMargin + boxWidth) , Y1_ <<-* topMargin ,                       X2_ <<-* (leftMargin + boxWidth)               , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
   <> (if leftline  == FullLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight)         , Stroke_ <<- "black" ] else mempty)

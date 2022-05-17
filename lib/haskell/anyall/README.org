@@ -386,7 +386,7 @@ After re-reading [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8E
 
 *** Orientation
 
-Elements on the canvas can be laid out left-to-right (LR), top-to-bottom (TB), or a combination of both.
+Elements on the canvas can be laid out left-to-right (LR), top-to-bottom (TB), or a combination of both, whatever is most appropriate given the immediate context.
 
 *** Unfilled Elements
 

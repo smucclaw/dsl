@@ -8,46 +8,44 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Symbol (SProxy(SProxy))
-import Prelude (Unit)
 import Prim (Array)
 
 import Prelude
 
-data Item' Unit Unit =
-    Leaf Unit
+data Item' a b =
+    Leaf b
   | All {
-      itemLbl :: Maybe Unit
-    , itemsAll :: Array (Item' Unit Unit)
+      itemLbl :: Maybe a
+    , itemsAll :: Array (Item' a b)
     }
   | Any {
-      itemLbl :: Maybe Unit
-    , itemsAny :: Array (Item' Unit Unit)
+      itemLbl :: Maybe a
+    , itemsAny :: Array (Item' a b)
     }
-  | Not (Item' Unit Unit)
+  | Not (Item' a b)
 
-derive instance eqItem' :: Eq (Item' Unit Unit)
-derive instance genericItem' :: Generic Unit rUnit => Generic (Item' Unit Unit) _
+derive instance genericItem' :: (Generic a ra, Generic b rb) => Generic (Item' a b) _
 
 --------------------------------------------------------------------------------
-_Leaf :: forall Unit Unit. Prism' (Item' Unit Unit) Unit
+_Leaf :: forall a b. Prism' (Item' a b) b
 _Leaf = prism' Leaf f
   where
     f (Leaf a) = Just $ a
     f _ = Nothing
 
-_All :: forall Unit Unit. Prism' (Item' Unit Unit) { itemLbl :: Maybe Unit, itemsAll :: Array (Item' Unit Unit) }
+_All :: forall a b. Prism' (Item' a b) { itemLbl :: Maybe a, itemsAll :: Array (Item' a b) }
 _All = prism' All f
   where
     f (All r) = Just r
     f _ = Nothing
 
-_Any :: forall Unit Unit. Prism' (Item' Unit Unit) { itemLbl :: Maybe Unit, itemsAny :: Array (Item' Unit Unit) }
+_Any :: forall a b. Prism' (Item' a b) { itemLbl :: Maybe a, itemsAny :: Array (Item' a b) }
 _Any = prism' Any f
   where
     f (Any r) = Just r
     f _ = Nothing
 
-_Not :: forall Unit Unit. Prism' (Item' Unit Unit) (Item' Unit Unit)
+_Not :: forall a b. Prism' (Item' a b) (Item' a b)
 _Not = prism' Not f
   where
     f (Not a) = Just $ a

@@ -26,6 +26,7 @@ import Language.PureScript.Bridge
 import Data.Proxy (Proxy (Proxy))
 import AnyAll (Item')
 import System.Exit (exitSuccess)
+import qualified Language.PureScript.Bridge.TypeParameters as TypeParams
 
 
 -- data Foo = Foo { a  } deriving (Eq, Generic)
@@ -36,7 +37,8 @@ import System.Exit (exitSuccess)
 myTypes :: [SumType 'Haskell]
 myTypes =
   [
-    let p = (Proxy :: Proxy (Item' () ())) in equal p (mkSumType p)  -- Also produce a `Eq` instance.
+    -- let p = (Proxy :: Proxy (Item' TypeParams.A TypeParams.B)) in equal p (mkSumType p)  -- Also produce a `Eq` instance.
+    let p = (Proxy :: Proxy (Item' TypeParams.A TypeParams.B)) in mkSumType p  -- Also produce a `Eq` instance.
   -- , let p = (Proxy :: Proxy Bar) in order p (mkSumType p)  -- Produce both `Eq` and `Ord`.
   -- , mkSumType (Proxy :: Proxy (Item' () ()))  -- Just produce a `Generic` instance.
   ]

@@ -46,7 +46,7 @@ main :: IO ()
 main = do
   opts <- unwrapRecord "mp"
   when (SFL4.only opts == "purescript-bridge") $ do
-    writePSTypes "purescript-source" (buildBridge defaultBridge) myTypes
+    writePSTypesWith noLenses "purescript-source" (buildBridge defaultBridge) myTypes
     exitSuccess
 
   rc <- SFL4.getConfig opts

@@ -2,12 +2,8 @@
 module AnyAll.Types where
 
 import Data.Generic.Rep (class Generic)
-import Data.Lens (Iso', Lens', Prism', lens, prism')
-import Data.Lens.Iso.Newtype (_Newtype)
-import Data.Lens.Record (prop)
 import Data.Maybe (Maybe, Maybe(..))
 import Data.Newtype (class Newtype)
-import Data.Symbol (SProxy(SProxy))
 import Prim (Array)
 
 import Prelude
@@ -26,29 +22,3 @@ data Item' a b =
 
 derive instance genericItem' :: (Generic a ra, Generic b rb) => Generic (Item' a b) _
 
---------------------------------------------------------------------------------
-_Leaf :: forall a b. Prism' (Item' a b) b
-_Leaf = prism' Leaf f
-  where
-    f (Leaf a) = Just $ a
-    f _ = Nothing
-
-_All :: forall a b. Prism' (Item' a b) { itemLbl :: Maybe a, itemsAll :: Array (Item' a b) }
-_All = prism' All f
-  where
-    f (All r) = Just r
-    f _ = Nothing
-
-_Any :: forall a b. Prism' (Item' a b) { itemLbl :: Maybe a, itemsAny :: Array (Item' a b) }
-_Any = prism' Any f
-  where
-    f (Any r) = Just r
-    f _ = Nothing
-
-_Not :: forall a b. Prism' (Item' a b) (Item' a b)
-_Not = prism' Not f
-  where
-    f (Not a) = Just $ a
-    f _ = Nothing
-
---------------------------------------------------------------------------------

@@ -17,7 +17,20 @@ import Debug.Trace
 
 type Height = Double
 type Width  = Double
-type BBox = (Width, Height)
+data BBox = BBox
+  { bbw :: Width
+  , bbh :: Height
+  , bblm :: Width
+  , bbrm :: Width
+  }
+  deriving (Eq, Show)
+
+defaultBBox = BBox
+  { bbw = 0
+  , bbh = 0
+  , bblm = 0
+  , bbrm = 0
+  }
 
 -- | how compact should the output be?
 data Scale = Tiny  -- @ ---o---
@@ -73,7 +86,7 @@ makeSvg' :: AAVConfig -> (BBox, Element) -> Element
 makeSvg' c = makeSvg
 
 makeSvg :: (BBox, Element) -> Element
-makeSvg ((width, height), geom) =
+makeSvg (_bbx, geom) =
      doctype
   <> with (svg11_ geom) [Version_ <<- "1.1" ]
 
@@ -95,6 +108,13 @@ drawItem c negContext qt
   | cscale c == Tiny = drawItemTiny c negContext qt
   | otherwise        = drawItemFull c negContext qt
 
+-- | item drawing proceeds in the following stages:
+-- - draw all children -- just the boxes, no port connectors yet. if the children are themselves complex, we trust in the bounding boxes returned.
+-- - for each child, position horizontally, centered or left/right aligned appropriately.
+-- - position children vertically. usually this means spreading them out, with a gap between them.
+-- - attach input and output horizontal lines to ports.
+-- - connect 
+
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
@@ -110,11 +130,12 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
       (boxStroke, boxFill, textFill) = getColors True
       oneRowHeight = boxHeight + lrVgap
       drawnChildren = vDistribute $ drawItemFull c negContext <$> childqs
-      childLineLength = (snd . fst $ drawnChildren)
+      childLineLength = (bbh . fst $ drawnChildren)
       y1 = (topMargin + boxHeight / 2)
-      x2 = (fst . fst $ drawnChildren) + leftMargin
+      x2 = (bbw . fst $ drawnChildren) + leftMargin
   in
-    (,) (leftMargin + rightMargin + (fst.fst $ drawnChildren), (snd.fst $ drawnChildren) + boxHeight + lrVgap)
+    (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
+                    , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
     ( text_ [ X_  <<-* (boxWidth  / 2 + 2 * leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
       <> move (leftMargin, boxHeight) (snd drawnChildren)
       <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
@@ -129,32 +150,34 @@ drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
       topText Nothing              = ""
 
       -- if we used the diagrams package all of this would be calculated automatically for us.
-      vDistribute :: [((Width, Height), Element)] -> ((Width,Height),Element)
+      vDistribute :: [(BBox, Element)] -> (BBox,Element)
       vDistribute elems =
-        let alignX = maximum $ fst . fst <$> elems
-            alignY = maximum $ snd . fst <$> elems
+        let alignX = maximum $ bbw . fst <$> elems
+            alignY = maximum $ bbh . fst <$> elems
         in vD alignX alignY (reverse elems)
 
       -- [TODO] -- consider moving the Width/Height here into a reader monad; does that end up with a less or more verbose version of the following?
-      vD :: Width -> Height -> [((Width, Height), Element)] -> ((Width, Height), Element)
-      vD ax ay [] = ((0,0),mempty)
-      vD ax ay [((w,h),x)] =
+      vD :: Width -> Height -> [(BBox, Element)] -> (BBox, Element)
+      vD ax ay [] = (defaultBBox,mempty)
+      vD ax ay [(bbox,x)] =
         let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
-        in ((w,h),x
-                  <> (move (0,boxHeight / 2)
-                       (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - w / 2 , Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ])
-                       <>
-                       (line_ [ X1_ <<-* leftMargin + ax , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - w / 2 + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
-                     )
+        in ( bbox
+           , x
+             <> (move (0,boxHeight / 2)
+                  (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - (bbw bbox) / 2 , Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ]
+                  <>
+                  (line_ [ X1_ <<-* leftMargin + ax , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + ax - (bbw bbox) / 2 + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
+                  )
+                )
            )
-      vD ax ay (((w,h),x):xs) =
+      vD ax ay ((bbox,x):xs) =
         let AAVScale (boxWidth, boxHeight, topMargin, rightMargin, bottomMargin, leftMargin, lrVgap) = getScale (cscale c)
             vds = trace ("calling vD ax=" ++ show ax ++ " ay=" ++ show ay)
                   $ vD ax ay xs
-        in ((max w (fst . fst $ vds)
-            , h + lrVgap + (snd . fst $ vds))
+        in (defaultBBox { bbw = max (bbw bbox) (bbw . fst $ vds)
+                        , bbh = bbh bbox + lrVgap + (bbh . fst $ vds) }
            , x
-             <> move (0,h + lrVgap) (snd vds)
+             <> move (0,(bbh bbox) + lrVgap) (snd vds)
            )
       
 drawLeaf :: AAVConfig
@@ -183,7 +206,7 @@ drawLeaf c negContext qt@(Node q childqs) =
                     then (circle_ [Cx_  <<-* (boxWidth  / 2 + leftMargin) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
                     else   (text_ [ X_  <<-* (boxWidth  / 2 + leftMargin) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) (boxWidth, topMargin + boxHeight + bottomMargin) $
+  (,) defaultBBox { bbw = boxWidth, bbh = topMargin + boxHeight + bottomMargin } $
      rect_ [ X_      <<-* leftMargin , Y_      <<-* topMargin , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
   <> (if leftline  == HalfLine then line_ [ X1_ <<-* leftMargin              , Y1_ <<-* topMargin ,                       X2_ <<-* leftMargin                            , Y2_ <<-* (topMargin + boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
@@ -214,12 +237,12 @@ itemBox :: AAVConfig
         -> (BBox, Element)
 itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
 itemBox c x y (Simply t)  m cs amNot
-  | cscale c  == Tiny  = (,) (10,10) $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
+  | cscale c  == Tiny  = (,) defaultBBox { bbw = 10, bbh = 10 } $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
 -- [TODO] small
-  | cscale c  `elem` [Full,Small]  = (,) (fromIntegral $ TL.length t * 3, 25) $ g_ [] (
+  | cscale c  `elem` [Full,Small]  = (,) (defaultBBox { bbw = fromIntegral $ TL.length t * 3, bbh = 25 }) $ g_ [] (
       rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ]
         <> mempty ) -- some text
-itemBox c x y andor m cs amNot = (,) (fromIntegral $ 25, 25) $ g_ [] (
+itemBox c x y andor m cs amNot = (,) (defaultBBox { bbw = fromIntegral $ 25, bbh = 25 }) $ g_ [] (
   rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ]
     <> mempty) -- some text
   
@@ -275,7 +298,9 @@ move :: (Double, Double) -> Element -> Element
 move (x, y) geoms =
   with geoms [Transform_ <<- translate x y]
 
-renderChain :: AAVConfig -> [(BBox, Element)] -> Element
+type OldBBox = (Width, Height)
+
+renderChain :: AAVConfig -> [(OldBBox, Element)] -> Element
 renderChain c [] = mempty
 renderChain c [(_,g)] = g
 renderChain c (((w,h),g):hgs) =
@@ -283,13 +308,13 @@ renderChain c (((w,h),g):hgs) =
         <> line (10, 20) (10, h)
         <> move (0, h) (renderChain c hgs)  )
 
-renderLeaf :: (ToElement a) => AAVConfig -> a -> (BBox, Element)
+renderLeaf :: (ToElement a) => AAVConfig -> a -> (OldBBox, Element)
 renderLeaf c desc =
   let height = 25
       geom = item c 0 0 desc
   in ((25,height), geom)
 
-renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (BBox, Element)
+renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (OldBBox, Element)
 renderNot c children =
   let
       ((w,h), g) = renderItem c $ head children
@@ -302,14 +327,14 @@ renderNot c children =
   in ((w,height), geom)
 
 
-renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (BBox, Element)
+renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (OldBBox, Element)
 renderSuffix c x y desc =
   let h = 20 -- h/w of imaginary box
       geom :: Element
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in ((25,h), geom)
 
-renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
+renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, Element)
 renderAll c Nothing childnodes = renderAll c allof childnodes
 renderAll c (Just (Pre prefix)) childnodes =
   let
@@ -346,7 +371,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
-renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (BBox, Element)
+renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, Element)
 renderAny c Nothing childnodes = renderAny c (Just (Pre "any of:")) childnodes
 renderAny c (Just (Pre prefix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -387,13 +412,13 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
   in ((width, height), geom)
 
 
-renderItem :: (ToElement a) => AAVConfig -> Item a -> (BBox, Element)
+renderItem :: (ToElement a) => AAVConfig -> Item a -> (OldBBox, Element)
 renderItem c (Leaf label)     = renderLeaf c label
 renderItem c (Not       args) = renderNot c      [args]
 renderItem c (All label args) = renderAll c label args
 renderItem c (Any label args) = renderAny c label args
 
-toy :: (BBox, Element)
+toy :: (OldBBox, Element)
 toy = renderItem defaultAAVConfig $
   All (Just $ PrePost "You need all of" ("to survive." :: TL.Text))
       [ Leaf ("Item 1;" :: TL.Text)

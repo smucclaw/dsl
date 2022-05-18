@@ -1,0 +1,46 @@
+{
+  "marking": {
+    "walk": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "run": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "sink": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "swim": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "eat": {
+      "getDefault": {
+        "Left": false
+      }
+    },
+    "drink": {
+      "getDefault": {
+        "Left": true
+      }
+    }
+  },
+  "andOrTree": {
+    "nodetype": "all",
+    "pre": "all of",
+    "children": [
+          {
+            "leaf": "eat"
+          },
+          {
+            "leaf": "drink"
+          }
+        ]
+  }
+}

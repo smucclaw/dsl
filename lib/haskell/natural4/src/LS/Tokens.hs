@@ -266,7 +266,7 @@ pMultiTerm :: Parser MultiTerm
 pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ some pNumOrText
 
 slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = debugNameSL "slMultiTerm" $ liftSL $ some pNumOrText <* dnl
+slMultiTerm = debugNameSL "slMultiTerm" $ liftSL $ some pNumOrText <* optional dnl
 
 
 

@@ -35,6 +35,30 @@
     "nodetype": "all",
     "pre": "all of",
     "children": [
+      {
+        "nodetype": "not",
+        "children": [
+          {
+            "nodetype": "any",
+            "pre": "either",
+            "children": [
+              {
+                "leaf": "sink"
+              },
+              {
+                "leaf": "swim"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "leaf": "walk"
+      },
+      {
+        "nodetype": "all",
+        "pre": "all",
+        "children": [
           {
             "leaf": "eat"
           },
@@ -42,5 +66,7 @@
             "leaf": "drink"
           }
         ]
+      }
+    ]
   }
 }

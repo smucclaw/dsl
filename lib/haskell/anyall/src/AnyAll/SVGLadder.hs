@@ -125,6 +125,12 @@ drawItem c negContext qt
 -- - flatten all the children into a single element. attach input and output horizontal lines to ports.
 -- - return adjusted bounding box to caller.
 
+data HAlignment = HLeft | HCenter | HRight
+  deriving (Eq, Show)
+
+data VAlignment = VTop | VMiddle | VBottom
+  deriving (Eq, Show)
+
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
@@ -136,7 +142,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       bottomMargin = topMargin
       (boxStroke, boxFill, textFill) = getColors True
   in case ao of
-       Or -> let drawnChildren = addLines c $ vDistribute c $ hDistribute c $ drawItemFull c negContext <$> childqs
+       Or -> let drawnChildren = vCombineOr c $ vStack c $ hAlign c HCenter $ drawItemFull c negContext <$> childqs
                  childLineLength = (bbh . fst $ drawnChildren)
                  y1 = (topMargin + boxHeight / 2)
                  x2 = (bbw . fst $ drawnChildren) + leftMargin
@@ -151,8 +157,10 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                   <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- right horizontal
                   <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
                 )
-       And -> let drawnChildren = error "todo"
-              in (defaultBBox, mempty)
+       And -> let drawnChildren = hCombineAnd c $ hStack c $ vAlign c VMiddle $ drawItemFull c negContext <$> childqs
+              in (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
+                                 , bbh = bbh.fst $ drawnChildren }
+                 (snd drawnChildren)
        Simply _txt -> drawLeaf     c      negContext   qt
        Neg         -> drawItemFull c (not negContext) (head childqs)
      
@@ -162,28 +170,50 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       topText Nothing              = ""
 
       -- if we used the diagrams package all of this would be calculated automatically for us.
-      hDistribute :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
-      hDistribute c elems =
-        let alignX = maximum $ bbw . fst <$> elems
-        in hD alignX <$> elems
-        where hD :: Width -> (BBox, Element) -> (BBox, Element)
-              hD ax (bb,x) = (bb { bblm = (ax - bbw bb) / 2, bbrm = (ax - bbw bb) / 2 }, x) -- [TODO] later, left/center/right-align based on the value of x
+      hAlign :: AAVConfig -> HAlignment -> [(BBox, Element)] -> [(BBox,Element)]
+      hAlign c alignment elems =
+        let mx = maximum $ bbw . fst <$> elems
+        in hD alignment mx <$> elems
+        where hD :: HAlignment -> Width -> (BBox, Element) -> (BBox, Element)
+              hD HCenter mx (bb,x) = (bb { bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, x)
+              hD HLeft   mx (bb,x) = (bb { bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
+              hD HRight  mx (bb,x) = (bb { bblm = (mx - bbw bb) / 1, bbrm = 0                 }, x)
         
-      vDistribute :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
-      vDistribute c = fmap (vD c)
+      vAlign :: AAVConfig -> VAlignment -> [(BBox, Element)] -> [(BBox,Element)]
+      vAlign c alignment elems =
+        let mx = maximum $ bbh . fst <$> elems
+        in vA alignment mx <$> elems
+        where vA :: VAlignment -> Width -> (BBox, Element) -> (BBox, Element)
+              vA VMiddle  mx (bb,x) = (bb { bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, x)
+              vA VTop     mx (bb,x) = (bb { bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
+              vA VBottom  mx (bb,x) = (bb { bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, x)
+
+      -- prepare to stack a bunch of elements vertically by adding a lrVgap to each element's top margin
+      vStack, hStack :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
+      vStack c = fmap (vD c)
         where vD :: AAVConfig -> (BBox, Element) -> (BBox, Element)
               vD c (bb,x) = (bb { bbtm = lrVgap }, x)
                 where
                   AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+      -- prepare to stack a bunch of elements horizontally by lining them up left to right, by adding a lrHgap to each element's left margin.
+      -- bit questionable whether this Stack function is really necessary or if it's better done inside addLines.
+      hStack c = fmap (hS c)
+        where hS :: AAVConfig -> (BBox, Element) -> (BBox, Element)
+              hS c (bb,x) = (bb { bbtm = lrVgap }, x)
+                where
+                  AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
 
-      addLines :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
-      addLines c elems =
-        let (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
+      vCombineOr :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
+      vCombineOr c elems =
+        let layout = case cdirection c of
+              LR -> vlayout
+              TB -> error "hlayout not yet implemented"
+            (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
         where
           AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
-          layout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
-          layout (bbold,old) (bbnew,new) =
+          vlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
+          vlayout (bbold,old) (bbnew,new) =
             (defaultBBox { bbh = bbh bbold + bbh bbnew + lrVgap
                          , bbw = max (bbw bbold) (bbw bbnew)
                          }
@@ -200,6 +230,30 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                   (line_ [ X1_ <<-* leftMargin + bblm bbnew + bbw bbnew , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew + bbw bbnew + bbrm bbnew + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
                 )
               )
+            )
+
+      hCombineAnd :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
+      hCombineAnd c elems =
+        let layout = case cdirection c of
+              LR -> hlayout
+              TB -> error "vlayout not yet implemented"
+            (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
+        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
+        where
+          AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
+          hlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
+          hlayout (bbold,old) (bbnew,new) =
+            (defaultBBox { bbh = max (bbh bbold) (bbh bbnew)
+                         , bbw = bblm bbold + bbw bbold + bbrm bbold + bblm bbnew + bbw bbnew + bbrm bbnew + lrVgap -- [TODO] should become lrHgap, need to add this to our default margin set
+                         }
+            , old
+              <> path_ [ D_ <<- (mA 0 (boxHeight / 2) <> (cR -- this should be equivalent to a horizontal line down the middle, but we're doing it as a path to better understand how paths work
+                                                         (bblm bbold + bbw bbold + bbrm bbold) 0
+                                                         (bblm bbold + bbw bbold + bbrm bbold) 0
+                                                         (bblm bbold + bbw bbold + bbrm bbold + bblm bbnew) 0
+                                                       )
+                                ), Stroke_ <<- "green", Fill_ <<- "none" ]
+              <> move (bblm bbold + bbw bbold + bbrm bbold + leftMargin + bblm bbnew, 0) new
             )
       
 drawLeaf :: AAVConfig

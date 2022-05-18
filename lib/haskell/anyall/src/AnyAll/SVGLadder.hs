@@ -88,6 +88,8 @@ type ItemStyle = Maybe Bool
 (<<-*) :: Show a => AttrTag -> a -> Attribute
 (<<-*) tag a = bindAttr tag (T.pack (show a))
 
+tpsa a = T.pack $ show a
+
 infix 4 <<-*
 
 makeSvg' :: AAVConfig -> (BBox, Element) -> Element
@@ -117,7 +119,7 @@ drawItem c negContext qt
   | otherwise        = drawItemFull c negContext qt
 
 -- | item drawing proceeds in the following stages:
--- - draw all children -- just the boxes, no port connectors yet. if the children are themselves complex, we trust in the bounding boxes returned.
+-- - construct all children -- just the boxes, no port connectors yet. if the children are themselves complex, we trust in the bounding boxes returned.
 -- - for each child, position horizontally, centered or left/right aligned appropriately.
 -- - position children vertically. usually this means spreading them out, with a gap between them. we do this by adding a topmargin to each bounding box
 -- - flatten all the children into a single element. attach input and output horizontal lines to ports.
@@ -142,9 +144,11 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                                 , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
                 ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
                   <> move (leftMargin, boxHeight) (snd drawnChildren)
-                  <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
-                  <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- right horizontal
+
+                  <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- left horizontal
                   <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- left vertical
+                  
+                  <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- right horizontal
                   <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
                 )
        And -> let drawnChildren = error "todo"
@@ -183,8 +187,14 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
             (defaultBBox { bbh = bbh bbold + bbh bbnew + lrVgap
                          , bbw = max (bbw bbold) (bbw bbnew)
                          }
-            , old <>
-              ( move (0, bbh bbold + lrVgap) $ (move (leftMargin + bblm bbnew, 0) new) <>
+            , old
+              <> path_ [ D_ <<- (mA 0 (- boxHeight / 2) <> (cR
+                                                         (leftMargin) 0
+                                                         (0)              (bbh bbold + bbtm bbnew + boxHeight)
+                                                         (leftMargin + bblm bbnew) (bbh bbold + bbtm bbnew + boxHeight)
+                                                       )
+                                ), Stroke_ <<- "green", Fill_ <<- "none" ]
+              <> ( move (0, bbh bbold + bbtm bbnew) $ (move (leftMargin + bblm bbnew, 0) new) <>
                 (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ]
                  <>
                   (line_ [ X1_ <<-* leftMargin + bblm bbnew + bbw bbnew , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew + bbw bbnew + bbrm bbnew + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])

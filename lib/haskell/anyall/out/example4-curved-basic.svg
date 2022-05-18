@@ -9,7 +9,7 @@
 <line fill="none" stroke="#000000" x1="80" y1="54" x2="80" y2="76"/>
 <line fill="none" stroke="#000000" x1="200" y1="54" x2="200" y2="76"/>
 <line fill="none" stroke="#000000" x1="80" y1="54" x2="200" y2="54"/>
-<path fill="none" stroke="#0000FF" stroke-width="2" d="M20,22c20,0,31.5,54,60,54"/>
+<path fill="none" stroke="#0000FF" stroke-width="2" d="M20,22 c20,0,31.5,54,60,54"/>
 <path fill="none" stroke="#0000FF" d="M200,76c20,0,40-54,60-54"/>
 <text transform="matrix(1 0 0 1 124.9912 130)" font-family="'ArialMT'" font-size="12px">either</text>
 <rect x="80" y="162" fill="none" width="120" height="44"/>

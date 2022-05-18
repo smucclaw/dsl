@@ -1,68 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator 26.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 1366 768" style="enable-background:new 0 0 1366 768;" xml:space="preserve">
-<style type="text/css">
-	.st0{font-family:'ArialMT';}
-	.st1{font-size:12px;}
-	.st2{fill:none;}
-	.st3{fill:none;stroke:#000000;}
-	.st4{fill:none;stroke:#0000FF;stroke-width:2;}
-	.st5{fill:none;stroke:#0000FF;}
-	.st6{fill:none;stroke:#FF0000;}
-	.st7{fill:#D3D3D3;}
-	.st8{fill:#FFFFFF;}
-</style>
-<text transform="matrix(1 0 0 1 123.6553 22)" class="st0 st1">any of</text>
-<rect x="80" y="54" class="st2" width="120" height="44"/>
-<text transform="matrix(1 0 0 1 127.9971 76)" class="st0 st1">walk</text>
-<line class="st3" x1="80" y1="54" x2="80" y2="76"/>
-<line class="st3" x1="200" y1="54" x2="200" y2="76"/>
-<line class="st3" x1="80" y1="54" x2="200" y2="54"/>
-<path class="st4" d="M20,22c20,0,31.5,54,60,54"/>
-<path class="st5" d="M200,76c20,0,40-54,60-54"/>
-<text transform="matrix(1 0 0 1 124.9912 130)" class="st0 st1">either</text>
-<rect x="80" y="162" class="st2" width="120" height="44"/>
-<text transform="matrix(1 0 0 1 129.3301 184)" class="st0 st1">sink</text>
-<line class="st3" x1="80" y1="162" x2="80" y2="206"/>
-<line class="st3" x1="200" y1="162" x2="200" y2="206"/>
-<line class="st3" x1="80" y1="162" x2="200" y2="162"/>
-<line class="st4" x1="60" y1="184" x2="80" y2="184"/>
-<line class="st5" x1="200" y1="184" x2="220" y2="184"/>
-<rect x="80" y="216" class="st2" width="120" height="44"/>
-<text transform="matrix(1 0 0 1 126.3359 238)" class="st0 st1">swim</text>
-<line class="st3" x1="80" y1="216" x2="80" y2="260"/>
-<line class="st3" x1="200" y1="216" x2="200" y2="260"/>
-<line class="st3" x1="80" y1="216" x2="200" y2="216"/>
-<line class="st4" x1="60" y1="238" x2="80" y2="238"/>
-<line class="st5" x1="200" y1="238" x2="220" y2="238"/>
-<line class="st6" x1="40" y1="130" x2="60" y2="130"/>
-<line class="st6" x1="220" y1="130" x2="240" y2="130"/>
-<line class="st3" x1="60" y1="130" x2="60" y2="238"/>
-<line class="st3" x1="220" y1="130" x2="220" y2="238"/>
-<line class="st4" x1="20" y1="130" x2="40" y2="130"/>
-<line class="st5" x1="240" y1="130" x2="260" y2="130"/>
-<text transform="matrix(1 0 0 1 130.3262 302)" class="st0 st1">any</text>
-<rect x="80" y="334" class="st7" width="120" height="44"/>
-<text transform="matrix(1 0 0 1 131.6592 356)" class="st8 st0 st1">eat</text>
-<line class="st3" x1="80" y1="334" x2="80" y2="378"/>
-<line class="st4" x1="60" y1="356" x2="80" y2="356"/>
-<line class="st5" x1="200" y1="356" x2="220" y2="356"/>
-<rect x="80" y="388" class="st7" width="120" height="44"/>
-<text transform="matrix(1 0 0 1 126.9951 410)" class="st8 st0 st1">drink</text>
-<line class="st3" x1="80" y1="388" x2="80" y2="410"/>
-<line class="st3" x1="200" y1="388" x2="200" y2="410"/>
-<line class="st3" x1="80" y1="388" x2="200" y2="388"/>
-<line class="st4" x1="60" y1="410" x2="80" y2="410"/>
-<line class="st5" x1="200" y1="410" x2="220" y2="410"/>
-<line class="st6" x1="40" y1="302" x2="60" y2="302"/>
-<line class="st6" x1="220" y1="302" x2="240" y2="302"/>
-<line class="st3" x1="60" y1="302" x2="60" y2="410"/>
-<line class="st3" x1="220" y1="302" x2="220" y2="410"/>
-<line class="st4" x1="20" y1="302" x2="40" y2="302"/>
-<line class="st5" x1="240" y1="302" x2="260" y2="302"/>
-<line class="st6" x1="0" y1="22" x2="20" y2="22"/>
-<line class="st6" x1="260" y1="22" x2="280" y2="22"/>
-<line class="st3" x1="20" y1="22" x2="20" y2="420"/>
-<line class="st3" x1="260" y1="22" x2="260" y2="420"/>
+	 viewBox="0 0 1366 768" enable-background="new 0 0 1366 768" xml:space="preserve">
+<text transform="matrix(1 0 0 1 123.6553 22)" font-family="'ArialMT'" font-size="12px">any of</text>
+<rect x="80" y="54" fill="none" width="120" height="44"/>
+<text transform="matrix(1 0 0 1 127.9971 76)" font-family="'ArialMT'" font-size="12px">walk</text>
+<line fill="none" stroke="#000000" x1="80" y1="54" x2="80" y2="76"/>
+<line fill="none" stroke="#000000" x1="200" y1="54" x2="200" y2="76"/>
+<line fill="none" stroke="#000000" x1="80" y1="54" x2="200" y2="54"/>
+<path fill="none" stroke="#0000FF" stroke-width="2" d="M20,22 c 32.9,0, 31.5,54 ,  60,54"/>
+<path fill="none" stroke="#0000FF" d="M200,76c20,0,40-54,60-54"/>
+<text transform="matrix(1 0 0 1 124.9912 130)" font-family="'ArialMT'" font-size="12px">either</text>
+<rect x="80" y="162" fill="none" width="120" height="44"/>
+<text transform="matrix(1 0 0 1 129.3301 184)" font-family="'ArialMT'" font-size="12px">sink</text>
+<line fill="none" stroke="#000000" x1="80" y1="162" x2="80" y2="206"/>
+<line fill="none" stroke="#000000" x1="200" y1="162" x2="200" y2="206"/>
+<line fill="none" stroke="#000000" x1="80" y1="162" x2="200" y2="162"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="60" y1="184" x2="80" y2="184"/>
+<line fill="none" stroke="#0000FF" x1="200" y1="184" x2="220" y2="184"/>
+<rect x="80" y="216" fill="none" width="120" height="44"/>
+<text transform="matrix(1 0 0 1 126.3359 238)" font-family="'ArialMT'" font-size="12px">swim</text>
+<line fill="none" stroke="#000000" x1="80" y1="216" x2="80" y2="260"/>
+<line fill="none" stroke="#000000" x1="200" y1="216" x2="200" y2="260"/>
+<line fill="none" stroke="#000000" x1="80" y1="216" x2="200" y2="216"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="60" y1="238" x2="80" y2="238"/>
+<line fill="none" stroke="#0000FF" x1="200" y1="238" x2="220" y2="238"/>
+<line fill="none" stroke="#FF0000" x1="40" y1="130" x2="60" y2="130"/>
+<line fill="none" stroke="#FF0000" x1="220" y1="130" x2="240" y2="130"/>
+<line fill="none" stroke="#000000" x1="60" y1="130" x2="60" y2="238"/>
+<line fill="none" stroke="#000000" x1="220" y1="130" x2="220" y2="238"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="20" y1="130" x2="40" y2="130"/>
+<line fill="none" stroke="#0000FF" x1="240" y1="130" x2="260" y2="130"/>
+<text transform="matrix(1 0 0 1 130.3262 302)" font-family="'ArialMT'" font-size="12px">any</text>
+<rect x="80" y="334" fill="#D3D3D3" width="120" height="44"/>
+<text transform="matrix(1 0 0 1 131.6592 356)" fill="#FFFFFF" font-family="'ArialMT'" font-size="12px">eat</text>
+<line fill="none" stroke="#000000" x1="80" y1="334" x2="80" y2="378"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="60" y1="356" x2="80" y2="356"/>
+<line fill="none" stroke="#0000FF" x1="200" y1="356" x2="220" y2="356"/>
+<rect x="80" y="388" fill="#D3D3D3" width="120" height="44"/>
+<text transform="matrix(1 0 0 1 126.9951 410)" fill="#FFFFFF" font-family="'ArialMT'" font-size="12px">drink</text>
+<line fill="none" stroke="#000000" x1="80" y1="388" x2="80" y2="410"/>
+<line fill="none" stroke="#000000" x1="200" y1="388" x2="200" y2="410"/>
+<line fill="none" stroke="#000000" x1="80" y1="388" x2="200" y2="388"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="60" y1="410" x2="80" y2="410"/>
+<line fill="none" stroke="#0000FF" x1="200" y1="410" x2="220" y2="410"/>
+<line fill="none" stroke="#FF0000" x1="40" y1="302" x2="60" y2="302"/>
+<line fill="none" stroke="#FF0000" x1="220" y1="302" x2="240" y2="302"/>
+<line fill="none" stroke="#000000" x1="60" y1="302" x2="60" y2="410"/>
+<line fill="none" stroke="#000000" x1="220" y1="302" x2="220" y2="410"/>
+<line fill="none" stroke="#0000FF" stroke-width="2" x1="20" y1="302" x2="40" y2="302"/>
+<line fill="none" stroke="#0000FF" x1="240" y1="302" x2="260" y2="302"/>
+<line fill="none" stroke="#FF0000" x1="0" y1="22" x2="20" y2="22"/>
+<line fill="none" stroke="#FF0000" x1="260" y1="22" x2="280" y2="22"/>
+<line fill="none" stroke="#000000" x1="20" y1="22" x2="20" y2="420"/>
+<line fill="none" stroke="#000000" x1="260" y1="22" x2="260" y2="420"/>
 </svg>

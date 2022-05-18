@@ -36,9 +36,6 @@
     "pre": "any of",
     "children": [
       {
-        "leaf": "walk"
-      },
-      {
         "nodetype": "not",
         "children": [
           {
@@ -54,6 +51,9 @@
             ]
           }
         ]
+      },
+      {
+        "leaf": "walk"
       },
       {
         "nodetype": "any",

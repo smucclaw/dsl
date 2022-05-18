@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+-- usage:
+-- (base) ┌─[mengwong@solo-8] - [~/src/smucclaw/dsl/lib/haskell/anyall] - [2022-05-18 12:38:04]
+-- └─[255] <git:(ladder 88053e0✱✈) > cat out/example-or.json | stack run -- --only svg | perl -ple 's/\.00+//g' > out/example4.svg
+
 -- | A visualization inspired by Ladder Logic and by Layman Allen (1978).
 
 module AnyAll.SVGLadder where
@@ -122,30 +126,31 @@ drawItem c negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
-drawItemFull c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext   qt
-drawItemFull c negContext qt@(Node (Q _sv ao@(Neg        ) pp m) childqs) = drawItemFull c (not negContext) (head childqs)
-drawItemFull c negContext qt@(Node (Q _sv ao@And           pp m) childqs) = drawLeaf     c      negContext  (head childqs)  -- [TODO]
-drawItemFull c negContext qt@(Node (Q  sv ao@Or            pp m) childqs) =
+drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
   let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
       topMargin = min 0 topMargin_
       bottomMargin = topMargin
       (boxStroke, boxFill, textFill) = getColors True
-      drawnChildren = addLines c $ vDistribute c $ hDistribute c $ drawItemFull c negContext <$> childqs
-      childLineLength = (bbh . fst $ drawnChildren)
-      y1 = (topMargin + boxHeight / 2)
-      x2 = (bbw . fst $ drawnChildren) + leftMargin
-  in
-    (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
-                    , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
-    ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
-      <> move (leftMargin, boxHeight) (snd drawnChildren)
-      <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
-      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- right horizontal
-      <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- left vertical
-      <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
-    )
+  in case ao of
+       Or -> let drawnChildren = addLines c $ vDistribute c $ hDistribute c $ drawItemFull c negContext <$> childqs
+                 childLineLength = (bbh . fst $ drawnChildren)
+                 y1 = (topMargin + boxHeight / 2)
+                 x2 = (bbw . fst $ drawnChildren) + leftMargin
+             in (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
+                                , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
+                ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
+                  <> move (leftMargin, boxHeight) (snd drawnChildren)
+                  <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- left horizontal
+                  <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ] -- right horizontal
+                  <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- left vertical
+                  <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
+                )
+       And -> let drawnChildren = error "todo"
+              in (defaultBBox, mempty)
+       Simply _txt -> drawLeaf     c      negContext   qt
+       Neg         -> drawItemFull c (not negContext) (head childqs)
      
     where
       topText (Just (Pre x      )) = x

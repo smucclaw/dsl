@@ -66,19 +66,22 @@ defaultAAVConfig = AAVConfig
   }
 
 data AAVScale = AAVScale
-  ( Width  -- ^ box width
-  , Height -- ^ box height
-  , Width  -- ^ left margin
-  , Width  -- ^ top margin
-  , Width  -- ^ right margin
-  , Width  -- ^ bottom margin
-  , Width  -- ^ LR: vertical gap between vertical elements
-  ) deriving (Show, Eq)
+  { sbw :: Width  -- ^ box width
+  , sbh :: Height -- ^ box height
+  , slm :: Width  -- ^ left margin
+  , stm :: Width  -- ^ top margin
+  , srm :: Width  -- ^ right margin
+  , sbm :: Width  -- ^ bottom margin
+  , slrv :: Width  -- ^ LR: vertical   gap between elements
+  , slrh :: Width  -- ^ LR: horizontal gap between elements
+  , stbv :: Width  -- ^ TB: vertical   gap between elements
+  , stbh :: Width  -- ^ TB: horizontal gap between elements
+  } deriving (Show, Eq)
 
-getScale :: Scale -> AAVScale
-getScale Full  = AAVScale (120, 44, 22, 20, 22, 20, 10)
-getScale Small = AAVScale ( 44, 30, 11, 14, 11, 14,  7)
-getScale Tiny  = AAVScale (  8,  8,  6, 10,  6, 10,  5)
+getScale :: Scale -> AAVScale -- sbw sbh slm stm srm sbm slrv slrh stbv stbh
+getScale Full      = AAVScale    120  44  22  20  22  20  10   10    10   10
+getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
+getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 
 getColors True = ("none", "none", "black")
 getColors False = ("none", "lightgrey", "white")
@@ -137,18 +140,15 @@ drawItemTiny c negContext qt                                              = draw
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
-  let AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
-      topMargin = min 0 topMargin_
-      bottomMargin = topMargin
-      (boxStroke, boxFill, textFill) = getColors True
+  let (boxStroke, boxFill, textFill) = getColors True
   in case ao of
        Or -> let drawnChildren = vCombineOr c $ vStack c $ hAlign c HCenter $ drawItemFull c negContext <$> childqs
                  childLineLength = (bbh . fst $ drawnChildren)
-                 y1 = (topMargin + boxHeight / 2)
+                 y1 = (boxHeight / 2)
                  x2 = (bbw . fst $ drawnChildren) + leftMargin
              in (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
                                 , bbh = (bbh.fst $ drawnChildren) + boxHeight + lrVgap }
-                ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
+                ( text_ [ X_  <<-* leftMargin + (bbw.fst $ drawnChildren) / 2 , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (fromString $ TL.unpack $ topText pp)
                   <> move (leftMargin, boxHeight) (snd drawnChildren)
 
                   <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- left horizontal
@@ -165,6 +165,9 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
        Neg         -> drawItemFull c (not negContext) (head childqs)
      
     where
+      myScale     = getScale (cscale c)
+      boxWidth    = sbw myScale; boxHeight = sbh myScale; leftMargin  = slm myScale; rightMargin = srm myScale; lrVgap = slrv myScale; lrHgap = slrh myScale
+      
       topText (Just (Pre x      )) = x
       topText (Just (PrePost x _)) = x
       topText Nothing              = ""
@@ -193,15 +196,11 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       vStack c = fmap (vD c)
         where vD :: AAVConfig -> (BBox, Element) -> (BBox, Element)
               vD c (bb,x) = (bb { bbtm = lrVgap }, x)
-                where
-                  AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
       -- prepare to stack a bunch of elements horizontally by lining them up left to right, by adding a lrHgap to each element's left margin.
       -- bit questionable whether this Stack function is really necessary or if it's better done inside addLines.
       hStack c = fmap (hS c)
         where hS :: AAVConfig -> (BBox, Element) -> (BBox, Element)
               hS c (bb,x) = (bb { bbtm = lrVgap }, x)
-                where
-                  AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
 
       vCombineOr :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
       vCombineOr c elems =
@@ -211,7 +210,6 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
             (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
         where
-          AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
           vlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
           vlayout (bbold,old) (bbnew,new) =
             (defaultBBox { bbh = bbh bbold + bbh bbnew + lrVgap
@@ -240,20 +238,16 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
             (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
         where
-          AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
           hlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
           hlayout (bbold,old) (bbnew,new) =
             (defaultBBox { bbh = max (bbh bbold) (bbh bbnew)
                          , bbw = bblm bbold + bbw bbold + bbrm bbold + bblm bbnew + bbw bbnew + bbrm bbnew + lrVgap -- [TODO] should become lrHgap, need to add this to our default margin set
                          }
             , old
-              <> path_ [ D_ <<- (mA 0 (boxHeight / 2) <> (cR -- this should be equivalent to a horizontal line down the middle, but we're doing it as a path to better understand how paths work
-                                                         (bblm bbold + bbw bbold + bbrm bbold) 0
-                                                         (bblm bbold + bbw bbold + bbrm bbold) 0
-                                                         (bblm bbold + bbw bbold + bbrm bbold + bblm bbnew) 0
-                                                       )
-                                ), Stroke_ <<- "green", Fill_ <<- "none" ]
-              <> move (bblm bbold + bbw bbold + bbrm bbold + leftMargin + bblm bbnew, 0) new
+              <> line_ [ X1_ <<-* bblm bbold + bbw bbold + bbrm bbold,                       Y1_ <<-* boxHeight / 2
+                       , X2_ <<-* bblm bbold + bbw bbold + bbrm bbold + lrVgap + bblm bbnew, Y2_ <<-* boxHeight / 2
+                       , Stroke_ <<- "green", Fill_ <<- "none" ]
+              <> move (bblm bbold + bbw bbold + bbrm bbold + lrVgap + bblm bbnew, 0) new
             )
       
 drawLeaf :: AAVConfig
@@ -262,9 +256,6 @@ drawLeaf :: AAVConfig
          -> (BBox, Element)
 drawLeaf c negContext qt@(Node q childqs) =
   let (boxStroke, boxFill, textFill) = getColors confidence
-      AAVScale (boxWidth, boxHeight, topMargin_, rightMargin, bottomMargin_, leftMargin, lrVgap) = getScale (cscale c)
-      topMargin = min 0 topMargin_
-      bottomMargin = topMargin
       mytext = case andOr q of
         (Simply txt) -> fromString (TL.unpack txt)
         (Neg)        -> "neg..."
@@ -279,19 +270,20 @@ drawLeaf c negContext qt@(Node q childqs) =
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
-                    then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2 + topMargin) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
-                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2 + topMargin) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+                    then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
+                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
   (,) defaultBBox { bbw = boxWidth, bbh = boxHeight } $
      rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* (boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* (boxHeight / 2) , Stroke_ <<- "black" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* (boxHeight)     , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* (boxHeight)     , Stroke_ <<- "black" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0               , Stroke_ <<- "black" ] else mempty)
-
-
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black" ] else mempty)
+  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black" ] else mempty)
+  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black" ] else mempty)
+  where
+    boxHeight = sbh (getScale (cscale c))
+    boxWidth  = sbw (getScale (cscale c))
 
 
   -- itemBox c 0 0 ao mark children False

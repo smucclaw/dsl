@@ -1159,17 +1159,8 @@ verbFromUDS' verbose x = case getNsubj x of
     Groot_obl_obl (GrootV_ t p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl1) obl2
     Groot_obl_xcomp (GrootV_ t p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl) xc
     Groot_xcomp (GrootV_ t p vp) (GxcompAdv_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
-    Groot_advmod (GrootV_ t p vp) (Gadvmod_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
-
-    {- -- version 1: explicit pattern match, brittle, specialised for 1 case
-    Groot_acl_nmod (GrootN_ np) _                      (Gnmod_ nmod) ->
-      Just $ GAdvVP (GUseComp (GCompNP np)) nmod
-    Groot_acl_nmod (GrootA_ ap) _                      (Gnmod_ nmod) ->
-      Just $ GAdvVP (GUseComp (GCompAP ap)) nmod
-    Groot_acl_nmod (GrootV_ _t _p vp) _                      (Gnmod_ nmod) ->
-      Just $ GAdvVP vp nmod -}
-
-    -- version 2: general solution, recursion
+    Groot_advmod (GrootV_ t p vp) (Gadvmod_ adv) ->
+      Just $ GMkVPS t p $ GAdvVP vp adv
     Groot_acl_nmod root         (GaclUDSgerund_ uds) (Gnmod_ prep np) -> do
       GMkVPS t p vp <- verbFromUDS (Groot_only root) -- recursively calling verbFromUDS, now with a UDS that is guaranteed to go to the _ case below, and getRoot will be called, and a VP will be constructed
       GMkVPS _ _ vpToBecomeGerund <- verbFromUDS uds -- :: GVPS
@@ -1179,16 +1170,25 @@ verbFromUDS' verbose x = case getNsubj x of
 
     _ -> case getRoot x of -- TODO: fill in other cases
                 GrootV_ t p vp:_ -> Just $ GMkVPS t p vp
-                GrootVaux_ t p _aux vp:_ -> Just $ GMkVPS t p vp ; -- TODO: apply aux to VP!
-                -- GrootN_  np:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompNP np)
-                -- GrootA_  ap:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAP ap)
-                -- GrootAdv_ a:_ -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAdv a)
-                -- TODO: add cases for
-                -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
---                _            -> Nothing
+                GrootVaux_ t p aux vp:_ -> Just $ GComplAux aux t p vp ;
+                -- Here we want only verby roots, for other root constructors we use root2vps!
                 _ -> if verbose
                       then trace ("\n\n **** verbFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
                       else Nothing
+
+-- | Two first cases overlap with verbFromUDS: rootV_ and rootVaux_ always become VPS.
+-- Rest don't, because this is called for any root ever that we want to turn into VPS.
+root2vps :: Groot -> Maybe GVPS
+root2vps root = case root of
+  GrootV_ t p vp -> Just $ GMkVPS t p vp
+  GrootVaux_ t p aux vp -> Just $ GComplAux aux t p vp ;
+  GrootN_  np -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompNP np)
+  GrootA_  ap -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAP ap)
+  GrootAdv_ a -> Just $ GMkVPS presSimul GPPos $ GUseComp (GCompAdv a)
+  -- TODO: add cases fora
+  -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
+  _            -> Nothing
+
 
 scFromUDS :: GUDS -> Maybe GSC
 scFromUDS x = case sFromUDS x of
@@ -1204,45 +1204,43 @@ sFromUDS x = case getNsubj x of
   [] -> Nothing
   _ -> case x of
     Groot_expl_cop_csubj root _expl _cop csubj -> do
-      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- (root2vps root)
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
       pure $ GUseCl t p $ GImpersCl pred
-    Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> root2vps root
     Groot_csubj root (Gcsubj_ cs) -> do
-      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- (root2vps root)
       sc <- scFromUDS cs
       pure $ GUseCl t p $ GPredSCVP sc vp
     Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
-      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- (root2vps root)
       pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
     Groot_nsubj_obj_advcl root (Gnsubj_ subj) (Gobj_ obj) advcl -> do
-      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- (root2vps root)
       let adv = Gadvcl2Adv advcl
           pred = GAdvVP (complVP vp obj) adv
       pure $ GUseCl t p $ GPredVP subj pred
-    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_obj_obl_obl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_ccomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obj root (Gnsubj_ np) obj -> predVPS np <$> verbFromUDSVerbose (Groot_obj root obj)
-    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
-      GMkVPS t p vp <- verbFromUDSVerbose (Groot_only root)
+      GMkVPS t p vp <- (root2vps root)
       pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
-    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
-    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> verbFromUDSVerbose (Groot_only root)
---    Groot_nsubj_cop_advmod root (Gnsubj_ np) _cop Gnot_advmod -> -- TODO: can we address the negation?
---      predVPS np <$> verbFromUDSVerbose (Groot_only root)
+    Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
 
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
                 Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp

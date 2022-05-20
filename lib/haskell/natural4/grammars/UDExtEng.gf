@@ -11,6 +11,7 @@ concrete UDExtEng of UDExt = UDAppEng,
     GenericCl, ImpersCl
   ],
   SentenceEng [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+
  ** open
   Prelude,
   SyntaxEng, (P=ParadigmsEng), ExtendEng,
@@ -42,6 +43,10 @@ concrete UDExtEng of UDExt = UDAppEng,
     -- : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
     ComplVP vp np = ComplSlash (slashV vp) np ;
     -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
+
+    -- : VP -> S -> VP ; -- [assess]:VP [if it is a NDB]:S
+    ComplSVP vp s = AdvVP vp <s : Adv> ;
+
     -- : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
     PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
 
@@ -59,6 +64,11 @@ concrete UDExtEng of UDExt = UDAppEng,
 
     -- : VV  -> Ant -> Pol -> VP -> VP ;
     ComplVV = ParseExtendComplVV ;
+
+   -- : aux -> Temp -> Pol -> VP -> VPS ;
+    ComplAux aux t p vp =
+      let ant = lin Ant {s = [] ; a = t.a} ;
+      in MkVPS presSimulTemp positivePol (ParseExtendComplVV aux.vv ant p vp) ;
 
     -- All of their lincat is already Adv
     -- : advcl/acl/xcomp -> Adv ;

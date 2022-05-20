@@ -20,6 +20,7 @@
 #fun aclRelclUDSRP_ nsubj:* head
 #fun punct_ head
 
+#fun addMark mark head
 #fun root_nsubj head nsubj:*                         -- root -> nsubj:* -> UDS ;               -- the cat sleeps
 #fun root_nsubj_obj head nsubj:* obj                 -- root -> nsubj:* -> obj -> UDS ;   -- the cat sees us
 #fun root_nsubj_cop head nsubj:* cop                 -- root -> nsubj:* -> cop -> UDS ; -- the cat is small

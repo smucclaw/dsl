@@ -18,6 +18,9 @@ lin
 
 -- Most of this file is a rather mechanical effort of cutting and pasting the internal trees together.
 
+  -- : mark -> UDS -> UDS
+  -- addMark if it_is_ndb =
+
 	-- : NP -> aclRelcl -> NP ; -- RelNP but for aclRelcl instead. Too annoying to build RS here, instead going via UDS.
   RelclNP np rcl = mkNP np rcl ;
   -- : NP -> acl -> NP ;        -- same but for gerunds etc

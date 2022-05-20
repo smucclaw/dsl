@@ -7,6 +7,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 	fun
 
+	addMark : mark -> UDS -> UDS ; -- sometimes we do need to parse "if [something does something]" as standalone >:(
+
 	RelclNP : NP -> aclRelcl -> NP ; -- RelNP but for aclRelcl instead. Too annoying to build RS here, instead going via UDS.
 	AclNP : NP -> acl -> NP ;        -- same but for gerunds etc
 

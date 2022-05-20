@@ -634,6 +634,7 @@ data Tree :: * -> * where
   GDMay :: GUDS -> Tree GUDS_
   GDMust :: GUDS -> Tree GUDS_
   GDShant :: GUDS -> Tree GUDS_
+  GaddMark :: Gmark -> GUDS -> Tree GUDS_
   Groot_acl :: Groot -> Gacl -> Tree GUDS_
   Groot_aclRelcl :: Groot -> GaclRelcl -> Tree GUDS_
   Groot_aclRelcl_nmod :: Groot -> GaclRelcl -> Gnmod -> Tree GUDS_
@@ -739,9 +740,9 @@ data Tree :: * -> * where
   LexV :: String -> Tree GV_
   GAdVVP :: GAdV -> GVP -> Tree GVP_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
+  GComplSVP :: GVP -> GS -> Tree GVP_
   GComplV :: GV -> GNP -> Tree GVP_
   GComplVP :: GVP -> GNP -> Tree GVP_
-  GComplVV :: GVV -> GAnt -> GPol -> GVP -> Tree GVP_
   GConjVP :: GConj -> GListVP -> Tree GVP_
   GPassV :: GV -> Tree GVP_
   GPassVAgent :: GV -> GNP -> Tree GVP_
@@ -749,6 +750,7 @@ data Tree :: * -> * where
   GProgrVP :: GVP -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   GUseV :: GV -> Tree GVP_
+  GComplAux :: Gaux -> GTemp -> GPol -> GVP -> Tree GVPS_
   GConjVPS :: GConj -> GListVPS -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   GaclUDS_ :: GUDS -> Tree Gacl_
@@ -1138,6 +1140,7 @@ instance Eq (Tree a) where
     (GDMay x1,GDMay y1) -> and [ x1 == y1 ]
     (GDMust x1,GDMust y1) -> and [ x1 == y1 ]
     (GDShant x1,GDShant y1) -> and [ x1 == y1 ]
+    (GaddMark x1 x2,GaddMark y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_acl x1 x2,Groot_acl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl x1 x2,Groot_aclRelcl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_aclRelcl_nmod x1 x2 x3,Groot_aclRelcl_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1243,9 +1246,9 @@ instance Eq (Tree a) where
     (LexV x,LexV y) -> x == y
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GComplSVP x1 x2,GComplSVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV x1 x2,GComplV y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVP x1 x2,GComplVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GComplVV x1 x2 x3 x4,GComplVV y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjVP x1 x2,GConjVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPassV x1,GPassV y1) -> and [ x1 == y1 ]
     (GPassVAgent x1 x2,GPassVAgent y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1253,6 +1256,7 @@ instance Eq (Tree a) where
     (GProgrVP x1,GProgrVP y1) -> and [ x1 == y1 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
+    (GComplAux x1 x2 x3 x4,GComplAux y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjVPS x1 x2,GConjVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GaclUDS_ x1,GaclUDS_ y1) -> and [ x1 == y1 ]
@@ -2513,6 +2517,7 @@ instance Gf GUDS where
   gf (GDMay x1) = mkApp (mkCId "DMay") [gf x1]
   gf (GDMust x1) = mkApp (mkCId "DMust") [gf x1]
   gf (GDShant x1) = mkApp (mkCId "DShant") [gf x1]
+  gf (GaddMark x1 x2) = mkApp (mkCId "addMark") [gf x1, gf x2]
   gf (Groot_acl x1 x2) = mkApp (mkCId "root_acl") [gf x1, gf x2]
   gf (Groot_aclRelcl x1 x2) = mkApp (mkCId "root_aclRelcl") [gf x1, gf x2]
   gf (Groot_aclRelcl_nmod x1 x2 x3) = mkApp (mkCId "root_aclRelcl_nmod") [gf x1, gf x2, gf x3]
@@ -2621,6 +2626,7 @@ instance Gf GUDS where
       Just (i,[x1]) | i == mkCId "DMay" -> GDMay (fg x1)
       Just (i,[x1]) | i == mkCId "DMust" -> GDMust (fg x1)
       Just (i,[x1]) | i == mkCId "DShant" -> GDShant (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "addMark" -> GaddMark (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_acl" -> Groot_acl (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_aclRelcl" -> Groot_aclRelcl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_aclRelcl_nmod" -> Groot_aclRelcl_nmod (fg x1) (fg x2) (fg x3)
@@ -2739,9 +2745,9 @@ instance Gf GV where
 instance Gf GVP where
   gf (GAdVVP x1 x2) = mkApp (mkCId "AdVVP") [gf x1, gf x2]
   gf (GAdvVP x1 x2) = mkApp (mkCId "AdvVP") [gf x1, gf x2]
+  gf (GComplSVP x1 x2) = mkApp (mkCId "ComplSVP") [gf x1, gf x2]
   gf (GComplV x1 x2) = mkApp (mkCId "ComplV") [gf x1, gf x2]
   gf (GComplVP x1 x2) = mkApp (mkCId "ComplVP") [gf x1, gf x2]
-  gf (GComplVV x1 x2 x3 x4) = mkApp (mkCId "ComplVV") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjVP x1 x2) = mkApp (mkCId "ConjVP") [gf x1, gf x2]
   gf (GPassV x1) = mkApp (mkCId "PassV") [gf x1]
   gf (GPassVAgent x1 x2) = mkApp (mkCId "PassVAgent") [gf x1, gf x2]
@@ -2754,9 +2760,9 @@ instance Gf GVP where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdVVP" -> GAdVVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "AdvVP" -> GAdvVP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "ComplSVP" -> GComplSVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplV" -> GComplV (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVP" -> GComplVP (fg x1) (fg x2)
-      Just (i,[x1,x2,x3,x4]) | i == mkCId "ComplVV" -> GComplVV (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "ConjVP" -> GConjVP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PassV" -> GPassV (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PassVAgent" -> GPassVAgent (fg x1) (fg x2)
@@ -2769,11 +2775,13 @@ instance Gf GVP where
       _ -> error ("no VP " ++ show t)
 
 instance Gf GVPS where
+  gf (GComplAux x1 x2 x3 x4) = mkApp (mkCId "ComplAux") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjVPS x1 x2) = mkApp (mkCId "ConjVPS") [gf x1, gf x2]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "ComplAux" -> GComplAux (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "ConjVPS" -> GConjVPS (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
 
@@ -3783,6 +3791,7 @@ instance Compos Tree where
     GDMay x1 -> r GDMay `a` f x1
     GDMust x1 -> r GDMust `a` f x1
     GDShant x1 -> r GDShant `a` f x1
+    GaddMark x1 x2 -> r GaddMark `a` f x1 `a` f x2
     Groot_acl x1 x2 -> r Groot_acl `a` f x1 `a` f x2
     Groot_aclRelcl x1 x2 -> r Groot_aclRelcl `a` f x1 `a` f x2
     Groot_aclRelcl_nmod x1 x2 x3 -> r Groot_aclRelcl_nmod `a` f x1 `a` f x2 `a` f x3
@@ -3887,9 +3896,9 @@ instance Compos Tree where
     Groot_xcomp_obj x1 x2 x3 -> r Groot_xcomp_obj `a` f x1 `a` f x2 `a` f x3
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
+    GComplSVP x1 x2 -> r GComplSVP `a` f x1 `a` f x2
     GComplV x1 x2 -> r GComplV `a` f x1 `a` f x2
     GComplVP x1 x2 -> r GComplVP `a` f x1 `a` f x2
-    GComplVV x1 x2 x3 x4 -> r GComplVV `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjVP x1 x2 -> r GConjVP `a` f x1 `a` f x2
     GPassV x1 -> r GPassV `a` f x1
     GPassVAgent x1 x2 -> r GPassVAgent `a` f x1 `a` f x2
@@ -3897,6 +3906,7 @@ instance Compos Tree where
     GProgrVP x1 -> r GProgrVP `a` f x1
     GUseComp x1 -> r GUseComp `a` f x1
     GUseV x1 -> r GUseV `a` f x1
+    GComplAux x1 x2 x3 x4 -> r GComplAux `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjVPS x1 x2 -> r GConjVPS `a` f x1 `a` f x2
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GaclUDS_ x1 -> r GaclUDS_ `a` f x1

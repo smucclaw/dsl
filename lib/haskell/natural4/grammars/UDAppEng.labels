@@ -148,6 +148,10 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- if it's mislabeled as Imp, it's probably just present tense still
 #auxfun rootVImp_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Mood=Imp|VerbForm=Fin]
 
+-- if it's mislabeled as a noun, still present tense
+#auxfun rootVmislabeledNounSg_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Number=Sing]
+#auxfun rootVmislabeledNounPl_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Number=Plur]
+
 -- if no aux but VP in Inf, ???
 -- In such a case, the tense information is just thrown away.
 -- We give here the most default tense and polarity: present indicative positive.

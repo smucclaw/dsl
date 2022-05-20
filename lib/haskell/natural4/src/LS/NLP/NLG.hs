@@ -610,11 +610,11 @@ treeContents conj contents = case groupByRGLtype conj contents of
   TG {gfS    = Just x} -> gf x
 --  TG {gfVP   = Just x, gfAP = Nothing , gfCN = Nothing , gfNP = Nothing, gfAdv = Nothing} -> gf x
   -- TODO match
+  TG {gfVP   = Just x, gfAP = Just y} -> gf $ GConjVPS conj (GListVPS [x, GMkVPS presSimul GPPos (GUseComp (GCompAP y))])
   TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompAP x)))} -> gf x
   TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompNP x)))} -> gf x
   -- TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompCN x)))} -> gf x
   TG {gfVP   = Just (GMkVPS _ _ (GUseComp (GCompAdv x)))} -> gf x
-  TG {gfVP   = Just x , gfAP = Just y} -> gf $ GConjVPS conj (GListVPS [x, GMkVPS presSimul GPPos (GUseComp (GCompAP y))])
   TG {gfVP   = Just x} -> gf x
   TG {gfAdv  = Just x} -> gf x
   TG {gfAP   = Just x} -> gf x
@@ -623,6 +623,7 @@ treeContents conj contents = case groupByRGLtype conj contents of
   TG {gfDet  = Just x} -> gf x
   TG {gfRP   = Just x} -> gf x
   TG {gfPrep = Just x} -> gf x
+  _                    -> error $ "treeContents: no contents"
 
 treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
@@ -685,7 +686,7 @@ bsr2gf env bsr = case bsr of
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    let existingTrees = groupByRGLtype andConj contentsUDS
+    -- let existingTrees = groupByRGLtype andConj contentsUDS
     --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ treeContents andConj contentsUDS
 

@@ -430,15 +430,15 @@ kvspair2gf env (action,_) = case action of
   pred :| []     -> do
     predUDS <- parseUD env pred
     return $ case udsToTreeGroups predUDS of
-      TG {gfAP=Just ap}   -> ("AP", gf ap)
+      TG {gfS=Just s}     -> ("S", gf s)
+      TG {gfVP=Just v}    -> ("VP", gf v)
       TG {gfAdv=Just adv} -> ("Adv", gf adv)
+      TG {gfAP=Just ap}   -> ("AP", gf ap)
       TG {gfNP=Just np}   -> ("NP", gf np)
       TG {gfDet=Just det} -> ("Det", gf det)
       TG {gfCN=Just cn}   -> ("CN", gf cn)
       TG {gfPrep=Just pr} -> ("Prep", gf pr)
       TG {gfRP=Just rp}   -> ("RP", gf rp)
-      TG {gfS=Just cl}   -> ("Cl", gf cl)
-      TG {gfVP=Just v}    -> ("VP", gf v)
       _ -> ("NP", dummyExpr $ "kvspair2gf: type of predicate not among " ++ acceptedRGLtypes)
 
   pred :| compls -> do
@@ -476,6 +476,7 @@ combineExpr pred compl = result
 
       TG {gfVP=Just (GMkVPS t p notify)} ->
         ("VPS", case complTyped of
+          TG {gfS=Just you_see}  -> gf $ GMkVPS t p $ GComplSVP notify you_see
           TG {gfAP=Just haunted} -> gf $ GMkVPS t p $ complVP notify (GAdjAsNP haunted)
           TG {gfAdv=Just quickly}-> gf $ GMkVPS t p $ GAdvVP   notify quickly
           TG {gfNP=Just johnson} -> gf $ GMkVPS t p $ complVP notify johnson
@@ -484,7 +485,6 @@ combineExpr pred compl = result
           TG {gfPrep=Just with}  -> gf $ GMkVPS t p $ GPrepVP notify with
           -- TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
           -- TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
-          -- TG {gfS=Just you_see} -> ???
           _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfCN=Just house} ->
@@ -1101,6 +1101,9 @@ apFromUDS x = case x of
 
 advFromUDS :: GUDS -> Maybe GAdv
 advFromUDS x = case x of
+  GaddMark (Gmark_ subj) uds -> do
+    s <- sFromUDS uds
+    pure $ GSubjS subj s
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
   Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
   -- very much overfitted to catch "unless we go where it's warm"
@@ -1273,6 +1276,7 @@ predVPS np vps = useCl $ GPredVP np $ vps2vp vps
 
 vps2vp :: GVPS -> GVP
 vps2vp (GMkVPS _t _p vp) = vp
+vps2vp (GComplAux _a _t _p vp) = vp
 vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
 
 complVP :: GVP -> GNP -> GVP

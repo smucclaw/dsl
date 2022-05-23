@@ -27,17 +27,27 @@ data BBox = BBox
   { bbw :: Width
   , bbh :: Height
   , bblm, bbtm, bbrm, bbbm :: Width -- left, top, right, bottom margins
+  ,  pl,         pr        :: PortStyleV -- left and right  ports
+  ,  pt,         pb        :: PortStyleH --  top and bottom ports
   }
   deriving (Eq, Show)
 
+data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Height deriving (Eq, Show)
+data PortStyleH = PLeft | PCenter | PRight  | PHoffset Height deriving (Eq, Show)
+
 -- | default bounding box
-defaultBBox = BBox
+defaultBBox Tiny  = defaultBBox' { pl = PMiddle, pr = PMiddle }
+defaultBBox Small = defaultBBox Tiny
+defaultBBox Full  = defaultBBox'
+defaultBBox' = BBox
   { bbw = 0
   , bbh = 0
   , bblm = 0
   , bbtm = 0
   , bbrm = 0
   , bbbm = 0
+  , pl = PTop,    pr = PTop
+  , pt = PCenter, pb = PCenter
   }
 
 -- | how compact should the output be?
@@ -132,11 +142,18 @@ drawItem c negContext qt
 -- - flatten all the children into a single element. attach input and output horizontal lines to ports.
 -- - return adjusted bounding box to caller.
 
-data HAlignment = HLeft | HCenter | HRight
-  deriving (Eq, Show)
+data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
+data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
-data VAlignment = VTop | VMiddle | VBottom
-  deriving (Eq, Show)
+type BBE = (BBox, Element)
+
+-- | see page 1 of "box model" documentation
+(>>>), (<<<), (\|/), (/|\) :: BBE -> Double -> BBE
+(>>>) (bb,e) n = (bb { bbw = bbw bb + n, bblm = bblm bb + n }, move (  n,   0) e)
+(<<<) (bb,e) n = (bb { bbw = bbw bb + n, bbrm = bbrm bb + n }, id              e)
+(\|/) (bb,e) n = (bb { bbh = bbh bb + n, bbtm = bbtm bb + n }, move (  0,   n) e)
+(/|\) (bb,e) n = (bb { bbh = bbh bb + n, bbbm = bbbm bb + n }, id              e)
+infix 4 >>>, <<<, \|/, /|\
 
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
@@ -146,18 +163,18 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- we max up the bounding boxes and return that as our own bounding box.
   
   case ao of
-       Or -> let drawnChildren = vCombineOr c $ vStack c $ hAlign c HCenter $ drawItemFull c negContext <$> childqs
+       Or -> let drawnChildren = combineOr c $ hAlign c HCenter $ drawItemFull c negContext <$> childqs
              in case showLabels (cscale c) of
-                  False -> (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
-                                           , bbh =                            (bbh.fst $ drawnChildren) }
+                  False -> (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
+                                                        , bbh =                            (bbh.fst $ drawnChildren) }
                            (snd drawnChildren)
                   True -> addPrePostV drawnChildren (topText pp) (botText pp)
-       And -> let drawnChildren = hCombineAnd c $ hStack c $ vAlign c VMiddle $ drawItemFull c negContext <$> childqs
+       And -> let drawnChildren = combineAnd c $ vAlign c VMiddle $ drawItemFull c negContext <$> childqs
               in case showLabels (cscale c) of
-                   False -> (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
-                                           , bbh = bbh.fst $ drawnChildren }
+                   False -> (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
+                                                         , bbh = bbh.fst $ drawnChildren }
                            (snd drawnChildren)
-                   True -> addPrePostV (vlayout (defaultBBox, mempty) drawnChildren) (topText pp) (botText pp)
+                   True -> addPrePostV (vlayout (defaultBBox (cscale c), mempty) drawnChildren) (topText pp) (botText pp)
        Simply _txt -> drawLeaf     c      negContext   qt
        Neg         -> drawItemFull c (not negContext) (head childqs)
      
@@ -168,8 +185,8 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
         let y1 = (boxHeight / 2)
             x2 = (bbw . fst $ old) + leftMargin
             childLineLength = (bbh . fst $ old)
-        in (,) defaultBBox { bbw = leftMargin + rightMargin + (bbw.fst $ old)
-                           , bbh = (bbh.fst $ old) + boxHeight + lrVgap }
+        in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ old)
+                                        , bbh = (bbh.fst $ old) + boxHeight + lrVgap }
            ( text_ [ X_  <<-* leftMargin + (bbw.fst $ old) / 2 , Y_      <<-* (boxHeight / 2)
                    , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ]
              (fromString $ TL.unpack toptext )
@@ -196,77 +213,72 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       botText (Just (PrePost x y)) = y
       botText Nothing              = ""
 
-      -- if we used the diagrams package all of this would be calculated automatically for us.
+      -- | see page 2 of the "box model" documentation.
+      -- | if we used the diagrams package all of this would be calculated automatically for us.
       hAlign :: AAVConfig -> HAlignment -> [(BBox, Element)] -> [(BBox,Element)]
       hAlign c alignment elems =
         let mx = maximum $ bbw . fst <$> elems
         in hD alignment mx <$> elems
         where hD :: HAlignment -> Width -> (BBox, Element) -> (BBox, Element)
-              hD HCenter mx (bb,x) = (bb { bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, x)
-              hD HLeft   mx (bb,x) = (bb { bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
-              hD HRight  mx (bb,x) = (bb { bblm = (mx - bbw bb) / 1, bbrm = 0                 }, x)
+              hD HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, x)
+              hD HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
+              hD HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, x)
         
       vAlign :: AAVConfig -> VAlignment -> [(BBox, Element)] -> [(BBox,Element)]
       vAlign c alignment elems =
         let mx = maximum $ bbh . fst <$> elems
         in vA alignment mx <$> elems
         where vA :: VAlignment -> Width -> (BBox, Element) -> (BBox, Element)
-              vA VMiddle  mx (bb,x) = (bb { bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, x)
-              vA VTop     mx (bb,x) = (bb { bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
-              vA VBottom  mx (bb,x) = (bb { bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, x)
+              vA VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, x)
+              vA VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
+              vA VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, x)
 
-      -- prepare to stack a bunch of elements vertically by adding a lrVgap to each element's top margin
-      vStack, hStack :: AAVConfig -> [(BBox, Element)] -> [(BBox,Element)]
-      vStack c = fmap (vD c)
-        where vD :: AAVConfig -> (BBox, Element) -> (BBox, Element)
-              vD c (bb,x) = (bb { bbtm = lrVgap }, x)
-      -- prepare to stack a bunch of elements horizontally by lining them up left to right, by adding a lrHgap to each element's left margin.
-      -- bit questionable whether this Stack function is really necessary or if it's better done inside addLines.
-      hStack c = fmap (hS c)
-        where hS :: AAVConfig -> (BBox, Element) -> (BBox, Element)
-              hS c (bb,x) = (bb { bbtm = lrHgap }, x)
-
-      vCombineOr :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
-      vCombineOr c elems =
+      combineOr :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
+      combineOr c elems =
         let layout = case cdirection c of
               LR -> vlayout
-              TB -> error "hlayout not yet implemented"
-            (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
+              TB -> error "hlayout not yet implemented for Or"
+            (childbbox, children) = foldl' layout (defaultBBox (cscale c),mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
 
       vlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
       vlayout (bbold,old) (bbnew,new) =
-        (defaultBBox { bbh = bbh bbold + bbh bbnew + lrVgap
-                     , bbw = max (bbw bbold) (bbw bbnew)
-                     }
+        ((defaultBBox (cscale c)) { bbh = bbh bbold + bbh bbnew + lrVgap
+                                  , bbw = max (bbw bbold) (bbw bbnew)
+                                  }
         , old
           <> path_ [ D_ <<- (mA 0 (- boxHeight / 2) <> (cR
                                                      (leftMargin) 0
-                                                     (0)              (bbh bbold + bbtm bbnew + boxHeight)
-                                                     (leftMargin + bblm bbnew) (bbh bbold + bbtm bbnew + boxHeight)
+                                                     (0)              (bbh bbold + lrVgap + boxHeight)
+                                                     (leftMargin) (bbh bbold + lrVgap + boxHeight)
                                                    )
                             ), Stroke_ <<- "green", Fill_ <<- "none" ]
-          <> ( move (0, bbh bbold + bbtm bbnew) $ (move (leftMargin + bblm bbnew, 0) new) <>
+          <> ( move (0, bbh bbold + lrVgap) $ (move (leftMargin + bblm bbnew, 0) new) <>
             (line_ [ X1_ <<-* 0               , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue", Stroke_width_ <<-* 2 ]
              <>
-              (line_ [ X1_ <<-* leftMargin + bblm bbnew + bbw bbnew , Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bblm bbnew + bbw bbnew + bbrm bbnew + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
+              (line_ [ X1_ <<-* leftMargin + bbw bbnew - bbrm bbnew, Y1_ <<-* (0 + boxHeight / 2) , X2_ <<-* leftMargin + bbw bbnew + rightMargin, Y2_ <<-* (0 + boxHeight / 2) , Stroke_ <<- "blue" ])
             )
           )
         )
 
-      hCombineAnd :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
-      hCombineAnd c elems =
+      -- bezier curves: "M"            is the position of                       the first  point.
+      -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
+      -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
+      -- the third  argument after "c" is the position of                       the second point, relative to the first point.
+
+      combineAnd :: AAVConfig -> [(BBox, Element)] -> (BBox, Element)
+      combineAnd c elems =
         let layout = case cdirection c of
               LR -> hlayout
-              TB -> error "vlayout not yet implemented"
-            (childbbox, children) = foldl' layout (defaultBBox,mempty) elems
+              TB -> error "vlayout not yet implemented for And"
+            (childbbox, children) = foldl' layout (defaultBBox (cscale c),mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, children)
 
       hlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
       hlayout (bbold,old) (bbnew,new) =
-        (defaultBBox { bbh = max (bbh bbold) (bbh bbnew)
-                     , bbw = bblm bbold + bbw bbold + bbrm bbold + bblm bbnew + bbw bbnew + bbrm bbnew + lrHgap
-                     }
+        ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
+                                  , bbw = bblm bbold + bbw bbold + bbrm bbold + bblm bbnew + bbw bbnew + bbrm bbnew + lrHgap
+                                  }
         , old
           <> line_ [ X1_ <<-* bblm bbold + bbw bbold + bbrm bbold,                       Y1_ <<-* boxHeight / 2
                    , X2_ <<-* bblm bbold + bbw bbold + bbrm bbold + lrHgap + bblm bbnew, Y2_ <<-* boxHeight / 2
@@ -280,11 +292,6 @@ drawLeaf :: AAVConfig
          -> (BBox, Element)
 drawLeaf c negContext qt@(Node q childqs) =
   let (boxStroke, boxFill, textFill) = getColors confidence
-      mytext = case andOr q of
-        (Simply txt) -> fromString (TL.unpack txt)
-        (Neg)        -> "neg..."
-        (And)        -> "and..."
-        (Or)         -> "or..."
       notLine = if negContext then const FullLine else id
       (leftline, rightline, topline, confidence) = case mark q of
         Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)
@@ -297,7 +304,7 @@ drawLeaf c negContext qt@(Node q childqs) =
                     then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
                     else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
   in
-  (,) defaultBBox { bbw = boxWidth, bbh = boxHeight } $
+  (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
      rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
   <> boxContents
   <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black" ] else mempty)
@@ -306,9 +313,14 @@ drawLeaf c negContext qt@(Node q childqs) =
   <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black" ] else mempty)
   where
-    boxHeight = sbh (getScale (cscale c))
-    boxWidth  = sbw (getScale (cscale c))
-
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
+    mytext = case andOr q of
+      (Simply txt) -> fromString (TL.unpack txt)
+      (Neg)        -> "neg..."
+      (And)        -> "and..."
+      (Or)         -> "or..."
 
   -- itemBox c 0 0 ao mark children False
 
@@ -329,12 +341,12 @@ itemBox :: AAVConfig
         -> (BBox, Element)
 itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
 itemBox c x y (Simply t)  m cs amNot
-  | cscale c  == Tiny  = (,) defaultBBox { bbw = 10, bbh = 10 } $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
+  | cscale c  == Tiny  = (,) (defaultBBox (cscale c)) { bbw = 10, bbh = 10 } $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
 -- [TODO] small
-  | cscale c  `elem` [Full,Small]  = (,) (defaultBBox { bbw = fromIntegral $ TL.length t * 3, bbh = 25 }) $ g_ [] (
+  | cscale c  `elem` [Full,Small]  = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ TL.length t * 3, bbh = 25 }) $ g_ [] (
       rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ]
         <> mempty ) -- some text
-itemBox c x y andor m cs amNot = (,) (defaultBBox { bbw = fromIntegral $ 25, bbh = 25 }) $ g_ [] (
+itemBox c x y andor m cs amNot = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ 25, bbh = 25 }) $ g_ [] (
   rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ]
     <> mempty) -- some text
   

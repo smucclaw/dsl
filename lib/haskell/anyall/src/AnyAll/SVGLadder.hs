@@ -313,12 +313,21 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       hlayout (bbold,old) (bbnew,new) =
         ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
                                   , bbw = bbw bbold + lrHgap + bbw bbnew
+                                  ,  pr = PVoffset (portR bbnew myScale)
                                   }
         , old
           <> line_ [ X1_ <<-* bbw bbold - bbrm bbold,          Y1_ <<-* boxHeight / 2
                    , X2_ <<-* bbw bbold + lrHgap + bblm bbnew, Y2_ <<-* boxHeight / 2
                    , Stroke_ <<- "green", Fill_ <<- "none" ]
           <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
+          <> if (bbw bbold /= 0)
+             then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold - lrHgap)  (portR bbold myScale) <>
+                                  (cR (lrHgap)                            0
+                                   (   bbrm bbold                      ) (portL bbnew myScale - portR bbold myScale)
+                                   (   lrHgap + bbrm bbold + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
+                                  ))
+                        , Stroke_ <<- "red", Fill_ <<- "none" ]
+             else mempty
         )
       
 drawLeaf :: AAVConfig

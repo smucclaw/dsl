@@ -291,9 +291,9 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                       , pl = PVoffset (portL childbbox myScale)
                       , pr = PVoffset (portR childbbox myScale)
                       }
-           , move (leftMargin, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none" ] <> -- blueish tint
-                                   rect_ [ X1_ <<-* bblm childbbox, Y1_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
-                                         , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none" ] <> -- greenish tint
+           , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none"] <> -- blueish tint
+                                   rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
+                                         , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none"] <> -- greenish tint
                                    children ))
 
 
@@ -305,8 +305,8 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                                   ,  pr = PVoffset (portR bbnew myScale)
                                   }
         , old
-          <> move (bbw bbold + lrHgap, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
-          <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
+          <> move (bbw bbold + lrHgap, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
+          <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
           <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
           <> if (bbw bbold /= 0)
              then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold)  (portR bbold myScale) <>

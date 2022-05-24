@@ -46,7 +46,7 @@ defaultBBox' = BBox
   , bbtm = 0
   , bbrm = 0
   , bbbm = 0
-  , pl = PMiddle,    pr = PMiddle -- [TODO] default to PTop later
+  , pl = PTop,    pr = PTop    -- [TODO] default to PTop later
   , pt = PCenter, pb = PCenter
   }
 
@@ -57,9 +57,9 @@ portT bb s = portTB (pt bb) bb s
 portB bb s = portTB (pb bb) bb s
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Height
-portLR PTop    bb s = bbtm bb +                                    stbh s -- [TODO] clip to max size of element
+portLR PTop    bb s = bbtm bb +                                    sbh s / 2 -- [TODO] clip to max size of element
 portLR PMiddle bb s = bbtm bb + (bbh bb - bbtm bb - bbbm bb) / 2
-portLR PBottom bb s =           (bbh bb           - bbbm bb)     - stbh s
+portLR PBottom bb s =           (bbh bb           - bbbm bb)     - sbh s / 2
 portLR (PVoffset x) bb s = bbtm bb + x
 
 portTB :: PortStyleH -> BBox -> AAVScale -> Width
@@ -201,27 +201,6 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
        Neg         -> drawItemFull c (not negContext) (head childqs)
      
     where
-      -- given a stack of elements and pre/post labels, add the labels to the top and bottom of the stack. this is useful for Or subtrees.
-      addPrePostV :: (BBox, Element) -> TL.Text -> TL.Text -> (BBox, Element)
-      addPrePostV old toptext bottomtext =
-        let y1 = (boxHeight / 2)
-            x2 = (bbw . fst $ old) + leftMargin
-            childLineLength = (bbh . fst $ old)
-        in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ old)
-                                        , bbh = (bbh.fst $ old) + boxHeight + lrVgap }
-           ( text_ [ X_  <<-* leftMargin + (bbw.fst $ old) / 2 , Y_      <<-* (boxHeight / 2)
-                   , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ]
-             (fromString $ TL.unpack toptext )
-             <> move (leftMargin, boxHeight) (snd old)
-             
-             <> line_ [ X1_ <<-* 0,          Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- left horizontal
-             <> line_ [ X1_ <<-* leftMargin, Y1_ <<-* y1, X2_ <<-* leftMargin,       Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- left vertical
-             
-             <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2 + rightMargin, Y2_ <<-* y1                   , Stroke_ <<- "red" ]   -- right horizontal
-             <> line_ [ X1_ <<-* x2,         Y1_ <<-* y1, X2_ <<-* x2,               Y2_ <<-* y1 + childLineLength , Stroke_ <<- "black" ] -- right vertical
-           )
-        
-
       myScale     = getScale (cscale c)
       boxWidth    = sbw myScale; boxHeight = sbh myScale; leftMargin  = slm myScale; rightMargin = srm myScale; lrVgap = slrv myScale; lrHgap = slrh myScale
       
@@ -307,24 +286,33 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
               LR -> hlayout
               TB -> error "vlayout not yet implemented for And"
             (childbbox, children) = foldl1 layout elems
-        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin }, move (leftMargin, 0) children)
+        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin
+                      , bblm = leftMargin, bbrm = rightMargin
+                      , pl = PVoffset (portL childbbox myScale)
+                      , pr = PVoffset (portR childbbox myScale)
+                      }
+           , move (leftMargin, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none" ] <> -- blueish tint
+                                   rect_ [ X1_ <<-* bblm childbbox, Y1_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
+                                         , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none" ] <> -- greenish tint
+                                   children ))
+
 
       hlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
       hlayout (bbold,old) (bbnew,new) =
         ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
                                   , bbw = bbw bbold + lrHgap + bbw bbnew
+                                  ,  pl = PVoffset (portL bbold myScale)
                                   ,  pr = PVoffset (portR bbnew myScale)
                                   }
         , old
-          <> line_ [ X1_ <<-* bbw bbold - bbrm bbold,          Y1_ <<-* boxHeight / 2
-                   , X2_ <<-* bbw bbold + lrHgap + bblm bbnew, Y2_ <<-* boxHeight / 2
-                   , Stroke_ <<- "green", Fill_ <<- "none" ]
+          <> move (bbw bbold + lrHgap, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
+          <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X1_ <<-* 0, Y1_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
           <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
           <> if (bbw bbold /= 0)
-             then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold - lrHgap)  (portR bbold myScale) <>
-                                  (cR (lrHgap)                            0
+             then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold)  (portR bbold myScale) <>
+                                  (cR (bbrm bbold + lrHgap)              0
                                    (   bbrm bbold                      ) (portL bbnew myScale - portR bbold myScale)
-                                   (   lrHgap + bbrm bbold + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
+                                   (   bbrm bbold + lrHgap + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
                                   ))
                         , Stroke_ <<- "red", Fill_ <<- "none" ]
              else mempty

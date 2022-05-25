@@ -13,16 +13,16 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
-import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, readExpr, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text.Lazy as Text
-import Data.Char (toLower, isUpper, toUpper)
+import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
-import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
-import Data.List ( group, sort, sortOn, nub )
-import Data.List.Extra (groupOn)
+import Data.Maybe ( fromMaybe, catMaybes, mapMaybe, fromJust )
+import Data.List ( group, sort, sortOn, nub, intercalate, isInfixOf )
+import Data.List.Extra (groupOn, splitOn)
 import Data.Either (partitionEithers)
 import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
@@ -31,6 +31,7 @@ import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
+import Data.Set as Set (member, fromList)
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -76,13 +77,29 @@ parseUD env txt = do
   when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
 --  conll <- udpipe txt -- Initial parse
-  lowerConll <- udpipe (lowerButPreserveAllCaps txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
+  -- print "string that's being replaced"
+  -- print nonWords
+  -- print "origin string"
+  -- print txt
+  lowerConll <- udpipe (lowerButPreserveAllCaps $ Text.pack $ unwords $ concat $ combinePROPERNOUN $ group $ replaceChunks txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  -- print ("lowerconll")
+  -- print lowerConll
   when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   -- let expr = case ud2gf conll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   expr <- either errorMsg pure (ud2gf lowerConll)
-  when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ showExpr expr)
+  -- print "the original expression"
+  -- print $ words $ showExpr expr
+  print "replaced expression as string"
+  let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
+  print replaced
+  when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
+  -- let replacedToExpr = fromMaybe (dummyExpr "") (PGF.readExpr replaced)
+  -- print "show replaced as expr"
+  -- print $ showExpr replacedToExpr
+  -- let uds = toUDS (pgfGrammar $ udEnv env) replacedToExpr
   let uds = toUDS (pgfGrammar $ udEnv env) expr
   -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
@@ -106,6 +123,42 @@ parseUD env txt = do
                   ((l:_l), []) -> Left l
                   ([]  ,   []) -> Left "ud2gf: no results given for input"
       [] -> Left "ud2gf: tried parsing an empty input"
+
+    swapBack :: [String] -> [String] -> [String]
+    swapBack [] [] = []
+    swapBack [] (y:ys) = []
+    swapBack (x:xs) [] = x:xs
+    swapBack (x:xs) (y:ys) = ((init x) ++ y) : swapBack xs ys
+
+    checkIfChunk :: String -> Bool
+    checkIfChunk x = checkDigit x || checkLower x || checkSymbol x
+      where
+        checkLower = not . any isLower
+        checkDigit = any isDigit
+        checkSymbol x = any (`Set.member` (Set.fromList ['#','§'])) x
+
+    saveNonWords :: [String] -> [String] -> [[String]]
+    saveNonWords [] ls = []
+    saveNonWords (x:xs) ls
+      | checkIfChunk x = (x:ls) : saveNonWords xs ls
+      | otherwise = saveNonWords xs ls
+
+    swapChunk :: [String] -> [String]
+    swapChunk [] = []
+    swapChunk (x:xs)
+      | checkIfChunk x = ("propernoun") : swapChunk xs
+      | otherwise = x : swapChunk xs
+
+    replaceChunks :: Text.Text -> [String]
+    replaceChunks txt = swapChunk $ map Text.unpack $ Text.words txt
+    -- Text.pack $ unwords $
+
+    combinePROPERNOUN :: [[String]] ->[[String]]
+    combinePROPERNOUN [] = []
+    combinePROPERNOUN (x:xs)
+      | head x == "propernoun" = [intercalate "_" x] : combinePROPERNOUN xs
+      | otherwise = x : combinePROPERNOUN xs
+
 
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords

@@ -46,19 +46,33 @@ Now you can view the SVG:
 
 * Usage (Library)
 
+Suppose you want to be able to ~import AnyAll as AA~
+
+
 In ~package.yaml~ say ~dependencies: - anyall~
+
+** Local
+If you're using this within the ~dsl~ repo, say within ~dsl/lib/haskell/natural4~,
+
+In ~stack.yaml~ under ~extra-deps:~ say
+
+#+begin_src yaml
+  - ../anyall
+#+end_src
+
+** Remote
+If you're using this outside the ~dsl~ repo,
 
 In ~stack.yaml~ under ~extra-deps:~ say
 
 #+begin_src yaml
   - github: smucclaw/dsl
-    commit: d561043fed8abfd8333318af5882713b6da13c6b
+    commit: 10ed7be2775740badcb87a389d6acd578155d53d
     subdirs:
     - lib/haskell/anyall
-  - svg-builder-0.1.1
 #+end_src
 
-Then in your code you can ~import AnyAll as AA~
+(The commit hash will need to update to whatever commit you're up to in main.)
 
 * CLI Documentation
 
@@ -355,3 +369,205 @@ We kind of have the beginnings of this because we keep Leaf-node values separate
 See https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1043543357
 
 This is happening under smucclaw/sandbox/mengwong/mp/ and will be upgraded to a library in this repo when it is done.
+
+* Visualization
+
+In the year 2022, in a world where Edward Tufte has published five hefty books, what good options do we have for visualization of one of the most basic data structures in computer science?
+
+Surprisingly few that I know of.
+
+Initially we visualized the and/or tree like this:
+
+[[./out/Screenshot 2022-05-03 at 1.42.26 PM.png]]
+
+After re-reading [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8EBhYp/view?usp=sharing][Layman Allen]] and considering circuit diagrams, particularly the [[https://en.wikipedia.org/wiki/Ladder_logic][ladder logic used in PLC controllers]], we tried a new design.
+
+** Principles
+
+*** Orientation
+
+Elements on the canvas can be laid out left-to-right (LR), top-to-bottom (TB), or a combination of both, whatever is most appropriate given the immediate context.
+
+*** Unfilled Elements
+
+An AnyAll Item is represented as a 2d box, typically connected to the rest of the diagram with a pair of lines.
+
+If the user has not given a truth value to the proposition, it is in an "unknown" state -- ~Nothing :: Maybe Bool~.
+
+Typographically, we represent unknown values as white text on gray background. The ASCII art below doesn't show it, but the PNG examples elsewhere do.
+
+**** Leaf nodes are simple.
+
+LR:
+#+begin_example
+  ---- proposition 1 ----
+#+end_example
+
+TB:
+#+begin_example
+        |
+  proposition 2
+        |
+#+end_example
+
+**** Disjunction
+
+In an "or" tree, a proposition is true if ~any~ of its sub-propositions is true.
+
+LR:
+#+begin_example
+     any of the following 
+  ----- proposition 3 -------
+    |                   |
+    +-- proposition 4 --+
+    |                   |
+    +-- proposition 5 --+
+#+end_example
+
+TB:
+#+begin_example
+   |
+   |   if there has been any unauthorized
+   +--------+------------------+------------------+
+            |                  |                  |
+       disclosure,        announcement,  or  publication
+            |                  |                  |
+   |--------+------------------+------------------+
+   |   of the confidential information
+   |
+#+end_example
+
+**** Conjunction
+
+In an "and" tree, a proposition is true if ~all~ of its sub-propositions are true.
+
+LR:
+#+begin_example
+      all of the following
+  ----- proposition 6
+             |
+        proposition 7
+             |
+        proposition 8 -----
+      
+#+end_example
+
+TB:
+#+begin_example
+   |
+   |   there must be
+   |
+   +---  offer, ----- acceptance, ----- capacity, ----- and consideration -----+
+                                                                               |
+      for the contract to be valid                                             |
+                                                                               |
+   +---------------------------------------------------------------------------+
+   |
+   |
+#+end_example
+
+**** One can apply a "NOT" to the node
+
+Suppose the legal logic says: "If ... you are not a public agency ... then ..."
+
+The question is encoded as ~Not (Leaf "you are a public agency")~ to allow a more natural interview with the end-user.
+
+We draw a solid line at the end of the box to indicate the NOT.
+
+LR:
+#+begin_example
+                               |
+  ---- you are a public agency |----
+                               |
+#+end_example
+
+TB:
+#+begin_example
+        |
+  proposition 10
+  --------------
+        |
+#+end_example
+
+If the user answers "yes" to the question the overall value becomes "no", and vice-versa: see below diagrams.
+
+*** Known states where user has given input
+
+User input allows us to mark a box with a known value -- ~Just True~ or ~Just False~. The marking represents "closing the circuit":
+
+**** Suppose we know that something is true.
+
+We mark it by drawing a line to connect the start and ends of the box, and we change the colour to black text on white bg.
+
+LR:
+#+begin_example
+   +----------------+
+   |                |
+---+ proposition 11 +---
+
+#+end_example
+
+
+TB:
+#+begin_example
+            |
+   +--------+
+   |   proposition 1
+   +--------+
+            |
+#+end_example
+
+The intuition: if you can trace the line without lifting the pen from the paper, your conditions hold true.
+
+**** Suppose we know that something is false.
+
+We indicate that something is false by drawing a line at the start of the box:
+
+LR:
+#+begin_example
+      |               
+  ----| proposition 1 ----
+      |               
+#+end_example
+
+Intuitively, this represents that the circuit "stops here".
+
+**** A double negative is true!
+
+If there's already a line at the end, drawing a line at the start makes it possible to connect:
+
+LR:
+#+begin_example
+      +---------------+
+      |               |
+  ----| proposition 1 |----
+      |               |
+#+end_example
+
+TB:
+#+begin_example
+            |
+   +--------+---------
+   |   proposition 1
+   +--------+---------
+            |
+#+end_example
+
+
+*** Unknown states where there is a "typical" default
+
+When user input has not been received, but we know that most answers will be "yes", we leave the colour as white on grey but we connect the lines as though the user had given input.
+
+We model this using the `Default` type, which is something like a `Maybe Either Bool`.
+
+*** Bounding Box
+
+Every Item has a bounding box. This includes nested items! We deal with nesting using the ~g~ element to group, and ~with move~ to relocate relative to the parent.
+
+*** Alignment Guidance
+
+How does one center-align a column of text boxes?
+
+In SVG we can use the ~alignment-baseline~ attribute which makes things easier.
+
+

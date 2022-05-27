@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.5.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
@@ -71,8 +71,9 @@ executable anyall-exe
 
 test-suite anyall-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: AutoSpec.hs
   other-modules:
+      CompoundSpec
       Paths_anyall
   hs-source-dirs:
       test

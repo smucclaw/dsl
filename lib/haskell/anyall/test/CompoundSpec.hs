@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+module CompoundSpec(spec) where
 
 import Test.Hspec
 import AnyAll.Types
@@ -16,8 +17,8 @@ rt = Default $ Right $ Just True
 rf = Default $ Right $ Just False
 rn = Default $ Right Nothing
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
   let markup m = Marking (Default <$> m)
       rlv item marking = relevant Hard DPNormal (markup marking) Nothing item
   describe "with mustSing," $ do

@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -ddump-splices -dsuppress-uniques #-}
+-- {-# OPTIONS_GHC -ddump-splices -dsuppress-uniques #-}
 
 module Classy where
 

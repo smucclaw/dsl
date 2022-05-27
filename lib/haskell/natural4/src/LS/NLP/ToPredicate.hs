@@ -52,21 +52,23 @@ data SomeTree = forall b. SomeTree (Tree b)
 
 mkPredicate :: Gf (Tree a) => Tree a -> Predicate
 mkPredicate (GrootN_ x) = Unary $ headNP x
-mkPredicate (GrootV_ x) = Unary $ headVP x
-mkPredicate (Groot_cop_advmod root _ Gnot_advmod) = Not $ mkPredicate root -- TODO: use findNeg for more general solution?
+mkPredicate (GrootV_ _t p x) = getNeg p $ Unary $ headVP x
 mkPredicate (Groot_only rt) = mkPredicate rt
-mkPredicate (Groot_mark_nsubj rt _ _) = mkPredicate rt
 mkPredicate (Groot_nsubj rt _) = mkPredicate rt
-mkPredicate (Groot_xcomp (GrootV_ vp) (GxcompA_ccomp_ ap (Gccomp_ uds))) =
+mkPredicate (Groot_xcomp (GrootV_ _t p vp) (GxcompA_ccomp_ ap (Gccomp_ uds))) = getNeg p $
     Unary (headVP vp `combineName` headAP ap)
      `combinePredicate` findHeadAndArg uds
-mkPredicate (Groot_xcomp_ccomp (GrootV_ vp) xc (Gccomp_ uds)) =
+mkPredicate (Groot_xcomp_ccomp (GrootV_ _t p vp) xc (Gccomp_ uds)) = getNeg p $
     Unary (headVP vp `combineName` headXC xc)
      `combinePredicate` findHeadAndArg uds
-mkPredicate (Groot_ccomp (GrootV_ vp) (Gccomp_ uds)) =
+mkPredicate (Groot_ccomp (GrootV_ _t p vp) (Gccomp_ uds)) = getNeg p $
     Unary (headVP vp) `combinePredicate` findHeadAndArg uds
 mkPredicate (Groot_nsubj_ccomp rt subj cc) = undefined
 mkPredicate x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
+
+getNeg :: GPol -> Predicate -> Predicate
+getNeg GPNeg = Not
+getNeg _ = id
 
 -- Used when there are ccomp (clausal complement) present in the sentence
 -- We need to find, not just the head, but also the argument of the ccomp
@@ -102,8 +104,8 @@ findNsubj x = composOpMonoid findNsubj x
 -- Finds negation, but skips ccomp(s)
 -- "I don't know that you know" -> returns negation
 -- "I know that you don't know" -> returns empty list
-findNeg :: Tree a -> [Gadvmod]
-findNeg Gnot_advmod = [Gnot_advmod]
+findNeg :: Tree a -> [GPol]
+findNeg GPNeg = [GPNeg]
 findNeg (Gccomp_ _) = []
 findNeg x = composOpMonoid findNeg x
 
@@ -112,7 +114,7 @@ findNeg x = composOpMonoid findNeg x
 findRoot :: Tree a -> [Groot]
 findRoot rt@(GrootA_ _ap) = [rt]
 findRoot rt@(GrootN_ _np) = [rt]
-findRoot rt@(GrootV_ _vp) = [rt]
+findRoot rt@(GrootV_ _t _p _vp) = [rt]
 findRoot    (Gccomp_ _)   = []
 findRoot x = composOpMonoid findRoot x
 
@@ -124,7 +126,9 @@ headXC (GxcompA_ccomp_ ap cc) = error "not implemented"
 
 headVP :: GVP -> String
 headVP (GUseV v) | Just (v', []) <- unApp (gf v) = headName v'
-headVP _ = error "not implemented"
+headVP (GAdvVP vp _) = headVP vp
+headVP (GUseComp (GCompNP np)) = headNP np
+headVP x = error $ "headVP: not implemented for " ++ showExpr [] (gf x)
 
 headNP :: GNP -> String
 headNP (GMassNP cn) = headCN cn

@@ -6,9 +6,16 @@ concrete BareRGEng of BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
+<<<<<<< HEAD
+=======
+    ,VPS,MkVPS
+>>>>>>> origin/main
   ],
 
-  SentenceEng,
+  SentenceEng [
+    PredVP, UseCl, UseRCl, UseQCl
+    ],
+
 
   VerbEng [
    VP,AdV,Adv,AP,Comp,NP,V,Tense

@@ -39,30 +39,30 @@ pDeontic = (pToken Must  >> return DMust)
 pNumber :: Parser Integer
 pNumber = token test Set.empty <?> "number"
   where
-    test (WithPos _ _ _ (TNumber n)) = Just n
+    test (WithPos _ _ (TNumber n)) = Just n
     test _ = Nothing
 
 -- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
-    test (WithPos _ _ _ (Other t)) = Just t
+    test (WithPos _ _ (Other t)) = Just t
     test _ = Nothing
 
 getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
   where
-    test (WithPos _ _ _ tok) = Just tok
+    test (WithPos _ _ tok) = Just tok
 
 getWithPos :: Parser String
 getWithPos = token test Set.empty <?> "any token"
   where
-    test wp@(WithPos _ _ _ tok)
+    test wp@(WithPos _ _ tok)
       | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
       | otherwise                            = showpos wp
     showpos wp = Just $
-      show (unPos $ sourceLine   $ startPos wp) ++ "_" ++
-      show (unPos $ sourceColumn $ startPos wp) ++ ":" ++
+      show (unPos $ sourceLine   $ pos wp) ++ "_" ++
+      show (unPos $ sourceColumn $ pos wp) ++ ":" ++
       show (tokenVal wp)
     _showtok wp = Just $ show $ tokenVal wp
 
@@ -81,21 +81,21 @@ myTraceM x = whenDebug $ do
 getTokenNonDeep :: Parser MyToken
 getTokenNonDeep = token test Set.empty <?> "any token except GoDeeper / UnDeeper"
   where
-    test (WithPos _ _ _ GoDeeper) = Nothing
-    test (WithPos _ _ _ UnDeeper) = Nothing
-    test (WithPos _ _ _ tok) = Just tok
+    test (WithPos _ _ GoDeeper) = Nothing
+    test (WithPos _ _ UnDeeper) = Nothing
+    test (WithPos _ _ tok) = Just tok
 
 getTokenNonEOL :: Parser MyToken
 getTokenNonEOL = token test Set.empty <?> "any token except EOL"
   where
-    test (WithPos _ _ _ EOL) = Nothing
-    test (WithPos _ _ _ tok) = Just tok
+    test (WithPos _ _ EOL) = Nothing
+    test (WithPos _ _ tok) = Just tok
 
 
 -- pInt :: Parser Int
 -- pInt = token test Set.empty <?> "integer"
 --   where
---     test (WithPos _ _ _ (Int n)) = Just n
+--     test (WithPos _ _ (Int n)) = Just n
 --     test _ = Nothing
 
 -- pSum :: Parser (Int, Int)
@@ -169,7 +169,7 @@ pushBackToken :: WithPos MyToken -> Parser ()
 pushBackToken tok = updateParserState (\s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput})
 
 pushTokenStream :: WithPos MyToken -> MyStream -> MyStream
-pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStream} 
+pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStream}
 
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
@@ -378,7 +378,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
    - get the chain started  :: ($>|) and ($*|)
    - keep the chain running :: (|>|) and (|*|)
    - end the chain          :: (|><) and (|*<) ... also |<$ if you want to control that manually
-   
+
    In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
 
    What do the characters mean? Generally:
@@ -434,7 +434,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|*|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ continue    fancy fancy
 (|-|)  ::                     SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ continue    fancy plain without consuming any GoDeepers
 (|=|)  ::                     SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ continue    fancy fancy without consuming any GoDeepers
-($>>)  :: Show a           =>   Parser  a       ->                SLParser a  -- ^ consume any GoDeepers, then parse -- plain 
+($>>)  :: Show a           =>   Parser  a       ->                SLParser a  -- ^ consume any GoDeepers, then parse -- plain
 (|>>)  :: Show a           => SLParser  a       ->                SLParser a  -- ^ consume any GoDeepers, then parse -- fancy
 (|<|)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- plain
 (|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any GoDeepers or UnDeepers, then parse -- fancy
@@ -465,7 +465,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (>><) = manyIndentation
 
 
--- 
+--
 (|?|)  :: Show a => SLParser a ->          SLParser (Maybe a) -- optional for an SLParser
 (|?|) p = debugNameSL "|?| optional something" $ do
   try (do
@@ -717,7 +717,7 @@ someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" $ do
   slUnDeeper >> manyUndeepers
 
--- | consume any GoDeepers, then parse -- plain 
+-- | consume any GoDeepers, then parse -- plain
 ($>>) p = (|>>) (liftSL p)
 infixl 4 $>>
 

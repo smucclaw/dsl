@@ -1,7 +1,7 @@
 
 
-concrete UDCatEng of UDCat = BareRGEng **
-  open SyntaxEng, Prelude, (P=ParadigmsEng), (E=ExtraEng), ResEng, ExtendEng, (N=NounEng), SymbolicEng in {
+concrete UDCatMay of UDCat = BareRGMay **
+  open SyntaxMay, Prelude, (P=ParadigmsMay), ResMay, ExtendMay, (N=NounMay), SymbolicMay in {
 
   lincat
     UDS = LinUDS ;
@@ -48,13 +48,13 @@ concrete UDCatEng of UDCat = BareRGEng **
       mkAux : Str -> VV -> LinAux = \str,vv -> {
           s = str ; vv = vv ; auxType = RealAux } ;
       mkAux : Str -> AuxType -> LinAux = \str,at -> {
-          s = str ; vv = must_VV ; auxType = at } -- dummy vv, not used
+          s = str ; vv = should_VV ; auxType = at } -- dummy vv, not used
     } ;
 
   lin
     do_aux = mkAux "do" TenseAux ;
     be_aux = mkAux "be" TenseAux ;
-    may_aux = mkAux "may" E.may_VV ;
+    may_aux = mkAux "may" TenseAux ;
     have_aux = mkAux "have" TenseAux ;
     will_aux = mkAux "will" TenseAux ;
     can_aux = mkAux "can" can_VV ;
@@ -77,10 +77,6 @@ concrete UDCatEng of UDCat = BareRGEng **
       lin SC {s = mark.s ++ linUDS' Infinite emptyNP uds} ;
     csubjMarkFinite_ mark uds = -- assuming this is like "to assess the breach"
       lin SC {s = mark.s ++ linUDS uds} ;
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
     nsubj_,
     obj_,
     iobj_ = id NP ;
@@ -108,7 +104,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     rootN_ np = mkRoot np ;
     rootAdv_ adv = mkRoot (mkVP adv) ;
     rootDet_ det = mkRoot (N.DetNP det) ;
-    rootDAP_ dap = mkRoot (UseDAP dap) ;
+    -- rootDAP_ dap = mkRoot (UseDAP dap) ;
     rootQuant_ det = mkRoot (N.DetNP (N.DetQuant det N.NumSg)) ;
     rootAdA_ ada = rootAdv_ (mkAdv ada (P.mkAdv "")) ;
     nmod_ = PrepNP ;
@@ -163,15 +159,11 @@ concrete UDCatEng of UDCat = BareRGEng **
       isNP = False
       } ;
 
-    defaultUDSPred : CatEng.VP -> UDSPred = \vp -> defaultRoot ** {
-<<<<<<< HEAD
-      fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
-=======
+    defaultUDSPred : CatMay.VP -> UDSPred = \vp -> defaultRoot ** {
       fin = MkVPS (presSimulTemp) positivePol vp ;
->>>>>>> origin/main
-      pp = BareRGEng.PastPartAP vp ;
-      presp = BareRGEng.PresPartAP vp ;
-      inf = ExtendEng.MkVPI vp
+      pp = BareRGMay.PastPartAP vp ;
+      presp = BareRGMay.PresPartAP vp ;
+      inf = ExtendMay.MkVPI vp
     } ;
 
     LinUDS : Type = {
@@ -185,11 +177,7 @@ concrete UDCatEng of UDCat = BareRGEng **
         subj = np ; hasSubj = True ;
         pred = case rt.isNP of {
           True => mkUDSPred rt.np ;
-<<<<<<< HEAD
-          False => mkUDSPred rt.vp }
-=======
           False => mkUDSPred rt.temp rt.pol rt.vp }
->>>>>>> origin/main
         } ;
       mkUDS : NP -> UDSPred -> LinUDS = \np,pr -> {
         subj = np ; hasSubj = True ;
@@ -202,56 +190,42 @@ concrete UDCatEng of UDCat = BareRGEng **
     --  linUDS : NP -> LinUDS -> Str = \np,uds -> linUDS' Finite np uds
   --  } ;
 
-    uds2s : LinUDS -> S = \uds -> ExtendEng.PredVPS uds.subj uds.pred.fin ;
+    uds2s : LinUDS -> S = \uds -> ExtendMay.PredVPS uds.subj uds.pred.fin ;
 
     linUDS' : AclType ->  NP -> LinUDS -> Str = \at,subj,uds -> case at of {
-      Finite => (ExtendEng.PredVPS subj uds.pred.fin).s ;
+      Finite => (ExtendMay.PredVPS subj uds.pred.fin).s ;
       PresPart => (cc2 (mkUtt subj) (mkUtt uds.pred.presp)).s ;
       PastPart => (cc2 (mkUtt subj) (mkUtt uds.pred.pp)).s ;
-      Infinite => (mkUtt subj).s ++ uds.pred.inf.s ! VVAux ! agrP3 Sg} ;
+      Infinite => (mkUtt subj).s ++ uds.pred.inf.s} ;
 
     mkUDSPred = overload {
-<<<<<<< HEAD
-=======
       mkUDSPred : LinRoot -> UDSPred = \rt -> defaultUDSPred rt.vp ** {
         fin = MkVPS rt.temp rt.pol rt.vp } ;
->>>>>>> origin/main
-      mkUDSPred : CatEng.VP -> UDSPred = defaultUDSPred ;
-      mkUDSPred : CatEng.Tense -> CatEng.VP -> UDSPred = \tns,vp -> defaultUDSPred vp ** {
+      mkUDSPred : CatMay.VP -> UDSPred = defaultUDSPred ;
+      mkUDSPred : CatMay.Tense -> CatMay.VP -> UDSPred = \tns,vp -> defaultUDSPred vp ** {
         fin = MkVPS (mkTemp tns simultaneousAnt) positivePol vp } ;
-      mkUDSPred : Ant -> CatEng.VP -> UDSPred = \ant,vp -> defaultUDSPred vp ** {
+      mkUDSPred : Ant -> CatMay.VP -> UDSPred = \ant,vp -> defaultUDSPred vp ** {
         fin = MkVPS (mkTemp presentTense ant) positivePol vp } ;
-<<<<<<< HEAD
-      mkUDSPred : CatEng.Tense -> Ant -> CatEng.Pol -> CatEng.VP -> UDSPred = \tns,ant,pol,vp ->
-        let neg : Str = case pol.p of {CPos => [] ; _ => "not"}
-         in defaultUDSPred vp ** {
-              fin = MkVPS (mkTemp tns ant) pol vp ;
-=======
-      mkUDSPred : Temp -> CatEng.Pol -> CatEng.VP -> UDSPred = \temp,pol,vp ->
+      mkUDSPred : Temp -> CatMay.Pol -> CatMay.VP -> UDSPred = \temp,pol,vp ->
         let neg : Str = case pol.p of {CPos => [] ; _ => "not"}
          in defaultUDSPred vp ** {
               fin = MkVPS temp pol vp ;
->>>>>>> origin/main
               pp =
-                let pp' : AP = BareRGEng.PastPartAP vp
-                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+                let pp' : AP = BareRGMay.PastPartAP vp
+                  in pp' ** {s = neg ++ pp'.s} ;
               presp =
-                let pp' : AP = BareRGEng.PresPartAP vp
-                  in pp' ** {s = \\x => neg ++ pp'.s ! x} ;
+                let pp' : AP = BareRGMay.PresPartAP vp
+                  in pp' ** {s = neg ++ pp'.s } ;
               inf =
                 let inf' : VPI = MkVPI vp
-                  in inf' ** {s = \\typ,agr => neg ++ inf'.s ! typ ! agr}
+                  in inf' ** {s = neg ++ inf'.s }
             } ; -- TODO: VVInf becomes "not to <verb>", fix later
       mkUDSPred : NP -> UDSPred = \np ->
-        let vp : CatEng.VP = mkVP np in {
-<<<<<<< HEAD
-        fin = MkVPS (mkTemp presentTense simultaneousAnt) positivePol vp ;
-=======
+        let vp : CatMay.VP = mkVP np in {
         fin = MkVPS (presSimulTemp) positivePol vp ;
->>>>>>> origin/main
-        pp = BareRGEng.PastPartAP vp ;
-        presp = BareRGEng.PresPartAP vp ;
-        inf = ExtendEng.MkVPI vp ;
+        pp = BareRGMay.PastPartAP vp ;
+        presp = BareRGMay.PresPartAP vp ;
+        inf = ExtendMay.MkVPI vp ;
         np = np ;
         isNP = True
       }
@@ -272,34 +246,22 @@ concrete UDCatEng of UDCat = BareRGEng **
     linRoot : LinRoot -> Str = \rt -> (mkUtt rt.vp).s ;
 
     mkRoot = overload {
-<<<<<<< HEAD
-       mkRoot : AP -> Root = \ap -> emptyRoot ** {vp = mkVP ap} ;
-       mkRoot : NP -> Root = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True } ;
-       mkRoot : CatEng.VP -> Root = \vp -> emptyRoot ** {vp = vp} ;
-       mkRoot : VPSlash -> Root = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2 ;}
-    } ;
-
-    emptyRoot : Root = defaultRoot ** {
-=======
        mkRoot : AP -> LinRoot = \ap -> emptyRoot ** {vp = mkVP ap} ;
        mkRoot : NP -> LinRoot = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True} ;
-       mkRoot : CatEng.VP -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
-       mkRoot : VPSlash -> LinRoot = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2} ;
-       mkRoot : Temp -> Pol -> CatEng.VP -> LinRoot = \t,p,vp ->
+       mkRoot : CatMay.VP -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
+       mkRoot : VPSlash -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
+       mkRoot : Temp -> Pol -> CatMay.VP -> LinRoot = \t,p,vp ->
         emptyRoot ** {temp = t ; pol = p ; vp = vp}
     } ;
 
     emptyRoot : LinRoot = defaultRoot ** {
        temp = presSimulTemp ;
        pol = positivePol ;
->>>>>>> origin/main
        vp = mkVP (P.mkN "dummy") ;
        c2 = []
     } ;
 
     presSimulTemp : Temp = mkTemp presentTense simultaneousAnt ;
-
-    aclRelclRS_ : RS -> Adv = \rs -> lin Adv {s = embedInCommas (rs.s ! agrP3 Sg)} ;
 
     -- Add an SC onto a LinRoot, e.g.
     -- (ready : LinRoot) (to_sleep : SC) -> ready to sleep
@@ -310,7 +272,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     -- (warm : LinRoot) (by_nature : Adv) -> warm by nature
     advRoot : LinRoot -> Adv -> LinRoot = \rt,adv -> rt ** {
       vp = mkVP rt.vp adv ;
-      np = N.AdvNP <rt.np:NP> <adv:Adv> ;
+      np = mkNP <rt.np:NP> <adv:Adv> ;
     } ;
 
     -- Add a direct object onto a LinRoot, e.g.
@@ -327,56 +289,22 @@ concrete UDCatEng of UDCat = BareRGEng **
 
     } ;
 
-    UttAccNP : NP -> Utt = \np -> ss (np.s ! NPAcc) ;
+    UttAccNP : NP -> Utt = \np -> ss (np.s ! Bare ) ;
 
     emptyNP : NP = it_NP ** {s = \\_ => ""} ;
     emptySubj : Subj = that_Subj ** {s = ""} ;
 
-    should_VV : VV = lin VV {
-      s = table {
-        VVF VInf => ["be obliged to"] ;
-        VVF VPres => "should" ;
-        VVF VPPart => ["been obliged to"] ;
-        VVF VPresPart => ["being obliged to"] ;
-        VVF VPast => "should" ;
-        VVPastNeg => "should not" ;
-        VVPresNeg => "shouldn't"
-        } ;
-      p = [] ;
-      typ = VVAux
-    } ;
+    should_VV : VV = variants {} ;
 
-    shall_VV : VV = lin VV {
-      s = table {
-        VVF VInf => ["be obliged to"] ;
-        VVF VPres => "shall" ;
-        VVF VPPart => ["been obliged to"] ;
-        VVF VPresPart => ["being obliged to"] ;
-        VVF VPast => "shall" ;
-        VVPastNeg => "shall not" ;
-        VVPresNeg => "shan't"
-        } ;
-      p = [] ;
-      typ = VVAux
-    } ;
+    shall_VV : VV = variants {} ;
 
 
-    rp2np : RP -> NP = \rp -> rp ** {
-      s = \\c => rp.s ! RC Neutr c ;
-      a = ragr2agr rp.a
+    rp2np : RP -> NP = \rp -> emptyNP ** {
+      s = \\_ => rp.s ;
       } ;
 
-    ragr2agr : ResEng.RAgr -> ResEng.Agr = \ra -> case ra of {
-      ResEng.RAg a => a ;
-      ResEng.RNoAg => agrP3 Sg
-    } ;
-
-    -- copied this from ParseExtendEng, easier to duplicate code than to introduce new dependency?
+       -- copied this from ParseExtendMay, easier to duplicate code than to introduce new dependency?
     ParseExtendComplVV : VV -> Ant -> Pol -> VP -> VP ;
-    ParseExtendComplVV v ant pol vp =
-      insertObj (variants {\\agr => ant.s ++ pol.s ++
-                                    infVP v.typ vp True  ant.a pol.p agr;
-                           \\agr => ant.s ++ pol.s ++
-                                    infVP v.typ vp False ant.a pol.p agr})
-                (predVV v) ;
+    ParseExtendComplVV v ant pol vp = vp ;
+
 }

@@ -319,8 +319,7 @@ stanzaAsStream rs =
   MyStream rs $ parenthesize [ WithPos {..}
              | y <- [ 0 .. V.length vvt       - 1 ]
              , x <- [ 0 .. V.length (vvt ! y) - 1 ]
-             , let startPos = SourcePos "" (mkPos $ y + 1) (mkPos $ x + 1)
-                   endPos   = SourcePos "" (mkPos $ y + 1) (mkPos $ x + 1) -- same
+             , let pos = SourcePos "" (mkPos $ y + 1) (mkPos $ x + 1)
                    rawToken = vvt ! y ! x
                    tokenLength = 1
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
@@ -334,10 +333,10 @@ stanzaAsStream rs =
     parenthesize mys =
       tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
     eofPos = SourcePos "" pos1 pos1
-    withEOF = WithPos eofPos eofPos 1 EOF
-    withSOF = WithPos eofPos eofPos 1 SOF
-    insertParen a@WithPos {   endPos = aPos }
-                b@WithPos { startPos = bPos }
+    withEOF = WithPos eofPos 1 EOF
+    withSOF = WithPos eofPos 1 SOF
+    insertParen a@WithPos { pos = aPos }
+                b@WithPos { pos = bPos }
       | tokenVal a /= SOF &&
         aCol <  bCol &&
         aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
@@ -357,9 +356,9 @@ stanzaAsStream rs =
         aLin = unPos . sourceLine   $ aPos
         bLin = unPos . sourceLine   $ bPos
         goDp n = let newPos = aPos { sourceColumn = mkPos (aCol + n) }
-                 in b { tokenVal = GoDeeper, startPos = newPos, endPos = newPos }
+                 in b { tokenVal = GoDeeper, pos = newPos }
         unDp n = let newPos = bPos { sourceColumn = mkPos (bCol + n) }
-                 in a { tokenVal = UnDeeper, startPos = newPos, endPos = newPos }
+                 in a { tokenVal = UnDeeper, pos = newPos }
 -- MyStream is the primary input for our Parsers below.
 --
 

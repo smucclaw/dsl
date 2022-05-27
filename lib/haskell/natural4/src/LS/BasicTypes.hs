@@ -71,7 +71,7 @@ data MyToken = Every | Party | TokAll
 --
 -- the following was cribbed from Mark Karpov's MegaParsec tutorial,
 -- https://markkarpov.com/tutorial/megaparsec.html#working-with-custom-input-streams
-  
+
 instance Stream MyStream where
   type Token  MyStream = WithPos MyToken
   type Tokens MyStream = [WithPos MyToken]
@@ -132,8 +132,8 @@ instance TraversableStream MyStream where
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
       newSourcePos =
         case post of
-          [] -> if null pre then pstateSourcePos else endPos (last pre)
-          (x:_) -> startPos x
+          [] -> if null pre then pstateSourcePos else pos (last pre)
+          (x:_) -> pos x
       (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
       -- (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
       (preStr, postStr) = ("<not implemented #173a>", "<not implemented #173b>")
@@ -145,8 +145,7 @@ instance TraversableStream MyStream where
       restOfLine = takeWhile (/= '\n') postStr
 
 data WithPos a = WithPos
-  { startPos :: SourcePos
-  , endPos :: SourcePos
+  { pos :: SourcePos
   , tokenLength :: Int
   , tokenVal :: a
   } deriving (Eq, Ord, Show, Functor)
@@ -188,6 +187,6 @@ renderToken tok = map toUpper (show tok)
 
 
 liftMyToken :: MyToken -> WithPos MyToken
-liftMyToken = WithPos pos pos 0
+liftMyToken = WithPos pos 0
   where
     pos = initialPos ""

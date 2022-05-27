@@ -5,10 +5,20 @@ concrete UDExtEng of UDExt = UDAppEng,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
+<<<<<<< HEAD
   ],
   IdiomEng [
     GenericCl, ImpersCl
   ]
+=======
+    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+  ],
+  IdiomEng [
+    GenericCl, ImpersCl
+  ],
+  SentenceEng [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+
+>>>>>>> origin/main
  ** open
   Prelude,
   SyntaxEng, (P=ParadigmsEng), ExtendEng,
@@ -20,9 +30,12 @@ concrete UDExtEng of UDExt = UDAppEng,
 -- This set of functions used to live in BareRG, but they weren't actually used for parsing
 -- They look more like extensions to the RGL, so add them here.
   lin
+<<<<<<< HEAD
     -- : NP -> VP -> S ;
     PredVPS np vp = mkS (mkCl np vp) ;
 
+=======
+>>>>>>> origin/main
     -- : Cl -> ClSlash ; -- make a full Cl into ClSlash
     SlashCl cl = cl ** {c2=[]} ;
 
@@ -38,11 +51,22 @@ concrete UDExtEng of UDExt = UDAppEng,
        hasNum = False} ;
 
     -- : NP -> SC -> NP ;     -- to get "a data breach occurred" to become a NP
+<<<<<<< HEAD
     SentNP np sc = AdvNP np <sc : Adv> ;
+=======
+    SentNP np sc = mkNP np (lin Adv sc) ;
+>>>>>>> origin/main
 
     -- : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
     ComplVP vp np = ComplSlash (slashV vp) np ;
     -- ComplA a prep np = mkAP (P.mkA2 a prep) np ;
+<<<<<<< HEAD
+=======
+
+    -- : VP -> S -> VP ; -- [assess]:VP [if it is a NDB]:S
+    ComplSVP vp s = AdvVP vp <s : Adv> ;
+
+>>>>>>> origin/main
     -- : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
     PrepVP vp prep = vp ** {p = vp.p ++ prep.s} ;
 
@@ -58,6 +82,17 @@ concrete UDExtEng of UDExt = UDAppEng,
     You = you_NP ;
     Someone = somebody_NP ;
 
+<<<<<<< HEAD
+=======
+    -- : VV  -> Ant -> Pol -> VP -> VP ;
+    ComplVV = ParseExtendComplVV ;
+
+   -- : aux -> Temp -> Pol -> VP -> VPS ;
+    ComplAux aux t p vp =
+      let ant = lin Ant {s = [] ; a = t.a} ;
+      in MkVPS presSimulTemp positivePol (ParseExtendComplVV aux.vv ant p vp) ;
+
+>>>>>>> origin/main
     -- All of their lincat is already Adv
     -- : advcl/acl/xcomp -> Adv ;
     advcl2Adv,
@@ -113,7 +148,11 @@ concrete UDExtEng of UDExt = UDAppEng,
   -}
   oper
     relating_to_Prep : Prep = P.mkPrep "relating to" ;
+<<<<<<< HEAD
     concurrently_Adv : Adv = P.mkAdv "concurrently" ;
+=======
+    concurrently_Adv : SyntaxEng.Adv = P.mkAdv "concurrently" ;
+>>>>>>> origin/main
 
 --------------------------------------------------------------------------------------------
 -- This set of functions is for the more high-level NLG stuff
@@ -130,18 +169,18 @@ concrete UDExtEng of UDExt = UDAppEng,
 
     -- : UDS -> UDFragment -> UDFragment ;
     Upon upon action =
-      let upon_Adv : Adv = SyntaxEng.mkAdv upon_Prep (AdjAsNP upon.pred.presp) ;
+      let upon_Adv : SyntaxEng.Adv = SyntaxEng.mkAdv upon_Prep (AdjAsNP upon.pred.presp) ;
        in Se.ExtAdvS upon_Adv action ;
 
     Cond cond action =
-      let cond_Adv : Adv = SyntaxEng.mkAdv SyntaxEng.if_Subj (udsToS cond) ;
+      let cond_Adv : SyntaxEng.Adv = SyntaxEng.mkAdv SyntaxEng.if_Subj (udsToS cond) ;
        in Se.AdvS action cond_Adv;
 
     Temporal temp action = Se.AdvS action temp;
 
     Given given action =
       let given_Subj : Subj = lin Subj (ss "given that") ;
-          given_Adv : Adv = SyntaxEng.mkAdv given_Subj (udsToS given);
+          given_Adv : SyntaxEng.Adv = SyntaxEng.mkAdv given_Subj (udsToS given);
        in Se.AdvS action given_Adv ;
 
     -- : NP -> UDS -> UDFragment ;
@@ -149,7 +188,7 @@ concrete UDExtEng of UDExt = UDAppEng,
 
     -- : UDS -> NP -> NP ; -- EVERY king WHO is a singer
     Who is_singer king =
-      let who_is_singer_Adv : Adv = lin Adv (PredVPS who_NP is_singer.pred.fin) ;
+      let who_is_singer_Adv : SyntaxEng.Adv = lin Adv (PredVPS who_NP is_singer.pred.fin) ;
        in ExtAdvNP king who_is_singer_Adv ;
 
     Every np = mkNP (lin Predet {s = "every"}) np ;
@@ -184,7 +223,7 @@ concrete UDExtEng of UDExt = UDAppEng,
 
     -- : UDFragment -> UDS -> UDFragment ; -- breach is severe WHEN data is lost
     HornClause2 breach_is_severe data_is_lost =
-      let when_data_lost_Adv = mkAdv SyntaxEng.when_Subj (udsToS data_is_lost)
+      let when_data_lost_Adv : SyntaxEng.Adv = mkAdv SyntaxEng.when_Subj (udsToS data_is_lost)
        in hornlike breach_is_severe when_data_lost_Adv ;
 
     CondStandalone uds = ss (linUDS uds) ;
@@ -195,11 +234,11 @@ concrete UDExtEng of UDExt = UDAppEng,
     -- : UDS -> UDS -> UDFragment -> UDFragment
 
     CondUpon cond upon king =
-      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+      let cond_Adv : SyntaxEng.Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
        in Se.ExtAdvS cond_Adv (Upon upon king) ;
 
     CondTemporal cond temporal king =
-      let cond_Adv : Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
+      let cond_Adv : SyntaxEng.Adv = SyntaxEng.mkAdv if_Subj (udsToS cond) ;
        in Se.ExtAdvS cond_Adv (Se.AdvS king temporal) ;
 
 
@@ -243,7 +282,7 @@ concrete UDExtEng of UDExt = UDAppEng,
     -- hack to make the order "S , Adv"
     -- in English RG, lincat of S and Adv is both {s : Str} so we can do this
     -- Unsafe, don't copy for other languages
-    hornlike : S -> Adv -> S = \consequence,condition ->
+    hornlike : S -> SyntaxEng.Adv -> S = \consequence,condition ->
       Se.ExtAdvS (lin Adv consequence) (lin S condition) ;
   lin
 -- Aarne

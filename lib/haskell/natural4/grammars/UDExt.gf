@@ -5,10 +5,19 @@ abstract UDExt = UDApp ,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
+<<<<<<< HEAD
   ],
   Idiom [
     GenericCl, ImpersCl
   ]
+=======
+    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+  ],
+  Idiom [
+    GenericCl, ImpersCl
+  ],
+  Sentence [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+>>>>>>> origin/main
   ** {
 
 --------------------------------------------------------------------------------------------
@@ -16,8 +25,11 @@ abstract UDExt = UDApp ,
 -- They look more like extensions to the RGL, so add them here.
 
   fun
+<<<<<<< HEAD
     PredVPS : NP -> VP -> S ;
 
+=======
+>>>>>>> origin/main
     SlashCl : Cl -> ClSlash ; -- make a full Cl into ClSlash
 
     AdvAdv : Adv -> Adv -> Adv ;
@@ -27,6 +39,10 @@ abstract UDExt = UDApp ,
     SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
 
     ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
+<<<<<<< HEAD
+=======
+    ComplSVP : VP -> S -> VP ; -- [assess]:VP [if it is a NDB]:S
+>>>>>>> origin/main
     PrepVP : VP -> Prep -> VP ; -- like VPSlashPrep but on VPs. Probably this is also better to handle by other means and should be removed later.
     -- ComplA : A -> NP -> AP ; -- applicable to X  (TODO: where to put prep?)
     -- ComplN : N -> NP -> CN ; -- mother of X  (TODO: where to put prep?)
@@ -39,6 +55,14 @@ abstract UDExt = UDApp ,
     You : NP ; -- Many of the rules talk about a You, so just add it here.
     Someone : NP ;
 
+<<<<<<< HEAD
+=======
+    -- This version of ComplVV allows "may have occurred"
+    -- The one in core RGL would only become "has been allowed to occur"
+   -- ComplVV     : VV  -> Ant -> Pol -> VP -> VP ;
+    ComplAux    : aux -> Temp -> Pol -> VP -> VPS ;
+
+>>>>>>> origin/main
     -- Make the UDS categories that have Adv as a lincat, but aren't constructed from Adv, into Adv
     -- the rest can just peel off the constructor, e.g. obl with `obl_ : Adv -> obl`
     advcl2Adv : advcl -> Adv ;

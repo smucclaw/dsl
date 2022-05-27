@@ -1,4 +1,4 @@
--------------------------------------------------------------------
+------------------------------------------------------------------
 -- Exceptions and special cases, when UD structure doesn't match GF
 
 -- To handle "my hovercraft": i_Pron is not by default parsed as Det
@@ -63,11 +63,6 @@
 #auxfun DetCN_somePl det cn : Det -> CN -> NP = DetCN somePl_Det cn ; det[LEMMA=some] head[Number=Plur]
 #disable somePl_Det someSg_Det
 
--- #auxfun PrepNP_theSg prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN the_Det cn) ; case det head[Number=Sing]
--- #auxfun PrepNP_thePl prep det cn : Prep -> Det -> CN -> NP = PrepNP prep (DetCN thePl_Det cn) ; case det head[Number=Plur]
-
-#auxfun PrepN_ doubt in : N -> Prep -> NP = PrepNP in (MassNP (UseN doubt)) ; head case
-
 -- ** don't use ImpVP if there's no [Mood=Imp] **
 #auxfun UttImpSg_Pos vp : VP -> Utt = UttImpSg PPos (ImpVP vp) ; head[Mood=Imp]
 #auxfun UttImpSg_Neg do neg vp : Do -> Neg -> VP -> Utt = UttImpSg PNeg (ImpVP vp) ; aux[VerbForm=Inf] advmod head[VerbForm=Inf]
@@ -108,6 +103,134 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #disable aclUDSpastpartParens_
 
 -- ** recover from udpipe misparses **
+<<<<<<< HEAD
+=======
+
+-- recovering a "root case nmod" misparsed as "root mark acl", e.g day of mourning:
+-- "mourning" is analysed as verb, even though it should be noun, and "of" is analysed as conjunction, should be adposition.
+-- We do it in two steps:
+-- 1) Create a fake type for the result of "of mourning"
+-- 2) Connect "day" to that result of that fake type
+
+-- Step 1: create a result of this fake type NmodMisparsedAsAcl, give it a value that is actually a nmod
+#auxfun OfMourning_ of mourn : Prep -> VP -> NmodMisparsedAsAcl = nmod_ of_Prep (GerundNP mourn) ; mark[LEMMA=of] head[VerbForm=Ger]
+
+-- Step 2: connect the nmod with the fake type NmodMisparsedAsAcl to a CN.
+-- NB. the label must be acl—this is critical! the whole point is that udpipe has mistakenly applied the acl relation,
+-- so if we want to recover the proper relation, we must match acl in the auxfun.
+#auxfun DayOfMourning_ day of_mourning : NP -> NmodMisparsedAsAcl -> UDS = root_nmod (rootN_ day) of_mourning ; head acl
+
+-- where it is warm
+#auxfun WhereItIsWarm_ where it is warm : IAdv -> Pron -> cop -> Comp -> Adv = SubjS where_Subj (UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron it) (UseComp warm))) ; head[LEMMA=where] nsubj cop nsubj
+
+-- Word order stuff
+-- to prevent "portion of a building separated by walls" becoming "portion separated by walls of a building"
+#auxfun NmodAclPart_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPartCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
+#auxfun NmodAclPres_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VP -> NP = DetCN each (PPresCN_acl_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[VerbForm=Part]
+#auxfun NmodAmod_ provision the ofThisCode applicable : CN -> Det -> Adv -> AP -> NP = DetCN the (AdjCN applicable (AdvCN provision ofThisCode)) ; head det nmod amod
+-- recognise "Section 10" as an apposition
+
+-- Special case for NmodAcl with parentheses
+
+-- Step 1: find a VP surrounded by parens, return a fake type
+#auxfun VPInParentheses_ vp lrb rrb : VP -> Adv -> Adv -> VPInParens = vp ; head punct[LEMMA=\(] punct[LEMMA=\)]
+-- Step 2: detect that VP surrounded by parens
+#auxfun NmodAclPartWithParens_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VPInParens -> NP = DetCN each (PPartCN_acl_parens_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
+
+--------------------------------
+-- Roots with tense and polarity
+
+-- ** Present **
+
+#auxfun rootVPres_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Tense=Pres|VerbForm=Fin]
+#auxfun rootVPresNeg_ does not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TPres ASimul) PNeg vp                    ; aux[LEMMA=do|Tense=Pres] advmod[LEMMA=not] head[VerbForm=Inf]
+#auxfun rootAPresNeg_ is   not ap : cop -> Neg -> AP -> root = rootV_ (TTAnt TPres ASimul) PNeg (UseComp (CompAP ap)) ; cop[LEMMA=be|Tense=Pres] advmod[LEMMA=not] head
+#auxfun rootNPresNeg_ is   not np : cop -> Neg -> NP -> root = rootV_ (TTAnt TPres ASimul) PNeg (UseComp (CompNP np)) ; cop[LEMMA=be|Tense=Pres] advmod[LEMMA=not] head
+
+-- if it's mislabeled as Imp, it's probably just present tense still
+#auxfun rootVImp_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Mood=Imp|VerbForm=Fin]
+
+-- if it's mislabeled as a noun, still present tense
+#auxfun rootVmislabeledNounSg_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Number=Sing]
+#auxfun rootVmislabeledNounPl_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[Number=Plur]
+
+-- if no aux but VP in Inf, ???
+-- In such a case, the tense information is just thrown away.
+-- We give here the most default tense and polarity: present indicative positive.
+#auxfun rootVInf_  vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[VerbForm=Inf]
+
+
+-- ** Present progressive **
+-- Sometimes gerund is labeled as Tense=Pres, VerbForm=Part and other times Ger
+-- Sometimes be is labeled as cop, other times aux
+-- so need to make versions for all combinations
+
+-- 1) aux + Ger
+#auxfun rootVProgr_    be     vp : aux        -> VP -> root = rootV_ (TTAnt TPres ASimul) PPos (ProgrVP vp) ; aux[LEMMA=be|Tense=Pres] head[VerbForm=Ger]
+#auxfun rootVProgrNeg_ is not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TPres ASimul) PNeg (ProgrVP vp) ; aux[LEMMA=be|Tense=Pres] advmod[LEMMA=not] head[VerbForm=Ger]
+
+-- 2) aux + Pres Part
+#auxfun rootVProgrPrP_ be     vp : aux        -> VP -> root = rootV_ (TTAnt TPres ASimul) PPos (ProgrVP vp) ; aux[LEMMA=be] head[Tense=Pres|VerbForm=Part]
+#auxfun rootVPrPrPNeg_ is not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TPres ASimul) PNeg (ProgrVP vp) ; aux[LEMMA=be|Tense=Pres] advmod[LEMMA=not]  head[Tense=Pres|VerbForm=Part]
+
+-- 3) cop + Ger
+#auxfun rootVProgr_    be     vp : cop        -> VP -> root = rootV_ (TTAnt TPres ASimul) PPos (ProgrVP vp) ; cop[LEMMA=be|Tense=Pres] head[VerbForm=Ger]
+#auxfun rootVProgrNeg_ is not vp : cop -> Neg -> VP -> root = rootV_ (TTAnt TPres ASimul) PNeg (ProgrVP vp) ; cop[LEMMA=be|Tense=Pres] advmod[LEMMA=not] head[VerbForm=Ger]
+
+-- 4) cop + Pres Part
+#auxfun rootVProgrPrP_ be     vp : cop        -> VP -> root = rootV_ (TTAnt TPres ASimul) PPos (ProgrVP vp) ; cop[LEMMA=be] head[Tense=Pres|VerbForm=Part]
+#auxfun rootVPrPrPNeg_ is not vp : cop -> Neg -> VP -> root = rootV_ (TTAnt TPres ASimul) PNeg (ProgrVP vp) ; cop[LEMMA=be|Tense=Pres] advmod[LEMMA=not]  head[Tense=Pres|VerbForm=Part]
+
+
+-- ** Past **
+#auxfun rootVPast_ vp : VP -> root = rootV_ (TTAnt TPast ASimul) PPos vp ; head[Tense=Past|VerbForm=Fin]
+#auxfun rootVPastNeg_ does not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TPast ASimul) PNeg vp                    ; aux[LEMMA=do|Tense=Past] advmod[LEMMA=not] head[VerbForm=Inf]
+#auxfun rootAPastNeg_ is   not ap : cop -> Neg -> AP -> root = rootV_ (TTAnt TPast ASimul) PNeg (UseComp (CompAP ap)) ; cop[LEMMA=be|Tense=Past] advmod[LEMMA=not] head
+#auxfun rootNPastNeg_ is   not np : cop -> Neg -> NP -> root = rootV_ (TTAnt TPast ASimul) PNeg (UseComp (CompNP np)) ; cop[LEMMA=be|Tense=Past] advmod[LEMMA=not] head
+
+-- ** Past participle **
+-- only recognise as proper root if it has an aux
+#auxfun rootVPastPart_    has     vp : aux ->        VP -> root = rootV_ (TTAnt TPres AAnter) PPos vp ; aux[LEMMA=have]                   head[Tense=Past|VerbForm=Part]
+#auxfun rootVPastPartNeg_ has not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TPres AAnter) PNeg vp ; aux[LEMMA=have] advmod[LEMMA=not] head[Tense=Past|VerbForm=Part]
+
+-- if no aux but VP in Past Part, try making it into an acl right away
+-- this is probably going to need lots of cases—but no nsubj variants
+#auxfun rootVPastPartAcl_ vp : VP -> acl = aclUDSpastpart_ (root_only (rootV_ (TTAnt TPres AAnter) PPos vp)) ; head[Tense=Past|VerbForm=Part]
+#auxfun rootVPastPartOblAcl_ vp adv : VP -> Adv -> acl = aclUDSpastpart_ (root_obl (rootV_ (TTAnt TPres AAnter) PPos vp) (obl_ adv)) ; head[Tense=Past|VerbForm=Part] obl
+
+-- also try to make it into an AP
+#auxfun rootAPastPart_ vp : VP -> root = rootA_ (PastPartAP vp) ; head[Tense=Past|VerbForm=Part]
+
+
+-- May have occurred
+-- Special case because need ParseExtendComplVV
+#auxfun rootVPastPartAux_ may have vp : aux -> aux -> VP -> root = rootVaux_ (TTAnt TPres AAnter) PPos may vp ; aux aux[LEMMA=have] head[Tense=Past|VerbForm=Part]
+
+-- This will probably backfire anyway — needed for the case "becoming aware that …", the root is really just gerund without aux
+#auxfun rootVProgrSingle_ vp : VP -> root = rootV_ (TTAnt TPres ASimul) PPos vp ; head[VerbForm=Ger]
+
+-- ** Future **
+#auxfun rootVFut_    will     vp : aux ->        VP -> root = rootV_ (TTAnt TFut ASimul) PPos vp ; aux[LEMMA=will]                   head[VerbForm=Inf]
+#auxfun rootVFutNeg_ will not vp : aux -> Neg -> VP -> root = rootV_ (TTAnt TFut ASimul) PNeg vp ; aux[LEMMA=will] advmod[LEMMA=not] head[VerbForm=Inf]
+
+
+-- ** Passive **
+#auxfun rootVPresPass_    auxpass     v : aux ->        V -> root = rootV_ (TTAnt TPres ASimul) PPos (PassV v) ; aux:pass                   head[Tense=Past|VerbForm=Part]
+#auxfun rootVPresPassNeg_ auxpass not v : aux -> Neg -> V -> root = rootV_ (TTAnt TPres ASimul) PNeg (PassV v) ; aux:pass advmod[LEMMA=not] head[Tense=Past|VerbForm=Part]
+
+#disable PassV
+
+-- #auxfun PassVP_Cop_PresNeg cop neg v : Cop -> Neg -> V -> VPS = MkVPS (TTAnt TPres ASimul) PNeg  (PassVP v) ; aux:pass[Tense=Pres] advmod head[Tense=Past|VerbForm=Part]
+-- #auxfun PassVP_Cop_Past cop v : Cop -> V -> VPS = MkVPS (TTAnt TPast ASimul) PPos  (PassVP v) ; aux:pass[Tense=Past] head[Tense=Past|VerbForm=Part]
+-- #auxfun PassVP_Cop_PastNeg cop neg v : Cop -> Neg -> V -> VPS = MkVPS (TTAnt TPast ASimul) PNeg  (PassVP v) ; aux:pass[Tense=Past] advmod head[Tense=Past|VerbForm=Part]
+
+
+-- #auxfun rootVPresNeg_ do neg vp   : Do -> Neg -> VP -> VPS = MkVPS (TTAnt TPres ASimul) PNeg vp ; aux[Tense=Pres] advmod head
+-- #auxfun MkVPS_PastNeg do neg vp   : Do -> Neg -> VP -> VPS = MkVPS (TTAnt TPast ASimul) PNeg vp ; aux[Tense=Past] advmod head
+-- #auxfun MkVPS_Perf have vp        : Have -> VP -> VPS = MkVPS (TTAnt TPres AAnter) PPos vp ; aux[Tense=Pres] head
+-- #auxfun MkVPS_PerfNeg have neg vp : Have -> Neg -> VP -> VPS = MkVPS (TTAnt TPres AAnter) PNeg vp ; aux[Tense=Pres] advmod head
+-- #auxfun MkVPS_Pluperf have vp     : Have -> VP -> VPS = MkVPS (TTAnt TPast AAnter) PPos vp ; aux[Tense=Past] head
+>>>>>>> origin/main
 
 -- recovering a "root case nmod" misparsed as "root mark acl", e.g day of mourning:
 -- "mourning" is analysed as verb, even though it should be noun, and "of" is analysed as conjunction, should be adposition.
@@ -140,13 +263,13 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- Step 2: detect that VP surrounded by parens
 #auxfun NmodAclPartWithParens_ portion each ofBuilding sepByWalls : CN -> Det -> Adv -> VPInParens -> NP = DetCN each (PPartCN_acl_parens_ (AdvCN portion ofBuilding) sepByWalls) ; head det nmod acl[Tense=Past|VerbForm=Part]
 -----------------------
--- Inari's additions --
------------------------
+-- stuff to disable
 
 #disable StrN StrPN StrA StrAP StrCard StrNum StrSymb
 
 #disable pot1 pot2 pot3 pot4 pot1to19
 
+-----------------------
 -- Some multiwords
 -- ** more than **
 #auxfun MoreThan_ more than : Adv -> Prep -> Quant = more_than_Quant ; head[LEMMA=more] fixed[LEMMA=than]
@@ -161,7 +284,13 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- ** 5 people **
 #auxfun NumCN_ num cn : Card -> CN -> NP = DetCN (DetQuant IndefArt (NumCard num)) cn ; nummod head
 
+<<<<<<< HEAD
 -- Label variants of various
+=======
+-----------------------
+-- Label variants of various funs
+
+>>>>>>> origin/main
 -- This relation is nmod head, and default AdNum is advmod head
 #auxfun AdNumNmod_ atLeast five : AdN -> Card -> Card = AdNum atLeast five ; nmod head
 
@@ -180,17 +309,27 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #auxfun PPartCN_acl_parens_ cn vp : CN -> VP -> CN = AdjCN (ParentheticalAP (PastPartAP vp)) cn ; head acl[Tense=Past|VerbForm=Part]
 #disable ParentheticalAP
 
+<<<<<<< HEAD
 -- [data breach]:CN [affecting 500 people]:acl
 #auxfun PPresCN_acl_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head acl[VerbForm=Ger]
+=======
+------------------------------------------------
+-- Limiting the use of PresPartAP and PastPartAP
+-- Only when the relation is amod—for acl, acl:relcl, use AclNP and RelclNP
+>>>>>>> origin/main
 
 -- [qualifying]:amod [person]:CN
-#auxfun PPresCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head amod[VerbForm=Ger]
+#auxfun PPresCN_amod_ cn vp : CN -> VPtobeAP -> CN = AdjCN (PresPartAP vp) cn ; head amod[VerbForm=Ger]
 
 -- [qualified]:amod [person]:CN
 #auxfun PPartCN_amod_ cn vp : CN -> VP -> CN = AdjCN (PastPartAP vp) cn ; head amod[Tense=Past|VerbForm=Part]
 
--- [person]:CN [complying]:xcomp
-#auxfun PPresCN_xcomp_ cn vp : CN -> VP -> CN = AdjCN (PresPartAP vp) cn ; head xcomp[Tense=Pres|VerbForm=Part]
+-- mistagged acl as xcomp — xcomp shouldn't be child of NP?
+#auxfun AclNPXcompGer_ np vp : NP -> VP -> NP = AclNP np (aclGerund_ (root_only (rootVProgrSingle_ vp))) ; head xcomp[VerbForm=Ger]
+#auxfun AclNPXcompPrP_ np vp : NP -> VP -> NP = AclNP np (aclGerund_ (root_only (rootVProgrSingle_ vp))) ; head xcomp[Tense=Pres|VerbForm=Part]
+
+-- very ad hoc, recovering misparse
+#auxfun AwareBreachInvolving_ aware breach : AP -> NP -> xcomp = xcompA_ccomp_ aware (ccomp_ (root_only (rootN_ breach))) ; head obj
 
 -- [is]:cop [gone]:V
 -- something is tagged as ADJ in UD, but parsed as V in GF, so we match a V that has morpho tags associated with ADJ, and then turn it into AP
@@ -208,45 +347,37 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 
 #disable GenRP
 
+#auxfun root_rsubj_ rt rp : root -> RP -> aclRelcl = aclRelclUDSRP_ rp (root_only rt) ; head nsubj:*
+
 -- only allow CompoundCN for stuff like "unlimited area buildings"
 #auxfun FakeCN_ unlimited area : AP -> CN -> FakeCN = AdjCN unlimited area ; amod head
 #auxfun CompoundCN_ unlimarea buildings : FakeCN -> N -> N = CompoundCN unlimarea buildings ; compound head
 
 #disable CompoundCN
 
--- the person [who is affected]:RS
---#auxfun PassRelPres_ affected who is : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres]
 
--- … [who was affected]:RS
-#auxfun PassRelPast_ affected who was : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPast ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Past]
 
--- … [who has been affected]:RS
-#auxfun PassRelPart_ affected who has been : V -> RP -> aux -> auxPass -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part]
+-- -- the person [who is affected]:RS
+-- --#auxfun PassRelPres_ affected who is : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres]
 
--- the data [which is stored in electronic formats]:RS
---#auxfun PassRelOblPres_ stored which is in_formats : V -> RP -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux:pass obl
+-- -- … [who was affected]:RS
+-- #auxfun PassRelPast_ affected who was : V -> RP -> auxPass -> RS = UseRCl (TTAnt TPast ASimul) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Past]
 
--- [which has been stored in electronic formats]:RS
-#auxfun PassRelOblPart_ stored which has been in_formats : V -> RP -> aux -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part] obl
+-- -- … [who has been affected]:RS
+-- #auxfun PassRelPart_ affected who has been : V -> RP -> aux -> auxPass -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP who (PassV affected)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part]
 
--- Agents handled with special functions
+-- -- the data [which is stored in electronic formats]:RS
+-- --#auxfun PassRelOblPres_ stored which is in_formats : V -> RP -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux:pass obl
 
--- Auxiliary category ByPP to store our agent: it's an obl introduced by a prep with form "by"
-#auxfun ByPP_ by breach : Prep -> NP -> ByPP = breach ; case[FORM=by] head
+-- -- [which has been stored in electronic formats]:RS
+-- #auxfun PassRelOblPart_ stored which has been in_formats : V -> RP -> aux -> auxPass -> Adv -> RS = UseRCl (TTAnt TPres AAnter) PPos (RelVP which (AdvVP (PassV stored) in_formats)) ; head[Voice=Pass] nsubj:pass aux[Tense=Pres] aux:pass[VerbForm=Part] obl
 
--- [is affected by the breach]:VP
-#auxfun PassVAgent_ affected is breach : V -> auxPass -> ByPP -> VP = PassVAgent affected breach ; head[Voice=Pass] aux:pass obl -- TODO: don't throw away tense of auxPass
 
--- the person [whose data is affected by the breach]:RS
-#auxfun PassRelClAgent_ affected whose_data is breach : V -> RP -> auxPass -> ByPP -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP whose_data (PassVAgent affected breach)) ; head[Voice=Pass] nsubj:pass aux:pass[Tense=Pres] obl
-
--- [is affected by the breach]:AP
-#auxfun PastPartAgentAP_ affected breach : VP -> ByPP -> AP = PastPartAgentAP affected breach ; head[Tense=Past|VerbForm=Part] obl
-
--- disabled, because they can only fire with ByPP
+-- TODO remove altogether from UDApp, introduce in UDExt instead
 #disable PassVAgent PastPartAgentAP
 
 
+<<<<<<< HEAD
 -- be notified -- TODO: is this rule used on its own?
 -- Alternative is to turn VP into passive in all UDApp sentence pattern funs that have auxPass, subjPass etc.
 -- and then apply PassV in NLG.hs whenever an auxPass is found in the sentence
@@ -261,6 +392,8 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #auxfun RelNP_ np rs : NP -> RS -> NP = RelNP np rs ; head acl:relcl
 
 
+=======
+>>>>>>> origin/main
 -- ** obl **
 -- stored [in electronic formats]:obl
 -- default for AdvVP is head advmod, this is for head obl (i.e. Adv made by PrepNP)
@@ -268,6 +401,7 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #disable AdvVP
 
 
+<<<<<<< HEAD
 -- ** progressive **
 -- ProgrVP needs to be allowed in different places. This is probably going to be a long list.
 #auxfun RelVPGerund_aux_ processing that is : VP -> RP -> aux -> RS = UseRCl (TTAnt TPres ASimul) PPos (RelVP that (ProgrVP processing)) ; head[Tense=Pres|VerbForm=Part] nsubj aux
@@ -280,6 +414,10 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -- NB: we don't want this currently, because we add the gerund in UDExt.
 -- If UDExt changes, then uncomment this.
 -- #auxfun ProgrVP_ becoming : V -> VP = ProgrVP (UseV becoming) ; head[VerbForm=Ger]
+=======
+#disable ProgrVP GerundNP CompNP
+-- GerundNP causes loops with CompNP
+>>>>>>> origin/main
 
 #auxfun aclGerund_   uds : UDS -> acl = aclUDSgerund_   uds ; head[VerbForm=Ger]
 #auxfun aclPastPart_ uds : UDS -> acl = aclUDSpastpart_ uds ; head[Tense=Past|VerbForm=Part]
@@ -291,15 +429,26 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 #disable ExtAdvNP
 
 -- the data breach occurs
+<<<<<<< HEAD
 #auxfun theDataBreachOccursXmas_ the data breach occurs nmod : Det -> N -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootV_ occurs) (nsubj_ (DetCN the (UseN (CompoundN data breach)))) (obl_ nmod) ; det compound compound head[Number=Plur] nmod
 
 -- the data breach occurs
 #auxfun theDatasBreachOccursXmas_ the_data breach occurs nmod : Quant -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootV_ occurs) (nsubj_ (DetCN (DetQuant the_data NumSg) (UseN (breach)))) (obl_ nmod) ; nmod:poss compound head[Number=Plur] nmod
+=======
+#auxfun theDataBreachOccursXmas_ the data breach occurs nmod : Det -> N -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootVPres_ occurs) (nsubj_ (DetCN the (UseN (CompoundN data breach)))) (obl_ nmod) ; det compound compound head[Number=Plur] nmod
+
+-- the data breach occurs
+#auxfun theDatasBreachOccursXmas_ the_data breach occurs nmod : Quant -> N -> VP -> Adv -> UDS = root_nsubj_obl (rootVPres_ occurs) (nsubj_ (DetCN (DetQuant the_data NumSg) (UseN (breach)))) (obl_ nmod) ; nmod:poss compound head[Number=Plur] nmod
+>>>>>>> origin/main
 
 -----------------
 -- csubj + mark
 
 #auxfun CsubjMarkFinite_ that stuff_does_thing : mark -> UDS -> csubj = csubjMarkFinite_ that stuff_does_thing ; mark head[VerbForm=Fin]
+<<<<<<< HEAD
+=======
+#auxfun CsubjMarkFiniteRecoverMisparse_ that stuff_does_thing : mark -> UDS -> csubj = csubjMarkFinite_ that stuff_does_thing ; mark[LEMMA=that] head[VerbForm=Inf]
+>>>>>>> origin/main
 
 #auxfun CsubjMarkInfinite_ to do_a_thing : mark -> UDS -> csubj = csubjMarkInfinite_ to do_a_thing ; mark[LEMMA=to] head
 

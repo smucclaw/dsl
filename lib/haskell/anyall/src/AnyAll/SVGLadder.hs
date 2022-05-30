@@ -23,6 +23,8 @@ import Debug.Trace
 
 type Height = Double
 type Width  = Double
+type SVGElement = Element
+
 data BBox = BBox
   { bbw :: Width
   , bbh :: Height
@@ -31,6 +33,8 @@ data BBox = BBox
   ,  pt,         pb        :: PortStyleH --  top and bottom ports
   }
   deriving (Eq, Show)
+
+type BoxedSVG = (BBox, SVGElement)
 
 data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Height deriving (Eq, Show)
 data PortStyleH = PLeft | PCenter | PRight  | PHoffset Height deriving (Eq, Show)
@@ -51,10 +55,10 @@ defaultBBox' = BBox
   }
 
 portL, portT, portR, portB :: BBox -> AAVScale -> Height
-portL bb s = portLR (pl bb) bb s
-portR bb s = portLR (pr bb) bb s
-portT bb s = portTB (pt bb) bb s
-portB bb s = portTB (pb bb) bb s
+portL bb = portLR (pl bb) bb
+portR bb = portLR (pr bb) bb
+portT bb = portTB (pt bb) bb
+portB bb = portTB (pb bb) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Height
 portLR PTop    bb s = bbtm bb +                                    sbh s / 2 -- [TODO] clip to max size of element
@@ -128,10 +132,10 @@ tpsa a = T.pack $ show a
 
 infix 4 <<-*
 
-makeSvg' :: AAVConfig -> (BBox, Element) -> Element
+makeSvg' :: AAVConfig -> BoxedSVG -> SVGElement
 makeSvg' c = makeSvg
 
-makeSvg :: (BBox, Element) -> Element
+makeSvg :: BoxedSVG -> SVGElement
 makeSvg (_bbx, geom) =
      doctype
   <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1" ]
@@ -140,16 +144,13 @@ makeSvg (_bbx, geom) =
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
 
-q2svg :: AAVConfig -> QTree TL.Text -> Element
+q2svg :: AAVConfig -> QTree TL.Text -> SVGElement
 q2svg c qt = snd $ q2svg' c qt
 
-q2svg' :: AAVConfig -> QTree TL.Text -> (BBox, Element)
+q2svg' :: AAVConfig -> QTree TL.Text -> BoxedSVG
 q2svg' c qt@(Node q childqs) = drawItem c False qt 
 
-drawItem, drawItemTiny, drawItemFull :: AAVConfig
-                                     -> Bool
-                                     -> QTree TL.Text
-                                     -> (BBox, Element)
+drawItem :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
 drawItem c negContext qt
   | cscale c == Tiny = drawItemTiny c negContext qt
   | otherwise        = drawItemFull c negContext qt
@@ -164,10 +165,8 @@ drawItem c negContext qt
 data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
-type BBE = (BBox, Element)
-
 -- | see page 1 of "box model" documentation
-(>>>), (<<<), (\|/), (/|\) :: BBE -> Double -> BBE
+(>>>), (<<<), (\|/), (/|\) :: BoxedSVG -> Double -> BoxedSVG
 (>>>) (bb,e) n = (bb { bbw = bbw bb + n, bblm = bblm bb + n }, move (  n,   0) e)
 (<<<) (bb,e) n = (bb { bbw = bbw bb + n, bbrm = bbrm bb + n }, id              e)
 (\|/) (bb,e) n = (bb { bbh = bbh bb + n, bbtm = bbtm bb + n }, move (  0,   n) e)
@@ -180,9 +179,12 @@ topText = (=<<) maybeFirst
 bottomText :: Maybe (Label a) -> Maybe a
 bottomText = (=<<) maybeSecond
 
+drawItemTiny :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
+
+drawItemFull :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
@@ -212,7 +214,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       
       (boxStroke, boxFill, textFill) = getColors True
 
-      txtToBBE :: TL.Text -> BBE
+      txtToBBE :: TL.Text -> BoxedSVG
       txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
                    , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (fromString $ TL.unpack x) )
 
@@ -221,25 +223,25 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
 
       -- | see page 2 of the "box model" documentation.
       -- | if we used the diagrams package all of this would be calculated automatically for us.
-      hAlign :: AAVConfig -> HAlignment -> [(BBox, Element)] -> [(BBox,Element)]
+      hAlign :: AAVConfig -> HAlignment -> [BoxedSVG] -> [BoxedSVG]
       hAlign c alignment elems =
         let mx = maximum $ bbw . fst <$> elems
         in hD alignment mx <$> elems
-        where hD :: HAlignment -> Width -> (BBox, Element) -> (BBox, Element)
+        where hD :: HAlignment -> Width -> BoxedSVG -> BoxedSVG
               hD HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
               hD HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
               hD HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, move ((mx - bbw bb) / 1, 0) x)
         
-      vAlign :: AAVConfig -> VAlignment -> [(BBox, Element)] -> [(BBox,Element)]
+      vAlign :: AAVConfig -> VAlignment -> [BoxedSVG] -> [BoxedSVG]
       vAlign c alignment elems =
         let mx = maximum $ bbh . fst <$> elems
         in vA alignment mx <$> elems
-        where vA :: VAlignment -> Width -> (BBox, Element) -> (BBox, Element)
+        where vA :: VAlignment -> Width -> BoxedSVG -> BoxedSVG
               vA VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, move (0, (mx - bbh bb) / 2) x)
               vA VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
               vA VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, move (0, (mx - bbh bb) / 1) x)
 
-      combineOr :: AAVConfig -> Maybe BBE -> Maybe BBE -> [BBE] -> BBE
+      combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
       combineOr c mpre mpost elems =
         let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
             mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
@@ -249,7 +251,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
             (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
 
-      vlayout :: BBox -> (BBox, Element) -> (BBox, Element) -> (BBox, Element)
+      vlayout :: BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
       vlayout parentbbox (bbold,old) (bbnew,new) =
         let parentPortIn  = portL parentbbox myScale + lrVgap
             parentPortOut = portR parentbbox myScale + lrVgap
@@ -278,7 +280,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
       -- the third  argument after "c" is the position of                       the second point, relative to the first point.
 
-      combineAnd :: AAVConfig -> Maybe BBE -> Maybe BBE -> [BBE] -> BBE
+      combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
       combineAnd c mpre mpost elems =
         let layout = case cdirection c of
               LR -> hlayout
@@ -295,7 +297,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                                    children ))
 
 
-      hlayout :: (BBox, Element) -> (BBox, Element) -> (BBox, Element)
+      hlayout :: BoxedSVG -> BoxedSVG -> BoxedSVG
       hlayout (bbold,old) (bbnew,new) =
         ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
                                   , bbw = bbw bbold + lrHgap + bbw bbnew
@@ -319,7 +321,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> QTree TL.Text -- ^ the tree to draw
-         -> (BBox, Element)
+         -> BoxedSVG
 drawLeaf c negContext qt@(Node q childqs) =
   let (boxStroke, boxFill, textFill) = getColors confidence
       notLine = if negContext then const FullLine else id
@@ -368,7 +370,7 @@ itemBox :: AAVConfig
         -> Default Bool    -- ^ mark for the box
         -> [QTree TL.Text] -- ^ children
         -> Bool            -- ^ did we get here because we were contained by a Neg?
-        -> (BBox, Element)
+        -> BoxedSVG
 itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
 itemBox c x y (Simply t)  m cs amNot
   | cscale c  == Tiny  = (,) (defaultBBox (cscale c)) { bbw = 10, bbh = 10 } $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
@@ -411,30 +413,30 @@ colorScheme c m amNot = case m of
                 else if not amNot &&     b then "black" else "none"
   
 
-box :: AAVConfig -> Double -> Double -> Double -> Double -> Element
+box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
 
-line :: (Double , Double) -> (Double, Double) -> Element
+line :: (Double , Double) -> (Double, Double) -> SVGElement
 line (x1, y1) (x2, y2) =
   line_ [ X1_ <<-* x1, X2_ <<-* x2, Y1_ <<-* y1, Y2_ <<-* y2
         , Stroke_ <<- "grey" ]
 
-item :: ToElement a => AAVConfig -> Double -> Double -> a -> Element
+item :: ToElement a => AAVConfig -> Double -> Double -> a -> SVGElement
 item c x y desc =
   let w = 20
   in
     g_ [] (  box c x y w w
           <> text_ [ X_ <<-* (x + w + 5), Y_ <<-* (y + w - 5) ] (toElement desc)  )
 
-move :: (Double, Double) -> Element -> Element
+move :: (Double, Double) -> SVGElement -> SVGElement
 move (x, y) geoms =
   with geoms [Transform_ <<- translate x y]
 
 type OldBBox = (Width, Height)
 
-renderChain :: AAVConfig -> [(OldBBox, Element)] -> Element
+renderChain :: AAVConfig -> [(OldBBox, SVGElement)] -> SVGElement
 renderChain c [] = mempty
 renderChain c [(_,g)] = g
 renderChain c (((w,h),g):hgs) =
@@ -442,33 +444,33 @@ renderChain c (((w,h),g):hgs) =
         <> line (10, 20) (10, h)
         <> move (0, h) (renderChain c hgs)  )
 
-renderLeaf :: (ToElement a) => AAVConfig -> a -> (OldBBox, Element)
+renderLeaf :: (ToElement a) => AAVConfig -> a -> (OldBBox, SVGElement)
 renderLeaf c desc =
   let height = 25
       geom = item c 0 0 desc
   in ((25,height), geom)
 
-renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (OldBBox, Element)
+renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (OldBBox, SVGElement)
 renderNot c children =
   let
       ((w,h), g) = renderItem c $ head children
       height = h
 
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] ( line (-5, 5) (-10, 15)  --  /
                      <> line (10,0) (10,25)  --  |
                      <> move (00, 0) g )
   in ((w,height), geom)
 
 
-renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (OldBBox, Element)
+renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (OldBBox, SVGElement)
 renderSuffix c x y desc =
   let h = 20 -- h/w of imaginary box
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in ((25,h), geom)
 
-renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, Element)
+renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, SVGElement)
 renderAll c Nothing childnodes = renderAll c allof childnodes
 renderAll c (Just (Pre prefix)) childnodes =
   let
@@ -478,7 +480,7 @@ renderAll c (Just (Pre prefix)) childnodes =
       width = 25
       height = sum (snd <$> hs) + 30
 
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    -- elbow connector
                    <> line (10, 20) (10, 25)
@@ -496,7 +498,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
       width = 25
       height = sum (snd <$> hs) + fh + 30
 
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    <> line (10, 20) (10, 25)
                    <> line (10, 25) (40, 25)
@@ -505,7 +507,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
-renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, Element)
+renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, SVGElement)
 renderAny c Nothing childnodes = renderAny c (Just (Pre "any of:")) childnodes
 renderAny c (Just (Pre prefix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -514,7 +516,7 @@ renderAny c (Just (Pre prefix)) childnodes =
       width = 25
       height = sum (snd <$> hs) + 25
 
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    <> line (10, 20) (10, sum (init (snd <$> hs)) + 25 + 10)
                    <> move (30, 25) (go 0 hg)  )
@@ -533,7 +535,7 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
       width = 25
       height = sum (snd <$> hs) + fh + 25
 
-      geom :: Element
+      geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    <> line (10, 20) (10, sum (snd <$> init hs) + 25 + 10)
                    <> move (30, 25) (go 0 hg)
@@ -546,13 +548,13 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
   in ((width, height), geom)
 
 
-renderItem :: (ToElement a) => AAVConfig -> Item a -> (OldBBox, Element)
+renderItem :: (ToElement a) => AAVConfig -> Item a -> (OldBBox, SVGElement)
 renderItem c (Leaf label)     = renderLeaf c label
 renderItem c (Not       args) = renderNot c      [args]
 renderItem c (All label args) = renderAll c label args
 renderItem c (Any label args) = renderAny c label args
 
-toy :: (OldBBox, Element)
+toy :: (OldBBox, SVGElement)
 toy = renderItem defaultAAVConfig $
   All (Just $ PrePost "You need all of" ("to survive." :: TL.Text))
       [ Leaf ("Item 1;" :: TL.Text)

@@ -15,7 +15,6 @@ import Data.String (IsString)
 import qualified Data.Map.Strict      as Map
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Lazy       as TL
-import qualified Data.Text.Internal   as DTI
 import qualified Data.Vector          as V
 
 import Data.Aeson

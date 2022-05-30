@@ -7,7 +7,7 @@ import AnyAll.Relevance
 import qualified Data.Map.Strict as Map
 import Data.Tree
 import Data.Maybe (fromJust)
-import Data.Text.Lazy as TL
+import Data.Text as T
 
 ln, lt, lf, rt, rf, rn :: Default Bool
 ln = Default $ Left Nothing
@@ -361,7 +361,7 @@ spec = do
                                            ,("eat",   Left  $ Just True)])
       fromJust (fromJSON (asJSON qNot)) `shouldBe` qNot
 
-type SingLabel = TL.Text
+type SingLabel = T.Text
 
 mustSing :: Item SingLabel
 mustSing =

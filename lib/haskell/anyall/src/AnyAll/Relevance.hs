@@ -11,10 +11,10 @@ import Control.Monad (when, guard)
 import Data.Maybe (isJust)
 import Data.Either
 import Data.Tree
-import qualified Data.Text.Lazy       as TL
+import qualified Data.Text       as T
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: Hardness -> DisplayPref -> Marking TL.Text -> Maybe Bool -> Item TL.Text -> Tree (Q TL.Text)
+relevant :: Hardness -> DisplayPref -> Marking T.Text -> Maybe Bool -> Item T.Text -> Tree (Q T.Text)
 relevant sh dp marking parentValue self =
   let selfValue = evaluate sh marking self
       initVis   = if | isJust parentValue -> if | parentValue == selfValue              -> View

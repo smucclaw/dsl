@@ -8,7 +8,6 @@ import AnyAll.Types hiding ((<>))
 import Data.String
 import Graphics.Svg
 import qualified Data.Text as T
-import qualified Data.Text.Lazy       as TL
 
 type Height = Double
 
@@ -75,7 +74,7 @@ renderSuffix x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in (h, geom)
 
-renderAll :: (ToElement a) => Maybe (Label TL.Text) -> [Item a] -> (Height, Element)
+renderAll :: (ToElement a) => Maybe (Label T.Text) -> [Item a] -> (Height, Element)
 renderAll Nothing childnodes = renderAll allof childnodes
 renderAll (Just (Pre prefix)) childnodes =
   let
@@ -110,7 +109,7 @@ renderAll (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum hs) fg  )
   in (height, geom)
 
-renderAny :: (ToElement a) => Maybe (Label TL.Text) -> [Item a] -> (Height, Element)
+renderAny :: (ToElement a) => Maybe (Label T.Text) -> [Item a] -> (Height, Element)
 renderAny Nothing childnodes = renderAny (Just (Pre "any of:")) childnodes
 renderAny (Just (Pre prefix)) childnodes =
   let hg = map renderItem childnodes
@@ -157,8 +156,8 @@ renderItem (Any label args) = renderAny label args
 
 toy :: (Height, Element)
 toy = renderItem $
-  All (Just $ PrePost "You need all of" ("to survive." :: TL.Text))
-      [ Leaf ("Item 1;" :: TL.Text)
+  All (Just $ PrePost "You need all of" ("to survive." :: T.Text))
+      [ Leaf ("Item 1;" :: T.Text)
       , Leaf "Item 2;"
       , Any (Just $ Pre "Item 3 which may be satisfied by any of:" )
             [ Leaf "3.a;"

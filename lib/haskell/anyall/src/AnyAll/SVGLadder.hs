@@ -16,7 +16,6 @@ import AnyAll.Types hiding ((<>))
 import Data.String
 import Graphics.Svg
 import qualified Data.Text as T
-import qualified Data.Text.Lazy       as TL
 import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
@@ -86,7 +85,7 @@ data Direction = LR -- ^ left-to-right
 data AAVConfig = AAVConfig
   { cscale       :: Scale
   , cdirection   :: Direction
-  , cgetMark     :: Marking TL.Text
+  , cgetMark     :: Marking T.Text
   }
   deriving (Show, Eq)
 
@@ -144,13 +143,13 @@ makeSvg (_bbx, geom) =
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
 
-q2svg :: AAVConfig -> QTree TL.Text -> SVGElement
+q2svg :: AAVConfig -> QTree T.Text -> SVGElement
 q2svg c qt = snd $ q2svg' c qt
 
-q2svg' :: AAVConfig -> QTree TL.Text -> BoxedSVG
+q2svg' :: AAVConfig -> QTree T.Text -> BoxedSVG
 q2svg' c qt@(Node q childqs) = drawItem c False qt 
 
-drawItem :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
+drawItem :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItem c negContext qt
   | cscale c == Tiny = drawItemTiny c negContext qt
   | otherwise        = drawItemFull c negContext qt
@@ -179,12 +178,12 @@ topText = (=<<) maybeFirst
 bottomText :: Maybe (Label a) -> Maybe a
 bottomText = (=<<) maybeSecond
 
-drawItemTiny :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
+drawItemTiny :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
-drawItemFull :: AAVConfig -> Bool -> QTree TL.Text -> BoxedSVG
+drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
@@ -214,9 +213,9 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       
       (boxStroke, boxFill, textFill) = getColors True
 
-      txtToBBE :: TL.Text -> BoxedSVG
+      txtToBBE :: T.Text -> BoxedSVG
       txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
-                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (fromString $ TL.unpack x) )
+                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (fromString $ T.unpack x) )
 
       topTextE = txtToBBE <$> topText pp
       botTextE = txtToBBE <$> bottomText pp
@@ -320,7 +319,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
-         -> QTree TL.Text -- ^ the tree to draw
+         -> QTree T.Text -- ^ the tree to draw
          -> BoxedSVG
 drawLeaf c negContext qt@(Node q childqs) =
   let (boxStroke, boxFill, textFill) = getColors confidence
@@ -349,7 +348,7 @@ drawLeaf c negContext qt@(Node q childqs) =
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
     mytext = case andOr q of
-      (Simply txt) -> fromString (TL.unpack txt)
+      (Simply txt) -> fromString (T.unpack txt)
       (Neg)        -> "neg..."
       (And)        -> "and..."
       (Or)         -> "or..."
@@ -366,16 +365,16 @@ type Boolean = Bool
 itemBox :: AAVConfig
         -> Double          -- ^ x top left
         -> Double          -- ^ y top left
-        -> AndOr TL.Text   -- ^ Item, recast as an AndOr Text for display
+        -> AndOr T.Text   -- ^ Item, recast as an AndOr Text for display
         -> Default Bool    -- ^ mark for the box
-        -> [QTree TL.Text] -- ^ children
+        -> [QTree T.Text] -- ^ children
         -> Bool            -- ^ did we get here because we were contained by a Neg?
         -> BoxedSVG
 itemBox c x y Neg m cs amNot = itemBox c x y (andOr $ rootLabel $ head cs) m [] False
 itemBox c x y (Simply t)  m cs amNot
   | cscale c  == Tiny  = (,) (defaultBBox (cscale c)) { bbw = 10, bbh = 10 } $ g_ [] ( rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ] )
 -- [TODO] small
-  | cscale c  `elem` [Full,Small]  = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ TL.length t * 3, bbh = 25 }) $ g_ [] (
+  | cscale c  `elem` [Full,Small]  = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ T.length t * 3, bbh = 25 }) $ g_ [] (
       rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- "red", Fill_ <<- "green" ]
         <> mempty ) -- some text
 itemBox c x y andor m cs amNot = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ 25, bbh = 25 }) $ g_ [] (
@@ -470,7 +469,7 @@ renderSuffix c x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in ((25,h), geom)
 
-renderAll :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, SVGElement)
+renderAll :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [Item a] -> (OldBBox, SVGElement)
 renderAll c Nothing childnodes = renderAll c allof childnodes
 renderAll c (Just (Pre prefix)) childnodes =
   let
@@ -507,7 +506,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
-renderAny :: (ToElement a) => AAVConfig -> Maybe (Label TL.Text) -> [Item a] -> (OldBBox, SVGElement)
+renderAny :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [Item a] -> (OldBBox, SVGElement)
 renderAny c Nothing childnodes = renderAny c (Just (Pre "any of:")) childnodes
 renderAny c (Just (Pre prefix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -556,8 +555,8 @@ renderItem c (Any label args) = renderAny c label args
 
 toy :: (OldBBox, SVGElement)
 toy = renderItem defaultAAVConfig $
-  All (Just $ PrePost "You need all of" ("to survive." :: TL.Text))
-      [ Leaf ("Item 1;" :: TL.Text)
+  All (Just $ PrePost "You need all of" ("to survive." :: T.Text))
+      [ Leaf ("Item 1;" :: T.Text)
       , Leaf "Item 2;"
       , Any (Just $ Pre "Item 3 which may be satisfied by any of:" )
             [ Leaf "3.a;"

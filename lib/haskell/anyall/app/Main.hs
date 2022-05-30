@@ -9,8 +9,7 @@ module Main where
 
 import AnyAll
 import qualified Data.Map.Strict        as Map
-import qualified Data.Text.Lazy         as TL
-import qualified Data.Text.Internal   as DTI
+import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
 import           Control.Monad (forM_, when, guard)
 import System.Environment
@@ -39,7 +38,7 @@ main = do
   -- print (opts :: Opts Unwrapped)
   when (demo opts) $ maindemo; guard (not $ demo opts)
   mycontents <- B.getContents
-  let myinput = eitherDecode mycontents :: Either String (StdinSchema TL.Text)
+  let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
   when (only opts == "native") $ print myinput
   guard (isRight myinput)
   let (Right myright) = myinput
@@ -54,7 +53,7 @@ maindemo :: IO ()
 maindemo = do
   forM_
     [ Map.empty
-    , Map.fromList [("walk" :: TL.Text,  Left  $ Just True )
+    , Map.fromList [("walk" :: T.Text,  Left  $ Just True )
                    ,("run",   Left  $ Just True )
                    ,("eat",   Left  $ Just True )
                    ,("drink", Left  $ Just False)]

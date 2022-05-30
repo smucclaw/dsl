@@ -27,7 +27,19 @@ data Label a =
     Pre a
   | PrePost a a
   deriving (Eq, Show, Generic)
-instance ToJSON a => ToJSON (Label a); instance FromJSON a => FromJSON (Label a)
+instance ToJSON a => ToJSON (Label a)
+instance FromJSON a => FromJSON (Label a)
+
+labelFirst :: Label p -> p
+labelFirst (Pre x      ) = x
+labelFirst (PrePost x _) = x
+
+maybeFirst :: Label p -> Maybe p
+maybeFirst = Just . labelFirst
+
+maybeSecond :: Label p -> Maybe p
+maybeSecond (PrePost _ x) = Just x
+maybeSecond _ = Nothing
 
 allof, anyof :: Maybe (Label TL.Text)
 allof = Just $ Pre "all of:"
@@ -218,5 +230,3 @@ markingLabel (Any (Just (PrePost p1 p2)) _) = p1
 markingLabel (All (Just (PrePost p1 p2)) _) = p1
 markingLabel (Any Nothing                _) = "any of" -- to do -- add a State autoincrement to distinguish
 markingLabel (All Nothing                _) = "all of" -- to do -- add a State autoincrement to distinguish
-
-

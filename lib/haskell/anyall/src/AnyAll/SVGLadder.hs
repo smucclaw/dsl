@@ -174,6 +174,12 @@ type BBE = (BBox, Element)
 (/|\) (bb,e) n = (bb { bbh = bbh bb + n, bbbm = bbbm bb + n }, id              e)
 infix 4 >>>, <<<, \|/, /|\
 
+topText :: Maybe (Label a) -> Maybe a
+topText = (=<<) maybeFirst
+
+bottomText :: Maybe (Label a) -> Maybe a
+bottomText = (=<<) maybeSecond
+
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
@@ -206,20 +212,12 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       
       (boxStroke, boxFill, textFill) = getColors True
 
-      topText (Just (Pre x      )) = Just x
-      topText (Just (PrePost x _)) = Just x
-      topText Nothing              = Nothing
-
       txtToBBE :: TL.Text -> BBE
       txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
                    , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (fromString $ TL.unpack x) )
 
       topTextE = txtToBBE <$> topText pp
-      botTextE = txtToBBE <$> botText pp
-
-      botText (Just (Pre x      )) = Nothing
-      botText (Just (PrePost x y)) = Just y
-      botText Nothing              = Nothing
+      botTextE = txtToBBE <$> bottomText pp
 
       -- | see page 2 of the "box model" documentation.
       -- | if we used the diagrams package all of this would be calculated automatically for us.

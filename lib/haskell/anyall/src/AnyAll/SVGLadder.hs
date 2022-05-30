@@ -20,14 +20,13 @@ import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
 
-type Height = Double
-type Width  = Double
+type Length  = Double
 type SVGElement = Element
 
 data BBox = BBox
-  { bbw :: Width
-  , bbh :: Height
-  , bblm, bbtm, bbrm, bbbm :: Width -- left, top, right, bottom margins
+  { bbw :: Length
+  , bbh :: Length
+  , bblm, bbtm, bbrm, bbbm :: Length -- left, top, right, bottom margins
   ,  pl,         pr        :: PortStyleV -- left and right  ports
   ,  pt,         pb        :: PortStyleH --  top and bottom ports
   }
@@ -35,8 +34,8 @@ data BBox = BBox
 
 type BoxedSVG = (BBox, SVGElement)
 
-data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Height deriving (Eq, Show)
-data PortStyleH = PLeft | PCenter | PRight  | PHoffset Height deriving (Eq, Show)
+data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show)
+data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
 
 -- | default bounding box
 defaultBBox Tiny  = defaultBBox' { pl = PMiddle, pr = PMiddle }
@@ -53,19 +52,19 @@ defaultBBox' = BBox
   , pt = PCenter, pb = PCenter
   }
 
-portL, portT, portR, portB :: BBox -> AAVScale -> Height
+portL, portT, portR, portB :: BBox -> AAVScale -> Length
 portL bb = portLR (pl bb) bb
 portR bb = portLR (pr bb) bb
 portT bb = portTB (pt bb) bb
 portB bb = portTB (pb bb) bb
 
-portLR :: PortStyleV -> BBox -> AAVScale -> Height
+portLR :: PortStyleV -> BBox -> AAVScale -> Length
 portLR PTop    bb s = bbtm bb +                                    sbh s / 2 -- [TODO] clip to max size of element
 portLR PMiddle bb s = bbtm bb + (bbh bb - bbtm bb - bbbm bb) / 2
 portLR PBottom bb s =           (bbh bb           - bbbm bb)     - sbh s / 2
 portLR (PVoffset x) bb s = bbtm bb + x
 
-portTB :: PortStyleH -> BBox -> AAVScale -> Width
+portTB :: PortStyleH -> BBox -> AAVScale -> Length
 portTB PLeft   bb s = bblm bb +                                    stbv s -- [TODO] clip to max size of element
 portTB PCenter bb s = bblm bb + (bbw bb - bblm bb - bbrm bb) / 2
 portTB PRight  bb s =           (bbw bb           - bbrm bb)     - stbv s
@@ -97,16 +96,16 @@ defaultAAVConfig = AAVConfig
   }
 
 data AAVScale = AAVScale
-  { sbw :: Width  -- ^ box width
-  , sbh :: Height -- ^ box height
-  , slm :: Width  -- ^ left margin
-  , stm :: Width  -- ^ top margin
-  , srm :: Width  -- ^ right margin
-  , sbm :: Width  -- ^ bottom margin
-  , slrv :: Width  -- ^ LR: vertical   gap between elements
-  , slrh :: Width  -- ^ LR: horizontal gap between elements
-  , stbv :: Width  -- ^ TB: vertical   gap between elements
-  , stbh :: Width  -- ^ TB: horizontal gap between elements
+  { sbw :: Length  -- ^ box width
+  , sbh :: Length -- ^ box height
+  , slm :: Length  -- ^ left margin
+  , stm :: Length  -- ^ top margin
+  , srm :: Length  -- ^ right margin
+  , sbm :: Length  -- ^ bottom margin
+  , slrv :: Length  -- ^ LR: vertical   gap between elements
+  , slrh :: Length  -- ^ LR: horizontal gap between elements
+  , stbv :: Length  -- ^ TB: vertical   gap between elements
+  , stbh :: Length  -- ^ TB: horizontal gap between elements
   } deriving (Show, Eq)
 
 getScale :: Scale -> AAVScale -- sbw sbh slm stm srm sbm slrv slrh stbv stbh
@@ -226,7 +225,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       hAlign c alignment elems =
         let mx = maximum $ bbw . fst <$> elems
         in hD alignment mx <$> elems
-        where hD :: HAlignment -> Width -> BoxedSVG -> BoxedSVG
+        where hD :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
               hD HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
               hD HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
               hD HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, move ((mx - bbw bb) / 1, 0) x)
@@ -235,7 +234,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       vAlign c alignment elems =
         let mx = maximum $ bbh . fst <$> elems
         in vA alignment mx <$> elems
-        where vA :: VAlignment -> Width -> BoxedSVG -> BoxedSVG
+        where vA :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
               vA VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, move (0, (mx - bbh bb) / 2) x)
               vA VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
               vA VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, move (0, (mx - bbh bb) / 1) x)
@@ -433,7 +432,7 @@ move :: (Double, Double) -> SVGElement -> SVGElement
 move (x, y) geoms =
   with geoms [Transform_ <<- translate x y]
 
-type OldBBox = (Width, Height)
+type OldBBox = (Length, Length)
 
 renderChain :: AAVConfig -> [(OldBBox, SVGElement)] -> SVGElement
 renderChain c [] = mempty

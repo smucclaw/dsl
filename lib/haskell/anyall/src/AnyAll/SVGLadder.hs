@@ -202,6 +202,62 @@ hAlign :: HAlignment -> [BoxedSVG] -> [BoxedSVG]
 hAlign alignment elems = alignH alignment mx <$> elems
   where mx = maximum $ bbw . fst <$> elems
 
+hlayout :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
+hlayout c (bbold,old) (bbnew,new) =
+  ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
+                            , bbw = bbw bbold + lrHgap + bbw bbnew
+                            ,  pl = PVoffset (portL bbold myScale)
+                            ,  pr = PVoffset (portR bbnew myScale)
+                            }
+  , old
+    <> move (bbw bbold + lrHgap, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
+    <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
+    <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
+    <> if (bbw bbold /= 0)
+        then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold)  (portR bbold myScale) <>
+                            (cR (bbrm bbold + lrHgap)              0
+                              (   bbrm bbold                      ) (portL bbnew myScale - portR bbold myScale)
+                              (   bbrm bbold + lrHgap + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
+                            ))
+                  , Stroke_ <<- "red", Fill_ <<- "none" ]
+        else mempty
+  )
+  where
+    myScale     = getScale (cscale c)
+    lrHgap      = slrh myScale
+
+-- bezier curves: "M"            is the position of                       the first  point.
+-- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
+-- the second argument after "c" is the position of the control point for the second point, relative to the first point.
+-- the third  argument after "c" is the position of                       the second point, relative to the first point.
+vlayout :: AAVConfig -> BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
+vlayout c parentbbox (bbold,old) (bbnew,new) =
+  let parentPortIn  = portL parentbbox myScale + lrVgap
+      parentPortOut = portR parentbbox myScale + lrVgap
+      pathcolors    = [ Stroke_ <<- "green", Fill_ <<- "none" ]
+      parent2child  = path_ ( [ D_ <<- (mA (-leftMargin)     (parentPortIn) <>
+                                        (cA 0                 parentPortIn
+                                            (-leftMargin)     (bbh bbold + lrVgap + portL bbnew myScale)
+                                            (bblm bbnew)      (bbh bbold + lrVgap + portL bbnew myScale)
+                                        )) ] ++ pathcolors ) <>
+                      path_ ( [ D_ <<- (mA  (bbw parentbbox + rightMargin)  (parentPortOut) <>
+                                        (cA (bbw parentbbox)                 parentPortOut
+                                            (bbw parentbbox + rightMargin)   (bbh bbold + lrVgap + portR bbnew myScale)
+                                            (bbw parentbbox - bbrm bbnew)    (bbh bbold + lrVgap + portR bbnew myScale)
+                                        )) ] ++ pathcolors )
+  in ((defaultBBox (cscale c)) { bbh = bbh bbold + bbh bbnew + lrVgap
+                                , bbw = max (bbw bbold) (bbw bbnew)
+                                }
+      , old
+        <> move (0, bbh bbold + lrVgap) new
+        <> parent2child)
+  where
+    myScale     = getScale (cscale c)
+    lrHgap      = slrh myScale
+    lrVgap      = slrv myScale
+    leftMargin  = slm myScale
+    rightMargin = srm myScale
+
 drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
@@ -239,7 +295,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
 
       txtToBBE :: T.Text -> BoxedSVG
       txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
-                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ](fromString $ T.unpack x) )
+                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
 
       topTextE = txtToBBE <$> topText pp
       botTextE = txtToBBE <$> bottomText pp
@@ -249,44 +305,15 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
         let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
             mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
             layout = case cdirection c of
-              LR -> vlayout mybbox
+              LR -> vlayout c mybbox
               TB -> error "hlayout not yet implemented for Or"
             (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
 
-      vlayout :: BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
-      vlayout parentbbox (bbold,old) (bbnew,new) =
-        let parentPortIn  = portL parentbbox myScale + lrVgap
-            parentPortOut = portR parentbbox myScale + lrVgap
-            pathcolors    = [ Stroke_ <<- "green", Fill_ <<- "none" ]
-            parent2child  = path_ ( [ D_ <<- (mA (-leftMargin)     (parentPortIn) <>
-                                              (cA 0                 parentPortIn
-                                                  (-leftMargin)     (bbh bbold + lrVgap + portL bbnew myScale)
-                                                  (bblm bbnew)      (bbh bbold + lrVgap + portL bbnew myScale)
-                                              )) ] ++ pathcolors ) <>
-                            path_ ( [ D_ <<- (mA  (bbw parentbbox + rightMargin)  (parentPortOut) <>
-                                              (cA (bbw parentbbox)                 parentPortOut
-                                                  (bbw parentbbox + rightMargin)   (bbh bbold + lrVgap + portR bbnew myScale)
-                                                  (bbw parentbbox - bbrm bbnew)    (bbh bbold + lrVgap + portR bbnew myScale)
-                                              )) ] ++ pathcolors )
-        in ((defaultBBox (cscale c)) { bbh = bbh bbold + bbh bbnew + lrVgap
-                                     , bbw = max (bbw bbold) (bbw bbnew)
-                                     }
-           , old
-             <> move (0, bbh bbold + lrVgap) new
-             <> parent2child)
-
-        
-
-      -- bezier curves: "M"            is the position of                       the first  point.
-      -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
-      -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
-      -- the third  argument after "c" is the position of                       the second point, relative to the first point.
-
       combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
       combineAnd c mpre mpost elems =
         let layout = case cdirection c of
-              LR -> hlayout
+              LR -> hlayout c
               TB -> error "vlayout not yet implemented for And"
             (childbbox, children) = foldl1 layout elems
         in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin
@@ -298,28 +325,6 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                                    rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
                                          , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none"] <> -- greenish tint
                                    children ))
-
-
-      hlayout :: BoxedSVG -> BoxedSVG -> BoxedSVG
-      hlayout (bbold,old) (bbnew,new) =
-        ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
-                                  , bbw = bbw bbold + lrHgap + bbw bbnew
-                                  ,  pl = PVoffset (portL bbold myScale)
-                                  ,  pr = PVoffset (portR bbnew myScale)
-                                  }
-        , old
-          <> move (bbw bbold + lrHgap, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
-          <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
-          <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
-          <> if (bbw bbold /= 0)
-             then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold)  (portR bbold myScale) <>
-                                  (cR (bbrm bbold + lrHgap)              0
-                                   (   bbrm bbold                      ) (portL bbnew myScale - portR bbold myScale)
-                                   (   bbrm bbold + lrHgap + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
-                                  ))
-                        , Stroke_ <<- "red", Fill_ <<- "none" ]
-             else mempty
-        )
 
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
@@ -337,7 +342,7 @@ drawLeaf c negContext qt@(Node q childqs) =
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
                     then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
-                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] mytext)
+                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext))
   in
   (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
      rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
@@ -352,7 +357,7 @@ drawLeaf c negContext qt@(Node q childqs) =
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
     mytext = case andOr q of
-      (Simply txt) -> fromString (T.unpack txt)
+      (Simply txt) -> txt
       (Neg)        -> "neg..."
       (And)        -> "and..."
       (Or)         -> "or..."

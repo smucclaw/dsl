@@ -182,6 +182,26 @@ drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = draw
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
+alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
+alignV VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, move (0, (mx - bbh bb) / 2) x)
+alignV VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
+alignV VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, move (0, (mx - bbh bb) / 1) x)
+
+alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
+alignH HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
+alignH HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
+alignH HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, move ((mx - bbw bb) / 1, 0) x)
+
+-- | see page 2 of the "box model" documentation.
+-- | if we used the diagrams package all of this would be calculated automatically for us.
+vAlign :: VAlignment -> [BoxedSVG] -> [BoxedSVG]
+vAlign alignment elems = alignV alignment mx <$> elems
+  where mx = maximum $ bbh . fst <$> elems
+
+hAlign :: HAlignment -> [BoxedSVG] -> [BoxedSVG]
+hAlign alignment elems = alignH alignment mx <$> elems
+  where mx = maximum $ bbw . fst <$> elems
+
 drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
@@ -190,16 +210,16 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   case ao of
        Or -> let rawChildren = drawItemFull c negContext <$> childqs
                  drawnChildren = case showLabels (cscale c) of
-                   False -> combineOr c Nothing  Nothing  $ hAlign c HCenter $ rawChildren
-                   True  -> combineOr c topTextE botTextE $ hAlign c HCenter $ rawChildren
+                   False -> combineOr c Nothing  Nothing  $ hAlign HCenter $ rawChildren
+                   True  -> combineOr c topTextE botTextE $ hAlign HCenter $ rawChildren
              in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
                                              , bbh =                            (bbh.fst $ drawnChildren) } 
                 (snd drawnChildren)
 
        And -> let rawChildren = drawItemFull c negContext <$> childqs
                   drawnChildren = case showLabels (cscale c) of
-                   False -> combineAnd c Nothing  Nothing  $ vAlign c VTop $ rawChildren
-                   True ->  combineAnd c topTextE botTextE $ vAlign c VTop $ rawChildren
+                   False -> combineAnd c Nothing  Nothing  $ vAlign VTop $ rawChildren
+                   True ->  combineAnd c topTextE botTextE $ vAlign VTop $ rawChildren
               in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
                                               , bbh = bbh.fst $ drawnChildren }
                  (snd drawnChildren)
@@ -208,36 +228,21 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
      
     where
       myScale     = getScale (cscale c)
-      boxWidth    = sbw myScale; boxHeight = sbh myScale; leftMargin  = slm myScale; rightMargin = srm myScale; lrVgap = slrv myScale; lrHgap = slrh myScale
+      boxWidth    = sbw myScale
+      boxHeight   = sbh myScale
+      leftMargin  = slm myScale
+      rightMargin = srm myScale
+      lrVgap      = slrv myScale
+      lrHgap      = slrh myScale
       
       (boxStroke, boxFill, textFill) = getColors True
 
       txtToBBE :: T.Text -> BoxedSVG
       txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
-                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (fromString $ T.unpack x) )
+                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ](fromString $ T.unpack x) )
 
       topTextE = txtToBBE <$> topText pp
       botTextE = txtToBBE <$> bottomText pp
-
-      -- | see page 2 of the "box model" documentation.
-      -- | if we used the diagrams package all of this would be calculated automatically for us.
-      hAlign :: AAVConfig -> HAlignment -> [BoxedSVG] -> [BoxedSVG]
-      hAlign c alignment elems =
-        let mx = maximum $ bbw . fst <$> elems
-        in hD alignment mx <$> elems
-        where hD :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
-              hD HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
-              hD HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
-              hD HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, move ((mx - bbw bb) / 1, 0) x)
-        
-      vAlign :: AAVConfig -> VAlignment -> [BoxedSVG] -> [BoxedSVG]
-      vAlign c alignment elems =
-        let mx = maximum $ bbh . fst <$> elems
-        in vA alignment mx <$> elems
-        where vA :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
-              vA VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, move (0, (mx - bbh bb) / 2) x)
-              vA VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
-              vA VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, move (0, (mx - bbh bb) / 1) x)
 
       combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
       combineOr c mpre mpost elems =
@@ -315,7 +320,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                         , Stroke_ <<- "red", Fill_ <<- "none" ]
              else mempty
         )
-      
+
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> QTree T.Text -- ^ the tree to draw

@@ -258,6 +258,50 @@ vlayout c parentbbox (bbold,old) (bbnew,new) =
     leftMargin  = slm myScale
     rightMargin = srm myScale
 
+txtToBBE ::  AAVConfig -> T.Text -> BoxedSVG
+txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
+              , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
+  where
+    (boxStroke, boxFill, textFill) = getColors True
+    myScale     = getScale (cscale c)
+    boxWidth    = sbw myScale
+    boxHeight   = sbh myScale
+
+combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
+combineOr c mpre mpost elems =
+  let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
+      mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
+      layout = case cdirection c of
+        LR -> vlayout c mybbox
+        TB -> error "hlayout not yet implemented for Or"
+      (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
+  in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
+  where
+    myScale     = getScale (cscale c)
+    lrVgap      = slrv myScale
+    leftMargin  = slm myScale
+    rightMargin = srm myScale
+
+combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
+combineAnd c mpre mpost elems =
+  let layout = case cdirection c of
+        LR -> hlayout c
+        TB -> error "vlayout not yet implemented for And"
+      (childbbox, children) = foldl1 layout elems
+  in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin
+                , bblm = leftMargin, bbrm = rightMargin
+                , pl = PVoffset (portL childbbox myScale)
+                , pr = PVoffset (portR childbbox myScale)
+                }
+      , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none"] <> -- blueish tint
+                              rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
+                                    , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none"] <> -- greenish tint
+                              children ))
+  where
+    myScale     = getScale (cscale c)
+    leftMargin  = slm myScale
+    rightMargin = srm myScale
+
 drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
@@ -293,38 +337,8 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       
       (boxStroke, boxFill, textFill) = getColors True
 
-      txtToBBE :: T.Text -> BoxedSVG
-      txtToBBE x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
-                   , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
-
-      topTextE = txtToBBE <$> topText pp
-      botTextE = txtToBBE <$> bottomText pp
-
-      combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
-      combineOr c mpre mpost elems =
-        let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
-            mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
-            layout = case cdirection c of
-              LR -> vlayout c mybbox
-              TB -> error "hlayout not yet implemented for Or"
-            (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
-        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
-
-      combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
-      combineAnd c mpre mpost elems =
-        let layout = case cdirection c of
-              LR -> hlayout c
-              TB -> error "vlayout not yet implemented for And"
-            (childbbox, children) = foldl1 layout elems
-        in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin
-                      , bblm = leftMargin, bbrm = rightMargin
-                      , pl = PVoffset (portL childbbox myScale)
-                      , pr = PVoffset (portR childbbox myScale)
-                      }
-           , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none"] <> -- blueish tint
-                                   rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
-                                         , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none"] <> -- greenish tint
-                                   children ))
+      topTextE = txtToBBE c <$> topText pp
+      botTextE = txtToBBE c <$> bottomText pp
 
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us

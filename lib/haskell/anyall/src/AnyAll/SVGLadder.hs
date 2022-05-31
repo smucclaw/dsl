@@ -81,6 +81,8 @@ data Direction = LR -- ^ left-to-right
                | TB -- ^ top-to-bottom
                deriving (Show, Eq)
 
+-- AAV = AnyAll Visualization
+
 data AAVConfig = AAVConfig
   { cscale       :: Scale
   , cdirection   :: Direction

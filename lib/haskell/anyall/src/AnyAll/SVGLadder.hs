@@ -140,7 +140,6 @@ makeSvg (_bbx, geom) =
      doctype
   <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1" ]
 
-
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
 

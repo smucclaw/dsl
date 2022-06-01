@@ -1511,11 +1511,11 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      filetest "scenario-units-1" "unit test 1 for scenarios"
-        (parseOther pScenarioRule )
-        ( defaultScenario
-        , []
-        )
+      -- filetest "scenario-units-1" "unit test 1 for scenarios"
+      --   (parseOther pScenarioRule )
+      --   ( defaultScenario
+      --   , []
+      --   )
 
 
 

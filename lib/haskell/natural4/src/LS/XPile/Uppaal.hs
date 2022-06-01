@@ -7,11 +7,11 @@ import L4.Syntax as CoreL4
 import LS.Types as SFL4
 import qualified Data.Set as Set
 -- import L4.Annotation
-import Data.Text.Lazy (unpack)
-import qualified Data.Text.Lazy as TL
+import Data.Text (unpack)
+import qualified Data.Text as TL
 import qualified AnyAll as AA
 import L4.PrintProg
-import qualified Data.ByteString.Lazy.Char8 as T
+import qualified Data.ByteString.Char8 as T
 import L4.SyntaxManipulation
 import Data.Maybe (fromMaybe)
 

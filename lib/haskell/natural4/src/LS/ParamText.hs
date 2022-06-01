@@ -4,7 +4,7 @@ module LS.ParamText where
 
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 
 import LS.Types
 import LS.Parser

@@ -3,8 +3,9 @@
 
 module LS.XPile.Petri(module LS.XPile.Petri) where
 
-import qualified Data.Text.Lazy as Text
-import Data.Text.Lazy (Text)
+import qualified Data.Text as Text
+import Data.Text (Text)
+import qualified Data.Text.Lazy as LT
 
 import Data.GraphViz
 import Data.GraphViz.Attributes
@@ -100,7 +101,7 @@ fmtcluster 3 = [GraphAttrs [ Rank SameRank ] ]
 fmtcluster _ = []
 
 tcsd :: (Show a) => [a] -> [Attribute]
-tcsd = fmap $ Comment . Text.pack . show
+tcsd = fmap $ Comment . LT.fromStrict . Text.pack . show
 
 fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
 fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls 

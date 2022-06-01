@@ -16,7 +16,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, readExpr, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA

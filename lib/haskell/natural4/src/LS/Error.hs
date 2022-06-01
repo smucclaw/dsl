@@ -19,7 +19,7 @@ import Data.Function
 
 import LS.BasicTypes (MyStream , myStreamInput, MyToken, WithPos)
 import Data.Vector (imap, foldl', foldl1')
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Control.Arrow ((>>>))
 import Data.Void (Void)
 import qualified Data.Set as Set

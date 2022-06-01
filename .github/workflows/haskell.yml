@@ -23,9 +23,9 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       env:
-        cache-name: cache-cabal
+        cache-name: cache-stack
       with:
-        path: ~/.cabal
+        path: ~/.stack
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-

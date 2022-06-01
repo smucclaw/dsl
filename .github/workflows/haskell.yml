@@ -32,9 +32,15 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Build
+    - name: Build anyall
       run: stack build
       working-directory: lib/haskell/anyall
-    - name: Run tests
+    - name: Test anyall
       run: stack test
       working-directory: lib/haskell/anyall
+    - name: Build natural4
+      run: stack build
+      working-directory: lib/haskell/natural4
+    - name: Test natural4
+      run: stack test
+      working-directory: lib/haskell/natural4

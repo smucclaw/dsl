@@ -8,7 +8,7 @@
 
 module LS.BasicTypes where
 import Data.Proxy
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Text.Megaparsec
 import qualified Data.List.NonEmpty as NE
 import qualified Data.List as DL

@@ -100,6 +100,20 @@
 5	are	be	AUX	VBZ	Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin	6	aux	_	FUN=UseComp
 6	sleeping	sleep	VERB	VBG	Tense=Pres|VerbForm=Part	2	acl:relcl	_	_
 
+# text = the dog doesn't sleep
+1	the	the	DET	DT	Definite=Def|PronType=Art	2	det	_	_
+2	dog	dog	NOUN	NN	Number=Sing	5	nsubj	_	_
+3	does	do	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	aux	_	SpaceAfter=No
+4	n't	not	PART	RB	_	5	advmod	_	_
+5	sleep	sleep	VERB	VB	VerbForm=Inf	0	root	_	SpacesAfter=\n
+
+# text = the dog isn't sleeping
+1	the	the	DET	DT	Definite=Def|PronType=Art	2	det	_	_
+2	dog	dog	NOUN	NN	Number=Sing	5	nsubj	_	_
+3	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	aux	_	SpaceAfter=No
+4	n't	not	PART	RB	_	5	advmod	_	_
+5	sleeping	sleep	VERB	VBG	VerbForm=Ger	0	root	_	SpacesAfter=\n
+
 1	the	the	DET	Quant	FORM=0	2	det	_	FUN=DefArt
 2	PDPC	Pdpc	NOUN	NN	Number=Sing	0	root	_	FUN=Pdpc_N
 
@@ -121,6 +135,7 @@
 4	account	account	NOUN	NN	Number=Sing	5	compound	_	FUN=account_N
 5	identifier	identifier	NOUN	NN	Number=Sing	0	root	_	FUN=identifier_N
 
+# text = an individual affected by a notifiable data breach
 1	an	a	DET	DT	Definite=Ind|PronType=Art	2	det	_	FUN=a_Det
 2	individual	individual	NOUN	JJ	Degree=Pos	0	root	_	FUN=individual_A
 3	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part	2	acl	_	FUN=affectVBN

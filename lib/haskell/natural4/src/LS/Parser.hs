@@ -12,7 +12,7 @@ import qualified AnyAll as AA
 
 import Control.Monad.Combinators.Expr
 import Text.Megaparsec
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 

@@ -10,7 +10,7 @@
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
 
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Text.Megaparsec
 import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import Data.Void (Void)

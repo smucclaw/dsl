@@ -16,8 +16,9 @@ import Data.Graph.Inductive.PatriciaTree
 
 import           Debug.Trace
 import           Text.Pretty.Simple
-import qualified Data.Text.Lazy     as Text
-import           Data.Text.Lazy              (Text)
+import qualified Data.Text     as Text
+import           Data.Text              (Text)
+import qualified Data.Text.Lazy as LT
 import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import qualified Data.Map           as Map
@@ -70,7 +71,7 @@ toPetri rules =
                   condElimination rules $
                   reorder rules $
                   connectRules petri1 rules
-  in renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
+  in LT.toStrict $ renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder rules og = runGM og $ do

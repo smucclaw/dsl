@@ -1,0 +1,72 @@
+{
+  "marking": {
+    "walk": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "run": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "sink": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "swim": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "eat": {
+      "getDefault": {
+        "Left": false
+      }
+    },
+    "drink": {
+      "getDefault": {
+        "Right": false
+      }
+    }
+  },
+  "andOrTree": {
+    "nodetype": "all",
+    "pre": "all of",
+    "children": [
+      {
+        "leaf": "walk"
+      },
+      {
+        "nodetype": "not",
+        "children": [
+          {
+            "nodetype": "any",
+            "pre": "either",
+            "children": [
+              {
+                "leaf": "sink"
+              },
+              {
+                "leaf": "swim"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "nodetype": "all",
+        "pre": "both",
+        "children": [
+          {
+            "leaf": "eat"
+          },
+          {
+            "leaf": "drink"
+          }
+        ]
+      }
+    ]
+  }
+}

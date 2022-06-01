@@ -17,8 +17,9 @@
 module LS.Lib where
 
 -- import qualified Data.Tree      as Tree
-import qualified Data.Text.Lazy as Text
--- import Data.Text.Lazy.Encoding (decodeUtf8)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LT
+-- import Data.Text.Encoding (decodeUtf8)
 import Text.Megaparsec
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.Csv as Cassava
@@ -146,7 +147,7 @@ renderStream :: MyStream -> String
 renderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
 
 pRenderStream :: MyStream -> String
-pRenderStream = Text.unpack . pStringNoColor . renderStream
+pRenderStream = Text.unpack . LT.toStrict . pStringNoColor . renderStream
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of

@@ -122,12 +122,18 @@ defaultScenario = Scenario
   }
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
-
 filetest testfile desc parseFunc expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
+
+xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+xfiletest testfile desc parseFunc expected =
+  xit (testfile {- ++ ": " ++ desc -}) $ do
+  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  parseFunc testfile `traverse` exampleStreams testcsv
+    `shouldParse` [ expected ]    
 
 filetest2 testfile desc parseFunc expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
@@ -1511,11 +1517,11 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      -- filetest "scenario-units-1" "unit test 1 for scenarios"
-      --   (parseOther pScenarioRule )
-      --   ( defaultScenario
-      --   , []
-      --   )
+      xfiletest "scenario-units-1" "unit test 1 for scenarios"
+        (parseOther pScenarioRule )
+        ( defaultScenario
+        , []
+        )
 
 
 

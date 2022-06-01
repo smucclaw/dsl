@@ -40,9 +40,9 @@ nlgTests env = do
         treeCN <- bsr2gf env testCNBSR
         showExpr treeCN `shouldBe` "ConjCN or_Conj (BaseCN (UseN occurrence_N) (UseN assessment_N))"
 
-    -- it "Should return a complex common noun" $ do
-    --     treeCNComplex <- bsr2gf env testCNComplexBSR
-    --     showExpr treeCNComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (RelNP (MassNP (AdjCN (PositA great_A) (UseN harm_N))) (RS_that_NP_VP (UsePron she_Pron) (UseV suffer_V))))"
+    xit "Should return a complex common noun" $ do
+        treeCNComplex <- bsr2gf env testCNComplexBSR
+        showExpr treeCNComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (AdvNP (MassNP (UseN service_N)) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (RelNP (MassNP (AdjCN (PositA great_A) (UseN harm_N))) (RS_that_NP_VP (UsePron she_Pron) (UseV suffer_V))))"
 
     it "Should return a simple noun phrase" $ do
         treeNP <- bsr2gf env testNPBSR
@@ -60,9 +60,9 @@ nlgTests env = do
         treeNPComplex <- bsr2gf env testNPComplexBSR
         showExpr treeNPComplex `shouldBe` "ConjNP or_Conj (BaseNP (AdvNP (DetCN theSg_Det (UseN occurrence_N)) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (RelNP (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
-    -- it "Should return a det as det" $ do
-    --     treeDetsDet <- bsr2gf env testDetsAsDet
-    --     showExpr treeDetsDet `shouldBe` "UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron i_Pron) (ComplV like_V (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N))))"
+    xit "Should return a det as det" $ do
+        treeDetsDet <- bsr2gf env testDetsAsDet
+        showExpr treeDetsDet `shouldBe` "UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron i_Pron) (ComplV like_V (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N))))"
 
 nlgTests2 :: Spec
 nlgTests2 = do

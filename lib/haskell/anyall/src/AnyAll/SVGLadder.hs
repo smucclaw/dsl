@@ -81,6 +81,8 @@ data Direction = LR -- ^ left-to-right
                | TB -- ^ top-to-bottom
                deriving (Show, Eq)
 
+-- AAV = AnyAll Visualization
+
 data AAVConfig = AAVConfig
   { cscale       :: Scale
   , cdirection   :: Direction
@@ -137,7 +139,6 @@ makeSvg :: BoxedSVG -> SVGElement
 makeSvg (_bbx, geom) =
      doctype
   <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1" ]
-
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)

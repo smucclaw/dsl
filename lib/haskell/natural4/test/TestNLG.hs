@@ -9,7 +9,7 @@ import LS.NLP.NLG
 import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 
 
 nlgTests :: NLGEnv -> Spec

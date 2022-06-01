@@ -5,8 +5,8 @@ module LS.NLP.WordNet where
 import Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
 import Data.List.Split
 import Text.EditDistance
-import qualified Data.Text.Lazy     as Text
-import           Data.Text.Lazy              (Text)
+import qualified Data.Text     as Text
+import           Data.Text       (Text)
 import WordNet.DB
 import WordNet.Structured
 

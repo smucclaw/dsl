@@ -10,7 +10,7 @@
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
 
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Text.Megaparsec
 import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import Data.Void (Void)
@@ -669,18 +669,20 @@ pGetTokenPos = token test Set.empty <?> "some token"
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"
   where
-    test (WithPos (SourcePos _ _y x) _ _) = Just (unPos x)
+    test WithPos {pos= SourcePos _ _y x} = Just (unPos x)
 
 pYLocation :: Parser Depth
 pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
-    test (WithPos (SourcePos _ y _x) _ _) = Just (unPos y)
+    test WithPos{pos= SourcePos _ y _x } = Just (unPos y)
 
 
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
-pTokenMatch f c = token test (Set.singleton . Tokens . fmap liftMyToken $ c)
+pTokenMatch f c = do
+  ctx <- asks parseCallStack
+  token test $ Set.singleton $ Tokens $ liftMyToken ctx <$> c
   where
-    test (WithPos _ _ x) =
+    test WithPos {tokenVal = x} =
       if f x
         then Just x
         else Nothing

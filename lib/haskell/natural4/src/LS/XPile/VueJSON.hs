@@ -10,7 +10,7 @@ import LS.NLP.NLG
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (nub, groupBy)
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Control.Monad (when)
 
 import PGF ( linearize, languages )

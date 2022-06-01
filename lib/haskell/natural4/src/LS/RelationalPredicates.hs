@@ -7,7 +7,7 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import Debug.Trace
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )

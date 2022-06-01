@@ -24,12 +24,11 @@ import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Debug.Trace (traceM)
-import qualified Data.Text.Lazy as Text
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
 import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
 import Test.QuickCheck.Arbitrary.Generic
 import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
@@ -1179,7 +1178,7 @@ parserTests nlgEnv runConfig_ = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
 
-      let aboveNextLineKeyword :: SLParser ([Text.Text],MyToken)
+      let aboveNextLineKeyword :: SLParser ([T.Text],MyToken)
           aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
             (_,x,y) <- (,,)
                            $*| return ((),0)
@@ -1188,7 +1187,7 @@ parserTests nlgEnv runConfig_ = do
                            |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
             return (x,y)
 
-          aNLK :: Int -> SLParser ([Text.Text],MyToken)
+          aNLK :: Int -> SLParser ([T.Text],MyToken)
           aNLK maxDepth = mkSL $ do
             (toreturn, n) <- runSL aboveNextLineKeyword
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
@@ -1305,7 +1304,7 @@ parserTests nlgEnv runConfig_ = do
           inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
           inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
           inline_   = Any Nothing                                                 inline_xs
-          inline_xs = Leaf . RPMT . pure <$> Text.words "access use disclosure copying modification disposal"
+          inline_xs = Leaf . RPMT . pure <$> T.words "access use disclosure copying modification disposal"
           inline4_pp= Any (Just $ PrePost
                            "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
                            "of the personal data is likely to occur") inline_xs

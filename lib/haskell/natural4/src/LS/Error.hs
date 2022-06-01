@@ -54,7 +54,7 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         paddedExcelTable = excelTable & fmap (\x -> x <> V.replicate (numCols - length x) "")
         excelTableMarked =
           imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) paddedExcelTable
-          & fmap (fmap LT.unpack)
+          & fmap (fmap Text.unpack)
           -- & fmap (fmap (Text.unpack. ("(" <>) . (<>")")))
         -- foldMax = foldl' _ 1
         maxAllowedWidth = 35

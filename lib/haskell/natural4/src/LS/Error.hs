@@ -19,7 +19,8 @@ import Data.Function
 
 import LS.BasicTypes (MyStream (unMyStream, MyStream) , myStreamInput, MyToken (Other), WithPos (tokenVal, pos), renderToken)
 import Data.Vector (imap, foldl', foldl1')
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LT
 import Control.Arrow ((>>>))
 import Data.Void (Void)
 import qualified Data.Set as Set
@@ -53,7 +54,7 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         paddedExcelTable = excelTable & fmap (\x -> x <> V.replicate (numCols - length x) "")
         excelTableMarked =
           imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) paddedExcelTable
-          & fmap (fmap Text.unpack)
+          & fmap (fmap LT.unpack)
           -- & fmap (fmap (Text.unpack. ("(" <>) . (<>")")))
         -- foldMax = foldl' _ 1
         maxAllowedWidth = 35
@@ -85,7 +86,7 @@ xrenderStream :: MyStream -> String
 xrenderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
 
 xpRenderStream :: MyStream -> String
-xpRenderStream = Text.unpack . pStringNoColor . xrenderStream
+xpRenderStream = Text.unpack . LT.toStrict . pStringNoColor . xrenderStream
 
 -- | Pretty-print an 'ErrorItem'.
 showErrorItem :: VisualStream s => Proxy s -> ErrorItem (Token s) -> String

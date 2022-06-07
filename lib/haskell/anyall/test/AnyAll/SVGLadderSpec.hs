@@ -4,12 +4,16 @@ module AnyAll.SVGLadderSpec (spec) where
 
 import AnyAll.SVGLadder hiding (tl)
 import AnyAll.Types (Label (Pre, PrePost))
-import Data.Text (Text, splitOn)
+import Data.Text (Text, splitOn, pack)
 import qualified Data.Text.Lazy.IO as TIO
 import Graphics.Svg
 import Test.Hspec
-import Data.Text.Lazy (toStrict)
+import qualified Data.Text.Lazy as TL (toStrict)
 import qualified Data.Set as Set
+import qualified Text.XML.Light as XML
+import Text.XML.Light.Output (showTopElement)
+import Text.XML.Light (Attr(attrKey))
+
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
 
@@ -23,6 +27,15 @@ svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
       Fill_ <<- f,
       Stroke_ <<- s
     ]
+
+cleanXMLAttr :: XML.Attr -> (Text, Text)
+cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, pack $ XML.attrVal at)
+
+parseSVG :: Text -> Set.Set (Text, Text)
+parseSVG s =
+        case  XML.parseXMLDoc s of
+          Nothing  -> Set.empty
+          Just doc -> Set.fromList $ cleanXMLAttr <$> XML.elAttribs doc
 
 spec :: Spec
 spec = do
@@ -56,11 +69,11 @@ spec = do
     it "should be able to create a real basic SVG rectangle" $ do
       let
         alignBoxes = hAlign HLeft [(firstBox, firstRect), (secondBox, secondRect)]
-        svgs = toStrict . renderText . snd <$> alignBoxes
-        svgsAttrs = Set.fromList . splitOn " " <$> svgs
+        svgs = TL.toStrict . renderText . snd <$> alignBoxes
+        svgsAttrs = parseSVG <$> svgs
 
-        firstExpected = Set.fromList  ["<rect","fill=\"black\"","height=\"10\"","stroke=\"none\"","width=\"60\"","x=\"0\"/>","y=\"0\""]
-        secondExpected = Set.fromList ["<rect","fill=\"black\"","height=\"30\"","stroke=\"none\"","width=\"20\"","x=\"0\"/>","y=\"0\""]
+        firstExpected = Set.fromList  [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
+        secondExpected = Set.fromList  [("fill","black"),("height","30"),("stroke","none"),("width","20"),("y","0"),("x","0")]
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
 
   describe "topText" $ do

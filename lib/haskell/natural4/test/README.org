@@ -636,7 +636,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 |               | OR | 5.b   | c2    |
 |               | OR | 5.c   | c3    |
 
-***** withlabels indented first way -- doesn't work
+***** withlabels indented first way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -658,7 +658,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 
 
 
-***** withlabels indented second way -- doesn't work
+***** withlabels indented second way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -678,7 +678,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 |                                                                                            | OR    | FALSE | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
 
 
-***** withlabels indented third way -- doesn't work
+***** withlabels indented third way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-e.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -699,7 +699,7 @@ the FALSE gets in the way.
 |                                                                                            | OR |   5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
 |                                                                                            | OR |   5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
 
-***** withlabels indented fourth way -- doesn't work
+***** withlabels indented fourth way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-f.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -720,7 +720,7 @@ only change, remove the FALSE
 |                                                                                            | OR | 5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
 |                                                                                            | OR | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
 
-***** withlabels indented fifth way
+***** withlabels indented fifth way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-g.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -743,7 +743,7 @@ only change, move the "any information that" one column to the left
 
 i guess we'll just have to do that for the input spreadsheets.
 
-***** withlabels indented sixth way -- doesn't work
+***** withlabels indented sixth way -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-h.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -762,7 +762,7 @@ i guess we'll just have to do that for the input spreadsheets.
 |                                                                                            | OR    | FALSE |                5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
 |                                                                                            | OR    | FALSE |                5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
 
-maybe the parser is brittle here, it doesn't allow blank spaces? let's dive in and find out!
+all six indentation styles now work.
 
 
 *** how do we deal with blanks in between things we care about?

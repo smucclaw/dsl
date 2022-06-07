@@ -351,7 +351,8 @@ stanzaAsStream rs =
       | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
                         : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
-      | otherwise    = [a]
+      | otherwise    = [a]                                  --- | foo |       -> | foo   bar | -- at the same level, no ( or ) added.
+                                                            --- | bar |
       where
         aCol = unPos . sourceColumn $ aPos
         bCol = unPos . sourceColumn $ bPos

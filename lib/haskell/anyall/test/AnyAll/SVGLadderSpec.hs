@@ -37,6 +37,13 @@ parseSVG s =
           Nothing  -> Set.empty
           Just doc -> Set.fromList $ cleanXMLAttr <$> XML.elAttribs doc
 
+extractBoxesAndSVGs:: [BoxedSVG] -> ([Set.Set (Text, Text)],[BBox])
+extractBoxesAndSVGs alignBoxes = (svgsAttrs, boundingBoxes)
+  where
+  svgs = TL.toStrict . renderText . snd <$> alignBoxes
+  svgsAttrs = parseSVG <$> svgs
+  boundingBoxes = fst <$> alignBoxes
+
 spec :: Spec
 spec = do
   let
@@ -61,22 +68,43 @@ spec = do
           )
 
   describe "test aligment" $ do
-    let dc = defaultAAVConfig
-        firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
-        firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-        secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
-        secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
-    it "should be able to create a real basic SVG rectangle" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      firstSVGAttrs  = [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
+      secondSVGAttrs = [("fill","black"),("height","30"),("stroke","none"),("width","20"),("y","0"),("x","0")]
+
+    it "expands bounding box on Left alignment" $ do
       let
         alignBoxes = hAlign HLeft [(firstBox, firstRect), (secondBox, secondRect)]
-        svgs = TL.toStrict . renderText . snd <$> alignBoxes
-        svgsAttrs = parseSVG <$> svgs
-        boundingBoxes = fst <$> alignBoxes
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
 
-        firstExpected  = Set.fromList  [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
-        secondExpected = Set.fromList  [("fill","black"),("height","30"),("stroke","none"),("width","20"),("y","0"),("x","0")]
+        firstExpected  = Set.fromList  firstSVGAttrs
+        secondExpected = Set.fromList  secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bbrm=40}]
+
+    it "expands bounding box and shift rectangle on Central alignment" $ do
+      let
+        alignBoxes = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
+
+        firstExpected  = Set.fromList $ ("transform","translate(0.0000 0.0000)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(20.0000 0.0000)") : secondSVGAttrs
+      svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=20, bbrm=20}]
+
+    it "expands bounding box and shift rectangle on Right alignment" $ do
+      let
+        alignBoxes = hAlign HRight [(firstBox, firstRect), (secondBox, secondRect)]
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
+
+        firstExpected  = Set.fromList $ ("transform","translate(0.0000 0.0000)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(40.0000 0.0000)") : secondSVGAttrs
+      svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=40}]
 
   describe "topText" $ do
     it "extracts the only from Pre" $ do

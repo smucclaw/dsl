@@ -71,10 +71,12 @@ spec = do
         alignBoxes = hAlign HLeft [(firstBox, firstRect), (secondBox, secondRect)]
         svgs = TL.toStrict . renderText . snd <$> alignBoxes
         svgsAttrs = parseSVG <$> svgs
+        boundingBoxes = fst <$> alignBoxes
 
-        firstExpected = Set.fromList  [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
+        firstExpected  = Set.fromList  [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
         secondExpected = Set.fromList  [("fill","black"),("height","30"),("stroke","none"),("width","20"),("y","0"),("x","0")]
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bbrm=40}]
 
   describe "topText" $ do
     it "extracts the only from Pre" $ do

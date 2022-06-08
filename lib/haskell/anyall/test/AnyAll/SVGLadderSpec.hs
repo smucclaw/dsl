@@ -106,6 +106,36 @@ spec = do
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=40}]
 
+    it "expands bounding box on Top alignment" $ do
+      let
+        alignBoxes = vAlign VTop [(firstBox, firstRect), (secondBox, secondRect)]
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
+
+        firstExpected  = Set.fromList  firstSVGAttrs
+        secondExpected = Set.fromList  secondSVGAttrs
+      svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=20}, secondBox]
+
+    it "expands bounding box and shift rectangle on Middle alignment" $ do
+      let
+        alignBoxes = vAlign VMiddle [(firstBox, firstRect), (secondBox, secondRect)]
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
+
+        firstExpected  = Set.fromList $ ("transform","translate(0.0000 10.0000)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(0.0000 0.0000)") : secondSVGAttrs
+      svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10.0}, secondBox]
+
+    it "expands bounding box and shift rectangle on Bottom alignment" $ do
+      let
+        alignBoxes = vAlign VBottom [(firstBox, firstRect), (secondBox, secondRect)]
+        (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
+
+        firstExpected  = Set.fromList $ ("transform","translate(0.0000 20.0000)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(0.0000 0.0000)") : secondSVGAttrs
+      svgsAttrs `shouldBe` [firstExpected, secondExpected]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20.0}, secondBox]
+
   describe "topText" $ do
     it "extracts the only from Pre" $ do
       topText (Just $ Pre "a") `shouldBe` Just "a"

@@ -643,11 +643,11 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ pAction
+  debugName "pDoAction/pAction" $ someIndentation pAction
 
 
 pAction :: Parser BoolStructP
-pAction = debugName "pAction calling dBoolStructP" dBoolStructP
+pAction = debugName "pAction calling pParamText" (AA.Leaf <$> pParamText)
 
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,

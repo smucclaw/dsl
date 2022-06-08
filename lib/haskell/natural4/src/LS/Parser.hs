@@ -51,9 +51,12 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 -- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
-expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
+expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
-term p = debugName "term p" $ do
+term p = termIndent p
+
+exprIndent p = ppp $ debugName "expression indentable" (makeExprParser (termIndent p) table <?> "expression indentable")
+termIndent p = debugName "termIndent p" $ do
   try (debugName "term p/1a:label ends directly above next line" $ do
         (lbl, inner) <- (,)
           $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))

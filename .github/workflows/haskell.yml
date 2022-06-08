@@ -26,9 +26,9 @@ jobs:
         cache-name: cache-stack
       with:
         path: ~/.stack
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/*.cabal') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/*.cabal') }}
+          ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-

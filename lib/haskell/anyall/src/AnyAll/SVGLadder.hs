@@ -147,7 +147,7 @@ q2svg :: AAVConfig -> QTree T.Text -> SVGElement
 q2svg c qt = snd $ q2svg' c qt
 
 q2svg' :: AAVConfig -> QTree T.Text -> BoxedSVG
-q2svg' c qt@(Node q childqs) = drawItem c False qt 
+q2svg' c qt@(Node q childqs) = drawItem c False qt
 
 drawItem :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItem c negContext qt
@@ -184,9 +184,27 @@ drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = draw
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
-alignV VMiddle  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 2, bbbm = (mx - bbh bb) / 2 }, move (0, (mx - bbh bb) / 2) x)
-alignV VTop     mx (bb,x) = (bb { bbh = mx, bbtm = 0,                 bbbm = (mx - bbh bb) / 1 }, x)
-alignV VBottom  mx (bb,x) = (bb { bbh = mx, bbtm = (mx - bbh bb) / 1, bbbm = 0                 }, move (0, (mx - bbh bb) / 1) x)
+alignV alignment maxHeight (box, el) = (adjustMargins box { bbh = maxHeight }, moveElement el)
+  where
+    boxHeight = bbh box
+    alignmentPad = maxHeight - boxHeight
+    adjustMargins = adjustBoxMargins alignment alignmentPad
+    moveElement = alignVCalcElement alignment alignmentPad
+
+adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
+adjustBoxMargins alignment alignmentPad bx =  bx {bbtm = newTopMargin, bbbm = newBottomMargin}
+  where
+    (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
+
+columnAlignMargins :: VAlignment -> Length -> (Length, Length)
+columnAlignMargins VMiddle  alignmentPad = (alignmentPad / 2,  alignmentPad / 2)
+columnAlignMargins VTop     alignmentPad = (0, alignmentPad)
+columnAlignMargins VBottom  alignmentPad = (alignmentPad, 0)
+
+alignVCalcElement :: VAlignment -> Length -> (SVGElement -> SVGElement)
+alignVCalcElement VMiddle alignmentPad = move (0, alignmentPad / 2)
+alignVCalcElement VTop    alignmentPad = id
+alignVCalcElement VBottom alignmentPad = move (0, alignmentPad)
 
 alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
 alignH HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
@@ -307,14 +325,14 @@ drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
   -- in a LR layout, each of the ORs gets a row below.
   -- we max up the bounding boxes and return that as our own bounding box.
-  
+
   case ao of
        Or -> let rawChildren = drawItemFull c negContext <$> childqs
                  drawnChildren = case showLabels (cscale c) of
                    False -> combineOr c Nothing  Nothing  $ hAlign HCenter $ rawChildren
                    True  -> combineOr c topTextE botTextE $ hAlign HCenter $ rawChildren
              in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
-                                             , bbh =                            (bbh.fst $ drawnChildren) } 
+                                             , bbh =                            (bbh.fst $ drawnChildren) }
                 (snd drawnChildren)
 
        And -> let rawChildren = drawItemFull c negContext <$> childqs
@@ -326,7 +344,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                  (snd drawnChildren)
        Simply _txt -> drawLeaf     c      negContext   qt
        Neg         -> drawItemFull c (not negContext) (head childqs)
-     
+
     where
       myScale     = getScale (cscale c)
       boxWidth    = sbw myScale
@@ -335,7 +353,7 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
       rightMargin = srm myScale
       lrVgap      = slrv myScale
       lrHgap      = slrh myScale
-      
+
       (boxStroke, boxFill, textFill) = getColors True
 
       topTextE = txtToBBE c <$> topText pp
@@ -404,7 +422,7 @@ itemBox c x y (Simply t)  m cs amNot
 itemBox c x y andor m cs amNot = (,) ((defaultBBox (cscale c)) { bbw = fromIntegral $ 25, bbh = 25 }) $ g_ [] (
   rect_ [ X_ <<-* x      , Y_ <<-* y, Width_ <<-* 10, Height_ <<-* 10, Stroke_ <<- bs cs, Fill_ <<- bf cs ]
     <> mempty) -- some text
-  
+
   -- [TODO]: for And and Or, recurse into children, and move them around, and update current bounding box.
   where cs = colorScheme c m amNot
 
@@ -434,7 +452,7 @@ colorScheme c m amNot = case m of
     notLine   = if amNot                   then "black" else "none"
     topLine b = if          amNot && not b then "black"
                 else if not amNot &&     b then "black" else "none"
-  
+
 
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =

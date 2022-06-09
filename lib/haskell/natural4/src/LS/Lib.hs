@@ -604,7 +604,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
-      try pRegRule
+      try (debugName "pHenceLest -> innerRule -> pRegRule" pRegRule)
       <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pOtherVal)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))

@@ -831,117 +831,119 @@ parserTests nlgEnv runConfig_ = do
 
     describe "PDPA" $ do
 
-      filetest "pdpadbno-1" "must assess"
-        (parseR pToplevel)
-        [ defaultReg
-        { subj = Leaf
-            (
-                ( "Organisation" :| []
-                , Nothing
-                ) :| []
-            )
-        , rkeyword = REvery
-        , who = Just
-            ( Leaf
-                ( RPMT
+      let expected_pdpadbno1 =
+            [ defaultReg
+              { subj = Leaf
+                (
+                  ( "Organisation" :| []
+                  , Nothing
+                  ) :| []
+                )
+              , rkeyword = REvery
+              , who = Just
+                ( Leaf
+                  ( RPMT
                     [ "is"
                     , "not"
                     , "a Public Agency"
                     ]
+                  )
                 )
-            )
-        , cond = Just
-            ( Leaf
-                ( RPMT [ "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
-            )
-        , deontic = DMust
-        , action = Leaf
-            (
-                ( "assess" :| [ "if it is a Notifiable Data Breach" ]
-                , Nothing
-                ) :|
-                [
+              , cond = Just
+                ( Leaf
+                  ( RPMT [ "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
+                )
+              , deontic = DMust
+              , action = Leaf
+                (
+                  ( "assess" :| [ "if it is a Notifiable Data Breach" ]
+                  , Nothing
+                  ) :|
+                  [
                     ( "by" :|
-                        [ "performing"
-                        , "NDB Qualification"
-                        ]
+                      [ "performing"
+                      , "NDB Qualification"
+                      ]
                     , Nothing
                     )
-                ]
-            )
-        , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
-        , hence = Just ( RuleAlias ["Notification"] )
-        , lest = Just
-            ( defaultReg
-                { subj = Leaf
-                    (
-                        ( "the PDPC" :| []
-                        , Nothing
-                        ) :| []
-                    )
-                , rkeyword = RParty
-                , deontic = DMay
-                , action = Leaf
-                    (
-                        ( "demand" :| [ "an explanation for your inaction" ]
-                        , Nothing
-                        ) :| []
-                    )
-                , temporal = Nothing
-                , srcref = Nothing
-                , hence = Just
-                    ( defaultReg
-                        { subj = Leaf
-                            (
-                                ( "You" :| []
-                                , Nothing
-                                ) :| []
-                            )
-                        , rkeyword = RParty
-                        , deontic = DMust
-                        , srcref = Nothing
-                        , action = Leaf
-                            (
-                                ( "respond" :| []
-                                , Nothing
-                                ) :|
-                                [
-                                    ( "to" :| [ "the PDPC" ]
+                  ]
+                )
+              , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
+              , hence = Just ( RuleAlias ["Notification"] )
+              , lest = Just
+                ( defaultReg
+                    { subj = Leaf
+                        (
+                            ( "the PDPC" :| []
+                            , Nothing
+                            ) :| []
+                        )
+                    , rkeyword = RParty
+                    , deontic = DMay
+                    , action = Leaf
+                        (
+                            ( "demand" :| [ "an explanation for your inaction" ]
+                            , Nothing
+                            ) :| []
+                        )
+                    , temporal = Nothing
+                    , srcref = Nothing
+                    , hence = Just
+                        ( defaultReg
+                            { subj = Leaf
+                                (
+                                    ( "You" :| []
                                     , Nothing
-                                    )
-                                ,
-                                    ( "about" :| [ "your inaction" ]
+                                    ) :| []
+                                )
+                            , rkeyword = RParty
+                            , deontic = DMust
+                            , srcref = Nothing
+                            , action = Leaf
+                                (
+                                    ( "respond" :| []
                                     , Nothing
-                                    )
-                                ]
-                            )
-                        }
-                    )
-                }
-            )
-        , upon = Just
-            (
-                ( "becoming aware a data breach may have occurred" :| []
-                , Nothing
-                ) :| []
-            )
-        , rlabel = Just ("\167",2,"Assess")
-        }
-        , DefNameAlias
-        { name = [ "You" ]
-        , detail = [ "Organisation" ]
-        , nlhint = Nothing
-        , srcref = Just
-            ( SrcRef
-                { url = "test/Spec"
-                , short = "test/Spec"
-                , srcrow = 2
-                , srccol = 3
-                , version = Nothing
-                }
-            )
-        }
-        ]
+                                    ) :|
+                                    [
+                                        ( "to" :| [ "the PDPC" ]
+                                        , Nothing
+                                        )
+                                    ,
+                                        ( "about" :| [ "your inaction" ]
+                                        , Nothing
+                                        )
+                                    ]
+                                )
+                            }
+                        )
+                    }
+                )
+            , upon = Just
+                (
+                    ( "becoming aware a data breach may have occurred" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , rlabel = Just ("\167",2,"Assess")
+            }
+            , DefNameAlias
+            { name = [ "You" ]
+            , detail = [ "Organisation" ]
+            , nlhint = Nothing
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 2
+                    , srccol = 3
+                    , version = Nothing
+                    }
+                )
+            }
+            ]
+ 
+      filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1
+      filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
       filetest "pdpadbno-2" "data intermediaries"
         (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}]

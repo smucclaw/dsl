@@ -773,9 +773,9 @@ someIndentation' p = myindented' (manyIndentation' p)
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
 manyIndentation p =
-  debugName "manyIndentation/leaf?" (try p)
+  try (debugName "manyIndentation/leaf?" p)
   <|>
-  debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
+  (debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p))
 
 manyIndentation' :: Parser a -> Parser a
 manyIndentation' p =

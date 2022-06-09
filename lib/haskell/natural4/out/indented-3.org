@@ -24504,9 +24504,9 @@ Failures:
 
   To rerun use: --match "/Parser tests/megaparsing/indented-3/"
 
-Randomized with seed 875767525
+Randomized with seed 813520442
 
-Finished in 1.0769 seconds
+Finished in 1.4638 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

@@ -47944,8 +47944,8 @@ Loading env
 Parser tests
   PDPA
     boolstructp-3 FAILED [1]
-Loaded env
     boolstructp-3 FAILED [2]
+Loaded env
     boolstructp-3 FAILED [3]
     boolstructp-3 FAILED [4]
 
@@ -48067,9 +48067,9 @@ Failures:
 
   To rerun use: --match "/Parser tests/PDPA/boolstructp-3/"
 
-Randomized with seed 908639445
+Randomized with seed 556287310
 
-Finished in 1.1480 seconds
+Finished in 2.2857 seconds
 4 examples, 4 failures
 
 natural4> Test suite natural4-test failed

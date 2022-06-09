@@ -27820,9 +27820,9 @@ Failures:
 
   To rerun use: --match "/Parser tests/PDPA/pdpadbno-5/"
 
-Randomized with seed 1036838869
+Randomized with seed 1547897600
 
-Finished in 0.8644 seconds
+Finished in 1.0900 seconds
 1 example, 1 failure
 
 natural4> Test suite natural4-test failed

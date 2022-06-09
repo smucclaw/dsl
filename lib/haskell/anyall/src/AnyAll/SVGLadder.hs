@@ -184,7 +184,7 @@ drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = draw
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
-alignV alignment maxHeight (box, el) = (adjustMargins box { bbh = maxHeight }, moveElement el)
+alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, moveElement el)
   where
     boxHeight = bbh box
     alignmentPad = maxHeight - boxHeight
@@ -192,24 +192,42 @@ alignV alignment maxHeight (box, el) = (adjustMargins box { bbh = maxHeight }, m
     moveElement = alignVCalcElement alignment alignmentPad
 
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
-adjustBoxMargins alignment alignmentPad bx =  bx {bbtm = newTopMargin, bbbm = newBottomMargin}
+adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin, bbbm = newBottomMargin}
   where
     (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
 
 columnAlignMargins :: VAlignment -> Length -> (Length, Length)
-columnAlignMargins VMiddle  alignmentPad = (alignmentPad / 2,  alignmentPad / 2)
-columnAlignMargins VTop     alignmentPad = (0, alignmentPad)
-columnAlignMargins VBottom  alignmentPad = (alignmentPad, 0)
+columnAlignMargins VMiddle alignmentPad = (alignmentPad / 2, alignmentPad / 2)
+columnAlignMargins VTop alignmentPad = (0, alignmentPad)
+columnAlignMargins VBottom alignmentPad = (alignmentPad, 0)
 
 alignVCalcElement :: VAlignment -> Length -> (SVGElement -> SVGElement)
 alignVCalcElement VMiddle alignmentPad = move (0, alignmentPad / 2)
-alignVCalcElement VTop    alignmentPad = id
+alignVCalcElement VTop alignmentPad = id
 alignVCalcElement VBottom alignmentPad = move (0, alignmentPad)
 
 alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
-alignH HCenter mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 2, bbrm = (mx - bbw bb) / 2 }, move ((mx - bbw bb) / 2, 0) x)
-alignH HLeft   mx (bb,x) = (bb { bbw = mx, bblm = 0,                 bbrm = (mx - bbw bb) / 1 }, x)
-alignH HRight  mx (bb,x) = (bb { bbw = mx, bblm = (mx - bbw bb) / 1, bbrm = 0                 }, move ((mx - bbw bb) / 1, 0) x)
+alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElement x)
+  where
+    boxWidth = bbw bb
+    alignmentPad = maxWidth - boxWidth
+    adjustMargins = adjustSideMargins alignment alignmentPad
+    moveElement = alignHCalcMove alignment alignmentPad
+
+adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
+adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin, bbrm = newRightMargin}
+  where
+    (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
+
+rowAlignMargins :: HAlignment -> Length -> (Length, Length)
+rowAlignMargins HCenter alignmentPad = (alignmentPad / 2, alignmentPad / 2)
+rowAlignMargins HLeft alignmentPad = (0, alignmentPad)
+rowAlignMargins HRight alignmentPad = (alignmentPad, 0)
+
+alignHCalcMove :: HAlignment -> Length -> (SVGElement -> SVGElement)
+alignHCalcMove HCenter alignmentPad = move (alignmentPad / 2, 0)
+alignHCalcMove HLeft alignmentPad = id
+alignHCalcMove HRight alignmentPad = move (alignmentPad, 0)
 
 -- | see page 2 of the "box model" documentation.
 -- | if we used the diagrams package all of this would be calculated automatically for us.

@@ -38,9 +38,9 @@ prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.Item a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
-toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.All (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.Any (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
 toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
 toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
@@ -51,22 +51,35 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 -- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
-expr,term,notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
+expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
-term p = debugName "term p" $ do
-  try (debugName "term p/1a:label directly above" $ do
+term p = termIndent p
+
+exprIndent p = ppp $ debugName "expression indentable" (makeExprParser (termIndent p) table <?> "expression indentable")
+termIndent p = debugName "termIndent p" $ do
+  try (debugName "term p/1a:label ends directly above next line" $ do
         (lbl, inner) <- (,)
           $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
           |>< expr p
-        debugPrint $ "got label, then inner immediately below: " ++ show lbl
-        debugPrint $ "got inner: " <> show inner
+        debugPrint $ "1a: got label, then inner immediately below: " ++ show lbl
+        debugPrint $ "1a: got inner: " <> show inner
         return $ MyLabel lbl Nothing inner)
     <|>
-    try (debugName "term p/b:label to the left of line below, with EOL" $ do
-        lbl <- someSLPlain pNumOrText <* debugName "matching EOL" dnl
-        debugPrint $ "got label then EOL: " ++ show lbl
-        inner <- expr p
-        debugPrint $ "got inner: " ++ show inner
+    try (debugName "term p/1b:label ends to the left of line below, with EOL" $ do
+        (lbl, inner) <- (,)
+          $*| (someLiftSL pNumOrText) <* liftSL (debugName "matching EOL" dnl)
+          |>< expr p
+        debugPrint $ "1b: got label to the left, with EOL: " ++ show lbl
+        debugPrint $ "1b: got inner: " ++ show inner
+        return $ MyLabel lbl Nothing inner)
+    <|>
+    try (debugName "term p/1c:label ends to the right of line below" $ do
+        (lbl,inner) <- (,)
+          $*| (someLiftSL pNumOrText)
+          |<| expr p
+          |<$ undeepers
+        debugPrint $ "1c: got label to the right of next line: " ++ show lbl
+        debugPrint $ "1c: got inner: " ++ show inner
         return $ MyLabel lbl Nothing inner)
     <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)

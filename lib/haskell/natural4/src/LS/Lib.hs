@@ -351,7 +351,8 @@ stanzaAsStream rs =
       | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
                         : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
-      | otherwise    = [a]
+      | otherwise    = [a]                                  --- | foo |       -> | foo   bar | -- at the same level, no ( or ) added.
+                                                            --- | bar |
       where
         aCol = unPos . sourceColumn $ aPos
         bCol = unPos . sourceColumn $ bPos
@@ -603,7 +604,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
-      try pRegRule
+      try (debugName "pHenceLest -> innerRule -> pRegRule" pRegRule)
       <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pOtherVal)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
@@ -642,11 +643,11 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ pAction
+  debugName "pDoAction/pAction" $ someIndentation pAction
 
 
 pAction :: Parser BoolStructP
-pAction = debugName "pAction calling dBoolStructP" dBoolStructP
+pAction = debugName "pAction calling pParamText" (AA.Leaf <$> pParamText)
 
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
@@ -730,7 +731,7 @@ pDT = debugName "pDT" $ do
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- pAction
+  pa <- someIndentation pAction
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)

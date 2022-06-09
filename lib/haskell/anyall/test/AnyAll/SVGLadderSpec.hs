@@ -4,7 +4,7 @@ module AnyAll.SVGLadderSpec (spec) where
 
 import AnyAll.SVGLadder hiding (tl)
 import AnyAll.Types (Label (Pre, PrePost))
-import Data.Text (Text, splitOn, pack)
+import Data.Text (Text, splitOn, pack, replace)
 import qualified Data.Text.Lazy.IO as TIO
 import Graphics.Svg
 import Test.Hspec
@@ -29,20 +29,35 @@ svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
     ]
 
 cleanXMLAttr :: XML.Attr -> (Text, Text)
-cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, pack $ XML.attrVal at)
+cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, replace ".0000" "" (pack $ XML.attrVal at))
 
-parseSVG :: Text -> Set.Set (Text, Text)
-parseSVG s =
+parseRectSVG :: Text -> Set.Set (Text, Text)
+parseRectSVG s =
         case  XML.parseXMLDoc s of
           Nothing  -> Set.empty
           Just doc -> Set.fromList $ cleanXMLAttr <$> XML.elAttribs doc
+
+parseSVGContent :: XML.Content -> Set.Set (Text, Text)
+parseSVGContent (XML.Elem e) = Set.fromList $ ("svgName", pack $ XML.qName $ XML.elName e) : (cleanXMLAttr <$> XML.elAttribs e)
+parseSVGContent (XML.Text _) = Set.empty
+parseSVGContent (XML.CRef _) = Set.empty
+
+parseRectsSVG :: Text -> [Set.Set (Text, Text)]
+parseRectsSVG s = [] -- XML.parseXML s
 
 extractBoxesAndSVGs:: [BoxedSVG] -> ([Set.Set (Text, Text)],[BBox])
 extractBoxesAndSVGs alignBoxes = (svgsAttrs, boundingBoxes)
   where
   svgs = TL.toStrict . renderText . snd <$> alignBoxes
-  svgsAttrs = parseSVG <$> svgs
+  svgsAttrs = parseRectSVG <$> svgs
   boundingBoxes = fst <$> alignBoxes
+
+extractBoxAndSVG:: BoxedSVG -> (BBox, [Set.Set (Text, Text)])
+extractBoxAndSVG alignBoxes = (boundingBoxes, svgsAttrs)
+  where
+  svgs = TL.toStrict . renderText . snd $ alignBoxes
+  svgsAttrs = parseSVGContent <$> XML.parseXML svgs
+  boundingBoxes = fst alignBoxes
 
 spec :: Spec
 spec = do
@@ -91,8 +106,8 @@ spec = do
         alignBoxes = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
         (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
 
-        firstExpected  = Set.fromList $ ("transform","translate(0.0000 0.0000)") : firstSVGAttrs
-        secondExpected = Set.fromList $ ("transform","translate(20.0000 0.0000)") : secondSVGAttrs
+        firstExpected  = Set.fromList $ ("transform","translate(0 0)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(20 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=20, bbrm=20}]
 
@@ -101,8 +116,8 @@ spec = do
         alignBoxes = hAlign HRight [(firstBox, firstRect), (secondBox, secondRect)]
         (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
 
-        firstExpected  = Set.fromList $ ("transform","translate(0.0000 0.0000)") : firstSVGAttrs
-        secondExpected = Set.fromList $ ("transform","translate(40.0000 0.0000)") : secondSVGAttrs
+        firstExpected  = Set.fromList $ ("transform","translate(0 0)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(40 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=40}]
 
@@ -121,8 +136,8 @@ spec = do
         alignBoxes = vAlign VMiddle [(firstBox, firstRect), (secondBox, secondRect)]
         (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
 
-        firstExpected  = Set.fromList $ ("transform","translate(0.0000 10.0000)") : firstSVGAttrs
-        secondExpected = Set.fromList $ ("transform","translate(0.0000 0.0000)") : secondSVGAttrs
+        firstExpected  = Set.fromList $ ("transform","translate(0 10)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10.0}, secondBox]
 
@@ -131,10 +146,30 @@ spec = do
         alignBoxes = vAlign VBottom [(firstBox, firstRect), (secondBox, secondRect)]
         (svgsAttrs, boundingBoxes) = extractBoxesAndSVGs alignBoxes
 
-        firstExpected  = Set.fromList $ ("transform","translate(0.0000 20.0000)") : firstSVGAttrs
-        secondExpected = Set.fromList $ ("transform","translate(0.0000 0.0000)") : secondSVGAttrs
+        firstExpected  = Set.fromList $ ("transform","translate(0 20)") : firstSVGAttrs
+        secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20.0}, secondBox]
+
+  describe "test hlayout" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      firstSVGAttrs  = [("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0"), ("svgName","rect")]
+      secondSVGAttrs  = [("fill","#f5f5f5"),("height","35.0"),("stroke","none"),("transform","translate(65 0)"),("width","20.0"),("y","0"),("x","0"), ("svgName","rect")]
+      thirdSVGAttrs  = [("fill","#f8eeee"),("height","30.0"),("stroke","none"),("svgName","rect"),("transform","translate(65 0)"),("width","20.0"),("x","0"),("y","0.0")]
+      forthSVGAttrs  = [("fill","black"),("height","30"),("stroke","none"),("svgName","rect"),("transform","translate(65 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  = [("d","M 60,5 c 5,0 0,10 5 10"),("fill","none"),("stroke","red"),("svgName","path")]
+    it "expands bounding box on Left alignment" $ do
+      let
+        alignBox = hlayout dc (firstBox, firstRect) (secondBox, secondRect)
+        (resultBox, resultSVG) = extractBoxAndSVG alignBox
+      --  xx = TL.toStrict . renderText . snd $ alignBox
+      -- _ <- print xx
+      resultBox `shouldBe` firstBox{bbw = 85.0, bbh = 30.0, pl = PVoffset 5.0, pr = PVoffset 15.0}
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, thirdSVGAttrs, forthSVGAttrs, pathSVGAttrs]
 
   describe "topText" $ do
     it "extracts the only from Pre" $ do

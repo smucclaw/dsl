@@ -5,7 +5,7 @@ abstract UDExt = UDApp ,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
-    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+    ,PredVPS, ConsVPS
   ],
   Idiom [
     GenericCl, ImpersCl

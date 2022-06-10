@@ -9,7 +9,7 @@ abstract BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN, -- : N -> N -> N    -- control system
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
-    ,VPS, MkVPS
+    ,VPS, MkVPS, Conj, ListVPS, ConjVPS, BaseVPS
   ],
 
   Sentence [
@@ -129,10 +129,10 @@ abstract BareRG =
   cat
     [Prep]{2} ;
     [VP]{2} ;
+    -- [VPS]{2} ;
 
   fun
     ConjPrep : Conj -> [Prep] -> Prep ;
     ConjVP : Conj -> [VP] -> VP ;
-
-
+    -- ConjVPS : Conj -> [VPS] -> VPS ;
   }

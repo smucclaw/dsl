@@ -62,7 +62,7 @@ extractBoxAndSVG alignBoxes = (boundingBoxes, svgsAttrs)
 spec :: Spec
 spec = do
   let
-    dc = defaultAAVConfig
+    dc = defaultAAVConfig { cdebug = True }
     templatedBoundingBox = defaultBBox (cscale dc)
   describe "with SVGLadder, drawing primitives" $ do
     basicSvg <- runIO $ TIO.readFile "out/basic.svg"

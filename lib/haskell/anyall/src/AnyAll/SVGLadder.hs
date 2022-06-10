@@ -87,6 +87,7 @@ data AAVConfig = AAVConfig
   { cscale       :: Scale
   , cdirection   :: Direction
   , cgetMark     :: Marking T.Text
+  , cdebug       :: Bool
   }
   deriving (Show, Eq)
 
@@ -95,6 +96,7 @@ defaultAAVConfig = AAVConfig
   { cscale = Tiny
   , cdirection = LR
   , cgetMark = Marking Map.empty
+  , cdebug = False
   }
 
 data AAVScale = AAVScale
@@ -248,12 +250,17 @@ hlayout c (bbold, old) (bbnew, new) =
         pr = PVoffset (portR bbnew myScale)
       },
     old
-      <> move (newBoxStart, 0) debugRect1
-      <> move (newSvgStart, 0) debugRect2
+      <--> move (newBoxStart, 0) debugRect1
+      <--> move (newSvgStart, 0) debugRect2
       <> move (newSvgStart, 0) new
       <> connectingCurve
   )
   where
+    -- debug version of <>, ignores right argument if debug mode is false
+    (<-->) :: (Semigroup a) => a -> a -> a
+    x <--> y = if cdebug c then x <> y else x
+    infixl 7 <--> -- higher priority than Data.Semigroup.<>, and left associative, so it doesn't knock out the following <> bits that are "to the right"
+
     templateBox = defaultBBox (cscale c)
     myScale = getScale (cscale c)
     lrHgap = slrh myScale
@@ -640,3 +647,4 @@ toy = renderItem defaultAAVConfig $
             , Leaf "5.b; and"
             , Leaf "5.c." ]
       ]
+

@@ -23,6 +23,7 @@ import Options.Generic
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | svgtiny"
+                   , debug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
@@ -46,7 +47,9 @@ main = do
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
   when (only opts `elem` words "svg svgtiny") $
     print (makeSvg $
-           q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full }) $
+           q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full
+                                    , cdebug = debug opts
+                                    }) $
            hardnormal (marking myright) (andOrTree myright) )
 
 maindemo :: IO ()

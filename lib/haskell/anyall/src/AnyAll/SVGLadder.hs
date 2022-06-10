@@ -240,28 +240,40 @@ hAlign alignment elems = alignH alignment mx <$> elems
   where mx = maximum $ bbw . fst <$> elems
 
 hlayout :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
-hlayout c (bbold,old) (bbnew,new) =
-  ((defaultBBox (cscale c)) { bbh = max (bbh bbold) (bbh bbnew)
-                            , bbw = bbw bbold + lrHgap + bbw bbnew
-                            ,  pl = PVoffset (portL bbold myScale)
-                            ,  pr = PVoffset (portR bbnew myScale)
-                            }
-  , old
-    <> move (bbw bbold + lrHgap, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew , Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none" ] ) -- grayish tint
-    <> move (bbw bbold + lrHgap + bblm bbnew, 0) (rect_ [ X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew) , Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none" ] ) -- reddish tint
-    <> move (bbw bbold + lrHgap + bblm bbnew, 0) new
-    <> if (bbw bbold /= 0)
-        then path_ [ D_ <<- (mA  (bbw bbold - bbrm bbold)  (portR bbold myScale) <>
-                            (cR (bbrm bbold + lrHgap)              0
-                              (   bbrm bbold                      ) (portL bbnew myScale - portR bbold myScale)
-                              (   bbrm bbold + lrHgap + bblm bbnew) (portL bbnew myScale - portR bbold myScale)
-                            ))
-                  , Stroke_ <<- "red", Fill_ <<- "none" ]
-        else mempty
+hlayout c (bbold, old) (bbnew, new) =
+  ( templateBox
+      { bbh = max (bbh bbold) (bbh bbnew),
+        bbw = bbw bbold + lrHgap + bbw bbnew,
+        pl = PVoffset (portL bbold myScale),
+        pr = PVoffset (portR bbnew myScale)
+      },
+    old
+      <> move (newBoxStart, 0) debugRect1
+      <> move (newSvgStart, 0) debugRect2
+      <> move (newSvgStart, 0) new
+      <> connectingCurve
   )
   where
-    myScale     = getScale (cscale c)
-    lrHgap      = slrh myScale
+    templateBox = defaultBBox (cscale c)
+    myScale = getScale (cscale c)
+    lrHgap = slrh myScale
+    newBoxStart = bbw bbold + lrHgap
+    newSvgStart = newBoxStart + bblm bbnew
+    debugRect1 = rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew, Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none"] -- grayish tint
+    debugRect2 = rect_ [X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew), Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none"] -- reddish tint
+    curveMoveCommand = mA (bbw bbold - bbrm bbold) (portR bbold myScale)
+    curveBezierCommand =
+      cR
+        (bbrm bbold + lrHgap)
+        0
+        (bbrm bbold)
+        (portL bbnew myScale - portR bbold myScale)
+        (bbrm bbold + lrHgap + bblm bbnew)
+        (portL bbnew myScale - portR bbold myScale)
+    connectingCurve =
+      if bbw bbold /= 0
+        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "red", Fill_ <<- "none"]
+        else mempty :: SVGElement
 
 -- bezier curves: "M"            is the position of                       the first  point.
 -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.

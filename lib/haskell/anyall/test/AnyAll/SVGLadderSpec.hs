@@ -171,6 +171,30 @@ spec = do
       resultBox `shouldBe` firstBox{bbw = 85.0, bbh = 30.0, pl = PVoffset 5.0, pr = PVoffset 15.0}
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, thirdSVGAttrs, forthSVGAttrs, pathSVGAttrs]
 
+  describe "test vlayout" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      myScale     = getScale (cscale dc)
+      lrVgap      = slrv myScale
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
+      mybbox = (defaultBBox (cscale dc)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
+      secondSVGAttrs = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 15)"),("width","20"),("x","0"),("y","0")]
+      forthSVGAttrs  = [("d","M -6,27.5000 C 0,27.5000 -6,30 0 30"),("fill","none"),("stroke","green"),("svgName","path")]
+      pathSVGAttrs  =  [("d","M 66,27.5000 C 60,27.5000 66,30 60 30"),("fill","none"),("stroke","green"),("svgName","path")]
+    it "expands bounding box on Left alignment" $ do
+      let
+        alignBox = vlayout dc mybbox (firstBox, firstRect) (secondBox, secondRect)
+        (resultBox, resultSVG) = extractBoxAndSVG alignBox
+      --  xx = TL.toStrict . renderText . snd $ alignBox
+      -- _ <- print xx
+      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 45.0}
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+
   describe "topText" $ do
     it "extracts the only from Pre" $ do
       topText (Just $ Pre "a") `shouldBe` Just "a"

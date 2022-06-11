@@ -287,32 +287,45 @@ hlayout c (bbold, old) (bbnew, new) =
 -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
 -- the third  argument after "c" is the position of                       the second point, relative to the first point.
 vlayout :: AAVConfig -> BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
-vlayout c parentbbox (bbold,old) (bbnew,new) =
-  let parentPortIn  = portL parentbbox myScale + lrVgap
-      parentPortOut = portR parentbbox myScale + lrVgap
-      pathcolors    = [ Stroke_ <<- "green", Fill_ <<- "none" ]
-      parent2child  = path_ ( [ D_ <<- (mA (-leftMargin)     (parentPortIn) <>
-                                        (cA 0                 parentPortIn
-                                            (-leftMargin)     (bbh bbold + lrVgap + portL bbnew myScale)
-                                            (bblm bbnew)      (bbh bbold + lrVgap + portL bbnew myScale)
-                                        )) ] ++ pathcolors ) <>
-                      path_ ( [ D_ <<- (mA  (bbw parentbbox + rightMargin)  (parentPortOut) <>
-                                        (cA (bbw parentbbox)                 parentPortOut
-                                            (bbw parentbbox + rightMargin)   (bbh bbold + lrVgap + portR bbnew myScale)
-                                            (bbw parentbbox - bbrm bbnew)    (bbh bbold + lrVgap + portR bbnew myScale)
-                                        )) ] ++ pathcolors )
-  in ((defaultBBox (cscale c)) { bbh = bbh bbold + bbh bbnew + lrVgap
-                                , bbw = max (bbw bbold) (bbw bbnew)
-                                }
-      , old
-        <> move (0, bbh bbold + lrVgap) new
-        <> parent2child)
+vlayout c parentbbox (bbold, old) (bbnew, new) =
+  ( (defaultBBox (cscale c))
+      { bbh = bbh bbold + bbh bbnew + lrVgap,
+        bbw = max (bbw bbold) (bbw bbnew)
+      },
+    old
+      <> move (0, bbh bbold + lrVgap) new
+      <> parent2child
+  )
   where
-    myScale     = getScale (cscale c)
-    lrHgap      = slrh myScale
-    lrVgap      = slrv myScale
-    leftMargin  = slm myScale
+    parentPortIn = portL parentbbox myScale + lrVgap
+    parentPortOut = portR parentbbox myScale + lrVgap
+    pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
+    myScale = getScale (cscale c)
+    lrHgap = slrh myScale
+    lrVgap = slrv myScale
+    leftMargin = slm myScale
     rightMargin = srm myScale
+    path1 = path_ ((D_ <<- curve1StartPosition <> bezierCurve1) : pathcolors)
+    path2 = path_ ((D_ <<- curve2StartPosition <> bezierCurve2) : pathcolors)
+    parent2child = path1 <> path2
+    curve1StartPosition = mA (-leftMargin) parentPortIn
+    curve2StartPosition = mA (bbw parentbbox + rightMargin) parentPortOut
+    bezierCurve1 =
+      cA
+        0
+        parentPortIn
+        (-leftMargin)
+        (bbh bbold + lrVgap + portL bbnew myScale)
+        (bblm bbnew)
+        (bbh bbold + lrVgap + portL bbnew myScale)
+    bezierCurve2 =
+      cA
+        (bbw parentbbox)
+        parentPortOut
+        (bbw parentbbox + rightMargin)
+        (bbh bbold + lrVgap + portR bbnew myScale)
+        (bbw parentbbox - bbrm bbnew)
+        (bbh bbold + lrVgap + portR bbnew myScale)
 
 txtToBBE ::  AAVConfig -> T.Text -> BoxedSVG
 txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}

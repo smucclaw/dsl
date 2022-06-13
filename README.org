@@ -1,11 +1,9 @@
 #+TITLE: The home of the L4 DSL
 #+STARTUP: content
 
-This repo is in active development.
+This documentation is intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
-This documentation is intended for L4 internal developers working on the IDE and compiler toolchain for L4 itself.
-
-Documentation for legal engineers writing legal code in L4 may be found in the Legal Spreadsheets document. If you are looking to 
+Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]].
 
 * L4 Language Family
 
@@ -32,6 +30,7 @@ There is a parser and transpiler to a variety of downstream targets.
 |------------+------------+--------|
 | Core l4    | ASP        |        |
 
+
 * Natural L4
 
 ** Spreadsheet Interface
@@ -40,13 +39,11 @@ See [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2
 
 You will be installing a toolchain that makes sense of those spreadsheets.
 
-The rest of this documentation introduces you to the logic and semantics of natural4, its internal data structures.
+The rest of this documentation introduces you to the logic and semantics of natural4, its internal data structures, and its surface syntax.
 
 Along the way it discusses the internal structure of our compiler codebase.
 
 And it links to the operational code that equips L4 with a web-based development environment.
-
-*Download as CSV*: grab a relevant tab off the spreadsheet. For example, download the PDPADBNO tab.
 
 ** Compiler Toolchain
 
@@ -62,25 +59,207 @@ And it links to the operational code that equips L4 with a web-based development
 #+begin_src bash
   src/smucclaw/dsl$ cd lib/haskell/natural4
   natural4$ stack test
+#+end_src
+
+A number of sample CSV inputs can be found in the ~test/~ directory.
+
+#+begin_src
   natural4$ stack run -- --only native test/indented-1.csv
   natural4$ stack run -- --only native test/pdpadbno-1.csv
 #+end_src
 
-
+If you are satisfied with the output, install the binary:
 
 #+begin_src bash
   stack install
 #+end_src
 
+You should then have a ~natural4-exe~ somewhere in your ~~/.local/bin~ directory. That directory may or may not be in your ~$PATH~ by way of the above installation procedure.
+
+*** Downloading the Spreadsheet
+
+The typical user drafts an L4 program in a spreadsheet.
+
+That program can be downloaded as a CSV, which this toolchain consumes.
+
+Example: Go to the the PDPADBNO tab, and click ~Download / as CSV~.
+
+The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
+
+Is there some other way to obtain the same CSV using only the command line? Yes:
+
+#+begin_example
+  wget -O pdpadbno.csv 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbknuGFkvvk_Pv9e97iDW9BInxd-Cj27-xC8d_SwveP1PxERV7ZmiAIU7PWXas2CEMH2bl8PyyD6X3/pub?gid=0&single=true&output=csv'
+#+end_example
+
+For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
+
 *** Usage
 
-|            | Front-End IDE      | Parser               | How to Run                                     |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Natural L4 | [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] | lib/haskell/natural4 | cd lib/haskell/natural4                        |
-|            |                    |                      | stack run -- --only native test/indented-1.csv |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Core L4    |                    |                      |                                                |
-|            |                    |                      |                                                |
+#+begin_src
+  natural4$ stack run -- --only native pdpadbno.csv
+#+end_src
+
+This should produce a screenful of output. If all went well, the output will be in the format of a Haskell data structure, containing the rules that have been parsed. It will look something like this:
+
+#+begin_src haskell
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( All
+                ( Pre "Who" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    ]
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( All
+                ( Pre "Who" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    ]
+    [ Constitutive
+        { term = "The rule-level checkbox is checked"
+        , cond = Just
+            ( Any
+                ( Pre "any of:" )
+                [ Leaf "the conditions do not hold"
+                , All
+                    ( Pre "all of:" )
+                    [ Leaf "the conditions do hold"
+                    , Leaf "the action is satisfied"
+                    ]
+                ]
+            )
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        }
+    ]
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( Leaf "Qualifies" )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    , Constitutive
+        { term = "Qualifies"
+        , cond = Just
+            ( All
+                ( Pre "all of:" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        }
+    ]
+#+end_src
+
+*** Output Modes
+
+The above output is "~native~". Other outputs can be specified:
+
+**** native: a Haskell data structure
+
+As above.
+
+**** petri: a Petri Net showing the state diagram
+
+This incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
+
+#+begin_src 
+  stack run -- --only "petri" test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
+#+end_src
+
+It is not exactly a state diagram because things can be in multiple sub-states at once. Petri Nets are good at showing that.
+
+**** json: for consumption by other tools such as a web app
+
+**** prolog
+
+
+*** Debugging
+
+Sometimes, a downloaded CSV may not agree with the parser.
+
+If a parse error occurs, you can enable debugging by adding ~--dbug~ to the command line. An alternative way to enable debugging is to set the environment variable ~MP_DEBUG=True~.
+
+Debugging output is super verbose. We process it with the following idiom:
+
+#+begin_src
+  filename=pdpadbno; MP_DEBUG=True stack run test/$filename.csv |& bin/debug2org > out/$filename.org
+#+end_src
+
+The ~debug2org~ script rewrites the raw debugging output into a format which is more easily viewed in Emacs [[https://orgmode.org/][org-mode]]. Mostly, it's about folding: the parser's output is organized to reflect its attempts to parse various expressions. Most of those parse attempts are "desired failures" and are not of interest; org-mode lets you hide them by pressing ~TAB~.
+
+Making sense of the parser debug output requires some familiarity with programming language theory, with compiler theory, and with the specifics of our L4 parser toolchain.
+
+** Language Reference
+
+
 
 ** Web Development Environment
 
@@ -90,19 +269,41 @@ The "Legal Spreadsheets" document in Google Sheets serves as the front end to a 
 
 Under "Extensions / Apps Script" you will find a file called ~Code.gs~.
 
-In that file you will find a configuration section:
+In that file you will find a configuration section, which includes:
 
 #+begin_src javascript
   const l4api = "http://ec2-18-139-62-80.ap-southeast-1.compute.amazonaws.com:8000/l4/";
 #+end_src
 
-When the legal engineer changes the spreadsheet, this listener is triggered.
+When the legal engineer changes the spreadsheet, this "L4 API web listener" is triggered.
 
-The listener obtains the latest version of the spreadsheet, runs the parser, and refreshes downstream components, so that the legal engineer can see changes taking effect.
+The listener obtains the latest version of the spreadsheet, runs the parser, and refreshes downstream components, so that the legal engineer can see the effect of changes without having to install this toolchain locally.
+
+*** Installing the Web Listener
+
+As an internal developer you should be comfortable installing this toolchain locally.
+
+To bring up a local ~l4api~ listener, see documentation elsewhere ... there will be Node, etc.
+
+TODO:
+- the work that has been done to date may need to move into the dsl repo.
+- add a link to the appropriate README.
 
 *** Downstream Components
 
-**** The visualizer
+Thanks to the ~l4api~ listener, every Legal Spreadsheets document has a corresponding web link.
+
+At that web page, you will be able to view:
+
+**** The "expert system" web app
+
+**** The AST
+
+**** Visualizers
+
+***** for the decision logic
+
+***** for the state graph
 
 **** The formal verifier
 

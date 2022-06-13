@@ -75,16 +75,16 @@ digraph {
            ,comment="OrigRL \"Assess\""];
         18 [label="not done"];
         21 [label=then,comment=IsThen];
-        23 [label="NOTIFYing done"
+        23 [label="notification done"
            ,comment="Temporal \"before 3 days\""
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify PDPC\""];
         24 [label="not done"];
-        27 [label="NOTIFYing occurred"
+        27 [label="notification occurred"
            ,comment="Temporal \"eventually\""
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify PDPC\""];
-        32 [label="NOTIFYing done"
+        32 [label="notification done"
            ,comment="Temporal \"before 3 days\""
            ,comment=IsLastHappy
            ,comment="OrigRL \"Notify Individuals\""];

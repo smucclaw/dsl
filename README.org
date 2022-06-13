@@ -3,7 +3,7 @@
 
 This documentation is intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
-Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]].
+Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]]. If you're not already familiar with L4, you may want to work through that documentation first.
 
 * L4 Language Family
 
@@ -35,31 +35,37 @@ There is a parser and transpiler to a variety of downstream targets.
 
 ** Spreadsheet Interface
 
-See [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] for examples of L4 "source code".
+[[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] contains examples of L4 "source code".
 
-You will be installing a toolchain that makes sense of those spreadsheets.
+You will be installing a toolchain that makes sense of that code.
 
-The rest of this documentation introduces you to the logic and semantics of natural4, its internal data structures, and its surface syntax.
-
-Along the way it discusses the internal structure of our compiler codebase.
+The rest of this documentation introduces the logic and semantics of natural4, its internal data structures, and its surface syntax.
 
 And it links to the operational code that equips L4 with a web-based development environment.
+
+Along the way it discusses the internal structure of our compiler codebase.
 
 ** Compiler Toolchain
 
 *** Prerequisites
 
 1. Clone this repository.
-2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed  ahead of the next step because different editors will have different opinions about how to install Haskell.
-3. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
+2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed ahead of the next step because different editors will have different opinions about how to install Haskell.
+3. Nix users will have their own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand.
+4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
 
 *** Installation
 
-3. Compile and install
+After your Haskell is working well enough to run ~stack~,
+
 #+begin_src bash
   src/smucclaw/dsl$ cd lib/haskell/natural4
   natural4$ stack test
 #+end_src
+
+This will take some time as it needs to compile a particular version of ~ghc~, plus a whole raft of dependencies.
+
+**** Confirming the install
 
 A number of sample CSV inputs can be found in the ~test/~ directory.
 
@@ -68,7 +74,11 @@ A number of sample CSV inputs can be found in the ~test/~ directory.
   natural4$ stack run -- --only native test/pdpadbno-1.csv
 #+end_src
 
-If you are satisfied with the output, install the binary:
+This should compile the ~l4~ parser, and produce a bunch of output.
+
+**** Install the binary
+
+If you're happy with the above output,
 
 #+begin_src bash
   stack install
@@ -95,6 +105,12 @@ Is there some other way to obtain the same CSV using only the command line? Yes:
 For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
 
 *** Usage
+
+The job of a compiler / transpiler / parser / interpreter, whatever you want to call it, is to transform user code to some useful target representation.
+
+**** native: a Haskell data structure
+
+This is the simplest output mode. It confirms the parse happened as intended.
 
 #+begin_src
   natural4$ stack run -- --only native pdpadbno.csv
@@ -218,17 +234,41 @@ This should produce a screenful of output. If all went well, the output will be 
     ]
 #+end_src
 
-*** Output Modes
+The remainder of this document will explain the semantics of this  structure and how it is parsed from the spreadsheet.
 
-The above output is "~native~". Other outputs can be specified:
+**** prolog
 
-**** native: a Haskell data structure
+Those elements of L4 which correspond to first-order logic can be transpiled to a Prolog-like syntax.
 
-As above.
+The inspiration is [[https://www.doc.ic.ac.uk/~rak/papers/British%20Nationality%20Act.pdf][The British Nationality Act as a Logic Program]]. In principle it should be possible to express the British Nationality Act as an L4 program, from which we can extract a Prolog program.
+
+We usually see decision-related reasoning in the context of constitutive rules: an X counts as a Y if Z holds. In the trivial case, an X counts as true if Z holds:
+
+#+begin_src prolog
+  constitutiveRule(X) :- Z.
+
+  isBritishCitizen(X) :- isBritishCitizen(Y), parent(X, Y).
+#+end_src
+
+
+
+The reasoning used is backward-chaining deduction. Given a goal statement, the task is to decide if that goal is true or false. "It depends." What does it depend on? We work through all the dependencies, backtracking, until the goal can be proven true -- or false.
+
+Prolog's other great strength -- abductive reasoning through unification -- does not arise in our current swipl implementation. We do want to use this feature for planning problems, in the future.
+
+Our current transpilation pathway to Prolog actually runs through the CoreL4 language. It is possible that in future we will go direct from Natural4.
+
+Within the Prolog family of targets we differentiate:
+
+***** SWIPL
+
+***** Clingo
+
+***** s(CASP)
 
 **** petri: a Petri Net showing the state diagram
 
-This incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
+The following incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
 
 #+begin_src 
   stack run -- --only "petri" test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
@@ -237,9 +277,6 @@ This incantation converts PDPDABNO input into a Petri Net flowchart showing the 
 It is not exactly a state diagram because things can be in multiple sub-states at once. Petri Nets are good at showing that.
 
 **** json: for consumption by other tools such as a web app
-
-**** prolog
-
 
 *** Debugging
 

@@ -3,21 +3,24 @@
 
 This repo is in active development.
 
-The only people writing L4 according to this spec are the core development team, and it doesn't even always work for them.
+This documentation is intended for L4 internal developers working on the IDE and compiler toolchain for L4 itself.
+
+Documentation for legal engineers writing legal code in L4 may be found in the Legal Spreadsheets document. If you are looking to 
 
 * L4 Language Family
 
-L4 currently consists of:
-- a developer-friendly /Natural/ syntax intended to be written in a spreadsheet "IDE"
-- a semantically rigorous /Core/ syntax which lives in the repo ~smucclaw/baby-l4~
+The L4 language family currently comprises:
 
-|            | Front-End IDE      | Parser               | How to Run                                     |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Natural L4 | [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] | lib/haskell/natural4 | cd lib/haskell/natural4                        |
-|            |                    |                      | stack run -- --only native test/indented-1.csv |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Core L4    |                    |                      |                                                |
-|            |                    |                      |                                                |
+** a developer-friendly /Natural/ syntax
+
+The syntax uses a plethora of English keywords arranged in a sentence-like structure, similar to languages like SQL.
+
+The IDE is a spreadsheet environment.
+
+There is a parser and transpiler to a variety of downstream targets.
+
+** a semantically rigorous /Core/ syntax which lives in the repo ~smucclaw/baby-l4~
+
 
 |            | Target     | --only |
 |------------+------------+--------|
@@ -33,24 +36,81 @@ L4 currently consists of:
 
 ** Spreadsheet Interface
 
-See [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] for examples of "source code".
+See [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] for examples of L4 "source code".
 
-*Download as CSV*: grab a relevant tab off the spreadsheet.
+You will be installing a toolchain that makes sense of those spreadsheets.
 
+The rest of this documentation introduces you to the logic and semantics of natural4, its internal data structures.
+
+Along the way it discusses the internal structure of our compiler codebase.
+
+And it links to the operational code that equips L4 with a web-based development environment.
+
+*Download as CSV*: grab a relevant tab off the spreadsheet. For example, download the PDPADBNO tab.
+
+** Compiler Toolchain
+
+*** Prerequisites
+
+1. Clone this repository.
+2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed  ahead of the next step because different editors will have different opinions about how to install Haskell.
+3. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
+
+*** Installation
+
+3. Compile and install
 #+begin_src bash
-  cd lib/haskell/natural4
-  stack test
-  stack run -- --only native test/indented-1.csv
-  stack run -- --only native test/pdpadbno-1.csv
+  src/smucclaw/dsl$ cd lib/haskell/natural4
+  natural4$ stack test
+  natural4$ stack run -- --only native test/indented-1.csv
+  natural4$ stack run -- --only native test/pdpadbno-1.csv
 #+end_src
 
-If you're happy with this you can install the executable:
+
 
 #+begin_src bash
   stack install
 #+end_src
 
-** Text-mode Interface
+*** Usage
+
+|            | Front-End IDE      | Parser               | How to Run                                     |
+|------------+--------------------+----------------------+------------------------------------------------|
+| Natural L4 | [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] | lib/haskell/natural4 | cd lib/haskell/natural4                        |
+|            |                    |                      | stack run -- --only native test/indented-1.csv |
+|------------+--------------------+----------------------+------------------------------------------------|
+| Core L4    |                    |                      |                                                |
+|            |                    |                      |                                                |
+
+** Web Development Environment
+
+The "Legal Spreadsheets" document in Google Sheets serves as the front end to a development environment.
+
+*** Configuring the IDE back-end
+
+Under "Extensions / Apps Script" you will find a file called ~Code.gs~.
+
+In that file you will find a configuration section:
+
+#+begin_src javascript
+  const l4api = "http://ec2-18-139-62-80.ap-southeast-1.compute.amazonaws.com:8000/l4/";
+#+end_src
+
+When the legal engineer changes the spreadsheet, this listener is triggered.
+
+The listener obtains the latest version of the spreadsheet, runs the parser, and refreshes downstream components, so that the legal engineer can see changes taking effect.
+
+*** Downstream Components
+
+**** The visualizer
+
+**** The formal verifier
+
+**** The natural langage generator
+
+
+
+*** Future Text-mode Interface
 
 After the spreadsheet interface matures we will revisit support for a plaintext version of the language, to be supported in VS Code and Emacs via LSP. At this time we will write the BNF for the language.
 

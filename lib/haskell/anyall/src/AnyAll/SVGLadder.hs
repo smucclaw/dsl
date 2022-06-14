@@ -266,8 +266,8 @@ hlayout c (bbold, old) (bbnew, new) =
     lrHgap = slrh myScale
     newBoxStart = bbw bbold + lrHgap
     newSvgStart = newBoxStart + bblm bbnew
-    debugRect1 = rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew, Height_ <<-* bbh bbnew + 5, Fill_ <<- "#f5f5f5", Stroke_ <<- "none"] -- grayish tint
-    debugRect2 = rect_ [X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew), Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "#f8eeee", Stroke_ <<- "none"] -- reddish tint
+    debugRect1 = rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew, Height_ <<-* bbh bbnew + 5, Fill_ <<- "lightgrey", Stroke_ <<- "none", Class_ <<- "debugbox1"]
+    debugRect2 = rect_ [X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew), Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "lightsalmon", Stroke_ <<- "none", Class_ <<- "debugbox1"]
     curveMoveCommand = mA (bbw bbold - bbrm bbold) (portR bbold myScale)
     curveBezierCommand =
       cR
@@ -279,7 +279,7 @@ hlayout c (bbold, old) (bbnew, new) =
         (portL bbnew myScale - portR bbold myScale)
     connectingCurve =
       if bbw bbold /= 0
-        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none"]
+        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
         else mempty :: SVGElement
 
 -- bezier curves: "M"            is the position of                       the first  point.
@@ -305,8 +305,8 @@ vlayout c parentbbox (bbold, old) (bbnew, new) =
     lrVgap = slrv myScale
     leftMargin = slm myScale
     rightMargin = srm myScale
-    path1 = path_ ((D_ <<- curve1StartPosition <> bezierCurve1) : pathcolors)
-    path2 = path_ ((D_ <<- curve2StartPosition <> bezierCurve2) : pathcolors)
+    path1 = path_ ((D_ <<- curve1StartPosition <> bezierCurve1) : (Class_ <<- "v_connector_in") : pathcolors)
+    path2 = path_ ((D_ <<- curve2StartPosition <> bezierCurve2) : (Class_ <<- "v_connector_out") : pathcolors)
     parent2child = path1 <> path2
     curve1StartPosition = mA (-leftMargin) parentPortIn
     curve2StartPosition = mA (bbw parentbbox + rightMargin) parentPortOut
@@ -362,9 +362,9 @@ combineAnd c mpre mpost elems =
                 , pl = PVoffset (portL childbbox myScale)
                 , pr = PVoffset (portR childbbox myScale)
                 }
-      , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "#e5e5f5", Stroke_ <<- "none"] <> -- blueish tint
+      , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "lightskyblue", Stroke_ <<- "none"] <> -- blueish tint
                               rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
-                                    , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "#eaf5ea", Stroke_ <<- "none"] <> -- greenish tint
+                                    , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "honeydew", Stroke_ <<- "none"] <> -- greenish tint
                               children ))
   where
     myScale     = getScale (cscale c)
@@ -428,13 +428,13 @@ drawLeaf c negContext qt@(Node q childqs) =
                     else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext))
   in
   (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
-     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill ]
+     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill, Class_ <<- "textbox" ]
   <> boxContents
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black" ] else mempty)
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
+  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
+  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
+  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
   where
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))

@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 
 module AnyAll.SVGLadderSpec (spec) where
 
 import AnyAll.SVGLadder hiding (tl)
-import AnyAll.Types (Label (Pre, PrePost))
+import AnyAll.Types
 import Data.Text (Text, splitOn, pack, replace)
 import qualified Data.Text.Lazy.IO as TIO
 import Graphics.Svg
@@ -13,7 +14,11 @@ import qualified Data.Set as Set
 import qualified Text.XML.Light as XML
 import Text.XML.Light.Output (showTopElement)
 import Text.XML.Light (Attr(attrKey))
-
+import qualified Data.ByteString.Lazy as B
+import Data.Aeson (eitherDecode)
+import AnyAll (hardnormal)
+import Data.Tree
+import Data.Sequence.Internal.Sorting (Queue(Q))
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
 
@@ -59,10 +64,134 @@ extractBoxAndSVG alignBoxes = (boundingBoxes, svgsAttrs)
   svgsAttrs = parseSVGContent <$> XML.parseXML svgs
   boundingBoxes = fst alignBoxes
 
+compositeAndTree :: Tree (Q Text)
+compositeAndTree =
+  Node
+    { rootLabel =
+        AnyAll.Types.Q
+          { shouldView = View,
+            andOr = And,
+            prePost = Just (Pre "all of"),
+            mark = Default {getDefault = Left Nothing}
+          },
+      subForest =
+        [ Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = View,
+                    andOr = Simply "walk",
+                    prePost = Nothing,
+                    mark = Default {getDefault = Right (Just True)}
+                  },
+              subForest = []
+            },
+          Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = View,
+                    andOr = And,
+                    prePost = Just (Pre "all"),
+                    mark = Default {getDefault = Left Nothing}
+                  },
+              subForest =
+                [ Node
+                    { rootLabel =
+                        AnyAll.Types.Q
+                          { shouldView = Ask,
+                            andOr = Simply "eat",
+                            prePost = Nothing,
+                            mark = Default {getDefault = Left (Just False)}
+                          },
+                      subForest = []
+                    },
+                  Node
+                    { rootLabel =
+                        AnyAll.Types.Q
+                          { shouldView = Ask,
+                            andOr = Simply "drink",
+                            prePost = Nothing,
+                            mark = Default {getDefault = Left (Just True)}
+                          },
+                      subForest = []
+                    }
+                ]
+            }
+        ]
+    }
+
+
+simpleAndTree :: Tree (Q Text)
+simpleAndTree =
+  Node
+    { rootLabel =
+        AnyAll.Types.Q
+          { shouldView = View,
+            andOr = And,
+            prePost = Just (Pre "all"),
+            mark = Default {getDefault = Left Nothing}
+          },
+      subForest =
+        [ Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = Ask,
+                    andOr = Simply "eat",
+                    prePost = Nothing,
+                    mark = Default {getDefault = Left (Just False)}
+                  },
+              subForest = []
+            },
+          Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = Ask,
+                    andOr = Simply "drink",
+                    prePost = Nothing,
+                    mark = Default {getDefault = Left (Just True)}
+                  },
+              subForest = []
+            }
+        ]
+    }
+
+simpleOrTree :: Tree (Q Text)
+simpleOrTree =
+  Node
+    { rootLabel =
+        AnyAll.Types.Q
+          { shouldView = View,
+            andOr = Or,
+            prePost = Just (Pre "any"),
+            mark = Default {getDefault = Left Nothing}
+          },
+      subForest =
+        [ Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = Ask,
+                    andOr = Simply "eat",
+                    prePost = Nothing,
+                    mark = Default {getDefault = Left (Just False)}
+                  },
+              subForest = []
+            },
+          Node
+            { rootLabel =
+                AnyAll.Types.Q
+                  { shouldView = Ask,
+                    andOr = Simply "drink",
+                    prePost = Nothing,
+                    mark = Default {getDefault = Left (Just True)}
+                  },
+              subForest = []
+            }
+        ]
+    }
+
 spec :: Spec
 spec = do
   let
-    dc = defaultAAVConfig { cdebug = True }
+    dc = defaultAAVConfig { cdebug = True}
     templatedBoundingBox = defaultBBox (cscale dc)
   describe "with SVGLadder, drawing primitives" $ do
     basicSvg <- runIO $ TIO.readFile "out/basic.svg"
@@ -71,7 +200,6 @@ spec = do
       basicSvg' = makeSvg' dc (defaultBBox (cscale dc), rectangle)
     it "should be able to create a real basic SVG rectangle" $ do
       renderText basicSvg' `shouldBe` basicSvg
-
     it "should be able to test a BoxedSVG" $ do
       show
         ( defaultBBox (cscale dc),
@@ -173,27 +301,70 @@ spec = do
 
   describe "test vlayout" $ do
     let
+      c = dc{cscale=Full, cdebug = False}
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
       secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
-      myScale     = getScale (cscale dc)
+      myScale     = getScale (cscale c)
       lrVgap      = slrv myScale
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      a1:b2:xn = vAlign VTop elems
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
-      mybbox = (defaultBBox (cscale dc)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
+      mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
+      alignBox = vlayout c mybbox a1 b2
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
-      secondSVGAttrs = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 15)"),("width","20"),("x","0"),("y","0")]
-      forthSVGAttrs  = [("d","M -6,27.5000 C 0,27.5000 -6,30 0 30"),("fill","none"),("stroke","green"),("svgName","path")]
-      pathSVGAttrs  =  [("d","M 66,27.5000 C 60,27.5000 66,30 60 30"),("fill","none"),("stroke","green"),("svgName","path")]
-    it "expands bounding box on Left alignment" $ do
-      let
-        alignBox = vlayout dc mybbox (firstBox, firstRect) (secondBox, secondRect)
-        (resultBox, resultSVG) = extractBoxAndSVG alignBox
-      --  xx = TL.toStrict . renderText . snd $ alignBox
-      -- _ <- print xx
-      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 45.0}
+      secondSVGAttrs = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 40)"),("width","20"),("x","0"),("y","0")]
+      forthSVGAttrs  = [("d","M -22,32 C 0,32 -22,55 0 55"),("fill","none"),("stroke","green"),("svgName","path")]
+      pathSVGAttrs  =  [("d","M 82,32 C 60,32 82,55 60 55"),("fill","none"),("stroke","green"),("svgName","path")]
+    it "gets correct vbox" $ do
+      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 70.0, pl = PTop, pr = PTop}
+    it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    xit "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . snd $ alignBox
+      _ <- print svgXml
+      2 `shouldBe` 2
+
+  describe "test combineAnd" $ do
+    mycontents <- runIO $ B.readFile "out/example-and-short.json"
+    myFixture <- runIO $ B.readFile "out/example-and-short.svg"
+    let
+      c = dc{cscale=Full, cdebug = False} 
+      myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
+      (Right myright) = myinput
+      questionTree = hardnormal (marking myright) (andOrTree myright)
+      --(bbox, svg) = q2svg' c qq
+      (bbox2, svg2) = drawItemFull c False simpleAndTree
+      svgs = renderBS svg2
+      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleAndTree
+      rawChildren = drawItemFull c False <$> childqs
+      hrawChildren = hAlign HCenter rawChildren
+    -- _ <- runIO $ print svgs
+    -- _ <- runIO $ print rawChildren
+    it "expands bounding box on Left alignment" $ do
+      svgs `shouldBe` myFixture
+
+  describe "test combineOr" $ do
+    mycontents <- runIO $ B.readFile "out/example-or-short.json"
+    myFixture <- runIO $ B.readFile "out/example-or-short.svg"
+    let
+      c = dc{cscale=Full, cdebug = False} 
+      myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
+      (Right myright) = myinput
+      questionTree = hardnormal (marking myright) (andOrTree myright)
+      --(bbox, svg) = q2svg' c qq
+      (bbox2, svg2) = drawItemFull c False simpleOrTree
+      svgs = renderBS svg2
+      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleOrTree
+      rawChildren = drawItemFull c False <$> childqs
+      hrawChildren = hAlign HCenter rawChildren
+    -- _ <- runIO $ print hrawChildren
+    -- _ <- runIO $ print questionTree
+    it "expands bounding box on Left alignment" $ do
+      svgs `shouldBe` myFixture
 
   describe "topText" $ do
     it "extracts the only from Pre" $ do

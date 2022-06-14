@@ -291,7 +291,7 @@ spec = do
       alignBox = hlayout c alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` firstBox{bbw = 90.0, bbh = 30.0, pl = PVoffset 15.0, pr = PVoffset 15.0}
@@ -322,12 +322,12 @@ spec = do
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
-      inConnector1 = [("d","M -22,32 C 0,32 -22,15 0 15"),("fill","none"),("stroke","green"),("svgName","path")]
-      outConnector1  = [("d","M 82,32 C 60,32 82,15 60 15"),("fill","none"),("stroke","green"),("svgName","path")]
+      inConnector1 = [("d","M -22,32 C 0,32 -22,15 0 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector1  = [("d","M 82,32 C 60,32 82,15 60 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
 
       secondSVGBox = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(20 0)translate(0 30)"),("width","20"),("x","0"),("y","0")]
-      inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path")]
-      outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path")]
+      inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
       resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 60.0, pl = PTop, pr = PTop}
     it "gets correct svg" $ do

@@ -192,6 +192,7 @@ spec :: Spec
 spec = do
   let
     dc = defaultAAVConfig { cdebug = True}
+    c = dc{cscale=Full, cdebug = False}
     templatedBoundingBox = defaultBBox (cscale dc)
   describe "with SVGLadder, drawing primitives" $ do
     basicSvg <- runIO $ TIO.readFile "out/basic.svg"
@@ -285,23 +286,25 @@ spec = do
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
       secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
-      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
-      secondSVGAttrs = [("svgName","rect"), ("fill","#f5f5f5"),("height","35.0"),("stroke","none"),("transform","translate(65 0)"),("width","20.0"),("y","0"),("x","0")]
-      thirdSVGAttrs  = [("svgName","rect"), ("fill","#f8eeee"),("height","30.0"),("stroke","none"),("transform","translate(65 0)"),("width","20.0"),("x","0"),("y","0.0")]
-      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(65 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("d","M 60,5 c 5,0 0,10 5 10"),("fill","none"),("stroke","red")]
-    it "expands bounding box on Left alignment" $ do
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      alignBox = hlayout c alignedBox1 alignedBox2
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` firstBox{bbw = 90.0, bbh = 30.0, pl = PVoffset 15.0, pr = PVoffset 15.0}
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    xit "print debug" $ do
       let
-        alignBox = hlayout dc (firstBox, firstRect) (secondBox, secondRect)
-        (resultBox, resultSVG) = extractBoxAndSVG alignBox
-      --  xx = TL.toStrict . renderText . snd $ alignBox
-      -- _ <- print xx
-      resultBox `shouldBe` firstBox{bbw = 85.0, bbh = 30.0, pl = PVoffset 5.0, pr = PVoffset 15.0}
-      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, thirdSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print svgXml
+      pendingWith "it's not a real test but just a debug code"
 
   describe "test vlayout" $ do
     let
-      c = dc{cscale=Full, cdebug = False}
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
       secondBox = templatedBoundingBox {bbw = 20, bbh = 30}

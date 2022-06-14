@@ -309,24 +309,31 @@ spec = do
       myScale     = getScale (cscale c)
       lrVgap      = slrv myScale
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
-      a1:b2:xn = vAlign VTop elems
+      startBox = (defaultBBox (cscale c), mempty::SVGElement)
+      alignedBox1:alignedBox2:_ = hAlign HCenter elems
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
       mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
-      alignBox = vlayout c mybbox a1 b2
+      -- Have to use vlayout 2 times to feed start box
+      tempBox = vlayout c mybbox startBox alignedBox1
+      alignBox = vlayout c mybbox tempBox alignedBox2
+
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
-      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("width","60"),("y","0"),("x","0")]
-      secondSVGAttrs = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 40)"),("width","20"),("x","0"),("y","0")]
-      forthSVGAttrs  = [("d","M -22,32 C 0,32 -22,55 0 55"),("fill","none"),("stroke","green"),("svgName","path")]
-      pathSVGAttrs  =  [("d","M 82,32 C 60,32 82,55 60 55"),("fill","none"),("stroke","green"),("svgName","path")]
+      firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
+      inConnector1 = [("d","M -22,32 C 0,32 -22,15 0 15"),("fill","none"),("stroke","green"),("svgName","path")]
+      outConnector1  = [("d","M 82,32 C 60,32 82,15 60 15"),("fill","none"),("stroke","green"),("svgName","path")]
+
+      secondSVGBox = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(20 0)translate(0 30)"),("width","20"),("x","0"),("y","0")]
+      inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path")]
+      outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 70.0, pl = PTop, pr = PTop}
+      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 60.0, pl = PTop, pr = PTop}
     it "gets correct svg" $ do
-      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, secondSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
     xit "print debug" $ do
       let
-        svgXml = TL.toStrict . renderText . snd $ alignBox
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
       _ <- print svgXml
-      2 `shouldBe` 2
+      pendingWith "it's not a real test but just a debug code"
 
   describe "test combineAnd" $ do
     mycontents <- runIO $ B.readFile "out/example-and-short.json"

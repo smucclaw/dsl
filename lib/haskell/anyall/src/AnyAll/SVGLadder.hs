@@ -279,7 +279,7 @@ hlayout c (bbold, old) (bbnew, new) =
         (portL bbnew myScale - portR bbold myScale)
     connectingCurve =
       if bbw bbold /= 0
-        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "red", Fill_ <<- "none"]
+        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none"]
         else mempty :: SVGElement
 
 -- bezier curves: "M"            is the position of                       the first  point.

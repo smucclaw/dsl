@@ -247,7 +247,7 @@ We usually see decision-related reasoning in the context of constitutive rules: 
 #+begin_src prolog
   constitutiveRule(X) :- Z.
 
-  isBritishCitizen(X) :- isBritishCitizen(Y), parent(X, Y).
+  bna(isBritishCitizen,X) :- bna(isBritishCitizen,Y), parent(Y, X).
 #+end_src
 
 

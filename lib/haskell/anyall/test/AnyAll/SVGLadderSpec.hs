@@ -128,7 +128,7 @@ simpleAndTree =
           { shouldView = View,
             andOr = And,
             prePost = Just (Pre "all"),
-            mark = Default {getDefault = Left Nothing}
+            mark = Default {getDefault = Right (Just True)}
           },
       subForest =
         [ Node
@@ -137,7 +137,7 @@ simpleAndTree =
                   { shouldView = Ask,
                     andOr = Simply "eat",
                     prePost = Nothing,
-                    mark = Default {getDefault = Left (Just False)}
+                    mark = Default {getDefault = Right (Just True)}
                   },
               subForest = []
             },
@@ -147,7 +147,7 @@ simpleAndTree =
                   { shouldView = Ask,
                     andOr = Simply "drink",
                     prePost = Nothing,
-                    mark = Default {getDefault = Left (Just True)}
+                    mark = Default {getDefault = Right (Just True)}
                   },
               subForest = []
             }
@@ -297,10 +297,10 @@ spec = do
       resultBox `shouldBe` firstBox{bbw = 90.0, bbh = 30.0, pl = PVoffset 15.0, pr = PVoffset 15.0}
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
-    xit "print debug" $ do
+    it "print debug" $ do
       let
         svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
-      _ <- print svgXml
+      _ <- print resultBox
       pendingWith "it's not a real test but just a debug code"
 
   describe "test vlayout" $ do
@@ -356,6 +356,11 @@ spec = do
     -- _ <- runIO $ print rawChildren
     it "expands bounding box on Left alignment" $ do
       svgs `shouldBe` myFixture
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ svg2
+      _ <- print bbox2
+      pendingWith "it's not a real test but just a debug code"
 
   describe "test combineOr" $ do
     mycontents <- runIO $ B.readFile "out/example-or-short.json"

@@ -252,7 +252,7 @@ hlayout c (bbold, old) (bbnew, new) =
     old
       <--> move (newBoxStart, 0) debugRect1
       <--> move (newSvgStart, 0) debugRect2
-      <> move (newSvgStart, 0) new
+      <> move (newBoxStart, 0) new
       <> connectingCurve
   )
   where
@@ -381,16 +381,14 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                  drawnChildren = case showLabels (cscale c) of
                    False -> combineOr c Nothing  Nothing  $ hAlign HCenter $ rawChildren
                    True  -> combineOr c topTextE botTextE $ hAlign HCenter $ rawChildren
-             in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
-                                             , bbh =                            (bbh.fst $ drawnChildren) }
+             in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
                 (snd drawnChildren)
 
        And -> let rawChildren = drawItemFull c negContext <$> childqs
                   drawnChildren = case showLabels (cscale c) of
                    False -> combineAnd c Nothing  Nothing  $ vAlign VTop $ rawChildren
                    True ->  combineAnd c topTextE botTextE $ vAlign VTop $ rawChildren
-              in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
-                                              , bbh = bbh.fst $ drawnChildren }
+              in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
                  (snd drawnChildren)
        Simply _txt -> drawLeaf     c      negContext   qt
        Neg         -> drawItemFull c (not negContext) (head childqs)

@@ -37,17 +37,13 @@ pBoolStructPT :: Parser BoolStructP
 pBoolStructPT = prePostParse pParamText
 
 pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $ (<* pToken EOL) $
+pParamText = debugName "pParamText" $ (<* optional dnl) $
   (:|)
-  <$> ((,)
-      <$> ((:|) <$> pOtherVal <*> pure [])
-      <*> pure Nothing)
-  <*> pure []
-  -- <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
-  -- <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
-  -- (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
-  --  <|>
-  --  manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
+  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
+  <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
+  (try (someIndentation (sameMany (pKeyValuesAka <* pToken EOL))) -- maybe the subsequent lines are indented; consume the indentation first.
+   <|>
+   manyIndentation (sameMany (pKeyValuesAka <* pToken EOL)))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do

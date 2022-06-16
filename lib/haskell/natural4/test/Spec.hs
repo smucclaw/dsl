@@ -326,8 +326,6 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "indented-2" "inline constitutive rule" (parseR pRules) $ [Regulative {subj = Leaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT ["walks"]),Leaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = Leaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [Leaf (RPMT ["eats"]),Leaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
-{-
-
       filetest "indented-3" "defined names in natural positions" (parseR pRules) $ [Regulative {subj = Leaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT ["walks"]),Leaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = Leaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [Leaf (RPMT ["drinks"]),Any Nothing [Leaf (RPMT ["swallows"]),Leaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 3, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [Leaf (RPMT ["eats"]),Leaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
       let mustsing1 = [ defaultReg {
@@ -453,6 +451,8 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "action-params-singer" "should parse action params"
         (parseR pRules) [singer_must_pay_params]
+
+{-
 
 --      filetest "blank-lines" "should parse despite interrupting newlines"
 --        (parseR pRules) if_king_wishes_singer_2

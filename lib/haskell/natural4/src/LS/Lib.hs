@@ -769,7 +769,7 @@ pDT = debugName "pDT" $ do
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- someIndentation pAction
+  pa <- manyIndentation pAction
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)

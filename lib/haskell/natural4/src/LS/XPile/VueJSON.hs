@@ -129,17 +129,28 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 
 -- define custom types here for things we care about in purescript
 
-itemRPToItemStr :: Item RelationalPredicate -> Item String
-itemRPToItemStr (Leaf b) = Leaf (Text.unpack $ rp2text b)
-itemRPToItemStr (AnyAll.Types.All _ items) = AnyAll.Types.All Nothing (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.Any _ items) = AnyAll.Types.Any Nothing (map itemRPToItemStr items)
+-- itemRPToItemStr :: Item RelationalPredicate -> Item String
+-- itemRPToItemStr (Leaf b) = Leaf (Text.unpack $ rp2text b)
+-- itemRPToItemStr (AnyAll.Types.All _ items) = AnyAll.Types.All Nothing (map itemRPToItemStr items)
+-- itemRPToItemStr (AnyAll.Types.Any _ items) = AnyAll.Types.Any Nothing (map itemRPToItemStr items)
+-- itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
+
+itemRPToItemStr :: Item RelationalPredicate -> ItemJSON
+itemRPToItemStr (Leaf b) = AnyAll.Types.Leaf (rp2text b)
+itemRPToItemStr (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.All pp (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.Any Nothing items) = AnyAll.Types.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.Any pre (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.Any pp (map itemRPToItemStr items)
 itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
 
-itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
-itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)
-itemRPToBinExpr (AnyAll.Types.All _ items) = BEAll "" (map itemRPToBinExpr items)
-itemRPToBinExpr (AnyAll.Types.Any _ items) = BEAny "" (map itemRPToBinExpr items)
-itemRPToBinExpr (Not item) = BENot (itemRPToBinExpr item)
+
+-- itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
+-- itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)
+-- itemRPToBinExpr (AnyAll.Types.All _ items) = BEAll "" (map itemRPToBinExpr items)
+-- itemRPToBinExpr (AnyAll.Types.Any _ items) = BEAny "" (map itemRPToBinExpr items)
+-- itemRPToBinExpr (Not item) = BENot (itemRPToBinExpr item)
 
 -- dsl/lib/haskell/anyall/src/AnyAll/Types.hs
 -- type Item a = Item' (Label TL.Text) a

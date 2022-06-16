@@ -7,7 +7,7 @@
 
 -- | A visualization inspired by Ladder Logic and by Layman Allen (1978).
 
-module AnyAll.SVGLadder where
+module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
 import Data.List (foldl')
 
@@ -252,9 +252,7 @@ hlayout c (bbold, old) (bbnew, new) =
     old
       <--> move (newBoxStart, 0) debugRect1
       <--> move (newSvgStart, 0) debugRect2
-      <> (trace ("moving newBoxStart = " <> show newBoxStart) $
-          move (newBoxStart, 0) new
-         )
+      <> move (newBoxStart, 0) new
       <> connectingCurve
   )
   where
@@ -341,18 +339,20 @@ txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {-
 
 combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
 combineOr c mpre mpost elems =
-  let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
-      mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
-      layout = case cdirection c of
-        LR -> vlayout c mybbox
-        TB -> error "hlayout not yet implemented for Or"
-      (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
-  in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
+  ( childbbox {bbw = bbw childbbox + leftMargin + rightMargin},  -- only for LR
+    move (leftMargin, -interElementGap) children
+  )
   where
-    myScale     = getScale (cscale c)
-    lrVgap      = slrv myScale
-    leftMargin  = slm myScale
+    myScale = getScale (cscale c)
+    interElementGap = slrv myScale
+    leftMargin = slm myScale
     rightMargin = srm myScale
+    childheights = interElementGap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
+    mybbox = (defaultBBox (cscale c)) {bbh = childheights, bbw = maximum (bbw . fst <$> elems)}
+    layout = case cdirection c of
+      LR -> vlayout c mybbox
+      TB -> error "hlayout not yet implemented for Or"
+    (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
 
 combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
 combineAnd c mpre mpost elems =

@@ -95,7 +95,7 @@ pOneOf = pToken OneOf *> someIndentation pParamText
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermAka" $ pAKA (liftSL pMultiTerm) id <* dnl
+pMultiTermAka = debugName "pMultiTermAka" $ manyIndentation $ pAKA (liftSL pMultiTerm) id <* optional dnl
 
 -- head of nonempty list
 pSingleTermAka :: Parser KVsPair

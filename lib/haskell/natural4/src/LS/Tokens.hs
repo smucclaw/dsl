@@ -263,7 +263,7 @@ alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
 pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ some pNumOrText
+pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ some pNumOrText <* optional dnl
 
 slMultiTerm :: SLParser [Text.Text]
 slMultiTerm = debugNameSL "slMultiTerm" $ liftSL $ some pNumOrText <* optional dnl

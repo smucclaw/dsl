@@ -724,13 +724,13 @@ permutationsReg keynamewho =
             <&&> whatnot
             !<||> pDoAction
           ) )
-  <|>
-    ( debugName "regulative permutation with deontic-action" $ nopermute ( mkRBfromDA
+    <|>
+    debugName "regulative permutation with deontic-action" (nopermute $ mkRBfromDA
             !<$$> pure knw
             !<||> pDA
             !<|?> (Nothing, pTemporal <* dnl)
             <&&> whatnot
-          ) )
+          )
   where
     whatnot x = x
                 !<|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.

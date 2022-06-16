@@ -521,7 +521,7 @@ pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   -- tentative  <- pRegRuleNormal
   tentative  <- try pRegRuleSugary
-                  <|> try pRegRuleNormal
+                  <|> pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
 
@@ -717,15 +717,16 @@ permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStru
                 -> Parser RuleBody
 permutationsReg keynamewho =
   debugName "permutationsReg" $ do
+  knw <- keynamewho -- It is obligatory to start with the keynamewho
   try ( debugName "regulative permutation with deontic-temporal" $ nopermute ( mkRBfromDT
-            !<$$> keynamewho
+            !<$$> pure knw
             !<||> try pDT
             <&&> whatnot
             !<||> pDoAction
           ) )
   <|>
-  try  ( debugName "regulative permutation with deontic-action" $ nopermute ( mkRBfromDA
-            !<$$> keynamewho
+    ( debugName "regulative permutation with deontic-action" $ nopermute ( mkRBfromDA
+            !<$$> pure knw
             !<||> pDA
             !<|?> (Nothing, pTemporal <* dnl)
             <&&> whatnot

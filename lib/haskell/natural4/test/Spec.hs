@@ -444,6 +444,7 @@ parserTests nlgEnv runConfig_ = do
       filetest "nl-aliases-2" "should parse natural language aliases (\"NL Aliases\") on the next line"
         (parseR pRules) if_king_wishes_singer_nextline
 
+{-
       let singer_must_pay_params =
             singer_must_pay { action = Leaf (("pay" :| []                 , Nothing)
                                              :| [("to"     :| ["the King"], Nothing)
@@ -452,7 +453,6 @@ parserTests nlgEnv runConfig_ = do
       filetest "action-params-singer" "should parse action params"
         (parseR pRules) [singer_must_pay_params]
 
-{-
 
 --      filetest "blank-lines" "should parse despite interrupting newlines"
 --        (parseR pRules) if_king_wishes_singer_2

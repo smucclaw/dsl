@@ -668,7 +668,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ someIndentation pAction
+  debugName "pDoAction/pAction" $ manyIndentation pAction
 
 
 pAction :: Parser BoolStructP

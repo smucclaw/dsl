@@ -471,7 +471,7 @@ parserTests nlgEnv runConfig_ = do
       xfiletest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
 
       filetest "bob-head-1-b" "more indented NOT"
-        (parseR pRules) [srcrow2 bobUncle1]
+        (parseR pRules) [srccol2 bobUncle1]
 
       let bobUncle2 = bobUncle1
             { clauses =

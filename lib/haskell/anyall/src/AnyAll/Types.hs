@@ -50,8 +50,23 @@ data Hardness = Soft -- use Left defaults
 
 type AnswerToExplain = Bool
 
-type Item a = Item' (Label T.Text) a
+data BinExpr a b =
+    BELeaf a
+  | BEAll b [BinExpr a b]
+  | BEAny b [BinExpr a b]
+  | BENot (BinExpr a b)
+  deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 
+instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
+
+type Item a = Item' (Label TL.Text) a
+
+-- data Item' lbl a =
+--     Leaf                       a
+--   | All {itemLbl :: (Maybe lbl), itemsAll :: [Item' lbl a]}
+--   | Any {itemLbl :: (Maybe lbl), itemsAny :: [Item' lbl a]}
+--   | Not             (Item' lbl a)
+--   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 data Item' lbl a =
     Leaf                       a
   | All (Maybe lbl) [Item' lbl a]

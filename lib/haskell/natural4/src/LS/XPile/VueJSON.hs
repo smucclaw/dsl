@@ -14,6 +14,8 @@ import Control.Monad (when)
 
 import PGF ( linearize, languages )
 import LS.NLP.UDExt (gf)
+import Data.Graph.Inductive.Internal.Thread (threadList)
+
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds
@@ -123,3 +125,60 @@ quaero xs = xs
 toVueRules :: [Rule] -> BoolStructR
 toVueRules [Hornlike {clauses=[HC2 {hBody=Just t}]}] = t
 toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
+
+-- define custom types here for things we care about in purescript
+
+itemRPToItemStr :: Item RelationalPredicate -> Item String
+itemRPToItemStr (Leaf b) = Leaf (Text.unpack $ rp2text b)
+itemRPToItemStr (AnyAll.Types.All _ items) = AnyAll.Types.All Nothing (map itemRPToItemStr items)
+itemRPToItemStr (AnyAll.Types.Any _ items) = AnyAll.Types.Any Nothing (map itemRPToItemStr items)
+itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
+
+itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
+itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)
+itemRPToBinExpr (AnyAll.Types.All _ items) = BEAll "" (map itemRPToBinExpr items)
+itemRPToBinExpr (AnyAll.Types.Any _ items) = BEAny "" (map itemRPToBinExpr items)
+itemRPToBinExpr (Not item) = BENot (itemRPToBinExpr item)
+
+-- dsl/lib/haskell/anyall/src/AnyAll/Types.hs
+-- type Item a = Item' (Label TL.Text) a
+-- data Item' lbl a =
+--     Leaf                       a
+--   | All (Maybe lbl) [Item' lbl a]
+--   | Any (Maybe lbl) [Item' lbl a]
+--   | Not             (Item' lbl a)
+
+-- data Label a =
+--     Pre a
+--   | PrePost a a
+
+-- vue-pure-pdpa/src/AnyAll/Types.purs
+-- data Item a
+--   = Leaf a
+--   | All (Label a) (Array (Item a))
+--   | Any (Label a) (Array (Item a))
+--   | Not (Item a)
+
+
+-- we have this
+-- thing :: Item RelationalPredicate
+-- thing =  All Nothing
+--   [ Leaf
+--     ( RPMT [ "a" ] )
+--   , Any Nothing
+--     [ Leaf
+--       ( RPMT [ "b" ] )
+--     , Leaf
+--       ( RPMT [ "c" ] )
+--     ]
+--   ]
+
+-- we need this
+-- thing' :: Item String
+-- thing' =  All Nothing
+--   [ Leaf [ "a" ]
+--   , Any Nothing
+--     [ Leaf [ "b" ]
+--     , Leaf  [ "c" ]
+--     ]
+--   ]

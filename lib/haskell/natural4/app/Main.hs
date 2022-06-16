@@ -90,8 +90,8 @@ main = do
   when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
 
   when (SFL4.toVue rc) $ do
-    putStrLn $ toString $ encodePretty $ toVueRules rules
-    -- pPrint $ toVueRules rules
+    putStrLn $ toString $ encodePretty $ itemRPToBinExpr $ toVueRules rules
+    -- pPrint $ itemRPToItemStr $ toVueRules rules
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

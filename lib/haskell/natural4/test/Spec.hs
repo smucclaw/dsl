@@ -468,7 +468,7 @@ parserTests nlgEnv runConfig_ = do
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
 
-      filetest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
+      xfiletest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
 
       filetest "bob-head-1-b" "more indented NOT"
         (parseR pRules) [srcrow2 bobUncle1]

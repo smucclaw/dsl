@@ -26,8 +26,9 @@ jobs:
         cache-name: cache-stack
       with:
         path: ~/.stack
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
         restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
           ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-

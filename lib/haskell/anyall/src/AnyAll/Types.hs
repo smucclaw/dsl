@@ -59,9 +59,9 @@ data BinExpr a b =
 
 instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
 
-type Item a = Item' (Maybe (Label TL.Text)) a
+type Item a = Item' (Maybe (Label T.Text)) a
 
-type ItemJSON = Item' (Label TL.Text) TL.Text
+type ItemJSON = Item' (Label T.Text) T.Text
 
 -- data Item' lbl a =
 --     Leaf                       a

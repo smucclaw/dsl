@@ -1,0 +1,9 @@
+# text = an individual affected by a notifiable data breach
+1	an	a	DET	DT	Definite=Ind|PronType=Art	2	det	_	FUN=a_Det
+2	individual	individual	NOUN	JJ	Degree=Pos	0	root	_	FUN=individual_A
+3	affected	affect	VERB	VBN	Tense=Past|VerbForm=Part	2	acl	_	FUN=affectVBN
+4	by	by	ADP	IN	_	8	case	_	_
+5	a	a	DET	DT	Definite=Ind|PronType=Art	8	det	_	FUN=a_Det
+6	notifiable	notifiable	ADJ	JJ	Degree=Pos	8	amod	_	FUN=notifiable_A
+7	data	data	NOUN	NN	Number=Sing	8	compound	_	FUN=data_N
+8	breach	breach	NOUN	NN	Number=Sing	3	obl	_	FUN=breach_N

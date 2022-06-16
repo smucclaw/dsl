@@ -17,8 +17,9 @@
 module LS.Lib where
 
 -- import qualified Data.Tree      as Tree
-import qualified Data.Text.Lazy as Text
--- import Data.Text.Lazy.Encoding (decodeUtf8)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LT
+-- import Data.Text.Encoding (decodeUtf8)
 import Text.Megaparsec
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.Csv as Cassava
@@ -146,7 +147,7 @@ renderStream :: MyStream -> String
 renderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
 
 pRenderStream :: MyStream -> String
-pRenderStream = Text.unpack . pStringNoColor . renderStream
+pRenderStream = Text.unpack . LT.toStrict . pStringNoColor . renderStream
 
 exampleStream :: ByteString -> MyStream
 exampleStream s = case getStanzas <$> asCSV s of
@@ -628,7 +629,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
-      try pRegRule
+      try (debugName "pHenceLest -> innerRule -> pRegRule" pRegRule)
       <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pOtherVal)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
@@ -667,11 +668,11 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ pAction
+  debugName "pDoAction/pAction" $ someIndentation pAction
 
 
 pAction :: Parser BoolStructP
-pAction = debugName "pAction calling dBoolStructP" dBoolStructP
+pAction = debugName "pAction calling pParamText" (AA.Leaf <$> pParamText)
 
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
@@ -768,7 +769,7 @@ pDT = debugName "pDT" $ do
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- pAction
+  pa <- someIndentation pAction
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)

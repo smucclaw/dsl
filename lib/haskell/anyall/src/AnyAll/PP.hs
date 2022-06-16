@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.PP (ppQTree) where
+module AnyAll.PP (ppQTree, hardnormal) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance
@@ -11,9 +11,8 @@ import Data.String (IsString)
 import Data.Map.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
-import qualified Data.Text.Lazy         as TL
-import qualified Data.Text.Lazy.Builder as TLB
 import qualified Data.ByteString.Lazy   as B
+import qualified Data.Text       as T
 import Data.Aeson.Types
 
 ppline = Prettyprinter.line
@@ -29,7 +28,7 @@ markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
 markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
-hardnormal, softnormal :: Marking TL.Text -> Item TL.Text -> QTree TL.Text
+hardnormal, softnormal :: Marking T.Text -> Item T.Text -> QTree T.Text
 hardnormal m = relevant Hard DPNormal m Nothing
 
 softnormal m = relevant Soft DPNormal m Nothing
@@ -44,7 +43,7 @@ docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: Item TL.Text -> Map.Map TL.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
+ppQTree :: Item T.Text -> Map.Map T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
 ppQTree i mm = do
   let m = Marking (Default <$> mm)
       hardresult = hardnormal m i

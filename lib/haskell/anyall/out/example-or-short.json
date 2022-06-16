@@ -1,0 +1,26 @@
+{
+  "marking": {
+    "eat": {
+      "getDefault": {
+        "Left": false
+      }
+    },
+    "drink": {
+      "getDefault": {
+        "Left": true
+      }
+    }
+  },
+  "andOrTree": {
+        "nodetype": "any",
+        "pre": "any",
+        "children": [
+          {
+            "leaf": "eat"
+          },
+          {
+            "leaf": "drink"
+          }
+        ]
+  }
+}

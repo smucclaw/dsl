@@ -567,7 +567,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ( poowonk ) MEANS ( poopoo ) OR ( just a ( ( honk ) ) )
 
-***** r: this doesn't parse:
+***** r: this parses now:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-1-r.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -616,19 +616,153 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 |               | OR | c2    |
 |               | OR | c3    |
 
-***** PDPA Part 1 - fancier
+***** PDPA Part 1 - fancier -- works
 :PROPERTIES:
 :TABLE_EXPORT_FILE: inline-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| personal data |    |     |       |
-| MEANS         |    |   1 | alpha |
-| OR            |    |   2 | beta  |
-| OR            |    |   5 | gamma |
-|               |    | 5.a | c1    |
-|               | OR | 5.b | c2    |
-|               | OR | 5.c | c3    |
+it works if you outdent the 5 to match the left margin of the inner "OR"
+
+because a label has to be a single string this flattens to "5 gamma"
+
+it does preserve the separation between "5.a" and "c1" etc though. so that's good.
+
+| personal data |    |       |       |
+| MEANS         |    | 1     | alpha |
+| OR            |    | 2     | beta  |
+| OR            | 5  | gamma |       |
+|               |    | 5.a   | c1    |
+|               | OR | 5.b   | c2    |
+|               | OR | 5.c   | c3    |
+
+***** withlabels indented first way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| any of the prescribed personal data or classes of personal data relating to the individual |       |       |     |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      | FALSE |       |   1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         | FALSE |       |   2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         | FALSE |       |   3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         | FALSE |       |   4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | FALSE |       |   5 | Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —                                                                                                                    |
+|                                                                                            |       | FALSE | 5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR    | FALSE | 5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR    | FALSE | 5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR    | FALSE | 5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR    | FALSE | 5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR    | FALSE | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+
+
+
+***** withlabels indented second way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| any of the prescribed personal data or classes of personal data relating to the individual |       |       |     |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      | FALSE |       |   1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         | FALSE |       |   2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         | FALSE |       |   3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         | FALSE |       |   4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | FALSE | 5     |     | Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —                                                                                                                    |
+|                                                                                            |       | FALSE | 5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR    | FALSE | 5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR    | FALSE | 5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR    | FALSE | 5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR    | FALSE | 5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR    | FALSE | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+
+***** withlabels indented third way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-e.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+the FALSE gets in the way.
+
+| any of the prescribed personal data or classes of personal data relating to the individual |    |       |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      |    |     1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         |    |     2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         |    |     3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         |    |     4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | 5  | FALSE | Any information that ...                                                                                                                                                                                                                           |
+|                                                                                            |    |   5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR |   5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR |   5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR |   5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR |   5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR |   5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+***** withlabels indented fourth way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-f.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+only change, remove the FALSE
+
+| any of the prescribed personal data or classes of personal data relating to the individual |    |     |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      |    |   1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         |    |   2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         |    |   3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         |    |   4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | 5  |     | Any information that ...                                                                                                                                                                                                                           |
+|                                                                                            |    | 5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR | 5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR | 5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR | 5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR | 5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR | 5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+***** withlabels indented fifth way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-g.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+only change, move the "any information that" one column to the left
+
+| any of the prescribed personal data or classes of personal data relating to the individual |    |                          |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      |    |                        1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         |    |                        2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         |    |                        3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         |    |                        4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | 5  | Any information that ... |                                                                                                                                                                                                                                                    |
+|                                                                                            |    |                      5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR |                      5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR |                      5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR |                      5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR |                      5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR |                      5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+i guess we'll just have to do that for the input spreadsheets.
+
+***** withlabels indented sixth way -- works
+:PROPERTIES:
+:TABLE_EXPORT_FILE: inline-2-h.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| any of the prescribed personal data or classes of personal data relating to the individual |       |       |                    |                                                                                                                                                                                                                                                    |
+| MEANS                                                                                      | FALSE |       |                  1 | The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.                                |
+| OR                                                                                         | FALSE |       |                  2 | The income of the individual from the sale of any goods or property.                                                                                                                                                                               |
+| OR                                                                                         | FALSE |       |                  3 | The number of any credit card, charge card or debit card issued to or in the name of the individual.                                                                                                                                               |
+| OR                                                                                         | FALSE |       |                  4 | The number assigned to any account the individual has with any organisation that is a bank or finance company.                                                                                                                                     |
+| OR                                                                                         | FALSE | 5     | Any information... |                                                                                                                                                                                                                                                    |
+|                                                                                            |       | FALSE |                5.a | is or had been the subject of any investigation under the CYPA;                                                                                                                                                                                    |
+|                                                                                            | OR    | FALSE |                5.b | is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;                                                                                                                                                  |
+|                                                                                            | OR    | FALSE |                5.c | is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; |
+|                                                                                            | OR    | FALSE |                5.d | is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;                                                                                                                             |
+|                                                                                            | OR    | FALSE |                5.e | is or was the subject of an order made by a court under the CYPA; or                                                                                                                                                                               |
+|                                                                                            | OR    | FALSE |                5.f | is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.                              |
+
+all six indentation styles now work.
 
 
 *** how do we deal with blanks in between things we care about?
@@ -863,6 +997,8 @@ As discussed above in "Deriving the Grammar":
 |    | AND   | term3 |
 | OR | term4 |       |
 | OR | term5 |       |
+
+
 
 ***** ParamText
 
@@ -2473,22 +2609,45 @@ what if we say
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| §§    | Assess                                                                          |                                   |                 |                   |        |                                  |               |   |
-| EVERY | Organisation                                                                    |                                   |                 | AKA               | You    |                                  |               |   |
-| WHO   | is                                                                              | not                               | a Public Agency |                   |        |                                  |               |   |
-| MUST  | WITHIN                                                                          | 30                                | days            |                   |        |                                  |               |   |
-| UPON  | becoming aware a data breach may have occurred                                  |                                   |                 |                   |        |                                  |               |   |
-| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                 |                   |        |                                  |               |   |
-| ->    | assess                                                                          | if it is a Notifiable Data Breach |                 |                   |        |                                  |               |   |
-|       | by                                                                              | performing                        |                 | NDB Qualification |        |                                  |               |   |
-| HENCE | Notification                                                                    |                                   |                 |                   |        |                                  |               |   |
-| LEST  |                                                                                 | the PDPC                          | MAY             |                   |        |                                  |               |   |
-|       |                                                                                 |                                   | ->              |                   | demand | an explanation for your inaction |               |   |
-|       |                                                                                 |                                   | HENCE           | You               | MUST   |                                  |               |   |
-|       |                                                                                 |                                   |                 |                   | ->     | respond                          |               |   |
-|       |                                                                                 |                                   |                 |                   |        | to                               | the PDPC      |   |
-|       |                                                                                 |                                   |                 |                   |        | about                            | your inaction |   |
+| §§    | Assess                                                                          |                                   |                                  |                   |     |
+| EVERY | Organisation                                                                    |                                   |                                  | AKA               | You |
+| WHO   | is                                                                              | not                               | a Public Agency                  |                   |     |
+| MUST  | WITHIN                                                                          | 30                                | days                             |                   |     |
+| UPON  | becoming aware a data breach may have occurred                                  |                                   |                                  |                   |     |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                                  |                   |     |
+| ->    | assess                                                                          | if it is a Notifiable Data Breach |                                  |                   |     |
+|       | by                                                                              | performing                        |                                  | NDB Qualification |     |
+| HENCE | Notification                                                                    |                                   |                                  |                   |     |
+| LEST  | PARTY                                                                           | the PDPC                          |                                  |                   |     |
+|       | MAY                                                                             | demand                            | an explanation for your inaction |                   |     |
+|       | HENCE                                                                           | PARTY                             | You                              |                   |     |
+|       |                                                                                 | MUST                              | respond                          |                   |     |
+|       |                                                                                 |                                   | to                               | the PDPC          |     |
+|       |                                                                                 |                                   | about                            | your inaction     |     |
 
+if this works when "respond" "to" "about" are in the same column, then we need to extend the paramtext parser to handle EOL. But let's see first if the failure is happening earlier.
+
+*** let's try it with slightly different indentation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: pdpadbno-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §§    | Assess                                                                          |                                   |                                  |                   |               |
+| EVERY | Organisation                                                                    |                                   |                                  | AKA               | You           |
+| WHO   | is                                                                              | not                               | a Public Agency                  |                   |               |
+| MUST  | WITHIN                                                                          | 30                                | days                             |                   |               |
+| UPON  | becoming aware a data breach may have occurred                                  |                                   |                                  |                   |               |
+| WHEN  | the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13 |                                   |                                  |                   |               |
+| ->    | assess                                                                          | if it is a Notifiable Data Breach |                                  |                   |               |
+|       | by                                                                              | performing                        |                                  | NDB Qualification |               |
+| HENCE | Notification                                                                    |                                   |                                  |                   |               |
+| LEST  | PARTY                                                                           | the PDPC                          |                                  |                   |               |
+|       | MAY                                                                             | demand                            | an explanation for your inaction |                   |               |
+|       | HENCE                                                                           | PARTY                             | You                              |                   |               |
+|       |                                                                                 | MUST                              | respond                          |                   |               |
+|       |                                                                                 |                                   |                                  | to                | the PDPC      |
+|       |                                                                                 |                                   |                                  | about             | your inaction |
 
 *** Nested Or Group with pre/post labels
 

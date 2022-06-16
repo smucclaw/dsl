@@ -10,7 +10,7 @@ import LS.NLP.NLG
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (nub, groupBy)
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Control.Monad (when)
 
 import PGF ( linearize, languages )
@@ -25,8 +25,12 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
                   | r@DefTypically{..} <- rs ]
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
--- checklist rc rs = groundToChecklist `mapM` groundrules rc rs
-checklist env rc rs = groundsToChecklist env $ groundrules rc rs
+checklist env _ rs = do
+   qs <- nlgQuestion env `mapM` rs
+   let nonEmptyQs = [ q | q@(_:_) <- qs ]
+   pure $ sequence nonEmptyQs
+-- original:
+-- checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =

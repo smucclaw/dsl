@@ -4,7 +4,7 @@ module LS.XPile.Prolog where
 
 import LS as SFL4
 import Language.Prolog
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import qualified Data.Map as Map
 import Data.List.NonEmpty as NE
 import AnyAll

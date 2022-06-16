@@ -8,7 +8,7 @@
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import qualified Data.Set           as Set
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Text.Megaparsec
 import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT), MonadReader)
 import Control.Monad.Writer.Lazy
@@ -781,9 +781,9 @@ someIndentation' p = myindented' (manyIndentation' p)
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
 manyIndentation p =
-  debugName "manyIndentation/leaf?" (try p)
+  try (debugName "manyIndentation/leaf?" p)
   <|>
-  debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
+  (debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p))
 
 manyIndentation' :: Parser a -> Parser a
 manyIndentation' p =

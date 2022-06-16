@@ -1,0 +1,55 @@
+{
+  "marking": {
+    "walk": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "run": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "sink": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "swim": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "eat": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "drink": {
+      "getDefault": {
+        "Left": true
+      }
+    }
+  },
+  "andOrTree": {
+    "nodetype": "all",
+    "pre": "all of",
+    "children": [
+      {
+        "leaf": "walk"
+      },
+      {
+        "nodetype": "all",
+        "pre": "all",
+        "children": [
+          {
+            "leaf": "eat"
+          },
+          {
+            "leaf": "drink"
+          }
+        ]
+      }
+    ]
+  }
+}

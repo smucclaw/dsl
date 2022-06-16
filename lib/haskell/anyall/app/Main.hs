@@ -9,8 +9,7 @@ module Main where
 
 import AnyAll
 import qualified Data.Map.Strict        as Map
-import qualified Data.Text.Lazy         as TL
-import qualified Data.Text.Internal   as DTI
+import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
 import           Control.Monad (forM_, when, guard)
 import System.Environment
@@ -23,7 +22,8 @@ import Options.Generic
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
-                   , only :: w ::: String <!> "" <?> "native | tree | svg"
+                   , only :: w ::: String <!> "" <?> "native | tree | svg | svgtiny"
+                   , debug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
@@ -39,20 +39,24 @@ main = do
   -- print (opts :: Opts Unwrapped)
   when (demo opts) $ maindemo; guard (not $ demo opts)
   mycontents <- B.getContents
-  let myinput = eitherDecode mycontents :: Either String (StdinSchema TL.Text)
+  let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
   when (only opts == "native") $ print myinput
   guard (isRight myinput)
   let (Right myright) = myinput
   when (only opts == "tree") $
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
-  when (only opts == "svg") $
-    print $ makeSvg $ renderItem $ andOrTree myright
-  
+  when (only opts `elem` words "svg svgtiny") $
+    print (makeSvg $
+           q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full
+                                    , cdebug = debug opts
+                                    }) $
+           hardnormal (marking myright) (andOrTree myright) )
+
 maindemo :: IO ()
 maindemo = do
   forM_
     [ Map.empty
-    , Map.fromList [("walk" :: TL.Text,  Left  $ Just True )
+    , Map.fromList [("walk" :: T.Text,  Left  $ Just True )
                    ,("run",   Left  $ Just True )
                    ,("eat",   Left  $ Just True )
                    ,("drink", Left  $ Just False)]

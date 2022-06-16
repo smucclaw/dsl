@@ -42,6 +42,13 @@ packages:
   original:
     url: https://github.com/anka-213/gf-ud/archive/9a3a89f1e2896a26ab1671405f2af2b3facfc893.tar.gz
 - completed:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+    pantry-tree:
+      size: 546
+      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
+  original:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+- completed:
     size: 16398419
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
     name: wordnet
@@ -88,13 +95,6 @@ packages:
       sha256: 4082f112e4f3d6363df6d12906b24bdcc9ebd7ac2c683841fac1254324373f8f
   original:
     hackage: svg-builder-0.1.1
-- completed:
-    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
-    pantry-tree:
-      size: 546
-      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
-  original:
-    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
 snapshots:
 - completed:
     size: 587393

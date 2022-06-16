@@ -1,7 +1,7 @@
 personal data,,,
 MEANS,,1,alpha
 OR,,2,beta
-OR,,5,gamma
+OR,5,gamma,
 ,,5.a,c1
 ,OR,5.b,c2
 ,OR,5.c,c3

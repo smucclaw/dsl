@@ -7,17 +7,23 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 	fun
 
+	addMark : mark -> UDS -> UDS ; -- sometimes we do need to parse "if [something does something]" as standalone >:(
+
+	RelclNP : NP -> aclRelcl -> NP ; -- RelNP but for aclRelcl instead. Too annoying to build RS here, instead going via UDS.
+	AclNP : NP -> acl -> NP ;        -- same but for gerunds etc
+
 	-- from the first test corpus, full sentences
 	root_cop_advmod          : root -> cop -> advmod -> UDS ; -- is not a breach
-	passRelcl_               : root -> RP -> auxPass -> aclRelcl ; -- [whose data]:RP is affected
+	-- passRelcl_               : root -> RP -> aux -> aclRelcl ; -- [whose data]:RP is affected
 	root_nsubj_cop_advmod    : root -> nsubj -> cop -> advmod -> UDS ;
     root_nsubj_cop_nmod      : root -> nsubj -> cop -> nmod -> UDS ;
     root_nsubj_aux_aclRelcl  : root -> nsubj -> aux -> aclRelcl -> UDS ; -- [nsubj] is [root] that [aux] [aclRelcl]ed (aux for tense etc.)
     root_nsubj_aux_aclRelcl_obl : root -> nsubj -> aux -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [will]:aux disappear in the breach
     root_nsubj_cop_aclRelcl_obl : root -> nsubj -> cop -> aclRelcl -> obl -> UDS ;  -- the person whose personal data [is]:cop affected by the breach
+{-
     root_nsubjPass_aux_auxPass : root -> nsubjPass -> aux -> auxPass -> UDS ; -- everyone should be notified
 	root_nsubjPass_aux_auxPass_obl :  root -> nsubjPass -> aux -> auxPass -> obl -> UDS ; -- everyone should be notified in accordance with Section 10
-
+-}
 	-- from the text fragments in Legal Spreadsheets PDPA mockup
 
 	root_only : root -> UDS ;
@@ -66,8 +72,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_appos_advmod : root -> appos -> advmod -> UDS ;
 	--(Regs §3.1.b.ii) ;
 
-		root_auxPass : root -> auxPass -> UDS ;
-	--(b) or (c) is placed ;
+	-- 	root_auxPass : root -> auxPass -> UDS ;
+	-- --(b) or (c) is placed ;
 
 		root_case : root -> case_ -> UDS ;
 	--ONE OF ;
@@ -90,44 +96,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_case_nummod_nummod : root -> case_ -> nummod -> nummod -> UDS ;
 	--on or after 1 July 2020 ;
 
-		root_cc : root -> cc -> UDS ;
-	--or is" ;
-
-		root_cc_cop_xcomp : root -> cc -> cop -> xcomp -> UDS ;
-	--or is likely to result in ;
-
-		root_cc_nmod : root -> cc -> nmod -> UDS ;
-	--or transfer of any property ;
-
-		root_cc_obj : root -> cc -> obj -> UDS ;
-	--and amount due or outstanding ;
-
 		root_ccomp : root -> ccomp -> UDS ;
 	--unlikely that the notifiable data breach will result in significant harm to the affected individual ;
-
-		root_compound : root -> compound -> UDS ;
-	--(Regs §3.1.a) ;
-
-		root_compoundPrt_compoundPrt : root -> compoundPrt -> compoundPrt -> UDS ;
-	--set out in ;
-
-		root_compound_acl : root -> compound -> acl -> UDS ;
-	--"adoption order made under the Adoption of Children Act (Cap. 4) ;
-
-		root_compound_amod : root -> compound -> amod -> UDS ;
-	--scope quantification slightly different vs 4 ;
-
-		root_compound_appos : root -> compound -> appos -> UDS ;
-	--Advisory Guidelines part 20 ;
-
-		root_compound_compound : root -> compound -> compound -> UDS ;
-	--(Regs §3.1.b.i) ;
-
-		root_compound_compound_appos : root -> compound -> compound -> appos -> UDS ;
-	--Personal Data Protection Act — Data Breach Notification Obligation ;
-
-		root_compound_flat : root -> compound -> flat -> UDS ;
-	--(b) Human Immunodeficiency Virus Infection; ;
 
 		root_cop : root -> cop -> UDS ;
 	--"(c) is committed ;
@@ -143,15 +113,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubj_aux_aux : root -> nsubj -> aux -> aux -> UDS ;
 	--a data breach may have occurred ;
-
-		root_mark_nsubj_aux : root -> mark -> nsubj -> aux -> UDS ;
-	--if device has gone
-
-		root_mark_nsubj_aux_aux : root -> mark -> nsubj -> aux -> aux -> UDS ;
-	--that a data breach may have occurred
-
-	    root_mark_nsubj_xcomp : root -> mark -> nsubj -> xcomp -> UDS ;
-    -- if the device goes missing
 
 		root_aclRelcl : root -> aclRelcl -> UDS ;
 	-- [any manner]:root [that is reasonable]:acl:rcl ;
@@ -172,51 +133,11 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_goeswith_goeswith : root -> goeswith -> goeswith -> UDS ;
 	--(Act §26B.3.b) ;
 
-		root_mark : root -> mark -> UDS ;
-	--IF NOT ;
-
-		root_mark_cc_mark_obj : root -> mark -> cc -> mark -> obj -> UDS ;
-	--"on or after notifying the Commission ;
-
-		root_mark_expl_cop_xcomp : root -> mark -> expl -> cop -> xcomp -> UDS ;
-	--"once it is likely to be of significant scale ;
-
-		root_mark_expl_nsubj : root -> mark -> expl -> nsubj -> UDS ;
-	--"when there is a data breach ;
-
 		root_expl_cop_csubj	: root -> expl -> cop -> csubj -> UDS ;
 	--"[it]:expl [is]:cop [critical]:root [to do an assessment]:csubj"
 
-		root_mark_nsubj : root -> mark -> nsubj -> UDS ;
-	--whether or not the court has" ;
-
-		root_mark_nsubjPass_auxPass: root -> mark -> nsubjPass -> auxPass -> UDS ;
-	-- that the device that contains personal data is lost
-
-		root_mark_nsubjPass_auxPass_obl : root -> mark -> nsubjPass -> auxPass -> obl -> UDS ;
-	--"when an organisation is notified of a data breach ;
-
-		root_mark_nsubj_aux_advmod_obj : root -> mark -> nsubj -> aux -> advmod -> obj -> UDS ;
-	--"although the organisation must still notify the Commission ;
-
-		root_mark_nsubj_cop : root -> mark -> nsubj -> cop -> UDS ;
-	--"if it is significant ;
-
-		root_mark_nsubj_cop_obl : root -> mark -> nsubj -> cop -> obl -> UDS ;
-	--"when an organisation is aware of a data breach ;
-
 		root_nsubj_cop_obl : root -> nsubj -> cop -> obl -> UDS ;
 	--"an organisation is aware of a data breach ;
-
-
-		root_mark_nsubj_obj : root -> mark -> nsubj -> obj -> UDS ;
-	--"if it harms the affected individual ;
-
-		root_mark_nsubj_obl : root -> mark -> nsubj -> obl -> UDS ;
-	--"when an organisation knows of a data breach ;
-
-		root_mark_nummod : root -> mark -> nummod -> UDS ;
-	--"if the data breach affects at least 500 people ;
 
 		root_nmod : root -> nmod -> UDS ;
 	--day of silence ;
@@ -232,33 +153,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 
 		root_nsubj : root -> nsubj -> UDS ;
 	--"the organisation must ;
-
-		root_nsubjPass_auxPass : root -> nsubjPass -> auxPass -> UDS ;
-	--Bob is estranged ;
-
-		root_nsubjPass_auxPass_advmod : root -> nsubjPass -> auxPass -> advmod -> UDS;
-	-- the updates are reviewed regularly
-
-		root_nsubjPass_auxPass_advmod_advcl : root -> nsubjPass -> auxPass -> advmod -> advcl -> UDS ;
-	--Notification is not required if the data breach is within an organisation ;
-
-		root_nsubjPass_auxPass_advmod_xcomp : root -> nsubjPass -> auxPass -> advmod -> xcomp -> UDS ;
-	--a data breach within an organisation is deemed not to be a notifiable data breach ;
-
-		root_nsubjPass_auxPass_xcomp : root -> nsubjPass -> auxPass -> xcomp -> UDS ;
-	--data breach of prescribed personal data is deemed to result in significant harm ;
-
-		root_nsubjPass_aux_auxPass : root -> nsubjPass -> aux -> auxPass -> UDS ;
-	--every individual affected by the data breach should be notified ;
-
-		root_nsubjPass_aux_auxPass_obl_advmod : root -> nsubjPass -> aux -> auxPass -> obl -> advmod -> UDS ;
-	--the Commission must be notified of the data breach as soon as practicable once the organisation assesses it to be a notifiable breach ;
-
-		root_nsubjPass_aux_auxPass_obl_obl_advcl : root -> nsubjPass -> aux -> auxPass -> obl -> obl -> advcl -> UDS ;
-	--the Commission must be notified of the data breach within 3 days once the organisation assesses it to be a notifiable breach ;
-
-		root_nsubjPass_aux_auxPass_obl_obl_advmod : root -> nsubjPass -> aux -> auxPass -> obl -> obl -> advmod -> UDS ;
-	--the Commission must be notified of the data breach within 3 days or as soon as practicable once the organisation assesses it to be a notifiable breach ;
 
 		root_nsubj_advmod : root -> nsubj -> advmod -> UDS ;
 	--the King so desires ;
@@ -302,6 +196,13 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nsubj_cop_nmodPoss : root -> nsubj -> cop -> nmodPoss -> UDS ;
 	--Bob is your mother's brother ;
 
+		root_nsubj_obj_obl : root -> nsubj -> obj -> obl -> UDS ;
+	-- Bob processes data for an organisation
+
+		root_obj_obl_advcl : root -> obj -> obl -> advcl -> UDS ;
+	-- [do]:root [an assessment]:obj [upon discovery]:obl [to see if it's NDB]:advcl
+
+		root_obj_obl : root -> obj -> obl -> UDS ;
 
 		root_nsubj_obj : root -> nsubj -> obj -> UDS ;
 	--Data breach includes the loss of any storage medium or device with personal data. ;
@@ -324,27 +225,11 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_nummod_appos : root -> nummod -> appos -> UDS ;
 	--$10 * songLength ;
 
-		root_nummod_auxPass_cc_aux_auxPass_obl_obl : root -> nummod -> auxPass -> cc -> aux -> auxPass -> obl -> obl -> UDS ;
-	--(c) is or had been taken into care or custody by the Director-General of ;
-
-
-		root_nummod_mark_obj : root -> nummod -> mark -> obj -> UDS ;
-	--(c) to verify the authenticity or integrity of a secure electronic signature. ;
-
-		root_nummod_mark_obj_cc : root -> nummod -> mark -> obj -> cc -> UDS ;
-	--(b) to verify the integrity of a secure electronic record; or ;
-
 		root_nummod_nmod : root -> nummod -> nmod -> UDS ;
 	--Part 2 of the Schedule ;
 
-		root_nummod_nsubjPass_nsubjPass_auxPass_cc : root -> nummod -> nsubjPass -> nsubjPass -> auxPass -> cc -> UDS ;
-	--(b) any personal data that is disclosed to the extent that is required or ;
-
 		root_nummod_obl : root -> nummod -> obl -> UDS ;
 	--(b) owed by an organisation to the individual. ;
-
-		root_nummod_obl_cc : root -> nummod -> obl -> cc -> UDS ;
-	--(a) owed by the individual to an organisation; or ;
 
 		root_obj : root -> obj -> UDS ;
 	--eat potato ;
@@ -373,9 +258,6 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_obl_obl : root -> obl -> obl -> UDS ;
 	--mentioned in paragraph 11 on behalf of the individual. ;
 
-		root_obl_obl_obl_cc : root -> obl -> obl -> obl -> UDS ;
-	--authorised in that behalf in writing by the Director-General
-
 		root_obl_xcomp : root -> obl -> xcomp -> UDS ;
 	--"for an adoption order to be made ;
 
@@ -391,11 +273,12 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_xcomp_ccomp : root -> xcomp -> ccomp -> UDS ;
 	--render it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 
+        root_xcomp_obj : root -> xcomp -> obj -> UDS ; -- probably misparse??
+
 		root_nsubj_aux_obl : root -> nsubj -> aux -> obl -> UDS ;
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;
 
 
-	fun root_advcl_nsubjPass_auxPass : root -> advcl -> nsubjPass -> auxPass -> UDS ;
 	fun root_advcl_nsubj_aux_advcl : root -> advcl -> nsubj -> aux -> advcl -> UDS ;
 	fun root_advcl_nsubj_aux_advmod_obj : root -> advcl -> nsubj -> aux -> advmod -> obj -> UDS ;
 	fun root_advcl_nsubj_aux_ccomp : root -> advcl -> nsubj -> aux -> ccomp -> UDS ;
@@ -403,16 +286,20 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 	fun root_advcl_nsubj_cop : root -> advcl -> nsubj -> cop -> UDS ;
 	fun root_advcl_nsubj_cop_case_amod_nmod : root -> advcl -> nsubj -> cop -> case_ -> amod -> nmod -> UDS ;
 	fun root_advcl_nsubj_xcomp : root -> advcl -> nsubj -> xcomp -> UDS ;
-	fun root_mark_nsubj_nsubj_xcomp : root -> mark -> nsubj -> nsubj -> xcomp -> UDS ;
+	fun root_nsubj_nsubj_xcomp : root -> nsubj -> nsubj -> xcomp -> UDS ;
+
 	fun root_nsubj_cop_obl_parataxis : root -> nsubj -> cop -> obl -> parataxis -> UDS ;
 	fun root_nsubj_obj_advcl : root -> nsubj -> obj -> advcl -> UDS ;
 
-	-- Maryam's annotations
+	{- -- Maryam's annotations
+	fun root_advcl_nsubjPass_auxPass : root -> advcl -> nsubjPass -> auxPass -> UDS ;
 	fun root_advcl_nsubjPass_aux_auxPass_xcomp : root -> advcl -> nsubjPass -> aux -> auxPass -> xcomp -> UDS ;
 	fun root_nsubjPass_aux_auxPass_advcl_advcl : root -> nsubjPass -> aux -> auxPass -> advcl -> advcl -> UDS ;
 	fun root_nsubjPass_aux_auxPass_advmod : root -> nsubjPass -> aux -> auxPass -> advmod -> UDS ;
 	fun root_nsubjPass_aux_auxPass_obl : root -> nsubjPass -> aux -> auxPass -> obl -> UDS ;
 	fun root_nsubjPass_aux_auxPass_xcomp : root -> nsubjPass -> aux -> auxPass -> xcomp -> UDS ;
+	-}
+	fun root_nsubj_aux_xcomp : root -> nsubj -> aux -> xcomp -> UDS ; -- each portion shall be considered a separate building
 	fun root_nsubj_aux_cop_nmod : root -> nsubj -> aux -> cop -> nmod -> UDS ;
 	fun root_nsubj_nsubj_aux_advmod_obj : root -> nsubj -> nsubj -> aux -> advmod -> obj -> UDS ;
   fun root_advcl_nsubj_cop_nsubj : root -> advcl -> nsubj -> cop -> nsubj -> UDS ;

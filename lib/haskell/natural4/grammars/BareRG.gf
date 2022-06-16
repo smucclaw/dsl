@@ -9,10 +9,12 @@ abstract BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN, -- : N -> N -> N    -- control system
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
-
+    ,VPS, MkVPS
   ],
 
-  Sentence, -- The whole  module is included, but only some of the funs have labels, i.e. are used for parsing
+  Sentence [
+    PredVP, UseCl, UseRCl, UseQCl
+    ],
 
   Verb [
      VP,AdV,Adv,AP,Comp,NP,V,Tense

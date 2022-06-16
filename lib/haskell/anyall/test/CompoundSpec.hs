@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+module CompoundSpec(spec) where
 
 import Test.Hspec
 import AnyAll.Types
@@ -6,7 +7,7 @@ import AnyAll.Relevance
 import qualified Data.Map.Strict as Map
 import Data.Tree
 import Data.Maybe (fromJust)
-import Data.Text.Lazy as TL
+import Data.Text as T
 
 ln, lt, lf, rt, rf, rn :: Default Bool
 ln = Default $ Left Nothing
@@ -16,8 +17,8 @@ rt = Default $ Right $ Just True
 rf = Default $ Right $ Just False
 rn = Default $ Right Nothing
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
   let markup m = Marking (Default <$> m)
       rlv item marking = relevant Hard DPNormal (markup marking) Nothing item
   describe "with mustSing," $ do
@@ -360,7 +361,7 @@ main = hspec $ do
                                            ,("eat",   Left  $ Just True)])
       fromJust (fromJSON (asJSON qNot)) `shouldBe` qNot
 
-type SingLabel = TL.Text
+type SingLabel = T.Text
 
 mustSing :: Item SingLabel
 mustSing =

@@ -526,6 +526,105 @@ Conventionally one would expect such a form to gather the exact birthdate, from 
 
 *** 
 
+* Indentation Parsing
+
+We use ( and ) to represent going deeper and going undeeper.
+
+See the [[https://github.com/smucclaw/dsl/blob/main/lib/haskell/natural4/src/LS/Lib.hs#L340][insertparen]] function in the parser to see how preprocessing happens.
+
+There are some tricky situations that result from conceptually separate /lines/ being parsed under the same indentation /tree/.
+
+** Labels in boolstructs
+
+Our And/Or trees (using the AnyAll library) have the notion of a PrePost label used to capture prefix/suffix text around a sutbree.
+
+*** Indentation 1: a tree might look like:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ../test/boolstruct-indentation-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| Qualifies |    |           |        |
+| MEANS     | 1. | walks     |        |
+| AND       | 2. | either of |        |
+|           |    | 2a.       | eats   |
+|           | OR | 2b.       | drinks |
+
+Here we see that the subtrees carry structured labels -- the "1. 2. 2a. 2b." bits of text need to be preserved as set apart from the body of the tree.
+
+And we see that subtree 2 has a pre-label, "either of". It is an OR tree. Its children are 2a. eats, 2b. drinks.
+
+Conceptually easy, right?
+
+But the parser needs to handle this input stream:
+
+#+begin_src
+  AND ( "2." ( "either of" "2a." ( "eats" ) ...
+#+end_src
+
+Note the lack of parenthesis between "either of" and "2a.". This is liable to confuse the parser.
+
+What do we want?
+
+We want the "2a. eats OR 2b. drinks" part to be organized under a Pre label "2. either of".
+
+But achieving that is difficult.
+
+The "OR" construct under "2." would ordinarily begin at the column of the "OR". But for that to work, the OR would need to somehow synthesize a virtual ) ( between "either of" and "2a.". We don't currently have a way to push into the stream.
+
+Also, consider that there are alternative ways of indenting the same rule:
+
+*** Indentation 2: A similar tree might look like this
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ../test/boolstruct-indentation-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| Qualifies |    |       |           |
+| MEANS     | 1. | walks |           |
+| AND       | 2. |       | either of |
+|           |    | 2a.   | eats      |
+|           | OR | 2b.   | drinks    |
+
+Here the stream is
+
+#+begin_src 
+  AND ( "2." ( ( "either of" EOL ( "2a." ( "eats" ) ) OR ( "2b." ( "drinks" ) ) ) ) )
+#+end_src
+
+*** Indentation 3: An equally valid tree might look like this
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ../test/boolstruct-indentation-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| Qualifies |    |       |           |
+| MEANS     | 1. | walks |           |
+| AND       |    | 2.    | either of |
+|           |    | 2a.   | eats      |
+|           | OR | 2b.   | drinks    |
+
+Here the stream is
+
+#+begin_src
+  AND ( ( "2." ( "either of" ) "2a." ( eats ) ) OR ( "2b." ( "drinks" ) ...
+#+end_src
+
+*** Solving indentation
+
+All these alternatives need to be parsed and organized into the same output structure.
+
+This job falls to the ~term~ function in ~Parser.hs~.
+
+That function needs to handle the following cases:
+
+- label's last word is directly above  the first word below
+- label's last word is to the left of  the first word below
+- label's last word is to the right of the first word below
+
+Yes, it's possible for labels to have multiple words; or just a single word. We treat the single-word case as a trivial case of the multi-word case.
+
+
 * infrastructure
 
 #+NAME: lens magic

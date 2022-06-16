@@ -14,8 +14,7 @@ import Data.Maybe
 import Data.String (IsString)
 import qualified Data.Map.Strict      as Map
 import qualified Data.ByteString.Lazy as B
-import qualified Data.Text.Lazy       as TL
-import qualified Data.Text.Internal   as DTI
+import qualified Data.Text            as T
 import qualified Data.Vector          as V
 
 import Data.Aeson
@@ -27,9 +26,21 @@ data Label a =
     Pre a
   | PrePost a a
   deriving (Eq, Show, Generic)
-instance ToJSON a => ToJSON (Label a); instance FromJSON a => FromJSON (Label a)
+instance ToJSON a => ToJSON (Label a)
+instance FromJSON a => FromJSON (Label a)
 
-allof, anyof :: Maybe (Label TL.Text)
+labelFirst :: Label p -> p
+labelFirst (Pre x      ) = x
+labelFirst (PrePost x _) = x
+
+maybeFirst :: Label p -> Maybe p
+maybeFirst = Just . labelFirst
+
+maybeSecond :: Label p -> Maybe p
+maybeSecond (PrePost _ x) = Just x
+maybeSecond _ = Nothing
+
+allof, anyof :: Maybe (Label T.Text)
 allof = Just $ Pre "all of:"
 anyof = Just $ Pre "any of:"
 
@@ -39,7 +50,7 @@ data Hardness = Soft -- use Left defaults
 
 type AnswerToExplain = Bool
 
-type Item a = Item' (Label TL.Text) a
+type Item a = Item' (Label T.Text) a
 
 data Item' lbl a =
     Leaf                       a
@@ -88,17 +99,21 @@ prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
 prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
 
+-- | The andOrTree is defined in L4; we think of it as an "immutable" given.
+--   The marking comes from user input, and it "changes" at runtime,
+--   which is to say that whenever we get new input from the user we regenerate everything.
+--   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: Item a }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
-instance FromJSON (StdinSchema TL.Text) where
+instance FromJSON (StdinSchema T.Text) where
   parseJSON = withObject "StdinSchema" $ \o -> do
     markingO <- o .: "marking"
     aotreeO  <- o .: "andOrTree"
     let marking = parseMaybe parseJSON markingO
         aotree  = parseMaybe parseJSON aotreeO
-    return $ StdinSchema (fromJust marking :: Marking TL.Text) (fromJust aotree)
+    return $ StdinSchema (fromJust marking :: Marking T.Text) (fromJust aotree)
 
 instance   ToJSON a =>   ToJSON (Item a)
 instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
@@ -123,7 +138,7 @@ instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
-type AsTree a = Tree (AndOr a, Maybe (Label TL.Text))
+type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
 native2tree :: Item a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
@@ -147,7 +162,7 @@ newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
   deriving (Eq, Show, Generic)
 
 instance (ToJSON a, ToJSONKey a) => ToJSON (Marking a)
-instance FromJSON (Marking TL.Text) where
+instance FromJSON (Marking T.Text) where
   -- the keys in the object correspond to leaf contents, so we have to process them "manually"
   parseJSON = parseMarking
 
@@ -155,7 +170,7 @@ parseMarking = withObject "marking" $ \o -> do
     let asList = toList o
     return $ Marking $ Map.fromList $ mapMaybe (\(k,v) ->
                                                   case parseMaybe parseJSON v :: Maybe (Default Bool) of
-                                                    Just ma -> Just (TL.fromStrict k, ma)
+                                                    Just ma -> Just (k, ma)
                                                     Nothing -> Nothing) asList
 
 
@@ -202,5 +217,15 @@ getViewsJSON :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
 getViewsJSON = encode . getViews
 
 getForUI :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
-getForUI qt = encode (Map.fromList [("view" :: TL.Text, getViews qt)
-                                   ,("ask" :: TL.Text, getAsks qt)])
+getForUI qt = encode (Map.fromList [("view" :: T.Text, getViews qt)
+                                   ,("ask" :: T.Text, getAsks qt)])
+
+markingLabel :: Item T.Text -> T.Text
+markingLabel (Not x)  = markingLabel x
+markingLabel (Leaf x) = x
+markingLabel (Any (Just (Pre     p1   )) _) = p1
+markingLabel (All (Just (Pre     p1   )) _) = p1
+markingLabel (Any (Just (PrePost p1 p2)) _) = p1
+markingLabel (All (Just (PrePost p1 p2)) _) = p1
+markingLabel (Any Nothing                _) = "any of" -- to do -- add a State autoincrement to distinguish
+markingLabel (All Nothing                _) = "all of" -- to do -- add a State autoincrement to distinguish

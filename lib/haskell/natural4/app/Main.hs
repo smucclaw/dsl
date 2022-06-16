@@ -16,7 +16,7 @@ import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.NLP.NLG (nlg,myNLGEnv)
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)

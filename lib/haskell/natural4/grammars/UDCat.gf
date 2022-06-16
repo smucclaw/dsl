@@ -13,7 +13,7 @@ abstract UDCat = BareRG ** {
         amod ;
         appos ;
         aux ;
-        auxPass ;
+--        auxPass ;
         case_ ;
         cc ;
         ccPreconj ;
@@ -50,7 +50,7 @@ abstract UDCat = BareRG ** {
         nmodPoss ;
         nmodTmod ;
         nsubj ;
-        nsubjPass ;
+--        nsubjPass ;
         nummod ;
         nummodGov ;
         obj ;
@@ -69,6 +69,8 @@ abstract UDCat = BareRG ** {
 
     cat Gen ; -- workaround to replace auxcats
     fun '\'s_Gen' : Gen ;
+    cat Neg ;
+    fun not_Neg : Neg ;
 	cat X ; -- later: replace the Xs with actual cats
 
      -- coercion funs
@@ -119,6 +121,7 @@ abstract UDCat = BareRG ** {
         xcompA_ccomp_ : AP -> ccomp -> xcomp ; -- become [aware [that a data breach occurred]]
 
         ccomp_ : UDS -> ccomp ; -- just missing a complementiser, like "that"
+        ccompMarkUDS_ : mark -> UDS -> ccomp ;
 
         expl_ : Pron -> expl ;
         det_ : Det -> det ;
@@ -131,6 +134,7 @@ abstract UDCat = BareRG ** {
         -- in UD, syncategorematics (copula, tenses) are all AUX
         -- It's a bit clumsy to have e.g. be in 3 cats (aux, cop, auxPass), but it's good because ud2gf is parsing the string in the primary category
 		be_aux,
+        do_aux,
         may_aux,
         have_aux,
         will_aux,
@@ -139,17 +143,20 @@ abstract UDCat = BareRG ** {
         shall_aux,
         should_aux : aux ;
 
-        be_auxPass : auxPass ;
+--        be_auxPass : auxPass ;
 
         be_cop : cop ;
         is_cop : cop ;
         it_expl : expl ; -- render [it] unlikely that …
-        not_advmod : advmod ;
+        -- not_advmod : advmod ;
 
         -------
     fun
     -- UD roots can be many GF cats
-        rootV_ : VP -> root ;
+        rootV_ : Temp -> Pol ->  -- To keep the original tense and polarity
+                 VP ->   -- To get access to transformations
+                 root ;
+        rootVaux_ : Temp -> Pol -> aux -> VP -> root ;
         rootA_ : AP -> root ;
         rootN_ : NP -> root ;
         rootAdv_ : Adv -> root ; -- within 30 days
@@ -167,10 +174,10 @@ abstract UDCat = BareRG ** {
 
 		amod_ : AP -> amod ;
 
-        cc_ : Conj -> cc ;
 --        aclRelcl_ : RS -> aclRelcl ; -- whose personal data is/was/has been affected
+        aclRelclUDSRP_ : RP -> UDS -> aclRelcl ;
 		aclRelclUDS_ : UDS -> aclRelcl ; -- TODO figure out how this works properly, maybe needs some more auxfuns
-		aclRelclRS_ : RS -> aclRelcl ;
+--		aclRelclRS_ : RS -> aclRelcl ;
         aclUDS_ : UDS -> acl ; -- (the issues) as he sees them -- TODO: how is "as" tagged?
         aclUDSpastpartParens_ : UDS -> acl ;
         aclUDSpastpart_ : UDS -> acl ; -- (an individual) affected by the breach
@@ -193,7 +200,7 @@ abstract UDCat = BareRG ** {
 
         advmod_ : Adv -> advmod ;
         nmod_ : Prep -> NP -> nmod ; -- UD-specific version of PrepNP
-        nsubjPass_ : NP -> nsubjPass ;
+--        nsubjPass_ : NP -> nsubjPass ;
         advcl_ : Adv -> advcl ;
 
 }

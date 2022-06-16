@@ -51,7 +51,7 @@ executables:
 
 tests:
   anyall-test:
-    main:                Spec.hs
+    main:                AutoSpec.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -59,3 +59,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - anyall
+    - xml

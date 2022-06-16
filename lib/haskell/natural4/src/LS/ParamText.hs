@@ -4,7 +4,7 @@ module LS.ParamText where
 
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
 
 import LS.Types
 import LS.Parser
@@ -43,8 +43,11 @@ pParamText = debugName "pParamText" $ (<* pToken EOL) $
       <$> ((:|) <$> pOtherVal <*> pure [])
       <*> pure Nothing)
   <*> pure []
-  -- <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka
-  -- <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues" (manyIndentation (sameMany pKeyValuesAka))
+  -- <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
+  -- <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
+  -- (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
+  --  <|>
+  --  manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do

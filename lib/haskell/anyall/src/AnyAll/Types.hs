@@ -59,7 +59,9 @@ data BinExpr a b =
 
 instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
 
-type Item a = Item' (Label TL.Text) a
+type Item a = Item' (Maybe (Label TL.Text)) a
+
+type ItemJSON = Item' (Label TL.Text) TL.Text
 
 -- data Item' lbl a =
 --     Leaf                       a
@@ -69,12 +71,13 @@ type Item a = Item' (Label TL.Text) a
 --   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 data Item' lbl a =
     Leaf                       a
-  | All (Maybe lbl) [Item' lbl a]
-  | Any (Maybe lbl) [Item' lbl a]
+  | All lbl [Item' lbl a]
+  | Any lbl [Item' lbl a]
   | Not             (Item' lbl a)
   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 
-instance Semigroup (Item' a b) where
+
+instance Semigroup (Item a) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
@@ -94,24 +97,24 @@ instance Semigroup (Item' a b) where
 
 
 -- | prepend something to the Pre/Post label, shallowly
-shallowPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
-x `shallowPrependBSR` Leaf z    = Leaf (x <> " " <> z)
-x `shallowPrependBSR` All ml zs = All (prependToLabel x ml) zs
-x `shallowPrependBSR` Any ml zs = Any (prependToLabel x ml) zs
-x `shallowPrependBSR` Not z     = Not (x `shallowPrependBSR` z)
+-- shallowPrependBSR :: (IsString a, Semigroup a) => a -> Item a -> Item a
+-- x `shallowPrependBSR` Leaf z    = Leaf (x <> " " <> z)
+-- x `shallowPrependBSR` All ml zs = All (prependToLabel x ml) zs
+-- x `shallowPrependBSR` Any ml zs = Any (prependToLabel x ml) zs
+-- x `shallowPrependBSR` Not z     = Not (x `shallowPrependBSR` z)
 
 -- | prepend something to the Pre/Post label, deeply
-deepPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
-x `deepPrependBSR` Leaf z    = x `shallowPrependBSR` Leaf z
-x `deepPrependBSR` All ml zs = All (prependToLabel x ml) (deepPrependBSR x <$> zs)
-x `deepPrependBSR` Any ml zs = Any (prependToLabel x ml) (deepPrependBSR x <$> zs)
-x `deepPrependBSR` Not z     = Not (x `deepPrependBSR` z)
+-- deepPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
+-- x `deepPrependBSR` Leaf z    = x `shallowPrependBSR` Leaf z
+-- x `deepPrependBSR` All ml zs = All (prependToLabel x ml) (deepPrependBSR x <$> zs)
+-- x `deepPrependBSR` Any ml zs = Any (prependToLabel x ml) (deepPrependBSR x <$> zs)
+-- x `deepPrependBSR` Not z     = Not (x `deepPrependBSR` z)
 
 -- | utility function to assist with shallowPrependBSR
-prependToLabel :: (IsString a, Semigroup a) => a -> Maybe (Label a) -> Maybe (Label a)
-prependToLabel x Nothing              = Just $ Pre      x
-prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
-prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
+-- prependToLabel :: (IsString a, Semigroup a) => a -> Maybe (Label a) -> Maybe (Label a)
+-- prependToLabel x Nothing              = Just $ Pre      x
+-- prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
+-- prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
 
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.
@@ -130,6 +133,8 @@ instance FromJSON (StdinSchema T.Text) where
         aotree  = parseMaybe parseJSON aotreeO
     return $ StdinSchema (fromJust marking :: Marking T.Text) (fromJust aotree)
 
+
+instance   ToJSON ItemJSON
 instance   ToJSON a =>   ToJSON (Item a)
 instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
   parseJSON = withObject "andOrTree" $ \o -> do

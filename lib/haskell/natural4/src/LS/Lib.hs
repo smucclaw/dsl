@@ -96,6 +96,7 @@ getConfig o = do
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
+        , toHTML    = only o == "html"
         , saveAKA = False
         , wantNotRules = False
         , extendedGrounds = extd o

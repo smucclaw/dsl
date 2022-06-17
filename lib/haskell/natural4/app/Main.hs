@@ -15,7 +15,7 @@ import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.SVG
 import LS.XPile.VueJSON
-import LS.NLP.NLG (nlg,myNLGEnv)
+import LS.NLP.NLG (nlg,myNLGEnv,toHTML)
 import qualified Data.Text as Text
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -52,7 +52,12 @@ main = do
   when (SFL4.toProlog rc) $ do
     pPrint $ sfl4ToProlog rules
 
+  when (SFL4.toHTML rc) $ do
+    htm <- mapM (toHTML nlgEnv) rules
+    pPrint htm
+
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
+
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts

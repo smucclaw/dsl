@@ -480,6 +480,7 @@ data RunConfig = RC { debug     :: Bool
                     , toBabyL4  :: Bool
                     , toProlog  :: Bool
                     , toUppaal  :: Bool
+                    , toHTML    :: Bool
                     , saveAKA   :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool

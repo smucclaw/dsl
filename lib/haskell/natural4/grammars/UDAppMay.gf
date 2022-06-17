@@ -1,8 +1,8 @@
 
 
 concrete UDAppMay of UDApp =
-  UDCatMay, JustWordsWordNetMay - [some_Quant, some_Det, any_Det] **
-  open Prelude, SyntaxMay, ExtendMay
+  UDCatMay, JustWordsWordNetMay **
+  open Prelude, SyntaxMay, ExtendMay, SymbolicMay, LexiconMay
     in {
 
 lin
@@ -197,6 +197,10 @@ lin
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
 	   in onlyPred render_unlikely ;
 
+  -- add to try getting root_only to work
+ -- : root -> xcomp -> obj -> UDS ;
+  root_xcomp_obj rt xc obj = root_obj (advRoot rt xc) obj ;
+  --
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;

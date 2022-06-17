@@ -32,6 +32,26 @@ checklist env _ rs = do
 -- original:
 -- checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 
+-- toHTML :: NLGEnv -> RunConfig -> [Rule] -> IO (Text, Text)
+-- toHTML env _ rs = do
+--   htm <- nlg env `mapM` rs
+
+--   <div class="deontic rule">
+--   <div class="quantifier">Every person who</div>
+--   <ul class="who">
+--     <li> walks, and
+--         <ul>
+--            <li> eats, or </li>
+--            <li> drinks </li>
+--         </ul>
+--     </li>
+--    </ul>
+--    <div class="deontic">must</div>
+--    <div class="action">sing</div>
+-- </div>
+
+  -- return $ Text.breakOn "\n" $ Text.unwords htm
+
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
   let whoGrounds  = (bsp2text subj :) <$> bsr2grounds rc globalrules r who

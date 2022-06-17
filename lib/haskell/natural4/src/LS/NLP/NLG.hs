@@ -92,9 +92,9 @@ parseUD env txt = do
   expr <- either errorMsg pure (ud2gf lowerConll)
   -- print "the original expression"
   -- print $ words $ showExpr expr
-  print "replaced expression as string"
+  -- print "replaced expression as string"
   let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
-  print replaced
+  -- print replaced
   when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
   -- let replacedToExpr = fromMaybe (dummyExpr "") (PGF.readExpr replaced)
   -- print "show replaced as expr"
@@ -243,6 +243,38 @@ nlgQuestion env rl = do
         qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
+
+toHTML :: NLGEnv -> Rule -> IO Text.Text
+toHTML env rl = do
+   annotatedRule <- parseFields env rl
+   gr <- nlgExtPGF
+   let Just eng = readLanguage "UDExtEng"
+   let Just may = readLanguage "UDExtMay"
+   case annotatedRule of
+      RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
+        let deonticAction = mkApp deonticA [gf $ toUDS gr actionA]
+            openRlDiv = "<div class=\"deontic rule\">"
+            closeRlDiv = "</div>"
+            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
+            subj = mkApp keywordA [subjWho]
+            king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
+            existingQualifiers = [(name,expr) |
+                                  (name,Just expr) <- [("Cond", gf . toUDS gr <$> condA),
+                                                       ("Temporal", temporalA),
+                                                       ("Upon", uponA),
+                                                       ("Given", givenA)]]
+            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
+            linText = linearize gr eng finalTree
+            linTree = showExpr finalTree
+        putStrLn "hi"
+        putStrLn $ showExpr king_may_sing
+        putStrLn "ho"
+        return (
+          Text.pack (
+            openRlDiv ++ "\n" ++ linText ++ "\n" ++ linTree ++ closeRlDiv
+            )
+          )
+
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do
   --  print ("nlgQuestion")
@@ -267,7 +299,7 @@ nlg env rl = do
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            linText = linearize gr lang finalTree
+            linText = linearize gr eng finalTree
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       HornlikeA {

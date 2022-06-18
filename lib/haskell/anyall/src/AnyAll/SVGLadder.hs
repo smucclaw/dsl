@@ -356,23 +356,23 @@ combineOr c mpre mpost elems =
 
 combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
 combineAnd c mpre mpost elems =
-  let layout = case cdirection c of
-        LR -> hlayout c
-        TB -> error "vlayout not yet implemented for And"
-      (childbbox, children) = foldl1 layout elems
-  in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin
-                , bblm = leftMargin, bbrm = rightMargin
-                , pl = PVoffset (portL childbbox myScale)
-                , pr = PVoffset (portR childbbox myScale)
-                }
-      , move (leftMargin, 0) (rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw childbbox , Height_ <<-* bbh childbbox, Fill_ <<- "lightskyblue", Stroke_ <<- "none"] <> -- blueish tint
-                              rect_ [ X_ <<-* bblm childbbox, Y_ <<-* bbtm childbbox, Width_ <<-* (bbw childbbox - bblm childbbox - bbrm childbbox)
-                                    , Height_ <<-* bbh childbbox - bbtm childbbox - bbbm childbbox, Fill_ <<- "honeydew", Stroke_ <<- "none"] <> -- greenish tint
-                              children ))
+  ( childbbox
+      { bbw = bbw childbbox + leftMargin + rightMargin,
+        bblm = leftMargin,
+        bbrm = rightMargin,
+        pl = PVoffset (portL childbbox myScale),
+        pr = PVoffset (portR childbbox myScale)
+      },
+    move (leftMargin, 0) children
+  )
   where
-    myScale     = getScale (cscale c)
-    leftMargin  = slm myScale
+    myScale = getScale (cscale c)
+    leftMargin = slm myScale
     rightMargin = srm myScale
+    layout = case cdirection c of
+      LR -> hlayout c
+      TB -> error "vlayout not yet implemented for And"
+    (childbbox, children) = foldl1 layout elems
 
 drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
 drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =

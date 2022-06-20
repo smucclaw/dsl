@@ -179,9 +179,9 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- debugName "pSrcRef" (slPretendEmpty pSrcRef)
+  (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> (try ambitious <|> someStructure)
+    <$$> (someStructure) -- previously, try ambitious <|> someStructure; but we are trying to keep things more regular.
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
@@ -205,9 +205,9 @@ pHornlike = debugName "pHornlike" $ do
     --   WHEN Z IS Q
 
     ambitious = debugName "pHornlike/ambitious" $ do
-      (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
-      (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
-      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
+      (keyword, subject) <- (,) $>| debugName "Define/Decide" (choice [ pToken Define, pToken Decide ]) |*< slMultiTerm
+      (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
+      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
         <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> debugName "UNLESS pBSR" pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> debugName "AND pBSR"    pBSR))
@@ -228,7 +228,7 @@ pHornlike = debugName "pHornlike" $ do
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+      (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
@@ -245,9 +245,10 @@ pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   slRelPred |<$ undeepers
 
+-- [TODO] unify these two if possible
 relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
-  (x,y) <- debugName "pRelPred optIndentedTuple whenCase" (pRelPred `optIndentedTuple` whenCase)
+  (x,y) <- debugName "pRelPred , whenCase" ((,) <$> pRelPred <*> optional whenCase)
   return (x, join y)
 
 relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)

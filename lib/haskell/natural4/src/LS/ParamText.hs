@@ -6,11 +6,14 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import qualified Data.Text as Text
 
+import Data.Maybe (mapMaybe)
+
 import LS.Types
 import LS.Parser
 import LS.Tokens
 -- import LS.Parser
-import Data.List.NonEmpty
+import Data.List.NonEmpty ( toList, NonEmpty((:|)), fromList )
+
 
 -- there are two possible styles: flat, and tree.
 --- in the flat style, succeeding lines start at the same indentation level as the startParamText:
@@ -69,6 +72,10 @@ pTreeSomeWords = debugName "pTreeSomeWords" $ do
                                (sameDepth pPTree)
     return (firstLine, nextLines)
   return $ mkPTree firstLine inners
+
+-- | extract one or more type signatures from a paramtext, which, as you recall, could have multiple lines, each of which has their own typesig.
+pt2typesigs :: ParamText -> [TypeSig]
+pt2typesigs pt = mapMaybe snd (toList pt)
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do

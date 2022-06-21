@@ -23,7 +23,7 @@ sfl4ToProlog rs =
     concatMap (rule2clause analysis) rs
 
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
-rule2clause st cr@Hornlike { keyword = Means } = hornlike2clauses st (Text.unwords $ name cr) (clauses cr)
+rule2clause st cr@Hornlike {} = hornlike2clauses st (Text.unwords $ name cr) (clauses cr)
 rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $ name td) ens
 -- [ TypeDecl
 --     { name = "Chirality"

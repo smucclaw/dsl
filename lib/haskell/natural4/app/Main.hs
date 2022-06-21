@@ -36,8 +36,10 @@ main = do
   when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
     naturalLangSents <- mapM (nlg nlgEnv) rules
     mapM_ (putStrLn . Text.unpack) naturalLangSents
+
   when (SFL4.toBabyL4 rc) $ do
-    pPrint $ sfl4ToCorel4 rules
+    putStrLn $ sfl4ToCorel4 rules
+
   when (SFL4.toUppaal rc) $ do
     pPrint $ Uppaal.toL4TA rules
     putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules

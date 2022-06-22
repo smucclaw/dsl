@@ -13,6 +13,7 @@ import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
 import           Control.Monad (forM_, when, guard)
 import System.Environment
+import System.Exit
 import Data.Maybe
 import Data.Either (isRight, fromRight)
 
@@ -37,7 +38,8 @@ main :: IO ()
 main = do
   opts <- unwrapRecord "anyall"
   -- print (opts :: Opts Unwrapped)
-  when (demo opts) $ maindemo; guard (not $ demo opts)
+  when (demo opts) (maindemo >> exitSuccess)
+
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
   when (only opts == "native") $ print myinput

@@ -14,6 +14,31 @@ import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
 import qualified Data.Text       as T
 import Data.Aeson.Types
+import Data.List
+
+data Style ann = Style
+                 { s_parens :: Doc ann -> Doc ann
+                 , s_not :: String
+                 , s_and :: String
+                 , s_or  :: String
+                 }
+
+cStyle, haskellStyle, pythonStyle :: (Pretty txt) => Item txt -> Doc ann
+
+-- | render an AnyAll Item to a C-style syntax
+cStyle       = mystyle (Style parens "!"   "&&"  "||")
+
+-- | render an AnyAll Item to Haskell-style syntax
+haskellStyle = mystyle (Style parens "not" "&&"  "||")
+
+-- | render an AnyAll Item to Python-style syntax
+pythonStyle  = mystyle (Style parens "not" "and" "or")
+
+mystyle :: (Pretty txt) => Style ann -> Item txt -> Doc ann
+mystyle _ (Leaf x)     = pretty x
+mystyle s (All lbl xs) = parens (hsep (intersperse (pretty $ s_and s) (mystyle s <$> xs)))
+mystyle s (Any lbl xs) = parens (hsep (intersperse (pretty $ s_or  s) (mystyle s <$> xs)))
+mystyle s (Not     x ) = pretty (s_not s) <+> mystyle s x
 
 ppline = Prettyprinter.line
 
@@ -60,6 +85,11 @@ ppQTree i mm = do
   print $ "**" <+> "For UI:"
   B.putStr $ getForUI hardresult
   print ppline
+  
+  print $ "**" <+> "C-style:"
+  print (cStyle i)
+  print ppline
+
   
 {-
     {

@@ -8,8 +8,14 @@ import L4.Syntax as CoreL4
 
 import LS.Types as SFL4
 import L4.Annotation
+
+-- import Data.Function ( (&) )
+import Data.Functor ( (<&>) )
+-- import Control.Arrow ( (>>>) )
+import Debug.Trace (trace)
+
 import Data.Text (unpack, unwords, pack)
-import Data.Maybe (mapMaybe, catMaybes)
+import Data.Maybe (mapMaybe, catMaybes, fromMaybe)
 import Data.List.NonEmpty (toList)
 
 -- output to Core L4 for further transformation
@@ -30,6 +36,19 @@ ppCorel4 p =
 
 pptle :: TopLevelElement SRng -> Doc ann
 pptle (ClassDeclTLE cdcl) = pretty "class" <+> pretty (stringOfClassName . nameOfClassDecl $ cdcl)
+
+pptle (RuleTLE Rule { nameOfRule }) =
+  vsep [nameOfRule']
+  where
+    nameOfRule' = fromMaybe
+      -- If the rule doesn't have a name, just use an empty string.
+      (pretty "") $
+      -- Otherwise if the rule has a name, we turn it into
+      -- rule <RULE_NAME>
+      nameOfRule
+      <&> (\x -> ["rule <", x, ">"])
+      <&> foldMap pretty
+
 pptle tle                 = vsep ( pretty "-- pptle: UNIMPLEMENTED, showing Haskell source:"
                                    : (pretty . ("-- " <>) <$> lines (show tle)) )
 
@@ -52,7 +71,7 @@ sfl4ToCorel4Rule Regulative
             , having   -- HAVING sung...
             } = undefined
 
-sfl4ToCorel4Rule Hornlike
+sfl4ToCorel4Rule hornlike@Hornlike
             { name     -- :: RuleName           -- colour
             , keyword  -- :: MyToken            -- decide / define / means
             , given    -- :: Maybe ParamText    -- applicant has submitted fee
@@ -66,7 +85,7 @@ sfl4ToCorel4Rule Hornlike
             } =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            given2classdecls given
+            given2classdecls given ++ [rule]
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement SRng]
     given2classdecls Nothing = []
@@ -78,8 +97,15 @@ sfl4ToCorel4Rule Hornlike
                                                                                 } )
                     _                         -> Nothing
                 | ts <- snd <$> toList pt
-                ] 
-  
+                ]
+    rule = RuleTLE Rule {..}
+    annotOfRule = undefined
+    nameOfRule = rlabel <&> rl2text <&> unpack 
+    instrOfRule = undefined
+    varDeclsOfRule = undefined
+    precondOfRule = undefined
+    postcondOfRule = undefined
+
 sfl4ToCorel4Rule Constitutive
             { name     -- the thing we are defining
             , keyword  -- Means, Includes, Is, Deem

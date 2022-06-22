@@ -294,9 +294,91 @@ The ~debug2org~ script rewrites the raw debugging output into a format which is 
 
 Making sense of the parser debug output requires some familiarity with programming language theory, with compiler theory, and with the specifics of our L4 parser toolchain.
 
+** Interpretation Requirements
+
+After the parser succeeds, we have in our hands a list of ~Rules~.
+
+It is now the interpreter's job to think about the Rules, get organized, and prepare for the next step -- transpilation.
+
+The transpilers will be wanting answers to questions like:
+
+*** What is the ontology? What are the entities and relationships?
+
+This is where the ~DEFINE Class HAS Attribute~ syntax needs to be converted to a class-like model.
+
+And we need to find a way to relate different entities with one another -- an ~Employee~ may have an ~Employer~ and they may be connected explicitly by ~id~ fields or they may be connected implicitly. How does Alloy do it?
+
+*** Which types were explicit and which were inferred?
+
+*** What are the warnings and errors so far?
+
+In particular, the interpreter might be able to perform tree-shaking, dead code identification, and null pointer references.
+
+It might also be able to identify race conditions. Maybe one transpiler can request to view the output of another transpiler backend, so the formal verification module ends up running first and then the other transpilers output from that.
+
+*** Can we get a representation of the original program text?
+
+*** If not, then for each node in the AST, can we at least get a link back to a source reference in the original program text?
+
+And even beyond -- because in the left column of L4 we have the ~(Act 1.2)~ cells which provide links even farther back to the source legislation.
+
+*** What are the "statics" -- the inference rules?
+
+The interpreter needs to get its head around how all the BoolStructs go together.
+
+Our NLG component, for instance, needs to convert text like ~X gives birth to live young.~ to ~Does X give birth to live young?~
+
+So it will want to know every single "ground term" which we need to ask the user about.
+
+The Shannon/Allen visualizer and the JSON outputters will want to know how those terms fit together: the BoolStructs with their Labels.
+
+The web app interface builder may expect the interpreter to do some kind of reduction/optimization of the questions -- see ROBDD.
+
+*** What are the "dynamics" -- the state transitions?
+
+This is of particular interest to the visualizer that produces a Petri net.
+
+The interpreter needs to get its head around how all the HENCE and LEST blocks connect.
+
+*** Are there any defined terms that weren't actually defined?
+
+We are literally looking at capitalization to determine what's a Defined Term.
+
+** Interpreter Internals
+
+*** Macros
+
+If the language has support for user-defined macros or other forms of syntactic sugar, evaluate those macros and desugar to canonical form.
+
+*** Type annotations
+
+Filter all instances of ~TypedMulti~ in our AST where the ~snd~ is ~Just~; collect the explicit type annotations.
+
+*** Type inference
+
+Filter all instances of ~TypedMulti~ in our AST where the ~snd~ is ~Nothing~; attempt type inference based on observations of how the ~fst~ element is used elsewhere. For top marks, Implement Hindley-Milner inference.
+
+*** Entity Model
+
+Let's declare as a ~Class~ anything that has attributes and instances. How do we deal with subclasses, inheritance, and diamonds? I don't know.
+
+*** Statics: rephrase as First-Order Logic
+
+Construct trees of ANDs and ORs. How do we deal with a particular defined term appearing in multiple locations?
+
+E.g. given a shopping cart with both alcohol and cigarettes, a ~LegalCheckout~ may refer to the "subroutine" for ~AgeOfMajority~ twice; do we need to "cache" to result of evaluation, or is that a problem for the runtimes? Perhaps we can assist by at least giving identifiers so the runtime can do the right thing.
+
+The ~AnyAll~ library is responsible for most of this work.
+
+** Contract with Transpilers
+
+Let's have a convention where each transpiler under ~XPile~ can expect two arguments:
+- a list of rules ~[Rule]~ as returned by the Parser
+- an ~Interpretation~ containing the interpreter's analysis of the rules
+
 ** Language Reference
 
-
+See the Legal Spreadsheets L4 Manual.
 
 ** Web Development Environment
 

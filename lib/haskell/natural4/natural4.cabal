@@ -36,6 +36,7 @@ library
       LS.NLP.WordNet
       LS.ParamText
       LS.Parser
+      LS.PrettyPrinter
       LS.RelationalPredicates
       LS.Tokens
       LS.Types

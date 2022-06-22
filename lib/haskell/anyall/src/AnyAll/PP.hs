@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
-module AnyAll.PP (ppQTree, hardnormal) where
+module AnyAll.PP (ppQTree, hardnormal, cStyle) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance
@@ -14,7 +15,7 @@ import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
 import qualified Data.Text       as T
 import Data.Aeson.Types
-import Data.List
+import Data.List ( intersperse )
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann
@@ -120,3 +121,16 @@ ppQTree i mm = do
 
 
 
+instance (IsString t, Pretty t, Pretty a) => Pretty (Item' (Label t) a) where
+  pretty (Leaf a)            = pretty a
+  pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
+  pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (All (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Any Nothing    xs)             = pretty (Any (Just (Pre "Any of the following:")) xs)
+  pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (Any (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Not            x ) = "not" <+> pretty x
+
+instance (Pretty a) => Pretty (Label a) where
+  pretty (Pre     p1)    = pretty p1
+  pretty (PrePost p1 p2) = pretty p1 <+> "..." <+> pretty p2

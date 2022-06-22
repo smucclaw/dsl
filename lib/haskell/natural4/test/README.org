@@ -1564,29 +1564,6 @@ This has the same meaning as the original Waddington example, except the "eats o
 
 We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
 
-#+begin_src haskell
-  [ Regulative
-      { every = "person"
-      , who = All
-          ( Pre "Who" )
-          [ Leaf "walks"
-          , Leaf "degustates"
-          ]
-      , deontic = DMust
-      , action = "sing"
-      , temporal = Nothing
-      }
-  , Constitutive
-      { term = "degustates"
-      , cond = Any
-          ( Pre "any of:" )
-          [ Leaf "eats"
-          , Leaf "imbibes"
-          ]
-      }
-  ]
-#+end_src
-
 What does "imbibes" mean, anyway?
 
 *** multiple nestings

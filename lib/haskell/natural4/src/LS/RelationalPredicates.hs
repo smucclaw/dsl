@@ -8,7 +8,7 @@ import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import Debug.Trace
 import qualified Data.Text as Text
-
+import Data.String (IsString)
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
 import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
@@ -33,7 +33,6 @@ tok2rel = choice
     , RPelem    <$ pToken TokIn   
     , RPnotElem <$ pToken TokNotIn
     ]
-
 
 -- [TODO]: [FIXME]: this is a hack, because we don't have a good way to parse the thing
 unLeaf :: BoolStructR -> RelationalPredicate
@@ -279,7 +278,7 @@ nestedHorn = do
                             , keyword = meansTok
                             , given = Nothing
                             , upon = Nothing
-                            , clauses = [ HC2 (RPBoolStructR subj RPis bsr) Nothing ]
+                            , clauses = [ HC2 (RPMT subj) (Just bsr) ]
                             , rlabel = Nothing
                             , lsource = Nothing
                             , srcref = Just srcref

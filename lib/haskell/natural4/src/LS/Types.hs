@@ -79,9 +79,11 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 --
 -- > action = ( "walk" :| [] , Nothing )
 --
-type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
-                                                      --- |        | immediately    | :: | Urgency |
 
+type ParamText = NonEmpty TypedMulti               --- | notify | the government |    |         |
+                                                   --- |        | immediately    | :: | Urgency |
+newtype ParamText2 = PT2 (NonEmpty TypedMulti)  
+  deriving (Eq, Show, Generic)
 
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
@@ -286,21 +288,6 @@ data HornClause2 = HC2
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Show, Generic, ToJSON)
 
--- Prologgy stuff
-data HornClause = HC
-  { relPred :: RelationalPredicate
-  , relWhen :: Maybe HornBody
-  }
-  deriving (Eq, Show, Generic, ToJSON)
-
-type HornRP = AA.Item RelationalPredicate
-
-data HornBody = HBRP HornRP
-              | HBITE { hbif   :: HornRP
-                      , hbthen :: HornRP
-                      , hbelse :: HornRP }
-  deriving (Eq, Show, Generic, ToJSON)
-
 class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
   prependHead :: Text.Text -> a -> a
@@ -335,6 +322,16 @@ rel2txt RPgt      = "relGT"
 rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
+
+rel2op :: RPRel -> Text.Text
+rel2op RPis      = "=="
+rel2op RPeq      = "=="
+rel2op RPlt      = "<"
+rel2op RPlte     = "<="
+rel2op RPgt      = ">"
+rel2op RPgte     = ">="
+rel2op RPelem    = "IN"
+rel2op RPnotElem = "NOT IN"
 
 rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt

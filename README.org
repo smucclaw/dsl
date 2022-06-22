@@ -312,9 +312,9 @@ And we need to find a way to relate different entities with one another -- an ~E
 
 *** What are the warnings and errors so far?
 
-In particular, the interpreter might be able to perform tree-shaking, dead code identification, and null pointer references.
+In particular, the interpreter might be able to perform tree-shaking, dead code identification, and identify null pointer references.
 
-It might also be able to identify race conditions. Maybe one transpiler can request to view the output of another transpiler backend, so the formal verification module ends up running first and then the other transpilers output from that.
+It might also be able to identify race conditions. Maybe one transpiler can request to view the output of another transpiler backend, so the formal verification module ends up running first and then the other transpilers read output from that.
 
 *** Can we get a representation of the original program text?
 

@@ -22,7 +22,7 @@
     },
     "eat": {
       "getDefault": {
-        "Left": false
+        "Right": true
       }
     },
     "drink": {

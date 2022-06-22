@@ -7,7 +7,7 @@
 
 -- | A visualization inspired by Ladder Logic and by Layman Allen (1978).
 
-module AnyAll.SVGLadder where
+module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
 import Data.List (foldl')
 
@@ -252,7 +252,7 @@ hlayout c (bbold, old) (bbnew, new) =
     old
       <--> move (newBoxStart, 0) debugRect1
       <--> move (newSvgStart, 0) debugRect2
-      <> move (newSvgStart, 0) new
+      <> move (newBoxStart, 0) new
       <> connectingCurve
   )
   where
@@ -264,7 +264,8 @@ hlayout c (bbold, old) (bbnew, new) =
     templateBox = defaultBBox (cscale c)
     myScale = getScale (cscale c)
     lrHgap = slrh myScale
-    newBoxStart = bbw bbold + lrHgap
+    newBoxStart = trace ("calculating newBoxStart = " <> show (bbw bbold) <> " + " <> show lrHgap) $
+                  bbw bbold + lrHgap
     newSvgStart = newBoxStart + bblm bbnew
     debugRect1 = rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* bbw bbnew, Height_ <<-* bbh bbnew + 5, Fill_ <<- "lightgrey", Stroke_ <<- "none", Class_ <<- "debugbox1"]
     debugRect2 = rect_ [X_ <<-* 0, Y_ <<-* bbtm bbnew, Width_ <<-* (bbw bbnew - bblm bbnew - bbrm bbnew), Height_ <<-* bbh bbnew - bbtm bbnew - bbbm bbnew, Fill_ <<- "lightsalmon", Stroke_ <<- "none", Class_ <<- "debugbox1"]
@@ -338,18 +339,20 @@ txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {-
 
 combineOr :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
 combineOr c mpre mpost elems =
-  let childheights = lrVgap * (fromIntegral $ length elems - 1) +      (sum $ bbh . fst <$> elems)
-      mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
-      layout = case cdirection c of
-        LR -> vlayout c mybbox
-        TB -> error "hlayout not yet implemented for Or"
-      (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
-  in (childbbox { bbw = bbw childbbox + leftMargin + rightMargin {- only for LR -} }, move (leftMargin, -lrVgap) children)
+  ( childbbox {bbw = bbw childbbox + leftMargin + rightMargin},  -- only for LR
+    move (leftMargin, -interElementGap) children
+  )
   where
-    myScale     = getScale (cscale c)
-    lrVgap      = slrv myScale
-    leftMargin  = slm myScale
+    myScale = getScale (cscale c)
+    interElementGap = slrv myScale
+    leftMargin = slm myScale
     rightMargin = srm myScale
+    childheights = interElementGap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
+    mybbox = (defaultBBox (cscale c)) {bbh = childheights, bbw = maximum (bbw . fst <$> elems)}
+    layout = case cdirection c of
+      LR -> vlayout c mybbox
+      TB -> error "hlayout not yet implemented for Or"
+    (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
 
 combineAnd :: AAVConfig -> Maybe BoxedSVG -> Maybe BoxedSVG -> [BoxedSVG] -> BoxedSVG
 combineAnd c mpre mpost elems =
@@ -381,16 +384,14 @@ drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
                  drawnChildren = case showLabels (cscale c) of
                    False -> combineOr c Nothing  Nothing  $ hAlign HCenter $ rawChildren
                    True  -> combineOr c topTextE botTextE $ hAlign HCenter $ rawChildren
-             in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren)
-                                             , bbh =                            (bbh.fst $ drawnChildren) }
+             in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
                 (snd drawnChildren)
 
        And -> let rawChildren = drawItemFull c negContext <$> childqs
                   drawnChildren = case showLabels (cscale c) of
                    False -> combineAnd c Nothing  Nothing  $ vAlign VTop $ rawChildren
                    True ->  combineAnd c topTextE botTextE $ vAlign VTop $ rawChildren
-              in (,) (defaultBBox (cscale c)) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) -- the toptext will move this a bit later
-                                              , bbh = bbh.fst $ drawnChildren }
+              in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
                  (snd drawnChildren)
        Simply _txt -> drawLeaf     c      negContext   qt
        Neg         -> drawItemFull c (not negContext) (head childqs)

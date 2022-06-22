@@ -19,6 +19,7 @@ import Test.QuickCheck
 import LS.NLP.WordNet
 
 import LS.XPile.VueJSON
+import LS.XPile.CoreL4
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
@@ -1525,7 +1526,13 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-
+    -- [TODO] it'd be nice to get this working as a filetest rather than the manual way
+    describe "transpiler to CoreL4" $ do
+      it "should output a class declaration for seca.csv" $ do
+        let testfile = "seca"
+        testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+        let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
+        (fmap sfl4ToCorel4 <$> rules) `shouldParse` [ "class Situation" ]
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

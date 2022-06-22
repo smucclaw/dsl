@@ -16,6 +16,8 @@ import Control.Monad (when)
 import PGF ( linearize, languages )
 import LS.NLP.UDExt (gf)
 import Data.Graph.Inductive.Internal.Thread (threadList)
+import qualified Data.Map as Map
+import qualified Data.Text as T
 
 
 -- https://en.wikipedia.org/wiki/Ground_expression
@@ -136,16 +138,24 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 -- itemRPToItemStr (AnyAll.Types.Any _ items) = AnyAll.Types.Any Nothing (map itemRPToItemStr items)
 -- itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
 
-itemRPToItemStr :: Item RelationalPredicate -> ItemJSON
-itemRPToItemStr (Leaf b) = AnyAll.Types.Leaf (rp2text b)
-itemRPToItemStr (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.All pp (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.Any Nothing items) = AnyAll.Types.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.Any pre (map itemRPToItemStr items)
-itemRPToItemStr (AnyAll.Types.Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.Any pp (map itemRPToItemStr items)
-itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
+itemRPToItemJSON :: Item RelationalPredicate -> ItemJSON
+itemRPToItemJSON (Leaf b) = AnyAll.Types.Leaf (rp2text b)
+itemRPToItemJSON (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemJSON items)
+itemRPToItemJSON (AnyAll.Types.All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.All pp (map itemRPToItemJSON items)
+itemRPToItemJSON (AnyAll.Types.Any Nothing items) = AnyAll.Types.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (AnyAll.Types.Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.Any pre (map itemRPToItemJSON items)
+itemRPToItemJSON (AnyAll.Types.Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.Any pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Not item) = AnyAll.Types.Not (itemRPToItemJSON item)
 
+type RuleJSON = Map.Map String ItemJSON
+
+rulesToRuleJSON :: [Rule] -> RuleJSON
+rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
+
+ruleToRuleJSON :: Rule -> RuleJSON
+ruleToRuleJSON (Hornlike {clauses=[HC2 {hHead=RPMT mt, hBody=Just itemRP}]}) = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, Leaf "unimplemented")]
 
 -- itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
 -- itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)

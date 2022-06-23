@@ -11,16 +11,16 @@ import L4.Syntax as CoreL4
 
 import LS.Types as SFL4
 import L4.Annotation
+import LS.Interpreter
 
 -- import Data.Function ( (&) )
 import Data.Functor ( (<&>) )
 -- import Control.Arrow ( (>>>) )
-import Debug.Trace (trace)
 
-import Data.Text (unpack, unwords, pack)
-import Data.Maybe (mapMaybe, catMaybes, fromMaybe)
-import Data.List.NonEmpty (toList)
-import Data.List (intersperse)
+import qualified Data.Map as Map
+import qualified Data.Text as T
+import Data.Maybe (catMaybes, fromMaybe)
+import qualified Data.List.NonEmpty as NE
 
 -- output to Core L4 for further transformation
 
@@ -28,10 +28,17 @@ sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
-sfl4ToCorel4 rs = unlines ( ["#\n# outputted via CoreL4.Program types\n#\n\n"
-                            , ppCorel4 . sfl4ToCorel4Program $ rs
-                            , "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n" ]
-                            ++ (show . directToCore <$> rs) )
+sfl4ToCorel4 rs = let sTable = symbolTable rs
+  in unlines ( ["#\n# outputted via CoreL4.Program types\n#\n\n"
+               , ppCorel4 . sfl4ToCorel4Program $ rs
+               , "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
+               , (show $ prettyClasses sTable)
+               , ""
+               , (show $ prettyDecls   sTable)
+               , ""
+               ]
+               ++ (show . directToCore <$> rs)
+             )
 
 sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
 sfl4ToCorel4Program rus
@@ -99,15 +106,15 @@ sfl4ToCorel4Rule hornlike@Hornlike
     given2classdecls (Just pt) =
       catMaybes [ case ts of
                     Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
-                                                                                , nameOfClassDecl =  ClsNm (unpack s1)
+                                                                                , nameOfClassDecl =  ClsNm (T.unpack s1)
                                                                                 , defOfClassDecl = ClassDef [] []
                                                                                 } )
                     _                         -> Nothing
-                | ts <- snd <$> toList pt
+                | ts <- snd <$> NE.toList pt
                 ]
     rule = RuleTLE Rule
       { annotOfRule = undefined
-      , nameOfRule = rlabel <&> rl2text <&> unpack 
+      , nameOfRule = rlabel <&> rl2text <&> T.unpack 
       , instrOfRule = undefined
       , varDeclsOfRule = undefined
       , precondOfRule = undefined -- gonna need more time to figure out how to convert an L4 Rule to the Expr type. in the meantime there's directToCore
@@ -133,7 +140,7 @@ sfl4ToCorel4Rule TypeDecl
             , rlabel
             , lsource
             , srcref
-            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ unpack (Data.Text.unwords name), defOfClassDecl = ClassDef [] []}) : []
+            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ T.unpack (T.unwords name), defOfClassDecl = ClassDef [] []}) : []
 sfl4ToCorel4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
             { name   -- "Thing"
             , detail -- "some thing"
@@ -154,22 +161,29 @@ directToCore r@Hornlike{} =
   let needClauseNumbering = length (clauses r) > 1
   in
   vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel cnum needClauseNumbering x)) (rlabel r)
-              , maybe "# no for"        (\x -> "for"  <+> prettyGivens x)                                      (given r)
+              , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
               ,                                "if"   <+> cStyle (hc2preds c)
               ,                                "then" <+> pretty (hHead c)
               , Prettyprinter.line]
        | (c,cnum) <- zip (clauses r) [1..]
        ]
 
-prettyGivens :: ParamText -> Doc ann
-prettyGivens pt = hcat (intersperse "," (toList $ typedOrNot <$> pt))
-  where
-    typedOrNot :: TypedMulti -> Doc ann
-    typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)
-    typedOrNot (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
-    typedOrNot (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
-    typedOrNot (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
-    typedOrNot (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
+prettyTypedMulti :: ParamText -> Doc ann
+prettyTypedMulti pt = pretty $ PT3 pt
     
 prettyRuleLabel :: Int -> Bool -> RuleLabel -> Doc ann
 prettyRuleLabel cnum needed (_, _, text) = pretty text <> (if needed then "_" <> pretty cnum else mempty)
+
+prettyDecls :: ScopeTabs -> Doc ann
+prettyDecls sctabs = vsep [ "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
+                          | (_ , symtab') <- Map.toList sctabs
+                          , (mt, symtype) <- Map.toList symtab'
+                          ]
+
+prettyClasses :: ScopeTabs -> Doc ann
+prettyClasses sctabs = vsep [ "class" <+> prettySimpleType className
+                            | (_ , symtab') <- Map.toList sctabs
+                            , (mt, symtype) <- Map.toList symtab'
+                            , let (Just className) = getSymType symtype
+                            ]
+

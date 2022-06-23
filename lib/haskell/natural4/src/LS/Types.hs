@@ -82,9 +82,7 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 
 type ParamText = NonEmpty TypedMulti               --- | notify | the government |    |         |
                                                    --- |        | immediately    | :: | Urgency |
-newtype ParamText2 = PT2 (NonEmpty TypedMulti)  
-  deriving (Eq, Show, Generic)
-
+-- see PrettyPrinter for newtypes based on ParamText
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
@@ -151,6 +149,14 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbwhere    :: [Rule]      -- Hornlike rules only, please       -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
                       deriving (Eq, Show, Generic)
+
+-- | find some unique name for the rule for purposes of scoping the symbol table.
+-- if a rule label is provided, we use that.
+-- if it's not provided, we use the name.
+-- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
+
+ruleLabelName :: Rule -> RuleName
+ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (rlabel r)
 
 ruleName :: Rule -> RuleName
 ruleName Regulative { subj  = x } = [bsp2text x]

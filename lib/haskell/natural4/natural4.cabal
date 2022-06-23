@@ -29,6 +29,7 @@ library
       LS
       LS.BasicTypes
       LS.Error
+      LS.Interpreter
       LS.Lib
       LS.NLP.NLG
       LS.NLP.ToPredicate

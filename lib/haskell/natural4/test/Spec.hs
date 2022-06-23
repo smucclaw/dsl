@@ -1532,7 +1532,7 @@ parserTests nlgEnv runConfig_ = do
         let testfile = "seca"
         testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
         let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
-        (fmap sfl4ToCorel4 <$> rules) `shouldParse` [ "#\n# outputted via CoreL4.Program types\n#\n\n\nclass Situation\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\n\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor sit: Situation\nif (section_A applies && currentSit sit && sit == missingKeys)\nthen coverProvided Situation recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n" ]
+        (fmap sfl4ToCorel4 <$> rules) `shouldParse` [ "#\n# outputted via CoreL4.Program types\n#\n\n\nclass Situation\ndecl sit: Situation\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\n\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor sit: Situation\nif (section_A applies && currentSit sit && sit == missingKeys)\nthen coverProvided Situation recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n" ]
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

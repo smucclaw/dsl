@@ -1408,7 +1408,6 @@ This example serves multiple tests:
 | DEFINE |                |       | Event          |
 | DEFINE | BreakdownCause | IS A  | Event          |
 | DEFINE |                |       | Location       |
-| ;;     |                |       |                |
 | DEFINE |                |       | Surface        |
 | ;;     |                |       |                |
 | GIVEN  | location       | IS A  | Location       |

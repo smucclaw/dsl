@@ -1,0 +1,16 @@
+DEFINE,,,Person
+DEFINE,Passenger,IS A,Person
+DEFINE,Driver,IS A,Passenger
+DEFINE,,,GeneralVehicle
+HAS,vehicleAge,IS AN,Integer
+,vehicleLength,IS A,Float
+DEFINE,Vehicle,IS A,GeneralVehicle
+DEFINE,,,Event
+DEFINE,BreakdownCause,IS A,Event
+DEFINE,,,Location
+DEFINE,,,Surface
+;;,,,
+GIVEN,location,IS A,Location
+,surface,IS A,Surface
+DECIDE,isIn,,
+WHEN,location,IN,surface

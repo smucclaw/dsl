@@ -8,26 +8,27 @@ module LS.PrettyPrinter where
 
 import qualified Data.Text as T
 import LS.Types
+    ( RelationalPredicate(..),
+      HornClause2(HC2),
+      BoolStructR,
+      RPRel,
+      ParamText2(..),
+      pt2text,
+      rel2txt,
+      rel2op )
 import qualified AnyAll as AA
 import Prettyprinter
-import Data.List ( intersperse )
 import Data.List.NonEmpty
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
   pretty (RPParamText   pt)            = pretty $ pt2text pt
-  pretty (RPMT          mt)            = snakeCase mt
-  pretty (RPConstraint  mt1 rprel mt2) = hsep [ snakeCase mt1, pretty (rel2op rprel), snakeCase mt2 ]
-  pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snakeCase mt1, pretty rprel, pretty bsr ]
+  pretty (RPMT          mt)            = snake_case mt
+  pretty (RPConstraint  mt1 rprel mt2) = hsep [ snake_case mt1, pretty (rel2op rprel), snake_case mt2 ]
+  pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snake_case mt1, pretty rprel, pretty bsr ]
 
-tr :: Char -> Char -> String -> String
-tr _ _ [] = []
-tr x y (z:zs)
-  | x == z    = y : tr x y zs
-  | otherwise = z : tr x y zs
-  
-snakeCase :: [T.Text] -> Doc ann
-snakeCase xs = hsep (pretty . tr ' ' '_' . T.unpack <$> xs)
+snake_case :: [T.Text] -> Doc ann
+snake_case xs = hsep (pretty . T.replace " " "_" <$> xs)
 
 instance Pretty RPRel where
   pretty rpr = pretty $ rel2txt rpr

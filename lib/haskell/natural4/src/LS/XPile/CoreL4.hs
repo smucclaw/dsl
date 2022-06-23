@@ -151,23 +151,25 @@ sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
 
 directToCore :: SFL4.Rule -> Doc ann
 directToCore r@Hornlike{} =
-  vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel x)) (rlabel r)
-              , maybe "# no for"        (\x -> "for"  <+> prettyGivens x)             (given r)
+  let needClauseNumbering = length (clauses r) > 1
+  in
+  vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel cnum needClauseNumbering x)) (rlabel r)
+              , maybe "# no for"        (\x -> "for"  <+> prettyGivens x)                                      (given r)
               ,                                "if"   <+> cStyle (hc2preds c)
               ,                                "then" <+> pretty (hHead c)
               , Prettyprinter.line]
-       | c <- clauses r
+       | (c,cnum) <- zip (clauses r) [1..]
        ]
 
 prettyGivens :: ParamText -> Doc ann
-prettyGivens pt = hcat (intersperse "," (toList $ typedOrNot <$> pt)) -- they call this "marshalling" to a newtype, because ParamText is jbbust a type alias
+prettyGivens pt = hcat (intersperse "," (toList $ typedOrNot <$> pt))
   where
     typedOrNot :: TypedMulti -> Doc ann
-    typedOrNot (multitext, Nothing) = snakeCase (toList multitext)
-    typedOrNot (multitext, Just (SimpleType TOne      s1)) = snakeCase (toList multitext) <> ":"  <+> pretty s1
-    typedOrNot (multitext, Just (SimpleType TOptional s1)) = snakeCase (toList multitext) <> ":?" <+> pretty s1
-    typedOrNot (multitext, Just (SimpleType TList0    s1)) = snakeCase (toList multitext) <> ":"  <+> brackets (pretty s1)
-    typedOrNot (multitext, Just (SimpleType TList1    s1)) = snakeCase (toList multitext) <> ":"  <+> brackets (pretty s1)
+    typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)
+    typedOrNot (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
+    typedOrNot (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
+    typedOrNot (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
+    typedOrNot (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
     
-prettyRuleLabel :: RuleLabel -> Doc ann
-prettyRuleLabel (_, _, text) = pretty text
+prettyRuleLabel :: Int -> Bool -> RuleLabel -> Doc ann
+prettyRuleLabel cnum needed (_, _, text) = pretty text <> (if needed then "_" <> pretty cnum else mempty)

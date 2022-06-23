@@ -511,6 +511,7 @@ defaultRC = RC
         , toVue = False
         , extendedGrounds = False
         , toChecklist = False
+        , runNLGtests = False
         }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack

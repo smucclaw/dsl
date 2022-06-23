@@ -10,6 +10,7 @@ import qualified AnyAll as AA
 import Data.List.NonEmpty
 import qualified Data.Text as T
 import qualified Data.Map as Map
+import Debug.Trace
 import Data.Maybe
 
 -- | a basic symbol table to track "variable names" and their associated types.
@@ -31,6 +32,7 @@ type SymTab = Map.Map MultiTerm (Inferrable TypeSig) -- similar to TypedMulti, b
 newtype ClsTab = CT (Map.Map EntityType (Inferrable EntityType, ClsTab))  -- a class has attributes; those attributes live in a map keyed by classname.
             -- the fst part is the parent
             -- the snd part is the recursive HAS
+  deriving (Show, Eq)
 
 -- | the explicitly annotated types from the L4 source text are recorded in the fst of Inferrable
 --   the confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
@@ -104,8 +106,9 @@ thisAttributes (CT clstab) subclass = do
 
 extendedAttributes o@(CT clstab) subclass = do
   ((met, tss), CT ct) <- Map.lookup subclass clstab
-  let (Just (CT eAttrs)) = case met of
-                      Nothing -> Nothing
-                      Just et -> extendedAttributes o et
+  et <- met
+  let eAttrs = case extendedAttributes o et of
+                 Nothing -> Map.empty
+                 (Just (CT ea)) -> ea
   return $ CT $ ct <> eAttrs
 

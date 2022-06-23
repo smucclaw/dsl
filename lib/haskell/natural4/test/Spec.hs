@@ -25,7 +25,7 @@ import LS.XPile.CoreL4
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Debug.Trace (traceM)
+import Debug.Trace (traceM, trace)
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
 import qualified Data.Map as Map
@@ -1785,8 +1785,28 @@ parserTests nlgEnv runConfig_ = do
         (parseOther (do
                         rules <- some pTypeDefinition
                         let classH = classHierarchy rules
-                            parent = clsParent classH "bar address"
-                        return $ parent)) (Nothing,[])
+                            parent = clsParent classH "Class2"
+                        return $ parent))
+        (Just "Class1",[])
+
+      let getCTkeys :: ClsTab -> [EntityType]
+          getCTkeys (CT ct) = Map.keys ct
+
+      filetest "class-1" "attribute enumeration"
+        (parseOther (do
+                        rules <- some pTypeDefinition
+                        let classH = classHierarchy rules
+                            tA = getCTkeys <$> thisAttributes classH "Class2"
+                        return $ tA))
+        (Just ["bar address","firstname","lastname","office address","work address"], [])
+
+      filetest "class-1" "extended attribute enumeration"
+        (parseOther (do
+                        rules <- some pTypeDefinition
+                        let classH = classHierarchy rules
+                            eA = getCTkeys <$> extendedAttributes classH "Class2"
+                        return $ eA))
+        (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

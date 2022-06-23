@@ -419,22 +419,21 @@ pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
-    <$$> defineLimb
+    <$$> pToken Define *> defineLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
     defineLimb = do
-      _dtoken <- pToken Define
-      (name,super)  <- (,) $>| pNameParens |>< optional pTypeSig
+      (name,super) <- manyIndentation (pKeyValues)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- optional (pToken Has *> someIndentation (sameDepth pTypeDefinition))
+      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth defineLimb))
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
       return $ TypeDecl
-        { name
+        { name = NE.toList name
         , super
         , has
         , enums

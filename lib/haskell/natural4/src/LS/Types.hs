@@ -234,7 +234,7 @@ data Rule = Regulative
           | TypeDecl
             { name     :: RuleName  --      DEFINE Sign
             , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText

@@ -31,7 +31,7 @@ rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $
 --             ( "Left" :| [] ) :|
 --             [ "Right" :| [] ]
 
-rule2clause st td@TypeDecl { has   = Just rules }    = describeDict st (Text.unwords $ name td) (super td) rules
+rule2clause st td@TypeDecl { has   = rules }    = describeDict st (Text.unwords $ name td) (super td) rules
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -48,7 +48,7 @@ rule2clause st td@TypeDecl { has   = Just rules }    = describeDict st (Text.unw
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = Nothing, super = Just sup }  = pure $ describeParent st (Text.unwords (name td)) sup
+rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (Text.unwords (name td)) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just

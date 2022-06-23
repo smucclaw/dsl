@@ -1366,8 +1366,31 @@ ParamText list of words, untyped.
 |       | Paper    | beats | Rock     |
 
 ***** Type Declaration
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-DECLARE ParamText
+| DEFINE | Class1         | IS AN        | Object  |         |
+| HAS    | id             | IS A         | Integer |         |
+|        |                |              |         |         |
+| DEFINE | Class2         | IS A         | Class1  |         |
+| HAS    | firstname      | IS           | A       | String  |
+|        | lastname       | IS           | A       | String  |
+|        | office address |              |         |         |
+|        | HAS            | line1        | ::      | String  |
+|        | HAS            | line2        | ::      | String  |
+|        | bar address    | ::           | address |         |
+|        | work address   | IS           | A       | address |
+|        | HAS            | floor        | ::      | String  |
+|        |                | company name | ::      | String  |
+|        |                |              |         |         |
+| DEFINE | address        |              |         |         |
+| HAS    | line1          | ::           | String  |         |
+|        | line2          | ::           | String  |         |
+
+This example serves multiple tests:
+- the interpreter should inherit line1 and line2 to "work address" and extend it with "floor" and "company name" attributes.
 
 ***** HasRelation
 

@@ -489,6 +489,7 @@ data RunConfig = RC { debug     :: Bool
                     , toVue     :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
+                    , runNLGtests :: Bool
                     } deriving (Show, Eq)
 
 defaultRC :: RunConfig

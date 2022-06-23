@@ -38,6 +38,7 @@ data MyToken = Every | Party | TokAll
              | Decide
              | A_An
              | Deem | As | Has
+             -- | AsOf -- used to evaluate a term not under the live context but at some previous time
              | TypeSeparator -- ::, TYPE, AS, shrug
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
              | Distinct -- entity modifier in GIVEN

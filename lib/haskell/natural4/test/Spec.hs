@@ -7,6 +7,7 @@ module Main where
 import Text.Megaparsec
 import LS.Lib
 import LS.Parser
+import LS.Interpreter
 import LS.RelationalPredicates
 import LS.ParamText
 import LS.Tokens
@@ -27,6 +28,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Debug.Trace (traceM)
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
+import qualified Data.Map as Map
 import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Text as T
@@ -124,7 +126,7 @@ defaultScenario = Scenario
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile {- ++ ": " ++ desc -}) $ do
+  it (testfile ++ ": " ++ desc ) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -1539,6 +1541,253 @@ parserTests nlgEnv runConfig_ = do
         let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
         (fmap sfl4ToCorel4 <$> rules) `shouldParse` [ "#\n# outputted via CoreL4.Program types\n#\n\n\nclass Situation\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\n\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\nclass Situation\n\ndecl sit: Situation\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor sit: Situation\nif (section_A applies && currentSit sit && sit == missingKeys)\nthen coverProvided Situation recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n" ]
 
+      filetest "class-1" "type definitions"
+        (parseR pRules)
+        [ TypeDecl
+            { name = [ "Class1" ]
+            , super = Just
+                ( SimpleType TOne "Object" )
+            , has =
+                [ TypeDecl
+                    { name = [ "id" ]
+                    , super = Just
+                        ( SimpleType TOne "Integer" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                ]
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name = [ "Class2" ]
+            , super = Just
+                ( SimpleType TOne "Class1" )
+            , has =
+                [ TypeDecl
+                    { name = [ "firstname" ]
+                    , super = Just
+                        ( SimpleType TOne "String" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                , TypeDecl
+                    { name = [ "lastname" ]
+                    , super = Just
+                        ( SimpleType TOne "String" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                , TypeDecl
+                    { name = [ "office address" ]
+                    , super = Nothing
+                    , has =
+                        [ TypeDecl
+                            { name = [ "line1" ]
+                            , super = Just
+                                ( SimpleType TOne "String" )
+                            , has = []
+                            , enums = Nothing
+                            , given = Nothing
+                            , upon = Nothing
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Nothing
+                            , defaults = []
+                            , symtab = []
+                            }
+                        , TypeDecl
+                            { name = [ "line2" ]
+                            , super = Just
+                                ( SimpleType TOne "String" )
+                            , has = []
+                            , enums = Nothing
+                            , given = Nothing
+                            , upon = Nothing
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Nothing
+                            , defaults = []
+                            , symtab = []
+                            }
+                        ]
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                , TypeDecl
+                    { name = [ "work address" ]
+                    , super = Nothing
+                    , has =
+                        [ TypeDecl
+                            { name = [ "line1" ]
+                            , super = Just
+                                ( SimpleType TOne "String" )
+                            , has = []
+                            , enums = Nothing
+                            , given = Nothing
+                            , upon = Nothing
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Nothing
+                            , defaults = []
+                            , symtab = []
+                            }
+                        , TypeDecl
+                            { name = [ "line2" ]
+                            , super = Just
+                                ( SimpleType TOne "String" )
+                            , has = []
+                            , enums = Nothing
+                            , given = Nothing
+                            , upon = Nothing
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Nothing
+                            , defaults = []
+                            , symtab = []
+                            }
+                        ]
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                , TypeDecl
+                    { name = [ "bar address" ]
+                    , super = Just
+                        ( SimpleType TOne "address" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                ]
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 4
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name = [ "address" ]
+            , super = Nothing
+            , has =
+                [ TypeDecl
+                    { name = [ "line1" ]
+                    , super = Just
+                        ( SimpleType TOne "String" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                , TypeDecl
+                    { name = [ "line2" ]
+                    , super = Just
+                        ( SimpleType TOne "String" )
+                    , has = []
+                    , enums = Nothing
+                    , given = Nothing
+                    , upon = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Nothing
+                    , defaults = []
+                    , symtab = []
+                    }
+                ]
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 15
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        ]
+
+      filetest "class-1" "parent-class identification"
+        (parseOther (do
+                        rules <- some pTypeDefinition
+                        let classH = classHierarchy rules
+                            parent = clsParent classH "bar address"
+                        return $ parent)) (Nothing,[])
+
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
 srcrow', srccol' :: Int -> Rule -> Rule
@@ -1550,4 +1799,6 @@ srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
 srccol1     = srccol' 1
 srccol2     = srccol' 2
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
+
+
 

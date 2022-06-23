@@ -1,17 +1,17 @@
-DEFINE,Class1,IS A,Object
-HAS,id,IS A,Integer
-
-DEFINE,Class2,IS A,Class1
+DEFINE,Class1,IS AN,Object,
+HAS,id,IS A,Integer,
+,,,,
+DEFINE,Class2,IS A,Class1,
 HAS,firstname,IS,A,String
 ,lastname,IS,A,String
-,office address
+,office address,,,
 ,HAS,line1,::,String
 ,HAS,line2,::,String
-,work address
+,work address,,,
 ,HAS,line1,::,String
 ,,line2,::,String
-,bar address,::,address
-
-DEFINE,address
-HAS,line1,::,String
-,line2,::,String
+,bar address,::,address,
+,,,,
+DEFINE,address,,,
+HAS,line1,::,String,
+,line2,::,String,

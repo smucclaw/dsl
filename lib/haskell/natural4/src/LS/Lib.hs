@@ -99,6 +99,7 @@ getConfig o = do
         , saveAKA = False
         , wantNotRules = False
         , extendedGrounds = extd o
+        , runNLGtests = False
         }
 
 

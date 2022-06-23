@@ -34,6 +34,9 @@ data BBox = BBox
 
 type BoxedSVG = (BBox, SVGElement)
 
+type Question = Q T.Text
+type QuestionTree = Tree Question
+
 data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show)
 data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
 
@@ -241,8 +244,8 @@ hAlign :: HAlignment -> [BoxedSVG] -> [BoxedSVG]
 hAlign alignment elems = alignH alignment mx <$> elems
   where mx = maximum $ bbw . fst <$> elems
 
-hlayout :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
-hlayout c (bbold, old) (bbnew, new) =
+rowLayouter :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
+rowLayouter c (bbold, old) (bbnew, new) =
   ( templateBox
       { bbh = max (bbh bbold) (bbh bbnew),
         bbw = bbw bbold + lrHgap + bbw bbnew,
@@ -258,7 +261,6 @@ hlayout c (bbold, old) (bbnew, new) =
     myScale = getScale (cscale c)
     lrHgap = slrh myScale
     newBoxStart = bbw bbold + lrHgap
-    newSvgStart = newBoxStart + bblm bbnew
     curveMoveCommand = mA (bbw bbold - bbrm bbold) (portR bbold myScale)
     curveBezierCommand =
       cR
@@ -277,8 +279,8 @@ hlayout c (bbold, old) (bbnew, new) =
 -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
 -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
 -- the third  argument after "c" is the position of                       the second point, relative to the first point.
-vlayout :: AAVConfig -> BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
-vlayout c parentbbox (bbold, old) (bbnew, new) =
+columnLayouter :: AAVConfig -> BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
+columnLayouter c parentbbox (bbold, old) (bbnew, new) =
   ( (defaultBBox (cscale c))
       { bbh = bbh bbold + bbh bbnew + lrVgap,
         bbw = max (bbw bbold) (bbw bbnew)
@@ -292,7 +294,6 @@ vlayout c parentbbox (bbold, old) (bbnew, new) =
     parentPortOut = portR parentbbox myScale + lrVgap
     pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
     myScale = getScale (cscale c)
-    lrHgap = slrh myScale
     lrVgap = slrv myScale
     leftMargin = slm myScale
     rightMargin = srm myScale
@@ -339,8 +340,8 @@ combineOr c elems =
     rightMargin = srm myScale
     childheights = interElementGap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
     mybbox = (defaultBBox (cscale c)) {bbh = childheights, bbw = maximum (bbw . fst <$> elems)}
-    layout = vlayout c mybbox
-    (childbbox, children) = foldl' layout (defaultBBox (cscale c), mempty) elems
+    addElementToColumn = columnLayouter c mybbox
+    (childbbox, children) = foldl' addElementToColumn (defaultBBox (cscale c), mempty) elems
 
 combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
@@ -357,40 +358,45 @@ combineAnd c elems =
     myScale = getScale (cscale c)
     leftMargin = slm myScale
     rightMargin = srm myScale
-    layout = hlayout c
-    (childbbox, children) = foldl1 layout elems
+    addElementToRow = rowLayouter c
+    (childbbox, children) = foldl1 addElementToRow elems
 
-drawItemFull :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
-drawItemFull c negContext qt@(Node (Q  sv ao               pp m) childqs) =
-  -- in a LR layout, each of the ORs gets a row below.
-  -- we max up the bounding boxes and return that as our own bounding box.
-
-  case ao of
-       Or -> let rawChildren = drawItemFull c negContext <$> childqs
-                 drawnChildren = combineOr c $ hAlign HCenter rawChildren
-             in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
-                (snd drawnChildren)
-
-       And -> let rawChildren = drawItemFull c negContext <$> childqs
-                  drawnChildren = combineAnd c $ vAlign VTop rawChildren
-              in (,) (fst drawnChildren) { bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
-                 (snd drawnChildren)
-       Simply _txt -> drawLeaf     c      negContext   qt
-       Neg         -> drawItemFull c (not negContext) (head childqs)
-
+-- in a LR layout, each of the ORs gets a row below.
+-- we max up the bounding boxes and return that as our own bounding box.
+drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
+drawOr c negContext childqs =
+    (,)
+        (fst drawnChildren) {bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
+        (snd drawnChildren)
     where
+      rawChildren = drawItemFull c negContext <$> childqs
+      drawnChildren = combineOr c $ hAlign HCenter rawChildren
       myScale     = getScale (cscale c)
-      boxWidth    = sbw myScale
-      boxHeight   = sbh myScale
       leftMargin  = slm myScale
       rightMargin = srm myScale
-      lrVgap      = slrv myScale
-      lrHgap      = slrh myScale
 
-      (boxStroke, boxFill, textFill) = getColors True
+drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
+drawAnd c negContext childqs =
+    (,)
+        (fst drawnChildren) {bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
+        (snd drawnChildren)
+    where
+      rawChildren = drawItemFull c negContext <$> childqs
+      drawnChildren = combineAnd c $ vAlign VTop rawChildren
+      myScale     = getScale (cscale c)
+      leftMargin  = slm myScale
+      rightMargin = srm myScale
 
-      topTextE = txtToBBE c <$> topText pp
-      botTextE = txtToBBE c <$> bottomText pp
+drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
+drawItemFull c negContext qt@(Node (Q sv ao pp m) childqs) =
+  case ao of
+    Or -> drawOr c negContext childqs
+    And -> drawAnd c negContext childqs
+    Simply _txt -> drawLeaf c negContext qt
+    Neg -> drawItemFull c (not negContext) (head childqs)
+
+-- topTextE = txtToBBE c <$> topText pp
+-- botTextE = txtToBBE c <$> bottomText pp
 
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us

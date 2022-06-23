@@ -280,7 +280,7 @@ spec = do
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
       boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20.0}, secondBox]
 
-  describe "test hlayout" $ do
+  describe "test rowLayouter" $ do
     let
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
@@ -288,7 +288,7 @@ spec = do
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
-      alignBox = hlayout c alignedBox1 alignedBox2
+      alignBox = rowLayouter c alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
@@ -303,7 +303,7 @@ spec = do
       _ <- print resultBox
       pendingWith "it's not a real test but just a debug code"
 
-  describe "test vlayout" $ do
+  describe "test columnLayouter" $ do
     let
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
@@ -317,8 +317,8 @@ spec = do
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
       mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
       -- Have to use vlayout 2 times to feed start box
-      tempBox = vlayout c mybbox startBox alignedBox1
-      alignBox = vlayout c mybbox tempBox alignedBox2
+      tempBox = columnLayouter c mybbox startBox alignedBox1
+      alignBox = columnLayouter c mybbox tempBox alignedBox2
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]

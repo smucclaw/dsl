@@ -176,6 +176,7 @@ prop_rendertoken token =
 main :: IO ()
 main = do
   mpd <- lookupEnv "MP_DEBUG"
+  mpn <- lookupEnv "MP_NLG"
   let runConfig_ = RC
         { debug = isJust mpd
         , callDepth = 0
@@ -194,6 +195,7 @@ main = do
         , extendedGrounds = False
         , toChecklist = False
         , printstream = False
+        , runNLGtests = isJust mpn || False
         }
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
@@ -211,8 +213,9 @@ main = do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
     describe "Parser tests" $ parserTests nlgEnv runConfig_
-    describe "NLG tests" $ nlgTests nlgEnv
-
+    if runNLGtests runConfig_
+      then describe "NLG tests" $ nlgTests nlgEnv
+      else describe "skipping NLG tests" $ do it "to enable, run with MP_NLG=True or edit Spec.hs's runNLGtests config" $ do True
 
 parserTests :: NLGEnv -> RunConfig -> Spec
 parserTests nlgEnv runConfig_ = do
@@ -1487,23 +1490,25 @@ parserTests nlgEnv runConfig_ = do
           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
         ]
 
-      -- let's see if the groundrules function outputs the right things
-      let grNormal = groundrules runConfig_
-          grExtend = groundrules runConfig_ { extendedGrounds = True }
-          asCList  = unsafePerformIO .
-                       checklist nlgEnv runConfig_ { extendedGrounds = True }
+      when (runNLGtests runConfig_) $ do
+        -- let's see if the groundrules function outputs the right things
+        let grNormal = groundrules runConfig_
+            grExtend = groundrules runConfig_ { extendedGrounds = True }
+            asCList  = unsafePerformIO .
+                         checklist nlgEnv runConfig_ { extendedGrounds = True }
 
-      filetest "boolstructp-3" "groundrules, non-extended"
-        (parseWith grNormal pRules) [["person","has","health insurance"]]
+        filetest "boolstructp-3" "groundrules, non-extended"
+          (parseWith grNormal pRules) [["person","has","health insurance"]]
 
-      filetest "boolstructp-3" "groundrules, extended"
-        (parseWith grExtend pRules) [ ["person","is","immortal"]
-                                    , ["person","has","health insurance"]]
+        filetest "boolstructp-3" "groundrules, extended"
+          (parseWith grExtend pRules) [ ["person","is","immortal"]
+                                      , ["person","has","health insurance"]]
 
-      filetest "boolstructp-3" "as checklist, extended"
-        (parseWith asCList pRules) [ ["Does the person have health insurance?"]
-                                   , ["Is the person immortal?"]]
-      -- TODO: check why nlgQuestion reverses order, revert this once that is fixed
+        filetest "boolstructp-3" "as checklist, extended"
+          (parseWith asCList pRules) [ ["Does the person have health insurance?"]
+                                     , ["Is the person immortal?"]]
+        -- TODO: check why nlgQuestion reverses order, revert this once that is fixed
+
 
 
 -- let's parse scenario rules!

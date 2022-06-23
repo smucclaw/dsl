@@ -204,7 +204,7 @@ pHornlike = debugName "pHornlike" $ do
     --   WHEN Z IS Q
 
     ambitious = debugName "pHornlike/ambitious" $ do
-      (keyword, subject) <- (,) $>| debugName "Define/Decide" (choice [ pToken Define, pToken Decide ]) |*< slMultiTerm
+      (keyword, subject) <- (,) $>| debugName "Decide" (choice [ pToken Decide ]) |*< slMultiTerm
       (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
       (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
         <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
@@ -220,13 +220,13 @@ pHornlike = debugName "pHornlike" $ do
                       (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
       return (Just keyword, subject, clauses)
 
-    -- without the define/decide
+    -- without the decide
     --        X IS y             -- nextlinewhen
     --   WHEN Z IS Q
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
+      keyword <- optional $ choice [ pToken Decide ]
       (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 

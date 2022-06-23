@@ -373,7 +373,9 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some pRule <* eof
+  some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
+
+semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
 
 pRules = pRulesOnly
 
@@ -404,10 +406,10 @@ pRule = debugName "pRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
   foundRule <- (pRegRule <?> "regulative rule")
-    <|> (pTypeDefinition   <?> "ontology definition")
-    <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
-    <|> (pScenarioRule <?> "scenario rule")
-    <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> try (pTypeDefinition   <?> "ontology definition")
+    <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
+    <|> try (pScenarioRule <?> "scenario rule")
+    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
@@ -416,6 +418,7 @@ pRule = debugName "pRule" $ do
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 
 
+-- TypeDecl
 pTypeDefinition :: Parser Rule
 pTypeDefinition = debugName "pTypeDefinition" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
@@ -446,8 +449,8 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pHornlike/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pHornlike/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pTypeDefinition/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDefinition/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
 

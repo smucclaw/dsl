@@ -652,6 +652,8 @@ toToken "OTHERWISE" = pure Otherwise
 
 toToken "WHERE"     = pure Where
 
+toToken ";;"        = pure Semicolon
+
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
 toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n

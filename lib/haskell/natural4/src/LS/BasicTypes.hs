@@ -59,6 +59,7 @@ data MyToken = Every | Party | TokAll
              | GoDeeper | UnDeeper
              | SetPlus | SetLess -- set union and subtraction
              | Where -- like in Haskell
+             | Semicolon -- rule separator
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.
@@ -193,8 +194,10 @@ renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
 renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
-renderToken tok = map toUpper (show tok)
 
+renderToken Semicolon = ";;"
+
+renderToken tok = map toUpper (show tok)
 
 liftMyToken :: [String] -> MyToken -> WithPos MyToken
 liftMyToken = WithPos pos 0 . Just

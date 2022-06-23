@@ -50,7 +50,7 @@ instance Pretty ParamText2 where
 -- | ParamText3 is used by the CoreL4 transpiler to produce colon-annotated paramtexts.
 newtype ParamText3 = PT3 ParamText
 instance Pretty ParamText3 where
-  pretty (PT3 pt) = hcat (intersperse "," (toList $ typedOrNot <$> pt))
+  pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot <$> pt))
 
 typedOrNot :: TypedMulti -> Doc ann
 typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)

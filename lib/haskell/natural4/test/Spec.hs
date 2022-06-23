@@ -1539,7 +1539,7 @@ parserTests nlgEnv runConfig_ = do
         let testfile = "seca"
         testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
         let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
-        (fmap sfl4ToCorel4 <$> rules) `shouldParse` [ "#\n# outputted via CoreL4.Program types\n#\n\n\nclass Situation\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\n\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\nclass Situation\n\ndecl sit: Situation\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor sit: Situation\nif (section_A applies && currentSit sit && sit == missingKeys)\nthen coverProvided Situation recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n" ]
+        (fmap sfl4ToCorel4 <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\nclass Situation\n\n\ndecl sit: Situation\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor sit: Situation\nif (section_A applies && currentSit sit && sit == missingKeys)\nthen coverProvided Situation recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
 
       filetest "class-1" "type definitions"
         (parseR pRules)
@@ -1788,9 +1788,6 @@ parserTests nlgEnv runConfig_ = do
                             parent = clsParent classH "Class2"
                         return $ parent))
         (Just "Class1",[])
-
-      let getCTkeys :: ClsTab -> [EntityType]
-          getCTkeys (CT ct) = Map.keys ct
 
       filetest "class-1" "attribute enumeration"
         (parseOther (do

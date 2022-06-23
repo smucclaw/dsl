@@ -19,7 +19,7 @@ import Data.Functor ( (<&>) )
 
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust)
 import qualified Data.List.NonEmpty as NE
 
 -- output to Core L4 for further transformation
@@ -28,11 +28,13 @@ sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
-sfl4ToCorel4 rs = let sTable = symbolTable rs
-  in unlines ( ["#\n# outputted via CoreL4.Program types\n#\n\n"
-               , ppCorel4 . sfl4ToCorel4Program $ rs
-               , "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , (show $ prettyClasses sTable)
+sfl4ToCorel4 rs =
+  let sTable = symbolTable rs
+      cTable = classHierarchy rs
+  in unlines ( [ --"#\n# outputted via CoreL4.Program types\n#\n\n"
+                 -- , ppCorel4 . sfl4ToCorel4Program $ rs
+               "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
+               , (show $ prettyClasses cTable)
                , ""
                , (show $ prettyDecls   sTable)
                , ""
@@ -150,7 +152,7 @@ sfl4ToCorel4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
 sfl4ToCorel4Rule (RuleAlias t) = undefined -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled = undefined -- trivial top = _
 sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
-
+sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
@@ -168,6 +170,9 @@ directToCore r@Hornlike{} =
        | (c,cnum) <- zip (clauses r) [1..]
        ]
 
+directToCore r@TypeDecl{} = ""
+directToCore _ = ""
+
 prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
     
@@ -180,10 +185,23 @@ prettyDecls sctabs = vsep [ "decl" <+> typedOrNot (NE.fromList mt, getSymType sy
                           , (mt, symtype) <- Map.toList symtab'
                           ]
 
-prettyClasses :: ScopeTabs -> Doc ann
-prettyClasses sctabs = vsep [ "class" <+> prettySimpleType className
-                            | (_ , symtab') <- Map.toList sctabs
-                            , (mt, symtype) <- Map.toList symtab'
-                            , let (Just className) = getSymType symtype
-                            ]
+prettyClasses :: ClsTab -> Doc ann
+prettyClasses ct@(CT ch) =
+  vsep [ "class" <+> pretty className <>
+         case clsParent ct className of
+           Nothing       -> mempty
+           (Just parent) -> " extends" <+> pretty parent
+         -- attributes of the class are shown as decls
+         <> Prettyprinter.line
+         <> vsep [ "decl" <+> pretty attrname <>
+                   case attrType children attrname of
+                     Just t -> " :" <+> pretty className <+>
+                               "->" <+> prettySimpleType t
+                     Nothing -> ""
+                 | attrname <- getCTkeys children
+                 -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
+                 ]
+       | className <- getCTkeys ct
+       , let (Just (ctype, children)) = Map.lookup className ch
+       ]
 

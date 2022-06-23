@@ -29,9 +29,10 @@ import Data.Maybe
 
 type SymTab = Map.Map MultiTerm (Inferrable TypeSig) -- similar to TypedMulti, but with room for adding inferred types
 
-newtype ClsTab = CT (Map.Map EntityType (Inferrable EntityType, ClsTab))  -- a class has attributes; those attributes live in a map keyed by classname.
-            -- the fst part is the parent
-            -- the snd part is the recursive HAS
+newtype ClsTab = CT (Map.Map EntityType (Inferrable TypeSig, ClsTab))
+  -- a class has attributes; those attributes live in a map keyed by classname.
+  -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
+  -- the snd part is the recursive HAS containing attributes of the class
   deriving (Show, Eq)
 
 -- | the explicitly annotated types from the L4 source text are recorded in the fst of Inferrable
@@ -78,24 +79,30 @@ getUnderlyingType   (InlineEnum pt1       s1) = Left "type declaration cannot in
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   CT $ Map.fromList
-  [ (thisclass, (superclass, attributes))
+  [ (thisclass, (classtype, attributes))
   | r@TypeDecl{} <- rs
   , let thisclass = mt2text (name r)
-        superclass = do
-          case super r of
-            Nothing -> (Nothing, [])
-            Just s  -> case getUnderlyingType s of
-              Left err -> (Nothing, [])
-              Right mt -> (Just mt, [])
+        classtype = (super r, [])
         attributes = classHierarchy (has r)
   ]
   
+getCTkeys :: ClsTab -> [EntityType]
+getCTkeys (CT ct) = Map.keys ct
+
+-- a subclass extends a superclass.
+-- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
--- do we want to support diamond inheritance? if so, the EntityType we return should be a [EntityType].
 clsParent (CT clstab) subclass = do
-  ((met, tss), st) <- Map.lookup subclass clstab
-  superclass <- met
-  return superclass
+  ((mts, tss), st) <- Map.lookup subclass clstab
+  case getUnderlyingType <$> getSymType (mts, tss) of
+    Just (Right s1) -> Just s1
+    Just (Left err) -> Nothing
+    Nothing         -> Nothing
+
+attrType :: ClsTab -> EntityType -> Maybe TypeSig
+attrType (CT clstab) attrName = do
+  (t, CT ct) <- Map.lookup attrName clstab
+  getSymType t
 
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 
@@ -105,10 +112,11 @@ thisAttributes (CT clstab) subclass = do
   return ct
 
 extendedAttributes o@(CT clstab) subclass = do
-  ((met, tss), CT ct) <- Map.lookup subclass clstab
-  et <- met
-  let eAttrs = case extendedAttributes o et of
-                 Nothing -> Map.empty
-                 (Just (CT ea)) -> ea
+  ((mts, tss), CT ct) <- Map.lookup subclass clstab
+  ts <- mts
+  let eAttrs = case (extendedAttributes o <$> clsParent o subclass) of
+                 Nothing               -> Map.empty
+                 (Just Nothing)        -> Map.empty
+                 (Just (Just (CT ea))) -> ea
   return $ CT $ ct <> eAttrs
 

@@ -58,6 +58,18 @@ import Data.Either (rights)
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist"
+
+                   , workdir :: w ::: String <!> ""   <?> "workdir to save all the output files to"
+                    
+                   , toprolog  :: w ::: String <!> ""  <?> "prolog-like syntax representing the predicate logic"
+                   , tonative  :: w ::: String <!> ""  <?> "native Haskell data structure of the AST"
+                   , topetri   :: w ::: String <!> ""  <?> "a petri-net Dot file of the state graph"
+                   , toaasvg   :: w ::: String <!> ""  <?> "an anyall SVG of the decision trees"
+                   , tocorel4  :: w ::: String <!> ""  <?> "in core-l4 syntax"
+                   , tojson    :: w ::: String <!> ""  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
+                   , togrounds :: w ::: String <!> ""  <?> "ground terms"
+                   , tocheckl  :: w ::: String <!> ""  <?> "ground terms phrased in checklist syntax"
+
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
                    , file :: w ::: NoLabel [String] <?> "filename..."

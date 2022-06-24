@@ -66,6 +66,7 @@ library
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -76,6 +77,7 @@ library
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -89,6 +91,7 @@ library
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string
@@ -115,6 +118,7 @@ executable natural4-exe
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -125,6 +129,7 @@ executable natural4-exe
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -139,6 +144,7 @@ executable natural4-exe
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string
@@ -167,6 +173,7 @@ test-suite natural4-test
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -177,6 +184,7 @@ test-suite natural4-test
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -191,6 +199,7 @@ test-suite natural4-test
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string

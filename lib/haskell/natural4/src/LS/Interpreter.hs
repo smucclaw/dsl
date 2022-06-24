@@ -120,3 +120,14 @@ extendedAttributes o@(CT clstab) subclass = do
                  (Just (Just (CT ea))) -> ea
   return $ CT $ ct <> eAttrs
 
+-- | reduce the ruleset to an organized set of rule trees.
+-- where the HENCE and LEST are fully expanded; once a HENCE/LEST child has been incorporated into its parent, remove the child from the top-level list of rules.
+-- similarly with DECIDE rules defined inline with MEANS
+
+stitchRules :: [Rule] -> [Rule]
+stitchRules rs = rs
+
+aaForSVG :: Rule -> String
+aaForSVG r = "<svg />"
+  -- convert the AA items in this rule to SVG
+  

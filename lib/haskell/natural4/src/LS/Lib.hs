@@ -137,7 +137,7 @@ parseRules o = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
           putStrLn $ "* error while parsing " ++ filename
-          putStr (errorBundlePrettyCustom bundle)
+          putStrLn (errorBundlePrettyCustom bundle)
           putStrLn "** stream"
           printStream stream
           return (Left bundle)
@@ -387,6 +387,7 @@ pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
   some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
 
+semicolonBetweenRules :: Parser (Maybe MyToken)
 semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
 
 pRules = pRulesOnly
@@ -419,6 +420,7 @@ pRule = debugName "pRule" $ do
 
   foundRule <- (pRegRule <?> "regulative rule")
     <|> try (pTypeDeclaration   <?> "type declaration -- ontology definition")
+    <|> try (pVarDefn           <?> "variable definition")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
@@ -465,6 +467,45 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
+-- VarDefn gets turned into a Hornlike rule
+pVarDefn :: Parser Rule
+pVarDefn = debugName "pVarDefn" $ do
+  maybeLabel <- optional pRuleLabel
+  (proto,g,u,w) <- permute $ (,,,)
+    <$$> pToken Define *> defineLimb
+    <|?> (Nothing, givenLimb)
+    <|?> (Nothing, uponLimb)
+    <|?> (Nothing, whenCase)
+  return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel
+                 -- this is the same as addWhen from RelationalPredicates
+                 , clauses = [ hc2 { hBody = hBody hc2 <> w }
+                             | hc2 <- clauses proto
+                             ]
+                 }
+  where
+    defineLimb = do
+      (name,mytype) <- manyIndentation (pKeyValuesAka)
+      myTraceM $ "got name = " <> show name
+      myTraceM $ "got mytype = " <> show mytype
+      hases   <- concat <$> many (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      myTraceM $ "got hases = " <> show hases
+      return $ Hornlike
+        { name = NE.toList name
+        , keyword = Define
+        , super = mytype
+        , given = Nothing -- these get overwritten immediately above in the return
+        , upon = Nothing
+        , clauses = [ HC2 { hHead = RPParamText has, hBody = Nothing }
+                    | has <- hases
+                    ]
+        , rlabel  = noLabel
+        , lsource = noLSource
+        , srcref  = noSrcRef
+        , defaults = mempty, symtab = mempty
+        }
+
+    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule

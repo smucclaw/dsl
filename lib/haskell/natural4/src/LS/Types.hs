@@ -26,7 +26,6 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
-import Data.Char (toUpper)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -221,6 +220,7 @@ data Rule = Regulative
             }
           | Hornlike
             { name     :: RuleName           -- MyInstance
+            , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
             , given    :: Maybe ParamText    -- applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs

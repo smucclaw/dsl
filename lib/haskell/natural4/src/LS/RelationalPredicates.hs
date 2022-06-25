@@ -6,12 +6,9 @@ module LS.RelationalPredicates where
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
-import Debug.Trace
-import qualified Data.Text as Text
-import Data.String (IsString)
 import qualified AnyAll as AA
-import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
+import Data.List.NonEmpty ( toList, nonEmpty )
+import Data.Maybe (fromMaybe, catMaybes)
 
 import LS.Types
 import LS.Tokens
@@ -84,7 +81,7 @@ c2hornlike :: Rule -> Rule
 c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
   let clauses = pure $ HC2 (RPBoolStructR name RPis letbind) cond
       upon = Nothing
-  in Hornlike { name, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
+  in Hornlike { name, super = Nothing, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
 c2hornlike r = r
 
 pConstitutiveRule :: Parser Rule
@@ -176,6 +173,10 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
     $>| choice (try . pToken <$> preambles)
     |>< pParamText
 
+
+-- | a Hornlike rule does double duty, due to the underlying logical/functional/object paradigms.
+-- on the logical side of things,            it has to handle a DECIDE xx MEANS yy WHEN zz.
+-- on the functional/objecty side of things, it has to handle a DEFINE xx HAS yy variable definition.
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
@@ -185,14 +186,20 @@ pHornlike = debugName "pHornlike" $ do
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
   return $ Hornlike { name
+                    , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                     , keyword = fromMaybe Means keyword
                     , given
-                    , clauses = addWhen topwhen clauses
+                    , clauses = addWhen topwhen $ clauses
                     , upon, rlabel, srcref
                     , lsource = noLSource
                     , defaults = mempty, symtab = mempty
                     }
   where
+    addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
+    addHead Nothing hcs   = hcs
+    addHead (Just pt) hcs = [ hc2 { hHead = RPParamText pt }
+                            | hc2 <- hcs ]
+
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ hc2 { hBody = hBody hc2 <> mbsr }
                        | hc2 <- hcs ]
@@ -226,7 +233,7 @@ pHornlike = debugName "pHornlike" $ do
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Decide, pToken Define ]
+      keyword <- optional $ choice [ pToken Decide ]
       (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
@@ -275,6 +282,7 @@ nestedHorn = do
                                |^| liftSL (pToken Means)
                                |-| pBSR
   let simpleHorn = Hornlike { name = subj
+                            , super = Nothing
                             , keyword = meansTok
                             , given = Nothing
                             , upon = Nothing

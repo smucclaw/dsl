@@ -1,7 +1,7 @@
-DEFINE,Class1,IS AN,Object,
+DECLARE,Class1,IS AN,Object,
 HAS,id,IS A,Integer,
 ,,,,
-DEFINE,Class2,IS A,Class1,
+DECLARE,Class2,IS A,Class1,
 HAS,firstname,IS,A,String
 ,lastname,IS,A,String
 ,office address,,,
@@ -12,6 +12,6 @@ HAS,firstname,IS,A,String
 ,,line2,::,String
 ,bar address,::,address,
 ,,,,
-DEFINE,address,,,
+DECLARE,address,,,
 HAS,line1,::,String,
 ,line2,::,String,

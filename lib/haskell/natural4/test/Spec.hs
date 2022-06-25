@@ -1783,7 +1783,7 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "class-1" "parent-class identification"
         (parseOther (do
-                        rules <- some pTypeDefinition
+                        rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             parent = clsParent classH "Class2"
                         return $ parent))
@@ -1791,7 +1791,7 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "class-1" "attribute enumeration"
         (parseOther (do
-                        rules <- some pTypeDefinition
+                        rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             tA = getCTkeys <$> thisAttributes classH "Class2"
                         return $ tA))
@@ -1799,7 +1799,7 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "class-1" "extended attribute enumeration"
         (parseOther (do
-                        rules <- some pTypeDefinition
+                        rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             eA = getCTkeys <$> extendedAttributes classH "Class2"
                         return $ eA))
@@ -1816,6 +1816,4 @@ srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
 srccol1     = srccol' 1
 srccol2     = srccol' 2
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
-
-
 

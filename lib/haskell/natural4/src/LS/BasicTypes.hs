@@ -34,7 +34,7 @@ data MyToken = Every | Party | TokAll
              | Before | After | By | On | Eventually -- TVague is a temporal constraint but not a token
              | Means | Includes  | Is
              | Given | Having | Upon
-             | Define | OneOf | Holds
+             | Declare | Define | OneOf | Holds
              | Decide
              | A_An
              | Deem | As | Has

@@ -232,12 +232,26 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | TypeDecl
-            { name     :: RuleName  --      DEFINE Sign
-            , super    :: Maybe TypeSig     --                  :: Thing
+            { name     :: RuleName              -- DECLARE Class
+            , super    :: Maybe TypeSig         -- IS A Superclass
             , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
+            , rlabel   :: Maybe RuleLabel
+            , lsource  :: Maybe Text.Text
+            , srcref   :: Maybe SrcRef
+            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            }
+          | VarDefn
+            { name     :: RuleName              -- MyInstance
+            , keyword  :: MyToken            -- decide / define / means
+            , super    :: Maybe TypeSig         -- IS A Class
+            , has      :: [Rule]                -- HAS attrName  attrValue
+            , given    :: Maybe ParamText       -- let's sneak some functional programming in after all; this allows input parameters
+            , cond     :: Maybe BoolStructR     -- and let's have it be conditional on statics
+            , upon     :: Maybe ParamText       --                                 and kinetics
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -611,6 +625,7 @@ toToken "IS AN"  = [TypeSeparator, A_An]
 toToken "A"      = pure A_An
 toToken "AN"     = pure A_An
 
+toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define
 toToken "DECIDE"    = pure Decide
 toToken "ONE OF"    = pure OneOf

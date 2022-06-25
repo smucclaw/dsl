@@ -418,7 +418,8 @@ pRule = debugName "pRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
   foundRule <- (pRegRule <?> "regulative rule")
-    <|> try (pTypeDefinition   <?> "ontology definition")
+    <|> try (pTypeDeclaration   <?> "type declaration -- ontology definition")
+    <|> try (pVarDefn           <?> "variable definition")
     <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
@@ -431,20 +432,20 @@ pRule = debugName "pRule" $ do
 
 
 -- TypeDecl
-pTypeDefinition :: Parser Rule
-pTypeDefinition = debugName "pTypeDefinition" $ do
+pTypeDeclaration :: Parser Rule
+pTypeDeclaration = debugName "pTypeDeclaration" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
-    <$$> pToken Define *> defineLimb
+    <$$> pToken Declare *> declareLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
-    defineLimb = do
+    declareLimb = do
       (name,super) <- manyIndentation (pKeyValues)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth defineLimb))
+      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth declareLimb))
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
@@ -461,9 +462,42 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pTypeDefinition/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pTypeDefinition/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
+
+-- VarDefn
+pVarDefn :: Parser Rule
+pVarDefn = debugName "pVarDefn" $ do
+  maybeLabel <- optional pRuleLabel
+  ((kw,proto),g,u,w) <- permute $ (,,,)
+    <$$> (,) <$> pToken Define <*> defineLimb
+    <|?> (Nothing, givenLimb)
+    <|?> (Nothing, uponLimb)
+    <|?> (Nothing, whenCase)
+  return $ proto { given = snd <$> g, upon = snd <$> u, cond = w, rlabel = maybeLabel }
+  where
+    defineLimb = do
+      (name,super) <- manyIndentation (pKeyValues)
+      myTraceM $ "got name = " <> show name
+      myTraceM $ "got super = " <> show super
+      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth defineLimb))
+      myTraceM $ "got has = " <> show has
+      return $ VarDefn
+        { name = NE.toList name
+        , super
+        , has
+        , given = Nothing -- these get overwritten immediately above in the return
+        , upon = Nothing
+        , cond = Nothing
+        , rlabel  = noLabel
+        , lsource = noLSource
+        , srcref  = noSrcRef
+        , defaults = mempty, symtab = mempty
+        }
+
+    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
 -- | parse a Scenario stanza

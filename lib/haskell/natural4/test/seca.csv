@@ -18,7 +18,7 @@
 //,,,then coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DEFINE,Situation
+DECLARE,Situation
 ;;
 ,,,§,SecA_RecoverPassengersVehicleAuthorizedOp,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,GIVEN,sit,IS A,Situation,,,,,,,,,,,,,,,,,,,,,,,,,,,

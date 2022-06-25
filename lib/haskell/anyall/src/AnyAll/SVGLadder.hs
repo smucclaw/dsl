@@ -261,19 +261,40 @@ rowLayouter c (bbold, old) (bbnew, new) =
     myScale = getScale (cscale c)
     lrHgap = slrh myScale
     newBoxStart = bbw bbold + lrHgap
-    curveMoveCommand = mA (bbw bbold - bbrm bbold) (portR bbold myScale)
-    curveBezierCommand =
-      cR
-        (bbrm bbold + lrHgap)
-        0
-        (bbrm bbold)
-        (portL bbnew myScale - portR bbold myScale)
-        (bbrm bbold + lrHgap + bblm bbnew)
-        (portL bbnew myScale - portR bbold myScale)
     connectingCurve =
       if bbw bbold /= 0
-        then path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
-        else mempty :: SVGElement
+        then svgConnector $ rowConnectorData c bbold bbnew
+        else mempty
+
+data Dot = Dot {x::Length, y::Length}
+data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
+
+rowConnectorData :: AAVConfig -> BBox -> BBox -> Curve
+rowConnectorData c bbold bbnew =
+  Curve
+    { start = Dot {x = bbw bbold - rightMargin, y = portLocationY},
+      startGuide = Dot {x = rightMargin + gap, y = 0},
+      endGuide = Dot {x = rightMargin, y = portL bbnew myScale - portLocationY},
+      end = Dot {x = rightMargin + gap + bblm bbnew, y = portL bbnew myScale - portLocationY}
+    }
+  where
+    myScale = getScale (cscale c)
+    gap = slrh myScale
+    rightMargin = bbrm bbold
+    portLocationY = portR bbold myScale
+
+svgConnector :: Curve -> SVGElement
+svgConnector
+  Curve
+    { start = Dot {x = sx, y = sy},
+      startGuide = Dot {x = sgx, y = sgy},
+      endGuide = Dot {x = egx, y = egy},
+      end = Dot {x = ex, y = ey}
+    } =
+    path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
+    where
+      curveMoveCommand = mA sx sy
+      curveBezierCommand = cR sgx 0 egx egy ex ey
 
 -- bezier curves: "M"            is the position of                       the first  point.
 -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
@@ -341,7 +362,7 @@ combineOr c elems =
     childheights = interElementGap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
     mybbox = (defaultBBox (cscale c)) {bbh = childheights, bbw = maximum (bbw . fst <$> elems)}
     addElementToColumn = columnLayouter c mybbox
-    (childbbox, children) = foldl' addElementToColumn (defaultBBox (cscale c), mempty) elems
+    (childbbox, children) = foldl' addElementToColumn (defaultBBox (cscale c), mempty) $ hAlign HCenter elems
 
 combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
@@ -359,7 +380,7 @@ combineAnd c elems =
     leftMargin = slm myScale
     rightMargin = srm myScale
     addElementToRow = rowLayouter c
-    (childbbox, children) = foldl1 addElementToRow elems
+    (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
 
 -- in a LR layout, each of the ORs gets a row below.
 -- we max up the bounding boxes and return that as our own bounding box.
@@ -370,7 +391,7 @@ drawOr c negContext childqs =
         (snd drawnChildren)
     where
       rawChildren = drawItemFull c negContext <$> childqs
-      drawnChildren = combineOr c $ hAlign HCenter rawChildren
+      drawnChildren = combineOr c rawChildren
       myScale     = getScale (cscale c)
       leftMargin  = slm myScale
       rightMargin = srm myScale
@@ -382,7 +403,7 @@ drawAnd c negContext childqs =
         (snd drawnChildren)
     where
       rawChildren = drawItemFull c negContext <$> childqs
-      drawnChildren = combineAnd c $ vAlign VTop rawChildren
+      drawnChildren = combineAnd c rawChildren
       myScale     = getScale (cscale c)
       leftMargin  = slm myScale
       rightMargin = srm myScale

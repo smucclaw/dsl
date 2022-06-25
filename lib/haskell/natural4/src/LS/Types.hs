@@ -220,7 +220,7 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Hornlike
-            { name     :: RuleName           -- colour
+            { name     :: RuleName           -- MyInstance
             , keyword  :: MyToken            -- decide / define / means
             , given    :: Maybe ParamText    -- applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
@@ -238,20 +238,6 @@ data Rule = Regulative
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
-            , rlabel   :: Maybe RuleLabel
-            , lsource  :: Maybe Text.Text
-            , srcref   :: Maybe SrcRef
-            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            }
-          | VarDefn
-            { name     :: RuleName              -- MyInstance
-            , keyword  :: MyToken            -- decide / define / means
-            , super    :: Maybe TypeSig         -- IS A Class
-            , has      :: [Rule]                -- HAS attrName  attrValue
-            , given    :: Maybe ParamText       -- let's sneak some functional programming in after all; this allows input parameters
-            , cond     :: Maybe BoolStructR     -- and let's have it be conditional on statics
-            , upon     :: Maybe ParamText       --                                 and kinetics
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef

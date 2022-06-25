@@ -226,7 +226,7 @@ pHornlike = debugName "pHornlike" $ do
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Decide ]
+      keyword <- optional $ choice [ pToken Decide, pToken Define ]
       (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 

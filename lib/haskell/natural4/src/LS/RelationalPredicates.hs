@@ -24,13 +24,13 @@ pRelationalPredicate = pRelPred
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
 tok2rel = choice
-    [ RPis      <$ pToken Is      
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
+    [ RPis      <$ pToken Is
+    , RPeq      <$ pToken TokEQ
+    , RPlt      <$ pToken TokLT
+    , RPlte     <$ pToken TokLTE
+    , RPgt      <$ pToken TokGT
+    , RPgte     <$ pToken TokGTE
+    , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
     ]
 
@@ -67,7 +67,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
     rp2mt (RPConstraint  _mt1 _rpr mt2) = [mt2]
     rp2mt (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
 
-  
+
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
@@ -98,7 +98,8 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
     manyIndentation $ permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
-  let srcref' = SrcRef srcurl srcurl leftX leftY Nothing
+  let srcref' =  SrcRef
+        {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
   return $ Constitutive
     { name = namep
@@ -288,9 +289,9 @@ nestedHorn = do
   _ <- liftSL $ tellIdFirst (return simpleHorn)
   return (RPMT subj)
 
-  
+
 rpMT :: SLParser RelationalPredicate
-rpMT          = RPMT          $*| slAKA slMultiTerm id
+rpMT          = RPMT          <$> slAKA slMultiTerm id
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 

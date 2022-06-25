@@ -669,12 +669,12 @@ pGetTokenPos = token test Set.empty <?> "some token"
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"
   where
-    test WithPos {pos= SourcePos _ _y x} = Just (unPos x)
+    test = Just . unPos . sourceColumn . pos
 
 pYLocation :: Parser Depth
 pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
-    test WithPos{pos= SourcePos _ y _x } = Just (unPos y)
+    test = Just . unPos . sourceLine . pos
 
 
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken

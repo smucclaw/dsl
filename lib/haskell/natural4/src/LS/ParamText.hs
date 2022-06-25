@@ -37,13 +37,13 @@ pBoolStructPT :: Parser BoolStructP
 pBoolStructPT = prePostParse pParamText
 
 pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $
+pParamText = debugName "pParamText" $ (<* optional dnl) $
   (:|)
   <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
   <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
-  (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
+  (try (someIndentation (sameMany (pKeyValuesAka <* pToken EOL))) -- maybe the subsequent lines are indented; consume the indentation first.
    <|>
-   manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
+   manyIndentation (sameMany (pKeyValuesAka <* pToken EOL)))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do
@@ -91,7 +91,7 @@ pOneOf = pToken OneOf *> someIndentation pParamText
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
-pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
+pMultiTermAka = debugName "pMultiTermAka" $ manyIndentation $ pAKA (liftSL pMultiTerm) id <* optional dnl
 
 -- head of nonempty list
 pSingleTermAka :: Parser KVsPair
@@ -142,10 +142,14 @@ slOneOf = do
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<$ undeepers
+pKeyValuesAka = debugName "pKeyValuesAka" $ pAKA (liftSL pKeyValues) (toList . fst)
 
 pKeyValues :: Parser KVsPair
-pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
+pKeyValues = debugName "pKeyValues" $ do
+             (lhs, typesig)   <- (,)
+                                 <$> some pNumOrText
+                                 <*> optional pTypeSig
+             return (fromList lhs, typesig)
 
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
@@ -159,7 +163,7 @@ getSrcRef = do
   leftY  <- lookAhead pYLocation
   leftX  <- lookAhead pXLocation
   srcurl <- asks sourceURL
-  return $ SrcRef srcurl srcurl leftX leftY Nothing
+  return SrcRef {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
 
 -- utility function for the above
@@ -169,6 +173,7 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
+  srcref' <- liftSL getSrcRef
   (base, entityalias, typicalval) <- (,,)
                          $*| debugName "slAKA base" baseParser
                          |*| debugName "slAKA optional akapart"   ((|?|) akapart)
@@ -178,7 +183,6 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
   let detail' = toMultiTerm base
 
   debugPrint $ "pAKA: entityalias = " ++ show entityalias
-  srcref' <- liftSL getSrcRef
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
   liftSL $ tell defalias
   liftSL $ writeTypically detail' typicalval

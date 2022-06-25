@@ -26,10 +26,10 @@ import Data.Functor.Identity (Identity)
 import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
-dnl :: Parser MyToken
+dnl :: Parser ()
 -- -- dnl = many $ pToken EOL
-dnl = pToken EOL
--- dnl = some $ pToken EOL
+-- dnl = pToken EOL
+dnl = void $ some $ pToken EOL
 
 pDeontic :: Parser Deontic
 pDeontic = (pToken Must  >> return DMust)
@@ -44,10 +44,13 @@ pNumber = token test Set.empty <?> "number"
 
 -- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text
-pOtherVal = token test Set.empty <?> "Other text"
+-- pOtherVal = token test Set.empty <?> "Other text"
+pOtherVal = getOther <$> pTokenMatch test (pure $ Other "Other text")
   where
-    test WithPos {tokenVal = Other t} = Just t
-    test _ = Nothing
+    test (Other _) = True
+    test _ = False
+    getOther (Other t) = t
+    getOther _ = error "getOther: not an Other"
 
 getToken :: Parser MyToken
 getToken = token test Set.empty <?> "any token"
@@ -115,17 +118,21 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = do
-  rlabel' <- optional pRuleLabel
+pSrcRef = (,) <$> optional pRuleLabel <*> pJustSrcRef
+
+pJustSrcRef :: Parser (Maybe SrcRef)
+pJustSrcRef = do
+  -- WithPos{pos=SourcePos{sourceColumn, sourceLine}}  <- lookAhead pGetTokenPos
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
-  return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
+  return $ Just SrcRef {url = srcurl, short = srcurl, srcrow = leftY, srccol = leftX, version = Nothing}
 
 
 pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" . label "number" $ do
-  (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
+-- pNumAsText = debugName "pNumAsText" . label "number" $ do
+pNumAsText = debugName "pNumAsText" $ do
+  (TNumber n) <- pTokenMatch isNumber (pure $ Other "number")
   return (Text.pack $ show n)
   where
     isNumber (TNumber _) = True
@@ -147,11 +154,12 @@ myEOL :: Parser ()
 myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
 pRuleLabel :: Parser RuleLabel
-pRuleLabel = debugName "pRuleLabel" . pretendEmpty . someUndeepersOrEOL $ do
+pRuleLabel = debugName "pRuleLabel" . pretendEmpty $ do
   (RuleMarker i sym, actualLabel) <- (,)
-                                     $>| pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
+                                     <$> pTokenMatch isRuleMarker (pure $ RuleMarker 1 "§")
                                     --  |>| pOtherVal
-                                     |*| (Text.unwords <$> manyLiftSL pOtherVal)
+                                     <*> (Text.unwords <$> many pOtherVal)
+                                     <* dnl
                                      -- <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
 
   return (sym, i, actualLabel)
@@ -255,15 +263,15 @@ alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
 pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
+pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ some pNumOrText <* optional dnl
 
 slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
+slMultiTerm = debugNameSL "slMultiTerm" $ liftSL $ some pNumOrText <* optional dnl
 
 
 
 pNumOrText :: Parser Text.Text
-pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
+pNumOrText = pOtherVal <|> pNumAsText -- <?> "other text or number"
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
@@ -901,6 +909,7 @@ pretendEmpty = liftRawPFun iPretendEmpty
 
 -- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
 iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
+-- iPretendEmpty = try
 iPretendEmpty pt = MPInternal.ParsecT $ \s _ _ eok eerr ->
    let eerr' err _ = eerr err s
    in MPInternal.unParser pt s eok eerr' eok eerr'

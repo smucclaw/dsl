@@ -57,37 +57,37 @@ term p = termIndent p
 
 exprIndent p = ppp $ debugName "expression indentable" (makeExprParser (termIndent p) table <?> "expression indentable")
 termIndent p = debugName "termIndent p" $ do
-  try (debugName "term p/1a:label ends directly above next line" $ do
-        (lbl, inner) <- (,)
-          $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
-          |>< expr p
-        debugPrint $ "1a: got label, then inner immediately below: " ++ show lbl
-        debugPrint $ "1a: got inner: " <> show inner
-        return $ MyLabel lbl Nothing inner)
-    <|>
-    try (debugName "term p/1b:label ends to the left of line below, with EOL" $ do
-        (lbl, inner) <- (,)
-          $*| (someLiftSL pNumOrText) <* liftSL (debugName "matching EOL" dnl)
-          |>< expr p
-        debugPrint $ "1b: got label to the left, with EOL: " ++ show lbl
-        debugPrint $ "1b: got inner: " ++ show inner
-        return $ MyLabel lbl Nothing inner)
-    <|>
-    try (debugName "term p/1c:label ends to the right of line below" $ do
-        (lbl,inner) <- (,)
-          $*| (someLiftSL pNumOrText)
-          |<| expr p
-          |<$ undeepers
-        debugPrint $ "1c: got label to the right of next line: " ++ show lbl
-        debugPrint $ "1c: got inner: " ++ show inner
-        return $ MyLabel lbl Nothing inner)
-    <|>
+  -- try (debugName "term p/1a:label ends directly above next line" $ do
+  --       (lbl, inner) <- (,)
+  --         $*| (someLiftSL pNumOrText <* liftSL (lookAhead pNumOrText))
+  --         |>< expr p
+  --       debugPrint $ "1a: got label, then inner immediately below: " ++ show lbl
+  --       debugPrint $ "1a: got inner: " <> show inner
+  --       return $ MyLabel lbl Nothing inner)
+  --   <|>
+  --   try (debugName "term p/1b:label ends to the left of line below, with EOL" $ do
+  --       (lbl, inner) <- (,)
+  --         $*| (someLiftSL pNumOrText) <* liftSL (debugName "matching EOL" dnl)
+  --         |>< expr p
+  --       debugPrint $ "1b: got label to the left, with EOL: " ++ show lbl
+  --       debugPrint $ "1b: got inner: " ++ show inner
+  --       return $ MyLabel lbl Nothing inner)
+  --   <|>
+  --   try (debugName "term p/1c:label ends to the right of line below" $ do
+  --       (lbl,inner) <- (,)
+  --         $*| (someLiftSL pNumOrText)
+  --         |<| expr p
+  --         |<$ undeepers
+  --       debugPrint $ "1c: got label to the right of next line: " ++ show lbl
+  --       debugPrint $ "1c: got inner: " ++ show inner
+  --       return $ MyLabel lbl Nothing inner)
+  --   <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)
 
 
 notLabelTerm p =
   try (debugName "term p/2:someIndentation expr p" (someIndentation (expr p)))
-  <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
+  <|> try (debugName "term p/3:plain p" (plain p))
 
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
@@ -160,7 +160,7 @@ plain p = MyLeaf <$> p
 
 ppp :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 ppp base = -- local (\rc -> rc { debug = True }) $
-  try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
+  try noPrePost -- <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
   where
     noPrePost = debugName "ppp inner" base
 

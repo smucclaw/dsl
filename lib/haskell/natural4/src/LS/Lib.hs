@@ -214,7 +214,7 @@ asCSV s =
 
 -- | Make sure all lines have the same length
 equalizeLines :: RawStanza -> RawStanza
-equalizeLines stanza = fmap (pad maxLen) stanza
+equalizeLines stanza = fmap (pad $ succ maxLen) stanza -- <> V.singleton V.empty
   where
     maxLen = maximum $ fmap length stanza
 
@@ -327,41 +327,67 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , tokenVal <- toToken rawToken
+             , let paren = [GoDeeper
+                           | x > 0
+                           , y < V.length vvt - 1
+                           , let idskl = map pure indentSensitiveKeywords
+                           ,  -- When the next line has an "And" or "Or" in the previous col
+                             --- | foo | bar |      | foo | ( bar |
+                             --- | And | baz |  =>  | And | baz   |
+                             --- | Or  | biz |      | Or  | biz ) |
+                              toToken (vvt ! (y+1) ! (x - 1)) `elem` idskl
+                           && toToken (vvt ! y     ! (x - 1)) `notElem` idskl
+                           || -- When the next line is indented to the curent level, add a paren
+                             --- | foo | bar |  =>  | foo | ( bar |
+                             --- |     | baz |      |     | baz ) |
+                              -- TODO: Handle rule markers better
+                              -- TODO: Handle empty lines properly (should behave same if an empty line is added)
+                              toToken (vvt ! y     ! (x - 1)) `notElem` [[Empty], [Checkbox],[RuleMarker 1 "§"]]
+                           && all (`elem` [[Empty], [Checkbox]]) (V.take x $ fmap toToken (vvt ! (y+1)) )
+                           && not (all (`elem` [[Empty], [Checkbox]]) (fmap toToken (vvt ! (y+1)) ))
+                           ]
+
+             , tokenVal <- paren ++ toToken rawToken
              , tokenVal `notElem` [ Empty, Checkbox ]
              ]
   where
+    indentSensitiveKeywords :: [MyToken]
+    indentSensitiveKeywords = [And, Or]
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
-    eofPos = SourcePos "" pos1 pos1
-    withEOF = WithPos eofPos 1 Nothing EOF
-    withSOF = WithPos eofPos 1 Nothing SOF
-    insertParen a@WithPos { pos = aPos }
-                b@WithPos { pos = bPos }
-      | tokenVal a /= SOF &&
-        aCol <  bCol &&
-        aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
-                        a : a { tokenVal = EOL }            --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
-                        : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
+      tail $ insertParens [] (withSOF : mys ++ [withEOF])
+    sofPos = SourcePos "" pos1 pos1
+    lastLine = V.length rs - 1
+    lastCol  = V.length (rs ! lastLine) - 1
+    eofPos = SourcePos "" (mkPos $ lastLine + 1) (mkPos $ lastCol + 1)
+    withSOF = WithPos sofPos 1 Nothing SOF
+    withEOF = WithPos eofPos 1 Nothing EOL
+    col = unPos . sourceColumn . pos
+    lin = unPos . sourceLine   . pos
 
-      | aCol <  bCol =  a                                   --- | foo | bar | -> | foo ( bar | -- ordinary case: every indentation adds a GoDeeper.
-                        : (goDp <$> [1 .. (bCol - aCol)])
+    insertParens pars [] = replicate (length pars) (WithPos eofPos 1 Nothing UnDeeper)
+    insertParens parens (a : xs)
+      | tokenVal a == GoDeeper = a : insertParens (a:parens) xs
+      -- Close an open parenthesis when we are to the left of it
+      | (par:pars) <- parens, col par > col a
+      , tokenVal a `notElem` indentSensitiveKeywords = (UnDeeper <$ a) : insertParens pars (a:xs)
+    insertParens parens (a : xs@(b : _))
+      | tokenVal a /= SOF
+      , tokenVal b /= EOL
+      , col a < col b
+      , lin a < lin b =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
+                        a : eolToken : goDp : insertParens (goDp : parens) xs
+        --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
+        --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
-      | aCol >  bCol =  a                                   --- |     | foo |                  -- ordinary case: every outdentation adds an UnDeeper; no EOL added.
-                        : (unDp <$> [1 .. (aCol - bCol)])   --- | bar |     | -> | foo ) bar |
 
-      | otherwise    = [a]                                  --- | foo |       -> | foo   bar | -- at the same level, no ( or ) added.
-                                                            --- | bar |
+      | lin a < lin b =  a : eolToken : insertParens parens xs
+
       where
-        aCol = unPos . sourceColumn $ aPos
-        bCol = unPos . sourceColumn $ bPos
-        aLin = unPos . sourceLine   $ aPos
-        bLin = unPos . sourceLine   $ bPos
-        goDp n = let newPos = aPos { sourceColumn = mkPos (aCol + n) }
-                 in b { tokenVal = GoDeeper, pos = newPos }
-        unDp n = let newPos = bPos { sourceColumn = mkPos (bCol + n) }
-                 in a { tokenVal = UnDeeper, pos = newPos }
+        goDp = GoDeeper <$ b
+        eolToken = a { tokenVal = EOL, pos = (pos a) { sourceColumn = mkPos $ col a + 1 } }
+    insertParens parens (a : xs) = a : insertParens parens xs
+
 -- MyStream is the primary input for our Parsers below.
 --
 
@@ -397,12 +423,10 @@ pRule = debugName "pRule" $ do
   _ <- many dnl
   notFollowedBy eof
 
-  leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
-  leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
-  srcurl <- asks sourceURL
-  let srcref = SrcRef srcurl srcurl leftX leftY Nothing
+  srcref <- pJustSrcRef
 
-  foundRule <- (pRegRule <?> "regulative rule")
+  -- foundRule <- (pRegRule <?> "regulative rule")
+  foundRule <- pRegRule
     <|> (pTypeDefinition   <?> "ontology definition")
     <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
     <|> (pScenarioRule <?> "scenario rule")
@@ -410,7 +434,7 @@ pRule = debugName "pRule" $ do
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
-  return $ foundRule { srcref = Just srcref }
+  return $ foundRule { srcref }
 
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 
@@ -495,11 +519,12 @@ pGivens = debugName "pGivens" $ do
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
-  tentative  <- (try pRegRuleSugary
-                  <|> try pRegRuleNormal
+  -- tentative  <- pRegRuleNormal
+  tentative  <- try pRegRuleSugary
+                  <|> pRegRuleNormal
                   <|> (pToken Fulfilled >> return RegFulfilled)
                   <|> (pToken Breach    >> return RegBreach)
-                )
+
   return $ tentative { rlabel = maybeLabel }
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:
@@ -561,7 +586,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
-                   <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
+                   <*> optional (preambleBoolStructR [Who,Which,Whose])
   rulebody <- permutationsReg keynamewho
   henceLimb                   <- optional $ pHenceLest Hence
   lestLimb                    <- optional $ pHenceLest Lest
@@ -625,7 +650,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
-  entitytype   <- someIndentation pNameParens
+  entitytype   <- pNameParens
   let boolEntity = AA.Leaf $ multiterm2pt entitytype
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule
@@ -643,7 +668,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 pDoAction ::  Parser BoolStructP
 pDoAction = do
   _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ someIndentation pAction
+  debugName "pDoAction/pAction" $ manyIndentation pAction
 
 
 pAction :: Parser BoolStructP
@@ -653,8 +678,7 @@ pAction = debugName "pAction calling pParamText" (AA.Leaf <$> pParamText)
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
 
-mkRBfromDT :: BoolStructP
-           -> ((RegKeywords, BoolStructP )  -- every person
+mkRBfromDT :: ((RegKeywords, BoolStructP )  -- every person
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
            -> (Deontic, Maybe (TemporalConstraint Text.Text))
            -> [(Preamble, BoolStructR)] -- positive  -- IF / WHEN
@@ -663,13 +687,14 @@ mkRBfromDT :: BoolStructP
            -> [(Preamble, ParamText )] -- given conditions
            -> Maybe ParamText          -- having
            -> [Rule]
+           -> BoolStructP
            -> RuleBody
-mkRBfromDT rba (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere =
+mkRBfromDT (rbkn,rbwho) (rbd,rbt) rbpb rbpbneg rbu rbg rbh rbwhere rba  =
   RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
-mkRBfromDA :: (Deontic, BoolStructP)
-           -> ((RegKeywords, BoolStructP ) -- every person or thing
+mkRBfromDA :: ((RegKeywords, BoolStructP ) -- every person or thing
               ,Maybe (Preamble, BoolStructR)) -- who is red and blue
+           -> (Deontic, BoolStructP)
            -> Maybe (TemporalConstraint Text.Text)
            -> [(Preamble, BoolStructR)] -- whenif
            -> [(Preamble, BoolStructR)] -- unless
@@ -678,7 +703,7 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> Maybe ParamText         -- having
            -> [Rule]
            -> RuleBody
-mkRBfromDA (rbd,rba) (rbkn,rbwho) rbt rbpb rbpbneg rbu rbg rbh rbwhere
+mkRBfromDA (rbkn,rbwho) (rbd,rba) rbt rbpb rbpbneg rbu rbg rbh rbwhere
   = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
 
 
@@ -692,30 +717,43 @@ permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStru
                 -> Parser RuleBody
 permutationsReg keynamewho =
   debugName "permutationsReg" $ do
-  try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
-            <$$> pDoAction
-            <||> keynamewho
-            <||> try pDT
+  knw <- keynamewho -- It is obligatory to start with the keynamewho
+  try ( debugName "regulative permutation with deontic-temporal" $ nopermute ( mkRBfromDT
+            !<$$> pure knw
+            !<||> try pDT
             <&&> whatnot
+            !<||> pDoAction
           ) )
-  <|>
-  try ( debugName "regulative permutation with deontic-action" $ permute ( mkRBfromDA
-            <$$> try pDA
-            <||> keynamewho
-            <|?> (Nothing, pTemporal)
+    <|>
+    debugName "regulative permutation with deontic-action" (nopermute $ mkRBfromDA
+            !<$$> pure knw
+            !<||> pDA
+            !<|?> (Nothing, pTemporal <* dnl)
             <&&> whatnot
-          ) )
+          )
   where
     whatnot x = x
-                <|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
-                <|?> ([], some $ preambleBoolStructR [Unless]) -- unless
-                <|?> ([], some $ preambleParamText [Upon])   -- upon
-                <|?> ([], some $ preambleParamText [Given])  -- given
-                <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
-                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
+                !<|?> ([], some $ preambleBoolStructR [When, If])   -- syntactic constraint, all the if/when need to be contiguous.
+                !<|?> ([], some $ preambleBoolStructR [Unless]) -- unless
+                !<|?> ([], some $ preambleParamText [Upon])   -- upon
+                !<|?> ([], some $ preambleParamText [Given])  -- given
+                !<|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
+                !<|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>
+    -- Disable permutations
+    (!<||>) = (<||>)
+    -- (!<||>) = (<*>)
+    infixl 1 !<||>
+    (!<|?>) p = (<|?>) p
+    -- x !<|?> (a,b) = x <*> (b <|> pure a)
+    infixl 1 !<|?>
+    -- (!<$$>) = (<$>)
+    (!<$$>) = (<$$>)
+    infixl 2 !<$$>
+    -- nopermute = id
+    nopermute = permute
 
 -- the Deontic/temporal/action form
 -- MAY EVENTUALLY
@@ -723,15 +761,16 @@ permutationsReg keynamewho =
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
 pDT = debugName "pDT" $ do
   (pd,pt) <- (,)
-    $>| pDeontic
-    |>< optional pTemporal
+    <$> pDeontic
+    <*> optional pTemporal
+    <* pToken EOL
   return (pd, join pt)
 
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- someIndentation pAction
+  pa <- manyIndentation pAction
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)

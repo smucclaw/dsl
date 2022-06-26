@@ -23,14 +23,19 @@ class US_Company extends Corporation {
 // GLOBAL scope
 const Amount : Money = {
   Currency: "USD",
-  Amount: "100000",
+  Amount: 100000,
+  }
+
+
+const Phineas_Ounder : Natural_Person = {
+  Email: "founder@example.com",
   }
 
 
 const Company : US_Company = {
   Name: "Unicorn Startup Pte Ltd",
   Address: "100 Ideas Way\nSmart Zone",
-  representative: "Phineas Ounder",
+  representative: Phineas_Ounder,
   }
 
 
@@ -40,10 +45,6 @@ const Investor : Natural_Person = {
   Email: "scrooge@example.com",
   }
 
-
-const Phineas_Ounder : Natural_Person = {
-  Email: "founder@example.com",
-  }
 
 
 const GLOBALS = [Amount, Company, Investor, Phineas_Ounder];

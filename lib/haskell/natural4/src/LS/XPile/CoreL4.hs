@@ -37,10 +37,10 @@ sfl4ToCorel4 rs =
                , (show $ prettyClasses cTable) , ""
                , (show $ prettyDecls   sTable) , "\n--facts\n"
                , (show $ prettyFacts   sTable) , ""
+               , "\n# directToCore\n\n"
                ] ++
                [ show (directToCore r)
                | r <- rs
-               , keyword r /= Define
                ]
              )
 
@@ -161,16 +161,18 @@ sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 -- where the RPMT elements of the BooLStructR are nullary, unary, or binary operators depending on how many elements are in the list
 
 directToCore :: SFL4.Rule -> Doc ann
-directToCore r@Hornlike{} =
-  let needClauseNumbering = length (clauses r) > 1
-  in
-  vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel cnum needClauseNumbering x)) (rlabel r)
-              , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
-              ,                                "if"   <+> cStyle (hc2preds c)
-              ,                                "then" <+> pretty (hHead c)
-              , Prettyprinter.line]
-       | (c,cnum) <- zip (clauses r) [1..]
-       ]
+directToCore r@Hornlike{keyword}
+  | keyword /= Define =
+    let needClauseNumbering = length (clauses r) > 1
+    in
+      vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel cnum needClauseNumbering x)) (rlabel r)
+                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
+                  ,                                "if"   <+> cStyle (hc2preds c)
+                  ,                                "then" <+> pretty (hHead c)
+                  , Prettyprinter.line]
+           | (c,cnum) <- zip (clauses r) [1..]
+           ]
+  | otherwise = ""
 
 -- fact <rulename> multiterm
 

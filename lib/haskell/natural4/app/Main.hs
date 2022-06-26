@@ -32,17 +32,18 @@ main = do
   rules    <- SFL4.dumpRules opts
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
-      (toprologFN,  asProlog)  = (SFL4.workdir opts <> "/" <> SFL4.toprolog  opts,  show (sfl4ToProlog rules))
-      (topetriFN,   asPetri)   = (SFL4.workdir opts <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
-      (tonativeFN,  asNative)  = (SFL4.workdir opts <> "/" <> SFL4.tonative  opts,  show rules)
-      (toaasvgFN,   asAAsvg)   = (SFL4.workdir opts <> "/" <> SFL4.toaasvg   opts,  SFL4.aaForSVG <$> SFL4.stitchRules rules)
-      (tocorel4FN,  asCoreL4)  = (SFL4.workdir opts <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
-      (tojsonFN,    asJSONstr) = (SFL4.workdir opts <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
-      (togroundsFN, asGrounds) = (SFL4.workdir opts <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
-      tochecklFN               =  SFL4.workdir opts <> "/" <> SFL4.tocheckl  opts
+      workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
+      (toprologFN,  asProlog)  = (workuuid <> "/" <> SFL4.toprolog  opts,  show (sfl4ToProlog rules))
+      (topetriFN,   asPetri)   = (workuuid <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules)
+      (toaasvgFN,   asAAsvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  SFL4.aaForSVG <$> SFL4.stitchRules rules)
+      (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
+      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
+      (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
+      tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts
 
   when toworkdir $ do
-    putStrLn $ "* outputting to workdir " <> SFL4.workdir opts
+    putStrLn $ "* outputting to workdir " <> workuuid
     unless (null (SFL4.toprolog  opts)) $ mywritefile toprologFN   iso8601 asProlog
     unless (null (SFL4.topetri   opts)) $ mywritefile topetriFN    iso8601 asPetri
     unless (null (SFL4.tocorel4  opts)) $ mywritefile tocorel4FN   iso8601 asCoreL4
@@ -50,7 +51,7 @@ main = do
     unless (null (SFL4.toaasvg   opts)) $ mapM_ (\(n,s) -> mywritefile toaasvgFN (iso8601 <> "-" <> show n) s) (zip [1 :: Int ..] asAAsvg)
     unless (null (SFL4.tonative  opts)) $ mywritefile tonativeFN   iso8601 asNative
     unless (null (SFL4.togrounds opts)) $ mywritefile togroundsFN  iso8601 asGrounds
-    unless (null (SFL4.tocheckl  opts)) $ do
+    unless (null (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile tochecklFN   iso8601 asCheckl
 

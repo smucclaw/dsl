@@ -108,6 +108,50 @@ For this to work, you need to first click on ~File / Share / Publish to web~. Th
 
 The job of a compiler / transpiler / parser / interpreter, whatever you want to call it, is to transform user code to some useful target representation.
 
+This command outputs all the target representations to disk:
+
+#+begin_example
+$ stack run -- --workdir=workdir --uuiddir=1234abcd --topetri=petri --tojson=json --toaasvg=aasvg --tonative=native --tocorel4=corel4 --tocheckl=checklist test/pdpadbno-1.csv  test/pdpadbno-[1578].csv
+#+end_example
+
+Note that the ~--uuiddir~ option is for a shared-secret session key under some web UI.
+
+The result:
+
+#+begin_example
+  $ tree workdir
+  workdir
+  └── 1234abcd
+      ├── aasvg
+      │   ├── 2022-06-26T04:51:48.191Z-1
+      │   ├── 2022-06-26T04:51:48.191Z-2
+      │   ├── 2022-06-26T04:51:48.191Z-3
+      │   ├── 2022-06-26T04:51:48.191Z-4
+      │   ├── 2022-06-26T04:51:48.191Z-5
+      │   ├── 2022-06-26T04:51:48.191Z-6
+      │   ├── 2022-06-26T04:51:48.191Z-7
+      │   ├── 2022-06-26T04:51:48.191Z-8
+      │   ├── 2022-06-26T04:51:48.191Z-9
+      │   └── LATEST -> 2022-06-26T04:51:48.191Z-9
+      ├── checklist
+      │   ├── 2022-06-26T04:51:48.191Z
+      │   └── LATEST -> 2022-06-26T04:51:48.191Z
+      ├── corel4
+      │   ├── 2022-06-26T04:51:48.191Z
+      │   └── LATEST -> 2022-06-26T04:51:48.191Z
+      ├── json
+      │   ├── 2022-06-26T04:51:48.191Z
+      │   └── LATEST -> 2022-06-26T04:51:48.191Z
+      ├── native
+      │   ├── 2022-06-26T04:51:48.191Z
+      │   └── LATEST -> 2022-06-26T04:51:48.191Z
+      └── petri
+          ├── 2022-06-26T04:51:48.191Z
+          └── LATEST -> 2022-06-26T04:51:48.191Z
+#+end_example
+
+These outputs can be further transformed and put in front of the user's eyeballs.
+
 **** native: a Haskell data structure
 
 This is the simplest output mode. It confirms the parse happened as intended.

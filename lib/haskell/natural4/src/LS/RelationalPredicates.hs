@@ -6,12 +6,9 @@ module LS.RelationalPredicates where
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
-import Debug.Trace
-import qualified Data.Text as Text
-
 import qualified AnyAll as AA
-import Data.List.NonEmpty ( NonEmpty((:|)), nonEmpty, toList )
-import Data.Maybe (fromMaybe, fromJust, maybeToList, catMaybes)
+import Data.List.NonEmpty ( toList, nonEmpty )
+import Data.Maybe (fromMaybe, catMaybes)
 
 import LS.Types
 import LS.Tokens
@@ -33,7 +30,6 @@ tok2rel = choice
     , RPelem    <$ pToken TokIn   
     , RPnotElem <$ pToken TokNotIn
     ]
-
 
 -- [TODO]: [FIXME]: this is a hack, because we don't have a good way to parse the thing
 unLeaf :: BoolStructR -> RelationalPredicate
@@ -85,7 +81,7 @@ c2hornlike :: Rule -> Rule
 c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
   let clauses = pure $ HC2 (RPBoolStructR name RPis letbind) cond
       upon = Nothing
-  in Hornlike { name, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
+  in Hornlike { name, super = Nothing, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
 c2hornlike r = r
 
 pConstitutiveRule :: Parser Rule
@@ -177,23 +173,33 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
     $>| choice (try . pToken <$> preambles)
     |>< pParamText
 
+
+-- | a Hornlike rule does double duty, due to the underlying logical/functional/object paradigms.
+-- on the logical side of things,            it has to handle a DECIDE xx MEANS yy WHEN zz.
+-- on the functional/objecty side of things, it has to handle a DEFINE xx HAS yy variable definition.
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
-  (rlabel, srcref) <- debugName "pSrcRef" (slPretendEmpty pSrcRef)
+  (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> (try ambitious <|> someStructure)
+    <$$> (someStructure) -- previously, try ambitious <|> someStructure; but we are trying to keep things more regular.
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
   return $ Hornlike { name
+                    , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                     , keyword = fromMaybe Means keyword
                     , given
-                    , clauses = addWhen topwhen clauses
+                    , clauses = addWhen topwhen $ clauses
                     , upon, rlabel, srcref
                     , lsource = noLSource
                     , defaults = mempty, symtab = mempty
                     }
   where
+    addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
+    addHead Nothing hcs   = hcs
+    addHead (Just pt) hcs = [ hc2 { hHead = RPParamText pt }
+                            | hc2 <- hcs ]
+
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ hc2 { hBody = hBody hc2 <> mbsr }
                        | hc2 <- hcs ]
@@ -205,9 +211,9 @@ pHornlike = debugName "pHornlike" $ do
     --   WHEN Z IS Q
 
     ambitious = debugName "pHornlike/ambitious" $ do
-      (keyword, subject) <- (,) $>| choice [ pToken Define, pToken Decide ] |*< slMultiTerm
-      (iswhen, object)   <- (,) $>| choice [ pToken When,   pToken Is     ] |>< pNameParens
-      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike / someStructure / clauses permute" $ permute $ (,,,)
+      (keyword, subject) <- (,) $>| debugName "Decide" (choice [ pToken Decide ]) |*< slMultiTerm
+      (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
+      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
         <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> debugName "UNLESS pBSR" pBSR))
         <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> debugName "AND pBSR"    pBSR))
@@ -221,14 +227,14 @@ pHornlike = debugName "pHornlike" $ do
                       (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
       return (Just keyword, subject, clauses)
 
-    -- without the define/decide
+    -- without the decide
     --        X IS y             -- nextlinewhen
     --   WHEN Z IS Q
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Define, pToken Decide ]
-      (relPred, whenpart) <- manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+      keyword <- optional $ choice [ pToken Decide ]
+      (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
@@ -245,19 +251,29 @@ pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   slRelPred |<$ undeepers
 
+-- [TODO] unify these two if possible
 relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
-  (x,y) <- debugName "pRelPred optIndentedTuple whenCase" (pRelPred `optIndentedTuple` whenCase)
+  (x,y) <- debugName "pRelPred , whenCase" ((,) <$> pRelPred <*> optional whenCase)
   return (x, join y)
 
 relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-relPredSamelineWhen = debugName "relPredSamelineWhen" $ (,) $*| slRelPred |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $ optional whenCase))
+relPredSamelineWhen = debugName "relPredSamelineWhen" $
+                      (,) $*| slRelPred
+                      |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $
+                                     optional whenCase))
+
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenMeansIf *> (Just <$> pBSR))
   <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
+
 whenMeansIf :: Parser MyToken
-whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If ]
+whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If, pToken Is ]
+-- i think we need to distinguish WHEN/IF from MEANS/IS.
+-- WHEN/IF  puts a BoolStructR in the hBody
+-- MEANS/IS puts a RelationalPredicate in the hHead
+
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
@@ -275,10 +291,11 @@ nestedHorn = do
                                |^| liftSL (pToken Means)
                                |-| pBSR
   let simpleHorn = Hornlike { name = subj
+                            , super = Nothing
                             , keyword = meansTok
                             , given = Nothing
                             , upon = Nothing
-                            , clauses = [ HC2 (RPBoolStructR subj RPis bsr) Nothing ]
+                            , clauses = [ HC2 (RPMT subj) (Just bsr) ]
                             , rlabel = Nothing
                             , lsource = Nothing
                             , srcref = Just srcref

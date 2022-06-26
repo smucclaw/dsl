@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
-module AnyAll.PP (ppQTree, hardnormal) where
+module AnyAll.PP (ppQTree, hardnormal, cStyle) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance
@@ -14,6 +15,31 @@ import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
 import qualified Data.Text       as T
 import Data.Aeson.Types
+import Data.List ( intersperse )
+
+data Style ann = Style
+                 { s_parens :: Doc ann -> Doc ann
+                 , s_not :: String
+                 , s_and :: String
+                 , s_or  :: String
+                 }
+
+cStyle, haskellStyle, pythonStyle :: (Pretty txt) => Item txt -> Doc ann
+
+-- | render an AnyAll Item to a C-style syntax
+cStyle       = mystyle (Style parens "!"   "&&"  "||")
+
+-- | render an AnyAll Item to Haskell-style syntax
+haskellStyle = mystyle (Style parens "not" "&&"  "||")
+
+-- | render an AnyAll Item to Python-style syntax
+pythonStyle  = mystyle (Style parens "not" "and" "or")
+
+mystyle :: (Pretty txt) => Style ann -> Item txt -> Doc ann
+mystyle _ (Leaf x)     = pretty x
+mystyle s (All lbl xs) = parens (hsep (intersperse (pretty $ s_and s) (mystyle s <$> xs)))
+mystyle s (Any lbl xs) = parens (hsep (intersperse (pretty $ s_or  s) (mystyle s <$> xs)))
+mystyle s (Not     x ) = pretty (s_not s) <+> mystyle s x
 
 ppline = Prettyprinter.line
 
@@ -61,6 +87,11 @@ ppQTree i mm = do
   B.putStr $ getForUI hardresult
   print ppline
   
+  print $ "**" <+> "C-style:"
+  print (cStyle i)
+  print ppline
+
+  
 {-
     {
       "ask": {
@@ -90,3 +121,16 @@ ppQTree i mm = do
 
 
 
+instance (IsString t, Pretty t, Pretty a) => Pretty (Item' (Label t) a) where
+  pretty (Leaf a)            = pretty a
+  pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
+  pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (All (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Any Nothing    xs)             = pretty (Any (Just (Pre "Any of the following:")) xs)
+  pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (Any (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Not            x ) = "not" <+> pretty x
+
+instance (Pretty a) => Pretty (Label a) where
+  pretty (Pre     p1)    = pretty p1
+  pretty (PrePost p1 p2) = pretty p1 <+> "..." <+> pretty p2

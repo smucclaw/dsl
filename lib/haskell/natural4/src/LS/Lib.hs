@@ -58,6 +58,19 @@ import Data.Either (rights)
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist"
+
+                   , workdir   :: w ::: String <!> ""  <?> "workdir to save all the output files to"
+                   , uuiddir   :: w ::: String <!> "no-uuid"  <?> "uuid prefix to follow the workdir"
+                   , toprolog  :: w ::: String <!> ""  <?> "prolog-like syntax representing the predicate logic"
+                   , tonative  :: w ::: String <!> ""  <?> "native Haskell data structure of the AST"
+                   , topetri   :: w ::: String <!> ""  <?> "a petri-net Dot file of the state graph"
+                   , toaasvg   :: w ::: String <!> ""  <?> "an anyall SVG of the decision trees"
+                   , tocorel4  :: w ::: String <!> ""  <?> "in core-l4 syntax"
+                   , tojson    :: w ::: String <!> ""  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
+                   , togrounds :: w ::: String <!> ""  <?> "ground terms"
+                   , tocheckl  :: w ::: String <!> ""  <?> "ground terms phrased in checklist syntax"
+                   , tots      :: w ::: String <!> ""  <?> "typescript"
+
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
                    , file :: w ::: NoLabel [String] <?> "filename..."
@@ -96,9 +109,11 @@ getConfig o = do
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
+        , toTS      = only o == "ts"
         , saveAKA = False
         , wantNotRules = False
         , extendedGrounds = extd o
+        , runNLGtests = False
         }
 
 
@@ -124,7 +139,7 @@ parseRules o = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
           putStrLn $ "* error while parsing " ++ filename
-          putStr (errorBundlePrettyCustom bundle)
+          putStrLn (errorBundlePrettyCustom bundle)
           putStrLn "** stream"
           printStream stream
           return (Left bundle)
@@ -372,7 +387,10 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some pRule <* eof
+  some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
+
+semicolonBetweenRules :: Parser (Maybe MyToken)
+semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
 
 pRules = pRulesOnly
 
@@ -403,10 +421,11 @@ pRule = debugName "pRule" $ do
   let srcref = SrcRef srcurl srcurl leftX leftY Nothing
 
   foundRule <- (pRegRule <?> "regulative rule")
-    <|> (pTypeDefinition   <?> "ontology definition")
-    <|> (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
-    <|> (pScenarioRule <?> "scenario rule")
-    <|> (pHornlike <?> "DECIDE ... IS ... Horn rule")
+    <|> try (pTypeDeclaration   <?> "type declaration -- ontology definition")
+    <|> try (pVarDefn           <?> "variable definition")
+    <|> try (c2hornlike <$> pConstitutiveRule <?> "constitutive rule")
+    <|> try (pScenarioRule <?> "scenario rule")
+    <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
@@ -415,26 +434,26 @@ pRule = debugName "pRule" $ do
 -- if we get back a constitutive, we can rewrite it to a Hornlike here
 
 
-pTypeDefinition :: Parser Rule
-pTypeDefinition = debugName "pTypeDefinition" $ do
+-- TypeDecl
+pTypeDeclaration :: Parser Rule
+pTypeDeclaration = debugName "pTypeDeclaration" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
-    <$$> defineLimb
+    <$$> pToken Declare *> declareLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
-    defineLimb = do
-      _dtoken <- pToken Define
-      (name,super)  <- (,) $>| pNameParens |>< optional pTypeSig
+    declareLimb = do
+      (name,super) <- manyIndentation (pKeyValues)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- optional (pToken Has *> someIndentation (sameDepth pTypeDefinition))
+      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth declareLimb))
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
       return $ TypeDecl
-        { name
+        { name = NE.toList name
         , super
         , has
         , enums
@@ -446,10 +465,52 @@ pTypeDefinition = debugName "pTypeDefinition" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pHornlike/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pHornlike/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 
+-- VarDefn gets turned into a Hornlike rule
+pVarDefn :: Parser Rule
+pVarDefn = debugName "pVarDefn" $ do
+  maybeLabel <- optional pRuleLabel
+  (proto,g,u,w) <- permute $ (,,,)
+    <$$> pToken Define *> defineLimb
+    <|?> (Nothing, givenLimb)
+    <|?> (Nothing, uponLimb)
+    <|?> (Nothing, whenCase)
+  return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel
+                 -- this is the same as addWhen from RelationalPredicates
+                 , clauses = if not (null (clauses proto))
+                             then [ hc2 { hBody = hBody hc2 <> w }
+                                  | hc2 <- clauses proto
+                                  ]
+                             -- this really should be restricted to only MEANS and IS
+                             else [ ]
+                 }
+  where
+    defineLimb = debugName "defineLimb" $ do
+      (name,mytype) <- manyIndentation (pKeyValuesAka)
+      myTraceM $ "got name = " <> show name
+      myTraceM $ "got mytype = " <> show mytype
+      hases   <- concat <$> many (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      myTraceM $ "got hases = " <> show hases
+      return $ Hornlike
+        { name = NE.toList name
+        , keyword = Define
+        , super = mytype
+        , given = Nothing -- these get overwritten immediately above in the return
+        , upon = Nothing
+        , clauses = [ HC2 { hHead = RPParamText has, hBody = Nothing }
+                    | has <- hases
+                    ]
+        , rlabel  = noLabel
+        , lsource = noLSource
+        , srcref  = noSrcRef
+        , defaults = mempty, symtab = mempty
+        }
+
+    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule

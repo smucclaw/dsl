@@ -29,6 +29,7 @@ library
       LS
       LS.BasicTypes
       LS.Error
+      LS.Interpreter
       LS.Lib
       LS.NLP.NLG
       LS.NLP.ToPredicate
@@ -36,6 +37,7 @@ library
       LS.NLP.WordNet
       LS.ParamText
       LS.Parser
+      LS.PrettyPrinter
       LS.RelationalPredicates
       LS.Tokens
       LS.Types
@@ -45,6 +47,7 @@ library
       LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.SVG
+      LS.XPile.Typescript
       LS.XPile.Uppaal
       LS.XPile.VueJSON
   other-modules:
@@ -64,6 +67,7 @@ library
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -74,6 +78,7 @@ library
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -81,11 +86,13 @@ library
     , parser-combinators
     , parsers
     , pretty-simple
+    , prettyprinter
     , prolog
     , replace-megaparsec
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string
@@ -112,6 +119,7 @@ executable natural4-exe
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -122,6 +130,7 @@ executable natural4-exe
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -130,11 +139,13 @@ executable natural4-exe
     , parser-combinators
     , parsers
     , pretty-simple
+    , prettyprinter
     , prolog
     , replace-megaparsec
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string
@@ -163,6 +174,7 @@ test-suite natural4-test
     , bytestring
     , cassava
     , containers
+    , directory
     , edit-distance
     , extra
     , fgl
@@ -173,6 +185,7 @@ test-suite natural4-test
     , graphviz
     , hspec
     , hspec-megaparsec
+    , iso8601-time
     , lens
     , megaparsec
     , mtl
@@ -181,11 +194,13 @@ test-suite natural4-test
     , parser-combinators
     , parsers
     , pretty-simple
+    , prettyprinter
     , prolog
     , replace-megaparsec
     , split
     , stm
     , text
+    , time
     , typed-process
     , udpipe-hs
     , utf8-string

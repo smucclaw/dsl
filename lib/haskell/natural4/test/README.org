@@ -1122,7 +1122,7 @@ let's put a DECIDE in front of it
 
 | X1 | X2 | IS | Y1 | Y2 |
 
-****** simple define, single line
+****** horn-1: single line: decide / is / when
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1137,7 +1137,7 @@ X IS HornClauseRHS
 | DECIDE | X | IS | Y | WHEN | Z | IS | Q | AND | P | > | NP |
 
 
-****** simple define, multi line 2
+****** horn-2: multiline: decide / is // when / is // and
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1147,7 +1147,7 @@ X IS HornClauseRHS
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-****** simple define, multi line 3, and; we don't support this syntax for now.
+****** horn-3: multiline: decide / is // when
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1158,7 +1158,7 @@ X IS HornClauseRHS
 
 BoolStructR should be (AND (z is q) (p gt np))
 
-****** simple define, multi line 3, or
+****** horn-3-or: decide, multi line 3, or
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3-or.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1169,7 +1169,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | DECIDE | X | IS | Y |    |   |   |    |
 | WHEN   | Z | IS | Q | OR | P | > | NP |
 
-****** simple define, multi line 4
+****** horn-4: decide, multi line 4
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1180,7 +1180,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-****** simple define, multi line 5
+****** horn-5: decide, multi line 5
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1191,7 +1191,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | OR     | P | >  | NP |
 
-****** simple define, multi line 6 with non-nested bool
+****** horn-6: binding
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1205,7 +1205,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | OR     | P   | >  | NP    |
 | AND    | top | IS | level |
 
-****** simple define, multi line 7 with nested bool
+****** horn-7: simple define, multi line 7 with nested bool
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1350,13 +1350,35 @@ ParamText list of words, untyped.
 
 - part of a HornClause
 
-***** ConstitutiveRule, Binary Predicate definition, explicit, infix
+***** decision tables: ConstitutiveRule, Binary Predicate definition, explicit, infix
+
+we should have support for multi-way define/decide IS/WHEN lines: a la
+
+****** decision tables 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: multi-decide-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | GIVEN  | Sign1 |       | Sign2 | IS | A        | Sign |       |    |          |
 | DECIDE | Sign1 | beats | Sign2 |    |          |      |       |    |          |
 | IS     | TRUE  | WHEN  | Sign1 | IS | Rock     | AND  | Sign2 | IS | Scissors |
 |        | "     | "     | "     | "  | Scissors | "    | "     | "  | Paper    |
 |        | "     | "     | "     | "  | Paper    | "    | "     | "  | Rock     |
+
+****** decision tables 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: multi-decide-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+without the IS TRUE
+
+| GIVEN  | Sign1 |       | Sign2    | IS  | A     | Sign |          |   |   |
+| DECIDE | Sign1 | beats | Sign2    |     |       |      |          |   |   |
+| WHEN   | Sign1 | IS    | Rock     | AND | Sign2 | IS   | Scissors |   |   |
+| "      | "     | "     | Scissors | "   | "     | "    | Paper    |   |   |
+| "      | "     | "     | Paper    | "   | "     | "    | Rock     |   |   |
 
 ***** Binary Predicate definition, compact
 
@@ -1366,8 +1388,56 @@ ParamText list of words, untyped.
 |       | Paper    | beats | Rock     |
 
 ***** Type Declaration
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-DECLARE ParamText
+| DECLARE | Class1         | IS AN        | Object  |         |
+| HAS     | id             | IS A         | Integer |         |
+|         |                |              |         |         |
+| DECLARE | Class2         | IS A         | Class1  |         |
+| HAS     | firstname      | IS           | A       | String  |
+|         | lastname       | IS           | A       | String  |
+|         | office address |              |         |         |
+|         | HAS            | line1        | ::      | String  |
+|         | HAS            | line2        | ::      | String  |
+|         | bar address    | ::           | address |         |
+|         | work address   | IS           | A       | address |
+|         | HAS            | floor        | ::      | String  |
+|         |                | company name | ::      | String  |
+|         |                |              |         |         |
+| DECLARE | address        |              |         |         |
+| HAS     | line1          | ::           | String  |         |
+|         | line2          | ::           | String  |         |
+
+This example serves multiple tests:
+- the interpreter should inherit line1 and line2 to "work address" and extend it with "floor" and "company name" attributes.
+
+***** the CoreL4 encoding of the AXA case uses class extensions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE |                |       | Person         |         |
+| DECLARE | Passenger      | IS A  | Person         |         |
+| DECLARE | Driver         | IS A  | Passenger      |         |
+| DECLARE |                |       | GeneralVehicle |         |
+| HAS     | vehicleAge     | IS AN | Integer        |         |
+|         | vehicleLength  | IS A  | Float          |         |
+| DECLARE | Vehicle        | IS A  | GeneralVehicle |         |
+| DECLARE |                |       | Event          |         |
+| DECLARE | BreakdownCause | IS A  | Event          |         |
+| DECLARE |                |       | Location       |         |
+| DECLARE |                |       | Surface        |         |
+| ;;      |                |       |                |         |
+| GIVEN   | location       | IS A  | Location       |         |
+|         | surface        | IS A  | Surface        |         |
+| DECIDE  | isIn           |       |                |         |
+| WHEN    | location       | IN    | surface        |         |
+| ;;      |                |       |                |         |
+| DECLARE | Vehicles       | IS    | LIST1          | Vehicle |
 
 ***** HasRelation
 
@@ -1563,29 +1633,6 @@ This has the same meaning as the original Waddington example, except the "eats o
 | ->    | sing       |         |
 
 We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
-
-#+begin_src haskell
-  [ Regulative
-      { every = "person"
-      , who = All
-          ( Pre "Who" )
-          [ Leaf "walks"
-          , Leaf "degustates"
-          ]
-      , deontic = DMust
-      , action = "sing"
-      , temporal = Nothing
-      }
-  , Constitutive
-      { term = "degustates"
-      , cond = Any
-          ( Pre "any of:" )
-          [ Leaf "eats"
-          , Leaf "imbibes"
-          ]
-      }
-  ]
-#+end_src
 
 What does "imbibes" mean, anyway?
 

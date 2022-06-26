@@ -1,0 +1,78 @@
+//,,,,,,,,,,,,,,,,,
+//,"A Person Who Walks; and Eats, or Drinks; Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
+//,,,,,,,,,,,,,,,,,
+//,Imagine a provision that says something like –,,,,,,,,,,,,,,,,
+//,,"   A person who –
+    (a) walks; and
+    (b) (i)   eats, or
+           (ii) drinks,
+    must sing.",,,,,,"from Matthew Waddington
+4 Sep 2021",,,,"see also https://twitter.com/mattwadd/status/1454465335596290052
+which links to https://legislativedrafter.wordpress.com/2021/10/30/logic-and-legislation/ ",,,,,
+//,,,,,,,,,,,,,,,,,
+//,How do we say this in L4?,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+,,EVERY,Person,,,,,,,,,,,,,,
+,,WHO,walks,,,,,,,,,,,,,,
+,,AND,,eats,,,,,,,,,,,,,
+,,,OR,drinks,,,,,,,,,,,,,
+,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"We haven't done too much violence to the original: we've moved the ""and"" and ""or"" around, added indentation, and uppercased some keywords.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Let's do more! As documents grow in complexity, it is natural to introduce defined terms:
+    A Qualifying Person is a person who walks and (eats or drinks).
+    Every Qualifying Person must sing.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+,,EVERY,Person,,,,,,,,,,,,,,
+,,WHO,,,Qualifies,,,,,,,,,,,,
+,,,,,MEANS,walks,,,,,,,,,,,
+,,,,,AND,,eats,,,,,,,,,,
+,,,,,,OR,drinks,,,,,,,,,,
+,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"We've added ""folding"": in the left margin you'll see a clickable button that hides and shows the definition of ""Qualifies"", for easier reading.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Read one way, we get ""Every Person who Qualifies must sing."" This is the regulative essence of the rule.
+
+Read another way, we get ""A Qualifying Person is one who walks and (eats or drinks)."" This is the constitutive essence of the rule.
+
+This takes a bit of getting used to, but we trust there are no substantive objections so far.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Now we can add checkboxes! You can click on these boxes to explore how the ANDs and ORs come together, and work through particular scenarios you may have in mind.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,//,"To watch the checkboxes light up when you click,",,,,,,
+//,,WHO,FALSE,Qualifies,,,,,,//,make a copy of this spreadsheet,,,,,,
+//,,,,MEANS,TRUE,walks,,,,//,by clicking File / Make a Copy.,,,,,,
+//,,,,AND,FALSE,FALSE,eats,,,//,These two slashes mark a comment: the text to the right is not part of the stanza.,,,,,,
+//,,,,,OR,FALSE,drinks,,,//,A rule-level checkbox at far left assesses if the rule itself is satisfied.,,,,,,
+//,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Checkboxes are useful for all kinds of things.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,,,,,,,,
+//,TRUE,WHO,TRUE,walks,,,,,,,,,,,,,
+//,,AND,,FALSE,eats,,,,,,,,,,,,
+//,,,OR,TRUE,drinks,,,,,,,,,,,,
+TRUE,//,MUST,TRUE,sing,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,What do the checkboxes mean?,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+TRUE,DECIDE,The rule-level checkbox (at far left) is checked,,,,,,,,,,,,,,,
+,WHEN,FALSE,the conditions do not hold,,,,,,,,,,,,,b,
+,OR,TRUE,the conditions do hold,,,,,,,,,,,,,,
+,AND,TRUE,the action is satisfied,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Logically, we have ""logical implication"": the ⇒ operator.
+Practically, the rule-level checkbox at far left can be read as a compliance status.
+A conjunction of rule-level checkboxes, running down the page, is tantamount to a compliance report!",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,See Also,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Deon Digital's CSL inspired the logic and semantics of this approach to regulative rules and contract composition. The spreadsheet syntax is original.,,,,,,,,,,,,,,,,
+//,Tweetstorm citing historical references.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,

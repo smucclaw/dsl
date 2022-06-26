@@ -4,7 +4,6 @@
 module LS.XPile.VueJSON where
 
 import LS
-import AnyAll.Types
 import LS.NLP.NLG
 
 import Options.Generic

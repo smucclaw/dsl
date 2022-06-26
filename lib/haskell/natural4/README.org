@@ -1,0 +1,9 @@
+#+TITLE: Natural L4 Language Reference and Parser Guide
+
+* Audience
+
+This detailed documentation is intended for Haskell programmers developing the L4 compiler and related tools.
+
+* Syntax Reference
+
+The surface syntax of L4 is documented in 

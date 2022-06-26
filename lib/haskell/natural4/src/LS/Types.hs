@@ -26,7 +26,6 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
-import Data.Char (toUpper)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -79,10 +78,10 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 --
 -- > action = ( "walk" :| [] , Nothing )
 --
-type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
-                                                      --- |        | immediately    | :: | Urgency |
 
-
+type ParamText = NonEmpty TypedMulti               --- | notify | the government |    |         |
+                                                   --- |        | immediately    | :: | Urgency |
+-- see PrettyPrinter for newtypes based on ParamText
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
@@ -150,6 +149,14 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          }
                       deriving (Eq, Show, Generic)
 
+-- | find some unique name for the rule for purposes of scoping the symbol table.
+-- if a rule label is provided, we use that.
+-- if it's not provided, we use the name.
+-- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
+
+ruleLabelName :: Rule -> RuleName
+ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (rlabel r)
+
 ruleName :: Rule -> RuleName
 ruleName Regulative { subj  = x } = [bsp2text x]
 ruleName x = name x
@@ -212,7 +219,8 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Hornlike
-            { name     :: RuleName           -- colour
+            { name     :: RuleName           -- MyInstance
+            , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
             , given    :: Maybe ParamText    -- applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
@@ -224,9 +232,9 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | TypeDecl
-            { name     :: RuleName  --      DEFINE Sign
-            , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            { name     :: RuleName              -- DECLARE Class
+            , super    :: Maybe TypeSig         -- IS A Superclass
+            , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
@@ -286,21 +294,6 @@ data HornClause2 = HC2
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Show, Generic, ToJSON)
 
--- Prologgy stuff
-data HornClause = HC
-  { relPred :: RelationalPredicate
-  , relWhen :: Maybe HornBody
-  }
-  deriving (Eq, Show, Generic, ToJSON)
-
-type HornRP = AA.Item RelationalPredicate
-
-data HornBody = HBRP HornRP
-              | HBITE { hbif   :: HornRP
-                      , hbthen :: HornRP
-                      , hbelse :: HornRP }
-  deriving (Eq, Show, Generic, ToJSON)
-
 class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
   prependHead :: Text.Text -> a -> a
@@ -335,6 +328,16 @@ rel2txt RPgt      = "relGT"
 rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
+
+rel2op :: RPRel -> Text.Text
+rel2op RPis      = "=="
+rel2op RPeq      = "=="
+rel2op RPlt      = "<"
+rel2op RPlte     = "<="
+rel2op RPgt      = ">"
+rel2op RPgte     = ">="
+rel2op RPelem    = "IN"
+rel2op RPnotElem = "NOT IN"
 
 rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt
@@ -484,8 +487,10 @@ data RunConfig = RC { debug     :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
                     , toVue     :: Bool
+                    , toTS      :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
+                    , runNLGtests :: Bool
                     } deriving (Show, Eq)
 
 defaultRC :: RunConfig
@@ -505,8 +510,10 @@ defaultRC = RC
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , toTS = False
         , extendedGrounds = False
         , toChecklist = False
+        , runNLGtests = False
         }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack
@@ -606,6 +613,7 @@ toToken "IS AN"  = [TypeSeparator, A_An]
 toToken "A"      = pure A_An
 toToken "AN"     = pure A_An
 
+toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define
 toToken "DECIDE"    = pure Decide
 toToken "ONE OF"    = pure OneOf
@@ -646,6 +654,8 @@ toToken "NOT IN"    = pure TokNotIn
 toToken "OTHERWISE" = pure Otherwise
 
 toToken "WHERE"     = pure Where
+
+toToken ";;"        = pure Semicolon
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.

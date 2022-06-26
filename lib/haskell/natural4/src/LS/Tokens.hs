@@ -842,6 +842,7 @@ indent3 f p1 p2 p3 = debugName "indent3" $ do
   p1' <- p1
   someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
 
+-- [TODO] deprecate these in favour of slparser or something even better. this is janky.
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
 optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do
   (,) <$> p1 `optIndented` p2

@@ -111,12 +111,12 @@ The job of a compiler / transpiler / parser / interpreter, whatever you want to 
 This command outputs all the target representations to disk:
 
 #+begin_example
-$ stack run -- --workdir=workdir --uuiddir=1234abcd --topetri=petri --tojson=json --toaasvg=aasvg --tonative=native --tocorel4=corel4 --tocheckl=checklist test/pdpadbno-1.csv  test/pdpadbno-[1578].csv
+$ stack run -- --workdir=workdir --uuiddir=1234abcd --topetri=petri --tojson=json --toaasvg=aasvg --tonative=native --tocorel4=corel4 --tocheckl=checklist --tots=typescript  test/pdpadbno-[1578].csv
 #+end_example
 
 Note that the ~--uuiddir~ option is for a shared-secret session key under some web UI.
 
-The result:
+The result will be something like:
 
 #+begin_example
   $ tree workdir

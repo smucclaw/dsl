@@ -19,12 +19,13 @@ import Data.Maybe
 
 -- | ClsTab: things that are explicitly defined in a Type Declaration (DECLARE ... HAS ...) end up in the ClsTab
 -- and they qualify to be used as types on the RHS of a :: definition which could appear anywhere.
-newtype ClsTab = CT (Map.Map EntityType (Inferrable TypeSig, ClsTab))
+newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
   deriving (Show, Eq)
 
+type ClassHierarchyMap = Map.Map EntityType (Inferrable TypeSig, ClsTab)
 
 -- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
 -- those end up in the ScopeTabs object returned by the `symbolTable` function.
@@ -137,6 +138,24 @@ extendedAttributes o@(CT clstab) subclass = do
                  (Just Nothing)        -> Map.empty
                  (Just (Just (CT ea))) -> ea
   return $ CT $ ct <> eAttrs
+
+-- | extract all inheritance relationships
+getInheritances :: ClsTab -> [(EntityType, EntityType)]
+getInheritances ct =
+  [ (child, parent)
+  | child <- getCTkeys ct
+  , (Just parent) <- [clsParent ct child]
+  ]
+
+getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]
+getAttrTypesIn ct classname =
+  case thisAttributes ct classname of
+    Nothing         -> []
+    (Just (CT ct')) -> concat [ ts : concatMap (getAttrTypesIn ct'') (getCTkeys ct'')
+                              | (_attrname, (its, ct'')) <- Map.toList ct' -- EntityType (Inferrable TypeSig, ClsTab)
+                              , Just ts <- [getSymType its]
+                              ]
+  
 
 -- | reduce the ruleset to an organized set of rule trees.
 -- where the HENCE and LEST are fully expanded; once a HENCE/LEST child has been incorporated into its parent, remove the child from the top-level list of rules.

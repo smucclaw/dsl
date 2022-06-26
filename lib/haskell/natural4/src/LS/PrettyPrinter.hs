@@ -66,7 +66,7 @@ instance Pretty ParamText4 where
                      <> rbrace
     where word1 l = typedOrNot       ((NE.head . fst $ l) :| [], snd l)
           lrest :: TypedMulti -> Doc ann
-          lrest l = hsep $ pretty <$> (NE.tail . fst $ l)
+          lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
 
 typedOrNot :: TypedMulti -> Doc ann
 typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)

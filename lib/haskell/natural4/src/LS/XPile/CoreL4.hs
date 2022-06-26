@@ -217,6 +217,6 @@ prettyClasses ct@(CT ch) =
                  -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
                  ]
        | className <- getCTkeys ct
-       , let (Just (ctype, children)) = Map.lookup className ch
+       , (Just (ctype, children)) <- [Map.lookup className ch]
        ]
 

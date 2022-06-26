@@ -62,6 +62,7 @@ dependencies:
 - time
 - iso8601-time
 - directory
+- fgl
 
 ghc-options: -Wall
 

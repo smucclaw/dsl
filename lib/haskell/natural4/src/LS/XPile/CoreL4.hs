@@ -209,7 +209,7 @@ prettyClasses ct@(CT ch) =
          <> vsep [ "decl" <+> pretty attrname <>
                    case attrType children attrname of
                      Just t -> " :" <+> pretty className <+>
-                               "->" <+> prettySimpleType t
+                               "->" <+> prettySimpleType snake_inner t
                      Nothing -> ""
                  | attrname <- getCTkeys children
                  -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE

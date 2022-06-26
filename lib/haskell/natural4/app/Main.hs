@@ -17,6 +17,7 @@ import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.SVG
 import LS.XPile.VueJSON
+import LS.XPile.Typescript
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
 import Data.ByteString.Lazy.UTF8 (toString)
@@ -39,6 +40,7 @@ main = do
       (toaasvgFN,   asAAsvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  SFL4.aaForSVG <$> SFL4.stitchRules rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
+      (totsFN,      asTSstr)   = (workuuid <> "/" <> SFL4.tots      opts,  show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts
       (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules
@@ -51,6 +53,7 @@ main = do
     unless (null (SFL4.topetri   opts)) $ mywritefile topetriFN    iso8601 asPetri
     unless (null (SFL4.tocorel4  opts)) $ mywritefile tocorel4FN   iso8601 asCoreL4
     unless (null (SFL4.tojson    opts)) $ mywritefile tojsonFN     iso8601 asJSONstr
+    unless (null (SFL4.tots      opts)) $ mywritefile totsFN       iso8601 asTSstr
     unless (null (SFL4.toaasvg   opts)) $ mapM_ (\(n,s) -> mywritefile toaasvgFN (iso8601 <> "-" <> show n) s) (zip [1 :: Int ..] asAAsvg)
     unless (null (SFL4.tonative  opts)) $ mywritefile tonativeFN   iso8601 asNative
     unless (null (SFL4.togrounds opts)) $ mywritefile togroundsFN  iso8601 asGrounds
@@ -80,9 +83,11 @@ main = do
 
   when (SFL4.toProlog rc) $ pPrint $ asProlog
 
-  when (SFL4.only opts `elem` ["native"]) $ pPrint rules
-  when (SFL4.only opts `elem` ["classes"]) $ pPrint (classHierarchy rules)
-  when (SFL4.only opts `elem` ["symtab"])  $ pPrint (symbolTable rules)
+  when (SFL4.toTS rc) $ print $ asTypescript rules
+
+  when (SFL4.only opts `elem` ["native"])  $ pPrint rules
+  when (SFL4.only opts `elem` ["classes"]) $ print (classHierarchy rules)
+  when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
 
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]

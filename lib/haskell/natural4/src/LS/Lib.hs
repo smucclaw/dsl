@@ -69,6 +69,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tojson    :: w ::: String <!> ""  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , togrounds :: w ::: String <!> ""  <?> "ground terms"
                    , tocheckl  :: w ::: String <!> ""  <?> "ground terms phrased in checklist syntax"
+                   , tots      :: w ::: String <!> ""  <?> "typescript"
 
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"
@@ -108,6 +109,7 @@ getConfig o = do
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
+        , toTS      = only o == "ts"
         , saveAKA = False
         , wantNotRules = False
         , extendedGrounds = extd o

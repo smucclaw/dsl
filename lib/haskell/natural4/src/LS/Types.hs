@@ -487,6 +487,7 @@ data RunConfig = RC { debug     :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
                     , toVue     :: Bool
+                    , toTS      :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
                     , runNLGtests :: Bool
@@ -509,6 +510,7 @@ defaultRC = RC
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , toTS = False
         , extendedGrounds = False
         , toChecklist = False
         , runNLGtests = False

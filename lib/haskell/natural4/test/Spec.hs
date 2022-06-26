@@ -21,6 +21,7 @@ import LS.NLP.WordNet
 
 import LS.XPile.VueJSON
 import LS.XPile.CoreL4
+import LS.XPile.Typescript
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS

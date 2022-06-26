@@ -59,7 +59,7 @@ getSymType (Nothing, [])  = Nothing
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: [Rule] -> ScopeTabs
 symbolTable rs =
-  Map.fromList $ fromGivens <> fromDefines
+  Map.fromListWith (<>) $ fromGivens <> fromDefines
   where
     fromGivens :: [(RuleName, SymTab)]
     fromGivens = [ (rname, symtable)
@@ -75,9 +75,9 @@ symbolTable rs =
                                   )
 
     fromDefines :: [(RuleName, SymTab)]
-    fromDefines = [ (rname, symtable)
+    fromDefines = [ (scopename, symtable)
                   | r@Hornlike{keyword=Define}   <- rs
-                  , let rname = ruleLabelName r
+                  , let scopename = maybe (["GLOBAL"]) (\x -> [rl2text x]) (rlabel r)
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 

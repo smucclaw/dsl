@@ -47,6 +47,7 @@ library
       LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.SVG
+      LS.XPile.Typescript
       LS.XPile.Uppaal
       LS.XPile.VueJSON
   other-modules:

@@ -478,12 +478,15 @@ pVarDefn = debugName "pVarDefn" $ do
     <|?> (Nothing, whenCase)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel
                  -- this is the same as addWhen from RelationalPredicates
-                 , clauses = [ hc2 { hBody = hBody hc2 <> w }
-                             | hc2 <- clauses proto
-                             ]
+                 , clauses = if not (null (clauses proto))
+                             then [ hc2 { hBody = hBody hc2 <> w }
+                                  | hc2 <- clauses proto
+                                  ]
+                             -- this really should be restricted to only MEANS and IS
+                             else [ ]
                  }
   where
-    defineLimb = do
+    defineLimb = debugName "defineLimb" $ do
       (name,mytype) <- manyIndentation (pKeyValuesAka)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype

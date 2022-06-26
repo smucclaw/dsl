@@ -17,51 +17,69 @@ import Data.Maybe
 
 -- what's the difference between SymTab, ClsTab, and ScopeTabs?
 
--- ClsTab: things that are explicitly defined in a Type Definition (DEFINE ... HAS ...) end up in the ClsTab
+-- | ClsTab: things that are explicitly defined in a Type Declaration (DECLARE ... HAS ...) end up in the ClsTab
 -- and they qualify to be used as types on the RHS of a :: definition which could appear anywhere.
-
--- ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
--- those end up in the ScopeTabs object returned by the `symbolTable` function.
-
--- SymTabs are a helper data structure used by ScopeTabs.
--- ClsTabs are keyed by class name.
-
-
-type SymTab = Map.Map MultiTerm (Inferrable TypeSig) -- similar to TypedMulti, but with room for adding inferred types
-
 newtype ClsTab = CT (Map.Map EntityType (Inferrable TypeSig, ClsTab))
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
   deriving (Show, Eq)
 
--- | the explicitly annotated types from the L4 source text are recorded in the fst of Inferrable
---   the confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
+
+-- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
+-- those end up in the ScopeTabs object returned by the `symbolTable` function.
+
+-- We also see explicit variable definitions given by (DEFINE ... HAS ...). These also end up in ScopeTabs.
+-- If such a definition appears under a WHERE limb of another rule, it is scoped to that rule.
+
+-- If it is given at top level, then it is under ... global scope, which is represented by Rulename=[]
+-- The keys to ScopeTabs are from ruleLabelName.
+
+type ScopeTabs = Map.Map RuleName SymTab
+
+--  | SymTabs are a helper data structure used by ScopeTabs.
+-- the fst contains type-related information.
+-- the snd contains value-related information.
+
+-- this type is getting pretty hefty, soon it'll be time to give it a proper type definition.
+
+type SymTab = Map.Map MultiTerm (Inferrable TypeSig, [HornClause2])
+
+-- | The explicitly annotated types from the L4 source text are recorded in the fst of Inferrable.
+--   The confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
+--   If type checking / inference have not been implemented the snd will be empty.
 type Inferrable ts = (Maybe ts, [ts])
 
+-- get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
 getSymType (Just x, _)    = Just x
 getSymType (Nothing, x:_) = Just x
 getSymType (Nothing, [])  = Nothing
 
--- | each scope maintains its own symbol table, plus global scope, which is represented by Rulename=[]
--- The keys to ScopeTabs are from ruleLabelName.
-type ScopeTabs = Map.Map RuleName SymTab
-
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: [Rule] -> ScopeTabs
 symbolTable rs =
-  Map.fromList
-  [ (rname, symtable)
-  | r   <- rs
-  , hasGiven r
-  , gPT <- maybeToList (given r)
-  , let rname = ruleLabelName r
-        symtable = Map.fromList (pt2inferrable <$> toList gPT)
-  ]
+  Map.fromList $ fromGivens <> fromDefines
   where
-    pt2inferrable :: TypedMulti -> (MultiTerm, Inferrable TypeSig)
-    pt2inferrable (mt, maybeTS) = (toList mt, (maybeTS, []))
+    fromGivens :: [(RuleName, SymTab)]
+    fromGivens = [ (rname, symtable)
+                 | r   <- rs
+                 , hasGiven r
+                 , gPT <- maybeToList (given r)
+                 , let rname = ruleLabelName r
+                       symtable = Map.fromList ( pt2inferrable <$> toList gPT )
+                 ]
+    pt2inferrable :: TypedMulti -> (MultiTerm, (Inferrable TypeSig, [HornClause2]))
+    pt2inferrable (mt, maybeTS) = (toList mt, ((maybeTS , []) -- [TODO] if we ever introduce default values, this might be the place to implement that
+                                              ,                     []) -- we don't expect to see value definitions in givens, just type assignments
+                                  )
+
+    fromDefines :: [(RuleName, SymTab)]
+    fromDefines = [ (rname, symtable)
+                  | r@Hornlike{keyword=Define}   <- rs
+                  , let rname = ruleLabelName r
+                        symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
+                  ]
 
 hasGiven     Hornlike{} = True
 hasGiven   Regulative{} = True

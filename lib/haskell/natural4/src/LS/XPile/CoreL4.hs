@@ -31,15 +31,17 @@ sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
   let sTable = symbolTable rs
       cTable = classHierarchy rs
-  in unlines ( [ --"#\n# outputted via CoreL4.Program types\n#\n\n"
+  in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , (show $ prettyClasses cTable)
-               , ""
-               , (show $ prettyDecls   sTable)
-               , ""
+               , (show $ prettyClasses cTable) , ""
+               , (show $ prettyDecls   sTable) , "\n--facts\n"
+               , (show $ prettyFacts   sTable) , ""
+               ] ++
+               [ show (directToCore r)
+               | r <- rs
+               , keyword r /= Define
                ]
-               ++ (show . directToCore <$> rs)
              )
 
 sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
@@ -170,6 +172,8 @@ directToCore r@Hornlike{} =
        | (c,cnum) <- zip (clauses r) [1..]
        ]
 
+-- fact <rulename> multiterm
+
 directToCore r@TypeDecl{} = ""
 directToCore _ = ""
 
@@ -180,11 +184,20 @@ prettyRuleLabel :: Int -> Bool -> RuleLabel -> Doc ann
 prettyRuleLabel cnum needed (_, _, text) = pretty text <> (if needed then "_" <> pretty cnum else mempty)
 
 prettyDecls :: ScopeTabs -> Doc ann
-prettyDecls sctabs = vsep [ "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
-                          | (_ , symtab') <- Map.toList sctabs
-                          , (mt, symtype) <- Map.toList symtab'
+prettyDecls sctabs = vsep [ "--" <+> pretty scopename <> Prettyprinter.line <> "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
+                          | (scopename , symtab')         <- Map.toList sctabs
+                          , (mt, (symtype,_vals)) <- Map.toList symtab'
                           ]
 
+prettyFacts :: ScopeTabs -> Doc ann
+prettyFacts sctabs =
+  vsep
+  [ -- global symtab as facts
+    "fact" <+> angles (snake_case scopename) <+> viaShow symtab'
+  | (scopename , symtab') <- Map.toList sctabs
+  , (mt, (symtype,_vals)) <- Map.toList symtab'
+  ]
+  
 prettyClasses :: ClsTab -> Doc ann
 prettyClasses ct@(CT ch) =
   vsep [ "class" <+> pretty className <>

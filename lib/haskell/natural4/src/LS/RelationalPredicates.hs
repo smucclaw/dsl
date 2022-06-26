@@ -258,13 +258,22 @@ relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
   return (x, join y)
 
 relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-relPredSamelineWhen = debugName "relPredSamelineWhen" $ (,) $*| slRelPred |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $ optional whenCase))
+relPredSamelineWhen = debugName "relPredSamelineWhen" $
+                      (,) $*| slRelPred
+                      |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $
+                                     optional whenCase))
+
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenMeansIf *> (Just <$> pBSR))
   <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
+
 whenMeansIf :: Parser MyToken
-whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If ]
+whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If, pToken Is ]
+-- i think we need to distinguish WHEN/IF from MEANS/IS.
+-- WHEN/IF  puts a BoolStructR in the hBody
+-- MEANS/IS puts a RelationalPredicate in the hHead
+
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do

@@ -10,6 +10,7 @@ import Options.Generic
 import Text.Pretty.Simple (pPrint)
 
 import LS.XPile.CoreL4
+import LS.Interpreter
 -- import LS.XPile.Petri
 
 import qualified LS.XPile.Uppaal as Uppaal
@@ -35,12 +36,14 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> SFL4.toprolog  opts,  show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules)
       (toaasvgFN,   asAAsvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  SFL4.aaForSVG <$> SFL4.stitchRules rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
       (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules
+                                                                           <> "\n\n-- class hierarchy:\n" <> show (classHierarchy rules)
+                                                                           <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
 
   when toworkdir $ do
     putStrLn $ "* outputting to workdir " <> workuuid
@@ -78,6 +81,9 @@ main = do
   when (SFL4.toProlog rc) $ pPrint $ asProlog
 
   when (SFL4.only opts `elem` ["native"]) $ pPrint rules
+  when (SFL4.only opts `elem` ["classes"]) $ pPrint (classHierarchy rules)
+  when (SFL4.only opts `elem` ["symtab"])  $ pPrint (symbolTable rules)
+
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts

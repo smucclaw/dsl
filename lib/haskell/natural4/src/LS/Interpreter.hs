@@ -12,6 +12,9 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Debug.Trace
 import Data.Maybe
+import Data.Graph.Inductive
+import Data.Graph.Inductive.Query.DFS
+import Data.Tuple (swap)
 
 -- | a basic symbol table to track "variable names" and their associated types.
 
@@ -118,6 +121,38 @@ clsParent (CT clstab) subclass = do
     Just (Left err) -> Nothing
     Nothing         -> Nothing
 
+type MyClassName = EntityType
+-- | class names, topologically sorted to eliminate forward references
+-- note: this code will probably fail silently on any input that isn't as expected
+topsortedClasses :: ClsTab -> [MyClassName]
+topsortedClasses ct =
+  [ cn
+  | n <- topsort asGraph
+  , (Just cn) <- [Map.lookup n idToType]
+  ]
+  where
+    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
+    allClasses :: ClsTab -> [MyClassName]
+    allClasses = getCTkeys
+    -- first let's assign integer identifiers to each type found in the class hierarchy
+    typeToID = Map.fromList (Prelude.zip allTypes [1..])
+    idToType = Map.fromList $ swap <$> Map.toList typeToID
+    asGraph :: Gr MyClassName ()
+    asGraph =
+      -- there are a couple different kinds of dependencies...
+      let child2parent = getInheritances ct       -- child depends on parent
+          class2attrtypes = [ (cn, ut)            -- class depends on attribute types
+                            | cn <- getCTkeys ct
+                            , ts <- getAttrTypesIn ct cn
+                            , Right ut <- [getUnderlyingType ts]
+                            ]
+      in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
+    myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
+    myEdges abab = [ (aid, bid, ())
+                   | (a,b) <- abab
+                   , (Just aid) <- [Map.lookup a typeToID]
+                   , (Just bid) <- [Map.lookup b typeToID]
+                   ]
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
 attrType (CT clstab) attrName = do
   (t, CT ct) <- Map.lookup attrName clstab

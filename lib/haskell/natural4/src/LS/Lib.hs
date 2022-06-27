@@ -109,7 +109,7 @@ getConfig o = do
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
-        , toTS      = only o == "ts"
+        , toTS      = only o `elem` words "typescript ts"
         , saveAKA = False
         , wantNotRules = False
         , extendedGrounds = extd o

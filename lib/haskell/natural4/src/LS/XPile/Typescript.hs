@@ -20,13 +20,10 @@ import LS.Interpreter
 
 import Data.Functor ( (<&>) )
 
-import Data.Tuple (swap)
 import qualified Data.Map as Map
 import qualified Data.Text as T
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import qualified Data.List.NonEmpty as NE
-import Data.Graph.Inductive
-import Data.Graph.Inductive.Query.DFS
 
 
 asTypescript :: [SFL4.Rule] -> Doc ann
@@ -55,42 +52,12 @@ tsClasses ct@(CT ch) =
                           -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
                           ] )
          <> Prettyprinter.line <> rbrace <> Prettyprinter.line
-       | className <- reverse $ topsorted ct
+       | className <- reverse $ topsortedClasses ct
        , (Just (ctype, children)) <- [Map.lookup className ch]
        ]
 
 -- the classes need to be topologically sorted because typescript is picky about that
-type MyClassName = EntityType
 
-topsorted :: ClsTab -> [MyClassName]
-topsorted ct =
-  [ cn
-  | n <- topsort asGraph
-  , (Just cn) <- [Map.lookup n idToType]
-  ]
-  where
-    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
-    allClasses :: ClsTab -> [MyClassName]
-    allClasses = getCTkeys
-    -- first let's assign integer identifiers to each type found in the class hierarchy
-    typeToID = Map.fromList (zip allTypes [1..])
-    idToType = Map.fromList $ swap <$> Map.toList typeToID
-    asGraph :: Gr MyClassName ()
-    asGraph =
-      -- there are a couple different kinds of dependencies...
-      let child2parent = getInheritances ct       -- child depends on parent
-          class2attrtypes = [ (cn, ut)            -- class depends on attribute types
-                            | cn <- getCTkeys ct
-                            , ts <- getAttrTypesIn ct cn
-                            , Right ut <- [getUnderlyingType ts]
-                            ]
-      in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
-    myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
-    myEdges abab = [ (aid, bid, ())
-                   | (a,b) <- abab
-                   , (Just aid) <- [Map.lookup a typeToID]
-                   , (Just bid) <- [Map.lookup b typeToID]
-                   ]
 -- todo: var GLOBALS = [ ... ]
 
 jsInstances :: ScopeTabs -> Doc ann

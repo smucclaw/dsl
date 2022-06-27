@@ -34,7 +34,7 @@ svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
     ]
 
 cleanXMLAttr :: XML.Attr -> (Text, Text)
-cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, replace ".0000" "" (pack $ XML.attrVal at))
+cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, pack $ XML.attrVal at)
 
 parseRectSVG :: Text -> Set.Set (Text, Text)
 parseRectSVG s =
@@ -268,7 +268,7 @@ spec = do
         firstExpected  = Set.fromList $ ("transform","translate(0 10)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10.0}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10}, secondBox]
 
     it "expands bounding box and shift rectangle on Bottom alignment" $ do
       let
@@ -278,7 +278,7 @@ spec = do
         firstExpected  = Set.fromList $ ("transform","translate(0 20)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20.0}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20}, secondBox]
 
   describe "test rowLayouter" $ do
     let
@@ -294,7 +294,7 @@ spec = do
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 90.0, bbh = 30.0, pl = PVoffset 15.0, pr = PVoffset 15.0}
+      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15}
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -329,7 +329,7 @@ spec = do
       inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
       outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 60.0, pl = PTop, pr = PTop}
+      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop}
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
     xit "print debug" $ do

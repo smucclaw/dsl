@@ -19,9 +19,36 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
+import           Data.Text.Lazy                   (toStrict)
+import           Data.Text.Lazy.Builder           (toLazyText)
+import           Data.Text.Lazy.Builder.Int
+import Text.Printf (formatInteger)
 
-type Length  = Double
+type Length  = Integer
 type SVGElement = Element
+
+intToText :: Integral a => a -> T.Text
+intToText = toStrict . toLazyText . decimal
+
+mAInt :: Integral a => a -> a -> T.Text
+mAInt x y = T.concat ["M " , intToText x, ",",  intToText y, " "]
+
+cRInt :: Integral a =>  a -> a -> a -> a -> a -> a -> T.Text
+cRInt dc1x dc1y dc2x dc2y dx dy = T.concat
+  [ "c ", intToText dc1x, ",", intToText dc1y, " ", intToText dc2x
+  , ",", intToText dc2y, " ", intToText dx, " ", intToText dy]
+
+cAInt :: Integral a =>  a -> a -> a -> a -> a -> a -> T.Text
+cAInt c1x c1y c2x c2y x y = T.concat
+  [ "C ", intToText c1x, ",", intToText c1y, " ", intToText c2x, ","
+  , intToText c2y, " ", intToText x, " ", intToText y]
+
+translateInt :: Integral a =>  a -> a -> T.Text
+translateInt x y = T.concat ["translate(", intToText x, " ", intToText y, ")"]
+
+moveInt :: Integral a => (a, a) -> SVGElement -> SVGElement
+moveInt (x, y) geoms =
+  with geoms [Transform_ <<- translateInt x y]
 
 data BBox = BBox
   { bbw :: Length
@@ -62,14 +89,14 @@ portT bb = portTB (pt bb) bb
 portB bb = portTB (pb bb) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
-portLR PTop    bb s = bbtm bb +                                    sbh s / 2 -- [TODO] clip to max size of element
-portLR PMiddle bb s = bbtm bb + (bbh bb - bbtm bb - bbbm bb) / 2
-portLR PBottom bb s =           (bbh bb           - bbbm bb)     - sbh s / 2
+portLR PTop    bb s = bbtm bb +                                    sbh s `div` 2 -- [TODO] clip to max size of element
+portLR PMiddle bb s = bbtm bb + (bbh bb - bbtm bb - bbbm bb)  `div` 2
+portLR PBottom bb s =           (bbh bb           - bbbm bb)     - sbh s  `div` 2
 portLR (PVoffset x) bb s = bbtm bb + x
 
 portTB :: PortStyleH -> BBox -> AAVScale -> Length
 portTB PLeft   bb s = bblm bb +                                    stbv s -- [TODO] clip to max size of element
-portTB PCenter bb s = bblm bb + (bbw bb - bblm bb - bbrm bb) / 2
+portTB PCenter bb s = bblm bb + (bbw bb - bblm bb - bbrm bb)  `div` 2
 portTB PRight  bb s =           (bbw bb           - bbrm bb)     - stbv s
 portTB (PHoffset x) bb s = bblm bb + x
 
@@ -143,7 +170,7 @@ makeSvg' c = makeSvg
 makeSvg :: BoxedSVG -> SVGElement
 makeSvg (_bbx, geom) =
      doctype
-  <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1" ]
+  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1" ]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
@@ -170,10 +197,10 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 -- | see page 1 of "box model" documentation
-(>>>), (<<<), (\|/), (/|\) :: BoxedSVG -> Double -> BoxedSVG
-(>>>) (bb,e) n = (bb { bbw = bbw bb + n, bblm = bblm bb + n }, move (  n,   0) e)
+(>>>), (<<<), (\|/), (/|\) :: BoxedSVG -> Length -> BoxedSVG
+(>>>) (bb,e) n = (bb { bbw = bbw bb + n, bblm = bblm bb + n }, moveInt (   n,   0) e)
 (<<<) (bb,e) n = (bb { bbw = bbw bb + n, bbrm = bbrm bb + n }, id              e)
-(\|/) (bb,e) n = (bb { bbh = bbh bb + n, bbtm = bbtm bb + n }, move (  0,   n) e)
+(\|/) (bb,e) n = (bb { bbh = bbh bb + n, bbtm = bbtm bb + n }, moveInt (  0,    n) e)
 (/|\) (bb,e) n = (bb { bbh = bbh bb + n, bbbm = bbbm bb + n }, id              e)
 infix 4 >>>, <<<, \|/, /|\
 
@@ -202,14 +229,14 @@ adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin, bbbm = new
     (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
 
 columnAlignMargins :: VAlignment -> Length -> (Length, Length)
-columnAlignMargins VMiddle alignmentPad = (alignmentPad / 2, alignmentPad / 2)
+columnAlignMargins VMiddle alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
 columnAlignMargins VTop alignmentPad = (0, alignmentPad)
 columnAlignMargins VBottom alignmentPad = (alignmentPad, 0)
 
 alignVCalcElement :: VAlignment -> Length -> (SVGElement -> SVGElement)
-alignVCalcElement VMiddle alignmentPad = move (0, alignmentPad / 2)
+alignVCalcElement VMiddle alignmentPad = moveInt (0, alignmentPad `div` 2)
 alignVCalcElement VTop alignmentPad = id
-alignVCalcElement VBottom alignmentPad = move (0, alignmentPad)
+alignVCalcElement VBottom alignmentPad = moveInt (0, alignmentPad)
 
 alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
 alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElement x)
@@ -225,14 +252,14 @@ adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin, bbrm =
     (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
 
 rowAlignMargins :: HAlignment -> Length -> (Length, Length)
-rowAlignMargins HCenter alignmentPad = (alignmentPad / 2, alignmentPad / 2)
+rowAlignMargins HCenter alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
 rowAlignMargins HLeft alignmentPad = (0, alignmentPad)
 rowAlignMargins HRight alignmentPad = (alignmentPad, 0)
 
 alignHCalcMove :: HAlignment -> Length -> (SVGElement -> SVGElement)
-alignHCalcMove HCenter alignmentPad = move (alignmentPad / 2, 0)
+alignHCalcMove HCenter alignmentPad = moveInt ( alignmentPad `div` 2, 0)
 alignHCalcMove HLeft alignmentPad = id
-alignHCalcMove HRight alignmentPad = move (alignmentPad, 0)
+alignHCalcMove HRight alignmentPad = moveInt (alignmentPad, 0)
 
 -- | see page 2 of the "box model" documentation.
 -- | if we used the diagrams package all of this would be calculated automatically for us.
@@ -253,7 +280,7 @@ rowLayouter c (bbold, old) (bbnew, new) =
         pr = PVoffset (portR bbnew myScale)
       },
     old
-      <> move (newBoxStart, 0) new
+      <> moveInt (newBoxStart, 0) new
       <> connectingCurve
   )
   where
@@ -293,8 +320,8 @@ svgConnector
     } =
     path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
     where
-      curveMoveCommand = mA sx sy
-      curveBezierCommand = cR sgx 0 egx egy ex ey
+      curveMoveCommand = mAInt sx sy
+      curveBezierCommand = cRInt sgx 0 egx  egy  ex ey
 
 -- bezier curves: "M"            is the position of                       the first  point.
 -- the first  argument after "c" is the position of the control point for the first  point, relative to the first point.
@@ -316,7 +343,7 @@ columnLayouter c parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
         }
     svg =
       old
-        <> move (0, bbh bbold + lrVgap) new
+        <> moveInt (0, bbh bbold + lrVgap) new
         <> inboundConnector
         <> outboundConnector
 
@@ -329,9 +356,9 @@ inboundCurve c parentbbox bbold bbnew =
     myScale = getScale (cscale c)
     lrVgap = slrv myScale
     leftMargin = slm myScale
-    startPosition = mA (-leftMargin) parentPortIn
+    startPosition = mAInt (- leftMargin) parentPortIn
     bezierCurve =
-      cA
+      cAInt
         0
         parentPortIn
         (-leftMargin)
@@ -348,9 +375,9 @@ outboundCurve c parentbbox bbold bbnew =
     myScale = getScale (cscale c)
     lrVgap = slrv myScale
     rightMargin = srm myScale
-    startPosition = mA (bbw parentbbox + rightMargin) parentPortOut
+    startPosition = mAInt (bbw parentbbox + rightMargin) parentPortOut
     bezierCurve =
-      cA
+      cAInt
         (bbw parentbbox)
         parentPortOut
         (bbw parentbbox + rightMargin)
@@ -360,7 +387,7 @@ outboundCurve c parentbbox bbold bbnew =
 
 txtToBBE ::  AAVConfig -> T.Text -> BoxedSVG
 txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
-              , text_ [ X_ <<-* 0, Y_ <<-* boxHeight / 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
+              , text_ [ X_ <<-* 0, Y_ <<-* boxHeight `div` 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
   where
     (boxStroke, boxFill, textFill) = getColors True
     myScale     = getScale (cscale c)
@@ -370,7 +397,7 @@ txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {-
 combineOr :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineOr c elems =
   ( childbbox {bbw = bbw childbbox + leftMargin + rightMargin},  -- only for LR
-    move (leftMargin, -interElementGap) children
+    moveInt (leftMargin, -interElementGap) children
   )
   where
     myScale = getScale (cscale c)
@@ -391,7 +418,7 @@ combineAnd c elems =
         pl = PVoffset (portL childbbox myScale),
         pr = PVoffset (portR childbbox myScale)
       },
-    move (leftMargin, 0) children
+    moveInt (leftMargin, 0) children
   )
   where
     myScale = getScale (cscale c)
@@ -452,14 +479,14 @@ drawLeaf c negContext qt@(Node q childqs) =
         Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
         Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
       boxContents = if cscale c == Tiny
-                    then (circle_ [Cx_  <<-* (boxWidth  / 2) ,Cy_      <<-* (boxHeight / 2) , R_ <<-* (boxWidth / 3), Fill_ <<- textFill ] )
-                    else   (text_ [ X_  <<-* (boxWidth  / 2) , Y_      <<-* (boxHeight / 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext))
+                    then (circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ] )
+                    else   (text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext))
   in
   (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
      rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill, Class_ <<- "textbox" ]
   <> boxContents
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight / 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
+  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
+  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight `div` 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
   <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
   <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
@@ -537,7 +564,7 @@ box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
 
-line :: (Double , Double) -> (Double, Double) -> SVGElement
+line :: (Length , Length) -> (Length, Length) -> SVGElement
 line (x1, y1) (x2, y2) =
   line_ [ X1_ <<-* x1, X2_ <<-* x2, Y1_ <<-* y1, Y2_ <<-* y2
         , Stroke_ <<- "grey" ]
@@ -561,7 +588,7 @@ renderChain c [(_,g)] = g
 renderChain c (((w,h),g):hgs) =
   g_ [] (  g
         <> line (10, 20) (10, h)
-        <> move (0, h) (renderChain c hgs)  )
+        <> moveInt (0, h) (renderChain c hgs)  )
 
 renderLeaf :: (ToElement a) => AAVConfig -> a -> (OldBBox, SVGElement)
 renderLeaf c desc =
@@ -582,7 +609,7 @@ renderNot c children =
   in ((w,height), geom)
 
 
-renderSuffix :: (ToElement a) => AAVConfig -> Double -> Double -> a -> (OldBBox, SVGElement)
+renderSuffix :: (ToElement a) => AAVConfig -> Length -> Length -> a -> (OldBBox, SVGElement)
 renderSuffix c x y desc =
   let h = 20 -- h/w of imaginary box
       geom :: SVGElement
@@ -622,8 +649,8 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> line (10, 20) (10, 25)
                    <> line (10, 25) (40, 25)
                    <> line (40, 25) (40, 30)
-                   <> move (30, 30) (renderChain c hg)
-                   <> move (40, 30 + sum (snd <$> hs)) fg  )
+                   <> moveInt (30, 30) (renderChain c hg)
+                   <> moveInt (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
 renderAny :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [Item a] -> (OldBBox, SVGElement)
@@ -638,12 +665,12 @@ renderAny c (Just (Pre prefix)) childnodes =
       geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    <> line (10, 20) (10, sum (init (snd <$> hs)) + 25 + 10)
-                   <> move (30, 25) (go 0 hg)  )
+                   <> moveInt (30, 25) (go 0 hg)  )
                  where go y [] = mempty
                        go y (((w,h),g):hgs) =
                          g_ [] (  g
                                <> line (-20, 10) (0, 10)
-                               <> move (0, h) (go (y+h) hgs)  )
+                               <> moveInt (0, h) (go (y+h) hgs)  )
   in ((width,height), geom)
 renderAny c (Just (PrePost prefix suffix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -657,13 +684,13 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
       geom :: SVGElement
       geom = g_ [] (  item c 0 0 prefix
                    <> line (10, 20) (10, sum (snd <$> init hs) + 25 + 10)
-                   <> move (30, 25) (go 0 hg)
-                   <> move (40, 25 + sum (snd <$> hs)) fg)
+                   <> moveInt (30, 25) (go 0 hg)
+                   <> moveInt (40, 25 + sum (snd <$> hs)) fg)
                  where go y [] = mempty
                        go y (((w,h),g):hgs) =
                          g_ [] (  g
                                <> line (-20, 10) (0, 10)
-                               <> move (0, h) (go (y+h) hgs)  )
+                               <> moveInt (0, h) (go (y+h) hgs)  )
   in ((width, height), geom)
 
 

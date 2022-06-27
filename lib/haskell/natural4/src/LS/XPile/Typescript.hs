@@ -8,6 +8,7 @@ module LS.XPile.Typescript where
 -- consider: https://hackage.haskell.org/package/aeson-typescript
 -- not suitable because L4 allows users to define their own types which are not known to Haskell's type system.
 
+import Debug.Trace
 import Prettyprinter
 
 import AnyAll
@@ -28,15 +29,16 @@ import qualified Data.List.NonEmpty as NE
 
 asTypescript :: [SFL4.Rule] -> Doc ann
 asTypescript rs =
-  let clstable  = classHierarchy rs
-      scopetabs = symbolTable rs
+  let l4i = l4interpret rs
   in
-    vsep [ tsClasses clstable
-         , jsInstances scopetabs
+    vsep [ tsClasses l4i
+         , jsInstances l4i
          ]
 
-tsClasses :: ClsTab -> Doc ann
-tsClasses ct@(CT ch) =
+tsClasses :: Interpreted -> Doc ann
+tsClasses l4i =
+  let ct@(CT ch) = classtable l4i
+  in
   vsep [ "class" <+> snake_case [className] <>
          case clsParent ct className of
            Nothing       -> mempty
@@ -53,24 +55,24 @@ tsClasses ct@(CT ch) =
                           ] )
          <> Prettyprinter.line <> rbrace <> Prettyprinter.line
        | className <- reverse $ topsortedClasses ct
-       , (Just (ctype, children)) <- [Map.lookup className ch]
+       , (Just (_ctype, children)) <- [Map.lookup className ch]
        ]
 
--- the classes need to be topologically sorted because typescript is picky about that
+-- classes and variables need to be topologically sorted because typescript is picky about that.
 
--- todo: var GLOBALS = [ ... ]
-
-jsInstances :: ScopeTabs -> Doc ann
-jsInstances sctabs =
+jsInstances :: Interpreted -> Doc ann
+jsInstances l4i =
+  let sctabs = scopetable l4i
+  in
   vsep [ "//" <+> scopenameStr scopename <+> "scope" <> Prettyprinter.line
          <> vsep [ "const" <+> snake_case mt <+> prettyMaybeType snake_inner (getSymType symtype) <+> equals <+> nest 2 value <> Prettyprinter.line
                  | (mt, (symtype, vals)) <- Map.toList symtab'
                  , value <- case vals of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
-                              HC2 { hHead = RPParamText {} } : _ -> [lbrace <> Prettyprinter.line <> asValuePT vals <> Prettyprinter.line <>
+                              HC2 { hHead = RPParamText {} } : _ -> [lbrace <> Prettyprinter.line <> asValuePT l4i vals <> Prettyprinter.line <>
                                                                      rbrace <> Prettyprinter.line]
-                              _                                  -> asValue <$> vals
+                              _                                  -> asValue l4i varpath <$> vals
                  ]
          <> Prettyprinter.line
          <> "const GLOBALS" <+> equals <+> list [ snake_case mt | mt <- Map.keys symtab' ] <> semi
@@ -81,13 +83,15 @@ jsInstances sctabs =
     scopenameStr [] = "globals"
     scopenameStr x  = snake_case x
 
-asValue :: HornClause2 -> Doc ann
-asValue hc2@(HC2 { hHead = RPMT        _ })               = "value" <+> colon <+> dquotes (pretty (hHead hc2))
-asValue hc2@(HC2 { hHead = RPConstraint  mt1 rprel mt2 }) = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
-asValue hc2@(HC2 { hHead = RPBoolStructR mt1 rprel bsr }) = snake_case mt1 <+> colon <+> "(some => lambda)"
-asValue hc2@(HC2 { hHead = RPParamText pt })              = pretty (PT4 pt)
+asValue :: Interpreted -> VarPath -> HornClause2 -> Doc ann
+asValue _l4i _vp hc2@(HC2 { hHead = RPMT        _ })               = "value" <+> colon <+> dquotes (pretty (hHead hc2))
+asValue _l4i _vp hc2@(HC2 { hHead = RPConstraint  mt1 rprel mt2 }) = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
+asValue _l4i _vp hc2@(HC2 { hHead = RPBoolStructR mt1 rprel bsr }) = snake_case mt1 <+> colon <+> "(some => lambda)"
+asValue  l4i  vp hc2@(HC2 { hHead = RPParamText pt })              = trace ("asValue branch 4: " ++ show pt) $
+                                                                     pretty (PT4 pt l4i vp)
 
-asValuePT :: [HornClause2] -> Doc ann
-asValuePT hc2s = vsep [ pretty (PT4 pt) <> comma
-                      | HC2 { hHead = RPParamText pt } <- hc2s ]
+asValuePT :: Interpreted -> [HornClause2] -> Doc ann
+asValuePT _l4i hc2s = trace ("asValuePT: " show pt) $
+                      vsep [ pretty (PT4 pt) <> comma
+                           | HC2 { hHead = RPParamText pt } <- hc2s ]
                  

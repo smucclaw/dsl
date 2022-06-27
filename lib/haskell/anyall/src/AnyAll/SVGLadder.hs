@@ -301,29 +301,36 @@ svgConnector
 -- the second argument after "c" is the position of the control point for the second point, relative to the first point.
 -- the third  argument after "c" is the position of                       the second point, relative to the first point.
 columnLayouter :: AAVConfig -> BBox -> BoxedSVG -> BoxedSVG -> BoxedSVG
-columnLayouter c parentbbox (bbold, old) (bbnew, new) =
-  ( (defaultBBox (cscale c))
-      { bbh = bbh bbold + bbh bbnew + lrVgap,
-        bbw = max (bbw bbold) (bbw bbnew)
-      },
-    old
-      <> move (0, bbh bbold + lrVgap) new
-      <> parent2child
-  )
+columnLayouter c parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
   where
     parentPortIn = portL parentbbox myScale + lrVgap
     parentPortOut = portR parentbbox myScale + lrVgap
+    myScale = getScale (cscale c)
+    lrVgap = slrv myScale
+    inboundConnector = inboundCurve c parentbbox bbold bbnew
+    outboundConnector = outboundCurve c parentbbox bbold bbnew
+    bbox =
+      (defaultBBox (cscale c))
+        { bbh = bbh bbold + bbh bbnew + lrVgap,
+          bbw = max (bbw bbold) (bbw bbnew)
+        }
+    svg =
+      old
+        <> move (0, bbh bbold + lrVgap) new
+        <> inboundConnector
+        <> outboundConnector
+
+inboundCurve :: AAVConfig -> BBox -> BBox -> BBox -> SVGElement
+inboundCurve c parentbbox bbold bbnew =
+  path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_in") : pathcolors)
+  where
+    parentPortIn = portL parentbbox myScale + lrVgap
     pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
     myScale = getScale (cscale c)
     lrVgap = slrv myScale
     leftMargin = slm myScale
-    rightMargin = srm myScale
-    path1 = path_ ((D_ <<- curve1StartPosition <> bezierCurve1) : (Class_ <<- "v_connector_in") : pathcolors)
-    path2 = path_ ((D_ <<- curve2StartPosition <> bezierCurve2) : (Class_ <<- "v_connector_out") : pathcolors)
-    parent2child = path1 <> path2
-    curve1StartPosition = mA (-leftMargin) parentPortIn
-    curve2StartPosition = mA (bbw parentbbox + rightMargin) parentPortOut
-    bezierCurve1 =
+    startPosition = mA (-leftMargin) parentPortIn
+    bezierCurve =
       cA
         0
         parentPortIn
@@ -331,7 +338,18 @@ columnLayouter c parentbbox (bbold, old) (bbnew, new) =
         (bbh bbold + lrVgap + portL bbnew myScale)
         (bblm bbnew)
         (bbh bbold + lrVgap + portL bbnew myScale)
-    bezierCurve2 =
+
+outboundCurve :: AAVConfig -> BBox -> BBox -> BBox -> SVGElement
+outboundCurve c parentbbox bbold bbnew =
+  path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_out") : pathcolors)
+  where
+    parentPortOut = portR parentbbox myScale + lrVgap
+    pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
+    myScale = getScale (cscale c)
+    lrVgap = slrv myScale
+    rightMargin = srm myScale
+    startPosition = mA (bbw parentbbox + rightMargin) parentPortOut
+    bezierCurve =
       cA
         (bbw parentbbox)
         parentPortOut

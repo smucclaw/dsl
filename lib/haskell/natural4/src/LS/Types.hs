@@ -39,9 +39,9 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 
 -- * BoolStructs wrap Phrasal types
 
-type BoolStruct  = AA.Item Text.Text
-type BoolStructP = AA.Item ParamText
-type BoolStructR = AA.Item RelationalPredicate
+type BoolStruct  = AA.ItemMaybeLabel Text.Text
+type BoolStructP = AA.ItemMaybeLabel ParamText
+type BoolStructR = AA.ItemMaybeLabel RelationalPredicate
 
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
@@ -94,7 +94,7 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> AA.Item ParamText
+mkLeaf :: Text.Text -> AA.ItemMaybeLabel ParamText
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
@@ -293,7 +293,7 @@ data HornClause = HC
   }
   deriving (Eq, Show, Generic, ToJSON)
 
-type HornRP = AA.Item RelationalPredicate
+type HornRP = AA.ItemMaybeLabel RelationalPredicate
 
 data HornBody = HBRP HornRP
               | HBITE { hbif   :: HornRP

@@ -132,7 +132,7 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 
 -- define custom types here for things we care about in purescript
 
-itemRPToItemJSON :: Item RelationalPredicate -> ItemJSON
+itemRPToItemJSON :: ItemMaybeLabel RelationalPredicate -> ItemJSON
 itemRPToItemJSON (Leaf b) = AnyAll.Types.Leaf (rp2text b)
 itemRPToItemJSON (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
 itemRPToItemJSON (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemJSON items)

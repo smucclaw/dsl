@@ -30,13 +30,13 @@ type MyBoolStruct = MyItem MultiTerm
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = prePostParse pOtherVal
 
-prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.Item a)
+prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.ItemMaybeLabel a)
 prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.Item a)
+toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.ItemMaybeLabel a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
 toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs

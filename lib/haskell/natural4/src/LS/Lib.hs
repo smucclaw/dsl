@@ -556,11 +556,12 @@ pGivens = debugName "pGivens" $ do
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
-  tentative  <- (try pRegRuleSugary
-                  <|> try pRegRuleNormal
-                  <|> (pToken Fulfilled >> return RegFulfilled)
-                  <|> (pToken Breach    >> return RegBreach)
-                )
+  tentative  <- manyIndentation $ choice
+                [ try pRegRuleNormal
+                , try pRegRuleSugary
+                , try (pToken Fulfilled >> return RegFulfilled)
+                , try (pToken Breach    >> return RegBreach)
+                ]
   return $ tentative { rlabel = maybeLabel }
 
 -- "You MAY" has no explicit PARTY or EVERY keyword:

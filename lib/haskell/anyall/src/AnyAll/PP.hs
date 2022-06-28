@@ -121,7 +121,7 @@ ppQTree i mm = do
 
 
 
-instance (IsString t, Pretty t, Pretty a) => Pretty (Item' (Label t) a) where
+instance (IsString t, Pretty t, Pretty a) => Pretty (Item' (Maybe (Label t)) a) where
   pretty (Leaf a)            = pretty a
   pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
   pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 

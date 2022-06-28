@@ -11,11 +11,11 @@ import Text.Pretty.Simple (pPrint)
 
 import LS.XPile.CoreL4
 import LS.Interpreter
--- import LS.XPile.Petri
 
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
-import LS.XPile.SVG
+import LS.XPile.Petri
+-- import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.NLP.NLG (nlg,myNLGEnv)

@@ -338,6 +338,13 @@ The ~debug2org~ script rewrites the raw debugging output into a format which is 
 
 Making sense of the parser debug output requires some familiarity with programming language theory, with compiler theory, and with the specifics of our L4 parser toolchain.
 
+*** Development Conveniences
+
+This little script (on Mac at least) watches your Downloads folder so every time you Save As CSV it moves the new download over to the ~test/~ directory. Run from home directory. You may need to edit to taste.
+
+#+begin_example
+  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(Legal Spreadsheets - (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
+#+end_example
 ** Interpretation Requirements
 
 After the parser succeeds, we have in our hands a list of ~Rules~.

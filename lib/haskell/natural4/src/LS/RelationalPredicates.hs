@@ -181,7 +181,8 @@ pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
   ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> (someStructure) -- previously, try ambitious <|> someStructure; but we are trying to keep things more regular.
+    <$$> -- (try ambitious <|>
+          someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
     <|?> (Nothing, fmap snd <$> optional givenLimb)
     <|?> (Nothing, fmap snd <$> optional uponLimb)
     <|?> (Nothing, whenCase)
@@ -280,6 +281,7 @@ slRelPred = debugName "slRelPred" $ do
   try       ( debugName "nested simpleHorn"  nestedHorn )
     <|> try ( debugName "RPConstraint"  rpConstraint )
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
+    -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
     <|> try ( debugName "RPMT"          rpMT )
 
 -- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad

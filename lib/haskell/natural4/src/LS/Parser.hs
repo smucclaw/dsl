@@ -92,7 +92,8 @@ notLabelTerm p =
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
-        , [ binary  And   myAnd  ]
+        , [ binary  And   myAnd
+          , binary  Unless myUnless  ]
         -- , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
@@ -121,6 +122,14 @@ myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
+myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
+myOr a b                          = MyAny (getAny a <> getAny b)
+
+myUnless :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myUnless (MyLabel pre post (MyAll xs)) b = MyLabel pre post $ MyAll (MyNot b: xs)
+myUnless a b                             = MyAll (MyNot b : [a])
+
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 setLess a (MyAll ((MyLeaf l):bs))
   | all (\b -> case b of
@@ -132,11 +141,6 @@ setLess a b = MyAll (getAll a <> [MyNot b])
 getAny :: MyItem lbl a -> [MyItem lbl a]
 getAny (MyAny xs) = xs
 getAny x = [x]
-
-myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
-myOr a b                          = MyAny (getAny a <> getAny b)
--- myOr a b                          = MyAny [a, b]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
 binary  tname f = InfixR  (f <$ (debugName ("binary(" <> show tname <> ")") $ pToken tname))

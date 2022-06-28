@@ -19,7 +19,7 @@ import Data.Functor ( (<&>) )
 
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.List.NonEmpty as NE
 
 -- output to Core L4 for further transformation
@@ -217,6 +217,6 @@ prettyClasses ct@(CT ch) =
                  -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
                  ]
        | className <- getCTkeys ct
-       , (Just (ctype, children)) <- [Map.lookup className ch]
+       , Just (ctype, children) <- [Map.lookup className ch]
        ]
 

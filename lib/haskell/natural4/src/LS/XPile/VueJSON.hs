@@ -5,6 +5,7 @@ module LS.XPile.VueJSON where
 
 import LS
 import LS.NLP.NLG
+import AnyAll.Types
 
 import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)

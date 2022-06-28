@@ -27,7 +27,9 @@ dependencies:
 - hspec
 - prettyprinter
 - aeson
+- aeson-pretty
 - bytestring
+- utf8-string
 - optparse-generic
 - vector
 

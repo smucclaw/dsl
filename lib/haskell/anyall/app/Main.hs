@@ -11,6 +11,7 @@ import AnyAll
 import qualified Data.Map.Strict        as Map
 import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
+import Data.ByteString.Lazy.UTF8 (toString)
 import           Control.Monad (forM_, when, guard)
 import System.Environment
 import System.Exit
@@ -18,6 +19,7 @@ import Data.Maybe
 import Data.Either (isRight, fromRight)
 
 import Data.Aeson
+import Data.Aeson.Encode.Pretty
 import Data.Aeson.Types (parseMaybe)
 import Options.Generic
 
@@ -45,8 +47,13 @@ main = do
   when (only opts == "native") $ print myinput
   guard (isRight myinput)
   let (Right myright) = myinput
+
+  when (only opts == "json") $
+    putStrLn $ toString $ encodePretty (andOrTree myright)
+
   when (only opts == "tree") $
     ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
+
   when (only opts `elem` words "svg svgtiny") $
     print (makeSvg $
            q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full

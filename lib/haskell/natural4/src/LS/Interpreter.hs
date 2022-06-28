@@ -203,3 +203,12 @@ aaForSVG :: Rule -> String
 aaForSVG r = "<svg />"
   -- convert the AA items in this rule to SVG
   
+-- some helper functions that are common to multiple XPile modules
+getAndOrTree :: Rule -> AA.Item T.Text
+getAndOrTree r@Regulative{} = AA.Leaf ("to expand to the conditions in the regulative rule " ++ ruleLabelName r)
+getAndOrTree r@Hornlike{} = AA.Leaf ("to expand to the conditions in the hornlike rule " ++ ruleLabelName r)
+  
+      
+
+
+

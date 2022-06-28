@@ -8,21 +8,12 @@ module LS.PrettyPrinter where
 
 import qualified Data.Text as T
 import LS.Types
-    ( RelationalPredicate(..),
-      HornClause2(HC2),
-      BoolStructR,
-      RPRel,
-      ParamText,
-      TypedMulti,
-      TypeSig(..),
-      ParamType(..),
-      pt2text,
-      rel2txt,
-      rel2op )
 import qualified AnyAll as AA
 import Prettyprinter
 import Data.List (intersperse)
+import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
+import Debug.Trace
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
@@ -56,17 +47,72 @@ instance Pretty ParamText3 where
   pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot <$> pt))
 
 -- | ParamText4 is used to approximate a recursive record. currently we can only go 2 deep.
-newtype ParamText4 = PT4 ParamText
+-- in future we will have to upgrade ParamText to a full Tree type which can nest arbitrarily deep.
+data ParamText4 = PT4 ParamText Interpreted -- VarPath
+  deriving (Eq, Show)
 instance Pretty ParamText4 where
-  pretty (PT4 (line1 :| line2s))
-    | line2s == [] = word1 line1 <> colon <+> dquotes (lrest line1)
-    | otherwise    = word1 line1 <> colon <+> lbrace <+> "--" <+> lrest line1 <> Prettyprinter.line
+  pretty (PT4 (line1 :| line2s) l4i) -- varpath)
+    | line2s == [] = word1 line1 <> colon <+> quoteBoT line1
+    | otherwise    = word1 line1 <> colon <+> lbrace <+> "--" <+> quoteBoT line1 <> Prettyprinter.line
                      <> nest 2 (vsep [ word1 l2 <+> colon <+> dquotes (lrest l2) <> comma | l2 <- line2s ])
                      <> Prettyprinter.line
                      <> rbrace
-    where word1 l = typedOrNot       ((NE.head . fst $ l) :| [], snd l)
-          lrest :: TypedMulti -> Doc ann
-          lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
+    where
+      word1,lrest :: TypedMulti -> Doc ann
+      word1 l = typedOrNot       ((NE.head . fst $ l) :| [], snd l)
+      lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
+      -- quote based on type.
+      quoteBoT :: TypedMulti -> Doc ann
+      quoteBoT l@(net, mts) =
+        let unquoted = hsep $ pretty <$> NE.tail net
+        in case typeOfTerm l4i {-varpath-} l of
+          Just (SimpleType _ s1)  -> case s1 of
+                                       "string" -> dquotes $ lrest l
+                                       "number" -> unquoted
+                                       "num"    -> unquoted
+                                       _        -> snake_case (NE.tail net)
+          Just (InlineEnum _p _s) -> dquotes $ lrest l
+          Nothing                 -> unquoted
+
+-- what is the (L4) type of a given term?
+-- the term in question is given as a TypedMulti, which often works out to be a key/value together in a TypedMulti.
+-- if the TypedMulti already contains an explicit type, we'll return that.
+-- otherwise, we need to interrogate the class hierarchy and the "varpath" breadcrumb by which we arrived at the current term.
+-- for example, if we know that a Corporation extends Party with a representative : Natural Person, and we are now considering
+-- a representative: Bob inside of a const Company : US_Company which extends Corporation, we have enough information to know that
+-- the RHS Bob is a variable name, not a string, so we shoudn't double-quote it.
+
+typeOfTerm :: Interpreted {- -> VarPath -} -> TypedMulti -> Maybe TypeSig
+typeOfTerm l4i tm =
+  let (ct@(CT ch), scopetabs) = (classtable l4i, scopetable l4i)
+  in
+    Nothing
+
+-- -- we are given a long varpath representing the traversal through class (anonymous) attribute space -- i.e. multiple levels of HAS
+-- walk :: Interpreted -> Maybe ClsTab -> VarPath -> TypedMulti -> Maybe TypeSig
+-- walk l4i Nothing xs     tm = trace ("walk 1: Maybe ClsTab argument is Nothing") $ Nothing
+-- walk l4i _       []     tm = trace ("walk 2: varpath exhausted") $ Nothing
+-- walk l4i (Just ct0) (x:xs) ot@(l:|r,mts) =
+--   trace ("walk 3: x = " ++ show x ++ "; xs = " ++ show xs ++ "; l = " ++ show l ++ "; r = " ++ show r) $
+--       case mts of
+--         Just ts -> case getUnderlyingType ts of
+--                      Right t1 -> case Map.lookup t1 (unCT $ classtable l4i) of
+--                                    Nothing -> trace ("underlying type " ++ show t1 ++ " not found in toplevel classtable!") $
+--                                               Just ts
+--                                    Just (its, ct1) -> trace ("underlying type " ++ show t1 ++ " with inferrable typesig " ++ show its ++ " found in toplevel classtable, walking") $
+--                                                       trace ("attempting to obtain extended attributes first tho") $
+--                                                       let ct2 = extendedAttributes ct1 t1
+--                                                       in 
+--                                                       walk l4i ct2 xs ot
+--                      Left err -> trace ("underlying type returned error: " ++ err) $
+--                                  Nothing
+--         Nothing -> trace ("no explicit type given, so attempting to walk current clstab " ++ show ct0) $
+--                    trace ("does the current clstab have an attribute matching our varname " ++ show l ++ "?") $
+--                    case Map.lookup l (unCT ct0) of
+--                      Nothing -> trace ("no it does not.") $
+--                                 Nothing
+--                      Just (its, ct1) -> trace ("yes it does! we got back ct2 " ++ show ct1 ++ " so we will recurse, dropping " ++ show x) $
+--                                         walk l4i (Just ct1) xs ot
 
 typedOrNot :: TypedMulti -> Doc ann
 typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)

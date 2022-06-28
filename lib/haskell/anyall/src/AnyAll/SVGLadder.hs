@@ -431,9 +431,7 @@ combineAnd c elems =
 -- we max up the bounding boxes and return that as our own bounding box.
 drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
 drawOr c negContext childqs =
-    (,)
-        (fst drawnChildren) {bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
-        (snd drawnChildren)
+    drawnChildren 
     where
       rawChildren = drawItemFull c negContext <$> childqs
       drawnChildren = combineOr c rawChildren
@@ -443,9 +441,7 @@ drawOr c negContext childqs =
 
 drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
 drawAnd c negContext childqs =
-    (,)
-        (fst drawnChildren) {bbw = leftMargin + rightMargin + (bbw.fst $ drawnChildren) }
-        (snd drawnChildren)
+    drawnChildren
     where
       rawChildren = drawItemFull c negContext <$> childqs
       drawnChildren = combineAnd c rawChildren
@@ -562,6 +558,11 @@ colorScheme c m amNot = case m of
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
+        , Fill_ <<- "none", Stroke_ <<- "black" ]
+
+debugBox :: Length -> Length -> SVGElement
+debugBox w h =
+  rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
 
 line :: (Length , Length) -> (Length, Length) -> SVGElement

@@ -132,12 +132,6 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 
 -- define custom types here for things we care about in purescript
 
--- itemRPToItemStr :: Item RelationalPredicate -> Item String
--- itemRPToItemStr (Leaf b) = Leaf (Text.unpack $ rp2text b)
--- itemRPToItemStr (AnyAll.Types.All _ items) = AnyAll.Types.All Nothing (map itemRPToItemStr items)
--- itemRPToItemStr (AnyAll.Types.Any _ items) = AnyAll.Types.Any Nothing (map itemRPToItemStr items)
--- itemRPToItemStr (Not item) = AnyAll.Types.Not (itemRPToItemStr item)
-
 itemRPToItemJSON :: Item RelationalPredicate -> ItemJSON
 itemRPToItemJSON (Leaf b) = AnyAll.Types.Leaf (rp2text b)
 itemRPToItemJSON (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
@@ -154,8 +148,14 @@ rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
 
 ruleToRuleJSON :: Rule -> RuleJSON
-ruleToRuleJSON (Hornlike {clauses=[HC2 {hHead=RPMT mt, hBody=Just itemRP}]}) = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+ruleToRuleJSON Hornlike {clauses=[HC2 {hHead=RPMT mt,hBody=Just itemRP}]}
+  = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
+  =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
+  <> maybe Map.empty (Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+ruleToRuleJSON DefNameAlias{} = Map.empty
 ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, Leaf "unimplemented")]
+
 
 -- itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
 -- itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)

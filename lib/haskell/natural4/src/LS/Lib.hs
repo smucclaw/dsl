@@ -101,7 +101,7 @@ getConfig o = do
         , oldDepth = 0
         , parseCallStack = []
         , sourceURL = "STDIN"
-        , asJSON = maybe False (read :: String -> Bool) mpj
+        , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
         , toProlog  = only o == "prolog"

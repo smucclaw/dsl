@@ -148,7 +148,7 @@ getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
 getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 
 --                              (boxStroke, boxFill,     textFill
-getColors :: Scale -> Bool ->   (String,   String,       String)
+getColors :: Scale -> Bool ->   (T.Text,   T.Text,       T.Text)
 getColors    Tiny     True    = ("none",   "none",      "black")
 getColors    Tiny     False   = ("none",   "lightgrey", "lightgrey")
 getColors    Full     True    = ("none",   "none",      "black")

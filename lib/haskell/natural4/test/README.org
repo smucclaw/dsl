@@ -2123,11 +2123,13 @@ The connector ~UNLESS~ is defined as ~AND NOT~, so it follows whatever preamble 
 
 is ((morbror or farbror) and (not estranged))
 
-**** Unless in the tail
+**** TODO Unless in the tail
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-tail-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
 
 |        | Bob's your uncle             |           |     |
 | MEANS  | Bob is your mother's brother |           |     |
@@ -2150,11 +2152,13 @@ if (not estranged))
 
 hHead: is (not (estranged or dead))
 
-**** note hHead vs hBody
+**** TODO note hHead vs hBody
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
 
 unless follows the and/or/not
 
@@ -2178,11 +2182,13 @@ indenting the "Bob is estranged" term to the right of the OR below it, has the m
 |       |                  | OR | Bob is dead      |
 
 if (not (estranged or dead))
-**** more explicit indentation, body                                                   :expected:
+**** TODO more explicit indentation, body                                              :expected:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
 
 |      | Bob's your uncle |    |                  |
 | WHEN | NOT              |    | Bob is estranged |

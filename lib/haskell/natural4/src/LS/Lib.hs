@@ -431,8 +431,6 @@ pRule = debugName "pRule" $ do
 
   return $ foundRule { srcref = Just srcref }
 
--- if we get back a constitutive, we can rewrite it to a Hornlike here
-
 
 -- TypeDecl
 pTypeDeclaration :: Parser Rule

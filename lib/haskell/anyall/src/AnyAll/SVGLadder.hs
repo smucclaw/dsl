@@ -147,8 +147,13 @@ getScale Full      = AAVScale    120  44  22  20  22  20  10   10    10   10
 getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
 getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 
-getColors True = ("none", "none", "black")
-getColors False = ("none", "lightgrey", "white")
+--                              (boxStroke, boxFill,     textFill
+getColors :: Scale -> Bool ->   (T.Text,   T.Text,       T.Text)
+getColors    Tiny     True    = ("none",   "none",      "black")
+getColors    Tiny     False   = ("none",   "lightgrey", "lightgrey")
+getColors    Full     True    = ("none",   "none",      "black")
+getColors    Full     False   = ("none",   "lightgrey", "white")
+getColors    Small confidence = getColors Full confidence
 
 showLabels Full = True
 showLabels Small = False
@@ -389,8 +394,8 @@ txtToBBE ::  AAVConfig -> T.Text -> BoxedSVG
 txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {- [TODO] resizeHBox -}
               , text_ [ X_ <<-* 0, Y_ <<-* boxHeight `div` 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
   where
-    (boxStroke, boxFill, textFill) = getColors True
     myScale     = getScale (cscale c)
+    (boxStroke, boxFill, textFill) = getColors (cscale c) True
     boxWidth    = sbw myScale
     boxHeight   = sbh myScale
 
@@ -465,7 +470,7 @@ drawLeaf :: AAVConfig
          -> QTree T.Text -- ^ the tree to draw
          -> BoxedSVG
 drawLeaf c negContext qt@(Node q childqs) =
-  let (boxStroke, boxFill, textFill) = getColors confidence
+  let (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
       notLine = if negContext then const FullLine else id
       (leftline, rightline, topline, confidence) = case mark q of
         Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)

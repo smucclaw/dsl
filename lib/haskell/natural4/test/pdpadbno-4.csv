@@ -1,6 +1,8 @@
 §,NDB Qualification,,,,,,,,,,,,,,,,,,,
-DECIDE,a Data Breach,IS,Notifiable
-WHEN,TRUE,a data breach,,,occurred,,,,,,,,,,,,,,,
+DECIDE,a Data Breach,,,,,,,,,,,,,,,,,,,IS,TRUE,a Notifiable Data Breach,,,,AKA,NDB,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,
+IF,TRUE,a data breach,,,occurred,,,,,,,,,,,,,,,
 ,,MEANS,any,unauthorised,,,FALSE,access,,,"// maybe the label also needs to be a paramtext!? [""any"",""unauthorised""]",,,,,,,,,
 ,,,,,,OR,FALSE,use,,,// so that the test engine's GIVEN fact-finder can match  unauthorised disclosure of personal data,,,,,,,,,
 ,,,,,,OR,TRUE,disclosure,,,,,,,,,,,,

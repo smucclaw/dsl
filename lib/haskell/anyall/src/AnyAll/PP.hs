@@ -15,7 +15,7 @@ import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
 import qualified Data.Text       as T
 import Data.Aeson.Types
-import Data.List ( intersperse )
+import Data.List
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann

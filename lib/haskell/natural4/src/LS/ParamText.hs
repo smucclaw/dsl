@@ -122,8 +122,9 @@ pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple`
 slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
+-- so it turns out we usually don't even ever get here because a TYPICALLY gets handled by slAKA
 slTypedMulti :: SLParser KVsPair
-slTypedMulti = debugNameSL "slTypedMulti" $ do
+slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
     |*| (|?|) slTypeSig

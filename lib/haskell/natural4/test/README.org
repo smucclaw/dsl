@@ -2104,17 +2104,13 @@ Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. 
 
 The preamble ~WHO~ introduces a Boolean structure which qualifies the party.
 
-The preamble ~IF~ introduces a Boolean structure which qualifies preconditions generally.
+The preamble ~MEANS~ ends up in the relationalpredicate in the hHead.
 
-The preamble ~UNLESS~ is like ~IF~, but reversed.
+The preamble ~IF~ introduces a Boolean structure which qualifies preconditions generally. It goes to the hBody.
 
-What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now.
+The connector ~UNLESS~ is defined as ~AND NOT~, so it follows whatever preamble preceded it.
 
-|          | qualifies party | qualifies preconditions generally |
-| positive | WHO             | IF / WHEN                         |
-| negative | EXCEPT          | UNLESS                            |
-
-**** Unless /in/ the tail
+**** Unless in the head
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-tail-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2123,11 +2119,26 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 |        | Bob's your uncle             |
 | MEANS  | Bob is your mother's brother |
 | OR     | Bob is your father's brother |
-| UNLESS | Bob is estranged             |
+| UNLESS | Bob is just a family friend  |
 
-if ((morbror or farbror) and not estranged)
+is ((morbror or farbror) and (not estranged))
 
-**** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS :shouldfail:
+**** Unless in the tail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-tail-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|        | Bob's your uncle             |           |     |
+| MEANS  | Bob is your mother's brother |           |     |
+| OR     | Bob is your father's brother |           |     |
+| WHEN   | generally                    | TYPICALLY | yes |
+| UNLESS | Bob is estranged             |           |     |
+
+is (morbror or farbror)
+if (not estranged))
+
+**** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or WHEN or IS :shouldfail:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2137,9 +2148,24 @@ if ((morbror or farbror) and not estranged)
 | MEANS | NOT              | Bob is estranged |             |
 |       |                  | OR               | Bob is dead |
 
-if (not (estranged or dead))
+hHead: is (not (estranged or dead))
 
-**** more explicit indentation                                                         :expected:
+**** note hHead vs hBody
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+unless follows the and/or/not
+
+|        | Bob's your uncle             |             |
+| MEANS  | Bob is your mother's brother |             |
+| OR     | Bob is your father's brother |             |
+| UNLESS | Bob is estranged             |             |
+|        | OR                           | Bob is dead |
+
+if (not (estranged or dead))
+**** more explicit indentation, head                                                   :expected:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2152,6 +2178,36 @@ indenting the "Bob is estranged" term to the right of the OR below it, has the m
 |       |                  | OR | Bob is dead      |
 
 if (not (estranged or dead))
+**** more explicit indentation, body                                                   :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|      | Bob's your uncle |    |                  |
+| WHEN | NOT              |    | Bob is estranged |
+|      |                  | OR | Bob is dead      |
+
+if (not (estranged or dead))
+
+note this goes into the hBody instead of the hHead.
+
+**** more explicit indentation, unless in the body                                     :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-e.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|        | Bob's your uncle             |
+| MEANS  | Bob turns up at Thanksgiving |
+| WHEN   | Bob is dead                  |
+| OR     | Bob is blue                  |
+| UNLESS | Bob is immortal              |
+
+is thanksgiving
+if (not immortal and (dead or blue))
+
+note the unless goes into the hBody instead of the hHead.
 
 **** less explicit indentation                                                         :expected:
 :PROPERTIES:
@@ -2163,7 +2219,7 @@ if (not (estranged or dead))
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |
 
-if (not estranged) or dead)
+is (not estranged) or dead)
 
 **** but indentation doesn't go backwards
 :PROPERTIES:
@@ -2175,7 +2231,7 @@ if (not estranged) or dead)
 | MEANS | NOT              | Bob is estranged |
 | OR    | Bob is dead      |                  |
 
-if ((not estranged) or dead))
+is ((not estranged) or dead))
 
 **** combined with other connectors
 :PROPERTIES:

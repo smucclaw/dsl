@@ -201,13 +201,13 @@ pHornlike = debugName "pHornlike" $ do
   where
     addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
     addHead Nothing hcs   = hcs
-    addHead (Just pt) hcs = trace ("addHead running, overwriting hHead with RPParamText " <> show pt) $
+    addHead (Just pt) hcs = -- trace ("addHead running, overwriting hHead with RPParamText " <> show pt) $
                             [ hc2 { hHead = RPParamText pt }
                             | hc2 <- hcs ]
 
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
-    addWhen mbsr hcs = [ trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
-                         trace ("addWhen running, appending the mbsr " <> show mbsr) $
+    addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
+                         -- trace ("addWhen running, appending the mbsr " <> show mbsr) $
                          hc2 { hBody = hBody hc2 <> mbsr }
                        | hc2 <- hcs ]
 

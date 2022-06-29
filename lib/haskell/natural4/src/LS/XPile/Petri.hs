@@ -147,22 +147,6 @@ data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCon
 
 type PNodeD = PNode Deet
 type PetriD = Petri Deet
-type RuleSet = [Rule]
-
-getRuleByName :: RuleSet -> RuleName -> Maybe Rule
-getRuleByName rs rn = find (\r -> ruleName r == rn) rs
-
-getRuleByLabel :: RuleSet -> Text -> Maybe Rule
-getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
-
-rLabelR :: Rule -> Maybe RuleLabel
-rLabelR Regulative   {..} = rlabel
-rLabelR Constitutive {..} = rlabel
-rLabelR Hornlike     {..} = rlabel
-rLabelR TypeDecl     {..} = rlabel
-rLabelR Scenario     {..} = rlabel
-rLabelR RuleGroup    {..} = rlabel
-rLabelR _                 = Nothing
 
 -- initially let's just draw the state diagram in a manner typical of GraphViz.
 -- see the README

@@ -19,6 +19,7 @@ import TestNLG
 import Test.QuickCheck
 import LS.NLP.WordNet
 
+import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.XPile.CoreL4
 import LS.XPile.Typescript

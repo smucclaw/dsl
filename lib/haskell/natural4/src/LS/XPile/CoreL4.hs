@@ -9,9 +9,8 @@ import AnyAll
 import LS.PrettyPrinter 
 import L4.Syntax as CoreL4
 
-import LS.Types as SFL4
 import L4.Annotation
-import LS.Interpreter
+import LS as SFL4
 
 -- import Data.Function ( (&) )
 import Data.Functor ( (<&>) )
@@ -165,7 +164,7 @@ directToCore r@Hornlike{keyword}
   | keyword /= Define =
     let needClauseNumbering = length (clauses r) > 1
     in
-      vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleLabel cnum needClauseNumbering x)) (rlabel r)
+      vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleName cnum needClauseNumbering x)) (Just $ ruleLabelName r)
                   , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
                   ,                                "if"   <+> cStyle (hc2preds c)
                   ,                                "then" <+> pretty (hHead c)
@@ -182,8 +181,8 @@ directToCore _ = ""
 prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
     
-prettyRuleLabel :: Int -> Bool -> RuleLabel -> Doc ann
-prettyRuleLabel cnum needed (_, _, text) = pretty text <> (if needed then "_" <> pretty cnum else mempty)
+prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
+prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
 
 prettyDecls :: ScopeTabs -> Doc ann
 prettyDecls sctabs = vsep [ "--" <+> pretty scopename <> Prettyprinter.line <> "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)

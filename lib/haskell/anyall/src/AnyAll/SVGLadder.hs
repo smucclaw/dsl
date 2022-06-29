@@ -147,8 +147,9 @@ getScale Full      = AAVScale    120  44  22  20  22  20  10   10    10   10
 getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
 getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 
-getColors True = ("none", "none", "black")
-getColors False = ("none", "lightgrey", "white")
+--                (boxStroke, boxFill,     textFill
+getColors True  = ("none",   "none",      "black")
+getColors False = ("none",   "lightgrey", "lightgrey")
 
 showLabels Full = True
 showLabels Small = False

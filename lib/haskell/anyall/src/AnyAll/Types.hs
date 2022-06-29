@@ -68,7 +68,7 @@ data Item lbl a =
 
 type ItemMaybeLabel a = Item (Maybe (Label T.Text)) a
 
-type ItemJSON = Item (Label T.Text) T.Text
+type ItemJSONText = Item (Label T.Text) T.Text
 
 
 instance Semigroup t => Semigroup (Label t) where 

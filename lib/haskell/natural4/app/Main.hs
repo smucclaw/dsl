@@ -55,8 +55,9 @@ main = do
     pPrint $ sfl4ToProlog rules
 
   when (SFL4.toVue rc) $ do
-    putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
-    -- pPrint $ itemRPToItemStr $ toVueRules rules
+    -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
+    putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+    -- pPrint $ itemRPToItemJSON  $ toVueRules rules
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

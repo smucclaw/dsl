@@ -136,7 +136,7 @@ mywritefile doLink dirname filename ext s = do
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   writeFile mypath s
   -- do the symlink more atomically by renaming
-  when doLink $ myMkLink filename mylink
+  when doLink $ myMkLink (filename <> "." <> ext) mylink
   putStrLn $ "** output to " <> mypath
 
 myMkLink :: FilePath -> FilePath -> IO ()

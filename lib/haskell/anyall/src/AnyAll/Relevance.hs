@@ -14,7 +14,7 @@ import Data.Tree
 import qualified Data.Text       as T
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: Hardness -> DisplayPref -> Marking T.Text -> Maybe Bool -> Item T.Text -> Tree (Q T.Text)
+relevant :: Hardness -> DisplayPref -> Marking T.Text -> Maybe Bool -> ItemMaybeLabel T.Text -> Tree (Q T.Text)
 relevant sh dp marking parentValue self =
   let selfValue = evaluate sh marking self
       initVis   = if | isJust parentValue -> if | parentValue == selfValue              -> View
@@ -56,7 +56,7 @@ relevant sh dp marking parentValue self =
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some
 
-dispositive :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> [Item a]
+dispositive :: (Ord a, Show a) => Hardness -> Marking a -> ItemMaybeLabel a -> [ItemMaybeLabel a]
 dispositive sh marking self =
   let selfValue  = evaluate sh marking self
       recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
@@ -67,7 +67,7 @@ dispositive sh marking self =
        Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
-evaluate :: (Ord a, Show a) => Hardness -> Marking a -> Item a -> Maybe Bool
+evaluate :: (Ord a, Show a) => Hardness -> Marking a -> ItemMaybeLabel a -> Maybe Bool
 evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              Just (Default (Left  (Just x))) -> Just x

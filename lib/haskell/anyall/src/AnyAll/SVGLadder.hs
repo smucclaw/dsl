@@ -605,7 +605,7 @@ renderLeaf c desc =
       geom = item c 0 0 desc
   in ((25,height), geom)
 
-renderNot :: (ToElement a) => AAVConfig -> [Item a] -> (OldBBox, SVGElement)
+renderNot :: (ToElement a) => AAVConfig -> [ItemMaybeLabel a] -> (OldBBox, SVGElement)
 renderNot c children =
   let
       ((w,h), g) = renderItem c $ head children
@@ -625,7 +625,7 @@ renderSuffix c x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in ((25,h), geom)
 
-renderAll :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [Item a] -> (OldBBox, SVGElement)
+renderAll :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [ItemMaybeLabel a] -> (OldBBox, SVGElement)
 renderAll c Nothing childnodes = renderAll c allof childnodes
 renderAll c (Just (Pre prefix)) childnodes =
   let
@@ -662,7 +662,7 @@ renderAll c (Just (PrePost prefix suffix)) childnodes =
                    <> moveInt (40, 30 + sum (snd <$> hs)) fg  )
   in ((width,height), geom)
 
-renderAny :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [Item a] -> (OldBBox, SVGElement)
+renderAny :: (ToElement a) => AAVConfig -> Maybe (Label T.Text) -> [ItemMaybeLabel a] -> (OldBBox, SVGElement)
 renderAny c Nothing childnodes = renderAny c (Just (Pre "any of:")) childnodes
 renderAny c (Just (Pre prefix)) childnodes =
   let hg = map (renderItem c) childnodes
@@ -703,7 +703,7 @@ renderAny c (Just (PrePost prefix suffix)) childnodes =
   in ((width, height), geom)
 
 
-renderItem :: (ToElement a) => AAVConfig -> Item a -> (OldBBox, SVGElement)
+renderItem :: (ToElement a) => AAVConfig -> ItemMaybeLabel a -> (OldBBox, SVGElement)
 renderItem c (Leaf label)     = renderLeaf c label
 renderItem c (Not       args) = renderNot c      [args]
 renderItem c (All label args) = renderAll c label args

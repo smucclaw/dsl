@@ -51,10 +51,10 @@ rpLeafVal = debugName "rpLeafVal" $ do
   myTraceM $ "rpLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
 
-aaLeaves :: AA.Item RelationalPredicate -> [MultiTerm]
+aaLeaves :: AA.ItemMaybeLabel RelationalPredicate -> [MultiTerm]
 aaLeaves = aaLeavesFilter (const True)
 
-aaLeavesFilter :: (RelationalPredicate -> Bool) -> AA.Item RelationalPredicate -> [MultiTerm]
+aaLeavesFilter :: (RelationalPredicate -> Bool) -> AA.ItemMaybeLabel RelationalPredicate -> [MultiTerm]
 aaLeavesFilter f (AA.All _ xs) = concatMap (aaLeavesFilter f) xs
 aaLeavesFilter f (AA.Any _ xs) = concatMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
 aaLeavesFilter f (AA.Not x) = aaLeavesFilter f x

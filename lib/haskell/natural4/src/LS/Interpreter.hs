@@ -138,14 +138,14 @@ stitchRules l4i rs = rs
   
 
 -- some helper functions that are used by multiple XPile modules
-getAndOrTree :: RuleSet -> Rule -> AA.Item [T.Text]
+getAndOrTree :: RuleSet -> Rule -> AA.ItemMaybeLabel [T.Text]
 getAndOrTree _rs r@Regulative{}  = AA.Leaf ("to expand to the conditions in the regulative rule " : ruleLabelName r)
 getAndOrTree _rs r@Hornlike{}    = trace ("getAndOrTree on Hornlike rule " <> ruleNameStr r <> " starting") $
                                    foldr1 (<>) $ catMaybes
                                    [ mhead <> mbody
                                    | c <- clauses r
                                    , (hhead, hbody)  <- [(hHead c, hBody c)]
-                                   , let mhead, mbody :: Maybe (AA.Item MultiTerm)
+                                   , let mhead, mbody :: Maybe (AA.ItemMaybeLabel MultiTerm)
                                          mhead = case hhead of
                                                    RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
                                                    _                               -> trace "returning nothing" Nothing
@@ -168,7 +168,7 @@ getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
 
 -- we don't have a type alias for BoolStructMT, but if we did, it would appear here
-bsr2bsmt :: BoolStructR -> AA.Item MultiTerm
+bsr2bsmt :: BoolStructR -> AA.ItemMaybeLabel MultiTerm
 bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf mt
 bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (pt2multiterm pt)
 bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf mt2 -- by right we should pay closer attention to the rprel

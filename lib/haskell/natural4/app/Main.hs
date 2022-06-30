@@ -103,8 +103,9 @@ main = do
   when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
 
   when (SFL4.toVue rc) $ do
-    putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
-    -- pPrint $ itemRPToItemStr $ toVueRules rules
+    -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
+    putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+    -- pPrint $ itemRPToItemJSON  $ toVueRules rules
 
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]

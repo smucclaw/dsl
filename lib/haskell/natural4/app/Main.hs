@@ -98,7 +98,7 @@ main = do
 
   when (SFL4.toTS rc) $ print $ asTypescript rules
 
-  when (SFL4.only opts `elem` ["native"])  $ pPrint rules
+  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
   when (SFL4.only opts `elem` ["classes"]) $ print (classHierarchy rules)
   when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
 
@@ -106,7 +106,6 @@ main = do
     putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
     -- pPrint $ itemRPToItemStr $ toVueRules rules
 
-  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts

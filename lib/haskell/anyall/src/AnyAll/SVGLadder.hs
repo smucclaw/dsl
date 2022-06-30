@@ -469,7 +469,7 @@ drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
          -> QTree T.Text -- ^ the tree to draw
          -> BoxedSVG
-drawLeaf c negContext qt@(Node q childqs) =
+drawLeaf c negContext qt@(Node q _) =
   let (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
       notLine = if negContext then const FullLine else id
       (leftline, rightline, topline, confidence) = case mark q of
@@ -494,7 +494,7 @@ drawLeaf c negContext qt@(Node q childqs) =
   where
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
-    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
+    boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
     mytext = case andOr q of
       (Simply txt) -> txt
       (Neg)        -> "neg..."

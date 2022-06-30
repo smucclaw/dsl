@@ -17,7 +17,6 @@ asAAsvg aavc l4i rs =
   in Map.fromList [ (rn, svge)
                   | r <- rs'
                   , let rn = ruleLabelName r
-                        aaMT = getAndOrTree rs r
-                        aaT = mt2text <$> aaMT
+                        aaT = getAndOrTree rs r
                         svge = makeSvg $ q2svg' aavc (hardnormal (cgetMark aavc) aaT)
                   ]

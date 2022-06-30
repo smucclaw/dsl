@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 import qualified LS as SFL4
@@ -7,7 +8,7 @@ import Control.Applicative
 import Data.List
 import Data.Time.ISO8601
 import Options.Generic
-import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pPrint, pShowNoColor)
 
 import LS.XPile.CoreL4
 import LS.Interpreter
@@ -20,6 +21,7 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
+import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -27,6 +29,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
+import Text.RawString.QQ
 
 main :: IO ()
 main = do
@@ -42,7 +45,8 @@ main = do
       (topetriFN,   asPetri)   = (workuuid <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
+      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
+      (topursFN,    asPursstr) = (workuuid <> "/" <> SFL4.topurs    opts,  psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n")
       (totsFN,      asTSstr)   = (workuuid <> "/" <> SFL4.tots      opts,  show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts  
@@ -56,6 +60,7 @@ main = do
     unless (null (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (null (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     unless (null (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+    unless (null (SFL4.topurs    opts)) $ mywritefile True topursFN     iso8601 "purs" asPursstr
     unless (null (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     unless (null (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     unless (null (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
@@ -98,7 +103,8 @@ main = do
 
   when (SFL4.toTS rc) $ print $ asTypescript rules
 
-  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
+  when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
+  when (SFL4.only opts `elem` ["native"])  $ pPrint rules
   when (SFL4.only opts `elem` ["classes"]) $ print (classHierarchy rules)
   when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
 
@@ -151,3 +157,19 @@ snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] +
                 Text.unpack $
                 Text.replace " " "_" $
                 Text.intercalate "-" x
+
+psPrefix :: String -- the stuff at the top of the purescript output
+psPrefix = [r|
+module RuleLib.PDPADBNO where
+
+import AnyAll.Types
+import Data.Maybe
+import Data.Tuple
+import Prelude
+
+import Data.Map as Map
+
+schedule1_part1 :: ItemJSONStr
+schedule1_part1 =
+  |]
+

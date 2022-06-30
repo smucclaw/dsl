@@ -63,6 +63,7 @@ dependencies:
 - iso8601-time
 - directory
 - fgl
+- raw-strings-qq
 
 ghc-options: -Wall
 

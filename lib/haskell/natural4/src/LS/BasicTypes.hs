@@ -16,7 +16,7 @@ import qualified Data.Vector as V
 import Data.Aeson (ToJSON)
 import GHC.Generics
 import Data.Char (toUpper)
-import Data.List (intercalate)
+-- import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 

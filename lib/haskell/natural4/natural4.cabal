@@ -88,6 +88,7 @@ library
     , pretty-simple
     , prettyprinter
     , prolog
+    , raw-strings-qq
     , replace-megaparsec
     , split
     , stm
@@ -141,6 +142,7 @@ executable natural4-exe
     , pretty-simple
     , prettyprinter
     , prolog
+    , raw-strings-qq
     , replace-megaparsec
     , split
     , stm
@@ -196,6 +198,7 @@ test-suite natural4-test
     , pretty-simple
     , prettyprinter
     , prolog
+    , raw-strings-qq
     , replace-megaparsec
     , split
     , stm

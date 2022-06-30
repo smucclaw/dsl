@@ -13,8 +13,8 @@ import qualified Data.Map as Map
 import Debug.Trace
 import Data.Maybe
 import Data.Graph.Inductive
-import Data.Graph.Inductive.Query.DFS
 import Data.Tuple (swap)
+import Data.List (find)
 
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: [Rule] -> ScopeTabs
@@ -37,10 +37,11 @@ symbolTable rs =
     fromDefines :: [(RuleName, SymTab)]
     fromDefines = [ (scopename, symtable)
                   | r@Hornlike{keyword=Define}   <- rs
-                  , let scopename = maybe (["GLOBAL"]) (\x -> [rl2text x]) (rlabel r)
+                  , let scopename = maybe ["GLOBAL"] (\x -> [rl2text x]) (getRlabel r)
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
+hasGiven :: Rule -> Bool
 hasGiven     Hornlike{} = True
 hasGiven   Regulative{} = True
 hasGiven     TypeDecl{} = True
@@ -99,7 +100,7 @@ topsortedClasses ct =
                    ]
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
 attrType (CT clstab) attrName = do
-  (t, CT ct) <- Map.lookup attrName clstab
+  (t, CT _ct) <- Map.lookup attrName clstab
   getSymType t
 
 
@@ -124,21 +125,55 @@ getAttrTypesIn ct classname =
 -- | reduce the ruleset to an organized set of rule trees.
 -- where the HENCE and LEST are fully expanded; once a HENCE/LEST child has been incorporated into its parent, remove the child from the top-level list of rules.
 -- similarly with DECIDE rules defined inline with MEANS
+-- and references to defined terms; if a rule talks about Degustates, expand that to eats/drinks
 
-stitchRules :: [Rule] -> [Rule]
-stitchRules rs = rs
-
-aaForSVG :: Rule -> String
-aaForSVG r = "<svg />"
-  -- convert the AA items in this rule to SVG
+stitchRules :: Interpreted -> [Rule] -> [Rule]
+stitchRules l4i rs = rs
+  -- partition rules into consumers and providers
+  -- a consumer is one that is not mentioned by any other rule.
+  -- a provider is one that is mentioned by some other rule, or is a rulealias.
+  -- filter out providers; return only consumers.
+  -- the Petri transpiler uses fgl to think about this stuff.
+  -- here we do it directly.
   
--- some helper functions that are common to multiple XPile modules
-getAndOrTree :: Rule -> AA.Item T.Text
-getAndOrTree r@Regulative{} = AA.Leaf ("to expand to the conditions in the regulative rule " <> mt2text (ruleLabelName r))
-getAndOrTree r@Hornlike{} = AA.Leaf ("to expand to the conditions in the hornlike rule " <> mt2text (ruleLabelName r))
-getAndOrTree r = AA.Leaf ("ERROR: no and/or tree defined for rule " <> mt2text (ruleLabelName r))
-  
-      
 
+-- some helper functions that are used by multiple XPile modules
+getAndOrTree :: RuleSet -> Rule -> AA.Item [T.Text]
+getAndOrTree _rs r@Regulative{}  = AA.Leaf ("to expand to the conditions in the regulative rule " : ruleLabelName r)
+getAndOrTree _rs r@Hornlike{}    = trace ("getAndOrTree on Hornlike rule " <> ruleNameStr r <> " starting") $
+                                   foldr1 (<>) $ catMaybes
+                                   [ mhead <> mbody
+                                   | c <- clauses r
+                                   , (hhead, hbody)  <- [(hHead c, hBody c)]
+                                   , let mhead, mbody :: Maybe (AA.Item MultiTerm)
+                                         mhead = case hhead of
+                                                   RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
+                                                   _                               -> trace "returning nothing" Nothing
+                                         mbody = bsr2bsmt <$> hbody
+                                   ]
+getAndOrTree rs r@(RuleAlias rn) = case getRuleByName rs rn of
+                                     Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " : rn)
+                                     Just r' -> getAndOrTree rs r'
+getAndOrTree _rs r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) (AA.Leaf ("ERROR: can't call getAndOrTree against" : ruleLabelName r))
 
+ruleNameStr :: Rule -> String
+ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
+                          
+type RuleSet = [Rule]
 
+getRuleByName :: RuleSet -> RuleName -> Maybe Rule
+getRuleByName rs rn = find (\r -> ruleName r == rn) rs
+
+getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
+getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
+
+-- we don't have a type alias for BoolStructMT, but if we did, it would appear here
+bsr2bsmt :: BoolStructR -> AA.Item MultiTerm
+bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf mt
+bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (pt2multiterm pt)
+bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf mt2 -- by right we should pay closer attention to the rprel
+bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = bsr2bsmt bsr2
+bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Any lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)
+    

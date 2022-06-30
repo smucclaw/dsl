@@ -15,16 +15,18 @@ import LS.Interpreter
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.Petri
--- import LS.XPile.SVG
+import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
+import qualified Data.Map  as Map
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
+import AnyAll.SVGLadder (defaultAAVConfig)
 
 main :: IO ()
 main = do
@@ -34,29 +36,30 @@ main = do
   rules    <- SFL4.dumpRules opts
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
+      l4i         = l4interpret rules
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> SFL4.toprolog  opts,  show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
-      (toaasvgFN,   asAAsvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  SFL4.aaForSVG <$> SFL4.stitchRules rules)
+      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> SFL4.tots      opts,  show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
-      tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts
+      tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts  
       (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules
                                                                            <> "\n\n-- class hierarchy:\n" <> show (classHierarchy rules)
                                                                            <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
 
   when toworkdir $ do
     putStrLn $ "* outputting to workdir " <> workuuid
-    unless (null (SFL4.toprolog  opts)) $ mywritefile toprologFN   iso8601 asProlog
-    unless (null (SFL4.topetri   opts)) $ mywritefile topetriFN    iso8601 asPetri
-    unless (null (SFL4.tocorel4  opts)) $ mywritefile tocorel4FN   iso8601 asCoreL4
-    unless (null (SFL4.tojson    opts)) $ mywritefile tojsonFN     iso8601 asJSONstr
-    unless (null (SFL4.tots      opts)) $ mywritefile totsFN       iso8601 asTSstr
-    unless (null (SFL4.toaasvg   opts)) $ mapM_ (\(n,s) -> mywritefile toaasvgFN (iso8601 <> "-" <> show n) s) (zip [1 :: Int ..] asAAsvg)
-    unless (null (SFL4.tonative  opts)) $ mywritefile tonativeFN   iso8601 asNative
-    unless (null (SFL4.togrounds opts)) $ mywritefile togroundsFN  iso8601 asGrounds
+    unless (null (SFL4.toprolog  opts)) $ mywritefile toprologFN   (iso8601 <> ".pl")   asProlog
+    unless (null (SFL4.topetri   opts)) $ mywritefile topetriFN    (iso8601 <> ".dot")  asPetri
+    unless (null (SFL4.tocorel4  opts)) $ mywritefile tocorel4FN   (iso8601 <> ".l4")   asCoreL4
+    unless (null (SFL4.tojson    opts)) $ mywritefile tojsonFN     (iso8601 <> ".json") asJSONstr
+    unless (null (SFL4.tots      opts)) $ mywritefile totsFN       (iso8601 <> ".ts")   asTSstr
+    unless (null (SFL4.tonative  opts)) $ mywritefile tonativeFN   (iso8601 <> ".hs")   asNative
+    unless (null (SFL4.togrounds opts)) $ mywritefile togroundsFN  (iso8601 <> ".txt")  asGrounds
+    unless (null (SFL4.toaasvg   opts)) $ mapM_ (\(n,s) -> mywritefile toaasvgFN (iso8601 <> "-" <> take 20 (snake_scrub n) <> ".svg") (show s)) (Map.toList asaasvg)
     unless (null (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile tochecklFN   iso8601 asCheckl
@@ -127,3 +130,9 @@ mywritefile dirname filename s = do
   createFileLink filename mylink_tmp
   renameFile mylink_tmp mylink
   putStrLn $ "** output to " <> mypath
+
+snake_scrub :: [Text.Text] -> String
+snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_-") $
+                Text.unpack $
+                Text.replace " " "_" $
+                Text.intercalate "-" x

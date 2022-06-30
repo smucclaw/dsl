@@ -10,6 +10,8 @@ import qualified AnyAll as AA
 import Data.List.NonEmpty ( toList, nonEmpty )
 import Data.Maybe (fromMaybe, catMaybes)
 
+import Debug.Trace (trace)
+
 import LS.Types
 import LS.Tokens
 import LS.ParamText
@@ -91,6 +93,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
   namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
+  -- [TODO] we should delete the Unless here because we've got it in Expr
   ( (copula, mletbind), whenifs, unlesses, givens ) <-
     manyIndentation $ permutationsCon [Means,Includes,Is] [When,If] [Unless] [Given]
   srcurl <- asks sourceURL
@@ -198,11 +201,14 @@ pHornlike = debugName "pHornlike" $ do
   where
     addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
     addHead Nothing hcs   = hcs
-    addHead (Just pt) hcs = [ hc2 { hHead = RPParamText pt }
+    addHead (Just pt) hcs = -- trace ("addHead running, overwriting hHead with RPParamText " <> show pt) $
+                            [ hc2 { hHead = RPParamText pt }
                             | hc2 <- hcs ]
 
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
-    addWhen mbsr hcs = [ hc2 { hBody = hBody hc2 <> mbsr }
+    addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
+                         -- trace ("addWhen running, appending the mbsr " <> show mbsr) $
+                         hc2 { hBody = hBody hc2 <> mbsr }
                        | hc2 <- hcs ]
 
     -- this is actually kind of a meta-rule, because it really means
@@ -235,7 +241,7 @@ pHornlike = debugName "pHornlike" $ do
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
       keyword <- optional $ choice [ pToken Decide ]
-      (relPred, whenpart) <- debugName "pHornlike/someStructre going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
+      (relPred, whenpart) <- debugName "pHornlike/someStructure going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
       return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
 
 
@@ -266,11 +272,14 @@ relPredSamelineWhen = debugName "relPredSamelineWhen" $
 
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
-  try (whenMeansIf *> (Just <$> pBSR))
+  try (whenIf *> (Just <$> pBSR))
   <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
 
-whenMeansIf :: Parser MyToken
-whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pToken If, pToken Is ]
+meansIs :: Parser MyToken
+meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]
+
+whenIf :: Parser MyToken
+whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 -- i think we need to distinguish WHEN/IF from MEANS/IS.
 -- WHEN/IF  puts a BoolStructR in the hBody
 -- MEANS/IS puts a RelationalPredicate in the hHead
@@ -278,9 +287,9 @@ whenMeansIf = debugName "whenMeansIf" $ choice [ pToken When, pToken Means, pTok
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-  try       ( debugName "nested simpleHorn"  nestedHorn )
-    <|> try ( debugName "RPConstraint"  rpConstraint )
+        try ( debugName "RPConstraint"  rpConstraint )
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
+    <|> try ( debugName "nested simpleHorn"  nestedHorn )
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
     <|> try ( debugName "RPMT"          rpMT )
 
@@ -290,14 +299,14 @@ nestedHorn = do
   srcref <- liftSL getSrcRef
   (subj, meansTok, bsr) <- (,,)
                                $*| slMultiTerm
-                               |^| liftSL (pToken Means)
+                               |^| liftSL meansIs
                                |-| pBSR
   let simpleHorn = Hornlike { name = subj
                             , super = Nothing
                             , keyword = meansTok
                             , given = Nothing
                             , upon = Nothing
-                            , clauses = [ HC2 (RPMT subj) (Just bsr) ]
+                            , clauses = [ HC2 (RPBoolStructR subj RPis bsr) Nothing ]
                             , rlabel = Nothing
                             , lsource = Nothing
                             , srcref = Just srcref

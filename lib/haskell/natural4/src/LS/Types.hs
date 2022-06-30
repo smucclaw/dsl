@@ -156,10 +156,27 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 -- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
 
 ruleLabelName :: Rule -> RuleName
-ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (rlabel r)
+ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (getRlabel r)
+
+getRlabel :: Rule -> Maybe RuleLabel
+getRlabel r@Regulative{}    = rlabel r
+getRlabel r@Constitutive {} = rlabel r
+getRlabel r@Hornlike {}     = rlabel r
+getRlabel r@TypeDecl {}     = rlabel r
+getRlabel r@Scenario {}     = rlabel r
+getRlabel r@RuleGroup {}    = rlabel r
+-- getRlabel r@DefNameAlias {} = Nothing
+-- getRlabel r@DefTypically {} = Nothing
+-- getRlabel r@(RuleAlias a)   = Nothing
+-- getRlabel r@RegFulfilled    = Nothing
+-- getRlabel r@RegBreach       = Nothing
+getRlabel _                 = Nothing
 
 ruleName :: Rule -> RuleName
 ruleName Regulative { subj  = x } = [bsp2text x]
+ruleName (RuleAlias rn) = rn
+ruleName RegFulfilled = ["FULFILLED"]
+ruleName RegBreach    = ["BREACH"]
 ruleName x = name x
 
 type RuleLabel = (Text.Text   --  "§"
@@ -786,4 +803,13 @@ pTokenMatch f c = do
       if f x
         then Just x
         else Nothing
+
+rLabelR :: Rule -> Maybe RuleLabel
+rLabelR Regulative   {..} = rlabel
+rLabelR Constitutive {..} = rlabel
+rLabelR Hornlike     {..} = rlabel
+rLabelR TypeDecl     {..} = rlabel
+rLabelR Scenario     {..} = rlabel
+rLabelR RuleGroup    {..} = rlabel
+rLabelR _                 = Nothing
 

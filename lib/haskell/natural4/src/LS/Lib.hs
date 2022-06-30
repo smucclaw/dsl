@@ -356,7 +356,7 @@ stanzaAsStream rs =
                 b@WithPos { pos = bPos }
       | tokenVal a /= SOF &&
         aCol <  bCol &&
-        aLin <  bLin =  trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
+        aLin <  bLin =  -- trace ("Lib preprocessor: inserting EOL between " <> show (tokenVal a) <> " and " <> show (tokenVal b)) $
                         a : a { tokenVal = EOL }            --- | foo |     |    | foo   EOL | -- special case: we add an EOL to show the indentation crosses multiple lines.
                         : (goDp <$> [1 .. (bCol - aCol)])   --- |     | bar | -> |     ( bar | -- for example, in a ParamText, the "bar" line gives a parameter to the "foo" line
 
@@ -430,8 +430,6 @@ pRule = debugName "pRule" $ do
     <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
   return $ foundRule { srcref = Just srcref }
-
--- if we get back a constitutive, we can rewrite it to a Hornlike here
 
 
 -- TypeDecl

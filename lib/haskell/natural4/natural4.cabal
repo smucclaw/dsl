@@ -41,7 +41,6 @@ library
       LS.RelationalPredicates
       LS.Tokens
       LS.Types
-      LS.XPile.AA
       LS.XPile.CoreL4
       LS.XPile.CSV
       LS.XPile.Odoyle

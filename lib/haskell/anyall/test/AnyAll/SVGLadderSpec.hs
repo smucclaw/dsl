@@ -64,7 +64,7 @@ extractBoxAndSVG alignBoxes = (boundingBoxes, svgsAttrs)
   svgsAttrs = parseSVGContent <$> XML.parseXML svgs
   boundingBoxes = fst alignBoxes
 
-compositeAndTree :: Tree (Q Text)
+compositeAndTree :: QuestionTree
 compositeAndTree =
   Node
     { rootLabel =
@@ -120,7 +120,7 @@ compositeAndTree =
     }
 
 
-simpleAndTree :: Tree (Q Text)
+simpleAndTree :: QuestionTree
 simpleAndTree =
   Node
     { rootLabel =
@@ -154,7 +154,7 @@ simpleAndTree =
         ]
     }
 
-simpleOrTree :: Tree (Q Text)
+simpleOrTree :: QuestionTree
 simpleOrTree =
   Node
     { rootLabel =
@@ -186,6 +186,19 @@ simpleOrTree =
               subForest = []
             }
         ]
+    }
+
+makeSingleNodeTree :: Text -> QuestionTree
+makeSingleNodeTree t =
+  Node
+    { rootLabel =
+        AnyAll.Types.Q
+          { shouldView = View,
+            andOr = Simply t,
+            prePost = Nothing,
+            mark = Default {getDefault = Left Nothing}
+          },
+      subForest = []
     }
 
 spec :: Spec
@@ -396,3 +409,24 @@ spec = do
       bottomText (Just $ Pre "a") `shouldBe` Nothing
     it "does Nothing" $ do
       bottomText (Nothing :: Maybe (Label Text)) `shouldBe` Nothing
+
+  describe "drawLeaf" $ do
+    let
+      shortTextNode = makeSingleNodeTree "swim"
+      longTextNode = makeSingleNodeTree "discombobulate"
+    it "makes elements of different sizes for Full scale" $ do
+      let
+        c = dc{cscale=Full, cdebug = False}
+        shortLeaf = drawLeaf c True shortTextNode
+        longLeaf = drawLeaf c True longTextNode
+        shortBoxLength = bbw (fst shortLeaf)
+        longBoxLength = bbw (fst longLeaf)
+      (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
+    it "makes elements of the same size for Tiny scale" $ do
+      let
+        c = dc{cscale=Tiny, cdebug = False}
+        shortLeaf = drawLeaf c True shortTextNode
+        longLeaf = drawLeaf c True longTextNode
+        shortBoxLength = bbw (fst shortLeaf)
+        longBoxLength = bbw (fst longLeaf)
+      (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

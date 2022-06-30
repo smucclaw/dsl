@@ -216,7 +216,7 @@ bottomText :: Maybe (Label a) -> Maybe a
 bottomText = (=<<) maybeSecond
 
 drawItemTiny :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny c negContext qt@(Node (Q _sv ao@(Simply _txt) pp m) childqs) = drawLeaf     c      negContext qt
+drawItemTiny c negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) = drawLeaf     c      negContext txt m
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
@@ -455,61 +455,64 @@ drawAnd c negContext childqs =
       rightMargin = srm myScale
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
-drawItemFull c negContext qt@(Node (Q sv ao pp m) childqs) =
+drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
   case ao of
     Or -> drawOr c negContext childqs
     And -> drawAnd c negContext childqs
-    Simply _txt -> drawLeaf c negContext qt
+    Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)
 
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp
 
-drawLeaf :: AAVConfig
-         -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
-         -> QTree T.Text -- ^ the tree to draw
-         -> BoxedSVG
-drawLeaf c negContext qt@(Node q _) =
-  let (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
-      notLine = if negContext then const FullLine else id
-      (leftline, rightline, topline, confidence) = case mark q of
-        Default (Right (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, True)
-        Default (Right (Just False)) -> (FullLine,  notLine NoLine,       negContext, True)
-        Default (Right Nothing     ) -> (  NoLine,  notLine NoLine,            False, True)
-        Default (Left  (Just True))  -> (HalfLine,  notLine HalfLine, not negContext, False)
-        Default (Left  (Just False)) -> (FullLine,  notLine NoLine,       negContext, False)
-        Default (Left  Nothing     ) -> (  NoLine,  notLine NoLine,            False, False)
-      boxContents = if cscale c == Tiny
-                    then (circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ] )
-                    else   (text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext))
-  in
-  (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
-     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill, Class_ <<- "textbox" ]
-  <> boxContents
-  <> (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
+deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool, Bool)
+deriveBoxCap negContext m =
+  case m of
+    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext, True)
+    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext, True)
+    Default (Right Nothing) -> (NoLine, notLine NoLine, False, True)
+    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext, False)
+    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext, False)
+    Default (Left Nothing) -> (NoLine, notLine NoLine, False, False)
+  where
+    notLine = if negContext then const FullLine else id
+
+drawBoxCap :: AAVConfig -> Bool -> Default Bool -> Length -> Length -> SVGElement
+drawBoxCap c negContext m boxHeight boxWidth =
+  (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
   <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight `div` 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
   <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
   <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
   where
+    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+
+drawBoxContent :: Scale -> T.Text -> T.Text -> Length -> Length  -> SVGElement
+drawBoxContent Tiny mytext textFill boxHeight boxWidth=
+  circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ]
+drawBoxContent _ mytext textFill boxHeight boxWidth=
+  text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
+
+drawLeaf :: AAVConfig
+         -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
+         -> T.Text
+         -> Default Bool
+         -> BoxedSVG
+drawLeaf c negContext mytext m =
+  (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
+     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill, Class_ <<- "textbox" ]
+  <> boxContent
+  <> boxCap
+  where
+    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
-    boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (length (show mytext)))
-    mytext = case andOr q of
-      (Simply txt) -> txt
-      (Neg)        -> "neg..."
-      (And)        -> "and..."
-      (Or)         -> "or..."
-
-  -- itemBox c 0 0 ao mark children False
-
-
-
-
-
+    boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
+    boxCap = drawBoxCap c negContext m boxHeight boxWidth
+    boxContent = drawBoxContent (cscale c) mytext textFill boxHeight boxWidth
 
 type Boolean = Bool
-
 itemBox :: AAVConfig
         -> Double          -- ^ x top left
         -> Double          -- ^ y top left

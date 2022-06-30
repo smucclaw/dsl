@@ -188,17 +188,13 @@ simpleOrTree =
         ]
     }
 
-makeSingleNodeTree :: Text -> QuestionTree
+makeSingleNodeTree :: Text -> Question
 makeSingleNodeTree t =
-  Node
-    { rootLabel =
-        AnyAll.Types.Q
-          { shouldView = View,
-            andOr = Simply t,
-            prePost = Nothing,
-            mark = Default {getDefault = Left Nothing}
-          },
-      subForest = []
+  AnyAll.Types.Q
+    { shouldView = View,
+      andOr = Simply t,
+      prePost = Nothing,
+      mark = Default {getDefault = Left Nothing}
     }
 
 spec :: Spec
@@ -414,19 +410,20 @@ spec = do
     let
       shortTextNode = makeSingleNodeTree "swim"
       longTextNode = makeSingleNodeTree "discombobulate"
+      mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
         c = dc{cscale=Full, cdebug = False}
-        shortLeaf = drawLeaf c True shortTextNode
-        longLeaf = drawLeaf c True longTextNode
+        shortLeaf = drawLeaf c True "swim" mark
+        longLeaf = drawLeaf c True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
         c = dc{cscale=Tiny, cdebug = False}
-        shortLeaf = drawLeaf c True shortTextNode
-        longLeaf = drawLeaf c True longTextNode
+        shortLeaf = drawLeaf c True "swim" mark
+        longLeaf = drawLeaf c True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

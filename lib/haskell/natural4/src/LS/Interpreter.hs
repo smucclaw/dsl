@@ -145,22 +145,22 @@ getAndOrTree _rs r@Regulative{}  = AA.Leaf ("to expand to the conditions in the 
 getAndOrTree _rs r@Hornlike{}    = trace ("getAndOrTree on Hornlike rule " <> ruleNameStr r <> " starting") $
                                    foldr1 (<>) $ catMaybes $ bsmtOfClauses r
 
-bsmtOfClauses r = [ mhead <> mbody
-                  | c <- clauses r
-                  , (hhead, hbody)  <- [(hHead c, hBody c)]
-                  , let mhead, mbody :: Maybe (AA.Item MultiTerm)
-                        mhead = case hhead of
-                                  RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
-                                  _                               -> trace "returning nothing" Nothing
-                        mbody = bsr2bsmt <$> hbody
-                  ]
-                                   
 getAndOrTree rs r@(RuleAlias rn) = case getRuleByName rs rn of
                                      Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " : rn)
                                      Just r' -> getAndOrTree rs r'
 getAndOrTree _rs r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) $
                      AA.Leaf ("ERROR: can't call getAndOrTree against" : ruleLabelName r)
 
+bsmtOfClauses r = [ mhead <> mbody
+                  | c <- clauses r
+                  , (hhead, hbody)  <- [(hHead c, hBody c)]
+                  , let mhead, mbody :: Maybe (AA.ItemMaybeLabel MultiTerm)
+                        mhead = case hhead of
+                                  RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
+                                  _                               -> trace "returning nothing" Nothing
+                        mbody = bsr2bsmt <$> hbody
+                  ]
+                                   
 ruleNameStr :: Rule -> String
 ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
                           

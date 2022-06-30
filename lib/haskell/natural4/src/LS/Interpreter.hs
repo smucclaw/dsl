@@ -140,27 +140,46 @@ stitchRules l4i rs = rs
 -- multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
 -- some helper functions that are used by multiple XPile modules
-getAndOrTree :: RuleSet -> Rule -> AA.ItemMaybeLabel [T.Text]
-getAndOrTree _rs r@Regulative{}  = AA.Leaf ("to expand to the conditions in the regulative rule " : ruleLabelName r)
-getAndOrTree _rs r@Hornlike{}    = trace ("getAndOrTree on Hornlike rule " <> ruleNameStr r <> " starting") $
-                                   foldr1 (<>) $ catMaybes $ bsmtOfClauses r
+getAndOrTree :: [Rule] -> Rule -> AA.ItemMaybeLabel T.Text -- Vue wants AA.Item T.Text
+getAndOrTree _rs r@Regulative{}  = AA.Leaf ("[TODO]: to expand to the cond and the who from the regulative rule " <> T.unwords (ruleLabelName r))
+getAndOrTree _rs r@Hornlike{}    = trace ("[TODO]: getAndOrTree on Hornlike rule \"" <> ruleNameStr r <> "\"") $
+                                   extractRPMT2Text <$> (foldr (<>) (AA.Leaf (RPMT ["BASE CASE TRUE"])) $ catMaybes $ traceShowId $ bsmtOfClauses r)
 
 getAndOrTree rs r@(RuleAlias rn) = case getRuleByName rs rn of
-                                     Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " : rn)
+                                     Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " <> T.unwords rn)
                                      Just r' -> getAndOrTree rs r'
 getAndOrTree _rs r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) $
-                     AA.Leaf ("ERROR: can't call getAndOrTree against" : ruleLabelName r)
+                     AA.Leaf ("ERROR: can't call getAndOrTree against" <> T.unwords (ruleLabelName r))
 
 bsmtOfClauses r = [ mhead <> mbody
                   | c <- clauses r
                   , (hhead, hbody)  <- [(hHead c, hBody c)]
-                  , let mhead, mbody :: Maybe (AA.ItemMaybeLabel MultiTerm)
+                  , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
                         mhead = case hhead of
                                   RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
-                                  _                               -> trace "returning nothing" Nothing
-                        mbody = bsr2bsmt <$> hbody
+                                  _                               -> trace ("returning nothing for " <> show hhead) Nothing
+                        mbody = let output = bsr2bsmt <$> hbody in trace ("got output " <> show output) $ output
                   ]
-                                   
+
+
+onlyTheItems :: [Rule] -> AA.ItemMaybeLabel T.Text
+onlyTheItems rs = AA.All (Just (AA.Pre "all of the following:")) (getAndOrTree rs <$> rs)
+
+alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
+alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)
+alwaysLabel (AA.Any Nothing xs)  = AA.Any (AA.Pre "any of the following") (alwaysLabel <$> xs)
+alwaysLabel (AA.All (Just x) xs) = AA.All x (alwaysLabel <$> xs)
+alwaysLabel (AA.Any (Just x) xs) = AA.Any x (alwaysLabel <$> xs)
+alwaysLabel (AA.Leaf x)          = AA.Leaf x
+alwaysLabel (AA.Not x)           = AA.Not (alwaysLabel x)
+
+
+-- we must be certain it's always going to be an RPMT
+-- we extract so that it's easier to convert to JSON or to purescript Item Text
+extractRPMT2Text :: RelationalPredicate -> T.Text
+extractRPMT2Text (RPMT ts) = T.unwords ts
+extractRPMT2Text _         = error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
+                             
 ruleNameStr :: Rule -> String
 ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
                           
@@ -172,12 +191,15 @@ getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
 
--- we don't have a type alias for BoolStructMT, but if we did, it would appear here
-bsr2bsmt :: BoolStructR -> AA.ItemMaybeLabel MultiTerm
-bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf mt
-bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (pt2multiterm pt)
-bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf mt2 -- by right we should pay closer attention to the rprel
-bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = bsr2bsmt bsr2
+-- where every RelationalPredicate in the boolstruct is narrowed to RPMT only
+bsr2bsmt :: BoolStructR -> BoolStructR
+bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf (RPMT mt)
+bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (RPMT $ pt2multiterm pt)
+bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf (RPMT mt2)
+bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = let output = bsr2bsmt bsr2
+                                                     in trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
+                                                        trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
+                                                        output
 bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)

@@ -401,8 +401,11 @@ txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {-
 
 combineOr :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineOr c elems =
-  ( childbbox {bbw = bbw childbbox + leftMargin + rightMargin},  -- only for LR
-    moveInt (leftMargin, -interElementGap) children
+  ( childbbox
+      { bbw = bbw childbbox + leftMargin + rightMargin,
+        bbh = bbh childbbox - interElementGap
+      },
+    moveInt (leftMargin, - interElementGap) children
   )
   where
     myScale = getScale (cscale c)
@@ -436,23 +439,15 @@ combineAnd c elems =
 -- we max up the bounding boxes and return that as our own bounding box.
 drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
 drawOr c negContext childqs =
-    drawnChildren 
+    combineOr c rawChildren
     where
       rawChildren = drawItemFull c negContext <$> childqs
-      drawnChildren = combineOr c rawChildren
-      myScale     = getScale (cscale c)
-      leftMargin  = slm myScale
-      rightMargin = srm myScale
 
 drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
 drawAnd c negContext childqs =
-    drawnChildren
+    combineAnd c rawChildren
     where
       rawChildren = drawItemFull c negContext <$> childqs
-      drawnChildren = combineAnd c rawChildren
-      myScale     = getScale (cscale c)
-      leftMargin  = slm myScale
-      rightMargin = srm myScale
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =

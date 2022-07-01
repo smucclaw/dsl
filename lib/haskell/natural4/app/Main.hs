@@ -41,41 +41,41 @@ main = do
   let toworkdir   = not $ null $ SFL4.workdir opts
       l4i         = l4interpret rules
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
-      (toprologFN,  asProlog)  = (workuuid <> "/" <> SFL4.toprolog  opts,  show (sfl4ToProlog rules))
-      (topetriFN,   asPetri)   = (workuuid <> "/" <> SFL4.topetri   opts,  Text.unpack $ toPetri rules)
-      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> SFL4.toaasvg   opts,  AAS.asAAsvg defaultAAVConfig l4i rules)
-      (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> SFL4.tocorel4  opts,  sfl4ToCorel4 rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> SFL4.tojson    opts,  toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> SFL4.topurs    opts,  psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n")
-      (totsFN,      asTSstr)   = (workuuid <> "/" <> SFL4.tots      opts,  show (asTypescript rules))
-      (togroundsFN, asGrounds) = (workuuid <> "/" <> SFL4.togrounds opts,  show $ groundrules rc rules)
-      tochecklFN               =  workuuid <> "/" <> SFL4.tocheckl  opts  
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> SFL4.tonative  opts,  show rules
+      (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+      (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
+      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+      (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
+      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n")
+      (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
+      (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
+      tochecklFN               =  workuuid <> "/" <> "checkl"
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",    show rules
                                                                            <> "\n\n-- class hierarchy:\n" <> show (classHierarchy rules)
                                                                            <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
 
-  when toworkdir $ do
+  when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
     putStrLn $ "* outputting to workdir " <> workuuid
-    unless (null (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    unless (null (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
-    unless (null (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
-    unless (null (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
-    unless (null (SFL4.topurs    opts)) $ mywritefile True topursFN     iso8601 "purs" asPursstr
-    unless (null (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    unless (null (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
-    unless (null (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    unless (null (SFL4.toaasvg   opts)) $ sequence_
+    unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
+    unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
+    unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    unless (not (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+    unless (not (SFL4.topurs    opts)) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
+    unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
+    unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
+    unless (not (SFL4.toaasvg   opts)) $ sequence_
       [ do
           mywritefile False dname fname ext outstr
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
           appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
-          myMkLink iso8601 (workuuid <> "/" <> SFL4.toaasvg   opts <> "/" <> "LATEST")
+          myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
       | (n,s) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
             outstr = show s
       ]
-    unless (null (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
+    unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
 

@@ -11,7 +11,7 @@ import LS.Types
 import qualified AnyAll as AA
 import Prettyprinter
 import Data.List (intersperse)
-import qualified Data.Map as Map
+-- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
 import Debug.Trace
 

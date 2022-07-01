@@ -32,32 +32,22 @@
     }
   },
   "andOrTree": {
-    "nodetype": "all",
-    "pre": "all of",
-    "children": [
-      { "nodetype": "any",
-        "pre": "any of",
-        "children": [
-          { "leaf": "fart" },
-          { "leaf": "drink" }
-        ]
-      },
-      { "nodetype": "any",
-        "pre": "any of",
-        "children": [
-          { "leaf": "fart" },
-          { "leaf": "drink" }
-        ]
-      },
-      {
-        "leaf": "drink"
-      },
-      {
-        "leaf": "sneeze"
-      },
-      {
-        "leaf": "walk"
-      }
+    "tag": "All", "contents": [
+      { "tag": "Pre", "contents": "all of" },
+      [ { "tag": "Any", "contents": [
+        { "tag": "Pre", "contents": "any of" },
+        [ { "tag": "Leaf", "contents": "fart" },
+          { "tag": "Leaf", "contents": "drink" }
+        ] ] },
+
+        { "tag": "Leaf", "contents": "eat" },
+
+        { "tag": "All", "contents": [
+        { "tag": "Pre", "contents": "all of" },
+        [ { "tag": "Leaf", "contents": "sneeze" },
+          { "tag": "Leaf", "contents": "walk" }
+        ] ] }
+      ]
     ]
   }
-}  
+}

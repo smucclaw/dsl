@@ -13,9 +13,12 @@ import Data.Map.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
+import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Text       as T
+import Data.Aeson.Encode.Pretty ( encodePretty )
 import Data.Aeson.Types
 import Data.List
+import Text.Pretty.Simple (pPrint)
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann
@@ -89,6 +92,22 @@ ppQTree i mm = do
   
   print $ "**" <+> "C-style:"
   print (cStyle i)
+  print ppline
+
+  print $ "**" <+> "show of the AnyAll ItemMaybeLabel tree:"
+  pPrint i
+  print ppline
+
+  print $ "**" <+> "JSON of the AnyAll ItemMaybeLabel tree:"
+  putStrLn $ toString $ encodePretty i
+  print ppline
+
+  print $ "**" <+> "show of the AnyAll Item tree:"
+  pPrint $ alwaysLabeled i
+  print ppline
+
+  print $ "**" <+> "JSON of the AnyAll Item tree:"
+  putStrLn $ toString $ encodePretty $ alwaysLabeled i
   print ppline
 
   

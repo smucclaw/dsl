@@ -8,7 +8,7 @@
 
 module AnyAll.Types where
 
-import Debug.Trace (traceM)
+import Debug.Trace (traceM, trace)
 import Data.Tree
 import Data.Maybe
 import Data.String (IsString)
@@ -18,7 +18,7 @@ import qualified Data.Text            as T
 import qualified Data.Vector          as V
 
 import Data.Aeson
-import Data.Aeson.Types (parseMaybe)
+import Data.Aeson.Types (parseMaybe, parse)
 import GHC.Generics
 import GHC.Exts (toList)
 
@@ -70,6 +70,19 @@ type ItemMaybeLabel a = Item (Maybe (Label T.Text)) a
 
 type ItemJSONText = Item (Label T.Text) T.Text
 
+addJust :: ItemJSONText -> ItemMaybeLabel T.Text
+addJust (Any lbl xs) = Any (Just lbl) (addJust <$> xs)
+addJust (All lbl xs) = All (Just lbl) (addJust <$> xs)
+addJust (Leaf x)     = Leaf x
+addJust (Not x)      = Not (addJust x)
+
+alwaysLabeled :: ItemMaybeLabel T.Text -> ItemJSONText
+alwaysLabeled (Any Nothing    xs) = Any (Pre "any of:") (alwaysLabeled <$> xs)
+alwaysLabeled (All Nothing    xs) = All (Pre "all of:") (alwaysLabeled <$> xs)
+alwaysLabeled (Any (Just lbl) xs) = Any lbl (alwaysLabeled <$> xs)
+alwaysLabeled (All (Just lbl) xs) = All lbl (alwaysLabeled <$> xs)
+alwaysLabeled (Leaf x)            = Leaf x
+alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
 instance Semigroup t => Semigroup (Label t) where 
   (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2)
@@ -123,7 +136,7 @@ instance Monoid lbl => Semigroup (Item lbl a) where
 --   which is to say that whenever we get new input from the user we regenerate everything.
 --   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
-                                 , andOrTree :: ItemMaybeLabel a }
+                                 , andOrTree :: ItemMaybeLabel T.Text }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
 instance FromJSON (StdinSchema T.Text) where
@@ -132,7 +145,9 @@ instance FromJSON (StdinSchema T.Text) where
     aotreeO  <- o .: "andOrTree"
     let marking = parseMaybe parseJSON markingO
         aotree  = parseMaybe parseJSON aotreeO
-    return $ StdinSchema (fromJust marking :: Marking T.Text) (fromJust aotree)
+    return $ StdinSchema
+      (fromJust marking :: Marking T.Text)
+      (fromMaybe (Leaf "ERROR: unable to parse andOrTree from input") aotree)
 
 
 instance   (ToJSON lbl, ToJSON a) =>  ToJSON (Item lbl a)
@@ -140,29 +155,6 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (Item lbl a)
 -- instance   ToJSON ItemJSON
 
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (Item lbl a)
-
-{-
--- Is all that really necessary?
-instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
-  parseJSON = withObject "andOrTree" $ \o -> do
-    leaf      <- o .:? "leaf"
-    nodetype  <- o .:? "nodetype"
-    pre       <- o .:? "pre"
-    prepost   <- o .:? "prepost"
-    childrenA <- o .:? "children"
-    let label = if isJust prepost
-                then PrePost (fromJust pre) (fromJust prepost)
-                else Pre     (fromJust pre)
-        children = maybe [] (mapMaybe (parseMaybe parseJSON) . V.toList) childrenA
-    return $ if isJust leaf
-             then Leaf (fromJust leaf)
-             else case (nodetype :: Maybe String) of
-                    Just "any" -> Any (Just label) children
-                    Just "all" -> All (Just label) children
-                    Just "not" -> Not $ head children
-                    _          -> error "error in parsing JSON input"
--}
-
 
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)

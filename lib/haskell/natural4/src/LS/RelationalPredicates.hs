@@ -10,8 +10,6 @@ import qualified AnyAll as AA
 import Data.List.NonEmpty ( toList, nonEmpty )
 import Data.Maybe (fromMaybe, catMaybes)
 
-import Debug.Trace (trace)
-
 import LS.Types
 import LS.Tokens
 import LS.ParamText

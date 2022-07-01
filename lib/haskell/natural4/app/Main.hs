@@ -50,9 +50,11 @@ main = do
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",    show rules
-                                                                           <> "\n\n-- class hierarchy:\n" <> show (classHierarchy rules)
-                                                                           <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   TL.unpack (pShowNoColor rules)
+                                                                 <> "\n\n-- class hierarchy:\n"
+                                                                 <> TL.unpack (pShowNoColor (classHierarchy rules))
+                                                                 <> "\n\n-- symbol table:\n"
+                                                                 <> TL.unpack (pShowNoColor (symbolTable rules)))
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog

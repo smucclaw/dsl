@@ -12,12 +12,14 @@ import qualified Data.Text as T
 
 -- extract the tree-structured rules from Interpreter
 -- for each rule, print as svg according to options we were given
-asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, ItemMaybeLabel T.Text)
+asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, ItemMaybeLabel T.Text, QTree T.Text)
 asAAsvg aavc l4i rs =
   let rs' = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
-  in Map.fromList [ (rn, (svge, aaT))
+  in Map.fromList [ (rn, (svgtiny, svgfull, aaT, qtree))
                   | r <- rs'
-                  , let rn = ruleLabelName r
-                        aaT = getAndOrTree rs r
-                        svge = makeSvg $ q2svg' aavc (hardnormal (cgetMark aavc) aaT)
+                  , let rn      = ruleLabelName r
+                        aaT     = getAndOrTree rs r
+                        qtree   = hardnormal (cgetMark aavc) aaT
+                        svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
+                        svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
                   ]

@@ -43,7 +43,7 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
-      (toaasvgFN,   asaasvg)     = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n")
@@ -67,15 +67,16 @@ main = do
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ sequence_
       [ do
-          mywritefile False dname fname ext outstr
-          mywritefile False dname fname "hs" (TL.unpack $ pShowNoColor hsAnyAllTree)
+          mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
+          mywritefile False dname (fname<>"-full")   ext (show svgfull)
+          mywritefile False dname (fname<>"-anyall") "hs" (TL.unpack $ pShowNoColor hsAnyAllTree)
+          mywritefile False dname (fname<>"-qtree")  "hs" (TL.unpack $ pShowNoColor hsQtree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
           appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
           myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
-      | (n,(s,hsAnyAllTree)) <- Map.toList asaasvg
+      | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
-            outstr = show s
       ]
     unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules

@@ -60,6 +60,7 @@ data MyToken = Every | Party | TokAll
              | SetPlus | SetLess -- set union and subtraction
              | Where -- like in Haskell
              | Semicolon -- rule separator
+             | Notwithstanding | SubjectTo | Despite
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.
@@ -196,6 +197,10 @@ renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 
 renderToken Semicolon = ";;"
+
+renderToken Notwithstanding = "NOTWITHSTANDING"
+renderToken SubjectTo       = "SUBJECT TO"
+renderToken Despite         = "DESPITE"
 
 renderToken tok = map toUpper (show tok)
 

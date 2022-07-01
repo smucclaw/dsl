@@ -762,6 +762,14 @@ toToken "OTHERWISE" = pure Otherwise
 
 toToken "WHERE"     = pure Where
 
+-- "defeasibility" and priority ordering meta-rule operators
+toToken "NOTWITHSTANDING" = pure Notwithstanding
+toToken "NOTW"            = pure Notwithstanding
+toToken "SUBJECT TO"      = pure SubjectTo
+toToken "SUBTO"           = pure SubjectTo
+toToken "DESPITE"         = pure Despite
+toToken "IN SPITE OF"     = pure Despite
+
 toToken ";;"        = pure Semicolon
 
 -- we recognize numbers

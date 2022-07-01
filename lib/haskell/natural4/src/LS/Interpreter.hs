@@ -201,6 +201,6 @@ bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = let output = bsr2bsmt bsr2
                                                         trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
                                                         output
 bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
-bsr2bsmt (AA.Any lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)
     

@@ -50,9 +50,11 @@ main = do
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",    show rules
-                                                                           <> "\n\n-- class hierarchy:\n" <> show (classHierarchy rules)
-                                                                           <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   TL.unpack (pShowNoColor rules)
+                                                                 <> "\n\n-- class hierarchy:\n"
+                                                                 <> TL.unpack (pShowNoColor (classHierarchy rules))
+                                                                 <> "\n\n-- symbol table:\n"
+                                                                 <> TL.unpack (pShowNoColor (symbolTable rules)))
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
@@ -65,14 +67,17 @@ main = do
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ sequence_
       [ do
-          mywritefile False dname fname ext outstr
+          mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
+          mywritefile False dname (fname<>"-full")   ext (show svgfull)
+          mywritefile False dname (fname<>"-anyall") "hs" (TL.unpack $ pShowNoColor hsAnyAllTree)
+          mywritefile False dname (fname<>"-qtree")  "hs" (TL.unpack $ pShowNoColor hsQtree)
+          mywritefile False dname (fname<>"-qjson") "json" (toString $ encodePretty hsQtree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
           appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
           myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
-      | (n,s) <- Map.toList asaasvg
+      | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
-            outstr = show s
       ]
     unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules

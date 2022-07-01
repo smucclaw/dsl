@@ -7,7 +7,6 @@ import LS
 import LS.NLP.NLG
 import AnyAll.Types
 
-import Options.Generic
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text

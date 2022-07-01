@@ -71,6 +71,7 @@ main = do
           mywritefile False dname (fname<>"-full")   ext (show svgfull)
           mywritefile False dname (fname<>"-anyall") "hs" (TL.unpack $ pShowNoColor hsAnyAllTree)
           mywritefile False dname (fname<>"-qtree")  "hs" (TL.unpack $ pShowNoColor hsQtree)
+          mywritefile False dname (fname<>"-qjson") "json" (toString $ encodePretty hsQtree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
           appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")

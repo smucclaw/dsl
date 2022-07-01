@@ -43,7 +43,7 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
-      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+      (toaasvgFN,   asaasvg)     = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n")
@@ -68,11 +68,12 @@ main = do
     unless (not (SFL4.toaasvg   opts)) $ sequence_
       [ do
           mywritefile False dname fname ext outstr
+          mywritefile False dname fname "hs" (TL.unpack $ pShowNoColor hsAnyAllTree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
           appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
           myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
-      | (n,s) <- Map.toList asaasvg
+      | (n,(s,hsAnyAllTree)) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
             outstr = show s
       ]

@@ -55,7 +55,6 @@ main = do
                                                                            <> "\n\n-- symbol table:\n" <> show (symbolTable rules))
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
-    putStrLn $ "* outputting to workdir " <> workuuid
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
@@ -143,14 +142,12 @@ mywritefile doLink dirname filename ext s = do
   writeFile mypath s
   -- do the symlink more atomically by renaming
   when doLink $ myMkLink (filename <> "." <> ext) mylink
-  putStrLn $ "** output to " <> mypath
 
 myMkLink :: FilePath -> FilePath -> IO ()
 myMkLink filename mylink = do
   let mylink_tmp = mylink <> "-tmp"
   createFileLink filename mylink_tmp
   renameFile mylink_tmp mylink
-  putStrLn $ "ln -s " <> filename <> " " <> mylink
 
 snake_scrub :: [Text.Text] -> String
 snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_-") $

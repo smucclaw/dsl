@@ -30,13 +30,13 @@ type MyBoolStruct = MyItem MultiTerm
 pBoolStruct :: Parser BoolStruct
 pBoolStruct = prePostParse pOtherVal
 
-prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.Item a)
+prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.ItemMaybeLabel a)
 prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.Item a)
+toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.ItemMaybeLabel a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
 toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
@@ -92,7 +92,8 @@ notLabelTerm p =
 table :: [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
-        , [ binary  And   myAnd  ]
+        , [ binary  And   myAnd
+          , binary  Unless myUnless  ]
         -- , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
@@ -121,6 +122,14 @@ myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
+myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
+myOr a b                          = MyAny (getAny a <> getAny b)
+
+myUnless :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myUnless (MyLabel pre post (MyAll xs)) b = MyLabel pre post $ MyAll (MyNot b: xs)
+myUnless a b                             = MyAll (MyNot b : [a])
+
 setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 setLess a (MyAll ((MyLeaf l):bs))
   | all (\b -> case b of
@@ -132,11 +141,6 @@ setLess a b = MyAll (getAll a <> [MyNot b])
 getAny :: MyItem lbl a -> [MyItem lbl a]
 getAny (MyAny xs) = xs
 getAny x = [x]
-
-myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
-myOr a b                          = MyAny (getAny a <> getAny b)
--- myOr a b                          = MyAny [a, b]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
 binary  tname f = InfixR  (f <$ (debugName ("binary(" <> show tname <> ")") $ pToken tname))

@@ -1,23 +1,24 @@
 #+TITLE: The home of the L4 DSL
 #+STARTUP: content
 
-This repo is in active development.
+This documentation is intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
-The only people writing L4 according to this spec are the core development team, and it doesn't even always work for them.
+Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]]. If you're not already familiar with L4, you may want to work through that documentation first.
 
 * L4 Language Family
 
-L4 currently consists of:
-- a developer-friendly /Natural/ syntax intended to be written in a spreadsheet "IDE"
-- a semantically rigorous /Core/ syntax which lives in the repo ~smucclaw/baby-l4~
+The L4 language family currently comprises:
 
-|            | Front-End IDE      | Parser               | How to Run                                     |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Natural L4 | [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] | lib/haskell/natural4 | cd lib/haskell/natural4                        |
-|            |                    |                      | stack run -- --only native test/indented-1.csv |
-|------------+--------------------+----------------------+------------------------------------------------|
-| Core L4    |                    |                      |                                                |
-|            |                    |                      |                                                |
+** a developer-friendly /Natural/ syntax
+
+The syntax uses a plethora of English keywords arranged in a sentence-like structure, similar to languages like SQL.
+
+The IDE is a spreadsheet environment.
+
+There is a parser and transpiler to a variety of downstream targets.
+
+** a semantically rigorous /Core/ syntax which lives in the repo ~smucclaw/baby-l4~
+
 
 |            | Target     | --only |
 |------------+------------+--------|
@@ -29,28 +30,485 @@ L4 currently consists of:
 |------------+------------+--------|
 | Core l4    | ASP        |        |
 
+
 * Natural L4
 
 ** Spreadsheet Interface
 
-See [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] for examples of "source code".
+[[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] contains examples of L4 "source code".
 
-*Download as CSV*: grab a relevant tab off the spreadsheet.
+You will be installing a toolchain that makes sense of that code.
+
+The rest of this documentation introduces the logic and semantics of natural4, its internal data structures, and its surface syntax.
+
+And it links to the operational code that equips L4 with a web-based development environment.
+
+Along the way it discusses the internal structure of our compiler codebase.
+
+** Compiler Toolchain
+
+*** Prerequisites
+
+1. Clone this repository.
+2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed ahead of the next step because different editors will have different opinions about how to install Haskell.
+3. Nix users will have their own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand.
+4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
+
+*** Installation
+
+After your Haskell is working well enough to run ~stack~,
 
 #+begin_src bash
-  cd lib/haskell/natural4
-  stack test
-  stack run -- --only native test/indented-1.csv
-  stack run -- --only native test/pdpadbno-1.csv
+  src/smucclaw/dsl$ cd lib/haskell/natural4
+  natural4$ stack test
 #+end_src
 
-If you're happy with this you can install the executable:
+This will take some time as it needs to compile a particular version of ~ghc~, plus a whole raft of dependencies.
+
+**** Confirming the install
+
+A number of sample CSV inputs can be found in the ~test/~ directory.
+
+#+begin_src
+  natural4$ stack run -- --only native test/indented-1.csv
+  natural4$ stack run -- --only native test/pdpadbno-1.csv
+#+end_src
+
+This should compile the ~l4~ parser, and produce a bunch of output.
+
+**** Install the binary
+
+If you're happy with the above output,
 
 #+begin_src bash
   stack install
 #+end_src
 
-** Text-mode Interface
+You should then have a ~natural4-exe~ somewhere in your ~~/.local/bin~ directory. That directory may or may not be in your ~$PATH~ by way of the above installation procedure.
+
+*** Downloading the Spreadsheet
+
+The typical user drafts an L4 program in a spreadsheet.
+
+That program can be downloaded as a CSV, which this toolchain consumes.
+
+Example: Go to the the PDPADBNO tab, and click ~Download / as CSV~.
+
+The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
+
+Is there some other way to obtain the same CSV using only the command line? Yes:
+
+#+begin_example
+  wget -O pdpadbno.csv 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbknuGFkvvk_Pv9e97iDW9BInxd-Cj27-xC8d_SwveP1PxERV7ZmiAIU7PWXas2CEMH2bl8PyyD6X3/pub?gid=0&single=true&output=csv'
+#+end_example
+
+For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
+
+*** Usage
+
+The job of a compiler / transpiler / parser / interpreter, whatever you want to call it, is to transform user code to some useful target representation.
+
+This command outputs all the target representations to disk:
+
+#+begin_example
+$ stack run -- --workdir=workdir --uuiddir=1234abcd test/pdpadbno-[1578].csv
+#+end_example
+
+Note that the ~--uuiddir~ option is for a shared-secret session key under some web UI.
+
+You can make it whatever you want, so it would be a good idea to put the spreadsheet ID and sheet ID in there as well: ~uuiddir="secret/spreadsheetId/sheetId"~
+
+The result will be something like:
+
+#+begin_example
+  $ tree workdir
+  workdir
+  └── 1234abcd
+      ├── aasvg
+      │   ├── 2022-07-01T03:37:39.121Z
+      │   │   ├── Assessment.svg
+      │   │   ├── Data_Intermediary.svg
+      │   │   ├── Notify_Individuals.svg
+      │   │   ├── Notify_PDPC.svg
+      │   │   ├── Organisation.svg
+      │   │   ├── You.svg
+      │   │   ├── a_Data_Breach.svg
+      │   │   ├── a_data_breach-occurr.svg
+      │   │   ├── all_of-the_following.svg
+      │   │   ├── any_of_the_prescribe.svg
+      │   │   ├── in_other_prescribed_.svg
+      │   │   ├── index.html
+      │   │   ├── is-not-a_Public_Agen.svg
+      │   │   ├── it_is-unlikely_that_.svg
+      │   │   ├── it_is_or_is_likely_t.svg
+      │   │   ├── it_results_in_or_is_.svg
+      │   │   ├── the_data_breach_is_i.svg
+      │   │   └── the_data_breach_occu.svg
+      │   └── LATEST -> 2022-07-01T03:37:39.121Z
+      ├── corel4
+      │   ├── 2022-07-01T03:37:39.121Z.l4
+      │   └── LATEST.l4 -> 2022-07-01T03:37:39.121Z.l4
+      ├── grounds
+      │   ├── 2022-07-01T03:37:39.121Z.txt
+      │   └── LATEST.txt -> 2022-07-01T03:37:39.121Z.txt
+      ├── json
+      │   ├── 2022-07-01T03:37:39.121Z.json
+      │   └── LATEST.json -> 2022-07-01T03:37:39.121Z.json
+      ├── native
+      │   ├── 2022-07-01T03:37:39.121Z.hs
+      │   └── LATEST.hs -> 2022-07-01T03:37:39.121Z.hs
+      ├── petri
+      │   ├── 2022-07-01T03:37:39.121Z.dot
+      │   └── LATEST.dot -> 2022-07-01T03:37:39.121Z.dot
+      ├── prolog
+      │   ├── 2022-07-01T03:37:39.121Z.pl
+      │   └── LATEST.pl -> 2022-07-01T03:37:39.121Z.pl
+      ├── purs
+      │   ├── 2022-07-01T03:37:39.121Z.purs
+      │   └── LATEST.purs -> 2022-07-01T03:37:39.121Z.purs
+      └── ts
+          ├── 2022-07-01T03:37:39.121Z.ts
+          └── LATEST.ts -> 2022-07-01T03:37:39.121Z.ts
+#+end_example
+
+These outputs can be further transformed and put in front of the user's eyeballs.
+
+The "tocheckl" output (Checklists) is off by default -- to turn it on, add the option ~--tocheckl=True~ to the command line.
+
+Other outputs are on by default. To turn them off, add the relevant option to the command line -- for example, ~--togrounds=False~.
+
+**** native: a Haskell data structure
+
+This is the simplest output mode. It confirms the parse happened as intended.
+
+#+begin_src
+  natural4$ stack run -- --only native pdpadbno.csv
+#+end_src
+
+This should produce a screenful of output. If all went well, the output will be in the format of a Haskell data structure, containing the rules that have been parsed. It will look something like this:
+
+#+begin_src haskell
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( All
+                ( Pre "Who" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    ]
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( All
+                ( Pre "Who" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    ]
+    [ Constitutive
+        { term = "The rule-level checkbox is checked"
+        , cond = Just
+            ( Any
+                ( Pre "any of:" )
+                [ Leaf "the conditions do not hold"
+                , All
+                    ( Pre "all of:" )
+                    [ Leaf "the conditions do hold"
+                    , Leaf "the action is satisfied"
+                    ]
+                ]
+            )
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        }
+    ]
+    [ Regulative
+        { every = "Person"
+        , who = Just
+            ( Leaf "Qualifies" )
+        , cond = Nothing
+        , deontic = DMust
+        , action =
+            ( "sing"
+            , []
+            )
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        , upon = Nothing
+        , given = Nothing
+        }
+    , Constitutive
+        { term = "Qualifies"
+        , cond = Just
+            ( All
+                ( Pre "all of:" )
+                [ Leaf "walks"
+                , Any
+                    ( Pre "any of:" )
+                    [ Leaf "eats"
+                    , Leaf "drinks"
+                    ]
+                ]
+            )
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Nothing
+        }
+    ]
+#+end_src
+
+The remainder of this document will explain the semantics of this  structure and how it is parsed from the spreadsheet.
+
+**** prolog
+
+Those elements of L4 which correspond to first-order logic can be transpiled to a Prolog-like syntax.
+
+The inspiration is [[https://www.doc.ic.ac.uk/~rak/papers/British%20Nationality%20Act.pdf][The British Nationality Act as a Logic Program]]. In principle it should be possible to express the British Nationality Act as an L4 program, from which we can extract a Prolog program.
+
+We usually see decision-related reasoning in the context of constitutive rules: an X counts as a Y if Z holds. In the trivial case, an X counts as true if Z holds:
+
+#+begin_src prolog
+  constitutiveRule(X) :- Z.
+
+  bna(isBritishCitizen,X) :- bna(isBritishCitizen,Y), parent(Y, X).
+#+end_src
+
+
+
+The reasoning used is backward-chaining deduction. Given a goal statement, the task is to decide if that goal is true or false. "It depends." What does it depend on? We work through all the dependencies, backtracking, until the goal can be proven true -- or false.
+
+Prolog's other great strength -- abductive reasoning through unification -- does not arise in our current swipl implementation. We do want to use this feature for planning problems, in the future.
+
+Our current transpilation pathway to Prolog actually runs through the CoreL4 language. It is possible that in future we will go direct from Natural4.
+
+Within the Prolog family of targets we differentiate:
+
+***** SWIPL
+
+***** Clingo
+
+***** s(CASP)
+
+**** petri: a Petri Net showing the state diagram
+
+The following incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
+
+#+begin_src 
+  stack run -- --only petri test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
+#+end_src
+
+It is not exactly a state diagram because things can be in multiple sub-states at once. Petri Nets are good at showing that.
+
+**** aasvg: AnyAll SVG showing the decision logic
+
+**** json: for consumption by other tools such as a web app
+
+*** Debugging
+
+Sometimes, a downloaded CSV may not agree with the parser.
+
+If a parse error occurs, you can enable debugging by adding ~--dbug~ to the command line. An alternative way to enable debugging is to set the environment variable ~MP_DEBUG=True~.
+
+Debugging output is super verbose. We process it with the following idiom:
+
+#+begin_src
+  filename=pdpadbno; MP_DEBUG=True stack run test/$filename.csv |& bin/debug2org > out/$filename.org
+#+end_src
+
+The ~debug2org~ script rewrites the raw debugging output into a format which is more easily viewed in Emacs [[https://orgmode.org/][org-mode]]. Mostly, it's about folding: the parser's output is organized to reflect its attempts to parse various expressions. Most of those parse attempts are "desired failures" and are not of interest; org-mode lets you hide them by pressing ~TAB~.
+
+Making sense of the parser debug output requires some familiarity with programming language theory, with compiler theory, and with the specifics of our L4 parser toolchain.
+
+*** Development Conveniences
+
+This little script (on Mac at least) watches your Downloads folder so every time you Save As CSV it moves the new download over to the ~test/~ directory. Run from home directory. You may need to edit to taste.
+
+#+begin_example
+  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(Legal Spreadsheets - (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
+#+end_example
+** Interpretation Requirements
+
+After the parser succeeds, we have in our hands a list of ~Rules~.
+
+It is now the interpreter's job to think about the Rules, get organized, and prepare for the next step -- transpilation.
+
+The transpilers will be wanting answers to questions like:
+
+*** What is the ontology? What are the entities and relationships?
+
+This is where the ~DEFINE Class HAS Attribute~ syntax needs to be converted to a class-like model.
+
+And we need to find a way to relate different entities with one another -- an ~Employee~ may have an ~Employer~ and they may be connected explicitly by ~id~ fields or they may be connected implicitly. How does Alloy do it?
+
+*** Which types were explicit and which were inferred?
+
+*** What are the warnings and errors so far?
+
+In particular, the interpreter might be able to perform tree-shaking, dead code identification, and identify null pointer references.
+
+It might also be able to identify race conditions. Maybe one transpiler can request to view the output of another transpiler backend, so the formal verification module ends up running first and then the other transpilers read output from that.
+
+*** Can we get a representation of the original program text?
+
+*** If not, then for each node in the AST, can we at least get a link back to a source reference in the original program text?
+
+And even beyond -- because in the left column of L4 we have the ~(Act 1.2)~ cells which provide links even farther back to the source legislation.
+
+*** What are the "statics" -- the inference rules?
+
+The interpreter needs to get its head around how all the BoolStructs go together.
+
+Our NLG component, for instance, needs to convert text like ~X gives birth to live young.~ to ~Does X give birth to live young?~
+
+So it will want to know every single "ground term" which we need to ask the user about.
+
+The Shannon/Allen visualizer and the JSON outputters will want to know how those terms fit together: the BoolStructs with their Labels.
+
+The web app interface builder may expect the interpreter to do some kind of reduction/optimization of the questions -- see ROBDD.
+
+*** What are the "dynamics" -- the state transitions?
+
+This is of particular interest to the visualizer that produces a Petri net.
+
+The interpreter needs to get its head around how all the HENCE and LEST blocks connect.
+
+*** Are there any defined terms that weren't actually defined?
+
+We are literally looking at capitalization to determine what's a Defined Term.
+
+** Interpreter Internals
+
+*** Macros
+
+If the language has support for user-defined macros or other forms of syntactic sugar, evaluate those macros and desugar to canonical form.
+
+*** Type annotations
+
+Filter all instances of ~TypedMulti~ in our AST where the ~snd~ is ~Just~; collect the explicit type annotations.
+
+*** Type inference
+
+Filter all instances of ~TypedMulti~ in our AST where the ~snd~ is ~Nothing~; attempt type inference based on observations of how the ~fst~ element is used elsewhere. For top marks, Implement Hindley-Milner inference.
+
+*** Entity Model
+
+Let's declare as a ~Class~ anything that has attributes and instances. How do we deal with subclasses, inheritance, and diamonds? I don't know.
+
+*** Statics: rephrase as First-Order Logic
+
+Construct trees of ANDs and ORs. How do we deal with a particular defined term appearing in multiple locations?
+
+E.g. given a shopping cart with both alcohol and cigarettes, a ~LegalCheckout~ may refer to the "subroutine" for ~AgeOfMajority~ twice; do we need to "cache" to result of evaluation, or is that a problem for the runtimes? Perhaps we can assist by at least giving identifiers so the runtime can do the right thing.
+
+The ~AnyAll~ library is responsible for most of this work.
+
+** Contract with Transpilers
+
+Let's have a convention where each transpiler under ~XPile~ can expect two arguments:
+- a list of rules ~[Rule]~ as returned by the Parser
+- an ~Interpretation~ containing the interpreter's analysis of the rules
+
+** Language Reference
+
+See the Legal Spreadsheets L4 Manual.
+
+** Web Development Environment
+
+The "Legal Spreadsheets" document in Google Sheets serves as the front end to a development environment.
+
+*** Configuring the IDE back-end
+
+Under "Extensions / Apps Script" you will find a file called ~Code.gs~.
+
+In that file you will find a configuration section, which includes:
+
+#+begin_src javascript
+  const l4api = "http://ec2-18-139-62-80.ap-southeast-1.compute.amazonaws.com:8000/l4/";
+#+end_src
+
+When the legal engineer changes the spreadsheet, this "L4 API web listener" is triggered.
+
+The listener obtains the latest version of the spreadsheet, runs the parser, and refreshes downstream components, so that the legal engineer can see the effect of changes without having to install this toolchain locally.
+
+*** Installing the Web Listener
+
+As an internal developer you should be comfortable installing this toolchain locally.
+
+To bring up a local ~l4api~ listener, see documentation elsewhere ... there will be Node, etc.
+
+TODO:
+- the work that has been done to date may need to move into the dsl repo.
+- add a link to the appropriate README.
+
+*** Downstream Components
+
+Thanks to the ~l4api~ listener, every Legal Spreadsheets document has a corresponding web link.
+
+At that web page, you will be able to view:
+
+**** The "expert system" web app
+
+**** The AST
+
+**** Visualizers
+
+***** for the decision logic
+
+***** for the state graph
+
+**** The formal verifier
+
+**** The natural langage generator
+
+
+
+*** Future Text-mode Interface
 
 After the spreadsheet interface matures we will revisit support for a plaintext version of the language, to be supported in VS Code and Emacs via LSP. At this time we will write the BNF for the language.
 

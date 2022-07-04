@@ -1,0 +1,6 @@
+,,,§,SecA_RecoverPassengersVehicleAuthorizedOp,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,GIVEN,s,IS A,Situation,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,DECIDE,coverProvided,,s,recoverPassengersVehicleAuthorizedOp,,,,,SecA_RecoverPassengersVehicleAuthorizedOp,,,,,,,,,,,,,,,,,,,,
+,,,IF,FALSE,secA_Applicability,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,AND,FALSE,currentSit s,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,AND,FALSE,s,IS,missingKeys,,,,,,,,,,,,,,,,,,,,,,,,,

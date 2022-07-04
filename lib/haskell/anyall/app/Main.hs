@@ -11,22 +11,27 @@ import AnyAll
 import qualified Data.Map.Strict        as Map
 import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
+import Data.ByteString.Lazy.UTF8 (toString)
 import           Control.Monad (forM_, when, guard)
 import System.Environment
+import System.Exit
 import Data.Maybe
-import Data.Either (isRight, fromRight)
+import Data.Either (isLeft, fromLeft, isRight, fromRight)
 
 import Data.Aeson
+import Data.Aeson.Encode.Pretty ( encodePretty )
 import Data.Aeson.Types (parseMaybe)
 import Options.Generic
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | svgtiny"
+                   , debug :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
+
 
 -- consume JSON containing
 -- - an AnyAll Item
@@ -36,21 +41,44 @@ main :: IO ()
 main = do
   opts <- unwrapRecord "anyall"
   -- print (opts :: Opts Unwrapped)
-  when (demo opts) $ maindemo; guard (not $ demo opts)
+  when (demo opts) (maindemo >> exitSuccess)
+
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
+  when (isLeft myinput) $ do
+    putStrLn $ "JSON decoding error: " ++ show (fromLeft "see smucclaw/dsl/lib/haskell/anyall/app/Main.hs source" myinput)
+    exitFailure
   when (only opts == "native") $ print myinput
-  guard (isRight myinput)
+
   let (Right myright) = myinput
+      mytree = {- addJust $ -} andOrTree myright
+
+  when (only opts == "json") $
+    putStrLn $ toString $ encodePretty mytree
+
   when (only opts == "tree") $
-    ppQTree (andOrTree myright) (getDefault <$> (getMarking $ marking myright))
+    ppQTree mytree (getDefault <$> (getMarking $ marking myright))
+
   when (only opts `elem` words "svg svgtiny") $
     print (makeSvg $
-           q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full }) $
-           hardnormal (marking myright) (andOrTree myright) )
+           q2svg' (defaultAAVConfig { cscale = if only opts == "svgtiny" then Tiny else Full
+                                    , cdebug = debug opts
+                                    }) $
+           hardnormal (marking myright) mytree )
 
 maindemo :: IO ()
 maindemo = do
+  let myqtree = AnyAll.All (Just $ Pre "all of")
+                [ Leaf "walk"
+                , Not (Leaf "run")
+                , AnyAll.Any (Just $ Pre "either")
+                  [ Leaf "eat"
+                  , Leaf "drink" ]
+
+                , AnyAll.Any Nothing
+                  [ Leaf "eat"
+                  , Leaf "drink" ]
+                ]
   forM_
     [ Map.empty
     , Map.fromList [("walk" :: T.Text,  Left  $ Just True )
@@ -73,12 +101,11 @@ maindemo = do
                    ,("run",   Right $ Just False)
                    ,("eat",   Right $ Just True )
                    ,("drink", Left  $ Just True )]
-    ] $ ppQTree (AnyAll.All (Just $ Pre "all of")
-                 [ Leaf "walk"
-                 , Not (Leaf "run")
-                 , AnyAll.Any (Just $ Pre "either")
-                   [ Leaf "eat"
-                   , Leaf "drink" ] ])
+    ] $ ppQTree myqtree
+
+  putStrLn "* just the AndOr tree as JSON"
+  putStrLn $ toString $ encodePretty myqtree
+  
   putStrLn "* LEGEND"
   putStrLn ""
   putStrLn "  <    >  View: UI should display this node or subtree."

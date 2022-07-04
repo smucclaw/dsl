@@ -1122,7 +1122,7 @@ let's put a DECIDE in front of it
 
 | X1 | X2 | IS | Y1 | Y2 |
 
-****** simple define, single line
+****** horn-1: single line: decide / is / when
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1137,7 +1137,7 @@ X IS HornClauseRHS
 | DECIDE | X | IS | Y | WHEN | Z | IS | Q | AND | P | > | NP |
 
 
-****** simple define, multi line 2
+****** horn-2: multiline: decide / is // when / is // and
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1147,7 +1147,7 @@ X IS HornClauseRHS
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-****** simple define, multi line 3, and; we don't support this syntax for now.
+****** horn-3: multiline: decide / is // when
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1158,7 +1158,7 @@ X IS HornClauseRHS
 
 BoolStructR should be (AND (z is q) (p gt np))
 
-****** simple define, multi line 3, or
+****** horn-3-or: decide, multi line 3, or
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-3-or.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1169,7 +1169,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | DECIDE | X | IS | Y |    |   |   |    |
 | WHEN   | Z | IS | Q | OR | P | > | NP |
 
-****** simple define, multi line 4
+****** horn-4: decide, multi line 4
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1180,7 +1180,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | AND    | P | >  | NP |
 
-****** simple define, multi line 5
+****** horn-5: decide, multi line 5
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1191,7 +1191,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | WHEN   | Z | IS | Q  |
 | OR     | P | >  | NP |
 
-****** simple define, multi line 6 with non-nested bool
+****** horn-6: binding
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1205,7 +1205,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 | OR     | P   | >  | NP    |
 | AND    | top | IS | level |
 
-****** simple define, multi line 7 with nested bool
+****** horn-7: simple define, multi line 7 with nested bool
 :PROPERTIES:
 :TABLE_EXPORT_FILE: horn-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -1350,13 +1350,35 @@ ParamText list of words, untyped.
 
 - part of a HornClause
 
-***** ConstitutiveRule, Binary Predicate definition, explicit, infix
+***** decision tables: ConstitutiveRule, Binary Predicate definition, explicit, infix
+
+we should have support for multi-way define/decide IS/WHEN lines: a la
+
+****** decision tables 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: multi-decide-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | GIVEN  | Sign1 |       | Sign2 | IS | A        | Sign |       |    |          |
 | DECIDE | Sign1 | beats | Sign2 |    |          |      |       |    |          |
 | IS     | TRUE  | WHEN  | Sign1 | IS | Rock     | AND  | Sign2 | IS | Scissors |
 |        | "     | "     | "     | "  | Scissors | "    | "     | "  | Paper    |
 |        | "     | "     | "     | "  | Paper    | "    | "     | "  | Rock     |
+
+****** decision tables 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: multi-decide-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+without the IS TRUE
+
+| GIVEN  | Sign1 |       | Sign2    | IS  | A     | Sign |          |   |   |
+| DECIDE | Sign1 | beats | Sign2    |     |       |      |          |   |   |
+| WHEN   | Sign1 | IS    | Rock     | AND | Sign2 | IS   | Scissors |   |   |
+| "      | "     | "     | Scissors | "   | "     | "    | Paper    |   |   |
+| "      | "     | "     | Paper    | "   | "     | "    | Rock     |   |   |
 
 ***** Binary Predicate definition, compact
 
@@ -1366,8 +1388,56 @@ ParamText list of words, untyped.
 |       | Paper    | beats | Rock     |
 
 ***** Type Declaration
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-DECLARE ParamText
+| DECLARE | Class1         | IS AN        | Object  |         |
+| HAS     | id             | IS A         | Integer |         |
+|         |                |              |         |         |
+| DECLARE | Class2         | IS A         | Class1  |         |
+| HAS     | firstname      | IS           | A       | String  |
+|         | lastname       | IS           | A       | String  |
+|         | office address |              |         |         |
+|         | HAS            | line1        | ::      | String  |
+|         | HAS            | line2        | ::      | String  |
+|         | bar address    | ::           | address |         |
+|         | work address   | IS           | A       | address |
+|         | HAS            | floor        | ::      | String  |
+|         |                | company name | ::      | String  |
+|         |                |              |         |         |
+| DECLARE | address        |              |         |         |
+| HAS     | line1          | ::           | String  |         |
+|         | line2          | ::           | String  |         |
+
+This example serves multiple tests:
+- the interpreter should inherit line1 and line2 to "work address" and extend it with "floor" and "company name" attributes.
+
+***** the CoreL4 encoding of the AXA case uses class extensions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE |                |       | Person         |         |
+| DECLARE | Passenger      | IS A  | Person         |         |
+| DECLARE | Driver         | IS A  | Passenger      |         |
+| DECLARE |                |       | GeneralVehicle |         |
+| HAS     | vehicleAge     | IS AN | Integer        |         |
+|         | vehicleLength  | IS A  | Float          |         |
+| DECLARE | Vehicle        | IS A  | GeneralVehicle |         |
+| DECLARE |                |       | Event          |         |
+| DECLARE | BreakdownCause | IS A  | Event          |         |
+| DECLARE |                |       | Location       |         |
+| DECLARE |                |       | Surface        |         |
+| ;;      |                |       |                |         |
+| GIVEN   | location       | IS A  | Location       |         |
+|         | surface        | IS A  | Surface        |         |
+| DECIDE  | isIn           |       |                |         |
+| WHEN    | location       | IN    | surface        |         |
+| ;;      |                |       |                |         |
+| DECLARE | Vehicles       | IS    | LIST1          | Vehicle |
 
 ***** HasRelation
 
@@ -1563,29 +1633,6 @@ This has the same meaning as the original Waddington example, except the "eats o
 | ->    | sing       |         |
 
 We parse this into a tree of rules; other rules are now welcome to refer to this defined term as well.
-
-#+begin_src haskell
-  [ Regulative
-      { every = "person"
-      , who = All
-          ( Pre "Who" )
-          [ Leaf "walks"
-          , Leaf "degustates"
-          ]
-      , deontic = DMust
-      , action = "sing"
-      , temporal = Nothing
-      }
-  , Constitutive
-      { term = "degustates"
-      , cond = Any
-          ( Pre "any of:" )
-          [ Leaf "eats"
-          , Leaf "imbibes"
-          ]
-      }
-  ]
-#+end_src
 
 What does "imbibes" mean, anyway?
 
@@ -2057,17 +2104,13 @@ Suppose we downloaded as CSV an entire spreadsheet containing multiple stanzas. 
 
 The preamble ~WHO~ introduces a Boolean structure which qualifies the party.
 
-The preamble ~IF~ introduces a Boolean structure which qualifies preconditions generally.
+The preamble ~MEANS~ ends up in the relationalpredicate in the hHead.
 
-The preamble ~UNLESS~ is like ~IF~, but reversed.
+The preamble ~IF~ introduces a Boolean structure which qualifies preconditions generally. It goes to the hBody.
 
-What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now.
+The connector ~UNLESS~ is defined as ~AND NOT~, so it follows whatever preamble preceded it.
 
-|          | qualifies party | qualifies preconditions generally |
-| positive | WHO             | IF / WHEN                         |
-| negative | EXCEPT          | UNLESS                            |
-
-**** Unless /in/ the tail
+**** Unless in the head
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-tail-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2076,11 +2119,28 @@ What preamble do we use to reverse a WHO? Let's use the keyword ~EXCEPT~ for now
 |        | Bob's your uncle             |
 | MEANS  | Bob is your mother's brother |
 | OR     | Bob is your father's brother |
-| UNLESS | Bob is estranged             |
+| UNLESS | Bob is just a family friend  |
 
-if ((morbror or farbror) and not estranged)
+is ((morbror or farbror) and (not estranged))
 
-**** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or UNLESS or IS :shouldfail:
+**** TODO Unless in the tail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-tail-1-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
+
+|        | Bob's your uncle             |           |     |
+| MEANS  | Bob is your mother's brother |           |     |
+| OR     | Bob is your father's brother |           |     |
+| WHEN   | generally                    | TYPICALLY | yes |
+| UNLESS | Bob is estranged             |           |     |
+
+is (morbror or farbror)
+if (not estranged))
+
+**** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or WHEN or IS :shouldfail:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2090,9 +2150,26 @@ if ((morbror or farbror) and not estranged)
 | MEANS | NOT              | Bob is estranged |             |
 |       |                  | OR               | Bob is dead |
 
-if (not (estranged or dead))
+hHead: is (not (estranged or dead))
 
-**** more explicit indentation                                                         :expected:
+**** TODO note hHead vs hBody
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-c.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
+
+unless follows the and/or/not
+
+|        | Bob's your uncle             |             |
+| MEANS  | Bob is your mother's brother |             |
+| OR     | Bob is your father's brother |             |
+| UNLESS | Bob is estranged             |             |
+|        | OR                           | Bob is dead |
+
+if (not (estranged or dead))
+**** more explicit indentation, head                                                   :expected:
 :PROPERTIES:
 :TABLE_EXPORT_FILE: bob-head-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
@@ -2105,6 +2182,38 @@ indenting the "Bob is estranged" term to the right of the OR below it, has the m
 |       |                  | OR | Bob is dead      |
 
 if (not (estranged or dead))
+**** TODO more explicit indentation, body                                              :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-d.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+need to be sure this is in the test suite -- does Spec.hs point to this?
+
+|      | Bob's your uncle |    |                  |
+| WHEN | NOT              |    | Bob is estranged |
+|      |                  | OR | Bob is dead      |
+
+if (not (estranged or dead))
+
+note this goes into the hBody instead of the hHead.
+
+**** more explicit indentation, unless in the body                                     :expected:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: bob-head-1-e.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|        | Bob's your uncle             |
+| MEANS  | Bob turns up at Thanksgiving |
+| WHEN   | Bob is dead                  |
+| OR     | Bob is blue                  |
+| UNLESS | Bob is immortal              |
+
+is thanksgiving
+if (not immortal and (dead or blue))
+
+note the unless goes into the hBody instead of the hHead.
 
 **** less explicit indentation                                                         :expected:
 :PROPERTIES:
@@ -2116,7 +2225,7 @@ if (not (estranged or dead))
 | MEANS | NOT              | Bob is estranged |
 |       | OR               | Bob is dead      |
 
-if (not estranged) or dead)
+is (not estranged) or dead)
 
 **** but indentation doesn't go backwards
 :PROPERTIES:
@@ -2128,7 +2237,7 @@ if (not estranged) or dead)
 | MEANS | NOT              | Bob is estranged |
 | OR    | Bob is dead      |                  |
 
-if ((not estranged) or dead))
+is ((not estranged) or dead))
 
 **** combined with other connectors
 :PROPERTIES:

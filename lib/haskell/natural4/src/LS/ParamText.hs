@@ -4,13 +4,15 @@ module LS.ParamText where
 
 import Text.Megaparsec
 import Control.Monad.Writer.Lazy
-import qualified Data.Text as Text
+
+import Data.Maybe (mapMaybe)
 
 import LS.Types
 import LS.Parser
 import LS.Tokens
 -- import LS.Parser
-import Data.List.NonEmpty
+import Data.List.NonEmpty ( toList, NonEmpty((:|)), fromList )
+
 
 -- there are two possible styles: flat, and tree.
 --- in the flat style, succeeding lines start at the same indentation level as the startParamText:
@@ -36,14 +38,27 @@ import Data.List.NonEmpty
 pBoolStructPT :: Parser BoolStructP
 pBoolStructPT = prePostParse pParamText
 
+-- | parse a ParamText
+-- [TODO] the recursive structure of a HAS limb in a TypeDecl means that we need to mirror the same structure in a RPParamText, see pHornlike.
+-- so a ParamText needs to be able to contain more ParamText; it's going to have to become a Tree
 pParamText :: Parser ParamText
-pParamText = debugName "pParamText" $
-  (:|)
-  <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
-  <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
-  (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
-   <|>
-   manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
+pParamText = pParamTextSameDepthOK
+
+pParamText' :: Bool -> Parser ParamText
+pParamText' mustIndent = do
+  debugName ("pParamText " <> if mustIndent then "(subsequent lines must be indented)" else "(subsequent lines may be at same depth)") $
+    (:|)
+    <$> debugName "pParamText(flat) first line: pKeyValues" pKeyValuesAka <* optional (pToken EOL)
+    <*> debugName "pParamText(flat) subsequent lines: sameMany pKeyValues"
+    (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
+     <|> if mustIndent then pure [] else
+           manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
+
+pParamTextMustIndent :: Parser ParamText
+pParamTextMustIndent = pParamText' True
+
+pParamTextSameDepthOK :: Parser ParamText
+pParamTextSameDepthOK = pParamText' False
 
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do
@@ -69,6 +84,10 @@ pTreeSomeWords = debugName "pTreeSomeWords" $ do
                                (sameDepth pPTree)
     return (firstLine, nextLines)
   return $ mkPTree firstLine inners
+
+-- | extract one or more type signatures from a paramtext, which, as you recall, could have multiple lines, each of which has their own typesig.
+pt2typesigs :: ParamText -> [TypeSig]
+pt2typesigs pt = mapMaybe snd (toList pt)
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
@@ -103,8 +122,9 @@ pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple`
 slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
+-- so it turns out we usually don't even ever get here because a TYPICALLY gets handled by slAKA
 slTypedMulti :: SLParser KVsPair
-slTypedMulti = debugNameSL "slTypedMulti" $ do
+slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
     |*| (|?|) slTypeSig

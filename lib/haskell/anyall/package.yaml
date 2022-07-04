@@ -26,8 +26,11 @@ dependencies:
 - svg-builder
 - hspec
 - prettyprinter
+- pretty-simple
 - aeson
+- aeson-pretty
 - bytestring
+- utf8-string
 - optparse-generic
 - vector
 

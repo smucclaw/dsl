@@ -31,6 +31,7 @@ dependencies:
 - vector
 - bytestring
 - pretty-simple
+- prettyprinter
 - boxes
 - anyall
 - split
@@ -58,6 +59,11 @@ dependencies:
 - generic-arbitrary
 - udpipe-hs
 - async
+- time
+- iso8601-time
+- directory
+- fgl
+- raw-strings-qq
 
 ghc-options: -Wall
 

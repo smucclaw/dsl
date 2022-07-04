@@ -16,7 +16,7 @@ import qualified Data.Vector as V
 import Data.Aeson (ToJSON)
 import GHC.Generics
 import Data.Char (toUpper)
-import Data.List (intercalate)
+-- import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -34,10 +34,11 @@ data MyToken = Every | Party | TokAll
              | Before | After | By | On | Eventually -- TVague is a temporal constraint but not a token
              | Means | Includes  | Is
              | Given | Having | Upon
-             | Define | OneOf | Holds
+             | Declare | Define | OneOf | Holds
              | Decide
              | A_An
              | Deem | As | Has
+             -- | AsOf -- used to evaluate a term not under the live context but at some previous time
              | TypeSeparator -- ::, TYPE, AS, shrug
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
              | Distinct -- entity modifier in GIVEN
@@ -58,6 +59,7 @@ data MyToken = Every | Party | TokAll
              | GoDeeper | UnDeeper
              | SetPlus | SetLess -- set union and subtraction
              | Where -- like in Haskell
+             | Semicolon -- rule separator
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- note: we choose not to treat NOTIFY as keyword.
@@ -192,8 +194,10 @@ renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
 renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
-renderToken tok = map toUpper (show tok)
 
+renderToken Semicolon = ";;"
+
+renderToken tok = map toUpper (show tok)
 
 liftMyToken :: [String] -> MyToken -> WithPos MyToken
 liftMyToken = WithPos pos 0 . Just

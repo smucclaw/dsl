@@ -291,9 +291,9 @@ spec = do
 
   describe "test rowLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
@@ -303,7 +303,30 @@ spec = do
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15}
+      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15, bbrm = 13, bblm = 17}
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test combineAnd" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      alignBox = combineAnd c elems
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 10,0 0,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` firstBox{bbw = 134, bbh = 30, pl = PVoffset 5, pr = PVoffset 15, bblm = 22 + 17, bbrm = 22 + 13}
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do

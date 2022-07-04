@@ -282,7 +282,9 @@ rowLayouter c (bbold, old) (bbnew, new) =
       { bbh = max (bbh bbold) (bbh bbnew),
         bbw = bbw bbold + lrHgap + bbw bbnew,
         pl = PVoffset (portL bbold myScale),
-        pr = PVoffset (portR bbnew myScale)
+        pr = PVoffset (portR bbnew myScale),
+        bbrm = bbrm bbnew,
+        bblm = bblm bbold
       },
     old
       <> moveInt (newBoxStart, 0) new
@@ -421,8 +423,8 @@ combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
   ( childbbox
       { bbw = bbw childbbox + leftMargin + rightMargin,
-        bblm = leftMargin,
-        bbrm = rightMargin,
+        bblm = leftMargin + bblm childbbox,
+        bbrm = rightMargin + bbrm childbbox,
         pl = PVoffset (portL childbbox myScale),
         pr = PVoffset (portR childbbox myScale)
       },

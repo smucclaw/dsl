@@ -143,8 +143,12 @@ stitchRules l4i rs = rs
 getAndOrTree :: [Rule] -> Rule -> AA.ItemMaybeLabel T.Text -- Vue wants AA.Item T.Text
 getAndOrTree _rs r@Regulative{}  = AA.Leaf ("[TODO]: to expand to the cond and the who from the regulative rule " <> T.unwords (ruleLabelName r))
 getAndOrTree _rs r@Hornlike{}    = trace ("[TODO]: getAndOrTree on Hornlike rule \"" <> ruleNameStr r <> "\"") $
-                                   extractRPMT2Text <$> (foldr (<>) (AA.Leaf (RPMT ["BASE CASE TRUE"])) $ catMaybes $ traceShowId $ bsmtOfClauses r)
-
+                                   extractRPMT2Text <$> (foldr1 (<>) (defaultElem (AA.Leaf (RPMT ["BASE CASE TRUE"])) $ catMaybes $ traceShowId $ bsmtOfClauses r))
+  where
+    defaultElem :: a -> [a] -> [a]
+    defaultElem dflt []  = [ dflt ]
+    defaultElem _    lst = lst
+    
 getAndOrTree rs r@(RuleAlias rn) = case getRuleByName rs rn of
                                      Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " <> T.unwords rn)
                                      Just r' -> getAndOrTree rs r'

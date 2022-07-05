@@ -420,6 +420,7 @@ type VarPath = [TypedMulti]
 data Interpreted = L4I
   { classtable :: ClsTab
   , scopetable :: ScopeTabs
+  , origrules  :: [Rule]
   }
   deriving (Eq, Show)
 

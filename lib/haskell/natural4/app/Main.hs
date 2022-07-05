@@ -85,6 +85,7 @@ main = do
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
 
   when (SFL4.only opts == "petri") $ putStrLn asPetri
+  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree rules <$> rules)
 
   when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
   when (SFL4.toNLG rc && null (SFL4.only opts)) $ do

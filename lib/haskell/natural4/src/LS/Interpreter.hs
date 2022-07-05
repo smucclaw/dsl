@@ -50,7 +50,9 @@ hasGiven             __ = False
 
 l4interpret :: [Rule] -> Interpreted
 l4interpret rs = L4I { classtable = classHierarchy rs
-                     , scopetable = symbolTable    rs }
+                     , scopetable = symbolTable    rs
+                     , origrules  = id             rs
+                     }
 
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
@@ -140,34 +142,52 @@ stitchRules l4i rs = rs
 -- multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
 -- some helper functions that are used by multiple XPile modules
-getAndOrTree :: [Rule] -> Rule -> AA.ItemMaybeLabel T.Text -- Vue wants AA.Item T.Text
-getAndOrTree _rs r@Regulative{}  = AA.Leaf ("[TODO]: to expand to the cond and the who from the regulative rule " <> T.unwords (ruleLabelName r))
-getAndOrTree _rs r@Hornlike{}    = trace ("[TODO]: getAndOrTree on Hornlike rule \"" <> ruleNameStr r <> "\"") $
-                                   extractRPMT2Text <$> (foldr1 (<>) (defaultElem (AA.Leaf (RPMT ["BASE CASE TRUE"])) $ catMaybes $ traceShowId $ bsmtOfClauses r))
+getAndOrTree :: Interpreted -> Rule -> AA.ItemMaybeLabel T.Text -- Vue wants AA.Item T.Text
+getAndOrTree _l4i r@Regulative{}  = AA.Leaf ("[TODO]: to expand to the cond and the who from the regulative rule " <> T.unwords (ruleLabelName r))
+getAndOrTree  l4i r@Hornlike{}    = trace ("[TODO]: getAndOrTree on Hornlike rule \"" <> ruleNameStr r <> "\"") $
+                                    extractRPMT2Text <$> foldr1 (<>) (defaultElem (AA.Leaf (RPMT ["BASE CASE TRUE"]))
+                                                                      $ catMaybes
+                                                                      $ traceShowId
+                                                                      $ bsmtOfClauses
+                                                                      $ r { clauses = expandClauses l4i (clauses r) } )
   where
     defaultElem :: a -> [a] -> [a]
     defaultElem dflt []  = [ dflt ]
     defaultElem _    lst = lst
     
-getAndOrTree rs r@(RuleAlias rn) = case getRuleByName rs rn of
+getAndOrTree l4i r@(RuleAlias rn) = case getRuleByName (origrules l4i) rn of
                                      Nothing -> AA.Leaf ("ERROR: unable to expand rule alias " <> T.unwords rn)
-                                     Just r' -> getAndOrTree rs r'
-getAndOrTree _rs r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) $
-                     AA.Leaf ("ERROR: can't call getAndOrTree against" <> T.unwords (ruleLabelName r))
+                                     Just r' -> getAndOrTree l4i r'
+getAndOrTree _l4i r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) $
+                      AA.Leaf ("ERROR: can't call getAndOrTree against" <> T.unwords (ruleLabelName r))
 
+-- convert clauses to a boolStruct MT
 bsmtOfClauses r = [ mhead <> mbody
                   | c <- clauses r
                   , (hhead, hbody)  <- [(hHead c, hBody c)]
                   , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
                         mhead = case hhead of
-                                  RPBoolStructR _mt1 _rprel1 bsr1 -> trace "returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
-                                  _                               -> trace ("returning nothing for " <> show hhead) Nothing
-                        mbody = let output = bsr2bsmt <$> hbody in trace ("got output " <> show output) $ output
+                                  RPBoolStructR _mt1 _rprel1 bsr1 -> trace "bsmtOfClauses: returning bsr part of head's RPBoolStructRJust" (Just (bsr2bsmt bsr1))
+                                  _                               -> trace ("bsmtOfClauses: returning nothing for " <> show hhead) Nothing
+                        mbody = let output = bsr2bsmt <$> hbody in trace ("bsmtOfClauses: got output " <> show output) $ output
                   ]
 
+expandClauses :: Interpreted -> [HornClause2] -> [HornClause2]
+expandClauses l4i hcs =
+  [ newhc
+  | oldhc <- hcs
+  , let newhc = HC2 { hHead = expandHead l4i (hHead oldhc)
+                    , hBody = expandBody l4i (hBody oldhc) }
+  ]
 
-onlyTheItems :: [Rule] -> AA.ItemMaybeLabel T.Text
-onlyTheItems rs = AA.All (Just (AA.Pre "all of the following:")) (getAndOrTree rs <$> rs)
+expandHead :: Interpreted -> RelationalPredicate -> RelationalPredicate
+expandHead l4i = id
+
+expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
+expandBody l4i = id
+
+onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
+onlyTheItems l4i = AA.All (Just (AA.Pre "all of the following:")) (getAndOrTree l4i <$> origrules l4i)
 
 alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
 alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)

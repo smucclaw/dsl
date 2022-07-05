@@ -23,6 +23,7 @@ import           Data.Text.Lazy                   (toStrict)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
+import Control.Monad.Reader
 
 type Length  = Integer
 type SVGElement = Element
@@ -151,9 +152,14 @@ getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 getColors :: Scale -> Bool ->   (T.Text,   T.Text,       T.Text)
 getColors    Tiny     True    = ("none",   "none",      "black")
 getColors    Tiny     False   = ("none",   "lightgrey", "lightgrey")
-getColors    Full     True    = ("none",   "none",      "black")
-getColors    Full     False   = ("none",   "lightgrey", "white")
-getColors    Small confidence = getColors Full confidence
+getColors    _        True    = ("none",   "none",      "black")
+getColors    _        False   = ("none",   "lightgrey", "white")
+
+getColorsR :: Reader MyConfig (T.Text,   T.Text,       T.Text) 
+getColorsR = do
+  m <- asks markingR
+  c <- asks aav
+  return $ getColors (cscale c) (confidence m)
 
 showLabels Full = True
 showLabels Small = False
@@ -456,39 +462,94 @@ drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
   case ao of
     Or -> drawOr c negContext childqs
     And -> drawAnd c negContext childqs
-    Simply txt -> drawLeaf c negContext txt m
+    Simply txt -> runReader (local (addText txt) drawLeafR) contextR
     Neg -> drawItemFull c (not negContext) (head childqs)
-
+  where
+    contextR = MyConfig c negContext "" m
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp
 
-deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool, Bool)
+addText :: T.Text -> MyConfig -> MyConfig
+addText t c = c {mytext = t}
+
+deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool)
 deriveBoxCap negContext m =
   case m of
-    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext, True)
-    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext, True)
-    Default (Right Nothing) -> (NoLine, notLine NoLine, False, True)
-    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext, False)
-    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext, False)
-    Default (Left Nothing) -> (NoLine, notLine NoLine, False, False)
+    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
+    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext)
+    Default (Right Nothing) -> (NoLine, notLine NoLine, False)
+    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
+    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext)
+    Default (Left Nothing) -> (NoLine, notLine NoLine, False)
   where
     notLine = if negContext then const FullLine else id
 
-drawBoxCap :: AAVConfig -> Bool -> Default Bool -> Length -> Length -> SVGElement
-drawBoxCap c negContext m boxHeight boxWidth =
+confidence :: Default Bool -> Bool
+confidence (Default (Right _)) = True
+confidence (Default (Left _)) = False
+
+drawBoxCapR :: Reader MyConfig SVGElement
+drawBoxCapR = do
+  negContext <- asks negContext
+  m <- asks markingR
+  (boxWidth, boxHeight) <- deriveBoxSize
+  return $ drawBoxCap negContext m boxHeight boxWidth
+
+drawBoxCap :: Bool -> Default Bool -> Length -> Length -> SVGElement
+drawBoxCap negContext m boxHeight boxWidth =
   (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
   <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight `div` 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
   <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
   <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (leftline, rightline, topline) = deriveBoxCap negContext m
+
+drawBoxContentR :: Reader MyConfig SVGElement
+drawBoxContentR = do
+  c <- asks aav
+  mtext <- asks mytext
+  (boxStroke, boxFill, textFill) <- getColorsR
+  (boxWidth, boxHeight) <- deriveBoxSize
+  return $ drawBoxContent (cscale c) mtext textFill boxHeight boxWidth
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> Length -> Length  -> SVGElement
 drawBoxContent Tiny mytext textFill boxHeight boxWidth=
   circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ]
 drawBoxContent _ mytext textFill boxHeight boxWidth=
   text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
+
+data MyConfig = MyConfig{
+  aav :: AAVConfig,
+  negContext :: Bool,
+  mytext :: T.Text,
+  markingR :: Default Bool
+}
+
+deriveBoxSize :: Reader MyConfig (Length, Length)
+deriveBoxSize = do
+  c <- asks aav
+  mtext <- asks mytext
+  let
+      boxHeight = sbh (getScale (cscale c))
+      defBoxWidth = sbw (getScale (cscale c))  
+      boxWidth = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mtext))
+  return (boxWidth, boxHeight)
+
+drawLeafR :: Reader MyConfig BoxedSVG
+drawLeafR = do
+  c <- asks aav
+  (boxStroke, boxFill, textFill) <- getColorsR
+  (boxWidth, boxHeight) <- deriveBoxSize
+  boxContent <- drawBoxContentR
+  boxCap <- drawBoxCapR
+  return $
+    (,)
+      (defaultBBox (cscale c)) {bbw = boxWidth, bbh = boxHeight}
+      ( rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
+          <> boxContent
+          <> boxCap
+      )
 
 drawLeaf :: AAVConfig
          -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
@@ -501,12 +562,13 @@ drawLeaf c negContext mytext m =
   <> boxContent
   <> boxCap
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
-    (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
+    (leftline, rightline, topline) = deriveBoxCap negContext m
+    confidenceV = confidence m
+    (boxStroke, boxFill, textFill) = getColors (cscale c) confidenceV
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxCap = drawBoxCap c negContext m boxHeight boxWidth
+    boxCap = drawBoxCap negContext m boxHeight boxWidth
     boxContent = drawBoxContent (cscale c) mytext textFill boxHeight boxWidth
 
 type Boolean = Bool

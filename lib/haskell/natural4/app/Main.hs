@@ -172,7 +172,7 @@ import Prelude
 
 import Data.Map as Map
 
-schedule1_part1 :: ItemJSONStr
+schedule1_part1 :: Item String
 schedule1_part1 =
   |]
 

@@ -461,18 +461,21 @@ drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
 
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp
-
-deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool, Bool)
+deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool)
 deriveBoxCap negContext m =
   case m of
-    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext, True)
-    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext, True)
-    Default (Right Nothing) -> (NoLine, notLine NoLine, False, True)
-    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext, False)
-    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext, False)
-    Default (Left Nothing) -> (NoLine, notLine NoLine, False, False)
+    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
+    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext)
+    Default (Right Nothing) -> (NoLine, notLine NoLine, False)
+    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
+    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext)
+    Default (Left Nothing) -> (NoLine, notLine NoLine, False)
   where
     notLine = if negContext then const FullLine else id
+
+deriveConfidence :: Default a -> Bool
+deriveConfidence (Default (Right _)) = True
+deriveConfidence (Default (Left _)) = False
 
 drawBoxCap :: AAVConfig -> Bool -> Default Bool -> Length -> Length -> SVGElement
 drawBoxCap c negContext m boxHeight boxWidth =
@@ -482,7 +485,7 @@ drawBoxCap c negContext m boxHeight boxWidth =
   <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
   <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (leftline, rightline, topline) = deriveBoxCap negContext m
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> Length -> Length  -> SVGElement
 drawBoxContent Tiny mytext textFill boxHeight boxWidth=
@@ -501,7 +504,8 @@ drawLeaf c negContext mytext m =
   <> boxContent
   <> boxCap
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (leftline, rightline, topline) = deriveBoxCap negContext m
+    confidence = deriveConfidence m
     (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))

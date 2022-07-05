@@ -45,8 +45,8 @@ main = do
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems rules))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems rules)) <> "\n\n" <> psSuffix)
+      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems l4i))
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems l4i)) <> "\n\n" <> psSuffix)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
@@ -84,8 +84,8 @@ main = do
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
 
-  when (SFL4.only opts == "petri") $ putStrLn asPetri
-  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree rules <$> rules)
+  when (SFL4.only opts == "petri")  $ putStrLn asPetri
+  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i <$> rules)
 
   when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
   when (SFL4.toNLG rc && null (SFL4.only opts)) $ do

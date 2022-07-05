@@ -9,7 +9,9 @@ import LS.Types
 import qualified AnyAll as AA
 import Data.List.NonEmpty
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Map as Map
+import Text.Pretty.Simple
 import Debug.Trace
 import Data.Maybe
 import Data.Graph.Inductive
@@ -19,10 +21,11 @@ import Data.List (find)
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: [Rule] -> ScopeTabs
 symbolTable rs =
-  Map.fromListWith (<>) $ fromGivens <> fromDefines
+  Map.fromListWith (<>) $ fromGivens <> fromDefines <> fromDecides -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
   where
     fromGivens :: [(RuleName, SymTab)]
-    fromGivens = [ (rname, symtable)
+    fromGivens = -- trace "fromGivens:" $ traceShowId $
+                 [ (rname, symtable)
                  | r   <- rs
                  , hasGiven r
                  , gPT <- maybeToList (given r)
@@ -35,9 +38,22 @@ symbolTable rs =
                                   )
 
     fromDefines :: [(RuleName, SymTab)]
-    fromDefines = [ (scopename, symtable)
-                  | r@Hornlike{keyword=Define}   <- rs
-                  , let scopename = maybe ["GLOBAL"] (\x -> [rl2text x]) (getRlabel r)
+    fromDefines = -- trace "fromDefines:" $ traceShowId $
+                  [ (scopename, symtable)
+                  | r@Hornlike{}   <- rs
+                  , keyword r `elem` [Define, Means]
+                  , let scopename = -- trace ("fromDefines: working rule " ++ show (ruleLabelName r)) $
+                                    ruleLabelName r
+                        symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
+                  ]
+
+    fromDecides :: [(RuleName, SymTab)]
+    fromDecides = -- trace "fromDecides:" $ traceShowId $
+                  [ (scopename, symtable)
+                  | r@Hornlike{}   <- rs
+                  , keyword r `elem` [Decide, Is]
+                  , let scopename = -- trace ("fromDecides: working rule " ++ show (ruleLabelName r)) $
+                                    ruleLabelName r
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
@@ -176,12 +192,55 @@ expandClauses :: Interpreted -> [HornClause2] -> [HornClause2]
 expandClauses l4i hcs =
   [ newhc
   | oldhc <- hcs
-  , let newhc = HC2 { hHead = expandHead l4i (hHead oldhc)
-                    , hBody = expandBody l4i (hBody oldhc) }
+  , let newhc = HC2 { hHead =       expandRP l4i 1   $  hHead oldhc
+                    , hBody = fmap (expandRP l4i 1) <$> hBody oldhc }
   ]
 
-expandHead :: Interpreted -> RelationalPredicate -> RelationalPredicate
-expandHead l4i = id
+-- | is a given multiterm defined as a head somewhere in the ruleset?
+-- later, we shall have to limit the scope of such a definition based on UPON / WHEN / GIVEN preconditions.
+-- for now we just scan across the entire ruleset to see if it matches.
+expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
+expandRP l4i depth (RPMT                   mt2) = trace ("expandRP: " ++ replicate depth '|' ++ "RPMT " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
+                                                  expandMT  l4i (depth + 1) mt2
+expandRP l4i depth (RPConstraint  mt1 RPis mt2) = trace ("expandRP: " ++ replicate depth '|' ++ "RPConstraint " ++ show mt1 ++ " is " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
+                                                  expandMT  l4i (depth + 1) mt2
+expandRP l4i depth (RPBoolStructR mt1 RPis bsr) = trace ("expandRP: " ++ replicate depth '|' ++ "RPBoolStructR " ++ show mt1 ++ " is BSR: calling expandBSR on " ++ show bsr) $
+                                                  RPBoolStructR mt1 RPis (expandBSR l4i (depth + 1) bsr)
+expandRP l4i depth x                            = trace ("expandRP: " ++ replicate depth '|' ++ "returning unchanged " ++ show x) $
+                                                  x
+
+expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate
+expandMT l4i depth mt0 =
+  let expanded = listToMaybe
+                 [ out
+                 | (scopename,symtab) <- Map.toList (scopetable l4i)
+                 , (mytype, cs) <- maybeToList $
+                                   trace ("expandMT: " ++ replicate depth '|' ++ "considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
+                                   Map.lookup mt0 symtab
+                 , c <- trace ("expandMT: " ++ replicate depth '|' ++ "working through clauses " ++ show cs) $ cs
+                 , let outs = case hHead c of
+                                RPMT          mt           -> [          ] -- no change
+                                RPParamText   pt           -> [          ] -- no change
+                                RPConstraint  mt RPis  rhs -> [ RPMT rhs ] -- substitute with rhs
+                                RPConstraint  mt rprel rhs -> [ hHead c  ] -- maintain inequality
+                                RPBoolStructR mt RPis  bsr -> [ RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
+                 , out <- trace("expandMT: " ++ replicate depth '|' ++ "will return outs " ++ show outs) outs
+                 ]
+      toreturn = fromMaybe (RPMT mt0) $ expanded
+  in -- trace ("expandMT: scopetable toplevel is " ++ TL.unpack (pShow $ scopetable l4i)) $
+     trace ("expandMT: " ++ replicate depth '|' ++ "expanded = " ++ show expanded) $
+     trace ("expandMT: " ++ replicate depth '|' ++ "will return " ++ show toreturn) $
+     toreturn
+
+
+expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
+expandBSR  l4i depth x = let y = expandBSR' l4i depth x in trace ("expandBSR:" ++ replicate depth '|' ++ "given " ++ show x ++ ", returning " ++ show y) y
+expandBSR' l4i depth (AA.Leaf rp)    = case expandRP l4i (depth + 1) rp of
+                                        RPBoolStructR mt1 RPis bsr -> bsr
+                                        o                          -> AA.Leaf o
+expandBSR' l4i depth (AA.Not item)   = AA.Not     (expandBSR l4i (depth + 1) item)
+expandBSR' l4i depth (AA.All lbl xs) = AA.All lbl (expandBSR l4i (depth + 1) <$> xs)
+expandBSR' l4i depth (AA.Any lbl xs) = AA.Any lbl (expandBSR l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody l4i = id

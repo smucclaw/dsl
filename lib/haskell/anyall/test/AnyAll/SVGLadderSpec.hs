@@ -204,7 +204,7 @@ spec = do
     c = dc{cscale=Full, cdebug = False}
     templatedBoundingBox = defaultBBox (cscale dc)
   describe "with SVGLadder, drawing primitives" $ do
-    basicSvg <- runIO $ TIO.readFile "out/basic.svg"
+    basicSvg <- runIO $ TIO.readFile "test/fixtures/basic.svg"
     let
       rectangle = svgRect $ Rect (0, 0) (60, 30) "black" "none"
       basicSvg' = makeSvg' dc (defaultBBox (cscale dc), rectangle)
@@ -371,8 +371,8 @@ spec = do
       pendingWith "it's not a real test but just a debug code"
 
   describe "test combineAnd" $ do
-    mycontents <- runIO $ B.readFile "out/example-and-short.json"
-    myFixture <- runIO $ B.readFile "out/example-and-short.svg"
+    mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
+    myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
     let
       c = dc{cscale=Full, cdebug = False} 
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
@@ -395,8 +395,8 @@ spec = do
       pendingWith "it's not a real test but just a debug code"
 
   describe "test combineOr" $ do
-    mycontents <- runIO $ B.readFile "out/example-or-short.json"
-    myFixture <- runIO $ B.readFile "out/example-or-short.svg"
+    mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
+    myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
       c = dc{cscale=Full, cdebug = False} 
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)

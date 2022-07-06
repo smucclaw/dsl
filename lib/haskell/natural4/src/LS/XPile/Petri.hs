@@ -36,6 +36,8 @@ import AnyAll as AA
 
 import LS.NLP.WordNet
 
+import Debug.Trace
+
 --------------------------------------------------------------------------------
 -- fgl
 --------------------------------------------------------------------------------
@@ -219,6 +221,30 @@ fromRuleAlias :: Attribute
 fromRuleAlias = Comment "from RuleAlias"
 
 data SplitJoin = SJAny | SJAll deriving (Eq, Show)
+
+-- | wire up splits and joins.
+-- the pattern is this:
+--        
+--                   entry
+--                     |
+--                   split
+--                    / \
+--           childHead1 childHead2
+--              |              |
+--           child1         child2
+--           ....              ....
+--          /    \            /    \
+--         B  successTail1   B   successTail2
+--    breach        \      breach  /
+--                   \            /
+--                    [ joinNode ]
+--                          |
+--                      Fulfilled
+
+-- previously the successTails would have gone directly to Fulfilled
+-- but we relink them to go to the join node instead
+
+
 splitJoin :: [Rule]      -- background input ruleset
           -> PetriD      -- original whole graph
           -> SplitJoin   -- whether we are doing an Any or an All wrapper
@@ -241,12 +267,13 @@ splitJoin rs og sj sgs entry = runGM og $ do
 
       splitText = if length headsOfChildren == 2 then "both" else "split (and)"
       joinText  = "all done"
-  splitnode <- newNode (PN Trans splitText [] [IsInfra,IsAnd,IsSplit])
-  joinnode  <- newNode (PN Trans  joinText [] [IsInfra,IsAnd,IsJoin])
+  splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
+  joinnode  <- newNode (PN Trans  joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
   newEdge' (entry,splitnode, [Comment "added by split from parent node"])
   newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
   mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
   mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
+  traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
   mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasDeet :: Eq a => a -> PNode a -> Bool

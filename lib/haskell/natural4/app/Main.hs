@@ -58,7 +58,7 @@ main = do
                                    , TL.unpack (pShowNoColor $ (\r -> r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }) <$> rules)
 
                                    , "-- getAndOrTrees"
-                                   , unlines $ (\r -> ("-- " <> (show $ SFL4.ruleLabelName r)) <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+                                   , unlines $ (\r -> ("\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n") <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
 
                                    , "\n\n-- class hierarchy:\n"
                                    , TL.unpack (pShowNoColor (classHierarchy rules))

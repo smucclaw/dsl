@@ -285,6 +285,8 @@ splitJoin rs og sj sgs entry = runGM og $ do
     -- Doing this prevents redundant "All done" join nodes like
     --         (Something not done)      (Something done)
     --                                          |
+    --                                         All done
+    --                                          |
     --                                        Fulfilled                      
     when (length successTails > 1) $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )

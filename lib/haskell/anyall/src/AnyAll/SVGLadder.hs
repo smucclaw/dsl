@@ -461,14 +461,15 @@ drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
 
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp
-deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool)
+deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
   case extractSoft m of
-    (Just True) -> (HalfLine, notLine HalfLine, not negContext)
-    (Just False) -> (FullLine, notLine NoLine, negContext)
-    Nothing -> (NoLine, notLine NoLine, False)
+    (Just True) -> (HalfLine, notLine HalfLine, topLine (not negContext))
+    (Just False) -> (FullLine, notLine NoLine, topLine negContext)
+    Nothing -> (NoLine, notLine NoLine, NoLine)
   where
     notLine = if negContext then const FullLine else id
+    topLine = \nc -> if nc then FullLine else NoLine
 
 extractSoft :: Default Bool -> Maybe Bool
 extractSoft (Default (Right b)) = b
@@ -479,19 +480,50 @@ deriveConfidence (Default (Right _)) = True
 deriveConfidence (Default (Left _)) = False
 
 drawBoxCap :: AAVConfig -> Bool -> Default Bool -> Length -> Length -> SVGElement
-drawBoxCap c negContext m boxHeight boxWidth =
-  (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight `div` 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
+drawBoxCap c negContext m boxWidth boxHeight =
+  leftLineSVG <> rightLineSVG <> topLineSVG
   where
     (leftline, rightline, topline) = deriveBoxCap negContext m
+    leftLineSVG = drawVerticalLine 0 boxHeight leftline "leftline"
+    rightLineSVG = drawVerticalLine boxWidth boxHeight rightline "rightline"
+    topLineSVG = drawHorizontalLine 0 boxWidth topline "topline"
+
+drawVerticalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
+drawVerticalLine xPosition length lineType linePosition =
+  case lineType of
+    FullLine -> renderVerticalLine xPosition length (T.append linePosition ".full")
+    HalfLine -> renderVerticalLine xPosition (length `div` 2) (T.append linePosition ".half")
+    NoLine -> mempty
+
+renderVerticalLine :: Length -> Length -> T.Text -> SVGElement
+renderVerticalLine xPosition length lineClass =
+  line_ 
+    [ X1_ <<-* xPosition, Y1_ <<-* 0, 
+      X2_ <<-* xPosition, Y2_ <<-* length,
+      Stroke_ <<- "black", 
+      Class_ <<- lineClass
+    ]
+
+drawHorizontalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
+drawHorizontalLine yPosition length lineType linePosition =
+  case lineType of
+    FullLine -> renderHorizontalLine yPosition length (T.append linePosition ".full")
+    HalfLine -> renderHorizontalLine yPosition (length `div` 2) (T.append linePosition ".half")
+    NoLine -> mempty
+
+renderHorizontalLine :: Length -> Length -> T.Text -> SVGElement
+renderHorizontalLine yPosition length lineClass =
+  line_
+    [ X1_ <<-* 0,      Y1_ <<-* yPosition,
+      X2_ <<-* length, Y2_ <<-* yPosition,
+      Stroke_ <<- "black",
+      Class_ <<- lineClass
+    ]
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> Length -> Length  -> SVGElement
-drawBoxContent Tiny mytext textFill boxHeight boxWidth=
+drawBoxContent Tiny mytext textFill boxWidth boxHeight =
   circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ]
-drawBoxContent _ mytext textFill boxHeight boxWidth=
+drawBoxContent _ mytext textFill boxWidth boxHeight =
   text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
 
 drawLeaf :: AAVConfig
@@ -511,8 +543,8 @@ drawLeaf c negContext mytext m =
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxCap = drawBoxCap c negContext m boxHeight boxWidth
-    boxContent = drawBoxContent (cscale c) mytext textFill boxHeight boxWidth
+    boxCap = drawBoxCap c negContext m boxWidth boxHeight
+    boxContent = drawBoxContent (cscale c) mytext textFill boxWidth boxHeight
 
 type Boolean = Bool
 itemBox :: AAVConfig

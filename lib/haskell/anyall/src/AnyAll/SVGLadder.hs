@@ -463,15 +463,16 @@ drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
 -- botTextE = txtToBBE c <$> bottomText pp
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool)
 deriveBoxCap negContext m =
-  case m of
-    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
-    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext)
-    Default (Right Nothing) -> (NoLine, notLine NoLine, False)
-    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext)
-    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext)
-    Default (Left Nothing) -> (NoLine, notLine NoLine, False)
+  case extractSoft m of
+    (Just True) -> (HalfLine, notLine HalfLine, not negContext)
+    (Just False) -> (FullLine, notLine NoLine, negContext)
+    Nothing -> (NoLine, notLine NoLine, False)
   where
     notLine = if negContext then const FullLine else id
+
+extractSoft :: Default Bool -> Maybe Bool
+extractSoft (Default (Right b)) = b
+extractSoft (Default (Left b)) = b
 
 deriveConfidence :: Default a -> Bool
 deriveConfidence (Default (Right _)) = True

@@ -13,7 +13,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import           Data.Foldable (find)
 import           System.IO.Unsafe (unsafePerformIO)
-import           Control.Monad (forM_)
+import           Control.Monad (forM_, when, unless)
 import qualified Data.Map           as Map
 import           Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
 import           Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
@@ -127,9 +127,9 @@ tcsd :: (Show a) => [a] -> [Attribute]
 tcsd = fmap $ Comment . LT.fromStrict . Text.pack . show
 
 fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
-fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls 
-fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls 
-fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls 
+fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls
+fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls
+fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
 fmtPetriNode (_n,PN Trans txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
 fmtPetriNode (_n,PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
 
@@ -244,7 +244,6 @@ data SplitJoin = SJAny | SJAll deriving (Eq, Show)
 -- previously the successTails would have gone directly to Fulfilled
 -- but we relink them to go to the join node instead
 
-
 splitJoin :: [Rule]      -- background input ruleset
           -> PetriD      -- original whole graph
           -> SplitJoin   -- whether we are doing an Any or an All wrapper
@@ -266,15 +265,33 @@ splitJoin rs og sj sgs entry = runGM og $ do
       -- however, what i'm thinking of looks like     P T (P ... T)+ P   so that execution can proceed in parallel but whoever is first to the end can win.
 
       splitText = if length headsOfChildren == 2 then "both" else "split (and)"
-      joinText  = "all done"
-  splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
-  joinnode  <- newNode (PN Trans  joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
-  newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-  newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
-  mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
-  mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
-  traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
-  mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
+      joinText = "All done"
+  -- If the entry node doesn't have any children, we simply connect it to
+  -- Fulfilled and stop here. No need to make split and join nodes and link
+  -- them up in this case.
+  -- This is a quick hack. Ideally we have a way to determine if
+  -- it should connect to Breach or Fulfilled.
+  if null headsOfChildren then do
+    newEdge' (entry, fulfilledNode, [])
+  else do
+    -- If the entry node has children, then we need to care about splitting and
+    -- joining. We first make a split node and connect:
+    --    entry node -> split node -> children of entry node
+    splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
+    newEdge' (entry,splitnode, [Comment "added by split from parent node"])
+    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
+    -- Now we check how many tail nodes there are in successTails.
+    -- If there's only 1, then there's no need to make a join node and link that up.
+    -- Doing this prevents redundant "All done" join nodes like
+    --         (Something not done)      (Something done)
+    --                                          |
+    --                                        Fulfilled                      
+    when (length successTails > 1) $ do
+      joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
+      newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
+      mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
+      traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
+      mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasDeet :: Eq a => a -> PNode a -> Bool
 hasDeet  x  (PN _ _ _ deets) =     x `elem` deets

@@ -192,9 +192,40 @@ expandClauses :: Interpreted -> [HornClause2] -> [HornClause2]
 expandClauses l4i hcs =
   [ newhc
   | oldhc <- hcs
-  , let newhc = HC2 { hHead =       expandRP l4i 1   $  hHead oldhc
-                    , hBody = fmap (expandRP l4i 1) <$> hBody oldhc }
+  , let newhc = HC2 { hHead =                expandRP l4i 1   $  hHead oldhc
+                    , hBody = unleaf . fmap (expandRP l4i 1) <$> hBody oldhc }
   ]
+
+unleaf :: BoolStructR -> BoolStructR
+unleaf (AA.Leaf (RPBoolStructR b RPis bsr)) = unleaf bsr
+unleaf (AA.All  lbl xs) = AA.All lbl (unleaf <$> xs)
+unleaf (AA.Any  lbl xs) = AA.Any lbl (unleaf <$> xs)
+unleaf (AA.Not      x ) = AA.Not     (unleaf     x )
+unleaf (AA.Leaf x     ) = AA.Leaf    x
+
+-- take out the Leaf ( RPBoolStructR [ "b" ] RPis
+-- from the below:
+--        [ HC2
+--            { hHead = RPMT [ "c" ]
+--            , hBody = Just
+--                ( Any Nothing
+--                    [ Leaf
+--                        ( RPMT [ "a" ] )
+--                    , Leaf
+--                        ( RPBoolStructR [ "b" ] RPis
+--                            ( All Nothing
+--                                [ Leaf
+--                                    ( RPMT [ "b1" ] )
+--                                , Leaf
+--                                    ( RPMT [ "b2" ] )
+--                                ]
+--                            )
+--                        )
+--                    ]
+--                )
+--            }
+--        ]
+--
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON / WHEN / GIVEN preconditions.
@@ -223,7 +254,8 @@ expandMT l4i depth mt0 =
                                 RPParamText   pt           -> [          ] -- no change
                                 RPConstraint  mt RPis  rhs -> [ RPMT rhs ] -- substitute with rhs
                                 RPConstraint  mt rprel rhs -> [ hHead c  ] -- maintain inequality
-                                RPBoolStructR mt RPis  bsr -> [ RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
+                                RPBoolStructR mt RPis  bsr -> [ -- trace ("expandMT: " ++ replicate depth '|' ++ " big return: BSR " ++ show mt ++ " RPis expandBSR") $
+                                                                RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
                  , out <- trace("expandMT: " ++ replicate depth '|' ++ "will return outs " ++ show outs) outs
                  ]
       toreturn = fromMaybe (RPMT mt0) $ expanded
@@ -235,9 +267,12 @@ expandMT l4i depth mt0 =
 
 expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR  l4i depth x = let y = expandBSR' l4i depth x in trace ("expandBSR:" ++ replicate depth '|' ++ "given " ++ show x ++ ", returning " ++ show y) y
-expandBSR' l4i depth (AA.Leaf rp)    = case expandRP l4i (depth + 1) rp of
-                                        RPBoolStructR mt1 RPis bsr -> bsr
-                                        o                          -> AA.Leaf o
+expandBSR' l4i depth (AA.Leaf rp)    =
+  case expandRP l4i (depth + 1) rp of
+    RPBoolStructR mt1 RPis bsr -> trace ("expandBSR:" ++ replicate depth '|' ++ " bsr track: " ++ show bsr) $
+                                  bsr
+    o                          -> trace ("expandBSR:" ++ replicate depth '|' ++ " o track: Leaf " ++ show o) $
+                                  AA.Leaf o
 expandBSR' l4i depth (AA.Not item)   = AA.Not     (expandBSR l4i (depth + 1) item)
 expandBSR' l4i depth (AA.All lbl xs) = AA.All lbl (expandBSR l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = AA.Any lbl (expandBSR l4i (depth + 1) <$> xs)

@@ -29,7 +29,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
-import Text.RawString.QQ
+import qualified Text.RawString.QQ as QQ
 
 main :: IO ()
 main = do
@@ -50,11 +50,22 @@ main = do
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   TL.unpack (pShowNoColor rules)
-                                                                 <> "\n\n-- class hierarchy:\n"
-                                                                 <> TL.unpack (pShowNoColor (classHierarchy rules))
-                                                                 <> "\n\n-- symbol table:\n"
-                                                                 <> TL.unpack (pShowNoColor (symbolTable rules)))
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
+                                   [ "-- original rules:\n"
+                                   , TL.unpack (pShowNoColor rules)
+
+                                   , "-- variable-substitution expanded AnyAll rules\n"
+                                   , TL.unpack (pShowNoColor $ (\r -> r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }) <$> rules)
+
+                                   , "-- getAndOrTrees"
+                                   , unlines $ (\r -> ("-- " <> (show $ SFL4.ruleLabelName r)) <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+
+                                   , "\n\n-- class hierarchy:\n"
+                                   , TL.unpack (pShowNoColor (classHierarchy rules))
+
+                                   , "\n\n-- symbol table:\n"
+                                   , TL.unpack (pShowNoColor (symbolTable rules))
+                                   ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
@@ -163,7 +174,7 @@ snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] +
                 Text.intercalate "-" x
 
 psPrefix :: String -- the stuff at the top of the purescript output
-psPrefix = [r|
+psPrefix = [QQ.r|
 module RuleLib.PDPADBNO where
 
 import AnyAll.Types
@@ -178,7 +189,7 @@ schedule1_part1 =
   |]
 
 psSuffix :: String -- at the bottom of the purescript output
-psSuffix = [r|
+psSuffix = [QQ.r|
 schedule1_part1_nl :: NLDict
 schedule1_part1_nl =
   Map.fromFoldable

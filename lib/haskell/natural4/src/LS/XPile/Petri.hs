@@ -251,7 +251,23 @@ splitJoin :: [Rule]      -- background input ruleset
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
+  let (|>) = flip ($)
+      -- Sometimes, entry satisfies hasDeet IsFirstNode and so it appears
+      -- in the resulting list of nodes as returned by the call to nodes below.
+      -- Since we only want the children of entry and not entry itself, we can
+      -- filter out all nodes that look like it.
+      -- This helps avoid weird splits and joins like
+      --           Something done
+      --             ^     |
+      --             |     v
+      --              Both
+      --               |
+      --               v
+      --              ...
+      headsOfChildren = 
+        sgs |> labfilter (hasDeet IsFirstNode)
+            |> nodes
+            |> filter (/= entry)
       successTails    = [ n
                         | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs
                         , m <- suc og n -- there is a direct link to FULFILLED
@@ -264,8 +280,6 @@ splitJoin rs og sj sgs entry = runGM og $ do
       -- an OR split/join looks like                  T P (T ... T)+ P   but that means the choice is immediate, only one token is available to many paths
       -- however, what i'm thinking of looks like     P T (P ... T)+ P   so that execution can proceed in parallel but whoever is first to the end can win.
 
-      splitText = if length headsOfChildren == 2 then "both" else "split (and)"
-      joinText = "All done"
   -- If the entry node doesn't have any children, we simply connect it to
   -- Fulfilled and stop here. No need to make split and join nodes and link
   -- them up in this case.
@@ -274,19 +288,26 @@ splitJoin rs og sj sgs entry = runGM og $ do
   if null headsOfChildren then do
     newEdge' (entry, fulfilledNode, [])
   else do
+    let splitText = case length headsOfChildren of
+          0 -> undefined -- This should never happen since we already check if headsOfChildren is empty above.
+          1 -> "split (1)"
+          2 -> "both"
+          _ -> "split (and)"
+        joinText = "All done"
     -- If the entry node has children, then we need to care about splitting and
     -- joining. We first make a split node and connect:
     --    entry node -> split node -> children of entry node
     splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
+    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) 
+                   | headnode <- headsOfChildren ]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
     -- Doing this prevents redundant "All done" join nodes like
     --         (Something not done)      (Something done)
     --                                          |
     --                                         All done
-    --                                          |
+    --                                           |
     --                                        Fulfilled                      
     when (length successTails > 1) $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )

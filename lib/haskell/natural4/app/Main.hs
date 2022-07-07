@@ -19,7 +19,7 @@ import LS.XPile.Petri
 import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
-import LS.NLP.NLG (nlg,myNLGEnv)
+import LS.NLP.NLG (nlg,myNLGEnv,toHTML)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map

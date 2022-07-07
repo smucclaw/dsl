@@ -255,6 +255,7 @@ toHTML env rl = do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA]
             openRlDiv = "<div class=\"deontic rule\">"
             closeRlDiv = "</div>"
+            -- splitTheOr = isInfixOf "or_Conj" x
             subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
@@ -267,6 +268,10 @@ toHTML env rl = do
             linText = linearize gr eng finalTree
             linTree = showExpr finalTree
         putStrLn "hi"
+        putStrLn $ showExpr subj
+        -- putStrLn $ splitOr (showExpr (fromJust whoA))
+        putStrLn $ linearize gr eng (fromJust whoA)
+        putStrLn $ showExpr deonticAction
         putStrLn $ showExpr king_may_sing
         putStrLn "ho"
         return (

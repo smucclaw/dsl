@@ -177,10 +177,10 @@ elideNodes :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
 elideNodes desc pnpred og = runGM og $ do
   -- awkward phrasing, shouldn't there be some sort of concatM
   forM_ [ do
-             newEdge' (x, z, [Comment $ "after elision of " <> desc <> " intermediary"])
+             newEdge' (x,    z, [Comment $ "after elision of " <> desc <> " intermediary"])
              delEdge' (x, y)
              delEdge' (   y, z)
-             delNode' y
+             delNode'     y
         | y <- nodes $ labfilter pnpred og
         , let indegrees  = pre og y
               outdegrees = suc og y

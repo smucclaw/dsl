@@ -168,13 +168,20 @@ toPetri rules =
                   |> reorder rules
                   |> condElimination rules
                   |> mergePetri rules
-                  |> elideNodes "consequently" (hasText "consequently")
-                  |> elideNodes "FromRuleAlias" (hasDeet FromRuleAlias)
+                  |> elideNodes1 "consequently" (hasText "consequently")
+                  |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
   in LT.toStrict $ renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
 
--- | get rid of intermediary nodes y that fit the pattern `x -> y -> z`, where y passes the given predicate
-elideNodes :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
-elideNodes desc pnpred og = runGM og $ do
+elideNodes1 :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodes1 = elideNodes True
+
+elideNodesN :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodesN = elideNodes False
+
+-- | get rid of intermediary nodes y that fit the pattern `x -> y -> z`, where y passes the given predicate.
+-- if |x| and |z| are each 1, use the elideNodes1 form
+elideNodes :: Bool -> LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodes limit1 desc pnpred og = runGM og $ do
   -- awkward phrasing, shouldn't there be some sort of concatM
   forM_ [ do
              newEdge' (x,    z, [Comment $ "after elision of " <> desc <> " intermediary"])
@@ -184,8 +191,8 @@ elideNodes desc pnpred og = runGM og $ do
         | y <- nodes $ labfilter pnpred og
         , let indegrees  = pre og y
               outdegrees = suc og y
-        , length  indegrees == 1
-        , length outdegrees == 1
+        , not limit1 || length  indegrees == 1
+        , not limit1 || length outdegrees == 1
         , x   <- indegrees
         , z   <- outdegrees
         ] $ id

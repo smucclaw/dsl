@@ -108,6 +108,75 @@ For this to work, you need to first click on ~File / Share / Publish to web~. Th
 
 The job of a compiler / transpiler / parser / interpreter, whatever you want to call it, is to transform user code to some useful target representation.
 
+This command outputs all the target representations to disk:
+
+#+begin_example
+$ stack run -- --workdir=workdir --uuiddir=1234abcd test/pdpadbno-[1578].csv
+#+end_example
+
+Note that the ~--uuiddir~ option is for a shared-secret session key under some web UI.
+
+You can make it whatever you want, so it would be a good idea to put the spreadsheet ID and sheet ID in there as well: ~uuiddir="secret/spreadsheetId/sheetId"~
+
+The result will be something like:
+
+#+begin_example
+  $ tree workdir
+  workdir
+  └── 1234abcd
+      ├── aasvg
+      │   ├── 2022-07-01T03:37:39.121Z
+      │   │   ├── Assessment.svg
+      │   │   ├── Data_Intermediary.svg
+      │   │   ├── Notify_Individuals.svg
+      │   │   ├── Notify_PDPC.svg
+      │   │   ├── Organisation.svg
+      │   │   ├── You.svg
+      │   │   ├── a_Data_Breach.svg
+      │   │   ├── a_data_breach-occurr.svg
+      │   │   ├── all_of-the_following.svg
+      │   │   ├── any_of_the_prescribe.svg
+      │   │   ├── in_other_prescribed_.svg
+      │   │   ├── index.html
+      │   │   ├── is-not-a_Public_Agen.svg
+      │   │   ├── it_is-unlikely_that_.svg
+      │   │   ├── it_is_or_is_likely_t.svg
+      │   │   ├── it_results_in_or_is_.svg
+      │   │   ├── the_data_breach_is_i.svg
+      │   │   └── the_data_breach_occu.svg
+      │   └── LATEST -> 2022-07-01T03:37:39.121Z
+      ├── corel4
+      │   ├── 2022-07-01T03:37:39.121Z.l4
+      │   └── LATEST.l4 -> 2022-07-01T03:37:39.121Z.l4
+      ├── grounds
+      │   ├── 2022-07-01T03:37:39.121Z.txt
+      │   └── LATEST.txt -> 2022-07-01T03:37:39.121Z.txt
+      ├── json
+      │   ├── 2022-07-01T03:37:39.121Z.json
+      │   └── LATEST.json -> 2022-07-01T03:37:39.121Z.json
+      ├── native
+      │   ├── 2022-07-01T03:37:39.121Z.hs
+      │   └── LATEST.hs -> 2022-07-01T03:37:39.121Z.hs
+      ├── petri
+      │   ├── 2022-07-01T03:37:39.121Z.dot
+      │   └── LATEST.dot -> 2022-07-01T03:37:39.121Z.dot
+      ├── prolog
+      │   ├── 2022-07-01T03:37:39.121Z.pl
+      │   └── LATEST.pl -> 2022-07-01T03:37:39.121Z.pl
+      ├── purs
+      │   ├── 2022-07-01T03:37:39.121Z.purs
+      │   └── LATEST.purs -> 2022-07-01T03:37:39.121Z.purs
+      └── ts
+          ├── 2022-07-01T03:37:39.121Z.ts
+          └── LATEST.ts -> 2022-07-01T03:37:39.121Z.ts
+#+end_example
+
+These outputs can be further transformed and put in front of the user's eyeballs.
+
+The "tocheckl" output (Checklists) is off by default -- to turn it on, add the option ~--tocheckl=True~ to the command line.
+
+Other outputs are on by default. To turn them off, add the relevant option to the command line -- for example, ~--togrounds=False~.
+
 **** native: a Haskell data structure
 
 This is the simplest output mode. It confirms the parse happened as intended.
@@ -271,10 +340,12 @@ Within the Prolog family of targets we differentiate:
 The following incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
 
 #+begin_src 
-  stack run -- --only "petri" test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
+  stack run -- --only petri test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
 #+end_src
 
 It is not exactly a state diagram because things can be in multiple sub-states at once. Petri Nets are good at showing that.
+
+**** aasvg: AnyAll SVG showing the decision logic
 
 **** json: for consumption by other tools such as a web app
 
@@ -294,6 +365,13 @@ The ~debug2org~ script rewrites the raw debugging output into a format which is 
 
 Making sense of the parser debug output requires some familiarity with programming language theory, with compiler theory, and with the specifics of our L4 parser toolchain.
 
+*** Development Conveniences
+
+This little script (on Mac at least) watches your Downloads folder so every time you Save As CSV it moves the new download over to the ~test/~ directory. Run from home directory. You may need to edit to taste.
+
+#+begin_example
+  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(Legal Spreadsheets - (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
+#+end_example
 ** Interpretation Requirements
 
 After the parser succeeds, we have in our hands a list of ~Rules~.

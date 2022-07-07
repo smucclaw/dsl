@@ -8,7 +8,7 @@
 
 module AnyAll.Types where
 
-import Debug.Trace (traceM)
+import Debug.Trace (traceM, trace)
 import Data.Tree
 import Data.Maybe
 import Data.String (IsString)
@@ -18,7 +18,7 @@ import qualified Data.Text            as T
 import qualified Data.Vector          as V
 
 import Data.Aeson
-import Data.Aeson.Types (parseMaybe)
+import Data.Aeson.Types (parseMaybe, parse)
 import GHC.Generics
 import GHC.Exts (toList)
 
@@ -59,25 +59,39 @@ data BinExpr a b =
 
 instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
 
-type Item a = Item' (Maybe (Label T.Text)) a
-
-type ItemJSON = Item' (Label T.Text) T.Text
-
--- data Item' lbl a =
---     Leaf                       a
---   | All {itemLbl :: (Maybe lbl), itemsAll :: [Item' lbl a]}
---   | Any {itemLbl :: (Maybe lbl), itemsAny :: [Item' lbl a]}
---   | Not             (Item' lbl a)
---   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
-data Item' lbl a =
+data Item lbl a =
     Leaf                       a
-  | All lbl [Item' lbl a]
-  | Any lbl [Item' lbl a]
-  | Not             (Item' lbl a)
+  | All lbl [Item lbl a]
+  | Any lbl [Item lbl a]
+  | Not             (Item lbl a)
   deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
 
+type ItemMaybeLabel a = Item (Maybe (Label T.Text)) a
 
-instance Semigroup (Item a) where
+type ItemJSONText = Item (Label T.Text) T.Text
+
+addJust :: ItemJSONText -> ItemMaybeLabel T.Text
+addJust (Any lbl xs) = Any (Just lbl) (addJust <$> xs)
+addJust (All lbl xs) = All (Just lbl) (addJust <$> xs)
+addJust (Leaf x)     = Leaf x
+addJust (Not x)      = Not (addJust x)
+
+alwaysLabeled :: ItemMaybeLabel T.Text -> ItemJSONText
+alwaysLabeled (Any Nothing    xs) = Any (Pre "any of:") (alwaysLabeled <$> xs)
+alwaysLabeled (All Nothing    xs) = All (Pre "all of:") (alwaysLabeled <$> xs)
+alwaysLabeled (Any (Just lbl) xs) = Any lbl (alwaysLabeled <$> xs)
+alwaysLabeled (All (Just lbl) xs) = All lbl (alwaysLabeled <$> xs)
+alwaysLabeled (Leaf x)            = Leaf x
+alwaysLabeled (Not x)             = Not (alwaysLabeled x)
+
+instance Semigroup t => Semigroup (Label t) where 
+  (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2)
+  (<>)  (Pre pr1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) po2
+  (<>)  (PrePost pr1 po1) (Pre pr2) = PrePost (pr1 <> pr2) po1
+  (<>)  (PrePost pr1 po1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) (po1 <> po2)
+
+
+instance Monoid lbl => Semigroup (Item lbl a) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 
   (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
@@ -86,14 +100,14 @@ instance Semigroup (Item a) where
   (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Leaf y)   = r <> l
 
-  (<>) l@(Leaf x)   r@(Any y ys) = All Nothing [l,r]
+  (<>) l@(Leaf x)   r@(Any y ys) = All mempty [l,r]
   (<>) l@(Any x xs) r@(Leaf y)   = r <> l
 
   (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
   (<>) l@(All x xs) r@(Any y ys) = r <> l
 
   -- all the other cases get ANDed together in the most straightforward way.
-  (<>) l            r            = All Nothing [l, r]
+  (<>) l            r            = All mempty [l, r]
 
 
 -- | prepend something to the Pre/Post label, shallowly
@@ -104,7 +118,7 @@ instance Semigroup (Item a) where
 -- x `shallowPrependBSR` Not z     = Not (x `shallowPrependBSR` z)
 
 -- | prepend something to the Pre/Post label, deeply
--- deepPrependBSR :: (IsString a, Semigroup a) => a -> Item' (Label a) a -> Item' (Label a) a
+-- deepPrependBSR :: (IsString a, Semigroup a) => a -> Item (Label a) a -> Item (Label a) a
 -- x `deepPrependBSR` Leaf z    = x `shallowPrependBSR` Leaf z
 -- x `deepPrependBSR` All ml zs = All (prependToLabel x ml) (deepPrependBSR x <$> zs)
 -- x `deepPrependBSR` Any ml zs = Any (prependToLabel x ml) (deepPrependBSR x <$> zs)
@@ -122,7 +136,7 @@ instance Semigroup (Item a) where
 --   which is to say that whenever we get new input from the user we regenerate everything.
 --   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
-                                 , andOrTree :: Item a }
+                                 , andOrTree :: ItemMaybeLabel T.Text }
   deriving (Eq, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
 instance FromJSON (StdinSchema T.Text) where
@@ -131,41 +145,28 @@ instance FromJSON (StdinSchema T.Text) where
     aotreeO  <- o .: "andOrTree"
     let marking = parseMaybe parseJSON markingO
         aotree  = parseMaybe parseJSON aotreeO
-    return $ StdinSchema (fromJust marking :: Marking T.Text) (fromJust aotree)
+    return $ StdinSchema
+      (fromJust marking :: Marking T.Text)
+      (fromMaybe (Leaf "ERROR: unable to parse andOrTree from input") aotree)
 
 
-instance   ToJSON ItemJSON
-instance   ToJSON a =>   ToJSON (Item a)
-instance (Data.String.IsString a, FromJSON a) => FromJSON (Item a) where
-  parseJSON = withObject "andOrTree" $ \o -> do
-    leaf      <- o .:? "leaf"
-    nodetype  <- o .:? "nodetype"
-    pre       <- o .:? "pre"
-    prepost   <- o .:? "prepost"
-    childrenA <- o .:? "children"
-    let label = if isJust prepost
-                then PrePost (fromJust pre) (fromJust prepost)
-                else Pre     (fromJust pre)
-        children = maybe [] (mapMaybe (parseMaybe parseJSON) . V.toList) childrenA
-    return $ if isJust leaf
-             then Leaf (fromJust leaf)
-             else case (nodetype :: Maybe String) of
-                    Just "any" -> Any (Just label) children
-                    Just "all" -> All (Just label) children
-                    Just "not" -> Not $ head children
-                    _          -> error "error in parsing JSON input"
+instance   (ToJSON lbl, ToJSON a) =>  ToJSON (Item lbl a)
+-- TODO: Superfluous because covered by the above?
+-- instance   ToJSON ItemJSON
+
+instance   (FromJSON lbl, FromJSON a) =>  FromJSON (Item lbl a)
 
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
 type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
-native2tree :: Item a -> AsTree a
+native2tree :: ItemMaybeLabel a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
 native2tree (All l items) = Node (And, l) (native2tree <$> items)
 native2tree (Any l items) = Node ( Or, l) (native2tree <$> items)
 
-tree2native :: AsTree a -> Item a
+tree2native :: AsTree a -> ItemMaybeLabel a
 tree2native (Node (Simply a, _) children) = Leaf a
 tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
 tree2native (Node (And, lbl) children) = All lbl (tree2native <$> children)
@@ -240,6 +241,9 @@ getForUI :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
 getForUI qt = encode (Map.fromList [("view" :: T.Text, getViews qt)
                                    ,("ask" :: T.Text, getAsks qt)])
 
+
+{-
+-- Is that function used anywhere?
 markingLabel :: Item T.Text -> T.Text
 markingLabel (Not x)  = markingLabel x
 markingLabel (Leaf x) = x
@@ -249,3 +253,5 @@ markingLabel (Any (Just (PrePost p1 p2)) _) = p1
 markingLabel (All (Just (PrePost p1 p2)) _) = p1
 markingLabel (Any Nothing                _) = "any of" -- to do -- add a State autoincrement to distinguish
 markingLabel (All Nothing                _) = "all of" -- to do -- add a State autoincrement to distinguish
+-}
+

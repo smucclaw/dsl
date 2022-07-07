@@ -18,7 +18,7 @@ import           Text.PrettyPrint.Boxes hiding ((<>))
 import Data.Function
 
 import LS.BasicTypes (MyStream (unMyStream, MyStream) , myStreamInput, MyToken (Other), WithPos (tokenVal, pos), renderToken)
-import Data.Vector (imap, foldl', foldl1')
+import Data.Vector (imap, foldl1')
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LT
 import Control.Arrow ((>>>))

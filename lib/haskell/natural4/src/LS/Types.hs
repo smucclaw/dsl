@@ -21,12 +21,12 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import GHC.Generics
 import qualified Data.Tree as Tree
+import qualified Data.Map as Map
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
-import Data.Char (toUpper)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -39,9 +39,9 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 
 -- * BoolStructs wrap Phrasal types
 
-type BoolStruct  = AA.Item Text.Text
-type BoolStructP = AA.Item ParamText
-type BoolStructR = AA.Item RelationalPredicate
+type BoolStruct  = AA.ItemMaybeLabel Text.Text
+type BoolStructP = AA.ItemMaybeLabel ParamText
+type BoolStructR = AA.ItemMaybeLabel RelationalPredicate
 
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
@@ -79,10 +79,10 @@ type MultiTerm = [Text.Text]                          --- | apple | orange | ban
 --
 -- > action = ( "walk" :| [] , Nothing )
 --
-type ParamText = NonEmpty TypedMulti                  --- | notify | the government |    |         |
-                                                      --- |        | immediately    | :: | Urgency |
 
-
+type ParamText = NonEmpty TypedMulti               --- | notify | the government |    |         |
+                                                   --- |        | immediately    | :: | Urgency |
+-- see PrettyPrinter for newtypes based on ParamText
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
@@ -94,7 +94,7 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> AA.Item ParamText
+mkLeaf :: Text.Text -> AA.ItemMaybeLabel ParamText
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
@@ -150,8 +150,33 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          }
                       deriving (Eq, Show, Generic)
 
+-- | find some unique name for the rule for purposes of scoping the symbol table.
+-- if a rule label is provided, we use that.
+-- if it's not provided, we use the name.
+-- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
+
+ruleLabelName :: Rule -> RuleName
+ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (getRlabel r)
+
+getRlabel :: Rule -> Maybe RuleLabel
+getRlabel r@Regulative{}    = rlabel r
+getRlabel r@Constitutive {} = rlabel r
+getRlabel r@Hornlike {}     = rlabel r
+getRlabel r@TypeDecl {}     = rlabel r
+getRlabel r@Scenario {}     = rlabel r
+getRlabel r@RuleGroup {}    = rlabel r
+-- getRlabel r@DefNameAlias {} = Nothing
+-- getRlabel r@DefTypically {} = Nothing
+-- getRlabel r@(RuleAlias a)   = Nothing
+-- getRlabel r@RegFulfilled    = Nothing
+-- getRlabel r@RegBreach       = Nothing
+getRlabel _                 = Nothing
+
 ruleName :: Rule -> RuleName
 ruleName Regulative { subj  = x } = [bsp2text x]
+ruleName (RuleAlias rn) = rn
+ruleName RegFulfilled = ["FULFILLED"]
+ruleName RegBreach    = ["BREACH"]
 ruleName x = name x
 
 type RuleLabel = (Text.Text   --  "§"
@@ -212,7 +237,8 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | Hornlike
-            { name     :: RuleName           -- colour
+            { name     :: RuleName           -- MyInstance
+            , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
             , given    :: Maybe ParamText    -- applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
@@ -224,9 +250,9 @@ data Rule = Regulative
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             }
           | TypeDecl
-            { name     :: RuleName  --      DEFINE Sign
-            , super    :: Maybe TypeSig     --                  :: Thing
-            , has      :: Maybe [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            { name     :: RuleName              -- DECLARE Class
+            , super    :: Maybe TypeSig         -- IS A Superclass
+            , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
@@ -286,21 +312,6 @@ data HornClause2 = HC2
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Show, Generic, ToJSON)
 
--- Prologgy stuff
-data HornClause = HC
-  { relPred :: RelationalPredicate
-  , relWhen :: Maybe HornBody
-  }
-  deriving (Eq, Show, Generic, ToJSON)
-
-type HornRP = AA.Item RelationalPredicate
-
-data HornBody = HBRP HornRP
-              | HBITE { hbif   :: HornRP
-                      , hbthen :: HornRP
-                      , hbelse :: HornRP }
-  deriving (Eq, Show, Generic, ToJSON)
-
 class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
   prependHead :: Text.Text -> a -> a
@@ -335,6 +346,16 @@ rel2txt RPgt      = "relGT"
 rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
+
+rel2op :: RPRel -> Text.Text
+rel2op RPis      = "=="
+rel2op RPeq      = "=="
+rel2op RPlt      = "<"
+rel2op RPlte     = "<="
+rel2op RPgt      = ">"
+rel2op RPgte     = ">="
+rel2op RPelem    = "IN"
+rel2op RPnotElem = "NOT IN"
 
 rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt
@@ -391,6 +412,96 @@ type EntityType = Text.Text
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
              deriving (Eq, Show, Generic, ToJSON)
+
+-- for use by the interpreter
+
+type VarPath = [TypedMulti]
+
+data Interpreted = L4I
+  { classtable :: ClsTab
+  , scopetable :: ScopeTabs
+  , origrules  :: [Rule]
+  }
+  deriving (Eq, Show)
+
+-- | a basic symbol table to track "variable names" and their associated types.
+
+getUnderlyingType :: TypeSig -> Either String EntityType
+getUnderlyingType o@(SimpleType TOne      s1) = Right s1
+getUnderlyingType   (SimpleType TOptional s1) = Left "type declaration cannot inherit from _optional_ superclass"
+getUnderlyingType   (SimpleType TList0    s1) = Left "type declaration cannot inherit from _list_ superclass"
+getUnderlyingType   (SimpleType TList1    s1) = Left "type declaration cannot inherit from _list_ superclass"
+getUnderlyingType   (InlineEnum pt1       s1) = Left "type declaration cannot inherit from _enum_ superclass"
+
+-- what's the difference between SymTab, ClsTab, and ScopeTabs?
+
+-- | ClsTab: things that are explicitly defined in a Type Declaration (DECLARE ... HAS ...) end up in the ClsTab
+-- and they qualify to be used as types on the RHS of a :: definition which could appear anywhere.
+newtype ClsTab = CT ClassHierarchyMap
+  -- a class has attributes; those attributes live in a map keyed by classname.
+  -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
+  -- the snd part is the recursive HAS containing attributes of the class
+  deriving (Show, Eq)
+
+unCT :: ClsTab -> ClassHierarchyMap
+unCT (CT x) = x
+type ClassHierarchyMap = Map.Map EntityType (Inferrable TypeSig, ClsTab)
+
+-- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
+-- those end up in the ScopeTabs object returned by the `symbolTable` function.
+
+-- We also see explicit variable definitions given by (DEFINE ... HAS ...). These also end up in ScopeTabs.
+-- If such a definition appears under a WHERE limb of another rule, it is scoped to that rule.
+
+-- If it is given at top level, then it is under ... global scope, which is represented by Rulename=[]
+-- The keys to ScopeTabs are from ruleLabelName.
+
+type ScopeTabs = Map.Map RuleName SymTab
+
+--  | SymTabs are a helper data structure used by ScopeTabs.
+-- the fst contains type-related information.
+-- the snd contains value-related information.
+
+-- this type is getting pretty hefty, soon it'll be time to give it a proper type definition.
+
+type SymTab = Map.Map MultiTerm (Inferrable TypeSig, [HornClause2])
+
+-- | The explicitly annotated types from the L4 source text are recorded in the fst of Inferrable.
+--   The confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
+--   If type checking / inference have not been implemented the snd will be empty.
+type Inferrable ts = (Maybe ts, [ts])
+
+thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
+
+-- | attributes defined in the type declaration for this class specifically
+thisAttributes (CT clstab) subclass = do
+  ((mts, tss), ct) <- Map.lookup subclass clstab
+  return ct
+
+extendedAttributes o@(CT clstab) subclass = do
+  ((mts, tss), CT ct) <- Map.lookup subclass clstab
+  ts <- mts
+  let eAttrs = case (extendedAttributes o <$> clsParent o subclass) of
+                 Nothing               -> Map.empty
+                 (Just Nothing)        -> Map.empty
+                 (Just (Just (CT ea))) -> ea
+  return $ CT $ ct <> eAttrs
+
+-- get out whatever type signature has been user defined or inferred.
+getSymType :: Inferrable ts -> Maybe ts
+getSymType (Just x, _)    = Just x
+getSymType (Nothing, x:_) = Just x
+getSymType (Nothing, [])  = Nothing
+
+-- a subclass extends a superclass.
+-- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
+clsParent :: ClsTab -> EntityType -> Maybe EntityType
+clsParent (CT clstab) subclass = do
+  ((mts, tss), st) <- Map.lookup subclass clstab
+  case getUnderlyingType <$> getSymType (mts, tss) of
+    Just (Right s1) -> Just s1
+    Just (Left err) -> Nothing
+    Nothing         -> Nothing
 
 -- is this a NonEmpty (NonEmpty Text.Text)
 -- or a Tree (Text.Text)
@@ -484,8 +595,10 @@ data RunConfig = RC { debug     :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
                     , toVue     :: Bool
+                    , toTS      :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
+                    , runNLGtests :: Bool
                     } deriving (Show, Eq)
 
 defaultRC :: RunConfig
@@ -505,8 +618,10 @@ defaultRC = RC
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , toTS = False
         , extendedGrounds = False
         , toChecklist = False
+        , runNLGtests = False
         }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack
@@ -606,6 +721,7 @@ toToken "IS AN"  = [TypeSeparator, A_An]
 toToken "A"      = pure A_An
 toToken "AN"     = pure A_An
 
+toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define
 toToken "DECIDE"    = pure Decide
 toToken "ONE OF"    = pure OneOf
@@ -647,6 +763,8 @@ toToken "OTHERWISE" = pure Otherwise
 
 toToken "WHERE"     = pure Where
 
+toToken ";;"        = pure Semicolon
+
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
 toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
@@ -686,4 +804,13 @@ pTokenMatch f c = do
       if f x
         then Just x
         else Nothing
+
+rLabelR :: Rule -> Maybe RuleLabel
+rLabelR Regulative   {..} = rlabel
+rLabelR Constitutive {..} = rlabel
+rLabelR Hornlike     {..} = rlabel
+rLabelR TypeDecl     {..} = rlabel
+rLabelR Scenario     {..} = rlabel
+rLabelR RuleGroup    {..} = rlabel
+rLabelR _                 = Nothing
 

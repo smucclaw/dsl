@@ -34,7 +34,7 @@ svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
     ]
 
 cleanXMLAttr :: XML.Attr -> (Text, Text)
-cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, replace ".0000" "" (pack $ XML.attrVal at))
+cleanXMLAttr at = ( pack $ XML.qName $ XML.attrKey at, pack $ XML.attrVal at)
 
 parseRectSVG :: Text -> Set.Set (Text, Text)
 parseRectSVG s =
@@ -64,7 +64,7 @@ extractBoxAndSVG alignBoxes = (boundingBoxes, svgsAttrs)
   svgsAttrs = parseSVGContent <$> XML.parseXML svgs
   boundingBoxes = fst alignBoxes
 
-compositeAndTree :: Tree (Q Text)
+compositeAndTree :: QuestionTree
 compositeAndTree =
   Node
     { rootLabel =
@@ -120,7 +120,7 @@ compositeAndTree =
     }
 
 
-simpleAndTree :: Tree (Q Text)
+simpleAndTree :: QuestionTree
 simpleAndTree =
   Node
     { rootLabel =
@@ -154,7 +154,7 @@ simpleAndTree =
         ]
     }
 
-simpleOrTree :: Tree (Q Text)
+simpleOrTree :: QuestionTree
 simpleOrTree =
   Node
     { rootLabel =
@@ -186,6 +186,15 @@ simpleOrTree =
               subForest = []
             }
         ]
+    }
+
+makeSingleNodeTree :: Text -> Question
+makeSingleNodeTree t =
+  AnyAll.Types.Q
+    { shouldView = View,
+      andOr = Simply t,
+      prePost = Nothing,
+      mark = Default {getDefault = Left Nothing}
     }
 
 spec :: Spec
@@ -268,7 +277,7 @@ spec = do
         firstExpected  = Set.fromList $ ("transform","translate(0 10)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10.0}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10}, secondBox]
 
     it "expands bounding box and shift rectangle on Bottom alignment" $ do
       let
@@ -278,23 +287,23 @@ spec = do
         firstExpected  = Set.fromList $ ("transform","translate(0 20)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20.0}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20}, secondBox]
 
-  describe "test hlayout" $ do
+  describe "test rowLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
-      alignBox = hlayout c alignedBox1 alignedBox2
+      alignBox = rowLayouter c alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 90.0, bbh = 30.0, pl = PVoffset 15.0, pr = PVoffset 15.0}
+      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15, bbrm = 13, bblm = 17}
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -303,7 +312,30 @@ spec = do
       _ <- print resultBox
       pendingWith "it's not a real test but just a debug code"
 
-  describe "test vlayout" $ do
+  describe "test combineAnd" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      alignBox = combineAnd c elems
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 10,0 0,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` firstBox{bbw = 134, bbh = 30, pl = PVoffset 5, pr = PVoffset 15, bblm = 22 + 17, bbrm = 22 + 13}
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test columnLayouter" $ do
     let
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
@@ -317,8 +349,8 @@ spec = do
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
       mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
       -- Have to use vlayout 2 times to feed start box
-      tempBox = vlayout c mybbox startBox alignedBox1
-      alignBox = vlayout c mybbox tempBox alignedBox2
+      tempBox = columnLayouter c mybbox startBox alignedBox1
+      alignBox = columnLayouter c mybbox tempBox alignedBox2
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
@@ -329,7 +361,7 @@ spec = do
       inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
       outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60.0, bbh = 60.0, pl = PTop, pr = PTop}
+      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop}
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
     xit "print debug" $ do
@@ -396,3 +428,25 @@ spec = do
       bottomText (Just $ Pre "a") `shouldBe` Nothing
     it "does Nothing" $ do
       bottomText (Nothing :: Maybe (Label Text)) `shouldBe` Nothing
+
+  describe "drawLeaf" $ do
+    let
+      shortTextNode = makeSingleNodeTree "swim"
+      longTextNode = makeSingleNodeTree "discombobulate"
+      mark = Default {getDefault = Right (Just True)}
+    it "makes elements of different sizes for Full scale" $ do
+      let
+        c = dc{cscale=Full, cdebug = False}
+        shortLeaf = drawLeaf c True "swim" mark
+        longLeaf = drawLeaf c True "discombobulate" mark
+        shortBoxLength = bbw (fst shortLeaf)
+        longBoxLength = bbw (fst longLeaf)
+      (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
+    it "makes elements of the same size for Tiny scale" $ do
+      let
+        c = dc{cscale=Tiny, cdebug = False}
+        shortLeaf = drawLeaf c True "swim" mark
+        longLeaf = drawLeaf c True "discombobulate" mark
+        shortBoxLength = bbw (fst shortLeaf)
+        longBoxLength = bbw (fst longLeaf)
+      (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
-module AnyAll.PP (ppQTree, hardnormal) where
+module AnyAll.PP (ppQTree, hardnormal, cStyle) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance
@@ -12,9 +13,12 @@ import Data.Map.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
+import Data.ByteString.Lazy.UTF8 (toString)
 import qualified Data.Text       as T
+import Data.Aeson.Encode.Pretty ( encodePretty )
 import Data.Aeson.Types
 import Data.List
+import Text.Pretty.Simple (pPrint)
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann
@@ -23,7 +27,7 @@ data Style ann = Style
                  , s_or  :: String
                  }
 
-cStyle, haskellStyle, pythonStyle :: (Pretty txt) => Item txt -> Doc ann
+cStyle, haskellStyle, pythonStyle :: (Pretty txt) => ItemMaybeLabel txt -> Doc ann
 
 -- | render an AnyAll Item to a C-style syntax
 cStyle       = mystyle (Style parens "!"   "&&"  "||")
@@ -34,7 +38,7 @@ haskellStyle = mystyle (Style parens "not" "&&"  "||")
 -- | render an AnyAll Item to Python-style syntax
 pythonStyle  = mystyle (Style parens "not" "and" "or")
 
-mystyle :: (Pretty txt) => Style ann -> Item txt -> Doc ann
+mystyle :: (Pretty txt) => Style ann -> ItemMaybeLabel txt -> Doc ann
 mystyle _ (Leaf x)     = pretty x
 mystyle s (All lbl xs) = parens (hsep (intersperse (pretty $ s_and s) (mystyle s <$> xs)))
 mystyle s (Any lbl xs) = parens (hsep (intersperse (pretty $ s_or  s) (mystyle s <$> xs)))
@@ -53,7 +57,7 @@ markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
 markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
-hardnormal, softnormal :: Marking T.Text -> Item T.Text -> QTree T.Text
+hardnormal, softnormal :: Marking T.Text -> ItemMaybeLabel T.Text -> QTree T.Text
 hardnormal m = relevant Hard DPNormal m Nothing
 
 softnormal m = relevant Soft DPNormal m Nothing
@@ -68,7 +72,7 @@ docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: Item T.Text -> Map.Map T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
+ppQTree :: ItemMaybeLabel T.Text -> Map.Map T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
 ppQTree i mm = do
   let m = Marking (Default <$> mm)
       hardresult = hardnormal m i
@@ -88,6 +92,22 @@ ppQTree i mm = do
   
   print $ "**" <+> "C-style:"
   print (cStyle i)
+  print ppline
+
+  print $ "**" <+> "show of the AnyAll ItemMaybeLabel tree:"
+  pPrint i
+  print ppline
+
+  print $ "**" <+> "JSON of the AnyAll ItemMaybeLabel tree:"
+  putStrLn $ toString $ encodePretty i
+  print ppline
+
+  print $ "**" <+> "show of the AnyAll Item tree:"
+  pPrint $ alwaysLabeled i
+  print ppline
+
+  print $ "**" <+> "JSON of the AnyAll Item tree:"
+  putStrLn $ toString $ encodePretty $ alwaysLabeled i
   print ppline
 
   
@@ -120,3 +140,16 @@ ppQTree i mm = do
 
 
 
+instance (IsString t, Pretty t, Pretty a) => Pretty (Item (Maybe (Label t)) a) where
+  pretty (Leaf a)            = pretty a
+  pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
+  pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (All (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Any Nothing    xs)             = pretty (Any (Just (Pre "Any of the following:")) xs)
+  pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (Any (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Not            x ) = "not" <+> pretty x
+
+instance (Pretty a) => Pretty (Label a) where
+  pretty (Pre     p1)    = pretty p1
+  pretty (PrePost p1 p2) = pretty p1 <+> "..." <+> pretty p2

@@ -1,0 +1,7 @@
+DECIDE,c
+IF,a
+OR,b
+;;,
+,b
+MEANS,b1
+AND,b2

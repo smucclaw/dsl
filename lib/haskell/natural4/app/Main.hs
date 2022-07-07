@@ -30,8 +30,10 @@ import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import qualified Text.RawString.QQ as QQ
-import LS.Types (BoolStructR, RelationalPredicate(..))
+import LS.Types (BoolStructR, RelationalPredicate(..), Interpreted)
 import qualified AnyAll.Types as AA
+import Data.Maybe (catMaybes)
+import LS.Interpreter (onlyTheBoolStructR)
 
 main :: IO ()
 main = do
@@ -48,7 +50,7 @@ main = do
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems l4i)) <> "\n\n" <> psSuffix)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     processPurs l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
@@ -197,7 +199,6 @@ psSuffix = [QQ.r|
 schedule1_part1_nl :: NLDict
 schedule1_part1_nl =
   Map.fromFoldable
-    [ ]
     |]
 
 -- Tuple "en" $ Map.fromFoldable
@@ -265,18 +266,15 @@ schedule1_part1_nl =
 -- |]
 
 
--- type BoolStructR = ItemMaybeLabel RelationalPredicate
--- type MultiTerm = [Text.Text]
--- [(Text, Text)] is meant to turn into NLDict
 splitItemTree :: BoolStructR -> (BoolStructR, [(Text.Text, Text.Text)])
 splitItemTree tree = (extractIndexTree tree, extractDict tree)
 
+-- what about RMPT lists which do not contain exactly 2 elements?
+-- what about relpreds which aren't RPMT?
 extractIndexTree :: BoolStructR -> BoolStructR
 extractIndexTree (AA.Leaf (RPMT [idx, _])) = AA.Leaf (RPMT [idx])
 extractIndexTree (AA.Leaf (RPMT _)) = error "RPMT has to be a MultiTerm of 2 elements"
 extractIndexTree (AA.Leaf _) = error "RelPred has to be an RPMT"
--- how about RMPTs of empty lists / lists of more than 2 elements
--- how about relpreds which aren't RPMT
 extractIndexTree (AA.Any label subtrees) = AA.Any label (map extractIndexTree subtrees)
 extractIndexTree (AA.All label subtrees) = AA.All label (map extractIndexTree subtrees)
 extractIndexTree (AA.Not subtree) = AA.Not (extractIndexTree subtree)
@@ -288,3 +286,10 @@ extractDict (AA.Leaf _) = error "RelPred has to be an RPMT"
 extractDict (AA.Any _ subtrees) = concatMap extractDict subtrees
 extractDict (AA.All _ subtrees) = concatMap extractDict subtrees
 extractDict (AA.Not subtree) = extractDict subtree
+
+
+processPurs :: Interpreted -> String
+processPurs l4i =
+  let itemTree = onlyTheBoolStructR l4i
+      (idxtree, nldict) = splitItemTree itemTree
+  in psPrefix <> TL.unpack (pShowNoColor idxtree) <> "\n\n" <> psSuffix <> TL.unpack (pShowNoColor nldict)

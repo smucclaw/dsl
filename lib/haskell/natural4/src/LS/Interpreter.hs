@@ -182,6 +182,21 @@ getAndOrTree l4i r@(RuleAlias rn) = case getRuleByName (origrules l4i) rn of
 getAndOrTree _l4i r = trace ("ERROR: getAndOrTree called invalidly against rule " <> ruleNameStr r) $
                       AA.Leaf ("ERROR: can't call getAndOrTree against" <> T.unwords (ruleLabelName r))
 
+getBoolStructTree :: Interpreted -> Rule -> AA.ItemMaybeLabel RelationalPredicate
+getBoolStructTree  l4i r@Hornlike{}    = trace ("[TODO]: getAndOrTree on Hornlike rule \"" <> ruleNameStr r <> "\"") $
+                                         foldr1 (<>) (defaultElem (AA.Leaf (RPMT ["BASE CASE TRUE"]))
+                                                                      $ catMaybes
+                                                                      $ traceShowId
+                                                                      $ bsmtOfClauses
+                                                                      $ r { clauses = expandClauses l4i (clauses r) } )
+  where
+    defaultElem :: a -> [a] -> [a]
+    defaultElem dflt []  = [ dflt ]
+    defaultElem _    lst = lst
+getBoolStructTree _ _ = error "only Hornlike rules can be handled"
+
+
+
 -- convert clauses to a boolStruct MT
 bsmtOfClauses r = [ mhead <> mbody
                   | c <- clauses r
@@ -287,6 +302,10 @@ expandBody l4i = id
 
 onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
 onlyTheItems l4i = AA.All (Just (AA.Pre "all of the following:")) (getAndOrTree l4i <$> origrules l4i)
+
+onlyTheBoolStructR :: Interpreted -> AA.ItemMaybeLabel RelationalPredicate
+onlyTheBoolStructR l4i = AA.All (Just (AA.Pre "all of the following:")) (getBoolStructTree l4i <$> origrules l4i)
+
 
 alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
 alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)

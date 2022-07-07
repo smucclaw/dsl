@@ -64,6 +64,11 @@ hasGiven     TypeDecl{} = True
 hasGiven Constitutive{} = True
 hasGiven             __ = False
 
+-- | it's beginning to look like we need to break out the Rule Types into different types not just constructors
+hasClauses :: Rule -> Bool
+hasClauses     Hornlike{} = True
+hasClauses             __ = False
+
 l4interpret :: [Rule] -> Interpreted
 l4interpret rs = L4I { classtable = classHierarchy rs
                      , scopetable = symbolTable    rs

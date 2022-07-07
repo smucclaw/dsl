@@ -55,7 +55,9 @@ main = do
                                    , TL.unpack (pShowNoColor rules)
 
                                    , "-- variable-substitution expanded AnyAll rules\n"
-                                   , TL.unpack (pShowNoColor $ (\r -> r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }) <$> rules)
+                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }
+                                                               | r@SFL4.Hornlike{} <- rules
+                                                               ])
 
                                    , "-- getAndOrTrees"
                                    , unlines $ (\r -> ("\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n") <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules

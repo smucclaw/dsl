@@ -570,19 +570,23 @@ itemBox c x y andor m cs amNot = (,) ((defaultBBox (cscale c)) { bbw = fromInteg
   where cs = colorScheme c m amNot
 
 data ColorScheme = ColorScheme
-  { bs -- | box stroke
-  , bf -- | box fill
-  , tf -- | text fill
-  , ll -- | left  "negation" line -- the marking is False
-  , rl -- | right "negation" line -- we are drawing a Not element
-  , tl -- | top "truth" line -- drawn if the value is true, or if the marking is false and the item is a Not
-    :: T.Text
+  { -- | box stroke
+    bs :: T.Text,
+    -- | box fill
+    bf :: T.Text,
+    -- | text fill
+    tf :: T.Text,
+    -- | left  "negation" line -- the marking is False
+    ll :: T.Text,
+    -- | right "negation" line -- we are drawing a Not element
+    rl :: T.Text,
+    -- | top "truth" line -- drawn if the value is true, or if the marking is false and the item is a Not
+    tl :: T.Text
   }
-
 -- | the color scheme depends on the marking
 colorScheme :: AAVConfig
             -> Default Bool
-            -> Boolean   -- | iff we got here via a Not, this value is True
+            -> Boolean   -- ^ iff we got here via a Not, this value is True
             -> ColorScheme
 colorScheme c m amNot = case m of
                           Default (Right (Just b@True )) -> ColorScheme "none" "none" "black" "none"  notLine (topLine b) -- user says true, or computed to true

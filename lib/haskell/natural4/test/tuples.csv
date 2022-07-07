@@ -1,0 +1,9 @@
+any of the prescribed personal data or classes of personal data relating to the individual,,,,
+// (Act26§Part1.1),,,MEANS,FALSE,,1,"The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services."
+// (Act26§Part1.2),,,OR,TRUE,,2,The income of the individual from the sale of any goods or property.
+// (Act26§Part1.3),,,OR,FALSE,,3,"The number of any credit card, charge card or debit card issued to or in the name of the individual."
+// (Act26§Part1.4),,,OR,FALSE,,4,The number assigned to any account the individual has with any organisation that is a bank or finance company.
+MEANS,FALSE,,1,"The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services."
+OR,TRUE,,2,The income of the individual from the sale of any goods or property.
+OR,FALSE,,3,"The number of any credit card, charge card or debit card issued to or in the name of the individual."
+OR,FALSE,,4,The number assigned to any account the individual has with any organisation that is a bank or finance company.

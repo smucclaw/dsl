@@ -30,6 +30,8 @@ import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import qualified Text.RawString.QQ as QQ
+import LS.Types (BoolStructR, RelationalPredicate(..))
+import qualified AnyAll.Types as AA
 
 main :: IO ()
 main = do
@@ -262,4 +264,27 @@ schedule1_part1_nl =
 --     ]
 -- |]
 
-  
+
+-- type BoolStructR = ItemMaybeLabel RelationalPredicate
+-- type MultiTerm = [Text.Text]
+-- [(Text, Text)] is meant to turn into NLDict
+splitItemTree :: BoolStructR -> (BoolStructR, [(Text.Text, Text.Text)])
+splitItemTree tree = (extractIndexTree tree, extractDict tree)
+
+extractIndexTree :: BoolStructR -> BoolStructR
+extractIndexTree (AA.Leaf (RPMT [idx, _])) = AA.Leaf (RPMT [idx])
+extractIndexTree (AA.Leaf (RPMT _)) = error "RPMT has to be a MultiTerm of 2 elements"
+extractIndexTree (AA.Leaf _) = error "RelPred has to be an RPMT"
+-- how about RMPTs of empty lists / lists of more than 2 elements
+-- how about relpreds which aren't RPMT
+extractIndexTree (AA.Any label subtrees) = AA.Any label (map extractIndexTree subtrees)
+extractIndexTree (AA.All label subtrees) = AA.All label (map extractIndexTree subtrees)
+extractIndexTree (AA.Not subtree) = AA.Not (extractIndexTree subtree)
+
+extractDict :: BoolStructR -> [(Text.Text, Text.Text)]
+extractDict (AA.Leaf (RPMT [idx, txt])) = [(idx, txt)]
+extractDict (AA.Leaf (RPMT _)) = error "RPMT has to be a MultiTerm of 2 elements"
+extractDict (AA.Leaf _) = error "RelPred has to be an RPMT"
+extractDict (AA.Any _ subtrees) = concatMap extractDict subtrees
+extractDict (AA.All _ subtrees) = concatMap extractDict subtrees
+extractDict (AA.Not subtree) = extractDict subtree

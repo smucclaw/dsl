@@ -13,7 +13,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import           Data.Foldable (find)
 import           System.IO.Unsafe (unsafePerformIO)
-import           Control.Monad (forM_, when, unless)
+import           Control.Monad (forM_, when, unless, msum)
 import qualified Data.Map           as Map
 import           Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
 import           Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
@@ -52,6 +52,13 @@ data PNode a = PN { ntype  :: NType
              deriving (Eq, Show)
 
 type Petri a = Gr (PNode a) PLabel
+
+-- see also Data.Function (&)
+-- see also Flow (|>)
+-- https://hackage.haskell.org/package/flow-2.0.0.0/docs/Flow.html
+(|>) :: a -> (a -> b) -> b
+(|>) = flip ($)
+infixl 1 |>
 
 mkPlace,mkTrans,mkDecis :: Text -> (PNode a)
 mkPlace x = PN Place x [] []
@@ -156,11 +163,33 @@ type PetriD = Petri Deet
 toPetri :: [Rule] -> Text.Text
 toPetri rules =
   let petri1 = insrules rules startGraph
-      rewritten = mergePetri rules $
-                  condElimination rules $
-                  reorder rules $
-                  connectRules petri1 rules
+      rewritten = rules
+                  |> connectRules petri1
+                  |> reorder rules
+                  |> condElimination rules
+                  |> mergePetri rules
+                  |> elideNodes "consequently" (hasText "consequently")
+                  |> elideNodes "FromRuleAlias" (hasDeet FromRuleAlias)
   in LT.toStrict $ renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
+
+-- | get rid of intermediary nodes y that fit the pattern `x -> y -> z`, where y passes the given predicate
+elideNodes :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodes desc pnpred og = runGM og $ do
+  -- awkward phrasing, shouldn't there be some sort of concatM
+  forM_ [ do
+             newEdge' (x, z, [Comment $ "after elision of " <> desc <> " intermediary"])
+             delEdge' (x, y)
+             delEdge' (   y, z)
+             delNode' y
+        | y <- nodes $ labfilter pnpred og
+        , let indegrees  = pre og y
+              outdegrees = suc og y
+        , length  indegrees == 1
+        , length outdegrees == 1
+        , x   <- indegrees
+        , z   <- outdegrees
+        ] $ id
+  
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder rules og = runGM og $ do
@@ -251,7 +280,6 @@ splitJoin :: [Rule]      -- background input ruleset
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  let (|>) = flip ($)
       -- Sometimes, entry satisfies hasDeet IsFirstNode and so it appears
       -- in the resulting list of nodes as returned by the call to nodes below.
       -- Since we only want the children of entry and not entry itself, we can
@@ -264,7 +292,7 @@ splitJoin rs og sj sgs entry = runGM og $ do
       --               |
       --               v
       --              ...
-      headsOfChildren = 
+  let headsOfChildren = 
         sgs |> labfilter (hasDeet IsFirstNode)
             |> nodes
             |> filter (/= entry)
@@ -316,6 +344,8 @@ splitJoin rs og sj sgs entry = runGM og $ do
       traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
       mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
+hasText :: Text -> PNode a -> Bool
+hasText  x  (PN _ nt _ _) = x == nt
 hasDeet :: Eq a => a -> PNode a -> Bool
 hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
 hasDeets :: (Foldable t, Eq a) => t a -> PNode a -> Bool

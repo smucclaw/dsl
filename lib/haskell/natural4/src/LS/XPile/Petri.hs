@@ -290,10 +290,10 @@ splitJoin rs og sj sgs entry = runGM og $ do
   else do
     let splitText = case length headsOfChildren of
           0 -> undefined -- This should never happen since we already check if headsOfChildren is empty above.
-          1 -> "split (1)"
+          1 -> "consequently"
           2 -> "both"
           _ -> "split (and)"
-        joinText = "All done"
+        joinText = "all done"
     -- If the entry node has children, then we need to care about splitting and
     -- joining. We first make a split node and connect:
     --    entry node -> split node -> children of entry node
@@ -311,8 +311,8 @@ splitJoin rs og sj sgs entry = runGM og $ do
     --                                        Fulfilled                      
     when (length successTails > 1) $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
-      newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
-      mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
+      newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
+      mapM_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
       traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
       mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
@@ -340,6 +340,9 @@ connectRules sg rules =
   -- let's search for all ruleAlias nodes, and plan to expand them
   --
 
+  -- meng would like to clear up `x -> (FromRuleAlias) -> (y)` to `x -> (y)`
+  -- because it is ugly to have `() -> ()`, that's not really a Petri net
+  
   let subgraphOfAliases = labfilter (hasDeet FromRuleAlias) sg
   -- another way to find it might be to look for head nodes that have no outdegrees
 
@@ -574,7 +577,9 @@ r2fgl rs defRL r@Regulative{..} = do
                                       , temp
                                       ])
         successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
-                     vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+                     -- vp2np
+                     -- ( actionWord $ head $ actionFragments action) <> " " <>
+                     henceWord deontic
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
@@ -608,7 +613,7 @@ r2fgl rs defRL r@Regulative{..} = do
     vp2np :: Text -> Text
     vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
 
-    seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive"]
+    seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive", color Green]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]
     henceWord DMust  = "done"
     henceWord DMay   = "occurred"
@@ -652,7 +657,7 @@ subj2nl NLen (AA.Leaf pt) = pt2text pt
 deonticTemporal :: Rule -> [(Text.Text, Text.Text)]
 deonticTemporal r@(Regulative{..}) =
   let d = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
-      temp = tc2nl NLen temporal
+      temp = Text.replace "  " " " $ tc2nl NLen temporal
       actions = actionFragments action
   in dTshow d temp <$> actions
   where

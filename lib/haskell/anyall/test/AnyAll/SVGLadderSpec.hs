@@ -312,7 +312,7 @@ spec = do
       _ <- print resultBox
       pendingWith "it's not a real test but just a debug code"
 
-  describe "test combineAnd" $ do
+  describe "test combineAnd margins" $ do
     let
       firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
@@ -337,9 +337,9 @@ spec = do
 
   describe "test columnLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17, bbrm = 13}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bblm = 7, bbrm = 5}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       myScale     = getScale (cscale c)
       lrVgap      = slrv myScale
@@ -354,27 +354,48 @@ spec = do
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
-      inConnector1 = [("d","M -22,32 C 0,32 -22,15 0 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector1  = [("d","M 82,32 C 60,32 82,15 60 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
+      inConnector1 = [("d","M -22,32 C 0,32 -22,15 17 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector1  = [("d","M 82,32 C 60,32 82,15 47 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
 
       secondSVGBox = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(20 0)translate(0 30)"),("width","20"),("x","0"),("y","0")]
-      inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
+      inConnector2  = [("d","M -22,32 C 0,32 -22,45 27 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector2  =  [("d","M 82,32 C 60,32 82,45 35 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop}
+      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop, bblm = 0, bbrm = 0}
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
-    xit "print debug" $ do
+    it "print debug" $ do
       let
         svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
       _ <- print svgXml
       pendingWith "it's not a real test but just a debug code"
 
+  describe "test hAlign" $ do
+    let
+      leftMargin = 7
+      rightMargin = 5
+      aligmentPadOneSide = 20
+      columnWidth = 60
+      firstBox = templatedBoundingBox {bbw = columnWidth, bbh = 10, bblm = 17, bbrm = 13}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = columnWidth - aligmentPadOneSide * 2, bbh = 30, bblm = 7, bbrm = 5}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+
+      _:(alignedBox2,_):_ = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
+    it "aligns smaller box" $ do
+      alignedBox2 `shouldBe` secondBox
+        { bbw = columnWidth,
+          pl = PMiddle,
+          pr = PMiddle,
+          bblm = leftMargin + aligmentPadOneSide,
+          bbrm = rightMargin + aligmentPadOneSide
+        }
+
   describe "test combineAnd" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
     myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
     let
-      c = dc{cscale=Full, cdebug = False} 
+      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
@@ -398,7 +419,7 @@ spec = do
     mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
     myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
-      c = dc{cscale=Full, cdebug = False} 
+      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)

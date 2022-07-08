@@ -252,7 +252,7 @@ alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElem
     moveElement = alignHCalcMove alignment alignmentPad
 
 adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
-adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin, bbrm = newRightMargin}
+adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin + bblm box, bbrm = newRightMargin + bbrm box}
   where
     (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
 
@@ -497,10 +497,10 @@ drawVerticalLine xPosition length lineType linePosition =
 
 renderVerticalLine :: Length -> Length -> T.Text -> SVGElement
 renderVerticalLine xPosition length lineClass =
-  line_ 
-    [ X1_ <<-* xPosition, Y1_ <<-* 0, 
+  line_
+    [ X1_ <<-* xPosition, Y1_ <<-* 0,
       X2_ <<-* xPosition, Y2_ <<-* length,
-      Stroke_ <<- "black", 
+      Stroke_ <<- "black",
       Class_ <<- lineClass
     ]
 

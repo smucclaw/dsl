@@ -88,7 +88,7 @@ main = do
           mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
-          appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
+          appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
           myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
       | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")

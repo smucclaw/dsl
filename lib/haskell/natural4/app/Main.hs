@@ -36,7 +36,9 @@ main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
   nlgEnv   <- unsafeInterleaveIO myNLGEnv -- Only load the NLG environment if we need it.
+  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
+  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
       l4i         = l4interpret rules
@@ -70,6 +72,7 @@ main = do
                                    ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
+    putStrLn "going to start dumping to workdir outputs"
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4

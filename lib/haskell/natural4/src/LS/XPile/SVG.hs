@@ -9,6 +9,7 @@ import LS
 import AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as T
+import Data.Maybe (maybeToList)
 
 -- extract the tree-structured rules from Interpreter
 -- for each rule, print as svg according to options we were given
@@ -18,8 +19,8 @@ asAAsvg aavc l4i rs =
   in Map.fromList [ (rn, (svgtiny, svgfull, aaT, qtree))
                   | r <- rs'
                   , let rn      = ruleLabelName r
-                        aaT     = getAndOrTree l4i r
-                        qtree   = hardnormal (cgetMark aavc) aaT
+                  , aaT <- maybeToList (getAndOrTree l4i r)
+                  , let qtree   = hardnormal (cgetMark aavc) aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                         svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
                   ]

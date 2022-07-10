@@ -115,7 +115,7 @@ mySentence = [Singular ""other data""
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26B.1.b),,,OR,FALSE,"it is, or is likely to be, of a significant scale",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26B.3.a),,,,,MEANS,FALSE,if the data breach affects not fewer than,,,,,,,the prescribed number of affected individuals,,,,,,,,,,,,,,,,,,,,,,
-,,,,(Regs §4),,,,,,,,,,,,,,IS,500,,,,,,,,,,,,,,,,,,,,,
+,,,,(Regs §4),,,,,,,,,,,,,,MEANS,500,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

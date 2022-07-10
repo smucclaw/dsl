@@ -36,7 +36,9 @@ main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
   nlgEnv   <- unsafeInterleaveIO myNLGEnv -- Only load the NLG environment if we need it.
+--  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
+--  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
       l4i         = l4interpret rules
@@ -70,13 +72,14 @@ main = do
                                    ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
-    unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
+--    putStrLn "going to start dumping to workdir outputs"
+    unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     unless (not (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     unless (not (SFL4.topurs    opts)) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
+    unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ sequence_
       [ do
@@ -88,7 +91,8 @@ main = do
           mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
           let fnamext = fname <> "." <> ext
               displayTxt = Text.unpack $ Text.unwords n
-          appendFile (dname <> "/index.html") ("<li> " <> "<a href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n")
+          appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+                                               <> "</a></li>\n")
           myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
       | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
       , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
@@ -159,6 +163,7 @@ mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
   let mypath = dirname <> "/" <> filename     <> "." <> ext
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  -- putStrLn ("mywritefile: outputting to " <> mypath)
   writeFile mypath s
   -- do the symlink more atomically by renaming
   when doLink $ myMkLink (filename <> "." <> ext) mylink

@@ -173,9 +173,9 @@ makeSvg' :: AAVConfig -> BoxedSVG -> SVGElement
 makeSvg' c = makeSvg
 
 makeSvg :: BoxedSVG -> SVGElement
-makeSvg (_bbx, geom) =
+makeSvg (box, geom) =
      doctype
-  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1" ]
+  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + bbw box + bblm box + bbrm box, Height_ <<-* 23 + bbh box + bbtm box + bbbm box]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)

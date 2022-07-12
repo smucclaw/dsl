@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
-import           Data.Text.Lazy                   (toStrict)
+import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
@@ -437,6 +437,18 @@ combineAnd c elems =
     addElementToRow = rowLayouter c
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
 
+drawLabel ::  AAVConfig -> Maybe (Label T.Text) -> SVGElement
+drawLabel _ Nothing = mempty
+drawLabel c (Just l) =
+  case l of
+    Pre t -> boxContent t
+    PrePost pre post -> boxContent (T.append pre post)
+  where
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = \txt -> defBoxWidth - 15 + (3 * fromIntegral (T.length txt))
+    boxContent = \txt -> drawBoxContent (cscale c) txt "black" (boxWidth txt) boxHeight
+
 -- in a LR layout, each of the ORs gets a row below.
 -- we max up the bounding boxes and return that as our own bounding box.
 drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
@@ -445,17 +457,22 @@ drawOr c negContext childqs =
     where
       rawChildren = drawItemFull c negContext <$> childqs
 
-drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
-drawAnd c negContext childqs =
-    combineAnd c rawChildren
-    where
-      rawChildren = drawItemFull c negContext <$> childqs
+drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
+drawAnd c negContext pp childqs =
+  case pp of
+    Nothing -> (box, svg)
+    Just (Pre txt) -> (box, svg <> text_ [] (toElement txt))
+    Just (PrePost preTxt postTxt) ->  (box, svg <> text_ [] (toElement preTxt))
+  where
+    rawChildren = drawItemFull c negContext <$> childqs
+    (box, svg) = combineAnd c rawChildren
+    
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
   case ao of
     Or -> drawOr c negContext childqs
-    And -> drawAnd c negContext childqs
+    And -> drawAnd c negContext pp childqs
     Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)
 

@@ -308,14 +308,15 @@ rowConnectorData c bbold bbnew =
   Curve
     { start = Dot {x = bbw bbold - rightMargin, y = portLocationY},
       startGuide = Dot {x = rightMargin + gap, y = 0},
-      endGuide = Dot {x = rightMargin, y = portL bbnew myScale - portLocationY},
-      end = Dot {x = rightMargin + gap + bblm bbnew, y = portL bbnew myScale - portLocationY}
+      endGuide = Dot {x = rightMargin, y = endPortY},
+      end = Dot {x = rightMargin + gap + bblm bbnew, y = endPortY}
     }
   where
     myScale = getScale (cscale c)
     gap = slrh myScale
     rightMargin = bbrm bbold
     portLocationY = portR bbold myScale
+    endPortY = portL bbnew myScale - portLocationY
 
 svgConnector :: Curve -> SVGElement
 svgConnector
@@ -461,12 +462,30 @@ drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedS
 drawAnd c negContext pp childqs =
   case pp of
     Nothing -> (box, svg)
-    Just (Pre txt) -> (box, svg <> text_ [] (toElement txt))
-    Just (PrePost preTxt postTxt) ->  (box, svg <> text_ [] (toElement preTxt))
+    Just (Pre txt) -> drawAndPreLable c txt (box, svg) 
+    Just (PrePost preTxt postTxt) -> (box, svg <> text_ [] (toElement preTxt))
   where
     rawChildren = drawItemFull c negContext <$> childqs
     (box, svg) = combineAnd c rawChildren
-    
+
+drawAndPreLable :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
+drawAndPreLable c label (childBox, childSVG) =
+    (labeledBox, moveInt (0, labelHeight) (childSVG <> text_ [] (toElement label)))
+  where
+    labeledBox = childBox {bbtm = bbtm childBox + labelHeight, bbh = bbh childBox + labelHeight, pr = pqr, pl = pql}
+    labelHeight = stm (getScale (cscale c))
+    (pql,pqr) = labelPortsAdjustment childBox labelHeight
+
+labelPortsAdjustment :: BBox -> Length -> (PortStyleV , PortStyleV)
+labelPortsAdjustment childBox labelHeight =
+    (pql, pqr)
+  where
+    pql = labelPortAdjustment (pl childBox) labelHeight
+    pqr = labelPortAdjustment (pr childBox) labelHeight
+
+labelPortAdjustment :: PortStyleV -> Length -> PortStyleV
+labelPortAdjustment (PVoffset offset) labelHeight = PVoffset (offset + labelHeight)
+labelPortAdjustment port _ = port
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =

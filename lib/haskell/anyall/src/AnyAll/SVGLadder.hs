@@ -471,11 +471,25 @@ drawAnd c negContext pp childqs =
 
 drawAndPreLabel :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
 drawAndPreLabel c label (childBox, childSVG) =
-    (labeledBox, moveInt (0, labelHeight) (childSVG <> text_ [] (toElement label)))
+    (labeledBox, moveInt (0, labelHeight) childSVG <> svgLabel)
   where
     labeledBox = childBox {bbtm = bbtm childBox + labelHeight, bbh = bbh childBox + labelHeight, pr = pqr, pl = pql}
     labelHeight = stm (getScale (cscale c))
     (pql,pqr) = labelPortsAdjustment childBox labelHeight
+    lbox = labelBox c label
+    (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
+
+labelBox :: AAVConfig  -> T.Text -> BoxedSVG
+labelBox c mytext =
+  (,)
+  (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight }
+  (boxContent )
+  where
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
+    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- "hanging"] (toElement mytext)
+    ldbox = debugBox boxWidth boxHeight
 
 labelPortsAdjustment :: BBox -> Length -> (PortStyleV , PortStyleV)
 labelPortsAdjustment childBox labelHeight =

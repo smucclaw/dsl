@@ -306,17 +306,18 @@ data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
 rowConnectorData :: AAVConfig -> BBox -> BBox -> Curve
 rowConnectorData c bbold bbnew =
   Curve
-    { start = Dot {x = bbw bbold - rightMargin, y = portLocationY},
-      startGuide = Dot {x = rightMargin + gap, y = 0},
-      endGuide = Dot {x = rightMargin, y = endPortY},
-      end = Dot {x = rightMargin + gap + bblm bbnew, y = endPortY}
+    { start = Dot {x = bbw bbold - rightMargin, y = startPortY},
+      startGuide = Dot {x = endPortX `div` 2, y = 0},
+      endGuide = Dot {x = endPortX `div` 2, y = endPortY},
+      end = Dot {x = endPortX, y = endPortY}
     }
   where
     myScale = getScale (cscale c)
     gap = slrh myScale
     rightMargin = bbrm bbold
-    portLocationY = portR bbold myScale
-    endPortY = portL bbnew myScale - portLocationY
+    startPortY = portR bbold myScale
+    endPortY = portL bbnew myScale - startPortY
+    endPortX = rightMargin + gap + bblm bbnew
 
 svgConnector :: Curve -> SVGElement
 svgConnector
@@ -462,14 +463,14 @@ drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedS
 drawAnd c negContext pp childqs =
   case pp of
     Nothing -> (box, svg)
-    Just (Pre txt) -> drawAndPreLable c txt (box, svg) 
+    Just (Pre txt) -> drawAndPreLabel c txt (box, svg) 
     Just (PrePost preTxt postTxt) -> (box, svg <> text_ [] (toElement preTxt))
   where
     rawChildren = drawItemFull c negContext <$> childqs
     (box, svg) = combineAnd c rawChildren
 
-drawAndPreLable :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
-drawAndPreLable c label (childBox, childSVG) =
+drawAndPreLabel :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
+drawAndPreLabel c label (childBox, childSVG) =
     (labeledBox, moveInt (0, labelHeight) (childSVG <> text_ [] (toElement label)))
   where
     labeledBox = childBox {bbtm = bbtm childBox + labelHeight, bbh = bbh childBox + labelHeight, pr = pqr, pl = pql}

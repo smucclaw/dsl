@@ -300,7 +300,7 @@ spec = do
       alignBox = rowLayouter c alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15, bbrm = 13, bblm = 17}
@@ -323,7 +323,7 @@ spec = do
       alignBox = combineAnd c elems
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 10,0 0,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` firstBox{bbw = 134, bbh = 30, pl = PVoffset 5, pr = PVoffset 15, bblm = 22 + 17, bbrm = 22 + 13}

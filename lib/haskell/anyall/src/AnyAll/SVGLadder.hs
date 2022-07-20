@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
-import           Data.Text.Lazy                   (toStrict)
+import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
@@ -306,16 +306,18 @@ data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
 rowConnectorData :: AAVConfig -> BBox -> BBox -> Curve
 rowConnectorData c bbold bbnew =
   Curve
-    { start = Dot {x = bbw bbold - rightMargin, y = portLocationY},
-      startGuide = Dot {x = rightMargin + gap, y = 0},
-      endGuide = Dot {x = rightMargin, y = portL bbnew myScale - portLocationY},
-      end = Dot {x = rightMargin + gap + bblm bbnew, y = portL bbnew myScale - portLocationY}
+    { start = Dot {x = bbw bbold - rightMargin, y = startPortY},
+      startGuide = Dot {x = endPortX `div` 2, y = 0},
+      endGuide = Dot {x = endPortX `div` 2, y = endPortY},
+      end = Dot {x = endPortX, y = endPortY}
     }
   where
     myScale = getScale (cscale c)
     gap = slrh myScale
     rightMargin = bbrm bbold
-    portLocationY = portR bbold myScale
+    startPortY = portR bbold myScale
+    endPortY = portL bbnew myScale - startPortY
+    endPortX = rightMargin + gap + bblm bbnew
 
 svgConnector :: Curve -> SVGElement
 svgConnector
@@ -437,6 +439,18 @@ combineAnd c elems =
     addElementToRow = rowLayouter c
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
 
+drawLabel ::  AAVConfig -> Maybe (Label T.Text) -> SVGElement
+drawLabel _ Nothing = mempty
+drawLabel c (Just l) =
+  case l of
+    Pre t -> boxContent t
+    PrePost pre post -> boxContent (T.append pre post)
+  where
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = \txt -> defBoxWidth - 15 + (3 * fromIntegral (T.length txt))
+    boxContent = \txt -> drawBoxContent (cscale c) txt "black" (boxWidth txt) boxHeight
+
 -- in a LR layout, each of the ORs gets a row below.
 -- we max up the bounding boxes and return that as our own bounding box.
 drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
@@ -445,17 +459,40 @@ drawOr c negContext childqs =
     where
       rawChildren = drawItemFull c negContext <$> childqs
 
-drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
-drawAnd c negContext childqs =
-    combineAnd c rawChildren
-    where
-      rawChildren = drawItemFull c negContext <$> childqs
+drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
+drawAnd c negContext pp childqs =
+  case pp of
+    Nothing -> (box, svg)
+    Just (Pre txt) -> drawAndPreLabel c txt (box, svg) 
+    Just (PrePost preTxt postTxt) -> (box, svg <> text_ [] (toElement preTxt))
+  where
+    rawChildren = drawItemFull c negContext <$> childqs
+    (box, svg) = combineAnd c rawChildren
+
+drawAndPreLabel :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
+drawAndPreLabel c label (childBox, childSVG) =
+    (labeledBox, moveInt (0, labelHeight) (childSVG <> text_ [] (toElement label)))
+  where
+    labeledBox = childBox {bbtm = bbtm childBox + labelHeight, bbh = bbh childBox + labelHeight, pr = pqr, pl = pql}
+    labelHeight = stm (getScale (cscale c))
+    (pql,pqr) = labelPortsAdjustment childBox labelHeight
+
+labelPortsAdjustment :: BBox -> Length -> (PortStyleV , PortStyleV)
+labelPortsAdjustment childBox labelHeight =
+    (pql, pqr)
+  where
+    pql = labelPortAdjustment (pl childBox) labelHeight
+    pqr = labelPortAdjustment (pr childBox) labelHeight
+
+labelPortAdjustment :: PortStyleV -> Length -> PortStyleV
+labelPortAdjustment (PVoffset offset) labelHeight = PVoffset (offset + labelHeight)
+labelPortAdjustment port _ = port
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
   case ao of
     Or -> drawOr c negContext childqs
-    And -> drawAnd c negContext childqs
+    And -> drawAnd c negContext pp childqs
     Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)
 

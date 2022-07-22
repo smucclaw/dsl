@@ -495,13 +495,10 @@ drawAndPreLabel c label (childBox, childSVG) =
     labeledBox = childBox
       { bbtm = bbtm childBox + labelHeight
       , bbh = bbh childBox + labelHeight
-      , ports = (ports childBox)
-        { leftPort = pql
-        , rightPort = pqr
-        }  
+      , ports = adjustedPorts
     }
     labelHeight = stm (getScale (cscale c))
-    (pql,pqr) = labelPortsAdjustment childBox labelHeight
+    adjustedPorts = adjustPorts (ports childBox) labelHeight
     lbox = labelBox c label
     (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
 
@@ -517,12 +514,15 @@ labelBox c mytext =
     boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- "hanging"] (toElement mytext)
     ldbox = debugBox boxWidth boxHeight
 
-labelPortsAdjustment :: BBox -> Length -> (PortStyleV , PortStyleV)
-labelPortsAdjustment childBox labelHeight =
-    (pql, pqr)
+adjustPorts :: Ports -> Length -> Ports
+adjustPorts origPorts labelHeight =
+    origPorts
+    { leftPort = adjustedLeft
+    , rightPort = adjustedRight
+    }
   where
-    pql = labelPortAdjustment (leftPort $ ports childBox) labelHeight
-    pqr = labelPortAdjustment (rightPort $ ports childBox) labelHeight
+    adjustedLeft = labelPortAdjustment (leftPort origPorts) labelHeight
+    adjustedRight = labelPortAdjustment (rightPort origPorts) labelHeight
 
 labelPortAdjustment :: PortStyleV -> Length -> PortStyleV
 labelPortAdjustment (PVoffset offset) labelHeight = PVoffset (offset + labelHeight)

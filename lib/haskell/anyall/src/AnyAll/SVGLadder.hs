@@ -23,6 +23,7 @@ import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
+import Control.Arrow (ArrowChoice(right))
 
 type Length  = Integer
 type SVGElement = Element
@@ -51,13 +52,21 @@ moveInt (x, y) geoms =
   with geoms [Transform_ <<- translateInt x y]
 
 data BBox = BBox
-  { bbw :: Length
-  , bbh :: Length
+  { bbw                    :: Length
+  , bbh                    :: Length
   , bblm, bbtm, bbrm, bbbm :: Length -- left, top, right, bottom margins
-  ,  pl,         pr        :: PortStyleV -- left and right  ports
-  ,  pt,         pb        :: PortStyleH --  top and bottom ports
+  , ports                  :: Ports
   }
   deriving (Eq, Show)
+
+data Ports = Ports
+  { leftPort   :: PortStyleV,
+    rightPort  :: PortStyleV,
+    topPort    :: PortStyleH,
+    bottomPort :: PortStyleH
+  }
+  deriving (Eq, Show)
+
 
 type BoxedSVG = (BBox, SVGElement)
 
@@ -68,7 +77,7 @@ data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show
 data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
 
 -- | default bounding box
-defaultBBox Tiny  = defaultBBox' { pl = PMiddle, pr = PMiddle }
+defaultBBox Tiny  = defaultBBox' {ports = defaultPorts { leftPort = PMiddle, rightPort = PMiddle } }
 defaultBBox Small = defaultBBox Tiny
 defaultBBox Full  = defaultBBox'
 defaultBBox' = BBox
@@ -78,15 +87,21 @@ defaultBBox' = BBox
   , bbtm = 0
   , bbrm = 0
   , bbbm = 0
-  , pl = PTop,    pr = PTop    -- [TODO] default to PTop later
-  , pt = PCenter, pb = PCenter
+  , ports = defaultPorts
+  }
+
+defaultPorts = Ports
+  { leftPort = PTop
+  , rightPort = PTop
+  , topPort = PCenter
+  , bottomPort = PCenter
   }
 
 portL, portT, portR, portB :: BBox -> AAVScale -> Length
-portL bb = portLR (pl bb) bb
-portR bb = portLR (pr bb) bb
-portT bb = portTB (pt bb) bb
-portB bb = portTB (pb bb) bb
+portL bb = portLR (leftPort $ ports bb) bb
+portR bb = portLR (rightPort $ ports bb) bb
+portT bb = portTB (topPort $ ports bb) bb
+portB bb = portTB (bottomPort $ ports bb) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
 portLR PTop    bb s = bbtm bb +                                    sbh s `div` 2 -- [TODO] clip to max size of element
@@ -279,12 +294,14 @@ hAlign alignment elems = alignH alignment mx <$> elems
 rowLayouter :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
 rowLayouter c (bbold, old) (bbnew, new) =
   ( templateBox
-      { bbh = max (bbh bbold) (bbh bbnew),
-        bbw = bbw bbold + lrHgap + bbw bbnew,
-        pl = PVoffset (portL bbold myScale),
-        pr = PVoffset (portR bbnew myScale),
-        bbrm = bbrm bbnew,
-        bblm = bblm bbold
+      { bbh = max (bbh bbold) (bbh bbnew)
+      , bbw = bbw bbold + lrHgap + bbw bbnew
+      , bbrm = bbrm bbnew
+      , bblm = bblm bbold
+      , ports = (ports templateBox)
+        { leftPort = PVoffset (portL bbold myScale)
+        , rightPort = PVoffset (portR bbnew myScale)
+        }
       },
     old
       <> moveInt (newBoxStart, 0) new
@@ -424,11 +441,13 @@ combineOr c elems =
 combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
   ( childbbox
-      { bbw = bbw childbbox + leftMargin + rightMargin,
-        bblm = leftMargin + bblm childbbox,
-        bbrm = rightMargin + bbrm childbbox,
-        pl = PVoffset (portL childbbox myScale),
-        pr = PVoffset (portR childbbox myScale)
+      { bbw = bbw childbbox + leftMargin + rightMargin
+      , bblm = leftMargin + bblm childbbox
+      , bbrm = rightMargin + bbrm childbbox
+      , ports =  (ports childbbox)
+        { leftPort = PVoffset (portL childbbox myScale)
+        , rightPort = PVoffset (portR childbbox myScale)
+        }  
       },
     moveInt (leftMargin, 0) children
   )
@@ -473,7 +492,14 @@ drawAndPreLabel :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
 drawAndPreLabel c label (childBox, childSVG) =
     (labeledBox, moveInt (0, labelHeight) childSVG <> svgLabel)
   where
-    labeledBox = childBox {bbtm = bbtm childBox + labelHeight, bbh = bbh childBox + labelHeight, pr = pqr, pl = pql}
+    labeledBox = childBox
+      { bbtm = bbtm childBox + labelHeight
+      , bbh = bbh childBox + labelHeight
+      , ports = (ports childBox)
+        { leftPort = pql
+        , rightPort = pqr
+        }  
+    }
     labelHeight = stm (getScale (cscale c))
     (pql,pqr) = labelPortsAdjustment childBox labelHeight
     lbox = labelBox c label
@@ -483,7 +509,7 @@ labelBox :: AAVConfig  -> T.Text -> BoxedSVG
 labelBox c mytext =
   (,)
   (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight }
-  (boxContent )
+  boxContent
   where
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
@@ -495,8 +521,8 @@ labelPortsAdjustment :: BBox -> Length -> (PortStyleV , PortStyleV)
 labelPortsAdjustment childBox labelHeight =
     (pql, pqr)
   where
-    pql = labelPortAdjustment (pl childBox) labelHeight
-    pqr = labelPortAdjustment (pr childBox) labelHeight
+    pql = labelPortAdjustment (leftPort $ ports childBox) labelHeight
+    pqr = labelPortAdjustment (rightPort $ ports childBox) labelHeight
 
 labelPortAdjustment :: PortStyleV -> Length -> PortStyleV
 labelPortAdjustment (PVoffset offset) labelHeight = PVoffset (offset + labelHeight)

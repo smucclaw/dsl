@@ -303,7 +303,16 @@ spec = do
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15, bbrm = 13, bblm = 17}
+      resultBox `shouldBe` firstBox
+          { bbw = 90,
+            bbh = 30,
+            bbrm = 13,
+            bblm = 17,
+            ports = (ports firstBox)
+                { leftPort = PVoffset 15,
+                  rightPort = PVoffset 15
+                }
+          }
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -326,7 +335,16 @@ spec = do
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 134, bbh = 30, pl = PVoffset 5, pr = PVoffset 15, bblm = 22 + 17, bbrm = 22 + 13}
+      resultBox `shouldBe` firstBox
+          { bbw = 134,
+            bbh = 30,
+            ports = (ports firstBox)
+                { leftPort = PVoffset 5,
+                  rightPort = PVoffset 15
+                },
+            bblm = 22 + 17,
+            bbrm = 22 + 13
+          }
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -361,7 +379,16 @@ spec = do
       inConnector2  = [("d","M -22,32 C 0,32 -22,45 27 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
       outConnector2  =  [("d","M 82,32 C 60,32 82,45 35 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop, bblm = 0, bbrm = 0}
+      resultBox `shouldBe` firstBox
+          { bbw = 60,
+            bbh = 60,
+            ports = (ports firstBox)
+                { leftPort = PTop,
+                  rightPort = PTop
+                },
+            bblm = 0,
+            bbrm = 0
+          }
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
     it "print debug" $ do
@@ -384,12 +411,14 @@ spec = do
       _:(alignedBox2,_):_ = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
     it "aligns smaller box" $ do
       alignedBox2 `shouldBe` secondBox
-        { bbw = columnWidth,
-          pl = PMiddle,
-          pr = PMiddle,
-          bblm = leftMargin + aligmentPadOneSide,
-          bbrm = rightMargin + aligmentPadOneSide
-        }
+          { bbw = columnWidth,
+            ports = (ports secondBox)
+                { leftPort = PMiddle,
+                  rightPort = PMiddle
+                },
+            bblm = leftMargin + aligmentPadOneSide,
+            bbrm = rightMargin + aligmentPadOneSide
+          }
 
   describe "test combineAnd" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"

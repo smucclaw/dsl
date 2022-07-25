@@ -1,0 +1,87 @@
+{
+  "marking": {
+    "walk": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "run": {
+      "getDefault": {
+        "Right": true
+      }
+    },
+    "sink": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "swim": {
+      "getDefault": {
+        "Right": false
+      }
+    },
+    "eat": {
+      "getDefault": {
+        "Left": false
+      }
+    },
+    "drink": {
+      "getDefault": {
+        "Left": true
+      }
+    }
+  },
+  "andOrTree": {
+    "tag": "All",
+    "contents": [
+      {
+        "tag": "Pre",
+        "contents": "all of"
+      },
+      [
+        {
+          "tag": "Not",
+          "contents": 
+              {
+                "tag": "Any",
+                "contents": [
+                  null,
+                  [{
+                    "tag": "Leaf",
+                    "contents": "sink to the bottom"
+                  },
+                  {
+                    "tag": "Leaf",
+                    "contents": "swim"
+                  }]
+                ]
+              }
+        
+        },
+        {
+          "tag": "Leaf",
+          "contents": "walk"
+        },
+        {
+          "tag": "All",
+          "contents": [
+            {
+              "tag": "Pre",
+              "contents": "all of"
+            },
+            [
+              {
+                "tag": "Leaf",
+                "contents": "eat"
+              },
+              {
+                "tag": "Leaf",
+                "contents": "drink"
+              }
+            ]
+          ]
+        }
+      ]
+    ]
+  }
+}

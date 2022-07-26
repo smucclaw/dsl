@@ -483,7 +483,7 @@ drawAnd c negContext pp childqs =
   case pp of
     Nothing -> (box, svg)
     Just (Pre txt) -> drawAndPreLabel c txt (box, svg) 
-    Just (PrePost preTxt postTxt) -> (box, svg <> text_ [] (toElement preTxt))
+    Just (PrePost preTxt postTxt) -> drawAndPrePostLabel c preTxt postTxt (box, svg) 
   where
     rawChildren = drawItemFull c negContext <$> childqs
     (box, svg) = combineAnd c rawChildren
@@ -497,12 +497,26 @@ drawAndPreLabel c label (childBox, childSVG) =
       , bbh = bbh childBox + labelHeight
     }
     labelHeight = stm (getScale (cscale c))
-    adjustedPorts = adjustPorts (ports childBox) labelHeight
-    lbox = labelBox c label
+    lbox = labelBox c "hanging" label
     (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
 
-labelBox :: AAVConfig  -> T.Text -> BoxedSVG
-labelBox c mytext =
+drawAndPrePostLabel :: AAVConfig -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
+drawAndPrePostLabel c preTxt postTxt (childBox, childSVG) =
+    (labeledBox, moveInt (0, labelHeight) childSVG <> svgPreLabel <>  moveInt (0, bbh childBox + 2 * labelHeight) svgPostLabel)
+  where
+    labeledBox = childBox
+      { bbtm = bbtm childBox + labelHeight
+      , bbbm = bbbm childBox + labelHeight
+      , bbh = bbh childBox + 2 * labelHeight
+      }
+    labelHeight = stm (getScale (cscale c))
+    prelbox = labelBox c "hanging" preTxt
+    (_,svgPreLabel) = alignH HCenter (bbw labeledBox) prelbox
+    postlbox = labelBox c "text-top" postTxt
+    (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
+
+labelBox :: AAVConfig -> T.Text -> T.Text -> BoxedSVG
+labelBox c baseline mytext =
   (,)
   (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight }
   boxContent
@@ -510,7 +524,7 @@ labelBox c mytext =
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- "hanging"] (toElement mytext)
+    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
 
 adjustPorts :: Ports -> Length -> Ports
 adjustPorts origPorts labelHeight =

@@ -43,7 +43,7 @@
         },
         { "tag": "Leaf", "contents": "walk" },
         { "tag": "All", "contents": [
-          { "tag": "Pre", "contents": "all of" },
+          { "tag": "PrePost","contents": [ "Must", "simultaneously"] },
           [ {"tag": "Leaf","contents": "eat" },
             {"tag": "Leaf","contents": "drink"}
           ]]}

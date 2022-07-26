@@ -244,7 +244,7 @@ alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, mov
     moveElement = alignVCalcElement alignment alignmentPad
 
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
-adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin, bbbm = newBottomMargin}
+adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin + bbtm bx, bbbm = newBottomMargin + bbbm bx}
   where
     (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
 
@@ -495,7 +495,6 @@ drawAndPreLabel c label (childBox, childSVG) =
     labeledBox = childBox
       { bbtm = bbtm childBox + labelHeight
       , bbh = bbh childBox + labelHeight
-      , ports = adjustedPorts
     }
     labelHeight = stm (getScale (cscale c))
     adjustedPorts = adjustPorts (ports childBox) labelHeight
@@ -512,7 +511,6 @@ labelBox c mytext =
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
     boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- "hanging"] (toElement mytext)
-    ldbox = debugBox boxWidth boxHeight
 
 adjustPorts :: Ports -> Length -> Ports
 adjustPorts origPorts labelHeight =
@@ -683,10 +681,10 @@ box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
 
-debugBox :: Length -> Length -> SVGElement
-debugBox w h =
+debugBox :: T.Text -> Length -> Length -> SVGElement
+debugBox m w h =
   rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* w, Height_ <<-* h
-        , Fill_ <<- "none", Stroke_ <<- "black" ]
+        , Fill_ <<- "none", Stroke_ <<- "black", Class_ <<- m]
 
 line :: (Length , Length) -> (Length, Length) -> SVGElement
 line (x1, y1) (x2, y2) =

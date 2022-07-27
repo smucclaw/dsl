@@ -472,24 +472,28 @@ drawLabel c (Just l) =
 
 -- in a LR layout, each of the ORs gets a row below.
 -- we max up the bounding boxes and return that as our own bounding box.
-drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
-drawOr c negContext childqs =
-    combineOr c rawChildren
+drawOr :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
+drawOr c negContext pp childqs =
+    case pp of
+      Nothing -> (box, svg)
+      Just (Pre txt) -> drawPreLabelTop c txt (box, svg)
+      Just (PrePost preTxt postTxt) -> drawPrePostLabelTopBottom c preTxt postTxt (box, svg)
     where
       rawChildren = drawItemFull c negContext <$> childqs
+      (box, svg) = combineOr c rawChildren
 
 drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
 drawAnd c negContext pp childqs =
   case pp of
     Nothing -> (box, svg)
-    Just (Pre txt) -> drawAndPreLabel c txt (box, svg) 
-    Just (PrePost preTxt postTxt) -> drawAndPrePostLabel c preTxt postTxt (box, svg) 
+    Just (Pre txt) -> drawPreLabelTop c txt (box, svg)
+    Just (PrePost preTxt postTxt) -> drawPrePostLabelTopBottom c preTxt postTxt (box, svg)
   where
     rawChildren = drawItemFull c negContext <$> childqs
     (box, svg) = combineAnd c rawChildren
 
-drawAndPreLabel :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
-drawAndPreLabel c label (childBox, childSVG) =
+drawPreLabelTop :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
+drawPreLabelTop c label (childBox, childSVG) =
     (labeledBox, moveInt (0, labelHeight) childSVG <> svgLabel)
   where
     labeledBox = childBox
@@ -500,8 +504,8 @@ drawAndPreLabel c label (childBox, childSVG) =
     lbox = labelBox c "hanging" label
     (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
 
-drawAndPrePostLabel :: AAVConfig -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
-drawAndPrePostLabel c preTxt postTxt (childBox, childSVG) =
+drawPrePostLabelTopBottom :: AAVConfig -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
+drawPrePostLabelTopBottom c preTxt postTxt (childBox, childSVG) =
     (labeledBox, moveInt (0, labelHeight) childSVG <> svgPreLabel <>  moveInt (0, bbh childBox + 2 * labelHeight) svgPostLabel)
   where
     labeledBox = childBox
@@ -543,7 +547,7 @@ labelPortAdjustment port _ = port
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
   case ao of
-    Or -> drawOr c negContext childqs
+    Or -> drawOr c negContext pp childqs
     And -> drawAnd c negContext pp childqs
     Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)

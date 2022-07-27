@@ -530,27 +530,23 @@ labelBox c baseline mytext =
     boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
     boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
 
-adjustPorts :: Ports -> Length -> Ports
-adjustPorts origPorts labelHeight =
-    origPorts
-    { leftPort = adjustedLeft
-    , rightPort = adjustedRight
-    }
-  where
-    adjustedLeft = labelPortAdjustment (leftPort origPorts) labelHeight
-    adjustedRight = labelPortAdjustment (rightPort origPorts) labelHeight
-
-labelPortAdjustment :: PortStyleV -> Length -> PortStyleV
-labelPortAdjustment (PVoffset offset) labelHeight = PVoffset (offset + labelHeight)
-labelPortAdjustment port _ = port
+decorateWithLabel :: AAVConfig -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
+decorateWithLabel c pp childBox =
+  case (cscale c, pp) of
+    (Tiny, _ ) -> childBox
+    (_, Nothing) -> childBox
+    (_, Just (Pre txt)) -> drawPreLabelTop c txt childBox
+    (_, Just (PrePost preTxt postTxt)) -> drawPrePostLabelTopBottom c preTxt postTxt childBox
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
-drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
+drawItemFull c negContext qtr@(Node qt@(Q sv ao pp m) childqs) =
   case ao of
-    Or -> drawOr c negContext pp childqs
-    And -> drawAnd c negContext pp childqs
+    Or -> decorateWithLabel c pp (combineOr c rawChildren)
+    And -> decorateWithLabel c pp  (combineAnd c rawChildren)
     Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)
+  where
+    rawChildren = drawItemFull c negContext <$> childqs
 
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp

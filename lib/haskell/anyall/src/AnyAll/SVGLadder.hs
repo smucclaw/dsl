@@ -516,7 +516,7 @@ drawPrePostLabelTopBottom c preTxt postTxt (childBox, childSVG) =
     labelHeight = stm (getScale (cscale c))
     prelbox = labelBox c "hanging" preTxt
     (_,svgPreLabel) = alignH HCenter (bbw labeledBox) prelbox
-    postlbox = labelBox c "text-top" postTxt
+    postlbox = labelBox c "ideographic" postTxt
     (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
 
 labelBox :: AAVConfig -> T.Text -> T.Text -> BoxedSVG

@@ -111,6 +111,7 @@ getConfig o = do
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
         , toHTML    = only o == "html"
+        , toMarkdown = only o == "markdown"
         , toTS      = only o `elem` words "typescript ts"
         , saveAKA = False
         , wantNotRules = False

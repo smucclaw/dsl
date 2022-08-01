@@ -19,7 +19,7 @@ import LS.XPile.Petri
 import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
-import LS.NLP.NLG (nlg,myNLGEnv,toHTML)
+import LS.NLP.NLG (nlg,myNLGEnv,toMarkdown, toHTML)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -30,6 +30,7 @@ import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import Text.RawString.QQ
+
 
 main :: IO ()
 main = do
@@ -118,8 +119,15 @@ main = do
     putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
     -- pPrint $ itemRPToItemJSON  $ toVueRules rules
 
+  when (SFL4.toMarkdown rc) $ do
+    mkdn <- mapM (toMarkdown nlgEnv) rules
+    writeFile "output.md" $ concatMap Text.unpack mkdn
+    pPrint mkdn
+
   when (SFL4.toHTML rc) $ do
-    htm <- mapM (toHTML nlgEnv) rules
+    mkdn <- mapM (toMarkdown nlgEnv) rules
+    let htm = concatMap toHTML mkdn
+    writeFile "output.html" htm
     pPrint htm
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules

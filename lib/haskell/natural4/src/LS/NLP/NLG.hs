@@ -28,10 +28,14 @@ import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
-import Control.Monad (when)
+import Control.Monad (when, (<=<))
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
+import Text.Pandoc (Format(..),runPure, Extension (..), ReaderOptions(..), Pandoc, def)
+import Text.Pandoc.Error (handleError)
+import Text.Pandoc.Writers.HTML (writeHtml5String)
+import Text.Pandoc.Readers.Markdown
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -243,9 +247,8 @@ nlgQuestion env rl = do
         qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
-
-toHTML :: NLGEnv -> Rule -> IO Text.Text
-toHTML env rl = do
+toMarkdown :: NLGEnv -> Rule -> IO Text.Text
+toMarkdown env rl = do
    annotatedRule <- parseFields env rl
    gr <- nlgExtPGF
    let Just eng = readLanguage "UDExtEng"
@@ -256,6 +259,7 @@ toHTML env rl = do
             openRlDiv = "<div class=\"deontic rule\">"
             closeRlDiv = "</div>"
             -- splitTheOr = isInfixOf "or_Conj" x
+            -- mkApp (mkCId name) [expr, action]
             subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
@@ -267,18 +271,31 @@ toHTML env rl = do
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
             linText = linearize gr eng finalTree
             linTree = showExpr finalTree
-        putStrLn "hi"
-        putStrLn $ showExpr subj
-        -- putStrLn $ splitOr (showExpr (fromJust whoA))
-        putStrLn $ linearize gr eng (fromJust whoA)
-        putStrLn $ showExpr deonticAction
-        putStrLn $ showExpr king_may_sing
-        putStrLn "ho"
+        -- putStrLn "-"
+        -- putStrLn $ linearize gr eng (mkApp keywordA [gf $ peelNP subjA])
+        -- putStrLn "--"
+        -- putStrLn "<ul class=\"who\">"
+        -- putStrLn $ showExpr $ mkApp (mkCId "Who") [fromJust whoA]
+        -- putStrLn "</ul>"
+        -- putStrLn $ linearize gr eng subj
+        -- putStrLn "---"
+        -- putStrLn "<div class=\"deonticAction\">"
+        -- putStrLn $ linearize gr eng $ deonticAction
+        -- putStrLn "</div>"
+        -- putStrLn "----"
+        -- putStrLn $ showExpr king_may_sing
+        -- putStrLn "----"
         return (
-          Text.pack (
-            openRlDiv ++ "\n" ++ linText ++ "\n" ++ linTree ++ closeRlDiv
-            )
+          Text.pack linText
           )
+        -- return (
+        --   Text.pack (
+        --     linText ++ "\n" ++ linTree
+        --     )
+        --   )
+
+toHTML :: Text.Text -> String
+toHTML str = Text.unpack $ either mempty id . runPure $ writeHtml5String def =<< readMarkdown def str
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

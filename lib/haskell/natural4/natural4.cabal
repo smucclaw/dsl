@@ -83,6 +83,7 @@ library
     , megaparsec
     , mtl
     , optparse-generic
+    , pandoc
     , parser-combinators
     , parsers
     , pretty-simple
@@ -137,6 +138,7 @@ executable natural4-exe
     , mtl
     , natural4
     , optparse-generic
+    , pandoc
     , parser-combinators
     , parsers
     , pretty-simple
@@ -193,6 +195,7 @@ test-suite natural4-test
     , mtl
     , natural4
     , optparse-generic
+    , pandoc
     , parser-combinators
     , parsers
     , pretty-simple

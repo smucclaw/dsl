@@ -64,6 +64,7 @@ dependencies:
 - directory
 - fgl
 - raw-strings-qq
+- pandoc
 
 ghc-options: -Wall
 

@@ -181,12 +181,14 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
 pHornlike :: Parser Rule
 pHornlike = debugName "pHornlike" $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
-  ((keyword, name, clauses), given, upon, topwhen) <- debugName "pHornlike / permute" $ permute $ (,,,)
-    <$$> -- (try ambitious <|>
-          someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
-    <|?> (Nothing, fmap snd <$> optional givenLimb)
-    <|?> (Nothing, fmap snd <$> optional uponLimb)
-    <|?> (Nothing, whenCase)
+  let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
+        <$$> -- (try ambitious <|>
+                    someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
+        <|?> (Nothing, fmap snd <$> optional givenLimb)
+        <|?> (Nothing, fmap snd <$> optional uponLimb)
+        <|?> (Nothing, whenCase)
+        -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
+  ((keyword, name, clauses), given, upon, topwhen) <- permutepart
   return $ Hornlike { name
                     , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                     , keyword = fromMaybe Means keyword

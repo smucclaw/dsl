@@ -592,6 +592,7 @@ data RunConfig = RC { debug     :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
                     , toMarkdown :: Bool
+                    , toPDF     :: Bool
                     , saveAKA   :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
@@ -625,6 +626,7 @@ defaultRC = RC
         , runNLGtests = False
         , toHTML = False
         , toMarkdown = False
+        , toPDF = False
         }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack

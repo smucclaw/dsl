@@ -28,14 +28,18 @@ import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
-import Control.Monad (when, (<=<))
+import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
-import Text.Pandoc (Format(..),runPure, Extension (..), ReaderOptions(..), Pandoc, def)
-import Text.Pandoc.Error (handleError)
-import Text.Pandoc.Writers.HTML (writeHtml5String)
-import Text.Pandoc.Readers.Markdown
+import qualified Text.Pandoc as Pandoc (Format(..),runPure, Extension (..), ReaderOptions(..), Pandoc, def)
+import qualified Text.Pandoc.Error as Pandoc (handleError)
+import qualified Text.Pandoc.Writers.HTML as Pandoc (writeHtml5String)
+import qualified Text.Pandoc.Readers.Markdown as Pandoc
+import qualified Text.Pandoc.Writers.LaTeX as Pandoc
+import qualified Text.Pandoc.PDF as Pandoc
+import qualified Data.ByteString.Lazy as Byte (ByteString, writeFile)
+import Control.Monad.Trans
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -295,7 +299,14 @@ toMarkdown env rl = do
         --   )
 
 toHTML :: Text.Text -> String
-toHTML str = Text.unpack $ either mempty id . runPure $ writeHtml5String def =<< readMarkdown def str
+toHTML str = Text.unpack $ either mempty id . Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
+
+toPDF str = do
+  pand <- Pandoc.readMarkdown Pandoc.def str
+  pdfLR <- Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def pand
+  case pdfLR of
+    Right pdf -> liftIO $ Byte.writeFile "output.pdf" pdf
+    Left err -> liftIO $ putStrLn "can't write pdf file"
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

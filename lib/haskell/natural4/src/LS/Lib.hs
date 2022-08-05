@@ -112,6 +112,7 @@ getConfig o = do
         , toVue     = only o == "vue"
         , toHTML    = only o == "html"
         , toMarkdown = only o == "markdown"
+        , toPDF = only o == "pdf"
         , toTS      = only o `elem` words "typescript ts"
         , saveAKA = False
         , wantNotRules = False

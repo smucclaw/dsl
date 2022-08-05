@@ -19,7 +19,7 @@ import LS.XPile.Petri
 import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
-import LS.NLP.NLG (nlg,myNLGEnv,toMarkdown, toHTML)
+import LS.NLP.NLG (nlg,myNLGEnv,toMarkdown, toHTML,toPDF)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -129,6 +129,11 @@ main = do
     let htm = concatMap toHTML mkdn
     writeFile "output.html" htm
     pPrint htm
+
+  when (SFL4.toPDF rc) $ do
+    mkdn <- mapM (toMarkdown nlgEnv) rules
+    -- toPDF mkdn
+    pPrint mkdn
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

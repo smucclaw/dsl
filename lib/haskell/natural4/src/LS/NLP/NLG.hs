@@ -38,6 +38,8 @@ import qualified Text.Pandoc.Writers.HTML as Pandoc (writeHtml5String)
 import qualified Text.Pandoc.Readers.Markdown as Pandoc
 import qualified Text.Pandoc.Writers.LaTeX as Pandoc
 import qualified Text.Pandoc.PDF as Pandoc
+import qualified Text.Pandoc.UTF8 as Pandoc
+import qualified Text.Pandoc.Class as Pandoc (runIOorExplode)
 import qualified Data.ByteString.Lazy as Byte (ByteString, writeFile)
 import Control.Monad.Trans
 
@@ -301,12 +303,15 @@ toMarkdown env rl = do
 toHTML :: Text.Text -> String
 toHTML str = Text.unpack $ either mempty id . Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
 
-toPDF str = do
-  pand <- Pandoc.readMarkdown Pandoc.def str
-  pdfLR <- Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def pand
-  case pdfLR of
-    Right pdf -> liftIO $ Byte.writeFile "output.pdf" pdf
-    Left err -> liftIO $ putStrLn "can't write pdf file"
+toPDF :: Text.Text -> IO Byte.ByteString
+toPDF str = Pandoc.runIOorExplode $ either mempty id <$> (Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str)
+  -- pand <- Pandoc.readMarkdown Pandoc.def str
+  -- pdfLR <- Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def pand
+  -- case pdfLR of
+  --   Right pdf -> pdf
+  --   Left err -> putStrLn "can't write pdf file"
+    -- Right pdf -> Pandoc.toString $ Byte.writeFile "output.pdf" pdf
+    -- Left err -> putStrLn "can't write pdf file"
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

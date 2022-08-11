@@ -33,15 +33,20 @@ import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
 import qualified Text.Pandoc as Pandoc (Format(..),runPure, Extension (..), ReaderOptions(..), Pandoc, def)
-import qualified Text.Pandoc.Error as Pandoc (handleError)
+import qualified Text.Pandoc.Error as Pandoc
 import qualified Text.Pandoc.Writers.HTML as Pandoc (writeHtml5String)
 import qualified Text.Pandoc.Readers.Markdown as Pandoc
 import qualified Text.Pandoc.Writers.LaTeX as Pandoc
+import qualified Text.Pandoc.Readers.LaTeX as Pandoc
 import qualified Text.Pandoc.PDF as Pandoc
 import qualified Text.Pandoc.UTF8 as Pandoc
 import qualified Text.Pandoc.Class as Pandoc (runIOorExplode)
-import qualified Data.ByteString.Lazy as Byte (ByteString, writeFile)
+import qualified Text.Pandoc.Writers.LaTeX as Pandoc
+import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
 import Control.Monad.Trans
+import System.IO (stderr)
+import System.Exit (exitFailure)
+
 
 data NLGEnv = NLGEnv
   { udEnv :: UDEnv
@@ -301,17 +306,21 @@ toMarkdown env rl = do
         --   )
 
 toHTML :: Text.Text -> String
-toHTML str = Text.unpack $ either mempty id . Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
+toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
 
 toPDF :: Text.Text -> IO Byte.ByteString
-toPDF str = Pandoc.runIOorExplode $ either mempty id <$> (Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str)
+toPDF str = do
+  pdf <- Pandoc.runIOorExplode $ (Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str)
+  case pdf of
+    Left err -> do
+      Byte.hPutStrLn stderr err
+      exitFailure
+    Right bytePDF -> return bytePDF
   -- pand <- Pandoc.readMarkdown Pandoc.def str
   -- pdfLR <- Pandoc.makePDF "xelatex" [] Pandoc.writeLaTeX Pandoc.def pand
   -- case pdfLR of
-  --   Right pdf -> pdf
   --   Left err -> putStrLn "can't write pdf file"
-    -- Right pdf -> Pandoc.toString $ Byte.writeFile "output.pdf" pdf
-    -- Left err -> putStrLn "can't write pdf file"
+    -- Right pdf -> Byte.writeFile "output.pdf" pdf
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

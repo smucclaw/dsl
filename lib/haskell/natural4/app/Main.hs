@@ -24,7 +24,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
 import Data.ByteString.Lazy.UTF8 (toString)
-import qualified Data.ByteString.Lazy as Byte (ByteString, writeFile)
+import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
@@ -133,10 +133,9 @@ main = do
 
   when (SFL4.toPDF rc) $ do
     mkdn <- mapM (toMarkdown nlgEnv) rules
-    let concatMkdn = Text.pack $ concatMap Text.unpack mkdn
-    pdf <- toPDF concatMkdn
+    pdf <- toPDF (Text.concat mkdn)
     Byte.writeFile "output.pdf" pdf
-    pPrint concatMkdn
+    pPrint mkdn
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

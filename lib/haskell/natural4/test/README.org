@@ -797,6 +797,97 @@ should we expect an slMultiterm to parse it? decision: yes, we should.
 does this (erroneously IMHO) return [foo bar baz]?
 no, the parser fails, which is correct.
 
+*** variable substitution
+
+**** varsub-1-headhead: define one thing in terms of another thing, in the head
+:PROPERTIES:
+:TABLE_EXPORT_FILE: varsub-1-headhead.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|       | c  |
+| MEANS | a  |
+| OR    | b  |
+| ;;    |    |
+|       | b  |
+| MEANS | b1 |
+| AND   | b2 |
+
+c = a || (b1 && b2)
+
+**** varsub-2-headbody: define one thing in terms of another thing, in the head and body
+:PROPERTIES:
+:TABLE_EXPORT_FILE: varsub-2-headbody.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|        | c  |
+| MEANS  | a  |
+| OR     | b  |
+| ;;     |    |
+| DECIDE | b  |
+| IF     | b1 |
+| AND    | b2 |
+
+This should define c = a || (b1 && b2)
+
+**** varsub-3-bodybody: define one thing in terms of another thing, in the body and body
+:PROPERTIES:
+:TABLE_EXPORT_FILE: varsub-3-bodybody.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | c  |
+| IF     | a  |
+| OR     | b  |
+| ;;     |    |
+| DECIDE | b  |
+| IF     | b1 |
+| AND    | b2 |
+
+This should define c = a || (b1 && b2)
+
+**** varsub-4-bodyhead: define one thing in terms of another thing, in the body and head
+:PROPERTIES:
+:TABLE_EXPORT_FILE: varsub-4-bodyhead.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECIDE | c  |
+| IF     | a  |
+| OR     | b  |
+| ;;     |    |
+|        | b  |
+| MEANS  | b1 |
+| AND    | b2 |
+
+This should define c = a || (b1 && b2)
+
+**** regexpand-1: regulatives conjoined via a rulealias
+:PROPERTIES:
+:TABLE_EXPORT_FILE: regexpand-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| §      | Rule1       |        |
+| PARTY  | Alice       |        |
+| MAY    | act         |        |
+| BEFORE | deadline    |        |
+| HENCE  | TwoRules    |        |
+| ;;     |             |        |
+|        | TwoRules    |        |
+| MEANS  | Rule2a      |        |
+| AND    | Rule2b      |        |
+| ;;     |             |        |
+| §      | Rule2a      |        |
+| PARTY  | Bob         |        |
+| MUST   | acknowledge | action |
+| ;;     |             |        |
+| §      | Rule2b      |        |
+| PARTY  | Carol       |        |
+| MUST   | pay         | Alice  |
+
+This should link up Bob and Carol's subcontracts 2a and 2b as pursuant to Alice's subcontract 1.
 
 *** About the src/Parser.hs
 

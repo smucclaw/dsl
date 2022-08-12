@@ -124,6 +124,8 @@ mbsr2rhs Nothing = []
 mbsr2rhs (Just bsr) = bsr2struct bsr
 
 rp2goal :: RelationalPredicate -> [Term]
+rp2goal (RPParamText pt)     = pure $ vart "ERROR: rp2goal: paramtext not supported"
+rp2goal (RPMT [])            = pure $ vart ""
 rp2goal (RPMT [x])           = pure $ vart x
 rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
 rp2goal (RPBoolStructR lhs rel bsr) = Struct (Text.unpack $ Text.unwords lhs) <$> [bsr2struct bsr]

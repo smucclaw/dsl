@@ -204,7 +204,7 @@ spec = do
     c = dc{cscale=Full, cdebug = False}
     templatedBoundingBox = defaultBBox (cscale dc)
   describe "with SVGLadder, drawing primitives" $ do
-    basicSvg <- runIO $ TIO.readFile "out/basic.svg"
+    basicSvg <- runIO $ TIO.readFile "test/fixtures/basic.svg"
     let
       rectangle = svgRect $ Rect (0, 0) (60, 30) "black" "none"
       basicSvg' = makeSvg' dc (defaultBBox (cscale dc), rectangle)
@@ -291,19 +291,60 @@ spec = do
 
   describe "test rowLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
       alignBox = rowLayouter c alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 10,0 0,0 10 0"),("fill","none"),("stroke","green")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","green")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
-      resultBox `shouldBe` firstBox{bbw = 90, bbh = 30, pl = PVoffset 15, pr = PVoffset 15}
+      resultBox `shouldBe` firstBox
+          { bbw = 90,
+            bbh = 30,
+            bbrm = 13,
+            bblm = 17,
+            ports = (ports firstBox)
+                { leftPort = PVoffset 15,
+                  rightPort = PVoffset 15
+                }
+          }
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test combineAnd margins" $ do
+    let
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      alignBox = combineAnd c elems
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` firstBox
+          { bbw = 134,
+            bbh = 30,
+            ports = (ports firstBox)
+                { leftPort = PVoffset 5,
+                  rightPort = PVoffset 15
+                },
+            bblm = 22 + 17,
+            bbrm = 22 + 13
+          }
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -314,9 +355,9 @@ spec = do
 
   describe "test columnLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17, bbrm = 13}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bblm = 7, bbrm = 5}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       myScale     = getScale (cscale c)
       lrVgap      = slrv myScale
@@ -331,27 +372,59 @@ spec = do
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
-      inConnector1 = [("d","M -22,32 C 0,32 -22,15 0 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector1  = [("d","M 82,32 C 60,32 82,15 60 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
+      inConnector1 = [("d","M -22,32 C 0,32 -22,15 17 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector1  = [("d","M 82,32 C 60,32 82,15 47 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
 
       secondSVGBox = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(20 0)translate(0 30)"),("width","20"),("x","0"),("y","0")]
-      inConnector2  = [("d","M -22,32 C 0,32 -22,45 20 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector2  =  [("d","M 82,32 C 60,32 82,45 40 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
+      inConnector2  = [("d","M -22,32 C 0,32 -22,45 27 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
+      outConnector2  =  [("d","M 82,32 C 60,32 82,45 35 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
-      resultBox `shouldBe` firstBox{bbw = 60, bbh = 60, pl = PTop, pr = PTop}
+      resultBox `shouldBe` firstBox
+          { bbw = 60,
+            bbh = 60,
+            ports = (ports firstBox)
+                { leftPort = PTop,
+                  rightPort = PTop
+                },
+            bblm = 0,
+            bbrm = 0
+          }
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
-    xit "print debug" $ do
+    it "print debug" $ do
       let
         svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
       _ <- print svgXml
       pendingWith "it's not a real test but just a debug code"
 
-  describe "test combineAnd" $ do
-    mycontents <- runIO $ B.readFile "out/example-and-short.json"
-    myFixture <- runIO $ B.readFile "out/example-and-short.svg"
+  describe "test hAlign" $ do
     let
-      c = dc{cscale=Full, cdebug = False} 
+      leftMargin = 7
+      rightMargin = 5
+      aligmentPadOneSide = 20
+      columnWidth = 60
+      firstBox = templatedBoundingBox {bbw = columnWidth, bbh = 10, bblm = 17, bbrm = 13}
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox {bbw = columnWidth - aligmentPadOneSide * 2, bbh = 30, bblm = 7, bbrm = 5}
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+
+      _:(alignedBox2,_):_ = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
+    it "aligns smaller box" $ do
+      alignedBox2 `shouldBe` secondBox
+          { bbw = columnWidth,
+            ports = (ports secondBox)
+                { leftPort = PMiddle,
+                  rightPort = PMiddle
+                },
+            bblm = leftMargin + aligmentPadOneSide,
+            bbrm = rightMargin + aligmentPadOneSide
+          }
+
+  describe "test combineAnd" $ do
+    mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
+    myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
+    let
+      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
@@ -372,10 +445,10 @@ spec = do
       pendingWith "it's not a real test but just a debug code"
 
   describe "test combineOr" $ do
-    mycontents <- runIO $ B.readFile "out/example-or-short.json"
-    myFixture <- runIO $ B.readFile "out/example-or-short.svg"
+    mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
+    myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
-      c = dc{cscale=Full, cdebug = False} 
+      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)

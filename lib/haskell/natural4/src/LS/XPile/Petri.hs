@@ -13,7 +13,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 import           Data.Foldable (find)
 import           System.IO.Unsafe (unsafePerformIO)
-import           Control.Monad (forM_)
+import           Control.Monad (forM_, when, unless, msum)
 import qualified Data.Map           as Map
 import           Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
 import           Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
@@ -36,6 +36,8 @@ import AnyAll as AA
 
 import LS.NLP.WordNet
 
+import Debug.Trace
+
 --------------------------------------------------------------------------------
 -- fgl
 --------------------------------------------------------------------------------
@@ -50,6 +52,13 @@ data PNode a = PN { ntype  :: NType
              deriving (Eq, Show)
 
 type Petri a = Gr (PNode a) PLabel
+
+-- see also Data.Function (&)
+-- see also Flow (|>)
+-- https://hackage.haskell.org/package/flow-2.0.0.0/docs/Flow.html
+(|>) :: a -> (a -> b) -> b
+(|>) = flip ($)
+infixl 1 |>
 
 mkPlace,mkTrans,mkDecis :: Text -> (PNode a)
 mkPlace x = PN Place x [] []
@@ -125,9 +134,9 @@ tcsd :: (Show a) => [a] -> [Attribute]
 tcsd = fmap $ Comment . LT.fromStrict . Text.pack . show
 
 fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
-fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls 
-fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls 
-fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls 
+fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls
+fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls
+fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
 fmtPetriNode (_n,PN Trans txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
 fmtPetriNode (_n,PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
 
@@ -154,11 +163,40 @@ type PetriD = Petri Deet
 toPetri :: [Rule] -> Text.Text
 toPetri rules =
   let petri1 = insrules rules startGraph
-      rewritten = mergePetri rules $
-                  condElimination rules $
-                  reorder rules $
-                  connectRules petri1 rules
+      rewritten = rules
+                  |> connectRules petri1
+                  |> reorder rules
+                  |> condElimination rules
+                  |> mergePetri rules
+                  |> elideNodes1 "consequently" (hasText "consequently")
+                  |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
   in LT.toStrict $ renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
+
+elideNodes1 :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodes1 = elideNodes True
+
+elideNodesN :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodesN = elideNodes False
+
+-- | get rid of intermediary nodes y that fit the pattern `x -> y -> z`, where y passes the given predicate.
+-- if |x| and |z| are each 1, use the elideNodes1 form
+elideNodes :: Bool -> LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
+elideNodes limit1 desc pnpred og = runGM og $ do
+  -- awkward phrasing, shouldn't there be some sort of concatM
+  forM_ [ do
+             newEdge' (x,    z, [Comment $ "after elision of " <> desc <> " intermediary"])
+             delEdge' (x, y)
+             delEdge' (   y, z)
+             delNode'     y
+        | y <- nodes $ labfilter pnpred og
+        , let indegrees  = pre og y
+              outdegrees = suc og y
+        , not limit1 || length  indegrees == 1
+        , not limit1 || length outdegrees == 1
+        , x   <- indegrees
+        , z   <- outdegrees
+        ] $ id
+  
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder rules og = runGM og $ do
@@ -219,6 +257,29 @@ fromRuleAlias :: Attribute
 fromRuleAlias = Comment "from RuleAlias"
 
 data SplitJoin = SJAny | SJAll deriving (Eq, Show)
+
+-- | wire up splits and joins.
+-- the pattern is this:
+--        
+--                   entry
+--                     |
+--                   split
+--                    / \
+--           childHead1 childHead2
+--              |              |
+--           child1         child2
+--           ....              ....
+--          /    \            /    \
+--         B  successTail1   B   successTail2
+--    breach        \      breach  /
+--                   \            /
+--                    [ joinNode ]
+--                          |
+--                      Fulfilled
+
+-- previously the successTails would have gone directly to Fulfilled
+-- but we relink them to go to the join node instead
+
 splitJoin :: [Rule]      -- background input ruleset
           -> PetriD      -- original whole graph
           -> SplitJoin   -- whether we are doing an Any or an All wrapper
@@ -226,7 +287,22 @@ splitJoin :: [Rule]      -- background input ruleset
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
 splitJoin rs og sj sgs entry = runGM og $ do
-  let headsOfChildren = nodes $ labfilter (hasDeet IsFirstNode) sgs
+      -- Sometimes, entry satisfies hasDeet IsFirstNode and so it appears
+      -- in the resulting list of nodes as returned by the call to nodes below.
+      -- Since we only want the children of entry and not entry itself, we can
+      -- filter out all nodes that look like it.
+      -- This helps avoid weird splits and joins like
+      --           Something done
+      --             ^     |
+      --             |     v
+      --              Both
+      --               |
+      --               v
+      --              ...
+  let headsOfChildren = 
+        sgs |> labfilter (hasDeet IsFirstNode)
+            |> nodes
+            |> filter (/= entry)
       successTails    = [ n
                         | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs
                         , m <- suc og n -- there is a direct link to FULFILLED
@@ -239,16 +315,44 @@ splitJoin rs og sj sgs entry = runGM og $ do
       -- an OR split/join looks like                  T P (T ... T)+ P   but that means the choice is immediate, only one token is available to many paths
       -- however, what i'm thinking of looks like     P T (P ... T)+ P   so that execution can proceed in parallel but whoever is first to the end can win.
 
-      splitText = if length headsOfChildren == 2 then "both" else "split (and)"
-      joinText  = "all done"
-  splitnode <- newNode (PN Trans splitText [] [IsInfra,IsAnd,IsSplit])
-  joinnode  <- newNode (PN Trans  joinText [] [IsInfra,IsAnd,IsJoin])
-  newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-  newEdge' (joinnode,fulfilledNode, [Comment "added by join to fulfilledNode"])
-  mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) | headnode <- headsOfChildren ]
-  mapM_ newEdge' [ ( tailnode, joinnode, [Comment "added by join from tailnode"]) | tailnode <- successTails    ]
-  mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
+  -- If the entry node doesn't have any children, we simply connect it to
+  -- Fulfilled and stop here. No need to make split and join nodes and link
+  -- them up in this case.
+  -- This is a quick hack. Ideally we have a way to determine if
+  -- it should connect to Breach or Fulfilled.
+  if null headsOfChildren then do
+    newEdge' (entry, fulfilledNode, [])
+  else do
+    let splitText = case length headsOfChildren of
+          0 -> undefined -- This should never happen since we already check if headsOfChildren is empty above.
+          1 -> "consequently"
+          2 -> "both"
+          _ -> "split (and)"
+        joinText = "all done"
+    -- If the entry node has children, then we need to care about splitting and
+    -- joining. We first make a split node and connect:
+    --    entry node -> split node -> children of entry node
+    splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
+    newEdge' (entry,splitnode, [Comment "added by split from parent node"])
+    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) 
+                   | headnode <- headsOfChildren ]
+    -- Now we check how many tail nodes there are in successTails.
+    -- If there's only 1, then there's no need to make a join node and link that up.
+    -- Doing this prevents redundant "All done" join nodes like
+    --         (Something not done)      (Something done)
+    --                                          |
+    --                                         All done
+    --                                           |
+    --                                        Fulfilled                      
+    when (length successTails > 1) $ do
+      joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
+      newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
+      mapM_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
+      traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
+      mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
+hasText :: Text -> PNode a -> Bool
+hasText  x  (PN _ nt _ _) = x == nt
 hasDeet :: Eq a => a -> PNode a -> Bool
 hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
 hasDeets :: (Foldable t, Eq a) => t a -> PNode a -> Bool
@@ -273,6 +377,9 @@ connectRules sg rules =
   -- let's search for all ruleAlias nodes, and plan to expand them
   --
 
+  -- meng would like to clear up `x -> (FromRuleAlias) -> (y)` to `x -> (y)`
+  -- because it is ugly to have `() -> ()`, that's not really a Petri net
+  
   let subgraphOfAliases = labfilter (hasDeet FromRuleAlias) sg
   -- another way to find it might be to look for head nodes that have no outdegrees
 
@@ -507,7 +614,9 @@ r2fgl rs defRL r@Regulative{..} = do
                                       , temp
                                       ])
         successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
-                     vp2np ( actionWord $ head $ actionFragments action) <> " " <> henceWord deontic
+                     -- vp2np
+                     -- ( actionWord $ head $ actionFragments action) <> " " <>
+                     henceWord deontic
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
@@ -541,7 +650,7 @@ r2fgl rs defRL r@Regulative{..} = do
     vp2np :: Text -> Text
     vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
 
-    seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive"]
+    seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive", color Green]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]
     henceWord DMust  = "done"
     henceWord DMay   = "occurred"
@@ -585,7 +694,7 @@ subj2nl NLen (AA.Leaf pt) = pt2text pt
 deonticTemporal :: Rule -> [(Text.Text, Text.Text)]
 deonticTemporal r@(Regulative{..}) =
   let d = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
-      temp = tc2nl NLen temporal
+      temp = Text.replace "  " " " $ tc2nl NLen temporal
       actions = actionFragments action
   in dTshow d temp <$> actions
   where

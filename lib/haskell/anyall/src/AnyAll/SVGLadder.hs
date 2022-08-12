@@ -19,10 +19,11 @@ import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Tree
 import Debug.Trace
-import           Data.Text.Lazy                   (toStrict)
+import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
+import Control.Arrow (ArrowChoice(right))
 
 type Length  = Integer
 type SVGElement = Element
@@ -51,13 +52,21 @@ moveInt (x, y) geoms =
   with geoms [Transform_ <<- translateInt x y]
 
 data BBox = BBox
-  { bbw :: Length
-  , bbh :: Length
+  { bbw                    :: Length
+  , bbh                    :: Length
   , bblm, bbtm, bbrm, bbbm :: Length -- left, top, right, bottom margins
-  ,  pl,         pr        :: PortStyleV -- left and right  ports
-  ,  pt,         pb        :: PortStyleH --  top and bottom ports
+  , ports                  :: Ports
   }
   deriving (Eq, Show)
+
+data Ports = Ports
+  { leftPort   :: PortStyleV,
+    rightPort  :: PortStyleV,
+    topPort    :: PortStyleH,
+    bottomPort :: PortStyleH
+  }
+  deriving (Eq, Show)
+
 
 type BoxedSVG = (BBox, SVGElement)
 
@@ -68,7 +77,7 @@ data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show
 data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
 
 -- | default bounding box
-defaultBBox Tiny  = defaultBBox' { pl = PMiddle, pr = PMiddle }
+defaultBBox Tiny  = defaultBBox' {ports = defaultPorts { leftPort = PMiddle, rightPort = PMiddle } }
 defaultBBox Small = defaultBBox Tiny
 defaultBBox Full  = defaultBBox'
 defaultBBox' = BBox
@@ -78,15 +87,21 @@ defaultBBox' = BBox
   , bbtm = 0
   , bbrm = 0
   , bbbm = 0
-  , pl = PTop,    pr = PTop    -- [TODO] default to PTop later
-  , pt = PCenter, pb = PCenter
+  , ports = defaultPorts
+  }
+
+defaultPorts = Ports
+  { leftPort = PTop
+  , rightPort = PTop
+  , topPort = PCenter
+  , bottomPort = PCenter
   }
 
 portL, portT, portR, portB :: BBox -> AAVScale -> Length
-portL bb = portLR (pl bb) bb
-portR bb = portLR (pr bb) bb
-portT bb = portTB (pt bb) bb
-portB bb = portTB (pb bb) bb
+portL bb = portLR (leftPort $ ports bb) bb
+portR bb = portLR (rightPort $ ports bb) bb
+portT bb = portTB (topPort $ ports bb) bb
+portB bb = portTB (bottomPort $ ports bb) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
 portLR PTop    bb s = bbtm bb +                                    sbh s `div` 2 -- [TODO] clip to max size of element
@@ -173,9 +188,9 @@ makeSvg' :: AAVConfig -> BoxedSVG -> SVGElement
 makeSvg' c = makeSvg
 
 makeSvg :: BoxedSVG -> SVGElement
-makeSvg (_bbx, geom) =
+makeSvg (box, geom) =
      doctype
-  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1" ]
+  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + bbw box + bblm box + bbrm box, Height_ <<-* 23 + bbh box + bbtm box + bbbm box]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
@@ -229,7 +244,7 @@ alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, mov
     moveElement = alignVCalcElement alignment alignmentPad
 
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
-adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin, bbbm = newBottomMargin}
+adjustBoxMargins alignment alignmentPad bx = bx {bbtm = newTopMargin + bbtm bx, bbbm = newBottomMargin + bbbm bx}
   where
     (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
 
@@ -252,7 +267,7 @@ alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElem
     moveElement = alignHCalcMove alignment alignmentPad
 
 adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
-adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin, bbrm = newRightMargin}
+adjustSideMargins alignment alignmentPad box = box {bblm = newLeftMargin + bblm box, bbrm = newRightMargin + bbrm box}
   where
     (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
 
@@ -279,10 +294,14 @@ hAlign alignment elems = alignH alignment mx <$> elems
 rowLayouter :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
 rowLayouter c (bbold, old) (bbnew, new) =
   ( templateBox
-      { bbh = max (bbh bbold) (bbh bbnew),
-        bbw = bbw bbold + lrHgap + bbw bbnew,
-        pl = PVoffset (portL bbold myScale),
-        pr = PVoffset (portR bbnew myScale)
+      { bbh = max (bbh bbold) (bbh bbnew)
+      , bbw = bbw bbold + lrHgap + bbw bbnew
+      , bbrm = bbrm bbnew
+      , bblm = bblm bbold
+      , ports = (ports templateBox)
+        { leftPort = PVoffset (portL bbold myScale)
+        , rightPort = PVoffset (portR bbnew myScale)
+        }
       },
     old
       <> moveInt (newBoxStart, 0) new
@@ -304,16 +323,18 @@ data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
 rowConnectorData :: AAVConfig -> BBox -> BBox -> Curve
 rowConnectorData c bbold bbnew =
   Curve
-    { start = Dot {x = bbw bbold - rightMargin, y = portLocationY},
-      startGuide = Dot {x = rightMargin + gap, y = 0},
-      endGuide = Dot {x = rightMargin, y = portL bbnew myScale - portLocationY},
-      end = Dot {x = rightMargin + gap + bblm bbnew, y = portL bbnew myScale - portLocationY}
+    { start = Dot {x = bbw bbold - rightMargin, y = startPortY},
+      startGuide = Dot {x = endPortX `div` 2, y = 0},
+      endGuide = Dot {x = endPortX `div` 2, y = endPortY},
+      end = Dot {x = endPortX, y = endPortY}
     }
   where
     myScale = getScale (cscale c)
     gap = slrh myScale
     rightMargin = bbrm bbold
-    portLocationY = portR bbold myScale
+    startPortY = portR bbold myScale
+    endPortY = portL bbnew myScale - startPortY
+    endPortX = rightMargin + gap + bblm bbnew
 
 svgConnector :: Curve -> SVGElement
 svgConnector
@@ -420,11 +441,13 @@ combineOr c elems =
 combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
   ( childbbox
-      { bbw = bbw childbbox + leftMargin + rightMargin,
-        bblm = leftMargin,
-        bbrm = rightMargin,
-        pl = PVoffset (portL childbbox myScale),
-        pr = PVoffset (portR childbbox myScale)
+      { bbw = bbw childbbox + leftMargin + rightMargin
+      , bblm = leftMargin + bblm childbbox
+      , bbrm = rightMargin + bbrm childbbox
+      , ports =  (ports childbbox)
+        { leftPort = PVoffset (portL childbbox myScale)
+        , rightPort = PVoffset (portR childbbox myScale)
+        }  
       },
     moveInt (leftMargin, 0) children
   )
@@ -435,57 +458,161 @@ combineAnd c elems =
     addElementToRow = rowLayouter c
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
 
+drawLabel ::  AAVConfig -> Maybe (Label T.Text) -> SVGElement
+drawLabel _ Nothing = mempty
+drawLabel c (Just l) =
+  case l of
+    Pre t -> boxContent t
+    PrePost pre post -> boxContent (T.append pre post)
+  where
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = \txt -> defBoxWidth - 15 + (3 * fromIntegral (T.length txt))
+    boxContent = \txt -> drawBoxContent (cscale c) txt "black" (boxWidth txt) boxHeight
+
 -- in a LR layout, each of the ORs gets a row below.
 -- we max up the bounding boxes and return that as our own bounding box.
-drawOr :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
-drawOr c negContext childqs =
-    combineOr c rawChildren
+drawOr :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
+drawOr c negContext pp childqs =
+    case pp of
+      Nothing -> (box, svg)
+      Just (Pre txt) -> drawPreLabelTop c txt (box, svg)
+      Just (PrePost preTxt postTxt) -> drawPrePostLabelTopBottom c preTxt postTxt (box, svg)
     where
       rawChildren = drawItemFull c negContext <$> childqs
+      (box, svg) = combineOr c rawChildren
 
-drawAnd :: AAVConfig -> Bool -> [QuestionTree] -> BoxedSVG
-drawAnd c negContext childqs =
-    combineAnd c rawChildren
-    where
-      rawChildren = drawItemFull c negContext <$> childqs
+drawAnd :: AAVConfig -> Bool -> Maybe (Label T.Text) -> [QuestionTree] -> BoxedSVG
+drawAnd c negContext pp childqs =
+  case pp of
+    Nothing -> (box, svg)
+    Just (Pre txt) -> drawPreLabelTop c txt (box, svg)
+    Just (PrePost preTxt postTxt) -> drawPrePostLabelTopBottom c preTxt postTxt (box, svg)
+  where
+    rawChildren = drawItemFull c negContext <$> childqs
+    (box, svg) = combineAnd c rawChildren
+
+drawPreLabelTop :: AAVConfig -> T.Text -> BoxedSVG -> BoxedSVG
+drawPreLabelTop c label (childBox, childSVG) =
+    (labeledBox, moveInt (0, labelHeight) childSVG <> svgLabel)
+  where
+    labeledBox = childBox
+      { bbtm = bbtm childBox + labelHeight
+      , bbh = bbh childBox + labelHeight
+    }
+    labelHeight = stm (getScale (cscale c))
+    lbox = labelBox c "hanging" label
+    (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
+
+drawPrePostLabelTopBottom :: AAVConfig -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
+drawPrePostLabelTopBottom c preTxt postTxt (childBox, childSVG) =
+    (labeledBox, moveInt (0, labelHeight) childSVG <> svgPreLabel <>  moveInt (0, bbh childBox + 2 * labelHeight) svgPostLabel)
+  where
+    labeledBox = childBox
+      { bbtm = bbtm childBox + labelHeight
+      , bbbm = bbbm childBox + labelHeight
+      , bbh = bbh childBox + 2 * labelHeight
+      }
+    labelHeight = stm (getScale (cscale c))
+    prelbox = labelBox c "hanging" preTxt
+    (_,svgPreLabel) = alignH HCenter (bbw labeledBox) prelbox
+    postlbox = labelBox c "ideographic" postTxt
+    (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
+
+labelBox :: AAVConfig -> T.Text -> T.Text -> BoxedSVG
+labelBox c baseline mytext =
+  (,)
+  (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight }
+  boxContent
+  where
+    boxHeight        = sbh (getScale (cscale c))
+    defBoxWidth      = sbw (getScale (cscale c))
+    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
+    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
+
+decorateWithLabel :: AAVConfig -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
+decorateWithLabel c pp childBox =
+  case (cscale c, pp) of
+    (Tiny, _ ) -> childBox
+    (_, Nothing) -> childBox
+    (_, Just (Pre txt)) -> drawPreLabelTop c txt childBox
+    (_, Just (PrePost preTxt postTxt)) -> drawPrePostLabelTopBottom c preTxt postTxt childBox
 
 drawItemFull :: AAVConfig -> Bool -> QuestionTree -> BoxedSVG
-drawItemFull c negContext (Node qt@(Q sv ao pp m) childqs) =
+drawItemFull c negContext qtr@(Node qt@(Q sv ao pp m) childqs) =
   case ao of
-    Or -> drawOr c negContext childqs
-    And -> drawAnd c negContext childqs
+    Or -> decorateWithLabel c pp (combineOr c rawChildren)
+    And -> decorateWithLabel c pp  (combineAnd c rawChildren)
     Simply txt -> drawLeaf c negContext txt m
     Neg -> drawItemFull c (not negContext) (head childqs)
+  where
+    rawChildren = drawItemFull c negContext <$> childqs
 
 -- topTextE = txtToBBE c <$> topText pp
 -- botTextE = txtToBBE c <$> bottomText pp
-
-deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, Bool, Bool)
+deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
-  case m of
-    Default (Right (Just True)) -> (HalfLine, notLine HalfLine, not negContext, True)
-    Default (Right (Just False)) -> (FullLine, notLine NoLine, negContext, True)
-    Default (Right Nothing) -> (NoLine, notLine NoLine, False, True)
-    Default (Left (Just True)) -> (HalfLine, notLine HalfLine, not negContext, False)
-    Default (Left (Just False)) -> (FullLine, notLine NoLine, negContext, False)
-    Default (Left Nothing) -> (NoLine, notLine NoLine, False, False)
+  case extractSoft m of
+    (Just True) -> (HalfLine, notLine HalfLine, topLine (not negContext))
+    (Just False) -> (FullLine, notLine NoLine, topLine negContext)
+    Nothing -> (NoLine, notLine NoLine, NoLine)
   where
     notLine = if negContext then const FullLine else id
+    topLine = \nc -> if nc then FullLine else NoLine
+
+extractSoft :: Default Bool -> Maybe Bool
+extractSoft (Default (Right b)) = b
+extractSoft (Default (Left b)) = b
+
+deriveConfidence :: Default a -> Bool
+deriveConfidence (Default (Right _)) = True
+deriveConfidence (Default (Left _)) = False
 
 drawBoxCap :: AAVConfig -> Bool -> Default Bool -> Length -> Length -> SVGElement
-drawBoxCap c negContext m boxHeight boxWidth =
-  (if leftline  == HalfLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight `div`2 , Stroke_ <<- "black", Class_ <<- "leftline.half" ] else mempty)
-  <> (if rightline == HalfLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight `div` 2 , Stroke_ <<- "black", Class_ <<- "rightline.half" ] else mempty)
-  <> (if leftline  == FullLine then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* 0         , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "leftline.full" ] else mempty)
-  <> (if rightline == FullLine then line_ [ X1_ <<-* boxWidth , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* boxHeight     , Stroke_ <<- "black", Class_ <<- "rightline.full" ] else mempty)
-  <> (if topline               then line_ [ X1_ <<-* 0        , Y1_ <<-* 0, X2_ <<-* boxWidth  , Y2_ <<-* 0             , Stroke_ <<- "black", Class_ <<- "topline" ] else mempty)
+drawBoxCap c negContext m boxWidth boxHeight =
+  leftLineSVG <> rightLineSVG <> topLineSVG
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (leftline, rightline, topline) = deriveBoxCap negContext m
+    leftLineSVG = drawVerticalLine 0 boxHeight leftline "leftline"
+    rightLineSVG = drawVerticalLine boxWidth boxHeight rightline "rightline"
+    topLineSVG = drawHorizontalLine 0 boxWidth topline "topline"
+
+drawVerticalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
+drawVerticalLine xPosition length lineType linePosition =
+  case lineType of
+    FullLine -> renderVerticalLine xPosition length (T.append linePosition ".full")
+    HalfLine -> renderVerticalLine xPosition (length `div` 2) (T.append linePosition ".half")
+    NoLine -> mempty
+
+renderVerticalLine :: Length -> Length -> T.Text -> SVGElement
+renderVerticalLine xPosition length lineClass =
+  line_
+    [ X1_ <<-* xPosition, Y1_ <<-* 0,
+      X2_ <<-* xPosition, Y2_ <<-* length,
+      Stroke_ <<- "black",
+      Class_ <<- lineClass
+    ]
+
+drawHorizontalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
+drawHorizontalLine yPosition length lineType linePosition =
+  case lineType of
+    FullLine -> renderHorizontalLine yPosition length (T.append linePosition ".full")
+    HalfLine -> renderHorizontalLine yPosition (length `div` 2) (T.append linePosition ".half")
+    NoLine -> mempty
+
+renderHorizontalLine :: Length -> Length -> T.Text -> SVGElement
+renderHorizontalLine yPosition length lineClass =
+  line_
+    [ X1_ <<-* 0,      Y1_ <<-* yPosition,
+      X2_ <<-* length, Y2_ <<-* yPosition,
+      Stroke_ <<- "black",
+      Class_ <<- lineClass
+    ]
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> Length -> Length  -> SVGElement
-drawBoxContent Tiny mytext textFill boxHeight boxWidth=
+drawBoxContent Tiny mytext textFill boxWidth boxHeight =
   circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ]
-drawBoxContent _ mytext textFill boxHeight boxWidth=
+drawBoxContent _ mytext textFill boxWidth boxHeight =
   text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
 
 drawLeaf :: AAVConfig
@@ -499,13 +626,14 @@ drawLeaf c negContext mytext m =
   <> boxContent
   <> boxCap
   where
-    (leftline, rightline, topline, confidence) = deriveBoxCap negContext m
+    (leftline, rightline, topline) = deriveBoxCap negContext m
+    confidence = deriveConfidence m
     (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
     boxHeight        = sbh (getScale (cscale c))
     defBoxWidth      = sbw (getScale (cscale c))
     boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxCap = drawBoxCap c negContext m boxHeight boxWidth
-    boxContent = drawBoxContent (cscale c) mytext textFill boxHeight boxWidth
+    boxCap = drawBoxCap c negContext m boxWidth boxHeight
+    boxContent = drawBoxContent (cscale c) mytext textFill boxWidth boxHeight
 
 type Boolean = Bool
 itemBox :: AAVConfig
@@ -531,19 +659,23 @@ itemBox c x y andor m cs amNot = (,) ((defaultBBox (cscale c)) { bbw = fromInteg
   where cs = colorScheme c m amNot
 
 data ColorScheme = ColorScheme
-  { bs -- | box stroke
-  , bf -- | box fill
-  , tf -- | text fill
-  , ll -- | left  "negation" line -- the marking is False
-  , rl -- | right "negation" line -- we are drawing a Not element
-  , tl -- | top "truth" line -- drawn if the value is true, or if the marking is false and the item is a Not
-    :: T.Text
+  { -- | box stroke
+    bs :: T.Text,
+    -- | box fill
+    bf :: T.Text,
+    -- | text fill
+    tf :: T.Text,
+    -- | left  "negation" line -- the marking is False
+    ll :: T.Text,
+    -- | right "negation" line -- we are drawing a Not element
+    rl :: T.Text,
+    -- | top "truth" line -- drawn if the value is true, or if the marking is false and the item is a Not
+    tl :: T.Text
   }
-
 -- | the color scheme depends on the marking
 colorScheme :: AAVConfig
             -> Default Bool
-            -> Boolean   -- | iff we got here via a Not, this value is True
+            -> Boolean   -- ^ iff we got here via a Not, this value is True
             -> ColorScheme
 colorScheme c m amNot = case m of
                           Default (Right (Just b@True )) -> ColorScheme "none" "none" "black" "none"  notLine (topLine b) -- user says true, or computed to true
@@ -563,10 +695,10 @@ box c x y w h =
   rect_ [ X_ <<-* x, Y_ <<-* y, Width_ <<-* w, Height_ <<-* h
         , Fill_ <<- "none", Stroke_ <<- "black" ]
 
-debugBox :: Length -> Length -> SVGElement
-debugBox w h =
+debugBox :: T.Text -> Length -> Length -> SVGElement
+debugBox m w h =
   rect_ [ X_ <<-* 0, Y_ <<-* 0, Width_ <<-* w, Height_ <<-* h
-        , Fill_ <<- "none", Stroke_ <<- "black" ]
+        , Fill_ <<- "none", Stroke_ <<- "black", Class_ <<- m]
 
 line :: (Length , Length) -> (Length, Length) -> SVGElement
 line (x1, y1) (x2, y2) =

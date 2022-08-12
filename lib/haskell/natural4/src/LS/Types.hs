@@ -187,6 +187,10 @@ type RuleLabel = (Text.Text   --  "§"
 rl2text :: RuleLabel -> Text.Text
 rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 
+-- sometimes we just want to convert either the rulelabel or the rulename to text
+rlrn2text :: Rule -> Text.Text
+rlrn2text r = Text.unwords $ ruleLabelName r
+
 -- maybe we should have a proper dict orientation here
 data KW a = KW { dictK :: MyToken
                , dictV :: a }
@@ -420,6 +424,7 @@ type VarPath = [TypedMulti]
 data Interpreted = L4I
   { classtable :: ClsTab
   , scopetable :: ScopeTabs
+  , origrules  :: [Rule]
   }
   deriving (Eq, Show)
 
@@ -725,6 +730,7 @@ toToken "IS A"   = [TypeSeparator, A_An]
 toToken "IS AN"  = [TypeSeparator, A_An]
 toToken "A"      = pure A_An
 toToken "AN"     = pure A_An
+toToken "THE"    = pure A_An
 
 toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define

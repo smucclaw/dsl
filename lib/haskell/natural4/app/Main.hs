@@ -135,7 +135,6 @@ main = do
     mkdn <- mapM (toMarkdown nlgEnv) rules
     pdf <- toPDF (Text.concat mkdn)
     Byte.writeFile "output.pdf" pdf
-    pPrint mkdn
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

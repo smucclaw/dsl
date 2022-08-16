@@ -306,6 +306,8 @@ toMarkdown env rl = do
         --     linText ++ "\n" ++ linTree
         --     )
         --   )
+      _ ->
+        return (Text.pack $ error "error linearising rule")
 
 toHTML :: Text.Text -> String
 toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str

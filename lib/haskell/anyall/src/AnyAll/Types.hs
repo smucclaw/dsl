@@ -18,7 +18,7 @@ import qualified Data.Text            as T
 import qualified Data.Vector          as V
 
 import Data.Aeson
-import Data.Aeson.Types (parseMaybe, parse)
+import Data.Aeson.Types (parseMaybe, parse, Parser)
 import GHC.Generics
 import GHC.Exts (toList)
 
@@ -84,7 +84,7 @@ alwaysLabeled (All (Just lbl) xs) = All lbl (alwaysLabeled <$> xs)
 alwaysLabeled (Leaf x)            = Leaf x
 alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
-instance Semigroup t => Semigroup (Label t) where 
+instance Semigroup t => Semigroup (Label t) where
   (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2)
   (<>)  (Pre pr1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) po2
   (<>)  (PrePost pr1 po1) (Pre pr2) = PrePost (pr1 <> pr2) po1
@@ -182,17 +182,22 @@ asJSONDefault = encode
 newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
   deriving (Eq, Show, Generic)
 
+type TextMarking = Marking T.Text
+
 instance (ToJSON a, ToJSONKey a) => ToJSON (Marking a)
 instance FromJSON (Marking T.Text) where
   -- the keys in the object correspond to leaf contents, so we have to process them "manually"
   parseJSON = parseMarking
 
+parseMarkingKV :: ( T.Text, Value) -> Maybe (T.Text, Default Bool)
+parseMarkingKV (k,v) =
+  case parseMaybe parseJSON v :: Maybe (Default Bool) of
+    Just ma -> Just (k, ma)
+    Nothing -> Nothing
+
+parseMarking :: Value -> Parser (Marking T.Text)
 parseMarking = withObject "marking" $ \o -> do
-    let asList = toList o
-    return $ Marking $ Map.fromList $ mapMaybe (\(k,v) ->
-                                                  case parseMaybe parseJSON v :: Maybe (Default Bool) of
-                                                    Just ma -> Just (k, ma)
-                                                    Nothing -> Nothing) asList
+    return $ Marking $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
 
 
 data ShouldView = View | Hide | Ask deriving (Eq, Show, Generic)

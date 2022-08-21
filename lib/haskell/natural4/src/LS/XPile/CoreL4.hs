@@ -244,6 +244,7 @@ prettyDefns rs =
   [ "defn" <+> pretty (T.unwords lhs) <+> colon <+> "Integer -> Integer = \\x : Integer -> " <> pretty (T.unwords rhs)
   ]
   | r <- rs
+  , hasClauses r
   , cl <- clauses r
   , let clHead = hHead cl
         clBody = hBody cl

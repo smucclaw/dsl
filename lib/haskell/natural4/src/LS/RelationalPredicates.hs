@@ -184,8 +184,8 @@ pHornlike = debugName "pHornlike" $ do
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
         <$$> -- (try ambitious <|>
                     someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
-        <|?> (Nothing, fmap snd <$> optional givenLimb)
-        <|?> (Nothing, fmap snd <$> optional uponLimb)
+        <|?> (Nothing, Just . snd <$> givenLimb)
+        <|?> (Nothing, Just . snd <$> uponLimb)
         <|?> (Nothing, whenCase)
         -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
   ((keyword, name, clauses), given, upon, topwhen) <- permutepart
@@ -240,9 +240,15 @@ pHornlike = debugName "pHornlike" $ do
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Decide ]
-      (relPred, whenpart) <- debugName "pHornlike/someStructure going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
-      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
+      keyword <- Just <$> choice [ pToken Decide ]
+      relwhens <- try (debugName "some sameline whens" $
+                       someIndentation (sameDepth relPredSamelineWhen))
+                  <|> debugName "single nextline WHEN"
+                  (pure <$> manyIndentation relPredNextlineWhen)
+      return (keyword
+             , inferRuleName (fst . head $ relwhens)
+             , [HC2 relPred whenpart
+               | (relPred, whenpart) <- relwhens ])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]

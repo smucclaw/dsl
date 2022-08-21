@@ -1514,20 +1514,36 @@ This example serves multiple tests:
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |
-| DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |
-| DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |
-|         |                    |    |        |                    |          |             |
-| DECLARE | Person             |    |        |                    |          |             |
-| HAS     | dependents         | IS | A      | Number             |          |             |
-| HAS     | amount saved       | IS | A      | Number             |          |             |
-| HAS     | earnings           | IS | A      | Number             |          |             |
-| HAS     | income             | IS | A      | FinancialStatus    |          |             |
-| HAS     | savings account    | IS | A      | FinancialStatus    |          |             |
-| HAS     | isDead             | IS | A      | Boolean            |          |             |
-| HAS     | spendthrift        | IS | A      | Boolean            |          |             |
-| HAS     | investment         | IS | AN     | InvestmentStrategy |          |             |
+| DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |   |   |   |   |   |
+| DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |   |   |   |   |   |
+| DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |   |   |   |   |   |
+|         |                    |    |        |                    |          |             |   |   |   |   |   |
+| DECLARE | Person             |    |        |                    |          |             |   |   |   |   |   |
+| HAS     | dependents         | IS | A      | Number             |          |             |   |   |   |   |   |
+| HAS     | amount saved       | IS | A      | Number             |          |             |   |   |   |   |   |
+| HAS     | earnings           | IS | A      | Number             |          |             |   |   |   |   |   |
+| HAS     | income             | IS | A      | FinancialStatus    |          |             |   |   |   |   |   |
+| HAS     | savings account    | IS | A      | FinancialStatus    |          |             |   |   |   |   |   |
+| HAS     | isDead             | IS | A      | Boolean            |          |             |   |   |   |   |   |
+| HAS     | spendthrift        | IS | A      | Boolean            |          |             |   |   |   |   |   |
+| HAS     | investment         | IS | AN     | InvestmentStrategy |          |             |   |   |   |   |   |
 
+***** Financial Advisor decisions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| GIVEN  | Person          |   |    |                           |   |           |                 |   |    |            |
+| DECIDE | investment      |   | IS | savings                   |   | WHEN      | savings account |   | IS | inadequate |
+|        | "               |   | "  | stocks                    |   | WHEN      | savings account |   | IS | adequate   |
+|        |                 |   |    |                           |   | AND       | income          |   | IS | adequate   |
+|        | "               |   | "  | combination               |   | OTHERWISE |                 |   |    |            |
+|        | minSavings      |   | IS | dependents * 5000         |   |           |                 |   |    |            |
+|        | savings account |   | IS | adequate                  |   | WHEN      | amount saved    |   | >  | minSavings |
+|        | "               |   | "  | inadequate                |   | OTHERWISE |                 |   |    |            |
+|        | minIncome       |   | IS | 15000 + 4000 * dependents |   |           |                 |   |    |            |
+|        | income          |   | is | adequate                  |   | WHEN      | earnings        |   | >  | minIncome  |
 
 ***** the CoreL4 encoding of the AXA case uses class extensions
 :PROPERTIES:

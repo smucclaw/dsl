@@ -24,6 +24,7 @@ import           Data.List.NonEmpty (NonEmpty((:|)))
 import qualified Data.String.Utils as DSU
 import Text.Pretty.Simple (pShow, pShowNoColor)
 import qualified Data.Text.Lazy as TL
+import Control.Monad (guard)
 
 -- output to Core L4 for further transformation
 
@@ -38,10 +39,11 @@ sfl4ToCorel4 rs =
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , show $ prettyClasses cTable ,     "\n\n-- boilerplate\n"
-               , show $ prettyBoilerplate cTable , "\n\n-- decls\n"
-               , show $ prettyDecls   sTable ,     "\n\n-- facts\n"
-               , show $ prettyFacts   sTable , ""
+               , "\n\n-- classes\n",                   show $ prettyClasses cTable
+               , "\n\n-- boilerplate\n",               show $ prettyBoilerplate cTable
+               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
+               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
+               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
                , "\n# directToCore\n\n"
                ] ++
                [ show (directToCore r)
@@ -231,6 +233,26 @@ prettyBoilerplate ct@(CT ch) =
     pairwise :: [a] -> [(a, a)]
     pairwise [] = []
     pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
+
+-- | print arithmetic elements as defn
+-- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
+--     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
+
+prettyDefns :: [SFL4.Rule] -> Doc ann
+prettyDefns rs =
+  vsep $ concat [
+  [ "defn" <+> pretty (T.unwords lhs) <+> colon <+> "Integer -> Integer = \\x : Integer -> " <> pretty (T.unwords rhs)
+  ]
+  | r <- rs
+  , cl <- clauses r
+  , let clHead = hHead cl
+        clBody = hBody cl
+  , clBody == Nothing
+  , (RPConstraint lhs RPis rhs) <- [clHead]
+  , any (\x -> x `elem` T.unpack (T.unwords rhs)) ("+-*/" :: String)
+  ]
+
+
 
 prettyClasses :: ClsTab -> Doc ann
 prettyClasses ct@(CT ch) =

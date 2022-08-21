@@ -421,6 +421,16 @@ data TypeSig = SimpleType ParamType EntityType
 
 type VarPath = [TypedMulti]
 
+data InterpreterOptions = IOpts
+  { enums2decls :: Bool -- | convert inlineEnums in a class declaration to top-level decls? Used by corel4.
+  }
+  deriving (Eq, Show)
+
+defaultInterpreterOptions :: InterpreterOptions
+defaultInterpreterOptions = IOpts
+  { enums2decls = False
+  }
+
 data Interpreted = L4I
   { classtable :: ClsTab
   , scopetable :: ScopeTabs
@@ -445,7 +455,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT (CT x) = x

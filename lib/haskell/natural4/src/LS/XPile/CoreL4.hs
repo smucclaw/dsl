@@ -196,9 +196,10 @@ prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pret
 
 prettyDecls :: ScopeTabs -> Doc ann
 prettyDecls sctabs =
-  vsep [ "--" <+> pretty scopename <> Prettyprinter.line <>
+  vsep [ "--" <+> scope_name <> Prettyprinter.line <>
          "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
        | (scopename , symtab') <- Map.toList sctabs
+       , let scope_name = snake_inner (T.unwords scopename)
        , (mt, (symtype,_vals)) <- Map.toList symtab'
        ]
 
@@ -220,7 +221,7 @@ prettyBoilerplate ct@(CT ch) =
   , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
   , ""
   , "fact" <+> angles (c_name <> "Disj")
-  , encloseSep "" "" " && " $ (\(x,y) -> parens (pretty x <+> "/=" <+> pretty y)) <$> pairwise enumList
+  , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner x <+> "/=" <+> snake_inner y)) <$> pairwise enumList
   , ""
   ]
   | className <- getCTkeys ct
@@ -258,7 +259,7 @@ prettyDefns rs =
 prettyClasses :: ClsTab -> Doc ann
 prettyClasses ct@(CT ch) =
   vsep $ concat [
-  [ "class" <+> snake_inner className <>
+  [ "class" <+> c_name <>
     case clsParent ct className of
       Nothing       -> mempty
       (Just parent) -> " extends" <+> pretty parent
@@ -281,11 +282,11 @@ prettyClasses ct@(CT ch) =
     -- decl Enum1 : Someclass -> Attr1 -> Boolean
     -- [TODO] however, we do not have a sensible treatment of recursive class declarations, so we need to think about that.
   , if children == CT Map.empty then Prettyprinter.emptyDoc else commentWith "#" ("children:" : T.lines (T.pack (show children)))
-  , vsep [ "decl" <+> pretty attrname <>
+  , vsep [ "decl" <+> snake_inner attrname <>
            case attrType children attrname of
              -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
              Just t@(SimpleType _ptype pt) ->
-               encloseSep ": " "" " -> " ([ snake_inner className
+               encloseSep ": " "" " -> " ([ c_name
                                           , prettySimpleType snake_inner t
                                           ] ++ case pt of
                                                  "Boolean" -> []
@@ -299,6 +300,7 @@ prettyClasses ct@(CT ch) =
   , ""
   ]
   | className <- getCTkeys ct
+  , let c_name = snake_inner className
   , Just (ctype, children) <- [Map.lookup className ch]
   ]
 

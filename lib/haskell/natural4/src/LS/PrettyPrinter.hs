@@ -139,4 +139,7 @@ hc2preds :: HornClause2 -> BoolStructR
 hc2preds (HC2 _headRP Nothing) = AA.Leaf (RPMT ["TRUE"])
 hc2preds (HC2 _headRP (Just bsr)) = bsr
 
-  
+
+-- | comment a block of lines
+commentWith :: T.Text -> [T.Text] -> Doc ann
+commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line

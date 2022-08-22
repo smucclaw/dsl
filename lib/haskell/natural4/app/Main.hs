@@ -41,7 +41,7 @@ main = do
 --  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
-      l4i         = l4interpret rules
+      l4i         = l4interpret SFL4.defaultInterpreterOptions rules
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
@@ -65,10 +65,10 @@ main = do
                                    , unlines $ (\r -> ("\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n") <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
 
                                    , "\n\n-- class hierarchy:\n"
-                                   , TL.unpack (pShowNoColor (classHierarchy rules))
+                                   , TL.unpack (pShowNoColor (SFL4.classtable l4i))
 
                                    , "\n\n-- symbol table:\n"
-                                   , TL.unpack (pShowNoColor (symbolTable rules))
+                                   , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
                                    ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
@@ -100,6 +100,7 @@ main = do
     unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
+    putStrLn "natural4: output to workdir done"
 
   when (SFL4.only opts == "petri")  $ putStrLn asPetri
   when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i <$> rules)
@@ -128,8 +129,8 @@ main = do
 
   when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
   when (SFL4.only opts `elem` ["native"])  $ pPrint rules
-  when (SFL4.only opts `elem` ["classes"]) $ print (classHierarchy rules)
-  when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
+  when (SFL4.only opts `elem` ["classes"]) $ print (SFL4.classtable l4i)
+  when (SFL4.only opts `elem` ["symtab"])  $ print (SFL4.scopetable l4i)
 
   when (SFL4.toVue rc) $ do
     -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules

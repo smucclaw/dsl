@@ -1,4 +1,377 @@
+#+TITLE: Natural4 Compiler Toolchain Internals Documentation
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="excel-2007.css" />
+
+* Type Declarations                                                :ontology:
+
+We assume most L4 developers will have some exposure to OOP.
+
+We borrow class/instance from OOP, and algebraic data types from Haskell.
+
+** TODO simple sum types, or enums
+
+| DECLARE | TempUnit | IS | ONE OF | Fahrenheit | Celsius |
+
+#+begin_src haskell
+  data TempUnit = Fahrenheit | Celsius
+#+end_src
+
+** TODO algebraic datatypes
+
+| DECLARE | Temp | IS | TempUnit | number |
+
+#+begin_src haskell
+  data Temp = Temp TempUnit Float
+#+end_src
+
+** TODO simple tagged unions with prefix constructors
+
+| DECLARE | Temp | IS | F | real |
+|         |      | OR | C | real |
+|         |      | OR | K | real |
+
+#+begin_src haskell
+  data Temp = F Float
+            | C Float
+            | K Float
+#+end_src
+
+*** simple tagged unions with postfix constructors
+
+| DECLARE | temp | IS | real | F |
+|         |      | OR | real | C |
+|         |      | OR | real | K |
+
+** TODO product types
+
+- classes have attributes
+- equivalently, records have fields
+
+the attributes/fields themselves can have types.
+
+| DECLARE | Cartesian coordinate |    | AKA | Point  |
+| HAS     | X                    | IS | AN  | Int    |
+|         | Y                    | IS | AN  | Int    |
+|         | Label                | IS | A   | String |
+
+*** Legalese
+
+**** Dialect 1
+
+A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
+- an integer value "*X*";
+- an integer value "*Y*"; and
+- a string "*Label*".
+
+**** Dialect 2
+
+*Point* means a Cartesian coordinate with an integer value "X", an integer value "Y", and a string "label".
+
+*** Haskell
+#+begin_src haskell :tangle Classy.hs :noweb yes
+  <<lens magic>>
+  data Point = Point
+   { _x     :: Int
+   , _y     :: Int
+   , _label :: String
+   }
+  makeClassy ''Point
+#+end_src
+
+*** Typescript
+#+begin_src typescript
+  class Point {
+    x     : number;
+    y     : number;
+    label : string;
+  }
+#+end_src
+
+*** Python
+#+begin_src python
+  class Point:
+    x     = 1
+    y     = 2
+    label = "point label"
+#+end_src
+
+*** Prolog [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dicts]]
+
+#+begin_src prolog
+  A = point{x:1, y:2, label:"point label"}.
+#+end_src
+
+*** Alloy
+#+begin_src alloy
+open util/integers
+
+abstract sig Point {
+  x : Int,
+  y : Int
+  /* labels are strings, which are too hairy for Alloy */
+}
+
+one pointA extends Point {
+  x = 0
+  y = 0
+}
+#+end_src
+
+*** Uppaal
+
+#+begin_src uppaal?
+???
+#+end_src
+
+*** Java
+
+#+begin_src java
+class public super awesome Point {
+  x: attribute variable member of Point is integer;
+  y: same as above but in an ever more verbose syntax;
+}
+#+end_src
+
+
+** basic types
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: plain-table
+:END:
+
+|      | L4       | Haskell                   | Typescript | Desc                                                                                    |
+|------+----------+---------------------------+------------+-----------------------------------------------------------------------------------------|
+|      | int      | Int                       | number     |                                                                                         |
+|      | real     | Real                      | number     |                                                                                         |
+|      | date     |                           |            | a mess of possible spec formats including "the third business day after Christmas 2033" |
+|      | daterel  |                           |            | a mess of possible spec formats including "the third business day after Christmas"      |
+|      | datetime |                           |            |                                                                                         |
+|      |          |                           |            |                                                                                         |
+|      | currency | (currencycode, baseunits) |            |                                                                                         |
+| SG$1 |          | (SGD, 100)                |            |                                                                                         |
+|      |          |                           |            |                                                                                         |
+
+** inheritance and validation
+
+The syntax for inheritance and validation is:
+
+| DEFINE         | SubClass | IS | A | SuperClass |
+| HAS            | ...      |    |   |            |
+| WHICH / WHOSE  | ...      |    |   |            |
+
+There must be at least one of { HAS, WHICH | WHOSE } present after the DEFINE
+
+*** WHICH syntax
+
+the subject of the WHICH is the SubClass itself:
+
+| DEFINE | Natural | IS | AN | Int |
+| WHICH  | IS      | >= | 0  |     |
+
+*** WHOSE syntax
+
+an attribute name follows the WHOSE keyword:
+
+| DEFINE | Quadrant1 | IS | A  | Point |   |
+| WHOSE  | X         | IS | >= |     0 |   |
+| AND    | Y         | IS | >= |     0 |   |
+
+*** HAS syntax
+
+| DEFINE | MyObject |    |   |                |
+| HAS    | attr1    | IS | A | <Type Name>    |
+| HAS    | attr2    | IS |   | a static value |
+
+Here ~<Type Name>~ could be something like ~Int~ or ~String~ or ~Person~ or ~Address~.
+
+A static value is literally that: something like ~42~. It's a class constant.
+
+*** Examples
+**** Haskell
+
+as shown above with Classy Lenses
+
+**** Typescript
+#+begin_src typescript :tangle Classy.ts
+  class SuperParent { }
+
+  export class SubChild extends SuperParent {
+    newSubAttribute9: number = 42;
+    constructor(
+      public newSubAttribute7: number,
+      public newSubAttribute8: string
+    ) { super() }
+  }
+#+end_src
+
+This gets us:
+
+#+begin_example
+Welcome to Node.js v17.0.1.
+Type ".help" for more information.
+> classy = require('./src/Classy.js')
+{ __esModule: true, SubChild: [Function: SubChild] }
+> oops =new classy.SubChild (12,"boo")
+SubChild {
+  newSubAttribute7: 12,
+  newSubAttribute8: 'boo',
+  newSubAttribute9: 42
+}
+#+end_example
+
+
+** validation
+
+OOP has the idea of *constructors* which instantiate a particular value into a class. Maybe something like ~init()~ or ~new()~
+
+In Haskell every term has a type.
+
+In advanced typed languages we have the notion of refinement and dependent types.
+
+In L4 every class possesses a set of *validation rules*. Some might think of this in terms of refinement or dependent types.
+
+*** Example 1
+| DEFINE | Natural | IS | AN | Int |
+| WHICH  | IS      | >= |  0 |     |
+
+#+begin_src haskell :tangle Classy.hs
+  data MyNatural = MyNatural {
+    _myint :: Int
+  } deriving (Show, Eq, Ord)
+  makeClassy ''MyNatural
+
+  class Validation a where
+    isValid :: a -> Bool
+
+  instance Validation MyNatural where
+    isValid myn = myn^.myint >= 0
+#+end_src
+
+*** Example 2: majority
+
+| ENTITY | Person        |   |   |    |       |         |             |                                     |   |    |   |        |                   |
+| HAS    | official name |   |   | IS | A     | String  |             |                                     |   |    |   |        |                   |
+| HAS    | address       |   |   | IS | AN    | Address | OPTIONAL    |                                     |   |    |   |        |                   |
+| HAS    | identifier    |   |   | IS | ONEOF | UEN     | AKA         | Unique Entity Number                |   | IS | A | String | SG_UEN            |
+|        |               |   |   |    | OR    | NRIC    | AKA         | National Registration Identity Card |   | IS | A | String | SG_NRIC           |
+|        |               |   |   |    | OR    | FIN     | AKA         | Foreigner Identification Number     |   | IS | A | String | SG_FIN            |
+|        |               |   |   |    | OR    | TIN     | AKA         | U.S. Taxpayer Identification Number |   | IS | A | String |                   |
+|        |               |   |   |    | OR    |         | Nationality |                                     |   | IS | A | String | ISO3166-1 alpha-2 |
+|        |               |   |   |    |       | AND     | Passport    |                                     |   | IS | A | String |                   |
+
+#+begin_src haskell :tangle Classy.hs :noweb yes
+  <<subsidiary types>>
+  data Person = Person
+    { _officialName :: String
+    , _address :: Address
+    , _identifier :: Identifier
+    } deriving (Show, Eq)
+  makeClassy ''Person
+#+end_src
+
+#+NAME: subsidiary types
+#+begin_src haskell 
+  type Address = [String]
+
+  data Identifier = SG_UEN  String
+                  | SG_NRIC String
+                  | SG_FIN  String
+                  | US_TIN  String
+                  | Passport
+                    { nationality :: String
+                    , passportNo  :: String
+                    }
+    deriving (Show, Eq)
+#+end_src
+
+#+begin_src typescript
+  class Person {
+    _officialName  : string;
+    _address      ?: Address;
+    _identifier    :
+        { idtype : "SGUEN",     idval : SGUEN }
+      | { idtype : "SGNRIC",    idval : SGNRIC }
+      | { idtype : "SGFIN",     idval : SGFIN }
+      | { idtype : "USTIN",     idval : USTIN }
+      | { idtype : "passport",  idval :
+          {
+            nationality: string; // "se" "sg" "us" "uk"
+            passportNo:  string;
+          }
+        }
+  }
+  makeClassy ''Person
+#+end_src
+
+| ENTITY | Corporation    |   |   | IS | A | Person |   |   |
+| ENTITY | Natural Person |   |   | IS | A | Person |   |   |
+
+#+begin_src haskell :tangle Classy.hs
+  data Corporation   = Corporation   { _cperson :: Person }
+  data NaturalPerson = NaturalPerson { _nperson :: Person }
+  makeClassy ''NaturalPerson
+  instance HasPerson NaturalPerson where
+    person = nperson
+#+end_src
+
+#+begin_src typescript
+  class Corporation   extends Person { }
+  class NaturalPerson extends Person { }
+#+end_src
+
+| ENTITY | Capable          |                  |   | IS | A       | Natural |          |        |       |
+| HAS    | adulthood        |                  |   | IS | ONEOF   | Major   | Minor    | LIKELY | Major |
+| HAS    | ParentOrGuardian |                  |   | IS | A       | Capable | OPTIONAL |        |       |
+| WHOSE  | adulthood        |                  |   | IS |         | Major   |          |        |       |
+| OR     |                  | ParentOrGuardian |   | IS | defined |         |          |        |       |
+|        | AND              | ParentOrGuardian |   | IS | VALID   |         |          |        |       |
+
+(Majority means: are they not a minor?)
+
+Conventionally one would expect such a form to gather the exact birthdate, from which we could compute the age, from which we could compute majority, but here we are being more privacy-conscious and just asking if the individual is a major or a minor, hence ~majority~ is a Bool.
+
+#+begin_src haskell :tangle Classy.hs
+  data Majority = Major | Minor
+    deriving (Eq)
+
+  data CapablePerson = CapablePerson
+    { _np               :: NaturalPerson
+    , _adulthood        :: Majority
+    , _parentOrGuardian :: Maybe CapablePerson
+    }
+  makeClassy ''CapablePerson
+  instance HasNaturalPerson CapablePerson where
+    naturalPerson = np
+
+  instance Validation CapablePerson where
+    isValid p =
+      p^.adulthood == Major
+      || maybe False isValid (p^.parentOrGuardian)
+
+#+end_src
+
+#+begin_src typescript
+  class CapablePerson extends Natural {
+    adulthood         : boolean;
+    parentOrGuardian ?: CapablePerson;
+  }
+#+end_src
+									
+| ENTITY | Singapore Company |   |   | IS | A   | Corporation |   |   |
+| HAS    | identifier        |   |   | IS | UEN |             |   |   |
+
+#+begin_src typescript
+
+#+end_src
+									
+
+** instances
+
+
+
+** default values
+
+** attribute types
+
+** 
 
 * Notes on the code
 
@@ -13,11 +386,11 @@ Suppose we are given an input range containing, /inter alia/, a column of AND an
 | OR    | drinks |
 | MUST  | sing   |
 
-The BoolStruct is the bit in the middle. It spans the ~(walks && runs && (eats || drinks))~. Some call it a "condition" or "case".
+The BoolStruct is the bit in the middle. It spans the ~(walks && runs && (eats || drinks))~. Coode calls it a "case".
 
 The prior text, "EVERY person WHO", we will label the "Preamble". Because it comes before "walks".
 
-The "MUST sing" we label the "Denouement". Other structures are possible; more on that later. But most variations contain a BoolStruct somewhere or other.
+The "MUST sing" we label the "Condition". Other structures are possible; more on that later. But most variations contain a BoolStruct somewhere or other.
 
 It's up to us to turn the columns of a BoolStruct into an and/or tree, respecting operator precedence.
 
@@ -188,343 +561,6 @@ The need to return "attachments" means that a BoolStruct parser actually has to 
 Nested booleans go into the ~getBS~.
 
 Nested constitutive and regulative rules go into the ~getR~.
-
-** Type Definitions                                                                      :ontology:
-
-We assume most L4 developers will have some exposure to OOP.
-
-We borrow some essential notions from OOP.
-
-*** product types
-
-- classes have attributes
-- alternatively, records have fields
-
-attributes have types.
-
-| DEFINE | Cartesian   | coordinate | AKA | Point  |
-| HAS    | X           | IS         | AN  | Int    |
-|        | Y           | IS         | AN  | Int    |
-|        | Label       | IS         | A   | String |
-
-**** Legalese
-
-***** Dialect 1
-
-A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
-- an integer value "*X*";
-- an integer value "*Y*"; and
-- a string "*Label*".
-
-***** Dialect 2
-
-*Point* means a Cartesian coordinate with an integer value "X", an integer value "Y", and a string "label".
-
-**** Haskell
-#+begin_src haskell :tangle Classy.hs :noweb yes
-  <<lens magic>>
-  data Point = Point
-   { _x     :: Int
-   , _y     :: Int
-   , _label :: String
-   }
-  makeClassy ''Point
-#+end_src
-
-**** Typescript
-#+begin_src typescript
-  class Point {
-    x     : number;
-    y     : number;
-    label : string;
-  }
-#+end_src
-
-**** Python
-#+begin_src python
-  class Point:
-    x     = 1
-    y     = 2
-    label = "point label"
-#+end_src
-
-**** Prolog [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dicts]]
-
-#+begin_src prolog
-  A = point{x:1, y:2, label:"point label"}.
-#+end_src
-
-**** Alloy
-#+begin_src alloy
-open util/integers
-
-abstract sig Point {
-  x : Int,
-  y : Int
-  /* labels are strings, which are too hairy for Alloy */
-}
-
-one pointA extends Point {
-  x = 0
-  y = 0
-}
-#+end_src
-
-**** Uppaal
-
-#+begin_src uppaal?
-???
-#+end_src
-
-**** Java
-
-#+begin_src java
-class public super awesome Point {
-  x: attribute variable member of Point is integer;
-  y: same as above but in an ever more verbose syntax;
-}
-#+end_src
-
-
-*** basic types
-:PROPERTIES:
-:HTML_CONTAINER_CLASS: plain-table
-:END:
-
-|      | L4       | Haskell                   | Typescript | Desc                                                                                    |
-|------+----------+---------------------------+------------+-----------------------------------------------------------------------------------------|
-|      | int      | Int                       | number     |                                                                                         |
-|      | real     | Real                      | number     |                                                                                         |
-|      | date     |                           |            | a mess of possible spec formats including "the third business day after Christmas 2033" |
-|      | datetime |                           |            |                                                                                         |
-|      |          |                           |            |                                                                                         |
-|      | currency | (currencycode, baseunits) |            |                                                                                         |
-| SG$1 |          | (SGD, 100)                |            |                                                                                         |
-|      |          |                           |            |                                                                                         |
-
-*** inheritance and validation
-
-The syntax for inheritance and validation is:
-
-| DEFINE         | SubClass | IS | A | SuperClass |
-| HAS            | ...      |    |   |            |
-| WHICH / WHOSE  | ...      |    |   |            |
-
-There must be at least one of { HAS, WHICH | WHOSE } present after the DEFINE
-
-**** WHICH syntax
-
-the subject of the WHICH is the SubClass itself:
-
-| DEFINE | Natural | IS | AN | Int |
-| WHICH  | IS      | >= | 0  |     |
-
-**** WHOSE syntax
-
-an attribute name follows the WHOSE keyword:
-
-| DEFINE | Quadrant1 | IS | A  | Point |   |
-| WHOSE  | X         | IS | >= |     0 |   |
-| AND    | Y         | IS | >= |     0 |   |
-
-**** HAS syntax
-
-| DEFINE | MyObject |    |   |                |
-| HAS    | attr1    | IS | A | <Type Name>    |
-| HAS    | attr2    | IS |   | a static value |
-
-Here ~<Type Name>~ could be something like ~Int~ or ~String~ or ~Person~ or ~Address~.
-
-A static value is literally that: something like ~42~. It's a class constant.
-
-**** Examples
-***** Haskell
-
-as shown above with Classy Lenses
-
-***** Typescript
-#+begin_src typescript :tangle Classy.ts
-  class SuperParent { }
-
-  export class SubChild extends SuperParent {
-    newSubAttribute9: number = 42;
-    constructor(
-      public newSubAttribute7: number,
-      public newSubAttribute8: string
-    ) { super() }
-  }
-#+end_src
-
-This gets us:
-
-#+begin_example
-Welcome to Node.js v17.0.1.
-Type ".help" for more information.
-> classy = require('./src/Classy.js')
-{ __esModule: true, SubChild: [Function: SubChild] }
-> oops =new classy.SubChild (12,"boo")
-SubChild {
-  newSubAttribute7: 12,
-  newSubAttribute8: 'boo',
-  newSubAttribute9: 42
-}
-#+end_example
-
-
-*** validation
-
-OOP has the idea of *constructors* which instantiate a particular value into a class. Maybe something like ~init()~ or ~new()~
-
-In Haskell every term has a type.
-
-In advanced typed languages we have the notion of refinement and dependent types.
-
-In L4 every class possesses a set of *validation rules*. Some might think of this in terms of refinement or dependent types.
-
-**** Example 1
-| DEFINE | Natural | IS | AN | Int |
-| WHICH  | IS      | >= |  0 |     |
-
-#+begin_src haskell :tangle Classy.hs
-  data MyNatural = MyNatural {
-    _myint :: Int
-  } deriving (Show, Eq, Ord)
-  makeClassy ''MyNatural
-
-  class Validation a where
-    isValid :: a -> Bool
-
-  instance Validation MyNatural where
-    isValid myn = myn^.myint >= 0
-#+end_src
-
-**** Example 2: majority
-
-| ENTITY | Person        |   |   |    |       |         |             |                                     |   |    |   |        |                   |
-| HAS    | official name |   |   | IS | A     | String  |             |                                     |   |    |   |        |                   |
-| HAS    | address       |   |   | IS | AN    | Address | OPTIONAL    |                                     |   |    |   |        |                   |
-| HAS    | identifier    |   |   | IS | ONEOF | UEN     | AKA         | Unique Entity Number                |   | IS | A | String | SG_UEN            |
-|        |               |   |   |    | OR    | NRIC    | AKA         | National Registration Identity Card |   | IS | A | String | SG_NRIC           |
-|        |               |   |   |    | OR    | FIN     | AKA         | Foreigner Identification Number     |   | IS | A | String | SG_FIN            |
-|        |               |   |   |    | OR    | TIN     | AKA         | U.S. Taxpayer Identification Number |   | IS | A | String |                   |
-|        |               |   |   |    | OR    |         | Nationality |                                     |   | IS | A | String | ISO3166-1 alpha-2 |
-|        |               |   |   |    |       | AND     | Passport    |                                     |   | IS | A | String |                   |
-
-#+begin_src haskell :tangle Classy.hs :noweb yes
-  <<subsidiary types>>
-  data Person = Person
-    { _officialName :: String
-    , _address :: Address
-    , _identifier :: Identifier
-    } deriving (Show, Eq)
-  makeClassy ''Person
-#+end_src
-
-#+NAME: subsidiary types
-#+begin_src haskell 
-  type Address = [String]
-
-  data Identifier = SG_UEN  String
-                  | SG_NRIC String
-                  | SG_FIN  String
-                  | US_TIN  String
-                  | Passport
-                    { nationality :: String
-                    , passportNo  :: String
-                    }
-    deriving (Show, Eq)
-#+end_src
-
-#+begin_src typescript
-  class Person {
-    _officialName  : string;
-    _address      ?: Address;
-    _identifier    :
-        { idtype : "SGUEN",     idval : SGUEN }
-      | { idtype : "SGNRIC",    idval : SGNRIC }
-      | { idtype : "SGFIN",     idval : SGFIN }
-      | { idtype : "USTIN",     idval : USTIN }
-      | { idtype : "passport",  idval :
-          {
-            nationality: string; // "se" "sg" "us" "uk"
-            passportNo:  string;
-          }
-        }
-  }
-  makeClassy ''Person
-#+end_src
-
-| ENTITY | Corporation    |   |   | IS | A | Person |   |   |
-| ENTITY | Natural Person |   |   | IS | A | Person |   |   |
-
-#+begin_src haskell :tangle Classy.hs
-  data Corporation   = Corporation   { _cperson :: Person }
-  data NaturalPerson = NaturalPerson { _nperson :: Person }
-  makeClassy ''NaturalPerson
-  instance HasPerson NaturalPerson where
-    person = nperson
-#+end_src
-
-#+begin_src typescript
-  class Corporation   extends Person { }
-  class NaturalPerson extends Person { }
-#+end_src
-
-| ENTITY | Capable          |                  |   | IS | A       | Natural |          |        |       |
-| HAS    | adulthood        |                  |   | IS | ONEOF   | Major   | Minor    | LIKELY | Major |
-| HAS    | ParentOrGuardian |                  |   | IS | A       | Capable | OPTIONAL |        |       |
-| WHOSE  | adulthood        |                  |   | IS |         | Major   |          |        |       |
-| OR     |                  | ParentOrGuardian |   | IS | defined |         |          |        |       |
-|        | AND              | ParentOrGuardian |   | IS | VALID   |         |          |        |       |
-
-(Majority means: are they not a minor?)
-
-Conventionally one would expect such a form to gather the exact birthdate, from which we could compute the age, from which we could compute majority, but here we are being more privacy-conscious and just asking if the individual is a major or a minor, hence ~majority~ is a Bool.
-
-#+begin_src haskell :tangle Classy.hs
-  data Majority = Major | Minor
-    deriving (Eq)
-
-  data CapablePerson = CapablePerson
-    { _np               :: NaturalPerson
-    , _adulthood        :: Majority
-    , _parentOrGuardian :: Maybe CapablePerson
-    }
-  makeClassy ''CapablePerson
-  instance HasNaturalPerson CapablePerson where
-    naturalPerson = np
-
-  instance Validation CapablePerson where
-    isValid p =
-      p^.adulthood == Major
-      || maybe False isValid (p^.parentOrGuardian)
-
-#+end_src
-
-#+begin_src typescript
-  class CapablePerson extends Natural {
-    adulthood         : boolean;
-    parentOrGuardian ?: CapablePerson;
-  }
-#+end_src
-									
-| ENTITY | Singapore Company |   |   | IS | A   | Corporation |   |   |
-| HAS    | identifier        |   |   | IS | UEN |             |   |   |
-
-#+begin_src typescript
-
-#+end_src
-									
-
-*** instances
-
-
-
-*** default values
-
-*** attribute types
-
-*** 
 
 * Indentation Parsing
 

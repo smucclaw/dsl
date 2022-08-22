@@ -56,7 +56,8 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      QuickCheck
+      MissingH
+    , QuickCheck
     , aeson
     , aeson-pretty
     , anyall
@@ -109,7 +110,8 @@ executable natural4-exe
       app
   ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
-      QuickCheck
+      MissingH
+    , QuickCheck
     , aeson
     , aeson-pretty
     , anyall
@@ -165,7 +167,8 @@ test-suite natural4-test
       test
   ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
-      QuickCheck
+      MissingH
+    , QuickCheck
     , aeson
     , aeson-pretty
     , anyall

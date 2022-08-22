@@ -64,6 +64,7 @@ dependencies:
 - directory
 - fgl
 - raw-strings-qq
+- MissingH
 
 ghc-options: -Wall
 

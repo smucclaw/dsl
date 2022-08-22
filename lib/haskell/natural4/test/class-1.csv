@@ -1,5 +1,5 @@
 DECLARE,Class1,IS AN,Object,
-HAS,id,IS A,Integer,
+HAS,id,IS AN,Integer,
 ,,,,
 DECLARE,Class2,IS A,Class1,
 HAS,firstname,IS,A,String

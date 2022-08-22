@@ -1,0 +1,10 @@
+GIVEN,Person,,,,,,,,,
+DECIDE,investment,,IS,savings,,WHEN,savings account,,IS,inadequate
+,"""",,"""",stocks,,WHEN,savings account,,IS,adequate
+,,,,,,AND,income,,IS,adequate
+,"""",,"""",combination,,OTHERWISE,,,,
+,minSavings,,IS,dependents * 5000,,,,,,
+,savings account,,IS,adequate,,WHEN,amount saved,,>,minSavings
+,"""",,"""",inadequate,,OTHERWISE,,,,
+,minIncome,,IS,15000 + 4000 * dependents,,,,,,
+,income,,is,adequate,,WHEN,earnings,,>,minIncome

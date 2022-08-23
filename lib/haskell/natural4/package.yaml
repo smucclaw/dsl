@@ -64,7 +64,7 @@ dependencies:
 - directory
 - fgl
 - raw-strings-qq
-- MissingH
+- regex-tdfa
 
 ghc-options: -Wall
 

@@ -18,13 +18,102 @@ import Debug.Trace
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
   pretty (RPParamText   pt)            = pretty $ pt2text pt
-  pretty (RPMT          mt)            = snake_case mt
-  pretty (RPConstraint  mt1 rprel mt2) = hsep [ snake_case mt1, pretty (rel2op rprel), snake_case mt2 ]
-  pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snake_case mt1, pretty rprel, pretty bsr ]
+  pretty (RPMT          mt)            = snake_join mt
+  pretty (RPConstraint  mt1 rprel mt2) = hsep [ snake_join mt1, pretty (rel2op rprel), snake_join mt2 ]
+  pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snake_join mt1, pretty rprel, pretty bsr ]
 
+
+
+-- Hornlike rule transformations -- these form HC2 situations
+-- 1   p investment IS savings                     WHEN blah => if blah then investment p savings
+-- 2   p investment IS savings                     OTHERWISE => if True then investment p savings
+-- 3   p minSavings IS p's dependents * 5000  ( NO WHEN )    => defn p minsavings : \dependents -> dependents * 5000
+-- 4   p dependents IS 5                      ( NO WHEN )    => fact <dependentsAdam> dependents adam 5
+
+-- | RPCore is used by the CoreL4 transpiler to produce CoreL4-style function predicates, which are space-separated
+newtype RP1 = RP1 RelationalPredicate
+instance Pretty RP1 where
+  pretty (RP1 (RPParamText   pt)           ) = pretty (pt2text pt)
+  pretty (RP1 (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
+  pretty (RP1 (RPMT          mt)           ) = snake_join mt
+  pretty (RP1 (RPConstraint  mt1 RPis  mt2)) = hsep [ pred_join mt1, space_join mt2 ]
+
+--  somePred(X) :- ...
+--  somePred(Y) :- ...
+--  somePred(Z).       % prolog calls this a fact but it's really a default branch of the rule. so we have the same issue. ¯\_(ツ)_/¯
+
+  pretty (RP1 (RPConstraint  mt1 rprel mt2)) = hsep [ pred_join mt1, pretty (rel2op rprel), pred_join mt2 ]
+  pretty (RP1 (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_join mt1, pretty rprel, pretty bsr ] -- need to RP1 <$> bsr?
+
+{-
+GIVEN p IS A Person
+DECIDE p investment IS savings WHEN p savingsAccount IS inadequate
+becomes
+for p: Person
+if savingsAccount p inadequate
+then investment p savings
+-}
+
+-- --> bob's nephew
+--     bob.nephew
+--     nephew(bob,N) -- N is bob's nephew
+-- --> nephew bob  -- bob is a nephew?
+possessiveToObject :: T.Text -> T.Text
+possessiveToObject str = T.intercalate " " $ reverse $ T.splitOn "'s " str
+
+
+-- jack and jill are married. we use (jack x jill) to represent the relationship between jack and jill.
+-- that relation can itself possess things:
+-- (jack x jill)'s daughter
+-- daughter of jack with jill
+-- daughter (jack x jill)
+
+-- multi-level:
+-- john's mom's dad
+-- dad of mom of john
+-- dad(mom(john)) -- "function call"
+-- dad(mom john)
+
+-- mom john: john is a mom
+-- mom(john): john's mother?
+
+-- mom(john, M): M is john's mom
+
+
+-- | pred_join
+-- "foo bar" "baz" --> "baz foo bar
+-- "fooBar" "baz"  --> "baz fooBar"
+pred_join :: [T.Text] -> Doc ann
+pred_join xs = encloseSep "" "" " " (pretty <$> last xs : init xs)
+
+
+-- | space_join
+-- "foo bar" "baz" --> "foo bar baz"
+-- "fooBar" "baz"  --> "fooBar baz"
+space_join :: [T.Text] -> Doc ann
+space_join xs = encloseSep "" "" " " (pretty <$> xs)
+
+-- | dot_join
+-- "foo bar" "baz" --> "foo bar.baz"
+-- "fooBar" "baz"  --> "fooBar.baz"
+dot_join :: [T.Text] -> Doc ann
+dot_join xs = encloseSep "" "" "." (pretty <$> xs)
+
+-- | snake_join
+-- "foo bar" "baz" --> "foo bar_baz"
+-- "fooBar" "baz"  --> "fooBar_baz"
+snake_join :: [T.Text] -> Doc ann
+snake_join xs = encloseSep "" "" "_" (pretty <$> xs)
+
+-- | snake_case
+-- "foo bar" "baz" --> "foo_bar_baz"
+-- "fooBar" "baz"  --> "fooBar_baz"
 snake_case :: [T.Text] -> Doc ann
-snake_case xs = hsep (snake_inner <$> xs)
+snake_case xs = encloseSep "" "" "_" (snake_inner <$> xs)
 
+-- | snake_inner
+-- "foo bar" --> "foo_bar"
+-- "fooBar"" --> "fooBar"
 snake_inner :: T.Text -> Doc ann
 snake_inner = pretty . T.replace " " "_"
 

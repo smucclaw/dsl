@@ -276,10 +276,14 @@ relPredSamelineWhen = debugName "relPredSamelineWhen" $
                       |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $
                                      optional whenCase))
 
+-- foo IS bar                   Nothing                                becomes a fact
+-- foo IS bar WHEN baz          Just Leaf baz                          becomes a body to the horn clause
+-- foo IS bar OTHERWISE         Just Leaf __OTHERWISE__                becomes a default case, which feels like a fact, but isn't.
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenIf *> (Just <$> pBSR))
-  <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
+--  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
+  <|> Just (AA.Leaf (RPMT ["OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
 
 meansIs :: Parser MyToken
 meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]

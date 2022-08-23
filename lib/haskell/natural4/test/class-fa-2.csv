@@ -1,10 +1,12 @@
-GIVEN,Person,,,,,,,,,
-DECIDE,investment,,IS,savings,,WHEN,savings account,,IS,inadequate
-,"""",,"""",stocks,,WHEN,savings account,,IS,adequate
-,,,,,,AND,income,,IS,adequate
-,"""",,"""",combination,,OTHERWISE,,,,
-,minSavings,,IS,dependents * 5000,,,,,,
-,savings account,,IS,adequate,,WHEN,amount saved,,>,minSavings
-,"""",,"""",inadequate,,OTHERWISE,,,,
-,minIncome,,IS,15000 + 4000 * dependents,,,,,,
-,income,,is,adequate,,WHEN,earnings,,>,minIncome
+GIVEN,p,,IS,A,Person,,,,,
+DECIDE,p,investment,IS,savings,WHEN,p,savingsAccount,IS,,inadequate
+,p,"""","""",stocks,WHEN,p,savingsAccount,IS,,adequate
+,,,,,AND,p,income,IS,,adequate
+,p,"""","""",combination,OTHERWISE,,,,,
+,p,minSavings,IS,p's dependents,*,5000,,,,
+,p,savingsAccount,IS,adequate,WHEN,p,amountSaved,>,p,minSavings
+,p,"""","""",inadequate,OTHERWISE,,,,,
+,p,minIncome,IS,15000 + 4000 * p's dependents,,,,,,
+,p,income,IS,adequate,WHEN,p,earnings,>,p,minIncome
+,,,,,AND,p,steadiness,IS,,steady
+,p,blah,IS,42,,,,,,

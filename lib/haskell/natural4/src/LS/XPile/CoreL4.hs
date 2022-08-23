@@ -21,10 +21,12 @@ import qualified Data.Text as T
 import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.List.NonEmpty as NE
 import           Data.List.NonEmpty (NonEmpty((:|)))
-import qualified Data.String.Utils as DSU
 import Text.Pretty.Simple (pShow, pShowNoColor)
 import qualified Data.Text.Lazy as TL
 import Control.Monad (guard)
+
+import Text.Regex.TDFA
+import Data.List (nub, intercalate)
 
 -- output to Core L4 for further transformation
 
@@ -169,19 +171,33 @@ sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 -- in practice, a BoolStructR to an Expr
 -- where the RPMT elements of the BooLStructR are nullary, unary, or binary operators depending on how many elements are in the list
 
+
+-- p :: Person
+-- p.dependents           // javascript
+-- | p | dependents |
+-- | p's dependents |
+
+
+-- see also comments in Prettyprinter.hs around RP1
+
 directToCore :: SFL4.Rule -> Doc ann
 directToCore r@Hornlike{keyword}
   | keyword /= Define =
-    let needClauseNumbering = length (clauses r) > 1
-    in
-      vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleName cnum needClauseNumbering x)) (Just $ ruleLabelName r)
-                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
-                  ,                                "if"   <+> cStyle (hc2preds c)
-                  ,                                "then" <+> pretty (hHead c)
+      vsep [
+      case hBod of
+        Just _ -> vsep
+                  [ "rule" <+> angles rname
+                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)            (given r)
+                  ,                                "if"   <+> cStyle (RP1 <$> hc2preds c)
+                  ,                                "then" <+> pretty (RP1  $  hHead c)
                   , Prettyprinter.line]
-           | (c,cnum) <- zip (clauses r) [1..]
-           ]
-  | otherwise = ""
+        Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
+      | (c,cnum) <- zip (clauses r) [1..]
+      , (HC2 _headRP hBod) <- [c]
+      , let needClauseNumbering = length (clauses r) > 1
+      , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
+      ]
+  | otherwise = "# DEFINE rules unsupported at the moment"
 
 -- fact <rulename> multiterm
 
@@ -239,20 +255,57 @@ prettyBoilerplate ct@(CT ch) =
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
 --     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
 
-prettyDefns :: [SFL4.Rule] -> Doc ann
-prettyDefns rs =
-  vsep $ concat [
-  [ "defn" <+> pretty (T.unwords lhs) <+> colon <+> "Integer -> Integer = \\x : Integer -> " <> pretty (T.unwords rhs)
-  ]
-  | r <- rs
-  , hasClauses r
-  , cl <- clauses r
+prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
+prettyDefnCs rname cs = 
+  [
+    if null myterms
+    then
+      "fact" <+> angles rname <> Prettyprinter.line <>
+      commentWith "#" (T.lines (T.pack (show cl))) <>
+      pretty (RP1 clHead)
+    else
+      "defn" <+>
+      -- we assume the lhs is "p something" so we get rid of the p
+      pretty (T.unwords (tail lhs)) <+> colon <+>
+      -- rip out "p's dependents" and "dependents p" from the input rhs
+      -- nub and zip map them to integer indices
+      -- each integer index becomes an x y z a b c d etc
+      -- perhaps wiser if we use x1 x2 x3 instead of x y z
+      -- them we output it all back with the input terms rewritten to x1 x2 x3
+      encloseSep "" "" " -> " (intypes ++ [ returntype ])
+      <+> equals <+>
+      encloseSep "" "" " -> " ([ "\\" <> idx <+> colon <+> typ
+                               | (typ,idx) <- zip intypes x123
+                               ] ++ [ pretty outstr ])
+      <> Prettyprinter.line <> commentWith "#" (T.lines (T.pack (show cl)))
+    -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
+  | cl <- cs
   , let clHead = hHead cl
         clBody = hBody cl
   , clBody == Nothing
   , (RPConstraint lhs RPis rhs) <- [clHead]
-  , any (\x -> x `elem` T.unpack (T.unwords rhs)) ("+-*/" :: String)
+  , let rhss = T.unpack (T.unwords rhs)
+  , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
+                                                          ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
+                                          :: String)) :: [String]
+        intypes = replicate (length myterms) "Integer"
+        replacements = [ T.replace (T.pack t) (T.pack $ show n)
+                       | (t,n) <- zip (nub myterms) x123 ]
+        outstr = chain replacements (T.unwords rhs)
+        returntype = "Integer"
+
   ]
+  where
+    chain :: [a -> a] -> a -> a
+    chain = foldr (.) id
+    x123 = (\n -> "x" <> pretty n) <$> ([1..] :: [Int])
+
+prettyDefns :: [SFL4.Rule] -> Doc ann
+prettyDefns rs =
+  vsep $ concat [ prettyDefnCs "" (clauses r)
+                | r <- rs
+                , hasClauses r
+                ]
 
 
 

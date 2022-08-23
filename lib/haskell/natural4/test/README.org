@@ -1520,10 +1520,11 @@ This example serves multiple tests:
 |         |                    |    |        |                    |          |             |
 | DECLARE | Person             |    |        |                    |          |             |
 | HAS     | dependents         | IS | A      | Number             |          |             |
-| HAS     | amount saved       | IS | A      | Number             |          |             |
+| HAS     | amountSaved        | IS | A      | Number             |          |             |
 | HAS     | earnings           | IS | A      | Number             |          |             |
+| HAS     | steadiness         | IS | A      | EarningsStatus     |          |             |
 | HAS     | income             | IS | A      | FinancialStatus    |          |             |
-| HAS     | savings account    | IS | A      | FinancialStatus    |          |             |
+| HAS     | savingsAccount     | IS | A      | FinancialStatus    |          |             |
 | HAS     | isDead             | IS | A      | Boolean            |          |             |
 | HAS     | spendthrift        | IS | A      | Boolean            |          |             |
 | HAS     | investment         | IS | AN     | InvestmentStrategy |          |             |
@@ -1534,16 +1535,38 @@ This example serves multiple tests:
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| GIVEN  | Person          |   |    |                           |   |           |                 |   |    |            |
-| DECIDE | investment      |   | IS | savings                   |   | WHEN      | savings account |   | IS | inadequate |
-|        | "               |   | "  | stocks                    |   | WHEN      | savings account |   | IS | adequate   |
-|        |                 |   |    |                           |   | AND       | income          |   | IS | adequate   |
-|        | "               |   | "  | combination               |   | OTHERWISE |                 |   |    |            |
-|        | minSavings      |   | IS | dependents * 5000         |   |           |                 |   |    |            |
-|        | savings account |   | IS | adequate                  |   | WHEN      | amount saved    |   | >  | minSavings |
-|        | "               |   | "  | inadequate                |   | OTHERWISE |                 |   |    |            |
-|        | minIncome       |   | IS | 15000 + 4000 * dependents |   |           |                 |   |    |            |
-|        | income          |   | is | adequate                  |   | WHEN      | earnings        |   | >  | minIncome  |
+| GIVEN  | p |                | IS | A                             | Person    |      |                |    |   |            |
+| DECIDE | p | investment     | IS | savings                       | WHEN      | p    | savingsAccount | IS |   | inadequate |
+|        | p | "              | "  | stocks                        | WHEN      | p    | savingsAccount | IS |   | adequate   |
+|        |   |                |    |                               | AND       | p    | income         | IS |   | adequate   |
+|        | p | "              | "  | combination                   | OTHERWISE |      |                |    |   |            |
+|        | p | minSavings     | IS | p's dependents                | *         | 5000 |                |    |   |            |
+|        | p | savingsAccount | IS | adequate                      | WHEN      | p    | amountSaved    | >  | p | minSavings |
+|        | p | "              | "  | inadequate                    | OTHERWISE |      |                |    |   |            |
+|        | p | minIncome      | IS | 15000 + 4000 * p's dependents |           |      |                |    |   |            |
+|        | p | income         | IS | adequate                      | WHEN      | p    | earnings       | >  | p | minIncome  |
+|        |   |                |    |                               | AND       | p    | steadiness     | IS |   | steady     |
+|        | p | blah           | IS | 42                            |           |      |                |    |   |            |
+
+
+
+
+p minIncome  IS 15000 + 4000 * (p's dependents) + 1000 * (p's dependents) / 2 + 500 * (p's semidependents) / 3
+
+Map Term Lambda = zip (nub terms, [1..])
+
+\l1 l2 -> 15000 + 4000 * x + 1000 * x / 2 + 500 * y / 3
+
+minIncome(MI, D, SD) :- MI IS 15000 + 4000 * D + 1000 * D / 2 + 500 * SD / 3.
+
+
+a scenario would look like:
+
+| GIVEN  | p   | IS A          | Person |         |                |
+|        | HAS | dependents    | IS     |       5 |                |
+|        |     | earnings      | IS     |   10000 |                |
+|        |     | savingsAmount | IS     |  100000 |                |
+| EXPECT | p   | investment    | IS     | savings | -- or whatever |
 
 ***** the CoreL4 encoding of the AXA case uses class extensions
 :PROPERTIES:

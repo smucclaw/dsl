@@ -56,8 +56,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      MissingH
-    , QuickCheck
+      QuickCheck
     , aeson
     , aeson-pretty
     , anyall
@@ -90,6 +89,7 @@ library
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm
@@ -110,8 +110,7 @@ executable natural4-exe
       app
   ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
-      MissingH
-    , QuickCheck
+      QuickCheck
     , aeson
     , aeson-pretty
     , anyall
@@ -145,6 +144,7 @@ executable natural4-exe
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm
@@ -167,8 +167,7 @@ test-suite natural4-test
       test
   ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
-      MissingH
-    , QuickCheck
+      QuickCheck
     , aeson
     , aeson-pretty
     , anyall
@@ -202,6 +201,7 @@ test-suite natural4-test
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm

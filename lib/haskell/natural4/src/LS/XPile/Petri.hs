@@ -348,7 +348,7 @@ splitJoin rs og sj sgs entry = runGM og $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
       newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
       mapM_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
-      traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
+      -- traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
       mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasText :: Text -> PNode a -> Bool

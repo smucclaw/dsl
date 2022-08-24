@@ -184,8 +184,8 @@ pHornlike = debugName "pHornlike" $ do
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
         <$$> -- (try ambitious <|>
                     someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
-        <|?> (Nothing, fmap snd <$> optional givenLimb)
-        <|?> (Nothing, fmap snd <$> optional uponLimb)
+        <|?> (Nothing, Just . snd <$> givenLimb)
+        <|?> (Nothing, Just . snd <$> uponLimb)
         <|?> (Nothing, whenCase)
         -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
   ((keyword, name, clauses), given, upon, topwhen) <- permutepart
@@ -240,9 +240,15 @@ pHornlike = debugName "pHornlike" $ do
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- optional $ choice [ pToken Decide ]
-      (relPred, whenpart) <- debugName "pHornlike/someStructure going for the WHEN" $ manyIndentation (try relPredNextlineWhen <|> relPredSamelineWhen)
-      return (keyword, inferRuleName relPred, [HC2 relPred whenpart])
+      keyword <- Just <$> choice [ pToken Decide ]
+      relwhens <- try (debugName "some sameline whens" $
+                       someIndentation (sameDepth relPredSamelineWhen))
+                  <|> debugName "single nextline WHEN"
+                  (pure <$> manyIndentation relPredNextlineWhen)
+      return (keyword
+             , inferRuleName (fst . head $ relwhens)
+             , [HC2 relPred whenpart
+               | (relPred, whenpart) <- relwhens ])
 
 
     givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
@@ -270,10 +276,14 @@ relPredSamelineWhen = debugName "relPredSamelineWhen" $
                       |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $
                                      optional whenCase))
 
+-- foo IS bar                   Nothing                                becomes a fact
+-- foo IS bar WHEN baz          Just Leaf baz                          becomes a body to the horn clause
+-- foo IS bar OTHERWISE         Just Leaf __OTHERWISE__                becomes a default case, which feels like a fact, but isn't.
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenIf *> (Just <$> pBSR))
-  <|> Nothing <$ (debugName "Otherwise" $ pToken Otherwise)
+--  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
+  <|> Just (AA.Leaf (RPMT ["OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
 
 meansIs :: Parser MyToken
 meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]

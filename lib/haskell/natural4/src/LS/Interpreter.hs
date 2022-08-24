@@ -19,9 +19,10 @@ import Data.Tuple (swap)
 import Data.List (find)
 
 -- | interpret the parsed rules and construct the symbol tables
-symbolTable :: [Rule] -> ScopeTabs
-symbolTable rs =
-  Map.fromListWith (<>) $ fromGivens <> fromDefines <> fromDecides -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
+symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
+symbolTable iopts rs =
+  Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
+  -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
   where
     fromGivens :: [(RuleName, SymTab)]
     fromGivens = -- trace "fromGivens:" $ traceShowId $
@@ -57,6 +58,8 @@ symbolTable rs =
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
+ 
+
 hasGiven :: Rule -> Bool
 hasGiven     Hornlike{} = True
 hasGiven   Regulative{} = True
@@ -69,11 +72,15 @@ hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
 
-l4interpret :: [Rule] -> Interpreted
-l4interpret rs = L4I { classtable = classHierarchy rs
-                     , scopetable = symbolTable    rs
-                     , origrules  = id             rs
-                     }
+l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
+l4interpret iopts rs =
+  let ct = classHierarchy rs
+      st = symbolTable    iopts rs
+  in
+    L4I { classtable = ct
+        , scopetable = st
+        , origrules  = rs
+        }
 
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =

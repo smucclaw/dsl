@@ -222,6 +222,7 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: Maybe ParamText
+--            , given    :: [ParamText]      -- input parameters basically, or the type thereof
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , wwhere   :: [Rule]
@@ -233,7 +234,9 @@ data Rule = Regulative
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
             , letbind  :: BoolStructR
             , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
+--            , given    :: [ParamText]
             , given    :: Maybe ParamText
+        --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
@@ -244,7 +247,9 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText    -- applicant has submitted fee
+            , given    :: Maybe ParamText
+--            , given    :: [ParamText]        -- a:Applicant, p:Person, l:Lender -- the signature of the input
+        --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
             , rlabel   :: Maybe RuleLabel
@@ -258,6 +263,7 @@ data Rule = Regulative
             , super    :: Maybe TypeSig         -- IS A Superclass
             , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+--            , given    :: [ParamText]
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
@@ -336,6 +342,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
                                                                        --          AND
                                                                        --          right IS brown)
+                     --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
   deriving (Eq, Show, Generic, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
@@ -421,6 +428,16 @@ data TypeSig = SimpleType ParamType EntityType
 
 type VarPath = [TypedMulti]
 
+data InterpreterOptions = IOpts
+  { enums2decls :: Bool -- | convert inlineEnums in a class declaration to top-level decls? Used by corel4.
+  }
+  deriving (Eq, Show)
+
+defaultInterpreterOptions :: InterpreterOptions
+defaultInterpreterOptions = IOpts
+  { enums2decls = False
+  }
+
 data Interpreted = L4I
   { classtable :: ClsTab
   , scopetable :: ScopeTabs
@@ -445,7 +462,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT (CT x) = x

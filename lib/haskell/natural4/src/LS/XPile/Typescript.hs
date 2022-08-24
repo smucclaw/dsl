@@ -29,7 +29,7 @@ import qualified Data.List.NonEmpty as NE
 
 asTypescript :: [SFL4.Rule] -> Doc ann
 asTypescript rs =
-  let l4i = l4interpret rs
+  let l4i = l4interpret defaultInterpreterOptions rs
   in
     vsep [ tsClasses l4i
          , jsInstances l4i

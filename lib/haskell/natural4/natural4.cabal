@@ -89,6 +89,7 @@ library
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm
@@ -143,6 +144,7 @@ executable natural4-exe
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm
@@ -199,6 +201,7 @@ test-suite natural4-test
     , prettyprinter
     , prolog
     , raw-strings-qq
+    , regex-tdfa
     , replace-megaparsec
     , split
     , stm

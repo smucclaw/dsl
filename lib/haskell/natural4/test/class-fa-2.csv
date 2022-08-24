@@ -1,0 +1,12 @@
+GIVEN,p,,IS,A,Person,,,,,
+DECIDE,p,investment,IS,savings,WHEN,p,savingsAccount,IS,,inadequate
+,p,"""","""",stocks,WHEN,p,savingsAccount,IS,,adequate
+,,,,,AND,p,income,IS,,adequate
+,p,"""","""",combination,OTHERWISE,,,,,
+,p,minSavings,IS,p's dependents,*,5000,,,,
+,p,savingsAccount,IS,adequate,WHEN,p,amountSaved,>,p,minSavings
+,p,"""","""",inadequate,OTHERWISE,,,,,
+,p,minIncome,IS,15000 + 4000 * p's dependents,,,,,,
+,p,income,IS,adequate,WHEN,p,earnings,>,p,minIncome
+,,,,,AND,p,steadiness,IS,,steady
+,p,blah,IS,42,,,,,,

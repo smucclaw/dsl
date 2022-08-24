@@ -1322,10 +1322,13 @@ fragment of a HornClause with a constraint RelationalPredicate sans the X part
 
 ****** examples: HAS IS method definition in a type declaration
 
-| DECLARE |   | Round  | IS | A | Type   |        |   |      |                  |       |                  |
-| HAS     | 2 | Player | IS | A | Player |        |   |      |                  |       |                  |
-| HAS     | 1 | winner | IS | A | Player |        |   |      |                  |       |                  |
-|         |   |        | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
+This is a speculative syntax, it may turn out to be too loose to work with.
+
+| DECLARE |   | Round    | IS | A | Type   |        |   |      |                  |       |                  |
+| HAS     |   | Player A | IS | A | Player |        |   |      |                  |       |                  |
+| HAS     |   | Player B | IS | A | Player |        |   |      |                  |       |                  |
+| HAS     | 1 | winner   | IS | A | Player |        |   |      |                  |       |                  |
+|         |   |          | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
 
 HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
 
@@ -1485,7 +1488,7 @@ without the IS TRUE
 :END:
 
 | DECLARE | Class1         | IS AN        | Object  |         |
-| HAS     | id             | IS A         | Integer |         |
+| HAS     | id             | IS AN        | Integer |         |
 |         |                |              |         |         |
 | DECLARE | Class2         | IS A         | Class1  |         |
 | HAS     | firstname      | IS           | A       | String  |
@@ -1504,6 +1507,66 @@ without the IS TRUE
 
 This example serves multiple tests:
 - the interpreter should inherit line1 and line2 to "work address" and extend it with "floor" and "company name" attributes.
+
+***** Financial Advisor
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |
+| DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |
+| DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |
+|         |                    |    |        |                    |          |             |
+| DECLARE | Person             |    |        |                    |          |             |
+| HAS     | dependents         | IS | A      | Number             |          |             |
+| HAS     | amountSaved        | IS | A      | Number             |          |             |
+| HAS     | earnings           | IS | A      | Number             |          |             |
+| HAS     | steadiness         | IS | A      | EarningsStatus     |          |             |
+| HAS     | income             | IS | A      | FinancialStatus    |          |             |
+| HAS     | savingsAccount     | IS | A      | FinancialStatus    |          |             |
+| HAS     | isDead             | IS | A      | Boolean            |          |             |
+| HAS     | spendthrift        | IS | A      | Boolean            |          |             |
+| HAS     | investment         | IS | AN     | InvestmentStrategy |          |             |
+
+***** Financial Advisor decisions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| GIVEN  | p |                | IS | A                             | Person    |      |                |    |   |            |
+| DECIDE | p | investment     | IS | savings                       | WHEN      | p    | savingsAccount | IS |   | inadequate |
+|        | p | "              | "  | stocks                        | WHEN      | p    | savingsAccount | IS |   | adequate   |
+|        |   |                |    |                               | AND       | p    | income         | IS |   | adequate   |
+|        | p | "              | "  | combination                   | OTHERWISE |      |                |    |   |            |
+|        | p | minSavings     | IS | p's dependents                | *         | 5000 |                |    |   |            |
+|        | p | savingsAccount | IS | adequate                      | WHEN      | p    | amountSaved    | >  | p | minSavings |
+|        | p | "              | "  | inadequate                    | OTHERWISE |      |                |    |   |            |
+|        | p | minIncome      | IS | 15000 + 4000 * p's dependents |           |      |                |    |   |            |
+|        | p | income         | IS | adequate                      | WHEN      | p    | earnings       | >  | p | minIncome  |
+|        |   |                |    |                               | AND       | p    | steadiness     | IS |   | steady     |
+|        | p | blah           | IS | 42                            |           |      |                |    |   |            |
+
+
+
+
+p minIncome  IS 15000 + 4000 * (p's dependents) + 1000 * (p's dependents) / 2 + 500 * (p's semidependents) / 3
+
+Map Term Lambda = zip (nub terms, [1..])
+
+\l1 l2 -> 15000 + 4000 * x + 1000 * x / 2 + 500 * y / 3
+
+minIncome(MI, D, SD) :- MI IS 15000 + 4000 * D + 1000 * D / 2 + 500 * SD / 3.
+
+
+a scenario would look like:
+
+| GIVEN  | p   | IS A          | Person |         |                |
+|        | HAS | dependents    | IS     |       5 |                |
+|        |     | earnings      | IS     |   10000 |                |
+|        |     | savingsAmount | IS     |  100000 |                |
+| EXPECT | p   | investment    | IS     | savings | -- or whatever |
 
 ***** the CoreL4 encoding of the AXA case uses class extensions
 :PROPERTIES:

@@ -33,6 +33,7 @@ dependencies:
 - utf8-string
 - optparse-generic
 - vector
+- mtl
 
 # - ihaskell
 

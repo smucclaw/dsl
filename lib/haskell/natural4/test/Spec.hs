@@ -1587,10 +1587,48 @@ parserTests nlgEnv runConfig_ = do
         (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 
       filetest "class-fa-1" "financial advisor data modelling"
-        (parseR pToplevel) [TypeDecl {name = ["FinancialStatus"], super = Just (InlineEnum TOne (("adequate" :| ["inadequate"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},TypeDecl {name = ["EarningsStatus"], super = Just (InlineEnum TOne (("steady" :| ["unsteady"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing}), defaults = [], symtab = []},TypeDecl {name = ["InvestmentStrategy"], super = Just (InlineEnum TOne (("savings" :| ["stocks","combination"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 3, version = Nothing}), defaults = [], symtab = []},TypeDecl {name = ["Person"], super = Nothing, has = [TypeDecl {name = ["dependents"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["amount saved"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["earnings"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["income"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["savings account"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["isDead"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["spendthrift"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["investment"], super = Just (SimpleType TOne "InvestmentStrategy"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 5, version = Nothing}), defaults = [], symtab = []}]
+        (parseR pToplevel) [
+          TypeDecl { name = ["FinancialStatus"], super = Just (InlineEnum TOne (("adequate" :| ["inadequate"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl {name = ["EarningsStatus"], super = Just (InlineEnum TOne (("steady" :| ["unsteady"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl {name = ["InvestmentStrategy"], super = Just (InlineEnum TOne (("savings" :| ["stocks","combination"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 3, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl {name = ["Person"], super = Nothing, has = [
+            TypeDecl {name = ["dependents"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["amountSaved"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["earnings"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["income"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["savingsSccount"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["isDead"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["spendthrift"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["investment"], super = Just (SimpleType TOne "InvestmentStrategy"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}],
+            enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 5, version = Nothing}), defaults = [], symtab = []}
+          ]
 
       filetest "class-fa-2" "financial advisor decision modelling"
-        (parseR pToplevel) [Hornlike {name = ["investment"], super = Nothing, keyword = Decide, given = Just (("Person" :| [],Nothing) :| []), upon = Nothing, clauses = [HC2 {hHead = RPConstraint ["investment"] RPis ["savings"], hBody = Just (Leaf (RPConstraint ["savings account"] RPis ["inadequate"]))},HC2 {hHead = RPConstraint ["investment"] RPis ["stocks"], hBody = Just (All Nothing [Leaf (RPConstraint ["savings account"] RPis ["adequate"]),Leaf (RPConstraint ["income"] RPis ["adequate"])])},HC2 {hHead = RPConstraint ["investment"] RPis ["combination"], hBody = Nothing},HC2 {hHead = RPConstraint ["minSavings"] RPis ["dependents * 5000"], hBody = Nothing},HC2 {hHead = RPConstraint ["savings account"] RPis ["adequate"], hBody = Just (Leaf (RPConstraint ["amount saved"] RPgt ["minSavings"]))},HC2 {hHead = RPConstraint ["savings account"] RPis ["inadequate"], hBody = Nothing},HC2 {hHead = RPConstraint ["minIncome"] RPis ["15000 + 4000 * dependents"], hBody = Nothing},HC2 {hHead = RPMT ["income","is","adequate"], hBody = Just (Leaf (RPConstraint ["earnings"] RPgt ["minIncome"]))}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
+        (parseR pToplevel)
+        [ Hornlike { 
+          name = ["p", "investment"],
+          super = Nothing,
+          keyword = Decide,
+          given = Just (("p" :| [], Just (SimpleType TOne "Person")) :| []),
+          upon = Nothing,
+          clauses =
+            [ HC2 {hHead = RPConstraint ["p", "investment"] RPis ["savings"], hBody = Just (Leaf (RPConstraint ["p", "savingsAccount"] RPis ["inadequate"]))},
+              HC2 {hHead = RPConstraint ["p", "investment"] RPis ["stocks"], hBody = Just (All Nothing [Leaf (RPConstraint ["p", "savingsAccount"] RPis ["adequate"]), Leaf (RPConstraint ["p", "income"] RPis ["adequate"])])},
+              HC2 {hHead = RPConstraint ["p", "investment"] RPis ["combination"], hBody = Just (Leaf (RPMT ["OTHERWISE"]))},
+              HC2 {hHead = RPConstraint ["p", "minSavings"] RPis ["p's dependents", "*", "5000"], hBody = Nothing},
+              HC2 {hHead = RPConstraint ["p", "savingsAccount"] RPis ["adequate"], hBody = Just (Leaf (RPConstraint ["p", "amountSaved"] RPgt ["p", "minSavings"]))},
+              HC2 {hHead = RPConstraint ["p", "savingsAccount"] RPis ["inadequate"], hBody = Just (Leaf (RPMT ["OTHERWISE"]))},
+              HC2 {hHead = RPConstraint ["p", "minIncome"] RPis ["15000 + 4000 * p's dependents"], hBody = Nothing},
+              HC2 {hHead = RPConstraint ["p", "income"] RPis ["adequate"], hBody = Just (All Nothing [Leaf (RPConstraint ["p", "earnings"] RPgt ["p", "minIncome"]), Leaf (RPConstraint ["p", "steadiness"] RPis ["steady"])])},
+              HC2 {hHead = RPConstraint ["p", "blah"] RPis ["42"], hBody = Nothing}
+            ],
+          rlabel = Nothing,
+          lsource = Nothing,
+          srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+          defaults = [],
+          symtab = []
+        }
+        ]
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

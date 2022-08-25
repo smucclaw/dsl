@@ -19,6 +19,7 @@ import Data.Aeson (eitherDecode)
 import AnyAll (hardnormal)
 import Data.Tree
 import Data.Sequence.Internal.Sorting (Queue(Q))
+import Control.Monad.Reader (runReader)
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
 
@@ -487,16 +488,68 @@ spec = do
     it "makes elements of different sizes for Full scale" $ do
       let
         c = dc{cscale=Full, cdebug = False}
-        shortLeaf = drawLeaf c True "swim" mark
-        longLeaf = drawLeaf c True "discombobulate" mark
+        shortLeaf = runReader drawLeafR $ MyConfig  c True "swim" mark
+        longLeaf = runReader drawLeafR $ MyConfig c True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
         c = dc{cscale=Tiny, cdebug = False}
-        shortLeaf = drawLeaf c True "swim" mark
-        longLeaf = drawLeaf c True "discombobulate" mark
+        shortLeaf = runReader drawLeafR $ MyConfig c True "swim" mark
+        longLeaf = runReader drawLeafR $ MyConfig c True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)
+
+  describe "getColors Box" $ do
+    it "box colors for (Tiny     True)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Tiny True
+      (boxStroke, boxFill) `shouldBe` ("none",   "none")
+    it "box colors for (Tiny     False)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Tiny False
+      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+    it "box colors for (Small     True)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Small True
+      (boxStroke, boxFill) `shouldBe` ("none",   "none")
+    it "box colors for (Small     False)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Small False
+      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+    it "box colors for (Full     True)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Full True
+      (boxStroke, boxFill) `shouldBe` ("none",   "none")
+    it "box colors for (Full     False)" $ do
+      let
+        (boxStroke, boxFill) = getColorsBox Full False
+      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+
+  describe "getColors Text" $ do
+    it "Text colors for (Tiny     True)" $ do
+      let
+        textFill = getColorsText Tiny True
+      textFill `shouldBe` "black"
+    it "Text colors for (Tiny     False)" $ do
+      let
+        textFill = getColorsText Tiny False
+      textFill `shouldBe` "lightgrey"
+    it "Text colors for (Small     True)" $ do
+      let
+        textFill = getColorsText Small True
+      textFill `shouldBe` "black"
+    it "Text colors for (Small     False)" $ do
+      let
+        textFill = getColorsText Small False
+      textFill `shouldBe` "white"
+    it "Text colors for (Full     True)" $ do
+      let
+        textFill = getColorsText Full True
+      textFill `shouldBe` "black"
+    it "Text colors for (Full     False)" $ do
+      let
+       textFill = getColorsText Full False
+      textFill `shouldBe` "white"

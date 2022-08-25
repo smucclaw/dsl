@@ -170,18 +170,29 @@ getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
 getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
 
 --                              (boxStroke, boxFill,     textFill
-getColors :: Scale -> Bool ->   (T.Text,   T.Text,       T.Text)
-getColors    Tiny     True    = ("none",   "none",      "black")
-getColors    Tiny     False   = ("none",   "lightgrey", "lightgrey")
-getColors    _        True    = ("none",   "none",      "black")
-getColors    _        False   = ("none",   "lightgrey", "white")
+getColorsBox :: Scale -> Bool ->   (T.Text,   T.Text)
+getColorsBox    _        True    = ("none",   "none")
+getColorsBox    _        False   = ("none",   "lightgrey")
 
-getColorsR :: Reader MyConfig (T.Text,   T.Text,       T.Text) 
-getColorsR = do
+getColorsText :: Scale -> Bool ->    T.Text
+getColorsText    Tiny     False   = "lightgrey"
+getColorsText    _        True    = "black"
+getColorsText    _        False   = "white"
+
+getBoxColorsR :: Reader MyConfig (T.Text,   T.Text)
+getBoxColorsR = do
   m <- asks markingR
   c <- asks aav
-  return $ getColors (cscale c) (confidence m)
+  return $ getColorsBox (cscale c) (confidence m)
 
+
+getTextColorsR :: Reader MyConfig T.Text
+getTextColorsR = do
+  m <- asks markingR
+  c <- asks aav
+  return $ getColorsText (cscale c) (confidence m)
+
+showLabels :: Scale -> Bool
 showLabels Full = True
 showLabels Small = False
 showLabels Tiny = False
@@ -243,7 +254,7 @@ bottomText :: Maybe (Label a) -> Maybe a
 bottomText = (=<<) maybeSecond
 
 drawItemTiny :: AAVConfig -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny c negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) = drawLeaf     c      negContext txt m
+drawItemTiny c negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader drawLeafR $ MyConfig c negContext txt m
 drawItemTiny c negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny c (not negContext) (head childqs)
 drawItemTiny c negContext qt                                              = drawItemFull c      negContext   qt      -- [TODO]
 
@@ -428,7 +439,7 @@ txtToBBE c x = ( (defaultBBox (cscale c)) { bbh = boxHeight, bbw = boxWidth } {-
               , text_ [ X_ <<-* 0, Y_ <<-* boxHeight `div` 2, Text_anchor_ <<- "middle", Dominant_baseline_ <<- "central", Fill_ <<- textFill ] (toElement x) )
   where
     myScale     = getScale (cscale c)
-    (boxStroke, boxFill, textFill) = getColors (cscale c) True
+    textFill = getColorsText (cscale c) True
     boxWidth    = sbw myScale
     boxHeight   = sbh myScale
 
@@ -459,7 +470,7 @@ combineAnd c elems =
       , ports =  (ports childbbox)
         { leftPort = PVoffset (portL childbbox myScale)
         , rightPort = PVoffset (portR childbbox myScale)
-        }  
+        }
       },
     moveInt (leftMargin, 0) children
   )
@@ -594,16 +605,14 @@ drawBoxCapR :: Reader MyConfig SVGElement
 drawBoxCapR = do
   negContext <- asks negContext
   m <- asks markingR
-  boxSize <- deriveBoxSize
-  return $ drawBoxCap negContext m boxSize
+  drawBoxCap negContext m <$> deriveBoxSize
 
 drawBoxContentR :: Reader MyConfig SVGElement
 drawBoxContentR = do
   c <- asks aav
   mtext <- asks mytext
-  (boxStroke, boxFill, textFill) <- getColorsR
-  boxSize <- deriveBoxSize
-  return $ drawBoxContent (cscale c) mtext textFill boxSize
+  textFill <- getTextColorsR
+  drawBoxContent (cscale c) mtext textFill <$> deriveBoxSize
 
 drawBoxCap :: Bool -> Default Bool -> BoxDimensions -> SVGElement
 drawBoxCap negContext m BoxDimensions{boxWidth=bw, boxHeight=bh} =
@@ -665,14 +674,14 @@ deriveBoxSize = do
   mtext <- asks mytext
   let
       boxHeight = sbh (getScale (cscale c))
-      defBoxWidth = sbw (getScale (cscale c))  
+      defBoxWidth = sbw (getScale (cscale c))
       boxWidth = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mtext))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
 
 drawLeafR :: Reader MyConfig BoxedSVG
 drawLeafR = do
   c <- asks aav
-  (boxStroke, boxFill, textFill) <- getColorsR
+  (boxStroke, boxFill) <- getBoxColorsR
   BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize
   boxContent <- drawBoxContentR
   boxCap <- drawBoxCapR
@@ -683,26 +692,6 @@ drawLeafR = do
           <> boxContent
           <> boxCap
       )
-
-drawLeaf :: AAVConfig
-         -> Bool -- ^ are we in a Neg context? i.e. parent was Negging to us
-         -> T.Text
-         -> Default Bool
-         -> BoxedSVG
-drawLeaf c negContext mytext m =
-  (,) (defaultBBox (cscale c)) { bbw = boxWidth, bbh = boxHeight } $
-     rect_ [ X_      <<-* 0 , Y_      <<-* 0 , Width_  <<-* boxWidth , Height_ <<-* boxHeight , Stroke_ <<-  boxStroke , Fill_   <<-  boxFill, Class_ <<- "textbox" ]
-  <> boxContent
-  <> boxCap
-  where
-    (leftline, rightline, topline) = deriveBoxCap negContext m
-    confidence = deriveConfidence m
-    (boxStroke, boxFill, textFill) = getColors (cscale c) confidence
-    boxHeight        = sbh (getScale (cscale c))
-    defBoxWidth      = sbw (getScale (cscale c))
-    boxWidth         = if cscale c == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxCap = drawBoxCap negContext m BoxDimensions {boxWidth=boxWidth, boxHeight=boxHeight}
-    boxContent = drawBoxContent (cscale c) mytext textFill BoxDimensions {boxWidth=boxWidth, boxHeight=boxHeight}
 
 type Boolean = Bool
 itemBox :: AAVConfig

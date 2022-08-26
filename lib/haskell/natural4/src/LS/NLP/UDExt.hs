@@ -581,6 +581,7 @@ data Tree :: * -> * where
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GPostAdvS :: GS -> GAdv -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
+  GSSubjS :: GS -> GSubj -> GS -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
   GEmbedQS :: GQS -> Tree GSC_
   GEmbedS :: GS -> Tree GSC_
@@ -1087,6 +1088,7 @@ instance Eq (Tree a) where
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GPostAdvS x1 x2,GPostAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSSubjS x1 x2 x3,GSSubjS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GUseCl x1 x2 x3,GUseCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GEmbedQS x1,GEmbedQS y1) -> and [ x1 == y1 ]
     (GEmbedS x1,GEmbedS y1) -> and [ x1 == y1 ]
@@ -2324,6 +2326,7 @@ instance Gf GS where
   gf (GExistS x1 x2 x3) = mkApp (mkCId "ExistS") [gf x1, gf x2, gf x3]
   gf (GPostAdvS x1 x2) = mkApp (mkCId "PostAdvS") [gf x1, gf x2]
   gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
+  gf (GSSubjS x1 x2 x3) = mkApp (mkCId "SSubjS") [gf x1, gf x2, gf x3]
   gf (GUseCl x1 x2 x3) = mkApp (mkCId "UseCl") [gf x1, gf x2, gf x3]
 
   fg t =
@@ -2332,6 +2335,7 @@ instance Gf GS where
       Just (i,[x1,x2,x3]) | i == mkCId "ExistS" -> GExistS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "PostAdvS" -> GPostAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "SSubjS" -> GSSubjS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "UseCl" -> GUseCl (fg x1) (fg x2) (fg x3)
 
 
@@ -3746,6 +3750,7 @@ instance Compos Tree where
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
     GPostAdvS x1 x2 -> r GPostAdvS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
+    GSSubjS x1 x2 x3 -> r GSSubjS `a` f x1 `a` f x2 `a` f x3
     GUseCl x1 x2 x3 -> r GUseCl `a` f x1 `a` f x2 `a` f x3
     GEmbedQS x1 -> r GEmbedQS `a` f x1
     GEmbedS x1 -> r GEmbedS `a` f x1

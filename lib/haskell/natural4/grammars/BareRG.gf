@@ -14,6 +14,7 @@ abstract BareRG =
 
   Sentence [
     PredVP, UseCl, UseRCl, UseQCl
+    , SSubjS
     ],
 
   Verb [

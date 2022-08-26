@@ -1374,6 +1374,10 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    -- GaddMark (Gmark_ subj) uds -> do
+    --   s <- sFromUDS uds
+    --   GSSubjS s subj
+    -- addMark (mark_ if_Subj) (root_nsubj_cop (rootN_ (DetCN aSg_Det (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (nsubj_ (UsePron it_Pron)) be_cop)
 
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
                 Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp

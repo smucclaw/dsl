@@ -298,7 +298,7 @@ spec = do
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
-      alignBox = rowLayouter c alignedBox1 alignedBox2
+      alignBox = rowLayouter (cscale c) alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","green")]
@@ -330,7 +330,7 @@ spec = do
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
-      alignBox = combineAnd c elems
+      alignBox = combineAnd (cscale c) elems
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
@@ -368,8 +368,8 @@ spec = do
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
       mybbox = (defaultBBox (cscale c)) { bbh = childheights, bbw = maximum ( bbw . fst <$> elems ) }
       -- Have to use vlayout 2 times to feed start box
-      tempBox = columnLayouter c mybbox startBox alignedBox1
-      alignBox = columnLayouter c mybbox tempBox alignedBox2
+      tempBox = columnLayouter (cscale c) mybbox startBox alignedBox1
+      alignBox = columnLayouter (cscale c) mybbox tempBox alignedBox2
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
@@ -425,15 +425,14 @@ spec = do
     mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
     myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
     let
-      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
       --(bbox, svg) = q2svg' c qq
-      (bbox2, svg2) = drawItemFull c False simpleAndTree
+      (bbox2, svg2) = drawItemFull Full False simpleAndTree
       svgs = renderBS svg2
       (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleAndTree
-      rawChildren = drawItemFull c False <$> childqs
+      rawChildren = drawItemFull Full False <$> childqs
       hrawChildren = hAlign HCenter rawChildren
     -- _ <- runIO $ print svgs
     -- _ <- runIO $ print rawChildren
@@ -449,15 +448,14 @@ spec = do
     mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
     myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
-      c = dc{cscale=Full, cdebug = False}
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
       --(bbox, svg) = q2svg' c qq
-      (bbox2, svg2) = drawItemFull c False simpleOrTree
+      (bbox2, svg2) = drawItemFull Full False simpleOrTree
       svgs = renderBS svg2
       (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleOrTree
-      rawChildren = drawItemFull c False <$> childqs
+      rawChildren = drawItemFull Full False <$> childqs
       hrawChildren = hAlign HCenter rawChildren
     -- _ <- runIO $ print hrawChildren
     -- _ <- runIO $ print questionTree
@@ -487,17 +485,15 @@ spec = do
       mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
-        c = dc{cscale=Full, cdebug = False}
-        shortLeaf = runReader drawLeafR $ MyConfig  c True "swim" mark
-        longLeaf = runReader drawLeafR $ MyConfig c True "discombobulate" mark
+        shortLeaf = runReader drawLeafR $ MyConfig Full True "swim" mark
+        longLeaf = runReader drawLeafR $ MyConfig Full True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        c = dc{cscale=Tiny, cdebug = False}
-        shortLeaf = runReader drawLeafR $ MyConfig c True "swim" mark
-        longLeaf = runReader drawLeafR $ MyConfig c True "discombobulate" mark
+        shortLeaf = runReader drawLeafR $ MyConfig Tiny True "swim" mark
+        longLeaf = runReader drawLeafR $ MyConfig Tiny True "discombobulate" mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

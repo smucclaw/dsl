@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- usage:
 -- (base) ┌─[mengwong@solo-8] - [~/src/smucclaw/dsl/lib/haskell/anyall] - [2022-05-18 12:38:04]
@@ -24,7 +25,7 @@ import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
 import Control.Monad.Reader
-import Control.Arrow (ArrowChoice(right))
+import Lens.Micro.Platform
 
 type Length  = Integer
 type SVGElement = Element
@@ -66,25 +67,29 @@ data BoxDimensions = BoxDimensions
   }
   deriving (Eq, Show)
 
+data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show)
+data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
+
 data Ports = Ports
-  { leftPort   :: PortStyleV,
-    rightPort  :: PortStyleV,
-    topPort    :: PortStyleH,
-    bottomPort :: PortStyleH
+  { _leftPort   :: PortStyleV,
+    _rightPort  :: PortStyleV,
+    _topPort    :: PortStyleH,
+    _bottomPort :: PortStyleH
   }
   deriving (Eq, Show)
 
+boxPorts :: Lens' BBox Ports
+boxPorts = lens ports (\x y -> x { ports = y })
+
+makeLenses ''Ports
 
 type BoxedSVG = (BBox, SVGElement)
 
 type Question = Q T.Text
 type QuestionTree = Tree Question
 
-data PortStyleV = PTop  | PMiddle | PBottom | PVoffset Length deriving (Eq, Show)
-data PortStyleH = PLeft | PCenter | PRight  | PHoffset Length deriving (Eq, Show)
-
 -- | default bounding box
-defaultBBox Tiny  = defaultBBox' {ports = defaultPorts { leftPort = PMiddle, rightPort = PMiddle } }
+defaultBBox Tiny  = defaultBBox' {ports = defaultPorts { _leftPort = PMiddle, _rightPort = PMiddle } }
 defaultBBox Small = defaultBBox Tiny
 defaultBBox Full  = defaultBBox'
 defaultBBox' = BBox
@@ -97,18 +102,19 @@ defaultBBox' = BBox
   , ports = defaultPorts
   }
 
+defaultPorts :: Ports
 defaultPorts = Ports
-  { leftPort = PTop
-  , rightPort = PTop
-  , topPort = PCenter
-  , bottomPort = PCenter
+  { _leftPort = PTop
+  , _rightPort = PTop
+  , _topPort = PCenter
+  , _bottomPort = PCenter
   }
 
 portL, portT, portR, portB :: BBox -> AAVScale -> Length
-portL bb = portLR (leftPort $ ports bb) bb
-portR bb = portLR (rightPort $ ports bb) bb
-portT bb = portTB (topPort $ ports bb) bb
-portB bb = portTB (bottomPort $ ports bb) bb
+portL bb = portLR (bb ^. boxPorts.leftPort) bb
+portR bb = portLR (bb ^. boxPorts.rightPort) bb
+portT bb = portTB (bb ^. boxPorts.topPort) bb
+portB bb = portTB (bb ^. boxPorts.bottomPort) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
 portLR PTop    bb s = bbtm bb +                                    sbh s `div` 2 -- [TODO] clip to max size of element
@@ -317,21 +323,20 @@ hAlign alignment elems = alignH alignment mx <$> elems
 rowLayouter :: AAVConfig -> BoxedSVG -> BoxedSVG -> BoxedSVG
 rowLayouter c (bbold, old) (bbnew, new) =
   ( templateBox
-      { bbh = max (bbh bbold) (bbh bbnew)
-      , bbw = bbw bbold + lrHgap + bbw bbnew
-      , bbrm = bbrm bbnew
-      , bblm = bblm bbold
-      , ports = (ports templateBox)
-        { leftPort = PVoffset (portL bbold myScale)
-        , rightPort = PVoffset (portR bbnew myScale)
-        }
-      },
+      & boxPorts.leftPort  .~ PVoffset (portL bbold myScale)
+      & boxPorts.rightPort .~ PVoffset (portR bbnew myScale)
+  ,
     old
       <> moveInt (newBoxStart, 0) new
       <> connectingCurve
   )
   where
-    templateBox = defaultBBox (cscale c)
+    templateBox = (defaultBBox (cscale c))
+      { bbh = max (bbh bbold) (bbh bbnew)
+      , bbw = bbw bbold + lrHgap + bbw bbnew
+      , bbrm = bbrm bbnew
+      , bblm = bblm bbold
+      }
     myScale = getScale (cscale c)
     lrHgap = slrh myScale
     newBoxStart = bbw bbold + lrHgap
@@ -463,15 +468,10 @@ combineOr c elems =
 
 combineAnd :: AAVConfig -> [BoxedSVG] -> BoxedSVG
 combineAnd c elems =
-  ( childbbox
-      { bbw = bbw childbbox + leftMargin + rightMargin
-      , bblm = leftMargin + bblm childbbox
-      , bbrm = rightMargin + bbrm childbbox
-      , ports =  (ports childbbox)
-        { leftPort = PVoffset (portL childbbox myScale)
-        , rightPort = PVoffset (portR childbbox myScale)
-        }
-      },
+  ( combinedBox
+      & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
+      & boxPorts.rightPort .~ PVoffset (portR childbbox myScale)
+  ,
     moveInt (leftMargin, 0) children
   )
   where
@@ -480,6 +480,11 @@ combineAnd c elems =
     rightMargin = srm myScale
     addElementToRow = rowLayouter c
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
+    combinedBox = childbbox
+      { bbw = bbw childbbox + leftMargin + rightMargin
+      , bblm = leftMargin + bblm childbbox
+      , bbrm = rightMargin + bbrm childbbox
+      }
 
 drawLabel ::  AAVConfig -> Maybe (Label T.Text) -> SVGElement
 drawLabel _ Nothing = mempty

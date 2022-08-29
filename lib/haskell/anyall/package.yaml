@@ -34,6 +34,7 @@ dependencies:
 - optparse-generic
 - vector
 - mtl
+- microlens-platform
 
 # - ihaskell
 

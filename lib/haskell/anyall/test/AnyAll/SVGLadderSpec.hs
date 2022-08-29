@@ -310,8 +310,8 @@ spec = do
             bbrm = 13,
             bblm = 17,
             ports = (ports firstBox)
-                { leftPort = PVoffset 15,
-                  rightPort = PVoffset 15
+                { _leftPort = PVoffset 15,
+                  _rightPort = PVoffset 15
                 }
           }
     it "svg is correct" $ do
@@ -340,8 +340,8 @@ spec = do
           { bbw = 134,
             bbh = 30,
             ports = (ports firstBox)
-                { leftPort = PVoffset 5,
-                  rightPort = PVoffset 15
+                { _leftPort = PVoffset 5,
+                  _rightPort = PVoffset 15
                 },
             bblm = 22 + 17,
             bbrm = 22 + 13
@@ -384,8 +384,8 @@ spec = do
           { bbw = 60,
             bbh = 60,
             ports = (ports firstBox)
-                { leftPort = PTop,
-                  rightPort = PTop
+                { _leftPort = PTop,
+                  _rightPort = PTop
                 },
             bblm = 0,
             bbrm = 0
@@ -414,8 +414,8 @@ spec = do
       alignedBox2 `shouldBe` secondBox
           { bbw = columnWidth,
             ports = (ports secondBox)
-                { leftPort = PMiddle,
-                  rightPort = PMiddle
+                { _leftPort = PMiddle,
+                  _rightPort = PMiddle
                 },
             bblm = leftMargin + aligmentPadOneSide,
             bbrm = rightMargin + aligmentPadOneSide

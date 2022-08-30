@@ -54,10 +54,10 @@ moveInt (x, y) geoms =
   with geoms [Transform_ <<- translateInt x y]
 
 data Margins = Margins
-  { leftMargin :: Length,
-    rightMargin :: Length,
-    topMargin :: Length,
-    bottomMargin :: Length
+  { _leftMargin :: Length,
+    _rightMargin :: Length,
+    _topMargin :: Length,
+    _bottomMargin :: Length
   }
   deriving (Eq, Show)
 
@@ -89,17 +89,27 @@ data Ports = Ports
 boxPorts :: Lens' BBox Ports
 boxPorts = lens ports (\x y -> x { ports = y })
 
+boxMargins :: Lens' BBox Margins
+boxMargins = lens margins (\x y -> x { margins = y })
+
 makeLenses ''Ports
+
+makeLenses ''Margins
+
+bTopMargin :: Lens' BBox Length
+bTopMargin = boxMargins . topMargin
 
 type BoxedSVG = (BBox, SVGElement)
 
 type Question = Q T.Text
 type QuestionTree = Tree Question
 
--- | default bounding box
+defaultBBox :: Scale -> BBox
 defaultBBox Tiny  = defaultBBox' {ports = defaultPorts { _leftPort = PMiddle, _rightPort = PMiddle } }
 defaultBBox Small = defaultBBox Tiny
 defaultBBox Full  = defaultBBox'
+
+defaultBBox' :: BBox
 defaultBBox' = BBox
   { bbw = 0
   , bbh = 0
@@ -117,10 +127,10 @@ defaultPorts = Ports
 
 defaultMargins :: Margins
 defaultMargins = Margins
-  { leftMargin = 0
-  , rightMargin = 0
-  , topMargin = 0
-  , bottomMargin = 0
+  { _leftMargin = 0
+  , _rightMargin = 0
+  , _topMargin = 0
+  , _bottomMargin = 0
   }
 
 
@@ -131,16 +141,16 @@ portT bb = portTB (bb ^. boxPorts.topPort) bb
 portB bb = portTB (bb ^. boxPorts.bottomPort) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
-portLR PTop    bb s = topMargin (margins bb) +                                    sbh s `div` 2 -- [TODO] clip to max size of element
-portLR PMiddle bb s = topMargin (margins bb) + (bbh bb - topMargin (margins bb) - bottomMargin (margins bb))  `div` 2
-portLR PBottom bb s =           (bbh bb           - bottomMargin (margins bb))     - sbh s  `div` 2
-portLR (PVoffset x) bb s = topMargin (margins bb) + x
+portLR PTop    bb s = bb ^. bTopMargin +                                    sbh s `div` 2 -- [TODO] clip to max size of element
+portLR PMiddle bb s = bb ^. bTopMargin + (bbh bb - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
+portLR PBottom bb s =           (bbh bb           - bb ^. boxMargins.bottomMargin)     - sbh s  `div` 2
+portLR (PVoffset x) bb s = bb ^. bTopMargin + x
 
 portTB :: PortStyleH -> BBox -> AAVScale -> Length
-portTB PLeft   bb s = leftMargin (margins bb) +                                    stbv s -- [TODO] clip to max size of element
-portTB PCenter bb s = leftMargin (margins bb) + (bbw bb - leftMargin (margins bb) - rightMargin (margins bb))  `div` 2
-portTB PRight  bb s =           (bbw bb           - rightMargin (margins bb))     - stbv s
-portTB (PHoffset x) bb s = leftMargin (margins bb) + x
+portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                    stbv s -- [TODO] clip to max size of element
+portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bbw bb - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
+portTB PRight  bb s =           (bbw bb           - bb ^. boxMargins.rightMargin)     - stbv s
+portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
 
 -- | how compact should the output be?
 data Scale = Tiny  -- @ ---o---
@@ -222,9 +232,6 @@ type ItemStyle = Maybe Bool
 (<<-*) :: Show a => AttrTag -> a -> Attribute
 (<<-*) tag a = bindAttr tag (T.pack (show a))
 
--- string to element
-tpsa a = T.pack $ show a
-
 infix 4 <<-*
 
 makeSvg' :: AAVConfig -> BoxedSVG -> SVGElement
@@ -233,7 +240,7 @@ makeSvg' c = makeSvg
 makeSvg :: BoxedSVG -> SVGElement
 makeSvg (box, geom) =
      doctype
-  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + bbw box + leftMargin (margins box) + rightMargin (margins box), Height_ <<-* 23 + bbh box + topMargin (margins box) + bottomMargin (margins box)]
+  <> with (svg11_ (moveInt (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + bbw box + _leftMargin (margins box) + _rightMargin (margins box), Height_ <<-* 23 + bbh box + _topMargin (margins box) + _bottomMargin (margins box)]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
@@ -261,10 +268,10 @@ data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 -- | see page 1 of "box model" documentation
 (>>>), (<<<), (\|/), (/|\) :: BoxedSVG -> Length -> BoxedSVG
-(>>>) (bb,e) n = (bb { bbw = bbw bb + n, margins = (margins bb) {leftMargin = leftMargin (margins bb) + n }}, moveInt (   n,   0) e)
-(<<<) (bb,e) n = (bb { bbw = bbw bb + n, margins = (margins bb) {rightMargin = rightMargin (margins bb) + n }}, id              e)
-(\|/) (bb,e) n = (bb { bbh = bbh bb + n, margins = (margins bb) {topMargin = topMargin (margins bb) + n }}, moveInt (  0,    n) e)
-(/|\) (bb,e) n = (bb { bbh = bbh bb + n, margins = (margins bb) {bottomMargin = bottomMargin (margins bb) + n }}, id              e)
+(>>>) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.leftMargin %~ (+ n), moveInt (   n,   0) e)
+(<<<) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.rightMargin %~ (+ n), id              e)
+(\|/) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.topMargin %~ (+ n), moveInt (  0,    n) e)
+(/|\) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.bottomMargin %~ (+ n), id              e)
 infix 4 >>>, <<<, \|/, /|\
 
 topText :: Maybe (Label a) -> Maybe a
@@ -287,11 +294,12 @@ alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, mov
     moveElement = alignVCalcElement alignment alignmentPad
 
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
-adjustBoxMargins alignment alignmentPad bx = bx {margins = newMargins}
+adjustBoxMargins alignment alignmentPad bx =
+  bx
+    & boxMargins.topMargin    %~ (+ newTopMargin)
+    & boxMargins.bottomMargin %~ (+ newBottomMargin)
   where
     (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
-    oldMargins = margins bx
-    newMargins = oldMargins {topMargin = newTopMargin + topMargin (margins bx), bottomMargin = newBottomMargin + bottomMargin (margins bx)}
 
 columnAlignMargins :: VAlignment -> Length -> (Length, Length)
 columnAlignMargins VMiddle alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
@@ -312,11 +320,12 @@ alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElem
     moveElement = alignHCalcMove alignment alignmentPad
 
 adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
-adjustSideMargins alignment alignmentPad box = box {margins = newMargins}
+adjustSideMargins alignment alignmentPad box =
+  box
+    & boxMargins.leftMargin %~ (+ newLeftMargin)
+    & boxMargins.rightMargin %~ (+ newRightMargin)
   where
     (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
-    oldMargins = margins box
-    newMargins = oldMargins {leftMargin = newLeftMargin + leftMargin (margins box), rightMargin = newRightMargin + rightMargin (margins box)}
 
 rowAlignMargins :: HAlignment -> Length -> (Length, Length)
 rowAlignMargins HCenter alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
@@ -343,6 +352,8 @@ rowLayouter sc (bbold, old) (bbnew, new) =
   ( templateBox
       & boxPorts.leftPort  .~ PVoffset (portL bbold myScale)
       & boxPorts.rightPort .~ PVoffset (portR bbnew myScale)
+      & boxMargins.leftMargin .~ (bbold ^. boxMargins.leftMargin)
+      & boxMargins.rightMargin .~ (bbnew ^. boxMargins.rightMargin)
   ,
     old
       <> moveInt (newBoxStart, 0) new
@@ -352,7 +363,6 @@ rowLayouter sc (bbold, old) (bbnew, new) =
     templateBox = (defaultBBox sc)
       { bbh = max (bbh bbold) (bbh bbnew)
       , bbw = bbw bbold + lrHgap + bbw bbnew
-      , margins = newMargins
       }
     myScale = getScale sc
     lrHgap = slrh myScale
@@ -361,8 +371,6 @@ rowLayouter sc (bbold, old) (bbnew, new) =
       if bbw bbold /= 0
         then svgConnector $ rowConnectorData sc bbold bbnew
         else mempty
-    oldMargins = margins (defaultBBox sc)
-    newMargins = oldMargins {leftMargin = leftMargin (margins bbold), rightMargin = rightMargin (margins bbnew)}
 
 data Dot = Dot {x::Length, y::Length}
 data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
@@ -378,10 +386,10 @@ rowConnectorData sc bbold bbnew =
   where
     myScale = getScale sc
     gap = slrh myScale
-    rightMargin' = rightMargin (margins bbold)
+    rightMargin' = bbold ^. boxMargins.rightMargin
     startPortY = portR bbold myScale
     endPortY = portL bbnew myScale - startPortY
-    endPortX = rightMargin' + gap + leftMargin (margins bbnew)
+    endPortX = rightMargin' + gap + bbnew ^. boxMargins.leftMargin
 
 svgConnector :: Curve -> SVGElement
 svgConnector
@@ -436,7 +444,7 @@ inboundCurve sc parentbbox bbold bbnew =
         parentPortIn
         (-leftMargin')
         (bbh bbold + lrVgap + portL bbnew myScale)
-        (leftMargin (margins bbnew))
+        (bbnew ^. boxMargins.leftMargin)
         (bbh bbold + lrVgap + portL bbnew myScale)
 
 outboundCurve :: Scale -> BBox -> BBox -> BBox -> SVGElement
@@ -455,7 +463,7 @@ outboundCurve sc parentbbox bbold bbnew =
         parentPortOut
         (bbw parentbbox + rightMargin')
         (bbh bbold + lrVgap + portR bbnew myScale)
-        (bbw parentbbox - rightMargin (margins bbnew))
+        (bbw parentbbox - (bbnew ^. boxMargins.rightMargin))
         (bbh bbold + lrVgap + portR bbnew myScale)
 
 txtToBBE ::  AAVConfig -> T.Text -> BoxedSVG
@@ -491,6 +499,8 @@ combineAnd sc elems =
   ( combinedBox
       & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
       & boxPorts.rightPort .~ PVoffset (portR childbbox myScale)
+      & boxMargins.leftMargin %~ (+ leftMargin')
+      & boxMargins.rightMargin %~ (+ rightMargin')
   ,
     moveInt (leftMargin', 0) children
   )
@@ -500,12 +510,7 @@ combineAnd sc elems =
     rightMargin' = srm myScale
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
-    combinedBox = childbbox
-      { bbw = bbw childbbox + leftMargin' + rightMargin'
-      , margins = newMargins
-      }
-    oldMargins = margins childbbox
-    newMargins = oldMargins {leftMargin = leftMargin' + leftMargin (margins childbbox), rightMargin = rightMargin' + rightMargin (margins childbbox)}
+    combinedBox = childbbox { bbw = bbw childbbox + leftMargin' + rightMargin'}
 
 drawLabel ::  AAVConfig -> Maybe (Label T.Text) -> SVGElement
 drawLabel _ Nothing = mempty
@@ -521,33 +526,30 @@ drawLabel c (Just l) =
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG
 drawPreLabelTop sc label (childBox, childSVG) =
-    (labeledBox, moveInt (0, labelHeight) childSVG <> svgLabel)
+    (labeledBox
+      & boxMargins.topMargin %~ (+ labelHeight)
+    ,
+    moveInt (0, labelHeight) childSVG <> svgLabel)
   where
-    labeledBox = childBox
-      { margins = newMargins
-      , bbh = bbh childBox + labelHeight
-    }
+    labeledBox = childBox { bbh = bbh childBox + labelHeight }
     labelHeight = stm (getScale sc)
     lbox = labelBox sc "hanging" label
     (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
-    oldMargins =  margins childBox
-    newMargins = oldMargins {topMargin = topMargin (margins childBox) + labelHeight}
 
 drawPrePostLabelTopBottom :: Scale -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
 drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
-    (labeledBox, moveInt (0, labelHeight) childSVG <> svgPreLabel <>  moveInt (0, bbh childBox + 2 * labelHeight) svgPostLabel)
+    (labeledBox
+      & boxMargins.topMargin %~ (+ labelHeight)
+      & boxMargins.bottomMargin %~ (+ labelHeight)
+    ,
+    moveInt (0, labelHeight) childSVG <> svgPreLabel <>  moveInt (0, bbh childBox + 2 * labelHeight) svgPostLabel)
   where
-    labeledBox = childBox
-      { margins = newMargins
-      , bbh = bbh childBox + 2 * labelHeight
-      }
+    labeledBox = childBox { bbh = bbh childBox + 2 * labelHeight }
     labelHeight = stm (getScale sc)
     prelbox = labelBox sc "hanging" preTxt
     (_,svgPreLabel) = alignH HCenter (bbw labeledBox) prelbox
     postlbox = labelBox sc "ideographic" postTxt
     (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
-    oldMargins = margins childBox
-    newMargins = oldMargins {topMargin = topMargin (margins childBox) + labelHeight , bottomMargin = bottomMargin (margins childBox) + labelHeight}
 
 labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
 labelBox sc baseline mytext =

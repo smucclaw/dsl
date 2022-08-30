@@ -237,8 +237,10 @@ spec = do
 
         firstExpected  = Set.fromList  firstSVGAttrs
         secondExpected = Set.fromList  secondSVGAttrs
+        oldMargins = margins secondBox
+        newMargins = oldMargins {rightMargin=40}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bbrm=40}]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, margins=newMargins}]
 
     it "expands bounding box and shift rectangle on Central alignment" $ do
       let
@@ -247,8 +249,10 @@ spec = do
 
         firstExpected  = Set.fromList $ ("transform","translate(0 0)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(20 0)") : secondSVGAttrs
+        oldMargins = margins secondBox
+        newMargins = oldMargins {leftMargin=20, rightMargin=20}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=20, bbrm=20}]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, margins=newMargins}]
 
     it "expands bounding box and shift rectangle on Right alignment" $ do
       let
@@ -257,8 +261,10 @@ spec = do
 
         firstExpected  = Set.fromList $ ("transform","translate(0 0)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(40 0)") : secondSVGAttrs
+        oldMargins = margins secondBox
+        newMargins = oldMargins {leftMargin=40}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, bblm=40}]
+      boundingBoxes `shouldBe` [firstBox, secondBox{bbw=60, margins=newMargins}]
 
     it "expands bounding box on Top alignment" $ do
       let
@@ -267,8 +273,10 @@ spec = do
 
         firstExpected  = Set.fromList  firstSVGAttrs
         secondExpected = Set.fromList  secondSVGAttrs
+        oldMargins = margins firstBox
+        newMargins = oldMargins {bottomMargin=20}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=20}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, margins=newMargins}, secondBox]
 
     it "expands bounding box and shift rectangle on Middle alignment" $ do
       let
@@ -277,8 +285,10 @@ spec = do
 
         firstExpected  = Set.fromList $ ("transform","translate(0 10)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
+        oldMargins = margins firstBox
+        newMargins = oldMargins {bottomMargin=10, topMargin = 10}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbbm=10, bbtm = 10}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, margins=newMargins}, secondBox]
 
     it "expands bounding box and shift rectangle on Bottom alignment" $ do
       let
@@ -287,14 +297,16 @@ spec = do
 
         firstExpected  = Set.fromList $ ("transform","translate(0 20)") : firstSVGAttrs
         secondExpected = Set.fromList $ ("transform","translate(0 0)") : secondSVGAttrs
+        oldMargins = margins firstBox
+        newMargins = oldMargins { topMargin = 20}
       svgsAttrs `shouldBe` [firstExpected, secondExpected]
-      boundingBoxes `shouldBe` [firstBox{bbh=30, bbtm = 20}, secondBox]
+      boundingBoxes `shouldBe` [firstBox{bbh=30, margins=newMargins}, secondBox]
 
   describe "test rowLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, margins = defaultMargins {leftMargin = 17}}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, margins = defaultMargins {rightMargin = 13}}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
@@ -305,15 +317,19 @@ spec = do
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` firstBox
-          { bbw = 90,
-            bbh = 30,
-            bbrm = 13,
-            bblm = 17,
-            ports = (ports firstBox)
-                { _leftPort = PVoffset 15,
-                  _rightPort = PVoffset 15
-                }
-          }
+                              { bbw = 90,
+                                bbh = 30,
+                                margins =
+                                  (margins firstBox)
+                                    { rightMargin = 13,
+                                      leftMargin = 17
+                                    },
+                                ports =
+                                  (ports firstBox)
+                                    { _leftPort = PVoffset 15,
+                                      _rightPort = PVoffset 15
+                                    }
+                              }
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -324,9 +340,9 @@ spec = do
 
   describe "test combineAnd margins" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, margins = defaultMargins {leftMargin = 17}}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bbrm = 13}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, margins = defaultMargins {rightMargin = 13}}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
@@ -339,12 +355,15 @@ spec = do
       resultBox `shouldBe` firstBox
           { bbw = 134,
             bbh = 30,
+            margins =
+              (margins firstBox)
+                { leftMargin = 22 + 17,
+                  rightMargin = 22 + 13
+                },
             ports = (ports firstBox)
                 { _leftPort = PVoffset 5,
                   _rightPort = PVoffset 15
-                },
-            bblm = 22 + 17,
-            bbrm = 22 + 13
+                }
           }
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
@@ -356,9 +375,9 @@ spec = do
 
   describe "test columnLayouter" $ do
     let
-      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, bblm = 17, bbrm = 13}
+      firstBox = templatedBoundingBox {bbw = 60, bbh = 10, margins = defaultMargins {leftMargin = 17, rightMargin = 13}}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, bblm = 7, bbrm = 5}
+      secondBox = templatedBoundingBox {bbw = 20, bbh = 30, margins = defaultMargins {leftMargin = 7, rightMargin = 5}}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
       myScale     = getScale (cscale c)
       lrVgap      = slrv myScale
@@ -383,12 +402,15 @@ spec = do
       resultBox `shouldBe` firstBox
           { bbw = 60,
             bbh = 60,
+            margins =
+              (margins firstBox)
+                { leftMargin = 0,
+                  rightMargin = 0
+                },
             ports = (ports firstBox)
                 { _leftPort = PTop,
                   _rightPort = PTop
-                },
-            bblm = 0,
-            bbrm = 0
+                }
           }
     it "gets correct svg" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGBox, inConnector1, outConnector1, secondSVGBox, inConnector2, outConnector2]
@@ -404,21 +426,24 @@ spec = do
       rightMargin = 5
       aligmentPadOneSide = 20
       columnWidth = 60
-      firstBox = templatedBoundingBox {bbw = columnWidth, bbh = 10, bblm = 17, bbrm = 13}
+      firstBox = templatedBoundingBox {bbw = columnWidth, bbh = 10, margins = defaultMargins {leftMargin = 17, rightMargin = 13}}
       firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
-      secondBox = templatedBoundingBox {bbw = columnWidth - aligmentPadOneSide * 2, bbh = 30, bblm = 7, bbrm = 5}
+      secondBox = templatedBoundingBox {bbw = columnWidth - aligmentPadOneSide * 2, bbh = 30, margins = defaultMargins {leftMargin = 7, rightMargin = 5}}
       secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
 
       _:(alignedBox2,_):_ = hAlign HCenter [(firstBox, firstRect), (secondBox, secondRect)]
     it "aligns smaller box" $ do
       alignedBox2 `shouldBe` secondBox
           { bbw = columnWidth,
+            margins =
+              (margins firstBox)
+                { leftMargin = leftMargin + aligmentPadOneSide,
+                  rightMargin = rightMargin + aligmentPadOneSide
+                },
             ports = (ports secondBox)
                 { _leftPort = PMiddle,
                   _rightPort = PMiddle
-                },
-            bblm = leftMargin + aligmentPadOneSide,
-            bbrm = rightMargin + aligmentPadOneSide
+                }
           }
 
   describe "test combineAnd" $ do

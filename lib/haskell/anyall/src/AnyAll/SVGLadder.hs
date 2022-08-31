@@ -141,13 +141,13 @@ portT bb = portTB (bb ^. boxPorts.topPort) bb
 portB bb = portTB (bb ^. boxPorts.bottomPort) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
-portLR PTop    bb s = bb ^. bTopMargin +                                    sbh s `div` 2 -- [TODO] clip to max size of element
+portLR PTop    bb s = bb ^. bTopMargin +                                    sbh s `div` 2
 portLR PMiddle bb s = bb ^. bTopMargin + (bbh bb - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
 portLR PBottom bb s =           (bbh bb           - bb ^. boxMargins.bottomMargin)     - sbh s  `div` 2
 portLR (PVoffset x) bb s = bb ^. bTopMargin + x
 
 portTB :: PortStyleH -> BBox -> AAVScale -> Length
-portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                    stbv s -- [TODO] clip to max size of element
+portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                    stbv s
 portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bbw bb - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
 portTB PRight  bb s =           (bbw bb           - bb ^. boxMargins.rightMargin)     - stbv s
 portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
@@ -209,14 +209,14 @@ getColorsText    Tiny     False   = "lightgrey"
 getColorsText    _        True    = "black"
 getColorsText    _        False   = "white"
 
-getBoxColorsR :: Reader MyConfig (T.Text,   T.Text)
+getBoxColorsR :: DrawConfigM (T.Text, T.Text)
 getBoxColorsR = do
   m <- asks markingR
   sc <- asks myScale
   return $ getColorsBox sc (confidence m)
 
 
-getTextColorsR :: Reader MyConfig T.Text
+getTextColorsR :: DrawConfigM T.Text
 getTextColorsR = do
   m <- asks markingR
   sc <- asks myScale
@@ -268,10 +268,10 @@ data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 -- | see page 1 of "box model" documentation
 (>>>), (<<<), (\|/), (/|\) :: BoxedSVG -> Length -> BoxedSVG
-(>>>) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.leftMargin %~ (+ n), moveInt (   n,   0) e)
-(<<<) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.rightMargin %~ (+ n), id              e)
-(\|/) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.topMargin %~ (+ n), moveInt (  0,    n) e)
-(/|\) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.bottomMargin %~ (+ n), id              e)
+(>>>) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.leftMargin   %~ (+ n), moveInt (n, 0) e)
+(<<<) (bb,e) n = (bb { bbw = bbw bb + n} & boxMargins.rightMargin  %~ (+ n),                e)
+(\|/) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.topMargin    %~ (+ n), moveInt (0, n) e)
+(/|\) (bb,e) n = (bb { bbh = bbh bb + n} & boxMargins.bottomMargin %~ (+ n),                e)
 infix 4 >>>, <<<, \|/, /|\
 
 topText :: Maybe (Label a) -> Maybe a
@@ -281,7 +281,7 @@ bottomText :: Maybe (Label a) -> Maybe a
 bottomText = (=<<) maybeSecond
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader drawLeafR $ MyConfig sc negContext txt m
+drawItemTiny sc negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m
 drawItemTiny sc negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny sc (not negContext) (head childqs)
 drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
 
@@ -296,19 +296,19 @@ alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, mov
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
 adjustBoxMargins alignment alignmentPad bx =
   bx
-    & boxMargins.topMargin    %~ (+ newTopMargin)
-    & boxMargins.bottomMargin %~ (+ newBottomMargin)
+    & boxMargins.topMargin    %~ (+ topPadding)
+    & boxMargins.bottomMargin %~ (+ bottomPadding)
   where
-    (newTopMargin, newBottomMargin) = columnAlignMargins alignment alignmentPad
+    (topPadding, bottomPadding) = columnAlignMargins alignment alignmentPad
 
 columnAlignMargins :: VAlignment -> Length -> (Length, Length)
 columnAlignMargins VMiddle alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
-columnAlignMargins VTop alignmentPad = (0, alignmentPad)
+columnAlignMargins VTop    alignmentPad = (0, alignmentPad)
 columnAlignMargins VBottom alignmentPad = (alignmentPad, 0)
 
 alignVCalcElement :: VAlignment -> Length -> (SVGElement -> SVGElement)
 alignVCalcElement VMiddle alignmentPad = moveInt (0, alignmentPad `div` 2)
-alignVCalcElement VTop alignmentPad = id
+alignVCalcElement VTop    alignmentPad = id
 alignVCalcElement VBottom alignmentPad = moveInt (0, alignmentPad)
 
 alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
@@ -322,7 +322,7 @@ alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElem
 adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
 adjustSideMargins alignment alignmentPad box =
   box
-    & boxMargins.leftMargin %~ (+ newLeftMargin)
+    & boxMargins.leftMargin  %~ (+ newLeftMargin)
     & boxMargins.rightMargin %~ (+ newRightMargin)
   where
     (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
@@ -575,19 +575,12 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
   case ao of
     Or -> decorateWithLabel sc pp (combineOr sc rawChildren)
     And -> decorateWithLabel sc pp  (combineAnd sc rawChildren)
-    Simply txt -> runReader (local (addText txt) drawLeafR) contextR
+    Simply txt -> runReader (drawLeafR txt) contextR
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
-    contextR = MyConfig sc negContext "" m
+    contextR = DrawConfig sc negContext m
     rawChildren = drawItemFull sc negContext <$> childqs
--- topTextE = txtToBBE c <$> topText pp
--- botTextE = txtToBBE c <$> bottomText pp
 
-addText :: T.Text -> MyConfig -> MyConfig
-addText t c = c {mytext = t}
-
--- topTextE = txtToBBE c <$> topText pp
--- botTextE = txtToBBE c <$> bottomText pp
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
   case extractSoft m of
@@ -610,18 +603,17 @@ confidence :: Default Bool -> Bool
 confidence (Default (Right _)) = True
 confidence (Default (Left _)) = False
 
-drawBoxCapR :: Reader MyConfig SVGElement
-drawBoxCapR = do
+drawBoxCapR :: T.Text -> DrawConfigM SVGElement
+drawBoxCapR caption = do
   negContext <- asks negContext
   m <- asks markingR
-  drawBoxCap negContext m <$> deriveBoxSize
+  drawBoxCap negContext m <$> deriveBoxSize caption
 
-drawBoxContentR :: Reader MyConfig SVGElement
-drawBoxContentR = do
+drawBoxContentR :: T.Text -> DrawConfigM SVGElement
+drawBoxContentR caption = do
   sc <- asks myScale
-  mtext <- asks mytext
   textFill <- getTextColorsR
-  drawBoxContent sc mtext textFill <$> deriveBoxSize
+  drawBoxContent sc caption textFill <$> deriveBoxSize caption
 
 drawBoxCap :: Bool -> Default Bool -> BoxDimensions -> SVGElement
 drawBoxCap negContext m BoxDimensions{boxWidth=bw, boxHeight=bh} =
@@ -665,35 +657,35 @@ renderHorizontalLine yPosition length lineClass =
     ]
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> BoxDimensions -> SVGElement
-drawBoxContent Tiny mytext textFill BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} =
+drawBoxContent Tiny _ textFill BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} =
   circle_ [Cx_  <<-* (boxWidth `div` 2) ,Cy_      <<-* (boxHeight `div` 2) , R_ <<-* (boxWidth `div` 3), Fill_ <<- textFill ]
 drawBoxContent _ mytext textFill BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} =
   text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
 
-data MyConfig = MyConfig{
-  myScale :: Scale,
-  negContext :: Bool,
-  mytext :: T.Text,
-  markingR :: Default Bool
-}
+data DrawConfig = DrawConfig{
+    myScale :: Scale,
+    negContext :: Bool,
+    markingR :: Default Bool
+  }
 
-deriveBoxSize :: Reader MyConfig BoxDimensions
-deriveBoxSize = do
+type DrawConfigM = Reader DrawConfig
+
+deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
+deriveBoxSize caption = do
   sc <- asks myScale
-  mtext <- asks mytext
   let
       boxHeight = sbh (getScale sc)
       defBoxWidth = sbw (getScale sc)
-      boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length mtext))
+      boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length caption))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
 
-drawLeafR :: Reader MyConfig BoxedSVG
-drawLeafR = do
+drawLeafR :: T.Text -> DrawConfigM BoxedSVG
+drawLeafR caption = do
   sc <- asks myScale
   (boxStroke, boxFill) <- getBoxColorsR
-  BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize
-  boxContent <- drawBoxContentR
-  boxCap <- drawBoxCapR
+  BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
+  boxContent <- drawBoxContentR caption
+  boxCap <- drawBoxCapR caption
   return $
     (,)
       (defaultBBox sc) {bbw = boxWidth, bbh = boxHeight}

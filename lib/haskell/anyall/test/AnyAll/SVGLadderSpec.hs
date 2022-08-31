@@ -467,15 +467,15 @@ spec = do
       mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader drawLeafR $ MyConfig Full True "swim" mark
-        longLeaf = runReader drawLeafR $ MyConfig Full True "discombobulate" mark
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True  mark
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True  mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader drawLeafR $ MyConfig Tiny True "swim" mark
-        longLeaf = runReader drawLeafR $ MyConfig Tiny True "discombobulate" mark
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark
         shortBoxLength = bbw (fst shortLeaf)
         longBoxLength = bbw (fst longLeaf)
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

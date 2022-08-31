@@ -388,7 +388,7 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
+  some (try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
 semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))

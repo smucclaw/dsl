@@ -175,15 +175,25 @@ preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles)
     |>< pParamText
 
 
+
 -- | a Hornlike rule does double duty, due to the underlying logical/functional/object paradigms.
 -- on the logical side of things,            it has to handle a DECIDE xx MEANS yy WHEN zz.
 -- on the functional/objecty side of things, it has to handle a DEFINE xx HAS yy variable definition.
 pHornlike :: Parser Rule
-pHornlike = debugName "pHornlike" $ do
+pHornlike = pHornlike' True
+
+-- and sometimes, when pHornlike is being used to parse the WHERE limb of a regulative rule, we say we don't need the DEFINE/DECIDE keyword;
+-- this tries to give the behaviour of the ambitious parser but in a someStructure parser.
+pHornlike' :: Bool -> Parser Rule
+pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
+  let dKeyword = if needDkeyword
+                 then Just <$> choice [ pToken Decide ]
+                 else Nothing <$ pure ()
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
-        <$$> -- (try ambitious <|>
-                    someStructure -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
+        <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
+               someStructure dKeyword -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
+             -- )
         <|?> (Nothing, Just . snd <$> givenLimb)
         <|?> (Nothing, Just . snd <$> uponLimb)
         <|?> (Nothing, whenCase)
@@ -217,30 +227,30 @@ pHornlike = debugName "pHornlike" $ do
     -- DECIDE X IS y
     --   WHEN Z IS Q
 
-    ambitious = debugName "pHornlike/ambitious" $ do
-      (keyword, subject) <- (,) $>| debugName "Decide" (choice [ pToken Decide ]) |*< slMultiTerm
-      (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
-      (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
-        <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> debugName "UNLESS pBSR" pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> debugName "AND pBSR"    pBSR))
-        <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> debugName "OR pBSR"     pBSR))
-      debugPrint $ "ambitious: got back ifLimb     " ++ show ifLimb
-      debugPrint $ "ambitious: got back unlessLimb " ++ show unlessLimb
-      debugPrint $ "ambitious: got back andLimb    " ++ show andLimb
-      debugPrint $ "ambitious: got back orLimb     " ++ show orLimb
-      let clauses = [HC2 (RPConstraint subject RPis object)
-                     (maybe (Just $ AA.Leaf $ RPMT ["always"])
-                      (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
-      return (Just keyword, subject, clauses)
+    -- ambitious dKeyword = debugName "pHornlike/ambitious" $ do
+    --   (keyword, subject) <- (,) $>| debugName "Decide" (choice [ pToken Decide ]) |*< slMultiTerm
+    --   (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
+    --   (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
+    --     <$?> (Nothing, Just <$> try ((,) <$> pToken If     <*> debugName "IF pBSR"     pBSR))
+    --     <|?> (Nothing, Just <$> try ((,) <$> pToken Unless <*> debugName "UNLESS pBSR" pBSR))
+    --     <|?> (Nothing, Just <$> try ((,) <$> pToken And    <*> debugName "AND pBSR"    pBSR))
+    --     <|?> (Nothing, Just <$> try ((,) <$> pToken Or     <*> debugName "OR pBSR"     pBSR))
+    --   debugPrint $ "ambitious: got back ifLimb     " ++ show ifLimb
+    --   debugPrint $ "ambitious: got back unlessLimb " ++ show unlessLimb
+    --   debugPrint $ "ambitious: got back andLimb    " ++ show andLimb
+    --   debugPrint $ "ambitious: got back orLimb     " ++ show orLimb
+    --   let clauses = [HC2 (RPConstraint subject RPis object)
+    --                  (maybe (Just $ AA.Leaf $ RPMT ["always"])
+    --                   (Just . snd) $ mergePBRS (catMaybes [ifLimb,andLimb,orLimb,fmap AA.Not <$> unlessLimb]))]
+    --   return (Just keyword, subject, clauses)
 
     -- without the decide
     --        X IS y             -- nextlinewhen
     --   WHEN Z IS Q
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
-    someStructure = debugName "pHornlike/someStructure" $ do
-      keyword <- Just <$> choice [ pToken Decide ]
+    someStructure dKeyword = debugName "pHornlike/someStructure" $ do
+      keyword <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
       relwhens <- try (debugName "some sameline whens" $
                        someIndentation (sameDepth relPredSamelineWhen))
                   <|> debugName "single nextline WHEN"

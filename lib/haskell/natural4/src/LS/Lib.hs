@@ -388,7 +388,7 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
+  some (try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
 semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
@@ -773,7 +773,7 @@ permutationsReg keynamewho =
                 <|?> ([], some $ preambleParamText [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
-                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
+                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some (pHornlike' False)))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>

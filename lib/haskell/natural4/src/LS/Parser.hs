@@ -14,7 +14,7 @@ import Control.Monad.Combinators.Expr
 import Text.Megaparsec
 import qualified Data.Text as Text
 import Data.List.NonEmpty (NonEmpty ((:|)))
-
+import Debug.Trace
 
 data MyItem lbl a =
     MyLeaf                a
@@ -89,11 +89,11 @@ notLabelTerm p =
   try (debugName "term p/2:someIndentation expr p" (someIndentation (expr p)))
   <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
 
-table :: [[Operator Parser (MyBoolStruct a)]]
+table :: (Show a) => [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
-        , [ binary  And   myAnd
-          , binary  Unless myUnless  ]
+        , [ binary  Unless myUnless  ]
+        , [ binary  And   myAnd ]
         -- , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
@@ -118,19 +118,22 @@ getAll (MyAll xs) = xs
 getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
-myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myAnd,myOr,myUnless,setLess :: (Show lbl, Show a) => MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
-myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 
-myUnless :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myUnless (MyLabel pre post (MyAll xs)) b = MyLabel pre post $ MyAll (MyNot b: xs)
-myUnless a b                             = MyAll (MyNot b : [a])
+myUnless (MyLabel pre post (MyAll as)) b = trace "myUnless: path 1" $
+                                           MyLabel pre post $ MyAll (as ++ [MyNot b])
+myUnless a (MyLabel pre post (MyAll bs)) = trace "myUnless: path 2" $
+                                           MyLabel pre post $ MyAll (MyNot a: bs)
+myUnless a b                             = trace "myUnless: path 3" $
+                                           trace ("myUnless: path 3: a = " <> show a) $
+                                           trace ("myUnless: path 3: b = " <> show b) $
+                                           MyAll (a : [MyNot b])
 
-setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 setLess a (MyAll ((MyLeaf l):bs))
   | all (\b -> case b of
             MyNot _ -> True

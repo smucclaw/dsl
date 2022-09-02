@@ -125,13 +125,13 @@ myAnd a b                          = MyAll (getAll a <> getAll b)
 myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 
-myUnless (MyLabel pre post (MyAll as)) b = trace "myUnless: path 1" $
+myUnless (MyLabel pre post (MyAll as)) b = -- trace "myUnless: path 1" $
                                            MyLabel pre post $ MyAll (as ++ [MyNot b])
-myUnless a (MyLabel pre post (MyAll bs)) = trace "myUnless: path 2" $
+myUnless a (MyLabel pre post (MyAll bs)) = -- trace "myUnless: path 2" $
                                            MyLabel pre post $ MyAll (MyNot a: bs)
-myUnless a b                             = trace "myUnless: path 3" $
-                                           trace ("myUnless: path 3: a = " <> show a) $
-                                           trace ("myUnless: path 3: b = " <> show b) $
+myUnless a b                             = -- trace "myUnless: path 3" $
+                                           -- trace ("myUnless: path 3: a = " <> show a) $
+                                           -- trace ("myUnless: path 3: b = " <> show b) $
                                            MyAll (a : [MyNot b])
 
 setLess a (MyAll ((MyLeaf l):bs))

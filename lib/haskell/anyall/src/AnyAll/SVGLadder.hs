@@ -131,7 +131,6 @@ defaultMargins = Margins
   , _bottomMargin = 0
   }
 
-
 portL, portT, portR, portB :: BBox -> AAVScale -> Length
 portL bb = portLR (bb ^. boxPorts.leftPort) bb
 portR bb = portLR (bb ^. boxPorts.rightPort) bb
@@ -497,24 +496,19 @@ drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
     postlbox = labelBox sc "ideographic" postTxt
     (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
 
-labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
-labelBox sc baseline mytext =
-  (,)
-  (defaultBBox sc) { bbw = boxWidth, bbh = boxHeight }
-  boxContent
-  where
-    boxHeight        = sbh (getScale sc)
-    defBoxWidth      = sbw (getScale sc)
-    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
-
 decorateWithLabel :: Scale -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
-decorateWithLabel sc pp childBox =
-  case (sc, pp) of
-    (Tiny, _ ) -> childBox
-    (_, Nothing) -> childBox
-    (_, Just (Pre txt)) -> drawPreLabelTop sc txt childBox
-    (_, Just (PrePost preTxt postTxt)) -> drawPrePostLabelTopBottom sc preTxt postTxt childBox
+decorateWithLabel Tiny _ childBox = childBox
+decorateWithLabel _ Nothing childBox = childBox
+decorateWithLabel sc (Just (Pre txt)) childBox = drawPreLabelTop sc txt childBox
+decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox =  drawPrePostLabelTopBottom sc preTxt postTxt childBox
+
+decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelR Nothing childBox = return childBox
+decorateWithLabelR (Just (Pre txt)) childBox = asks myScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
+decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks myScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
+
+decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelGuardR ml childBox = asks myScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox
 
 drawItemFull :: Scale -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
@@ -624,6 +618,26 @@ deriveBoxSize caption = do
       defBoxWidth = sbw (getScale sc)
       boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length caption))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
+
+labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
+labelBox sc baseline mytext =
+  (,)
+  (defaultBBox sc) { bbw = boxWidth, bbh = boxHeight }
+  boxContent
+  where
+    boxHeight        = sbh (getScale sc)
+    defBoxWidth      = sbw (getScale sc)
+    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
+    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
+
+labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
+labelBoxR baseline mytext = do
+  sc <- asks myScale
+  BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize mytext
+  return (
+    (defaultBBox sc) { bbw = boxWidth, bbh = boxHeight }
+    ,
+    text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
 drawLeafR :: T.Text -> DrawConfigM BoxedSVG
 drawLeafR caption = do

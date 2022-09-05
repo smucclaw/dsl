@@ -27,13 +27,14 @@ spec = do
                                                                ,All (Just (Pre "something")) [Leaf "bbb"]]
                                  ,Any (Just (Pre "something")) [Leaf "qux"]
                                  ] )
-        `shouldBe` All Nothing [Leaf "bat"
-                               ,Leaf "bar"
+        `shouldBe` All Nothing [Leaf "foo1"
                                ,Leaf "foo2"
-                               ,Leaf "foo1"
-                               ,All (Just (Pre "something")) [Leaf "bbb"
-                                                             ,Leaf "baz"]
+                               ,Leaf "bar"
+                               ,Leaf "bat"
+                               ,All (Just (Pre "something")) [Leaf "baz"
+                                                             ,Leaf "bbb"]
                                ,Leaf "qux"]
+        
     it "should simplify singleton Leaf" $ do
       simplifyItem ( All Nothing [Leaf "foo"] )
         `shouldBe`   Leaf "foo"

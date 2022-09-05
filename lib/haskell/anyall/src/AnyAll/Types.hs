@@ -155,8 +155,6 @@ simplifyItem (All l1 xs) = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 ->
 simplifyItem (Any l1 xs) = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
 simplifyItem orig = orig
 
-type ItemGroup a = Map.Map (ItemMaybeLabel a) [ItemMaybeLabel a]
-
 -- | utility for simplifyItem: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
 -- example:
 -- input:
@@ -166,15 +164,15 @@ type ItemGroup a = Map.Map (ItemMaybeLabel a) [ItemMaybeLabel a]
 siblingfyItem :: (Show a) => [ItemMaybeLabel a] -> [ItemMaybeLabel a]
 siblingfyItem xs =
   let grouped =
-        Map.toList $
-        Map.fromListWith (++) [ ((anyall,lbl), ys)
-                              | x <- xs
-                              , let ((anyall,lbl),ys) = case x of
-                                                          (Any lbl ys) -> (("any", lbl),     ys)
-                                                          (All lbl ys) -> (("all", lbl),     ys)
-                                                          (Leaf    y ) -> (("leaf",mempty), [Leaf y])
-                                                          (Not     y ) -> (("not", mempty), [Not  y])
-                              ]
+        mergeMatch
+        [ ((anyall,lbl), ys)
+        | x <- xs
+        , let ((anyall,lbl),ys) = case x of
+                                    (Any lbl ys) -> (("any", lbl),     ys)
+                                    (All lbl ys) -> (("all", lbl),     ys)
+                                    (Leaf    y ) -> (("leaf",mempty), [Leaf y])
+                                    (Not     y ) -> (("not", mempty), [Not  y])
+        ]
       after = concat $ flip fmap grouped $ \case
         (("any",lbl),ys) -> [Any lbl ys]
         (("all",lbl),ys) -> [All lbl ys]
@@ -183,7 +181,15 @@ siblingfyItem xs =
      -- (trace $ TL.unpack $ strPrefix "siblingfyItem: during: " (pShowNoColor grouped)) $
      -- (trace $ TL.unpack $ strPrefix "siblingfyItem: after:  " (pShowNoColor after)) $
      after
-
+  where
+    -- combine sequential ("foo", [x,y]) , ("foo", [z]) into ("foo", [x,y,z]) but only if the "foo" parts match
+    mergeMatch :: (Eq a, Semigroup b) => [(a,b)] -> [(a,b)]
+    mergeMatch []  = []
+    mergeMatch [k] = [k]
+    mergeMatch ((x1,y1) : (x2,y2) : zs)
+      | x1 == x2  =           mergeMatch ((x1, y1 <> y2) : zs)
+      | otherwise = (x1,y1) : mergeMatch ((x2,       y2) : zs)
+      
 strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
   
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.

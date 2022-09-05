@@ -303,8 +303,8 @@ onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
 onlyTheItems l4i =
   let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i <$> origrules l4i)
       simplified = AA.simplifyItem myitem
-  in trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
-     trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
+  in -- trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
+     -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
      simplified
 
 alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText

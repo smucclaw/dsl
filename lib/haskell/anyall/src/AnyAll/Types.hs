@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 
 module AnyAll.Types where
 
@@ -15,7 +16,9 @@ import Data.String (IsString)
 import qualified Data.Map.Strict      as Map
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text            as T
+import qualified Data.Text.Lazy       as TL
 import qualified Data.Vector          as V
+import Text.Pretty.Simple (pShowNoColor)
 
 import Data.Aeson
 import Data.Aeson.Types (parseMaybe, parse, Parser)
@@ -25,7 +28,7 @@ import GHC.Exts (toList)
 data Label a =
     Pre a
   | PrePost a a
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Ord)
 instance ToJSON a => ToJSON (Label a)
 instance FromJSON a => FromJSON (Label a)
 
@@ -85,7 +88,7 @@ alwaysLabeled (Leaf x)            = Leaf x
 alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
 instance Semigroup t => Semigroup (Label t) where
-  (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2)
+  (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
   (<>)  (Pre pr1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) po2
   (<>)  (PrePost pr1 po1) (Pre pr2) = PrePost (pr1 <> pr2) po1
   (<>)  (PrePost pr1 po1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) (po1 <> po2)
@@ -131,6 +134,58 @@ instance Monoid lbl => Semigroup (Item lbl a) where
 -- prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
 
+
+
+-- | flatten redundantly nested structure
+-- example:
+-- input:
+--        All [All [x1, x2], Any [y1, y2], Leaf z]
+-- output:
+--        All [x1, x2,       Any [y1, y2], Leaf z]
+-- but only if the labels match
+
+simplifyItem :: (Show a) => ItemMaybeLabel a -> ItemMaybeLabel a
+-- reverse not-nots
+simplifyItem (Not (Not x)) = simplifyItem x
+-- extract singletons
+simplifyItem (All _ [x]) = simplifyItem x
+simplifyItem (Any _ [x]) = simplifyItem x
+-- flatten parent-child and flatten siblings
+simplifyItem (All l1 xs) = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem (Any l1 xs) = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem orig = orig
+
+type ItemGroup a = Map.Map (ItemMaybeLabel a) [ItemMaybeLabel a]
+
+-- | utility for simplifyItem: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
+-- example:
+-- input:
+--        All [Any [x1, x2], Any [y1, y2], Leaf z]
+-- output:
+--        All [Any [x1, x2, y1, y2], Leaf z]
+siblingfyItem :: (Show a) => [ItemMaybeLabel a] -> [ItemMaybeLabel a]
+siblingfyItem xs =
+  let grouped =
+        Map.toList $
+        Map.fromListWith (++) [ ((anyall,lbl), ys)
+                              | x <- xs
+                              , let ((anyall,lbl),ys) = case x of
+                                                          (Any lbl ys) -> (("any", lbl),     ys)
+                                                          (All lbl ys) -> (("all", lbl),     ys)
+                                                          (Leaf    y ) -> (("leaf",mempty), [Leaf y])
+                                                          (Not     y ) -> (("not", mempty), [Not  y])
+                              ]
+      after = concat $ flip fmap grouped $ \case
+        (("any",lbl),ys) -> [Any lbl ys]
+        (("all",lbl),ys) -> [All lbl ys]
+        ((_,_)      ,ys) -> ys
+  in -- (trace $ TL.unpack $ strPrefix "siblingfyItem: before: " (pShowNoColor xs)) $
+     -- (trace $ TL.unpack $ strPrefix "siblingfyItem: during: " (pShowNoColor grouped)) $
+     -- (trace $ TL.unpack $ strPrefix "siblingfyItem: after:  " (pShowNoColor after)) $
+     after
+
+strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
+  
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.
 --   The marking comes from user input, and it "changes" at runtime,
 --   which is to say that whenever we get new input from the user we regenerate everything.

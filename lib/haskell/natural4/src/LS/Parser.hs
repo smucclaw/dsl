@@ -25,6 +25,7 @@ data MyItem lbl a =
   deriving (Eq, Show)
   deriving (Functor)
 
+-- hm, shouldn't this be a MyItem (Maybe MultiTerm) to capture scenarios where there is no "any of the following" text?
 type MyBoolStruct = MyItem MultiTerm
 
 pBoolStruct :: Parser BoolStruct

@@ -300,7 +300,12 @@ expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody l4i = id
 
 onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
-onlyTheItems l4i = AA.All (Just (AA.Pre "all of the following:")) (catMaybes $ getAndOrTree l4i <$> origrules l4i)
+onlyTheItems l4i =
+  let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i <$> origrules l4i)
+      simplified = AA.simplifyItem myitem
+  in trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
+     trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
+     simplified
 
 alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
 alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)

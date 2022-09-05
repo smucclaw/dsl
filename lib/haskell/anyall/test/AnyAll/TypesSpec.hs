@@ -14,6 +14,33 @@ markingMap payload = Map.singleton "key" (Default payload)
 
 spec :: Spec
 spec = do
+  describe "simplifyItem" $ do
+    it "should leave Leaf " $ do
+      simplifyItem (Leaf "foo")
+        `shouldBe` (Leaf "foo")
+    it "should elevate nested All children" $ do
+      simplifyItem ( All Nothing [All Nothing [ Leaf "foo1"
+                                              , Leaf "foo2"]
+                                 ,All Nothing [ Leaf "bar"
+                                              , All Nothing [Leaf "bat"] ]
+                                 ,All (Just (Pre "something")) [Leaf "baz"
+                                                               ,All (Just (Pre "something")) [Leaf "bbb"]]
+                                 ,Any (Just (Pre "something")) [Leaf "qux"]
+                                 ] )
+        `shouldBe` All Nothing [Leaf "bat"
+                               ,Leaf "bar"
+                               ,Leaf "foo2"
+                               ,Leaf "foo1"
+                               ,All (Just (Pre "something")) [Leaf "bbb"
+                                                             ,Leaf "baz"]
+                               ,Leaf "qux"]
+    it "should simplify singleton Leaf" $ do
+      simplifyItem ( All Nothing [Leaf "foo"] )
+        `shouldBe`   Leaf "foo"
+    it "should simplify not-nots" $ do
+      simplifyItem ( Not $ Not $ Leaf "not" )
+        `shouldBe`   Leaf "not"
+
   describe "labelFirst" $ do
     it "extracts the only from Pre" $ do
       labelFirst (Pre "a") `shouldBe` "a"

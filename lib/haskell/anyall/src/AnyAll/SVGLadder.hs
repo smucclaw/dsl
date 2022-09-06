@@ -60,10 +60,9 @@ data Margins = Margins
   deriving (Eq, Show)
 
 data BBox = BBox
-  { bbw                    :: Length
-  , bbh                    :: Length
-  , margins                :: Margins
-  , ports                  :: Ports
+  { dimensions :: BoxDimensions
+  , margins    :: Margins
+  , ports      :: Ports
   }
   deriving (Eq, Show)
 
@@ -90,12 +89,27 @@ boxPorts = lens ports (\x y -> x { ports = y })
 boxMargins :: Lens' BBox Margins
 boxMargins = lens margins (\x y -> x { margins = y })
 
+boxDims :: Lens' BBox BoxDimensions
+boxDims = lens dimensions (\x y -> x { dimensions = y })
+
+dimWidth :: Lens' BoxDimensions Length
+dimWidth = lens boxWidth (\x y -> x { boxWidth = y })
+
+dimHeight :: Lens' BoxDimensions Length
+dimHeight = lens boxHeight (\x y -> x { boxHeight = y })
+
 makeLenses ''Ports
 
 makeLenses ''Margins
 
 bTopMargin :: Lens' BBox Length
 bTopMargin = boxMargins . topMargin
+
+bboxWidth :: Lens' BBox Length
+bboxWidth = boxDims . dimWidth
+
+bboxHeight :: Lens' BBox Length
+bboxHeight = boxDims . dimHeight
 
 type BoxedSVG = (BBox, SVGElement)
 
@@ -109,10 +123,14 @@ defaultBBox Full  = defaultBBox'
 
 defaultBBox' :: BBox
 defaultBBox' = BBox
-  { bbw = 0
-  , bbh = 0
+  { dimensions = defaultDimensions
   , margins = defaultMargins
   , ports = defaultPorts
+  }
+
+defaultDimensions = BoxDimensions
+  { boxWidth = 0
+  , boxHeight = 0
   }
 
 defaultPorts :: Ports
@@ -139,14 +157,14 @@ portB bb = portTB (bb ^. boxPorts.bottomPort) bb
 
 portLR :: PortStyleV -> BBox -> AAVScale -> Length
 portLR PTop    bb s = bb ^. bTopMargin +                                    sbh s `div` 2
-portLR PMiddle bb s = bb ^. bTopMargin + (bbh bb - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
-portLR PBottom bb s =           (bbh bb           - bb ^. boxMargins.bottomMargin)     - sbh s  `div` 2
+portLR PMiddle bb s = bb ^. bTopMargin + (bb ^. bboxHeight - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
+portLR PBottom bb s =           (bb ^. bboxHeight           - bb ^. boxMargins.bottomMargin)     - sbh s  `div` 2
 portLR (PVoffset x) bb s = bb ^. bTopMargin + x
 
 portTB :: PortStyleH -> BBox -> AAVScale -> Length
 portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                    stbv s
-portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bbw bb - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
-portTB PRight  bb s =           (bbw bb           - bb ^. boxMargins.rightMargin)     - stbv s
+portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bb ^. bboxWidth - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
+portTB PRight  bb s =           (bb ^. bboxWidth           - bb ^. boxMargins.rightMargin)     - stbv s
 portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
 
 -- | how compact should the output be?
@@ -231,7 +249,7 @@ makeSvg' c = makeSvg
 makeSvg :: BoxedSVG -> SVGElement
 makeSvg (box, geom) =
      doctype
-  <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + bbw box + _leftMargin (margins box) + _rightMargin (margins box), Height_ <<-* 23 + bbh box + _topMargin (margins box) + _bottomMargin (margins box)]
+  <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + box ^. bboxWidth + _leftMargin (margins box) + _rightMargin (margins box), Height_ <<-* 23 + box ^. bboxHeight + _topMargin (margins box) + _bottomMargin (margins box)]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
@@ -256,9 +274,9 @@ drawItemTiny sc negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = dra
 drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
-alignV alignment maxHeight (box, el) = (adjustMargins box {bbh = maxHeight}, moveElement el)
+alignV alignment maxHeight (box, el) = (adjustMargins (box & bboxHeight .~ maxHeight), moveElement el)
   where
-    boxHeight = bbh box
+    boxHeight = box ^. bboxHeight
     alignmentPad = maxHeight - boxHeight
     adjustMargins = adjustBoxMargins alignment alignmentPad
     moveElement = alignVCalcElement alignment alignmentPad
@@ -282,9 +300,9 @@ alignVCalcElement VTop    alignmentPad = id
 alignVCalcElement VBottom alignmentPad = move (0, alignmentPad)
 
 alignH :: HAlignment -> Length -> BoxedSVG -> BoxedSVG
-alignH alignment maxWidth (bb, x) = (adjustMargins bb {bbw = maxWidth}, moveElement x)
+alignH alignment maxWidth (bb, x) = (adjustMargins (bb & boxDims.dimWidth .~ maxWidth), moveElement x)
   where
-    boxWidth = bbw bb
+    boxWidth = bb ^. bboxWidth
     alignmentPad = maxWidth - boxWidth
     adjustMargins = adjustSideMargins alignment alignmentPad
     moveElement = alignHCalcMove alignment alignmentPad
@@ -311,11 +329,11 @@ alignHCalcMove HRight alignmentPad = move (alignmentPad, 0)
 -- | if we used the diagrams package all of this would be calculated automatically for us.
 vAlign :: VAlignment -> [BoxedSVG] -> [BoxedSVG]
 vAlign alignment elems = alignV alignment mx <$> elems
-  where mx = maximum $ bbh . fst <$> elems
+  where mx = maximum $ boxHeight . dimensions . fst <$> elems
 
 hAlign :: HAlignment -> [BoxedSVG] -> [BoxedSVG]
 hAlign alignment elems = alignH alignment mx <$> elems
-  where mx = maximum $ bbw . fst <$> elems
+  where mx = maximum $ boxWidth . dimensions . fst <$> elems
 
 rowLayouter :: Scale -> BoxedSVG -> BoxedSVG -> BoxedSVG
 rowLayouter sc (bbold, old) (bbnew, new) =
@@ -331,14 +349,13 @@ rowLayouter sc (bbold, old) (bbnew, new) =
   )
   where
     templateBox = (defaultBBox sc)
-      { bbh = max (bbh bbold) (bbh bbnew)
-      , bbw = bbw bbold + lrHgap + bbw bbnew
-      }
+        & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
+        & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
     myScale = getScale sc
     lrHgap = slrh myScale
-    newBoxStart = bbw bbold + lrHgap
+    newBoxStart = bbold ^. bboxWidth + lrHgap
     connectingCurve =
-      if bbw bbold /= 0
+      if bbold ^. bboxWidth /= 0
         then svgConnector $ rowConnectorData sc bbold bbnew
         else mempty
 
@@ -348,7 +365,7 @@ data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
 rowConnectorData :: Scale -> BBox -> BBox -> Curve
 rowConnectorData sc bbold bbnew =
   Curve
-    { start = Dot {x = bbw bbold - rightMargin', y = startPortY},
+    { start = Dot {x = bbold ^. bboxWidth - rightMargin', y = startPortY},
       startGuide = Dot {x = endPortX `div` 2, y = 0},
       endGuide = Dot {x = endPortX `div` 2, y = endPortY},
       end = Dot {x = endPortX, y = endPortY}
@@ -385,12 +402,11 @@ columnLayouter sc parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
     outboundConnector = outboundCurve sc parentbbox bbold bbnew
     bbox =
       (defaultBBox sc)
-        { bbh = bbh bbold + bbh bbnew + lrVgap,
-          bbw = max (bbw bbold) (bbw bbnew)
-        }
+        & boxDims.dimHeight .~ bbold ^. bboxHeight + bbnew ^. bboxHeight + lrVgap
+        & boxDims.dimWidth .~ max (bbold ^. bboxWidth) (bbnew ^. bboxWidth)
     svg =
       old
-        <> move (0, bbh bbold + lrVgap) new
+        <> move (0, bbold ^. bboxHeight + lrVgap) new
         <> inboundConnector
         <> outboundConnector
 
@@ -409,9 +425,9 @@ inboundCurve sc parentbbox bbold bbnew =
         0
         parentPortIn
         (-leftMargin')
-        (bbh bbold + lrVgap + portL bbnew myScale)
+        (bbold ^. bboxHeight + lrVgap + portL bbnew myScale)
         (bbnew ^. boxMargins.leftMargin)
-        (bbh bbold + lrVgap + portL bbnew myScale)
+        (bbold ^. bboxHeight + lrVgap + portL bbnew myScale)
 
 outboundCurve :: Scale -> BBox -> BBox -> BBox -> SVGElement
 outboundCurve sc parentbbox bbold bbnew =
@@ -422,22 +438,22 @@ outboundCurve sc parentbbox bbold bbnew =
     myScale = getScale sc
     lrVgap = slrv myScale
     rightMargin' = srm myScale
-    startPosition = mAInt (bbw parentbbox + rightMargin') parentPortOut
+    startPosition = mAInt (parentbbox ^. bboxWidth + rightMargin') parentPortOut
     bezierCurve =
       cAInt
-        (bbw parentbbox)
+        (parentbbox ^. bboxWidth)
         parentPortOut
-        (bbw parentbbox + rightMargin')
-        (bbh bbold + lrVgap + portR bbnew myScale)
-        (bbw parentbbox - (bbnew ^. boxMargins.rightMargin))
-        (bbh bbold + lrVgap + portR bbnew myScale)
+        (parentbbox ^. bboxWidth + rightMargin')
+        (bbold ^. bboxHeight + lrVgap + portR bbnew myScale)
+        (parentbbox ^. bboxWidth - (bbnew ^. boxMargins.rightMargin))
+        (bbold ^. bboxHeight + lrVgap + portR bbnew myScale)
 
 combineOr :: Scale -> [BoxedSVG] -> BoxedSVG
 combineOr sc elems =
   ( childbbox
-      { bbw = bbw childbbox + leftMargin + rightMargin,
-        bbh = bbh childbbox - interElementGap
-      },
+    & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin + rightMargin
+    & boxDims.dimHeight .~ childbbox ^. bboxHeight - interElementGap
+  ,
     move (leftMargin, - interElementGap) children
   )
   where
@@ -445,8 +461,10 @@ combineOr sc elems =
     interElementGap = slrv myScale
     leftMargin = slm myScale
     rightMargin = srm myScale
-    childheights = interElementGap * fromIntegral (length elems - 1) + sum (bbh . fst <$> elems)
-    mybbox = (defaultBBox sc) {bbh = childheights, bbw = maximum (bbw . fst <$> elems)}
+    childheights = interElementGap * fromIntegral (length elems - 1) + sum (boxHeight . dimensions . fst <$> elems)
+    mybbox = (defaultBBox sc)
+      & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
+      & boxDims.dimHeight .~ childheights
     addElementToColumn = columnLayouter sc mybbox
     (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter elems
 
@@ -467,7 +485,7 @@ combineAnd sc elems =
     rightMargin' = srm myScale
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
-    combinedBox = childbbox { bbw = bbw childbbox + leftMargin' + rightMargin'}
+    combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin' + rightMargin'
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG
 drawPreLabelTop sc label (childBox, childSVG) =
@@ -476,10 +494,10 @@ drawPreLabelTop sc label (childBox, childSVG) =
     ,
     move (0, labelHeight) childSVG <> svgLabel)
   where
-    labeledBox = childBox { bbh = bbh childBox + labelHeight }
+    labeledBox = childBox & boxDims.dimHeight .~ childBox ^. bboxHeight + labelHeight
     labelHeight = stm (getScale sc)
     lbox = labelBox sc "hanging" label
-    (_,svgLabel) = alignH HCenter (bbw labeledBox) lbox
+    (_,svgLabel) = alignH HCenter (labeledBox ^. bboxWidth) lbox
 
 drawPrePostLabelTopBottom :: Scale -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
 drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
@@ -487,14 +505,14 @@ drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
       & boxMargins.topMargin %~ (+ labelHeight)
       & boxMargins.bottomMargin %~ (+ labelHeight)
     ,
-    move (0, labelHeight) childSVG <> svgPreLabel <>  move (0, bbh childBox + 2 * labelHeight) svgPostLabel)
+    move (0, labelHeight) childSVG <> svgPreLabel <>  move (0, childBox ^. bboxHeight + 2 * labelHeight) svgPostLabel)
   where
-    labeledBox = childBox { bbh = bbh childBox + 2 * labelHeight }
+    labeledBox = childBox  & boxDims.dimHeight .~  childBox ^. bboxHeight + 2 * labelHeight
     labelHeight = stm (getScale sc)
     prelbox = labelBox sc "hanging" preTxt
-    (_,svgPreLabel) = alignH HCenter (bbw labeledBox) prelbox
+    (_,svgPreLabel) = alignH HCenter (labeledBox ^. bboxWidth) prelbox
     postlbox = labelBox sc "ideographic" postTxt
-    (_,svgPostLabel) = alignH HCenter (bbw labeledBox) postlbox
+    (_,svgPostLabel) = alignH HCenter (labeledBox ^. bboxWidth) postlbox
 
 decorateWithLabel :: Scale -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
 decorateWithLabel Tiny _ childBox = childBox
@@ -621,21 +639,25 @@ deriveBoxSize caption = do
 
 labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
 labelBox sc baseline mytext =
-  (,)
-  (defaultBBox sc) { bbw = boxWidth, bbh = boxHeight }
-  boxContent
+  ( (defaultBBox sc)
+      & boxDims . dimWidth .~ boxWidth
+      & boxDims . dimHeight .~ boxHeight,
+    boxContent
+  )
   where
-    boxHeight        = sbh (getScale sc)
-    defBoxWidth      = sbw (getScale sc)
-    boxWidth         = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxContent = text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
+    boxHeight = sbh (getScale sc)
+    defBoxWidth = sbw (getScale sc)
+    boxWidth = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
+    boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
 
 labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
 labelBoxR baseline mytext = do
   sc <- asks myScale
   BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize mytext
   return (
-    (defaultBBox sc) { bbw = boxWidth, bbh = boxHeight }
+    (defaultBBox sc)
+    & boxDims.dimWidth .~  boxWidth
+    & boxDims.dimHeight .~ boxHeight
     ,
     text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
@@ -646,13 +668,16 @@ drawLeafR caption = do
   BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
   boxCap <- drawBoxCapR caption
-  return $
-    (,)
-      (defaultBBox sc) {bbw = boxWidth, bbh = boxHeight}
-      ( rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
+  return
+    (
+      (defaultBBox sc)
+        & boxDims.dimWidth .~  boxWidth
+        & boxDims.dimHeight .~ boxHeight
+    ,
+      rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
           <> boxContent
           <> boxCap
-      )
+    )
 
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =

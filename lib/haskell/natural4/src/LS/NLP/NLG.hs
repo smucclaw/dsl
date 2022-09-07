@@ -536,6 +536,11 @@ bsp2gf env bsp = case bsp of
 -- | Takes the main action, a list of modifiers, and combines them into one Expr
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
 combineActionMods (_, expr) [] = expr
+combineActionMods ("CN",noun) (("RS",mod):rest) = combineActionMods ("CN", gf resultCN) rest
+  where
+    -- cnrs
+    resultCN :: GCN
+    resultCN = GRelCN (fg noun) (fg mod)
 combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS

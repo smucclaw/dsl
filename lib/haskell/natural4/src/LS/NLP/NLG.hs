@@ -298,16 +298,19 @@ toMarkdown env rl = do
         -- putStrLn "----"
         -- putStrLn $ showExpr king_may_sing
         -- putStrLn "----"
-        return (
-          Text.pack linText
-          )
         -- return (
-        --   Text.pack (
-        --     linText ++ "\n" ++ linTree
-        --     )
+        --   Text.pack linText
         --   )
-      _ ->
-        return (Text.pack $ error "error linearising rule")
+        return (
+          Text.pack (
+            linText ++ "\n" ++ linTree
+            )
+          )
+      _ -> do
+        statement <- nlg env rl
+        putStrLn ("rule was not linearised, but regular NLG returns " ++ Text.unpack statement)
+        return mempty
+        -- return (Text.pack $ error "error linearising rule")
 
 toHTML :: Text.Text -> String
 toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
@@ -1374,10 +1377,11 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
-    -- GaddMark (Gmark_ subj) uds -> do
-    --   s <- sFromUDS uds
-    --   GSSubjS s subj
-    -- addMark (mark_ if_Subj) (root_nsubj_cop (rootN_ (DetCN aSg_Det (AdjCN (PositA notifiable_A) (UseN (CompoundN data_N breach_N))))) (nsubj_ (UsePron it_Pron)) be_cop)
+    -- GaddMark (Gmark_ subj) uds -> sFromUDS uds
+    GaddMark (Gmark_ subj)(Groot_nsubj_cop root (Gnsubj_ np) _) -> do
+      s <- predVPS np <$> root2vps root
+      GMkVPS t p vp <- (root2vps root)
+      pure $ GUseCl t p $ GGenericCl $ GUseComp $ GCompAdv $ GSubjS subj s
 
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
                 Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp

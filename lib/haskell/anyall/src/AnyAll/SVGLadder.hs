@@ -246,10 +246,16 @@ infix 4 <<-*
 makeSvg' :: AAVConfig -> BoxedSVG -> SVGElement
 makeSvg' c = makeSvg
 
+mysteryWidth :: BBox -> Length
+mysteryWidth box = box ^. bboxWidth + box ^. boxMargins.leftMargin + box ^. boxMargins.rightMargin
+
+mysteryHeight :: BBox -> Length
+mysteryHeight box = box ^. bboxHeight + box ^. boxMargins.topMargin + box ^. boxMargins.bottomMargin
+
 makeSvg :: BoxedSVG -> SVGElement
 makeSvg (box, geom) =
      doctype
-  <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + box ^. bboxWidth + _leftMargin (margins box) + _rightMargin (margins box), Height_ <<-* 23 + box ^. bboxHeight + _topMargin (margins box) + _bottomMargin (margins box)]
+  <> with (svg11_ (move (23,23) geom)) [Version_ <<- "1.1", Width_ <<-* 23 + mysteryWidth box, Height_ <<-* 23 + mysteryHeight box]
 
 data LineHeight = NoLine | HalfLine | FullLine
   deriving (Eq, Show)
@@ -269,7 +275,7 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m
+drawItemTiny sc negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc)
 drawItemTiny sc negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny sc (not negContext) (head childqs)
 drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
 
@@ -518,7 +524,7 @@ decorateWithLabel :: Scale -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
 decorateWithLabel Tiny _ childBox = childBox
 decorateWithLabel _ Nothing childBox = childBox
 decorateWithLabel sc (Just (Pre txt)) childBox = drawPreLabelTop sc txt childBox
-decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox =  drawPrePostLabelTopBottom sc preTxt postTxt childBox
+decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox = drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
 decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
 decorateWithLabelR Nothing childBox = return childBox
@@ -536,7 +542,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
     Simply txt -> runReader (drawLeafR txt) contextR
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
-    contextR = DrawConfig sc negContext m
+    contextR = DrawConfig sc negContext m (defaultBBox sc)
     rawChildren = drawItemFull sc negContext <$> childqs
 
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
@@ -623,7 +629,8 @@ drawBoxContent _ mytext textFill BoxDimensions{boxWidth=boxWidth, boxHeight=boxH
 data DrawConfig = DrawConfig{
     myScale :: Scale,
     negContext :: Bool,
-    markingR :: Default Bool
+    markingR :: Default Bool,
+    defaultBox :: BBox
   }
 
 type DrawConfigM = Reader DrawConfig
@@ -652,27 +659,23 @@ labelBox sc baseline mytext =
 
 labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
 labelBoxR baseline mytext = do
-  sc <- asks myScale
-  BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize mytext
+  dbox <- asks defaultBox
+  dims@BoxDimensions{boxWidth=boxWidth} <- deriveBoxSize mytext
   return (
-    (defaultBBox sc)
-    & boxDims.dimWidth .~  boxWidth
-    & boxDims.dimHeight .~ boxHeight
+    dbox & boxDims .~ dims
     ,
     text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
 drawLeafR :: T.Text -> DrawConfigM BoxedSVG
 drawLeafR caption = do
   sc <- asks myScale
+  dbox <- asks defaultBox
   (boxStroke, boxFill) <- getBoxColorsR
-  BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
+  dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
   boxCap <- drawBoxCapR caption
   return
-    (
-      (defaultBBox sc)
-        & boxDims.dimWidth .~  boxWidth
-        & boxDims.dimHeight .~ boxHeight
+    (dbox & boxDims .~ dims
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
           <> boxContent

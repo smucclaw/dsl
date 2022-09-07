@@ -359,7 +359,7 @@ spec = do
       startBox = (defaultBBox (cscale c), mempty::SVGElement)
       alignedBox1:alignedBox2:_ = hAlign HCenter elems
       childheights = lrVgap * fromIntegral (length elems - 1) + sum (boxHeight . dimensions . fst <$> elems)
-      mybbox = (defaultBBox (cscale c)) & bboxWidth .~ maximum ( boxWidth . dimensions . fst <$> elems ) & bboxHeight .~ childheights
+      mybbox = defaultBBox (cscale c) & bboxWidth .~ maximum ( boxWidth . dimensions . fst <$> elems ) & bboxHeight .~ childheights
       -- Have to use vlayout 2 times to feed start box
       tempBox = columnLayouter (cscale c) mybbox startBox alignedBox1
       alignBox = columnLayouter (cscale c) mybbox tempBox alignedBox2
@@ -453,17 +453,17 @@ spec = do
       mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True  mark
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True  mark
-        shortBoxLength = (fst shortLeaf) ^. bboxWidth
-        longBoxLength = (fst longLeaf) ^. bboxWidth
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full)
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full)
+        shortBoxLength = shortLeaf ^. _1 . bboxWidth
+        longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark
-        shortBoxLength = (fst shortLeaf) ^. bboxWidth
-        longBoxLength = (fst longLeaf) ^. bboxWidth
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny)
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny)
+        shortBoxLength = shortLeaf ^. _1 . bboxWidth
+        longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)
 
   describe "getColors Box" $ do

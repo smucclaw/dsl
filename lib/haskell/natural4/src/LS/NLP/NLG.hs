@@ -541,6 +541,10 @@ combineActionMods ("CN",noun) (("RS",mod):rest) = combineActionMods ("CN", gf re
     -- cnrs
     resultCN :: GCN
     resultCN = GRelCN (fg noun) (fg mod)
+combineActionMods ("CN", noun) (("Adv",mod):rest) = combineActionMods ("CN", gf resultCN) rest
+  where
+    resultCN :: GCN
+    resultCN = GAdvCN (fg noun) (fg mod)
 combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS

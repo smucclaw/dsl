@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.RelationalPredicates where
 
@@ -7,8 +8,10 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import qualified AnyAll as AA
-import Data.List.NonEmpty ( toList, nonEmpty )
+import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
+import qualified Data.Foldable as DF
 import Data.Maybe (fromMaybe, catMaybes)
+import Data.Semigroup (sconcat)
 
 import LS.Types
 import LS.Tokens
@@ -48,6 +51,21 @@ rpLeafVal = debugName "rpLeafVal" $ do
   leafVal <- pRelationalPredicate
   myTraceM $ "rpLeafVal returning " ++ show leafVal
   return $ AA.Leaf leafVal
+
+-- | in the body of a HornClause, any elements which are defined with a type signature are considered local/private existential variables internal to the body.
+-- we partition the body of the Horn Clause into such existential variables, vs the rest of the logic.
+partitionExistentials :: HornClause2 -> (BoolStructR, BoolStructR)
+partitionExistentials c = ( AA.aaFilter (\case { AA.Leaf (RPParamText x) ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
+                          , AA.aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
+
+-- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
+bsr2pt :: BoolStructR -> ParamText
+bsr2pt bsr = sconcat $ fromList [ pt | RPParamText pt <- DF.toList bsr ]
+
+-- At this time, none of the preconditions should be found in the head, so we ignore that.
+hc2preds :: HornClause2 -> BoolStructR
+hc2preds (HC2 _headRP Nothing) = AA.Leaf (RPMT ["TRUE"])
+hc2preds (HC2 _headRP (Just bsr)) = bsr
 
 aaLeaves :: AA.ItemMaybeLabel RelationalPredicate -> [MultiTerm]
 aaLeaves = aaLeavesFilter (const True)
@@ -311,7 +329,15 @@ slRelPred = debugName "slRelPred" $ do
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
     <|> try ( debugName "nested simpleHorn"  nestedHorn )
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
+    <|> try ( debugName "RPParamText (with typesig)" rpParamTextWithTypesig )
     <|> try ( debugName "RPMT"          rpMT )
+
+rpParamTextWithTypesig :: SLParser RelationalPredicate
+rpParamTextWithTypesig = do
+  pt <- slParamText
+  if hasTypeSig pt
+    then return $ RPParamText pt
+    else empty
 
 -- we'll return an RPMT, but write a nested simple hornlike rule to the Parser writer monad
 nestedHorn :: SLParser RelationalPredicate
@@ -339,6 +365,7 @@ nestedHorn = do
   
 rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
+
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
 

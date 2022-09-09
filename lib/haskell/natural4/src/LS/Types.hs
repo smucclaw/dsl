@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
@@ -247,8 +248,7 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText
---            , given    :: [ParamText]        -- a:Applicant, p:Person, l:Lender -- the signature of the input
+            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender -- the signature of the input
         --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
@@ -337,7 +337,7 @@ instance PrependHead RelationalPredicate where
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
-                         | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
+                         | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
                                                                        --          AND

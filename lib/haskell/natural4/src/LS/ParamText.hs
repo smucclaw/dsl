@@ -89,6 +89,11 @@ pTreeSomeWords = debugName "pTreeSomeWords" $ do
 pt2typesigs :: ParamText -> [TypeSig]
 pt2typesigs pt = mapMaybe snd (toList pt)
 
+hasTypeSig :: ParamText -> Bool
+hasTypeSig ((_,Nothing) :| _) = False
+hasTypeSig ((_,_      ) :| _) = True
+    
+
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
   _           <- pToken TypeSeparator <|> pToken Is

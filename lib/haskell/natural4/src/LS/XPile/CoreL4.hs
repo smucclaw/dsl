@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase #-}
+
 module LS.XPile.CoreL4 where
 
 import Prettyprinter
@@ -185,12 +187,19 @@ directToCore r@Hornlike{keyword}
   | keyword /= Define =
       vsep [
       case hBod of
-        Just _ -> vsep
-                  [ "rule" <+> angles rname
-                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)            (given r)
-                  ,                                "if"   <+> cStyle (RP1 <$> hc2preds c)
-                  ,                                "then" <+> pretty (RP1  $  hHead c)
-                  , Prettyprinter.line]
+        Just _ ->
+          let (bodyE, bodyNonE) = partitionExistentials c
+          in
+          vsep
+          [ "rule" <+> angles rname
+                                                        -- convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
+          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> Just ( bsr2pt bodyE ))
+          ,                                "if"   <+> cStyle (RP1 <$> bodyNonE )
+          ,                                "then" <+> pretty (RP1  $  hHead c)
+          , Prettyprinter.line
+          , commentWith "#" (T.lines (T.pack (show $ given r)))
+          , commentWith "#" (T.lines (T.pack (show $ hc2preds c)))
+          ]
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
       , (HC2 _headRP hBod) <- [c]
@@ -198,7 +207,6 @@ directToCore r@Hornlike{keyword}
       , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
-
 -- fact <rulename> multiterm
 
 directToCore r@TypeDecl{} = ""

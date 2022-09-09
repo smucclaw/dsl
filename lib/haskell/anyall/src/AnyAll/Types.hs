@@ -87,6 +87,18 @@ alwaysLabeled (All (Just lbl) xs) = All lbl (alwaysLabeled <$> xs)
 alwaysLabeled (Leaf x)            = Leaf x
 alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
+aaExclude :: (Eq lbl, Eq a) => a -> Item lbl a -> Item lbl a
+aaExclude omit x = aaFilter (\case
+                                Leaf x -> x /= omit
+                                _      -> True
+                            ) x
+
+aaFilter :: (Item lbl a -> Bool) -> Item lbl a -> Item lbl a
+aaFilter f (Any lbl xs) = Any lbl (filter f (aaFilter f <$> xs))
+aaFilter f (All lbl xs) = All lbl (filter f (aaFilter f <$> xs))
+aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
+
+
 instance Semigroup t => Semigroup (Label t) where
   (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
   (<>)  (Pre pr1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) po2

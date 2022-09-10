@@ -192,13 +192,12 @@ directToCore r@Hornlike{keyword}
           in
           vsep
           [ "rule" <+> angles rname
-                                                        -- convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
           , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> Just ( bsr2pt bodyE ))
           ,                                "if"   <+> cStyle (RP1 <$> bodyNonE )
           ,                                "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
-          , commentWith "#" (T.lines (T.pack (show $ given r)))
-          , commentWith "#" (T.lines (T.pack (show $ hc2preds c)))
+          , commentShow "#" $ given r
+          , commentShow "#" $ hc2preds c
           ]
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
@@ -229,9 +228,11 @@ prettyDecls sctabs =
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
-  vsep
+  vsep $ concat
   [ -- global symtab as facts
-    "fact" <+> angles (snake_case scopename) <+> viaShow symtab'
+    [ "fact" <+> angles (snake_case scopename)
+    , commentShow "#" symtab'
+    ]
   | (scopename , symtab') <- Map.toList sctabs
   , (mt, (symtype,_vals)) <- Map.toList symtab'
   ]
@@ -263,13 +264,15 @@ prettyBoilerplate ct@(CT ch) =
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
 --     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
 
+commentShow c x = commentWith c (T.lines (T.pack (show x)))
+
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
 prettyDefnCs rname cs = 
   [
     if null myterms
     then
       "fact" <+> angles rname <> Prettyprinter.line <>
-      commentWith "#" (T.lines (T.pack (show cl))) <>
+      commentShow "#" cl <>
       pretty (RP1 clHead)
     else
       "defn" <+>
@@ -285,7 +288,7 @@ prettyDefnCs rname cs =
       encloseSep "" "" " -> " ([ "\\" <> idx <+> colon <+> typ
                                | (typ,idx) <- zip intypes x123
                                ] ++ [ pretty outstr ])
-      <> Prettyprinter.line <> commentWith "#" (T.lines (T.pack (show cl)))
+      <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
   | cl <- cs
   , let clHead = hHead cl
@@ -332,7 +335,7 @@ prettyClasses ct@(CT ch) =
       -- # Enumeration of members of Something
       -- decl Enum1: Something
       -- decl Enum2: Something
-  , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentWith "#" ("ctype:"    : T.lines (T.pack (show ctype)))
+  , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentShow "# ctype:" ctype
   , vsep [ "decl" <+> pretty member <> ":" <+> pretty className
          | (Just (InlineEnum TOne (( nelist, _ ) :| _)), _) <- [ctype]
          , member <- NE.toList nelist
@@ -342,7 +345,7 @@ prettyClasses ct@(CT ch) =
     -- the correct representation would be something like
     -- decl Enum1 : Someclass -> Attr1 -> Boolean
     -- [TODO] however, we do not have a sensible treatment of recursive class declarations, so we need to think about that.
-  , if children == CT Map.empty then Prettyprinter.emptyDoc else commentWith "#" ("children:" : T.lines (T.pack (show children)))
+  , if children == CT Map.empty then Prettyprinter.emptyDoc else commentShow "# children:" children
   , vsep [ "decl" <+> snake_inner attrname <>
            case attrType children attrname of
              -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool

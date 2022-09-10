@@ -61,6 +61,7 @@ partitionExistentials c = ( AA.aaFilter (\case { AA.Leaf (RPParamText x) ->     
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> ParamText
 bsr2pt bsr = sconcat $ fromList [ pt | RPParamText pt <- DF.toList bsr ]
+-- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
 hc2preds :: HornClause2 -> BoolStructR

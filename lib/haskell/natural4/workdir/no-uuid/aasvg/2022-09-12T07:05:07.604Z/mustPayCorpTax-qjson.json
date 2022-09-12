@@ -1,0 +1,112 @@
+[
+    {
+        "shouldView": "View",
+        "prePost": null,
+        "mark": {
+            "getDefault": {
+                "Left": null
+            }
+        },
+        "andOr": {
+            "tag": "And"
+        }
+    },
+    [
+        [
+            {
+                "shouldView": "Ask",
+                "prePost": null,
+                "mark": {
+                    "getDefault": {
+                        "Left": null
+                    }
+                },
+                "andOr": {
+                    "contents": "x",
+                    "tag": "Simply"
+                }
+            },
+            []
+        ],
+        [
+            {
+                "shouldView": "Ask",
+                "prePost": null,
+                "mark": {
+                    "getDefault": {
+                        "Left": null
+                    }
+                },
+                "andOr": {
+                    "contents": "owner p c",
+                    "tag": "Simply"
+                }
+            },
+            []
+        ],
+        [
+            {
+                "shouldView": "Ask",
+                "prePost": null,
+                "mark": {
+                    "getDefault": {
+                        "Left": null
+                    }
+                },
+                "andOr": {
+                    "contents": "profitable c",
+                    "tag": "Simply"
+                }
+            },
+            []
+        ],
+        [
+            {
+                "shouldView": "Ask",
+                "prePost": null,
+                "mark": {
+                    "getDefault": {
+                        "Left": null
+                    }
+                },
+                "andOr": {
+                    "contents": "hasHQ c x",
+                    "tag": "Simply"
+                }
+            },
+            []
+        ],
+        [
+            {
+                "shouldView": "View",
+                "prePost": null,
+                "mark": {
+                    "getDefault": {
+                        "Left": null
+                    }
+                },
+                "andOr": {
+                    "tag": "Neg"
+                }
+            },
+            [
+                [
+                    {
+                        "shouldView": "Ask",
+                        "prePost": null,
+                        "mark": {
+                            "getDefault": {
+                                "Left": null
+                            }
+                        },
+                        "andOr": {
+                            "contents": "isTaxHaven x",
+                            "tag": "Simply"
+                        }
+                    },
+                    []
+                ]
+            ]
+        ]
+    ]
+]

@@ -1,0 +1,34 @@
+{
+    "contents": [
+        {
+            "contents": "all of the following",
+            "tag": "Pre"
+        },
+        [
+            {
+                "contents": "x",
+                "tag": "Leaf"
+            },
+            {
+                "contents": "owner p c",
+                "tag": "Leaf"
+            },
+            {
+                "contents": "profitable c",
+                "tag": "Leaf"
+            },
+            {
+                "contents": "hasHQ c x",
+                "tag": "Leaf"
+            },
+            {
+                "contents": {
+                    "contents": "isTaxHaven x",
+                    "tag": "Leaf"
+                },
+                "tag": "Not"
+            }
+        ]
+    ],
+    "tag": "All"
+}

@@ -1,0 +1,83 @@
+
+#
+# outputted directly from XPile/CoreL4.hs
+#
+
+
+
+-- classes
+
+class City
+
+
+# children: CT (fromList [("Name",((Just (SimpleType TOne "String"),[]),CT (fromList []))),("isTaxhaven",((Just (SimpleType TOne "Boolean"),[]),CT (fromList [])))])
+
+decl Name: City -> String -> Boolean
+decl isTaxhaven: City -> Boolean
+
+class Corporation
+
+
+# children: CT (fromList [("Owner",((Just (SimpleType TOne "Person"),[]),CT (fromList []))),("hasHQ",((Just (SimpleType TOne "City"),[]),CT (fromList []))),("profitable",((Just (SimpleType TOne "Boolean"),[]),CT (fromList [])))])
+
+decl Owner: Corporation -> Person -> Boolean
+decl hasHQ: Corporation -> City -> Boolean
+decl profitable: Corporation -> Boolean
+
+class Person
+
+
+# children: CT (fromList [("Name",((Just (SimpleType TOne "String"),[]),CT (fromList [])))])
+
+decl Name: Person -> String -> Boolean
+
+
+
+-- boilerplate
+
+
+
+
+-- decls
+
+-- mustPayCorpTax
+decl c: Corporation
+-- mustPayCorpTax
+decl mustPayCorpTax_p_c
+-- mustPayCorpTax
+decl p: Person
+
+
+-- facts
+
+fact <mustPayCorpTax>
+# fromList [(["c"],((Just (SimpleType TOne "Corporation"),[]),[])),(["mustPayCorpTax","p","c"],((Nothing,[]),[HC2 {hHead = RPMT ["mustPayCorpTax","p","c"], hBody = Just (All Nothing [Leaf (RPParamText (("x" :| [],Just (SimpleType TOne "City")) :| [])),Leaf (RPMT ["owner","p","c"]),Leaf (RPMT ["profitable","c"]),Leaf (RPMT ["hasHQ","c","x"]),Not (Leaf (RPMT ["isTaxHaven","x"]))])}])),(["p"],((Just (SimpleType TOne "Person"),[]),[]))]
+
+fact <mustPayCorpTax>
+# fromList [(["c"],((Just (SimpleType TOne "Corporation"),[]),[])),(["mustPayCorpTax","p","c"],((Nothing,[]),[HC2 {hHead = RPMT ["mustPayCorpTax","p","c"], hBody = Just (All Nothing [Leaf (RPParamText (("x" :| [],Just (SimpleType TOne "City")) :| [])),Leaf (RPMT ["owner","p","c"]),Leaf (RPMT ["profitable","c"]),Leaf (RPMT ["hasHQ","c","x"]),Not (Leaf (RPMT ["isTaxHaven","x"]))])}])),(["p"],((Just (SimpleType TOne "Person"),[]),[]))]
+
+fact <mustPayCorpTax>
+# fromList [(["c"],((Just (SimpleType TOne "Corporation"),[]),[])),(["mustPayCorpTax","p","c"],((Nothing,[]),[HC2 {hHead = RPMT ["mustPayCorpTax","p","c"], hBody = Just (All Nothing [Leaf (RPParamText (("x" :| [],Just (SimpleType TOne "City")) :| [])),Leaf (RPMT ["owner","p","c"]),Leaf (RPMT ["profitable","c"]),Leaf (RPMT ["hasHQ","c","x"]),Not (Leaf (RPMT ["isTaxHaven","x"]))])}])),(["p"],((Just (SimpleType TOne "Person"),[]),[]))]
+
+
+
+-- defn from decision rules
+
+
+
+# directToCore
+
+
+rule <mustPayCorpTax>
+for p: Person, c: Corporation, x: City
+if (owner p c && profitable c && hasHQ c x && not isTaxHaven x)
+then mustPayCorpTax p c
+
+
+# Just (("p" :| [],Just (SimpleType TOne "Person")) :| [("c" :| [],Just (SimpleType TOne "Corporation"))])
+
+# All Nothing [Leaf (RPParamText (("x" :| [],Just (SimpleType TOne "City")) :| [])),Leaf (RPMT ["owner","p","c"]),Leaf (RPMT ["profitable","c"]),Leaf (RPMT ["hasHQ","c","x"]),Not (Leaf (RPMT ["isTaxHaven","x"]))]
+
+
+
+

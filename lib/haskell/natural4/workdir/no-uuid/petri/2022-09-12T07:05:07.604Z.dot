@@ -1,0 +1,14 @@
+digraph {
+    graph [compound=true];
+    subgraph breachfulfilled {
+        graph [rank=same];
+        0 [label=BREACH
+          ,color=brown
+          ,comment=IsInfra];
+        1 [label=FULFILLED
+          ,color=green
+          ,comment=IsInfra];
+    }
+    0 -> 1 [comment="this will render as invisible, but will be on same rank"
+           ,style=invis];
+}

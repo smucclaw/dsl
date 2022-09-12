@@ -698,9 +698,9 @@ finishSL p = p |<$ undeepers
 
 -- | Like `someUndeepers`, but only consumes up to n UnDeepers
 upToNUndeepers :: Int -> SLParser ()
-upToNUndeepers 0 = debugName "upToNUndeepers/done" $ return ()
-upToNUndeepers n = debugName "upToNUndeepers/undeeper" $ do
-  slUnDeeper *> upToNUndeepers (n-1) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
+upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ return ()
+upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") $ do
+  (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
 
 
 -- consume all the UnDeepers that have been stacked off to the right

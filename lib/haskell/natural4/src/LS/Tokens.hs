@@ -115,7 +115,7 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = do
+pSrcRef = debugName "pSrcRef" $ do
   rlabel' <- optional pRuleLabel
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -260,6 +260,16 @@ pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrTex
 slMultiTerm :: SLParser [Text.Text]
 slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
+
+-- | sameline: foo foo bar bar
+--   nextline: foo foo
+--             bar bar
+-- if we wanted to try to be super clever we could remain in the SL context the whole time and limit the <|> bit to the dnl newline vs the ) ( vs the samedepth
+
+sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
+sameOrNextLine pa pb =
+  try (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
+  <|> (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
 
 
 pNumOrText :: Parser Text.Text
@@ -424,7 +434,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 -- * the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
 (+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- ^ start with an initial count of expected UnDeepers
 ($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ start using plain plain
-($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ start using plain fancy
+($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ start using fancy fancy
 
 (>>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ same as $>| but optionally indented
 (>*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ same as $*| but optionally indented

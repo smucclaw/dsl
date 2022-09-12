@@ -1630,6 +1630,20 @@ parserTests nlgEnv runConfig_ = do
         }
         ]
 
+
+-- sl style
+    describe "sameOrNextLine" $ do
+      let potatoParser = parseOther (sameOrNextLine
+                                      (flip const $*| liftSL (pToken Declare) |*| (someSL (liftSL pOtherVal)))
+                                      (flip const $*| liftSL (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
+          potatoExpect = ( ( [ "Potato" ]
+                           , [ "genus", "species" ] ), [] )
+                         
+      filetest "sameornext-1-same"  "a b on same line"  potatoParser potatoExpect
+      filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
+      filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
+      filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
+
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
 srcrow', srccol' :: Int -> Rule -> Rule

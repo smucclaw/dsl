@@ -390,10 +390,10 @@ pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
   debugName "pRulesOnly: some" $
     some (debugName "trying semicolon *> pRule" $
-          try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
+          try (debugName "semicolon" semicolonBetweenRules *> optional dnl *> manyIndentation pRule <* optional dnl)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (manyIndentation (pToken Semicolon))
+semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
 
 pRules = pRulesOnly
 
@@ -531,7 +531,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
 pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  (relPred, _whenpart) <- someIndentation relPredSamelineWhen
+  (relPred, _whenpart) <- someIndentation rpSameNextLineWhen
   return $ ExpRP relPred
 
 -- | we want to parse two syntaxes:

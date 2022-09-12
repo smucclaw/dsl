@@ -10,7 +10,7 @@ import Text.Parser.Permutation
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
 import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe, catMaybes)
+import Data.Maybe (fromMaybe, catMaybes, isJust)
 import Data.Semigroup (sconcat)
 
 import LS.Types
@@ -274,10 +274,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     --        X IS Y WHEN Z IS Q -- samelinewhen
     someStructure dKeyword = debugName "pHornlike/someStructure" $ do
       keyword <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
-      relwhens <- try (debugName "some sameline whens" $
-                       someIndentation (sameDepth relPredSamelineWhen))
-                  <|> debugName "single nextline WHEN"
-                  (pure <$> manyIndentation relPredNextlineWhen)
+      relwhens <- (if keyword == Nothing then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
       return (keyword
              , inferRuleName (fst . head $ relwhens)
              , [HC2 relPred whenpart
@@ -293,21 +290,13 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPConstraint  mt _ _) = mt
     inferRuleName (RPBoolStructR mt _ _) = mt
 
+rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
+rpSameNextLineWhen = sameOrNextLine slRelPred (fmap join <$> liftSL $ optional whenCase)
+
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
   slRelPred |<$ undeepers
 
--- [TODO] unify these two if possible
-relPredNextlineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-relPredNextlineWhen = debugName "relPredNextlineWhen" $ do
-  (x,y) <- debugName "pRelPred , whenCase" ((,) <$> pRelPred <*> optional whenCase)
-  return (x, join y)
-
-relPredSamelineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-relPredSamelineWhen = debugName "relPredSamelineWhen" $
-                      (,) $*| slRelPred
-                      |>< (join <$> (debugName "optional whenCase -- but we should still consume GoDeepers before giving up" $
-                                     optional whenCase))
 
 -- foo IS bar                   Nothing                                becomes a fact
 -- foo IS bar WHEN baz          Just Leaf baz                          becomes a body to the horn clause

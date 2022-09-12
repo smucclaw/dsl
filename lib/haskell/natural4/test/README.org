@@ -1596,7 +1596,40 @@ a scenario would look like:
 ***** HasRelation
 
 
+*** sameOrNextLine -s same
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-1-same.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
+| DECLARE | Potato | HAS | genus | species |
+
+*** sameOrNextLine - next
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-2-next.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |         |
+| HAS     | genus  | species |
+
+*** sameOrNextLine - left a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-3-dnl.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|     | DECLARE | Potato  |   |
+| HAS | genus   | species |   |
+
+*** sameOrNextLine - next right a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-4-right.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | DECLARE | Potato |       |         |
+|   |         | HAS    | genus | species |
 ** Keywords
 
 *** DECIDE

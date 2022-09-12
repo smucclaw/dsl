@@ -45,9 +45,12 @@ sfl4ToCorel4 rs =
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                , "\n\n-- classes\n",                   show $ prettyClasses cTable
                , "\n\n-- boilerplate\n",               show $ prettyBoilerplate cTable
-               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
-               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
-               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
+
+-- honestly i think we can just live without these
+--               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
+--               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
+--               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
+
                , "\n# directToCore\n\n"
                ] ++
                [ show (directToCore r)
@@ -114,7 +117,8 @@ sfl4ToCorel4Rule hornlike@Hornlike
             } =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            given2classdecls given ++ [rule]
+            given2classdecls given ++
+            [rule]
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement SRng]
     given2classdecls Nothing = []

@@ -445,11 +445,12 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
+    parseHas = concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
     declareLimb = do
-      (name,super) <- manyIndentation (pKeyValues)
+      (name,super) <- manyIndentation (pKeyValuesAka)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth declareLimb))
+      has   <- (parseHas |<$ undeepers)
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums

@@ -149,24 +149,6 @@ defaultMargins = Margins
   , _bottomMargin = 0
   }
 
-portL, portT, portR, portB :: BBox -> AAVScale -> Length
-portL bb = portLR (bb ^. boxPorts.leftPort) bb
-portR bb = portLR (bb ^. boxPorts.rightPort) bb
-portT bb = portTB (bb ^. boxPorts.topPort) bb
-portB bb = portTB (bb ^. boxPorts.bottomPort) bb
-
-portLR :: PortStyleV -> BBox -> AAVScale -> Length
-portLR PTop    bb s = bb ^. bTopMargin +                                    sbh s `div` 2
-portLR PMiddle bb s = bb ^. bTopMargin + (bb ^. bboxHeight - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
-portLR PBottom bb s =           (bb ^. bboxHeight           - bb ^. boxMargins.bottomMargin)     - sbh s  `div` 2
-portLR (PVoffset x) bb s = bb ^. bTopMargin + x
-
-portTB :: PortStyleH -> BBox -> AAVScale -> Length
-portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                    stbv s
-portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bb ^. bboxWidth - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
-portTB PRight  bb s =           (bb ^. bboxWidth           - bb ^. boxMargins.rightMargin)     - stbv s
-portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
-
 -- | how compact should the output be?
 data Scale = Tiny  -- @ ---o---
            | Small -- @ --- [1.1] ---
@@ -195,23 +177,55 @@ defaultAAVConfig = AAVConfig
   , cdebug = False
   }
 
+data GapDimensions = GapDimensions
+  { _gapVertical :: Length
+  , _gapHorizontal :: Length
+  }
+  deriving (Eq, Show)
+
+makeLenses ''GapDimensions
+
 data AAVScale = AAVScale
-  { sbw :: Length  -- ^ box width
-  , sbh :: Length -- ^ box height
-  , slm :: Length  -- ^ left margin
-  , stm :: Length  -- ^ top margin
-  , srm :: Length  -- ^ right margin
-  , sbm :: Length  -- ^ bottom margin
-  , slrv :: Length  -- ^ LR: vertical   gap between elements
-  , slrh :: Length  -- ^ LR: horizontal gap between elements
-  , stbv :: Length  -- ^ TB: vertical   gap between elements
-  , stbh :: Length  -- ^ TB: horizontal gap between elements
+  { scaleDims :: BoxDimensions
+  , scaleMargins :: Margins
+  , horizontalLayout :: GapDimensions
+  , verticalLayout :: GapDimensions
   } deriving (Show, Eq)
 
-getScale :: Scale -> AAVScale -- sbw sbh slm stm srm sbm slrv slrh stbv stbh
-getScale Full      = AAVScale    120  44  22  20  22  20  10   10    10   10
-getScale Small     = AAVScale     44  30  11  14  11  14   7    7     7    7
-getScale Tiny      = AAVScale      8   8   6  10   6  10   5    5     5    5
+aavscaleDims :: Lens' AAVScale BoxDimensions
+aavscaleDims = lens scaleDims (\x y -> x { scaleDims = y })
+
+aavscaleMargins :: Lens' AAVScale Margins
+aavscaleMargins = lens scaleMargins (\x y -> x { scaleMargins = y })
+
+aavscaleHorizontalLayout :: Lens' AAVScale GapDimensions
+aavscaleHorizontalLayout = lens horizontalLayout (\x y -> x { horizontalLayout = y })
+
+aavscaleVerticalLayout :: Lens' AAVScale GapDimensions
+aavscaleVerticalLayout = lens verticalLayout (\x y -> x { verticalLayout = y })
+
+getScale :: Scale -> AAVScale --                 sbw sbh slm srm stm sbm slrv slrh stbv stbh
+getScale Full      = AAVScale    (BoxDimensions 120  44)  (Margins 22  22  20  20)  (GapDimensions 10   10)    (GapDimensions 10   10)
+getScale Small     = AAVScale    (BoxDimensions  44  30)  (Margins 11  11  14  14)  (GapDimensions 7    7 )    (GapDimensions 10   10)
+getScale Tiny      = AAVScale    (BoxDimensions   8   8)  (Margins 6   6  10  10)   (GapDimensions 5    5 )    (GapDimensions 10   10)
+
+portL, portT, portR, portB :: BBox -> AAVScale -> Length
+portL bb = portLR (bb ^. boxPorts.leftPort) bb
+portR bb = portLR (bb ^. boxPorts.rightPort) bb
+portT bb = portTB (bb ^. boxPorts.topPort) bb
+portB bb = portTB (bb ^. boxPorts.bottomPort) bb
+
+portLR :: PortStyleV -> BBox -> AAVScale -> Length
+portLR PTop    bb s = bb ^. bTopMargin +                                   s ^. aavscaleDims.dimHeight `div` 2
+portLR PMiddle bb s = bb ^. bTopMargin + (bb ^. bboxHeight - bb ^. bTopMargin - bb ^. boxMargins.bottomMargin)  `div` 2
+portLR PBottom bb s =           (bb ^. bboxHeight           - bb ^. boxMargins.bottomMargin)     -  s ^. aavscaleDims.dimHeight  `div` 2
+portLR (PVoffset x) bb s = bb ^. bTopMargin + x
+
+portTB :: PortStyleH -> BBox -> AAVScale -> Length
+portTB PLeft   bb s = bb ^. boxMargins.leftMargin +                                   s ^. aavscaleVerticalLayout.gapVertical
+portTB PCenter bb s = bb ^. boxMargins.leftMargin + (bb ^. bboxWidth - bb ^. boxMargins.leftMargin - bb ^. boxMargins.rightMargin)  `div` 2
+portTB PRight  bb s =           (bb ^. bboxWidth           - bb ^. boxMargins.rightMargin)     - s ^. aavscaleVerticalLayout.gapVertical
+portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
 
 --                              (boxStroke, boxFill,     textFill
 getColorsBox :: Scale -> Bool ->   (T.Text,   T.Text)
@@ -358,7 +372,7 @@ rowLayouter sc (bbold, old) (bbnew, new) =
         & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
         & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
     myScale = getScale sc
-    lrHgap = slrh myScale
+    lrHgap = myScale ^. aavscaleHorizontalLayout.gapHorizontal
     newBoxStart = bbold ^. bboxWidth + lrHgap
     connectingCurve =
       if bbold ^. bboxWidth /= 0
@@ -378,7 +392,7 @@ rowConnectorData sc bbold bbnew =
     }
   where
     myScale = getScale sc
-    gap = slrh myScale
+    gap = myScale ^. aavscaleHorizontalLayout.gapHorizontal
     rightMargin' = bbold ^. boxMargins.rightMargin
     startPortY = portR bbold myScale
     endPortY = portL bbnew myScale - startPortY
@@ -403,7 +417,7 @@ columnLayouter sc parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
     parentPortIn = portL parentbbox myScale + lrVgap
     parentPortOut = portR parentbbox myScale + lrVgap
     myScale = getScale sc
-    lrVgap = slrv myScale
+    lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     inboundConnector = inboundCurve sc parentbbox bbold bbnew
     outboundConnector = outboundCurve sc parentbbox bbold bbnew
     bbox =
@@ -423,8 +437,8 @@ inboundCurve sc parentbbox bbold bbnew =
     parentPortIn = portL parentbbox myScale + lrVgap
     pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
     myScale = getScale sc
-    lrVgap = slrv myScale
-    leftMargin' = slm myScale
+    lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
+    leftMargin' = myScale ^. aavscaleMargins.leftMargin
     startPosition = mAInt (- leftMargin') parentPortIn
     bezierCurve =
       cAInt
@@ -442,8 +456,8 @@ outboundCurve sc parentbbox bbold bbnew =
     parentPortOut = portR parentbbox myScale + lrVgap
     pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
     myScale = getScale sc
-    lrVgap = slrv myScale
-    rightMargin' = srm myScale
+    lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
+    rightMargin' = myScale ^. aavscaleMargins.rightMargin
     startPosition = mAInt (parentbbox ^. bboxWidth + rightMargin') parentPortOut
     bezierCurve =
       cAInt
@@ -457,16 +471,16 @@ outboundCurve sc parentbbox bbold bbnew =
 combineOr :: Scale -> [BoxedSVG] -> BoxedSVG
 combineOr sc elems =
   ( childbbox
-    & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin + rightMargin
+    & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin' + rightMargin'
     & boxDims.dimHeight .~ childbbox ^. bboxHeight - interElementGap
   ,
-    move (leftMargin, - interElementGap) children
+    move (leftMargin', - interElementGap) children
   )
   where
     myScale = getScale sc
-    interElementGap = slrv myScale
-    leftMargin = slm myScale
-    rightMargin = srm myScale
+    interElementGap = myScale ^. aavscaleHorizontalLayout.gapVertical
+    leftMargin' = myScale ^. aavscaleMargins.leftMargin
+    rightMargin' = myScale ^. aavscaleMargins.rightMargin
     childheights = interElementGap * fromIntegral (length elems - 1) + sum (boxHeight . dimensions . fst <$> elems)
     mybbox = (defaultBBox sc)
       & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
@@ -487,8 +501,8 @@ combineAnd sc elems =
   )
   where
     myScale = getScale sc
-    leftMargin' = slm myScale
-    rightMargin' = srm myScale
+    leftMargin' = myScale ^. aavscaleMargins.leftMargin
+    rightMargin' = myScale ^. aavscaleMargins.rightMargin
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
     combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin' + rightMargin'
@@ -501,7 +515,7 @@ drawPreLabelTop sc label (childBox, childSVG) =
     move (0, labelHeight) childSVG <> svgLabel)
   where
     labeledBox = childBox & boxDims.dimHeight .~ childBox ^. bboxHeight + labelHeight
-    labelHeight = stm (getScale sc)
+    labelHeight = (getScale sc) ^. aavscaleMargins.topMargin
     lbox = labelBox sc "hanging" label
     (_,svgLabel) = alignH HCenter (labeledBox ^. bboxWidth) lbox
 
@@ -514,7 +528,7 @@ drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
     move (0, labelHeight) childSVG <> svgPreLabel <>  move (0, childBox ^. bboxHeight + 2 * labelHeight) svgPostLabel)
   where
     labeledBox = childBox  & boxDims.dimHeight .~  childBox ^. bboxHeight + 2 * labelHeight
-    labelHeight = stm (getScale sc)
+    labelHeight = (getScale sc) ^. aavscaleMargins.topMargin
     prelbox = labelBox sc "hanging" preTxt
     (_,svgPreLabel) = alignH HCenter (labeledBox ^. bboxWidth) prelbox
     postlbox = labelBox sc "ideographic" postTxt
@@ -639,8 +653,8 @@ deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
 deriveBoxSize caption = do
   sc <- asks myScale
   let
-      boxHeight = sbh (getScale sc)
-      defBoxWidth = sbw (getScale sc)
+      boxHeight = getScale sc ^. aavscaleDims.dimHeight
+      defBoxWidth = getScale sc ^. aavscaleDims.dimWidth
       boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length caption))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
 
@@ -652,8 +666,8 @@ labelBox sc baseline mytext =
     boxContent
   )
   where
-    boxHeight = sbh (getScale sc)
-    defBoxWidth = sbw (getScale sc)
+    boxHeight = getScale sc ^. aavscaleDims.dimHeight
+    defBoxWidth =  getScale sc ^. aavscaleDims.dimWidth
     boxWidth = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
     boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
 

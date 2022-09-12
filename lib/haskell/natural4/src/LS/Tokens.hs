@@ -268,8 +268,8 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
 sameOrNextLine pa pb =
-  try (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
-  <|> (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
+  try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
+  <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
 
 
 pNumOrText :: Parser Text.Text

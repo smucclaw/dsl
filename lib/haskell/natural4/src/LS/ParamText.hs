@@ -167,7 +167,10 @@ slOneOf = do
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
 pKeyValuesAka :: Parser KVsPair
-pKeyValuesAka = debugName "pKeyValuesAka" $ slAKA slKeyValues (toList . fst) |<$ undeepers
+pKeyValuesAka = debugName "pKeyValuesAka" $ finishSL slKeyValuesAka
+
+slKeyValuesAka :: SLParser KVsPair
+slKeyValuesAka = slAKA slKeyValues (toList . fst)
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers

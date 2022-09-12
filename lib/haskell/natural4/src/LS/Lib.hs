@@ -447,10 +447,9 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
   where
     parseHas = concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
     declareLimb = do
-      (name,super) <- manyIndentation (pKeyValuesAka)
+      ((name,super),has) <- sameOrNextLine slKeyValuesAka parseHas
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- (parseHas |<$ undeepers)
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums

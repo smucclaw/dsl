@@ -1,1 +1,0 @@
-[["pt2grounds","unimplemented"],["mustPayCorpTax","p","c"],["x"],["owner","p","c"],["profitable","c"],["hasHQ","c","x"],["isTaxHaven","x"]]

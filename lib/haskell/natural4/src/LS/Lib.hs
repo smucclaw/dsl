@@ -388,10 +388,12 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some (try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
+  debugName "pRulesOnly: some" $
+    some (debugName "trying semicolon *> pRule" $
+          try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
+semicolonBetweenRules = optional (manyIndentation (pToken Semicolon))
 
 pRules = pRulesOnly
 
@@ -413,7 +415,7 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = debugName "pRule" $ do
-  _ <- many dnl
+  _ <- debugName "many dnl" $ many dnl
   notFollowedBy eof
 
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.

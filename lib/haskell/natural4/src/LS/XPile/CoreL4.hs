@@ -192,7 +192,7 @@ directToCore r@Hornlike{keyword}
           in
           vsep
           [ "rule" <+> angles rname
-          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> Just ( bsr2pt bodyE ))
+          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyE )
           ,                                "if"   <+> haskellStyle (RP1 <$> bodyNonE )
           ,                                "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line

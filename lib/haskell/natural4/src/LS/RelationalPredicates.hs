@@ -59,8 +59,12 @@ partitionExistentials c = ( AA.aaFilter (\case { AA.Leaf (RPParamText x) ->     
                           , AA.aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
 
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
-bsr2pt :: BoolStructR -> ParamText
-bsr2pt bsr = sconcat $ fromList [ pt | RPParamText pt <- DF.toList bsr ]
+bsr2pt :: BoolStructR -> Maybe ParamText
+bsr2pt bsr =
+  let ptlist = [ pt | RPParamText pt <- DF.toList bsr ]
+  in if ptlist == []
+     then Nothing
+     else Just $ sconcat $ fromList ptlist
 -- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.

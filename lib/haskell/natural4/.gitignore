@@ -4,3 +4,4 @@
 .#*
 .hspec-failures
 out/
+workdir/

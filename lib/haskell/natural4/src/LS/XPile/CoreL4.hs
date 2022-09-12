@@ -192,12 +192,12 @@ directToCore r@Hornlike{keyword}
       vsep [
       case hBod of
         Just _ ->
-          let (bodyE, bodyNonE) = partitionExistentials c
+          let (bodyEx, bodyNonEx) = partitionExistentials c
           in
           vsep
           [ "rule" <+> angles rname
-          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyE )
-          ,                                "if"   <+> haskellStyle (RP1 <$> bodyNonE )
+          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
+          ,                                "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
           ,                                "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
           , commentShow "#" $ given r

@@ -228,9 +228,9 @@ portTB PRight  bb s =           (bb ^. bboxWidth           - bb ^. boxMargins.ri
 portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
 
 --                              (boxStroke, boxFill,     textFill
-getColorsBox :: Scale -> Bool ->   (T.Text,   T.Text)
-getColorsBox    _        True    = ("none",   "none")
-getColorsBox    _        False   = ("none",   "lightgrey")
+getColorsBox :: Bool ->   (T.Text,   T.Text)
+getColorsBox True    = ("none",   "none")
+getColorsBox False   = ("none",   "lightgrey")
 
 getColorsText :: Scale -> Bool ->    T.Text
 getColorsText    Tiny     False   = "lightgrey"
@@ -240,8 +240,7 @@ getColorsText    _        False   = "white"
 getBoxColorsR :: DrawConfigM (T.Text, T.Text)
 getBoxColorsR = do
   m <- asks markingR
-  sc <- asks myScale
-  return $ getColorsBox sc (confidence m)
+  return $ getColorsBox (confidence m)
 
 
 getTextColorsR :: DrawConfigM T.Text
@@ -289,8 +288,8 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node qt@(Q _sv ao@(Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc)
-drawItemTiny sc negContext qt@(Node (Q _sv ao@(Neg)         pp m) childqs) = drawItemTiny sc (not negContext) (head childqs)
+drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc) (getScale sc)
+drawItemTiny sc negContext (Node (Q _sv Neg         pp m) childqs)  = drawItemTiny sc (not negContext) (head childqs)
 drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
@@ -556,7 +555,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
     Simply txt -> runReader (drawLeafR txt) contextR
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
-    contextR = DrawConfig sc negContext m (defaultBBox sc)
+    contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc)
     rawChildren = drawItemFull sc negContext <$> childqs
 
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
@@ -644,7 +643,8 @@ data DrawConfig = DrawConfig{
     myScale :: Scale,
     negContext :: Bool,
     markingR :: Default Bool,
-    defaultBox :: BBox
+    defaultBox :: BBox,
+    aav :: AAVScale
   }
 
 type DrawConfigM = Reader DrawConfig
@@ -652,17 +652,16 @@ type DrawConfigM = Reader DrawConfig
 deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
 deriveBoxSize caption = do
   sc <- asks myScale
-  let
-      boxHeight = getScale sc ^. aavscaleDims.dimHeight
-      defBoxWidth = getScale sc ^. aavscaleDims.dimWidth
+  BoxDimensions{boxWidth=defBoxWidth, boxHeight=boxHeight} <- asks (scaleDims.aav)
+  let  
       boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length caption))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
 
 labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
 labelBox sc baseline mytext =
   ( (defaultBBox sc)
-      & boxDims . dimWidth .~ boxWidth
-      & boxDims . dimHeight .~ boxHeight,
+      & boxDims.dimWidth .~ boxWidth
+      & boxDims.dimHeight .~ boxHeight,
     boxContent
   )
   where
@@ -682,7 +681,6 @@ labelBoxR baseline mytext = do
 
 drawLeafR :: T.Text -> DrawConfigM BoxedSVG
 drawLeafR caption = do
-  sc <- asks myScale
   dbox <- asks defaultBox
   (boxStroke, boxFill) <- getBoxColorsR
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption

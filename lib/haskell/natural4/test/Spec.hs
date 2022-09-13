@@ -9,7 +9,6 @@ import LS.Lib
 import LS.Parser
 import LS.Interpreter
 import LS.RelationalPredicates
-import LS.ParamText
 import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
@@ -169,9 +168,9 @@ notOther (RuleMarker _ _) = False
 notOther _ = True
 
 prop_rendertoken :: MyToken -> Property
-prop_rendertoken token =
-  token `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther token ==>
-  toToken (T.pack $ renderToken token) === [token]
+prop_rendertoken mytok =
+  mytok `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
+  toToken (T.pack $ renderToken mytok) === [mytok]
 
 
 
@@ -197,6 +196,7 @@ main = do
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , toTS = False
         , extendedGrounds = False
         , toChecklist = False
         , printstream = False

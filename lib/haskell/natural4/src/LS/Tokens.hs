@@ -271,6 +271,8 @@ sameOrNextLine pa pb =
   try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
   <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
 
+-- [TODO] have a combinator that does sameOrNextLine -- though would that be the same as |^|?
+-- |&| :: (Show a, Show b) => SLParser (a -> b) -> SLParser a -> SLParser b
 
 pNumOrText :: Parser Text.Text
 pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"

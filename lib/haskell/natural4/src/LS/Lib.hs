@@ -40,7 +40,6 @@ import Data.Maybe (listToMaybe, maybeToList)
 import LS.Types
 import LS.Tokens
 import LS.Parser
-import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import Control.Monad.Writer.Lazy
@@ -93,7 +92,6 @@ instance ParseFields a => ParseFields (NoLabel a) where
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
-  mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
         { debug       = maybe (dbug o) (read :: String -> Bool) mpd
@@ -489,11 +487,11 @@ pVarDefn = debugName "pVarDefn" $ do
                              else [ ]
                  }
   where
-    defineLimb = debugName "defineLimb" $ do
+    defineLimb = debugName "pVarDefn/defineLimb" $ do
       (name,mytype) <- manyIndentation (pKeyValuesAka)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
-      hases   <- concat <$> many (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
       return $ Hornlike
         { name = NE.toList name
@@ -510,8 +508,8 @@ pVarDefn = debugName "pVarDefn" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pVarDefn/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pVarDefn/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
@@ -823,7 +821,7 @@ exprP = debugName "expr pParamText" $ do
   --               ,("amount" :| ["$20"]     , Nothing)[))
 
   return $ case raw of
-    MyLabel pre post myitem -> prefixFirstLeaf pre myitem
+    MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText

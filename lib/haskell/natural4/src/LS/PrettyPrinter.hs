@@ -179,7 +179,7 @@ instance Pretty ParamText4 where
 
 typeOfTerm :: Interpreted {- -> VarPath -} -> TypedMulti -> Maybe TypeSig
 typeOfTerm l4i tm =
-  let (ct@(CT ch), scopetabs) = (classtable l4i, scopetable l4i)
+  let (ct@(CT ch), _scopetabs) = (classtable l4i, scopetable l4i)
   in
     Nothing
 

@@ -453,15 +453,15 @@ spec = do
       mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full)
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full)
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full)
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full)
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny)
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny)
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny)
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny)
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)
@@ -469,27 +469,27 @@ spec = do
   describe "getColors Box" $ do
     it "box colors for (Tiny     True)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Tiny True
+        (boxStroke, boxFill) = getColorsBox True
       (boxStroke, boxFill) `shouldBe` ("none",   "none")
     it "box colors for (Tiny     False)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Tiny False
+        (boxStroke, boxFill) = getColorsBox False
       (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
     it "box colors for (Small     True)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Small True
+        (boxStroke, boxFill) = getColorsBox True
       (boxStroke, boxFill) `shouldBe` ("none",   "none")
     it "box colors for (Small     False)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Small False
+        (boxStroke, boxFill) = getColorsBox False
       (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
     it "box colors for (Full     True)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Full True
+        (boxStroke, boxFill) = getColorsBox True
       (boxStroke, boxFill) `shouldBe` ("none",   "none")
     it "box colors for (Full     False)" $ do
       let
-        (boxStroke, boxFill) = getColorsBox Full False
+        (boxStroke, boxFill) = getColorsBox False
       (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
 
   describe "getColors Text" $ do

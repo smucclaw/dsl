@@ -453,15 +453,15 @@ spec = do
       mark = Default {getDefault = Right (Just True)}
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full)
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full)
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny)
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny)
+        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
+        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

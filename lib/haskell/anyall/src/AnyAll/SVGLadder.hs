@@ -246,7 +246,7 @@ getBoxColorsR = do
 getTextColorsR :: DrawConfigM T.Text
 getTextColorsR = do
   m <- asks markingR
-  sc <- asks myScale
+  sc <- asks contextScale
   return $ getColorsText sc (confidence m)
 
 type ItemStyle = Maybe Bool
@@ -288,7 +288,7 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) =  runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc) (getScale sc)
+drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
 drawItemTiny sc negContext (Node (Q _sv Neg         pp m) childqs)  = drawItemTiny sc (not negContext) (head childqs)
 drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
 
@@ -329,10 +329,10 @@ alignH alignment maxWidth (bb, x) = (adjustMargins (bb & boxDims.dimWidth .~ max
 adjustSideMargins :: HAlignment -> Length -> BBox -> BBox
 adjustSideMargins alignment alignmentPad box =
   box
-    & boxMargins.leftMargin  %~ (+ newLeftMargin)
-    & boxMargins.rightMargin %~ (+ newRightMargin)
+    & boxMargins.leftMargin  %~ (+ leftPadding)
+    & boxMargins.rightMargin %~ (+ rightPadding)
   where
-    (newLeftMargin, newRightMargin) = rowAlignMargins alignment alignmentPad
+    (leftPadding, rightPadding) = rowAlignMargins alignment alignmentPad
 
 rowAlignMargins :: HAlignment -> Length -> (Length, Length)
 rowAlignMargins HCenter alignmentPad = (alignmentPad  `div` 2, alignmentPad  `div` 2)
@@ -493,45 +493,45 @@ combineAnd sc elems =
   ( combinedBox
       & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
       & boxPorts.rightPort .~ PVoffset (portR childbbox myScale)
-      & boxMargins.leftMargin %~ (+ leftMargin')
-      & boxMargins.rightMargin %~ (+ rightMargin')
+      & boxMargins.leftMargin %~ (+ leftPad)
+      & boxMargins.rightMargin %~ (+ rightPad)
   ,
-    move (leftMargin', 0) children
+    move (leftPad, 0) children
   )
   where
     myScale = getScale sc
-    leftMargin' = myScale ^. aavscaleMargins.leftMargin
-    rightMargin' = myScale ^. aavscaleMargins.rightMargin
+    leftPad = myScale ^. aavscaleMargins.leftMargin
+    rightPad = myScale ^. aavscaleMargins.rightMargin
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
-    combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftMargin' + rightMargin'
+    combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftPad + rightPad
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG
 drawPreLabelTop sc label (childBox, childSVG) =
-    (labeledBox
+    (childBox
+      & boxDims.dimHeight  %~ (+ labelHeight)
       & boxMargins.topMargin %~ (+ labelHeight)
     ,
     move (0, labelHeight) childSVG <> svgLabel)
   where
-    labeledBox = childBox & boxDims.dimHeight .~ childBox ^. bboxHeight + labelHeight
-    labelHeight = (getScale sc) ^. aavscaleMargins.topMargin
+    labelHeight = getScale sc ^. aavscaleMargins.topMargin
     lbox = labelBox sc "hanging" label
-    (_,svgLabel) = alignH HCenter (labeledBox ^. bboxWidth) lbox
+    (_,svgLabel) = alignH HCenter (childBox ^. bboxWidth) lbox
 
 drawPrePostLabelTopBottom :: Scale -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
 drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
-    (labeledBox
+    (childBox 
+      & boxDims.dimHeight %~ (+ 2 * labelHeight)
       & boxMargins.topMargin %~ (+ labelHeight)
       & boxMargins.bottomMargin %~ (+ labelHeight)
     ,
     move (0, labelHeight) childSVG <> svgPreLabel <>  move (0, childBox ^. bboxHeight + 2 * labelHeight) svgPostLabel)
   where
-    labeledBox = childBox  & boxDims.dimHeight .~  childBox ^. bboxHeight + 2 * labelHeight
-    labelHeight = (getScale sc) ^. aavscaleMargins.topMargin
+    labelHeight = getScale sc ^. aavscaleMargins.topMargin
     prelbox = labelBox sc "hanging" preTxt
-    (_,svgPreLabel) = alignH HCenter (labeledBox ^. bboxWidth) prelbox
+    (_,svgPreLabel) = alignH HCenter (childBox ^. bboxWidth) prelbox
     postlbox = labelBox sc "ideographic" postTxt
-    (_,svgPostLabel) = alignH HCenter (labeledBox ^. bboxWidth) postlbox
+    (_,svgPostLabel) = alignH HCenter (childBox ^. bboxWidth) postlbox
 
 decorateWithLabel :: Scale -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
 decorateWithLabel Tiny _ childBox = childBox
@@ -541,11 +541,11 @@ decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox = drawPrePostLabel
 
 decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
 decorateWithLabelR Nothing childBox = return childBox
-decorateWithLabelR (Just (Pre txt)) childBox = asks myScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
-decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks myScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
+decorateWithLabelR (Just (Pre txt)) childBox = asks contextScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
+decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks contextScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
 decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
-decorateWithLabelGuardR ml childBox = asks myScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox
+decorateWithLabelGuardR ml childBox = asks contextScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox
 
 drawItemFull :: Scale -> Bool -> QuestionTree -> BoxedSVG
 drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
@@ -555,7 +555,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
     Simply txt -> runReader (drawLeafR txt) contextR
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
-    contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc)
+    contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
     rawChildren = drawItemFull sc negContext <$> childqs
 
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
@@ -588,7 +588,7 @@ drawBoxCapR caption = do
 
 drawBoxContentR :: T.Text -> DrawConfigM SVGElement
 drawBoxContentR caption = do
-  sc <- asks myScale
+  sc <- asks contextScale
   textFill <- getTextColorsR
   drawBoxContent sc caption textFill <$> deriveBoxSize caption
 
@@ -640,25 +640,32 @@ drawBoxContent _ mytext textFill BoxDimensions{boxWidth=boxWidth, boxHeight=boxH
   text_ [ X_  <<-* (boxWidth `div` 2) , Y_      <<-* (boxHeight `div` 2) , Text_anchor_ <<- "middle" , Dominant_baseline_ <<- "central" , Fill_ <<- textFill ] (toElement mytext)
 
 data DrawConfig = DrawConfig{
-    myScale :: Scale,
+    contextScale :: Scale,
     negContext :: Bool,
     markingR :: Default Bool,
     defaultBox :: BBox,
-    aav :: AAVScale
+    aav :: AAVScale,
+    textBoxLengthFn :: Length -> Length -> Length
   }
 
 type DrawConfigM = Reader DrawConfig
 
+textBoxLengthFull :: Length -> Length -> Length
+textBoxLengthFull defBoxWidth captionLength = defBoxWidth - 15 + (3 * captionLength)
+
+textBoxLengthTiny :: Length -> Length -> Length
+textBoxLengthTiny defBoxWidth _ = defBoxWidth
+
 deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
 deriveBoxSize caption = do
-  sc <- asks myScale
+  textBoxLength <- asks textBoxLengthFn
   BoxDimensions{boxWidth=defBoxWidth, boxHeight=boxHeight} <- asks (scaleDims.aav)
-  let  
-      boxWidth = if sc == Tiny then defBoxWidth else defBoxWidth - 15 + (3 * fromIntegral (T.length caption))
+  let
+      boxWidth = textBoxLength defBoxWidth (fromIntegral (T.length caption))
   return BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight}
 
 labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
-labelBox sc baseline mytext =
+labelBox sc baseline caption =
   ( (defaultBBox sc)
       & boxDims.dimWidth .~ boxWidth
       & boxDims.dimHeight .~ boxHeight,
@@ -667,8 +674,8 @@ labelBox sc baseline mytext =
   where
     boxHeight = getScale sc ^. aavscaleDims.dimHeight
     defBoxWidth =  getScale sc ^. aavscaleDims.dimWidth
-    boxWidth = defBoxWidth - 15 + (3 * fromIntegral (T.length mytext))
-    boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext)
+    boxWidth = textBoxLengthFull defBoxWidth (fromIntegral (T.length caption))
+    boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement caption)
 
 labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
 labelBoxR baseline mytext = do

@@ -1,0 +1,30 @@
+,,,,,
+,,,,,
+//,"GIVEN ANY Person p, Corporation c",,,,
+//,DECIDE mustPayCorpTax p c HOLDS,,,,
+//,WHEN THERE EXISTS A City x SUCH THAT,,,,
+//,owner p c HOLDS AND profitable c HOLDS AND hasHQ c x HOLDS AND isNotTaxHaven x HOLDS,,,,
+,,,,,
+,§,mustPayCorpTax,,,
+,GIVEN,p,IS,A,Person
+,,c,IS,A,Corporation
+,DECIDE,mustPayCorpTax,p,c,
+,WHEN,x,IS,A,City
+,AND,owner,p,c,
+,AND,profitable,,c,
+,AND,hasHQ,,c,x
+,AND,NOT,isTaxHaven,,x
+,,,,,
+,,,,,
+,,,,,
+;;,DECLARE,Person,,,
+,HAS,Name,IS,A,String
+,,,,,
+;;,DECLARE,Corporation,,,
+,HAS,hasHQ,IS,A,City
+,,Owner,IS,A,Person
+,,profitable,IS,A,Boolean
+,,,,,
+;;,DECLARE,City,,,
+,HAS,Name,IS,A,String
+,,isTaxhaven,IS,A,Boolean

@@ -6,7 +6,7 @@ HAS,firstname,IS,A,String
 ,lastname,IS,A,String
 ,office address,,,
 ,HAS,line1,::,String
-,HAS,line2,::,String
+,,line2,::,String
 ,bar address,::,address,
 ,work address,IS,A,address
 ,HAS,floor,::,String

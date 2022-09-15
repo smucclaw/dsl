@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase #-}
+
 module LS.XPile.CoreL4 where
 
 import Prettyprinter
@@ -43,9 +45,12 @@ sfl4ToCorel4 rs =
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                , "\n\n-- classes\n",                   show $ prettyClasses cTable
                , "\n\n-- boilerplate\n",               show $ prettyBoilerplate cTable
-               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
-               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
-               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
+
+-- honestly i think we can just live without these
+--               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
+--               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
+--               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
+
                , "\n# directToCore\n\n"
                ] ++
                [ show (directToCore r)
@@ -112,7 +117,8 @@ sfl4ToCorel4Rule hornlike@Hornlike
             } =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            given2classdecls given ++ [rule]
+            given2classdecls given ++
+            [rule]
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement SRng]
     given2classdecls Nothing = []
@@ -185,12 +191,18 @@ directToCore r@Hornlike{keyword}
   | keyword /= Define =
       vsep [
       case hBod of
-        Just _ -> vsep
-                  [ "rule" <+> angles rname
-                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)            (given r)
-                  ,                                "if"   <+> cStyle (RP1 <$> hc2preds c)
-                  ,                                "then" <+> pretty (RP1  $  hHead c)
-                  , Prettyprinter.line]
+        Just _ ->
+          let (bodyEx, bodyNonEx) = partitionExistentials c
+          in
+          vsep
+          [ "rule" <+> angles rname
+          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
+          ,                                "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
+          ,                                "then" <+> pretty (RP1  $  hHead c)
+          , Prettyprinter.line
+          , commentShow "#" $ given r
+          , commentShow "#" $ hc2preds c
+          ]
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
       , (HC2 _headRP hBod) <- [c]
@@ -198,7 +210,6 @@ directToCore r@Hornlike{keyword}
       , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
-
 -- fact <rulename> multiterm
 
 directToCore r@TypeDecl{} = ""
@@ -221,9 +232,11 @@ prettyDecls sctabs =
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
-  vsep
+  vsep $ concat
   [ -- global symtab as facts
-    "fact" <+> angles (snake_case scopename) <+> viaShow symtab'
+    [ "fact" <+> angles (snake_case scopename)
+    , commentShow "#" symtab'
+    ]
   | (scopename , symtab') <- Map.toList sctabs
   , (mt, (symtype,_vals)) <- Map.toList symtab'
   ]
@@ -255,13 +268,15 @@ prettyBoilerplate ct@(CT ch) =
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
 --     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
 
+commentShow c x = commentWith c (T.lines (T.pack (show x)))
+
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
 prettyDefnCs rname cs = 
   [
     if null myterms
     then
       "fact" <+> angles rname <> Prettyprinter.line <>
-      commentWith "#" (T.lines (T.pack (show cl))) <>
+      commentShow "#" cl <>
       pretty (RP1 clHead)
     else
       "defn" <+>
@@ -277,7 +292,7 @@ prettyDefnCs rname cs =
       encloseSep "" "" " -> " ([ "\\" <> idx <+> colon <+> typ
                                | (typ,idx) <- zip intypes x123
                                ] ++ [ pretty outstr ])
-      <> Prettyprinter.line <> commentWith "#" (T.lines (T.pack (show cl)))
+      <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
   | cl <- cs
   , let clHead = hHead cl
@@ -324,7 +339,7 @@ prettyClasses ct@(CT ch) =
       -- # Enumeration of members of Something
       -- decl Enum1: Something
       -- decl Enum2: Something
-  , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentWith "#" ("ctype:"    : T.lines (T.pack (show ctype)))
+  , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentShow "# ctype:" ctype
   , vsep [ "decl" <+> pretty member <> ":" <+> pretty className
          | (Just (InlineEnum TOne (( nelist, _ ) :| _)), _) <- [ctype]
          , member <- NE.toList nelist
@@ -334,7 +349,7 @@ prettyClasses ct@(CT ch) =
     -- the correct representation would be something like
     -- decl Enum1 : Someclass -> Attr1 -> Boolean
     -- [TODO] however, we do not have a sensible treatment of recursive class declarations, so we need to think about that.
-  , if children == CT Map.empty then Prettyprinter.emptyDoc else commentWith "#" ("children:" : T.lines (T.pack (show children)))
+  , if children == CT Map.empty then Prettyprinter.emptyDoc else commentShow "# children:" children
   , vsep [ "decl" <+> snake_inner attrname <>
            case attrType children attrname of
              -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool

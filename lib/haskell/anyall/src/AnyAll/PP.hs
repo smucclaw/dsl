@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module AnyAll.PP (ppQTree, hardnormal, cStyle) where
+module AnyAll.PP (ppQTree, hardnormal, cStyle, haskellStyle) where
 
 import AnyAll.Types hiding ((<>))
 import AnyAll.Relevance

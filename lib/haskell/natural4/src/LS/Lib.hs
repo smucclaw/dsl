@@ -40,7 +40,6 @@ import Data.Maybe (listToMaybe, maybeToList)
 import LS.Types
 import LS.Tokens
 import LS.Parser
-import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import Control.Monad.Writer.Lazy
@@ -93,7 +92,6 @@ instance ParseFields a => ParseFields (NoLabel a) where
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
-  mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
         { debug       = maybe (dbug o) (read :: String -> Bool) mpd
@@ -388,10 +386,12 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some (try (debugName "semicolon" semicolonBetweenRules *> pRule)) <* eof
+  debugName "pRulesOnly: some" $
+    some (debugName "trying semicolon *> pRule" $
+          try (debugName "semicolon" semicolonBetweenRules *> optional dnl *> manyIndentation pRule <* optional dnl)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
+semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
 
 pRules = pRulesOnly
 
@@ -413,7 +413,7 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = debugName "pRule" $ do
-  _ <- many dnl
+  _ <- debugName "many dnl" $ many dnl
   notFollowedBy eof
 
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
@@ -443,11 +443,11 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
+    parseHas = concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
     declareLimb = do
-      (name,super) <- manyIndentation (pKeyValues)
+      ((name,super),has) <- sameOrNextLine slKeyValuesAka parseHas
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth declareLimb))
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
@@ -487,11 +487,11 @@ pVarDefn = debugName "pVarDefn" $ do
                              else [ ]
                  }
   where
-    defineLimb = debugName "defineLimb" $ do
+    defineLimb = debugName "pVarDefn/defineLimb" $ do
       (name,mytype) <- manyIndentation (pKeyValuesAka)
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
-      hases   <- concat <$> many (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
       return $ Hornlike
         { name = NE.toList name
@@ -508,8 +508,8 @@ pVarDefn = debugName "pVarDefn" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pVarDefn/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pVarDefn/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
@@ -529,7 +529,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
 pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  (relPred, _whenpart) <- someIndentation relPredSamelineWhen
+  (relPred, _whenpart) <- someIndentation rpSameNextLineWhen
   return $ ExpRP relPred
 
 -- | we want to parse two syntaxes:
@@ -821,7 +821,7 @@ exprP = debugName "expr pParamText" $ do
   --               ,("amount" :| ["$20"]     , Nothing)[))
 
   return $ case raw of
-    MyLabel pre post myitem -> prefixFirstLeaf pre myitem
+    MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText

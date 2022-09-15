@@ -35,8 +35,8 @@ newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
   pretty (RP1 (RPParamText   pt)           ) = pretty (pt2text pt)
   pretty (RP1 (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
-  pretty (RP1 (RPMT          mt)           ) = snake_join mt
-  pretty (RP1 (RPConstraint  mt1 RPis  mt2)) = hsep [ pred_join mt1, space_join mt2 ]
+  pretty (RP1 (RPMT          mt)           ) = space_join mt
+  pretty (RP1 (RPConstraint  mt1 RPis  mt2)) = hsep [ pred_snake mt1, space_join mt2 ]
 
 --  somePred(X) :- ...
 --  somePred(Y) :- ...
@@ -79,6 +79,12 @@ possessiveToObject str = T.intercalate " " $ reverse $ T.splitOn "'s " str
 
 -- mom(john, M): M is john's mom
 
+
+-- | pred_snake
+-- "foo bar" "baz" --> "baz foo_bar
+-- "fooBar" "baz"  --> "baz fooBar"
+pred_snake :: [T.Text] -> Doc ann
+pred_snake xs = encloseSep "" "" " " (snake_inner <$> last xs : init xs)
 
 -- | pred_join
 -- "foo bar" "baz" --> "baz foo bar
@@ -173,7 +179,7 @@ instance Pretty ParamText4 where
 
 typeOfTerm :: Interpreted {- -> VarPath -} -> TypedMulti -> Maybe TypeSig
 typeOfTerm l4i tm =
-  let (ct@(CT ch), scopetabs) = (classtable l4i, scopetable l4i)
+  let (ct@(CT ch), _scopetabs) = (classtable l4i, scopetable l4i)
   in
     Nothing
 
@@ -222,11 +228,6 @@ prettySimpleType prty (InlineEnum pt1       s1) = "InlineEnum unsupported:" <+> 
 prettyMaybeType :: (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
 prettyMaybeType inner Nothing   = ""
 prettyMaybeType inner (Just ts) = colon <+> prettySimpleType inner ts
-
--- At this time, none of the preconditions should be found in the head, so we ignore that.
-hc2preds :: HornClause2 -> BoolStructR
-hc2preds (HC2 _headRP Nothing) = AA.Leaf (RPMT ["TRUE"])
-hc2preds (HC2 _headRP (Just bsr)) = bsr
 
 
 -- | comment a block of lines

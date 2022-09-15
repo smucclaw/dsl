@@ -4,3 +4,4 @@ Fibs100.hs
 *.o
 *.hi
 *.gfo
+.DS_Store

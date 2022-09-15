@@ -1,0 +1,75 @@
+//,,live updates,TRUE,,devMode port,8081,,,TRUE,,,,,,,,
+//,"CASE STUDY ONE:    LEGISLATION — Matthew Waddington, Legislative Drafting Office, Jersey",,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+//,"A Person Who Walks; and Eats, or Drinks; Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
+//,,,,,,,,,,,,,,,,,
+//,Consider a very simple rule:,,,,,,,,,,,,,,,,
+//,,"   A person who –
+    (a) walks; and
+    (b) (i)   eats, or
+           (ii) drinks,
+    must sing.",,,,"from Matthew Waddington
+4 Sep 2021",,,,"see also https://twitter.com/mattwadd/status/1454465335596290052
+which links to https://legislativedrafter.wordpress.com/2021/10/30/logic-and-legislation/ ",,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,How would we say this in L4? Like this:,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,,,,,,,,
+//,,WHO,walks,,,,,,,,,,,,,,
+//,,AND,,eats,,,,,,,,,,,,,
+//,,,OR,drinks,,,,,,,,,,,,,
+//,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"We haven't done too much violence to the original. We've adjusted the ""and"" and ""or"",
+added indentation, and uppercased some keywords. What's next?",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Let's add more structure: defined terms, known to programmers as variable definitions.
+
+    Qualifying Person means a person who walks; and eats or drinks.
+    Every Qualifying Person must sing.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+,,EVERY,Person,,,,,,,,,,,,,,
+,,WHO,,,Qualifies,,,,,,,,,,,,
+,,,,,MEANS,walks,,,,,,,,,,,
+,,,,,AND,,eats,,,,,,,,,,
+,,,,,,OR,drinks,,,,,,,,,,
+,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"In the left margin, a button hides and shows the definition of ""Qualifies"".
+This makes for easier reading. Programmers call it ""code folding"".
+The details are still there, but hidden from view until you want to see them.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Two Rules for the Price of One!,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"""Every Person who Qualifies must sing.""
+This is the regulative essence of the rule.
+The moving parts. The dynamics. Who does what by when? Entities are acting in time.
+Regulative rules are drawn like a +.
+
+""A Qualifying Person is one who walks, and eats or drinks.""
+This is the constitutive essence of the rule.
+The statics. The yes or no logic. Does this thing count as that, for these purposes?
+Constitutive rules are drawn like a T.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Let's go Interactive.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"You can work through scenarios by clicking on the highlighted checkboxes.
+The other checkboxes change in response.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,,,,,,,,
+//,,WHO,TRUE,Qualifies,,,,,,,,,,,,,
+//,,,,MEANS,TRUE,walks,,,,,,,,,,,
+//,,,,AND,TRUE,FALSE,eats,,,,,,,,,,
+//,,,,,OR,TRUE,drinks,,,,,,,,,,
+//,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"If it isn't working, you might need to make a copy of this spreadsheet –
+click on File / Make a copy.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,See Also,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Deon Digital's CSL inspired the logic and semantics of this approach to regulative rules and contract composition. The spreadsheet syntax is original.,,,,,,,,,,,,,,,,
+//,Tweetstorm citing historical references.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,

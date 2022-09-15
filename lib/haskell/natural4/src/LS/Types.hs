@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
@@ -247,8 +248,7 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText
---            , given    :: [ParamText]        -- a:Applicant, p:Person, l:Lender -- the signature of the input
+            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender -- the signature of the input
         --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
@@ -337,7 +337,7 @@ instance PrependHead RelationalPredicate where
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
-                         | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
+                         | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
                                                                        --          AND
@@ -350,6 +350,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
 
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "relIs"
+rel2txt RPhas     = "relHas"
 rel2txt RPeq      = "relEq"
 rel2txt RPlt      = "relLT"
 rel2txt RPlte     = "relLTE"
@@ -360,6 +361,7 @@ rel2txt RPnotElem = "relNotIn"
 
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "=="
+rel2op RPhas     = ".?"
 rel2op RPeq      = "=="
 rel2op RPlt      = "<"
 rel2op RPlte     = "<="
@@ -394,7 +396,7 @@ rpHead (RPMT           mt)            = mt
 rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
 
-data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
   deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: RuleName }
@@ -448,11 +450,11 @@ data Interpreted = L4I
 -- | a basic symbol table to track "variable names" and their associated types.
 
 getUnderlyingType :: TypeSig -> Either String EntityType
-getUnderlyingType o@(SimpleType TOne      s1) = Right s1
-getUnderlyingType   (SimpleType TOptional s1) = Left "type declaration cannot inherit from _optional_ superclass"
-getUnderlyingType   (SimpleType TList0    s1) = Left "type declaration cannot inherit from _list_ superclass"
-getUnderlyingType   (SimpleType TList1    s1) = Left "type declaration cannot inherit from _list_ superclass"
-getUnderlyingType   (InlineEnum pt1       s1) = Left "type declaration cannot inherit from _enum_ superclass"
+getUnderlyingType   (SimpleType TOne      s1) = Right s1
+getUnderlyingType   (SimpleType TOptional s1) = Right s1
+getUnderlyingType   (SimpleType TList0    s1) = Right s1
+getUnderlyingType   (SimpleType TList1    s1) = Right s1
+getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
 
 -- what's the difference between SymTab, ClsTab, and ScopeTabs?
 
@@ -496,12 +498,11 @@ thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 
 -- | attributes defined in the type declaration for this class specifically
 thisAttributes (CT clstab) subclass = do
-  ((mts, tss), ct) <- Map.lookup subclass clstab
+  ((_mts, _tss), ct) <- Map.lookup subclass clstab
   return ct
 
 extendedAttributes o@(CT clstab) subclass = do
-  ((mts, tss), CT ct) <- Map.lookup subclass clstab
-  ts <- mts
+  ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
   let eAttrs = case (extendedAttributes o <$> clsParent o subclass) of
                  Nothing               -> Map.empty
                  (Just Nothing)        -> Map.empty
@@ -518,10 +519,10 @@ getSymType (Nothing, [])  = Nothing
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
 clsParent (CT clstab) subclass = do
-  ((mts, tss), st) <- Map.lookup subclass clstab
+  ((mts, tss), _st) <- Map.lookup subclass clstab
   case getUnderlyingType <$> getSymType (mts, tss) of
     Just (Right s1) -> Just s1
-    Just (Left err) -> Nothing
+    Just (Left _)   -> Nothing
     Nothing         -> Nothing
 
 -- is this a NonEmpty (NonEmpty Text.Text)
@@ -755,6 +756,9 @@ toToken "ONE"       = pure One
 toToken "OPTIONAL"  = pure Optional
 toToken "LIST0"     = pure List0
 toToken "LIST1"     = pure List1
+toToken "LIST OF"   = pure List1
+toToken "LISTOF"    = pure List1
+toToken "LIST"      = pure List1
 
 toToken "AKA"       = pure Aka
 toToken "TYPICALLY" = pure Typically

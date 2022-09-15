@@ -9,7 +9,6 @@ import LS.Lib
 import LS.Parser
 import LS.Interpreter
 import LS.RelationalPredicates
-import LS.ParamText
 import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
@@ -169,9 +168,9 @@ notOther (RuleMarker _ _) = False
 notOther _ = True
 
 prop_rendertoken :: MyToken -> Property
-prop_rendertoken token =
-  token `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther token ==>
-  toToken (T.pack $ renderToken token) === [token]
+prop_rendertoken mytok =
+  mytok `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
+  toToken (T.pack $ renderToken mytok) === [mytok]
 
 
 
@@ -197,6 +196,7 @@ main = do
         , wantNotRules = False
         , toGrounds = False
         , toVue = False
+        , toTS = False
         , extendedGrounds = False
         , toChecklist = False
         , printstream = False
@@ -1595,8 +1595,9 @@ parserTests nlgEnv runConfig_ = do
             TypeDecl {name = ["dependents"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["amountSaved"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["earnings"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["steadiness"], super = Just (SimpleType TOne "EarningsStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["income"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["savingsSccount"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
+            TypeDecl {name = ["savingsAccount"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["isDead"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["spendthrift"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["investment"], super = Just (SimpleType TOne "InvestmentStrategy"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}],
@@ -1629,6 +1630,20 @@ parserTests nlgEnv runConfig_ = do
           symtab = []
         }
         ]
+
+
+-- sl style
+    describe "sameOrNextLine" $ do
+      let potatoParser = parseOther (sameOrNextLine
+                                      (flip const $>| (pToken Declare) |*| (someSL (liftSL pOtherVal)))
+                                      (flip const $>| (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
+          potatoExpect = ( ( [ "Potato" ]
+                           , [ "genus", "species" ] ), [] )
+                         
+      filetest "sameornext-1-same"  "a b on same line"  potatoParser potatoExpect
+      filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
+      filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
+      filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

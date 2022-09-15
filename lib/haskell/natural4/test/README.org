@@ -1495,7 +1495,7 @@ without the IS TRUE
 |         | lastname       | IS           | A       | String  |
 |         | office address |              |         |         |
 |         | HAS            | line1        | ::      | String  |
-|         | HAS            | line2        | ::      | String  |
+|         |                | line2        | ::      | String  |
 |         | bar address    | ::           | address |         |
 |         | work address   | IS           | A       | address |
 |         | HAS            | floor        | ::      | String  |
@@ -1520,14 +1520,14 @@ This example serves multiple tests:
 |         |                    |    |        |                    |          |             |
 | DECLARE | Person             |    |        |                    |          |             |
 | HAS     | dependents         | IS | A      | Number             |          |             |
-| HAS     | amountSaved        | IS | A      | Number             |          |             |
-| HAS     | earnings           | IS | A      | Number             |          |             |
-| HAS     | steadiness         | IS | A      | EarningsStatus     |          |             |
-| HAS     | income             | IS | A      | FinancialStatus    |          |             |
-| HAS     | savingsAccount     | IS | A      | FinancialStatus    |          |             |
-| HAS     | isDead             | IS | A      | Boolean            |          |             |
-| HAS     | spendthrift        | IS | A      | Boolean            |          |             |
-| HAS     | investment         | IS | AN     | InvestmentStrategy |          |             |
+|         | amountSaved        | IS | A      | Number             |          |             |
+|         | earnings           | IS | A      | Number             |          |             |
+|         | steadiness         | IS | A      | EarningsStatus     |          |             |
+|         | income             | IS | A      | FinancialStatus    |          |             |
+|         | savingsAccount     | IS | A      | FinancialStatus    |          |             |
+|         | isDead             | IS | A      | Boolean            |          |             |
+|         | spendthrift        | IS | A      | Boolean            |          |             |
+|         | investment         | IS | AN     | InvestmentStrategy |          |             |
 
 ***** Financial Advisor decisions
 :PROPERTIES:
@@ -1596,7 +1596,40 @@ a scenario would look like:
 ***** HasRelation
 
 
+*** sameOrNextLine -s same
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-1-same.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
+| DECLARE | Potato | HAS | genus | species |
+
+*** sameOrNextLine - next
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-2-next.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |         |
+| HAS     | genus  | species |
+
+*** sameOrNextLine - left a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-3-dnl.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|     | DECLARE | Potato  |   |
+| HAS | genus   | species |   |
+
+*** sameOrNextLine - next right a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-4-right.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | DECLARE | Potato |       |         |
+|   |         | HAS    | genus | species |
 ** Keywords
 
 *** DECIDE

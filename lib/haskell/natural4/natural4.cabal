@@ -35,7 +35,6 @@ library
       LS.NLP.ToPredicate
       LS.NLP.UDExt
       LS.NLP.WordNet
-      LS.ParamText
       LS.Parser
       LS.PrettyPrinter
       LS.RelationalPredicates

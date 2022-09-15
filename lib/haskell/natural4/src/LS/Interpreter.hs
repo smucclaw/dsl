@@ -6,6 +6,7 @@
 module LS.Interpreter where
 
 import LS.Types
+import LS.RelationalPredicates
 import qualified AnyAll as AA
 import Data.List.NonEmpty
 import qualified Data.Text as T
@@ -175,9 +176,10 @@ getAndOrTree _l4i r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
   
-getAndOrTree  l4i r@Hornlike{}    = fmap extractRPMT2Text <$> mconcat (-- traceShowId $
-                                                                       bsmtOfClauses $
-                                                                       r { clauses = expandClauses l4i (clauses r) } )
+getAndOrTree  l4i r@Hornlike{} = fmap extractRPMT2Text <$>
+                                 mconcat (-- traceShowId $
+  bsmtOfClauses $
+  r { clauses = expandClauses l4i (clauses r) } )
   where
     defaultElem :: a -> [a] -> [a]
     defaultElem dflt []  = [ dflt ]
@@ -194,14 +196,19 @@ getAndOrTree _l4i r = -- trace ("ERROR: getAndOrTree called invalidly against ru
 bsmtOfClauses r = [ mhead <> mbody
                   | c <- clauses r
                   , (hhead, hbody)  <- [(hHead c, hBody c)]
+                  , let (bodyEx, bodyNonEx) = partitionExistentials c
                   , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
                         mhead = case hhead of
                                   RPBoolStructR _mt1 _rprel1 bsr1 -> -- trace "bsmtOfClauses: returning bsr part of head's RPBoolStructRJust"
                                                                      Just (bsr2bsmt bsr1)
                                   _                               -> -- trace ("bsmtOfClauses: returning nothing for " <> show hhead)
                                                                      Nothing
-                        mbody = let output = bsr2bsmt <$> hbody in -- trace ("bsmtOfClauses: got output " <> show output)
-                                                                   output
+                        mbody = case hbody of
+                                  Nothing -> Nothing
+                                  _       -> 
+                                    let output = bsr2bsmt bodyNonEx in
+                                      -- trace ("bsmtOfClauses: got output " <> show output)
+                                      Just output
                   ]
 
 expandClauses :: Interpreted -> [HornClause2] -> [HornClause2]

@@ -10,7 +10,7 @@
 ,,c,IS,A,Corporation
 ,DECIDE,mustPayCorpTax,p,c,
 ,WHEN,x,IS,A,City
-,AND,owner,p,c,
+,AND,Owner,p,c,
 ,AND,profitable,,c,
 ,AND,hasHQ,,c,x
 ,AND,NOT,isTaxHaven,,x
@@ -27,4 +27,13 @@
 ,,,,,
 ;;,DECLARE,City,,,
 ,HAS,Name,IS,A,String
-,,isTaxhaven,IS,A,Boolean
+,,isTaxHaven,IS,A,Boolean
+,,,,,
+,,,,,
+;;,GIVEN,p,IS,A,Person
+,DECIDE,isCitizenof,p,usa,
+,WHEN,isBornin,p,usa,
+,,,,,
+//,what is the type of usa?,,,,
+//,"Assign it an abstract type t, generate equatiions/constraints that t must satify",,,,
+//,give it a type 'object' of which every other type is a subtype,,,Essentially language becomes untyped?,

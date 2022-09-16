@@ -43,8 +43,8 @@ sfl4ToCorel4 rs =
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , "\n\n-- classes\n",                   show $ prettyClasses cTable
-               , "\n\n-- boilerplate\n",               show $ prettyBoilerplate cTable
+               , "\n\n## classes\n",                   show $ prettyClasses cTable
+               , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 
 -- honestly i think we can just live without these
 --               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
@@ -81,8 +81,8 @@ pptle (RuleTLE Rule { nameOfRule }) =
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
 
-pptle tle                 = vsep ( "-- pptle: UNIMPLEMENTED, showing Haskell source:"
-                                   : (pretty . ("-- " <>) <$> lines (show tle)) )
+pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell source:"
+                                   : (pretty . ("## " <>) <$> lines (show tle)) )
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement SRng]
 sfl4ToCorel4Rule Regulative
@@ -223,7 +223,7 @@ prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pret
 
 prettyDecls :: ScopeTabs -> Doc ann
 prettyDecls sctabs =
-  vsep [ "--" <+> scope_name <> Prettyprinter.line <>
+  vsep [ "##" <+> scope_name <> Prettyprinter.line <>
          "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
        | (scopename , symtab') <- Map.toList sctabs
        , let scope_name = snake_inner (T.unwords scopename)
@@ -361,7 +361,7 @@ prettyClasses ct@(CT ch) =
                                                  _         -> ["Boolean"]
                                          )
              Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
-             Nothing   -> " #" <+> pretty attrname <+> "--" <+> "not typed"
+             Nothing   -> " #" <+> pretty attrname <+> "##" <+> "not typed"
          | attrname <- getCTkeys children
          -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
          ]

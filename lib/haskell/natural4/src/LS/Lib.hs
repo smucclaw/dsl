@@ -443,9 +443,9 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
-    parseHas = concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
+    parseHas = debugName "parseHas" $ concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
     declareLimb = do
-      ((name,super),has) <- sameOrNextLine slKeyValuesAka parseHas
+      ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ sameOrNextLine slKeyValuesAka parseHas
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
       myTraceM $ "got has = " <> show has

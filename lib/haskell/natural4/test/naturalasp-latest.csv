@@ -26,7 +26,7 @@
 ,,profitable,IS,A,Boolean
 ,,,,,
 ;;,DECLARE,City,,,
-,HAS,Name,IS,A,String
+,HAS,CityName,IS,A,String
 ,,isTaxHaven,IS,A,Boolean
 ,,,,,
 ,,,,,

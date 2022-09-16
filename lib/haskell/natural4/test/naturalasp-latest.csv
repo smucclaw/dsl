@@ -10,7 +10,7 @@
 ,,c,IS,A,Corporation
 ,DECIDE,mustPayCorpTax,p,c,
 ,WHEN,x,IS,A,City
-,AND,Owner,c,c,
+,AND,Owner,c,p,
 ,AND,profitable,,c,
 ,AND,hasHQ,,c,x
 ,AND,NOT,isTaxHaven,,x

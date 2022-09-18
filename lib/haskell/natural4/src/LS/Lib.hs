@@ -386,9 +386,9 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  debugName "pRulesOnly: some" $
+  debugName "pRulesOnly: some" $ concat <$>
     some (debugName "trying semicolon *> pRule" $
-          try (debugName "semicolon" semicolonBetweenRules *> optional dnl *> manyIndentation pRule <* optional dnl)) <* eof
+          try (debugName "semicolon" semicolonBetweenRules *> optional dnl *> manyIndentation (sameDepth pRule) <* optional dnl)) <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
 semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
@@ -443,7 +443,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
-    parseHas = debugName "parseHas" $ concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
+    parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       myTraceM $ "got name = " <> show name

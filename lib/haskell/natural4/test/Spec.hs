@@ -3,7 +3,7 @@
 
 module Main where
 
--- import Test.Hspec.Megaparsec hiding (shouldParse)
+import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
 import LS.Parser
@@ -437,11 +437,11 @@ parserTests nlgEnv runConfig_ = do
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 2, version = Nothing})) ]
 
       let if_king_wishes_singer_nextline = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})) ]
+              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})) ]
 
       let if_king_wishes_singer_2 = if_king_wishes ++
             [ DefNameAlias ["singer"] ["person"] Nothing
@@ -801,7 +801,7 @@ parserTests nlgEnv runConfig_ = do
         (parseOther pParamText) (ptFragment3b,[])
 
       filetest "paramtext-4-a" "a multi-line ParamText, typed String"
-        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}])
+        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing})}])
 
 
       let actionFragment1 :: BoolStructP
@@ -847,7 +847,7 @@ parserTests nlgEnv runConfig_ = do
           `shouldParse` ((Is,(Is,Is),Is), [])
 
     describe "MISC" $ do
-      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a Data Breach"] RPis (Leaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (Leaf (RPMT ["a data breach","occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = ["a data breach","occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
+      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a Data Breach"] RPis (Leaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (Leaf (RPMT ["a data breach","occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 7, srccol = 4, version = Nothing})},Hornlike {name = ["a data breach","occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [Leaf (RPMT ["access"]),Leaf (RPMT ["use"]),Leaf (RPMT ["disclosure"]),Leaf (RPMT ["copying"]),Leaf (RPMT ["modification"]),Leaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
       filetest "unauthorised" "should parse correctly"
         (parseR pToplevel) unauthorisedExpected
 
@@ -956,7 +956,7 @@ parserTests nlgEnv runConfig_ = do
                 ( SrcRef
                     { url = "test/Spec"
                     , short = "test/Spec"
-                    , srcrow = 2
+                    , srcrow = 6
                     , srccol = 3
                     , version = Nothing
                     }
@@ -968,15 +968,15 @@ parserTests nlgEnv runConfig_ = do
       filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
       filetest "pdpadbno-2" "data intermediaries"
-        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}]
+        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (Leaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (Leaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = Leaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 2, version = Nothing})}]
 
       filetest "pdpadbno-3" "data intermediaries"
-        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}]
+        (parseR pToplevel) [defaultReg {subj = Leaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (Leaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = Leaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 2, version = Nothing})}]
 
 --      filetest "pdpadbno-4" "ndb qualification" (parseR pToplevel) []
 
       filetest "pdpadbno-5" "notification to PDPC"
-        (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = Leaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [Leaf (RPMT ["it is","an NDB"]),Not (Leaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = Leaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = Leaf (("the PDPC" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 5, srccol = 1, version = Nothing})}]
 
       filetest "pdpadbno-6" "exemption: unlikely"
         (parseR pToplevel)
@@ -1047,7 +1047,7 @@ parserTests nlgEnv runConfig_ = do
             ( SrcRef
               { url = "test/Spec"
               , short = "test/Spec"
-              , srcrow = 2
+              , srcrow = 5
               , srccol = 5
               , version = Nothing
               }
@@ -1362,7 +1362,7 @@ parserTests nlgEnv runConfig_ = do
         const [DefTypically { name = ["disposal"]
                             , defaults = [RPConstraint ["disposal"] RPis ["True"]]
                             , srcref = Just (SrcRef { url = "test/Spec", short = "test/Spec"
-                                                    , srcrow = 3, srccol = 8, version = Nothing})}]
+                                                    , srcrow = 5, srccol = 8, version = Nothing})}]
           <$> inline_1)
       filetest "inline-1-m" "line crossing" pInline1 inline_1
       filetest "inline-1-n" "line crossing" pInline1 inline_2
@@ -1506,7 +1506,7 @@ parserTests nlgEnv runConfig_ = do
         , DefTypically
           { name = ["is","immortal"]
           , defaults = [RPConstraint ["is","immortal"] RPis ["false"]]
-          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
+          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 6, srccol = 3, version = Nothing})}
         ]
 
       when (runNLGtests runConfig_) $ do
@@ -1644,6 +1644,25 @@ parserTests nlgEnv runConfig_ = do
       filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
       filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
       filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
+
+-- declare should be able to have nestedHorn, not just pBSR
+    describe "nestedHorn" $ do
+      filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
+        (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["genus","species"] RPis (Leaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
+
+  -- |&|
+    describe "ampersand" $ do
+      let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
+      xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-2" "this bed is just right"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-3" "to the right shouldbe OK"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      xfiletest "ampersand-4" "to the right with extra should leave uncaptured uncaptured"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-4" "to the right with extra"
+        (parseOther nextLineP) ((["Potato", "uncaptured"],["genus", "species"]), [])
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

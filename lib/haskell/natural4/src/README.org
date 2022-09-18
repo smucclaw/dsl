@@ -562,6 +562,84 @@ Nested booleans go into the ~getBS~.
 
 Nested constitutive and regulative rules go into the ~getR~.
 
+* More about nested hornlike rules
+
+Mustsing has a good example: every person who qualifies must do whatever; inline, qualifies means something and something.
+
+that works inside the scope of a WHO because the WHO is a maybe boolstructr. the boolstructr resolves using a RelPred parser (slRelPred) which includes an RPMT $ mustNestHorn.
+
+However, if we want that sort of nested horn clause in a different context -- under the Policyholder of a ~DECLARE Policy HAS Policyholder~, for instance, then we need to take a different tack. Inside ~HAS Policyholder~, Policyholder is parsed by an slKeyValuesAka.
+
+Similarly we want to have support for MEANS inside a ~HENCE Notification~ (in PDPADBNO) -- where the HENCE Notification is of type Maybe Rule
+
+So, how do we augment an arbitrary parser with the ability to have a nestedHorn on the next line? We rely on sameOrNextline, but we crucially require that the sameOrNextline should not extend too far to the left past the term that is directly above the MEANS. Maybe the easy way to do this is to take advantage of the fact that between the Notification and the MEANS there is no godeeper or undeeper, so it is literally a >>.
+
+The problem is, sometimes allowing a nestedHorn in a certain position (e.g. in a maybeAka MEANS something) causes the nestedHorn to overmatch -- the maybeAka is supposed to stand alone, but the nestedHorn consumes the next line's MEANS, when it shouldn't.
+
+The problem can be traced to the ~|^|~ operator, which consumes any number of undeepers.
+
+We need to have a sameOrNextLine which consumes only as many undeepers which were to the right of the position of the base (LHS) parser:
+
+|       | foo1 |
+| MEANS | foo2 |
+
+so in the above, the nestedHorn (hopefully using a sameOrNextLine parser) would NOT match because foo1 is followed by a MEANS which is to the left of foo1
+
+however below, foo3 does have a nestedHorn because the MEANS sits immediately under it
+
+|   | foo3  |      |
+|   | MEANS | foo4 |
+
+This is all complicated by the fact that sometimes we want to be able to match foo5a as having a nested horn:
+
+
+|   | foo5a |      | foo5b
+|   | MEANS | foo6 |
+
+here, we see that it's foo5a that's being MEANSed, and the foo6 is the nested definition, and the foo5b follows the whole thing.
+
+This shows up for real in the PDPADBNO where we have "a data breach | occurred".
+
+But we don't have a very good way of doing this -- the ~|^|~ combinator isn't smart enough to do this job.
+
+To make all this work, we would need the sameOrNextLine function to be able to sense the position at the start of foo1a, and refuse to undeeper past it.
+
+Now trying to figure out how the SL and the Parser all interact so as to be able to get our hands on the (_,n) of the SLParser.
+
+** The ~|&|~ combinator
+
+Let's have a ~|&|~ combinator that strictly does not match when the RHS is to the left of the LHS.
+
+Now, didn't we have a sufficiently sophisticated indentation management system for the thing that handled pre and post labels above?
+
+We even had a lookahead matcher that anticipated where the next line fell. So maybe we should go look at that again and see if we can reuse any of it.
+
+[TODO].
+
+What we want to be able to say: myindented thingWithMeans
+
+should match a foo3 MEANS foo4
+
+but not foo1 MEANS fo2
+
+how would this work?
+
+thingWithMeans would be inside the myindented, and match because it is ~foo3 MEANS ( foo4 )~ with notihign between the foo3 and the MEANS.
+
+What about
+
+|   | foo7 |       |      |
+|   |      | MEANS | foo8 |
+|   |      |       |      |
+
+?
+
+There would be an EOL in the way, which we would accept
+
+|   | foo9 | MEANS | foo10 |
+
+And, on the same line, we should be fine with Foo9 ( MEANS ( foo10 ))
+
 * Indentation Parsing
 
 We use ( and ) to represent going deeper and going undeeper.

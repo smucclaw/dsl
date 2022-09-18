@@ -1630,6 +1630,60 @@ a scenario would look like:
 
 |   | DECLARE | Potato |       |         |
 |   |         | HAS    | genus | species |
+*** ampersand: |&| declare with inline nestedHorn
+:PROPERTIES:
+:TABLE_EXPORT_FILE: declare-nestedhorn-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |                    |         |
+|         | HAS    | genus              | species |
+|         |        | MEANS              |         |
+|         |        | some Linnaen thing |         |
+
+
+*** ampersand: |&| too far left -- should fail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|              | Potato |         |
+| too far left | genus  | species |
+
+*** ampersand: |&| just underneath -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |         |
+|   | genus  | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |       |         |
+|   |        | genus | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+similar to the situation in pdpadbno, where we have SOMETHING occurred
+
+|   | Potato |       |         | uncaptured |
+|   |        | genus | species |            |
+
+we want the SOMETHING to have a MEANS under it, but the "occurred" should not.
+
+we'll leave this as a [TODO] for now.
+
 ** Keywords
 
 *** DECIDE
@@ -1780,6 +1834,8 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 defined terms are T-shaped rules
 
+this should get picked up by the pConstitutiveRule and rewritten to Hornlike
+
 |       | degustates |
 | MEANS | eats       |
 | OR    | drinks     |
@@ -1798,7 +1854,7 @@ defined terms are T-shaped rules
 ...ignoring checkboxes...
 
 |   |   |       |      |            |   |   |
-|   |   | TRUE  |      | degustates |   |   |
+|   |   |       |      | degustates |   |   |
 |   |   | MEANS | TRUE | eats       |   |   |
 |   |   | OR    | TRUE | drinks     |   |   |
 |   |   |       |      |            |   |   |

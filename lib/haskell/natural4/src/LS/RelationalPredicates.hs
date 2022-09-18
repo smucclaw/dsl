@@ -117,7 +117,7 @@ pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   leftY              <- lookAhead pYLocation
-  namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
+  namep              <- debugName "calling someIndentation pNameParens, skipping over invisible DEFINE keyword" $ someIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   -- [TODO] we should delete the Unless here because we've got it in Expr
@@ -146,7 +146,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
 -- OR bob's your father's mother
 
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
-                           -- preamble = copula   (means,deem,decide)
+                           -- preamble = copula   (means)
                 -> Parser (  (Preamble, BoolStructR)  -- body of horn clause
                           , [(Preamble, BoolStructR)] -- positive conditions (when,if)
                           , [(Preamble, BoolStructR)] -- negative conditions (unless)
@@ -217,7 +217,7 @@ pHornlike' :: Bool -> Parser Rule
 pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
   let dKeyword = if needDkeyword
-                 then Just <$> choice [ pToken Decide ]
+                 then Just <$> choice [ pToken Decide ] -- [TODO] try allowing DEFINE in future, for things like simple-constitutive-1
                  else Nothing <$ pure ()
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
@@ -297,7 +297,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPBoolStructR mt _ _) = mt
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-rpSameNextLineWhen = sameOrNextLine slRelPred (fmap join <$> liftSL $ optional whenCase)
+rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
@@ -324,7 +324,7 @@ slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
         try ( debugName "RPConstraint"  rpConstraint )
     <|> try ( debugName "RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR slMultiTerm)
+    <|> try ( debugName "nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR pMultiTerm)
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
     <|> try ( debugName "RPParamText (with typesig)" rpParamTextWithTypesig )
     <|> try ( debugName "RPMT"          rpMT )
@@ -531,16 +531,16 @@ getSrcRef = do
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  slAKA baseParser toMultiTerm |<$ undeepers
+  manyIndentation (slAKA baseParser toMultiTerm |<$ undeepers)
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = do
   (base, entityalias, typicalval) <-
---    debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
+    debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
     (,,)
       $*| debugName "slAKA base" baseParser
       |*| debugName "slAKA optional akapart"   ((|?|) akapart)
-      |*| debugName "slAKA optional typically" ((|?|) typically)
+      |*< debugName "slAKA optional typically" ((|?|) typically)
 
   debugPrint "slAKA: proceeding after base and entityalias are retrieved ..."
   let detail' = toMultiTerm base
@@ -579,21 +579,19 @@ mustNestHorn, nestedHorn
   -> (MultiTerm -> RuleName)    -- ^ turn the thing into the inner Hornlike's RuleName
   -> Parser MyToken     -- ^ the connector, usually meansIs
   -> Parser BoolStructR -- ^ parser for the thing after the connector, usually pBSR
-  -> SLParser a         -- ^ the thing we're parsing -- but should this be a Parser because we don't want to over undeepen?
+  -> Parser a
   -> SLParser a
 nestedHorn toMT toRN connector pbsr base =
   try (mustNestHorn toMT toRN connector pbsr base)
     <|> noNested
   where
-    noNested = debugName "default noNested" base
+    noNested = debugName "default noNested" (liftSL base)
+
 
 mustNestHorn toMT toRN connector pbsr base =
   debugName "trying hasNested" $ do
       srcref <- liftSL getSrcRef
-      (subj, meansTok, bsr) <- (,,)
-                               $*| base
-                               |^| liftSL connector
-                               |-| pbsr
+      (subj, (meansTok, bsr)) <- liftSL $ liftSL base |&| ((,) $>| connector |-| pbsr)
       let simpleHorn = Hornlike { name = toRN (toMT subj)
                                 , super = Nothing
                                 , keyword = meansTok

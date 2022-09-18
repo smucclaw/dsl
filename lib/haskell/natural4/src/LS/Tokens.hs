@@ -266,6 +266,7 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 --             bar bar
 -- if we wanted to try to be super clever we could remain in the SL context the whole time and limit the <|> bit to the dnl newline vs the ) ( vs the samedepth
 
+(|&|) = sameOrNextLine
 sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
 sameOrNextLine pa pb =
   try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
@@ -452,6 +453,8 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any GoDeepers or UnDeepers, then parse -- fancy
 (|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- fancy
 (|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse, then consume GoDeepers
+
+(|&|)  ::(Show a, Show b)  => SLParser  a       -> SLParser b  ->   Parser (a,b) -- ^ standalone fancy fancy on same or next line
 
 -- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
 (+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.

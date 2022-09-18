@@ -445,7 +445,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
   where
     parseHas = debugName "parseHas" $ concat <$> many ((flip const) $>| pToken Has |>| (sameDepth declareLimb))
     declareLimb = do
-      ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ sameOrNextLine slKeyValuesAka parseHas
+      ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
       myTraceM $ "got has = " <> show has

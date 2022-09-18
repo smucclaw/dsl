@@ -388,7 +388,12 @@ pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
   debugName "pRulesOnly: some" $ concat <$>
     some (debugName "trying semicolon *> pRule" $
-          try (debugName "semicolon" semicolonBetweenRules *> optional dnl *> manyIndentation (sameDepth pRule) <* optional dnl)) <* eof
+          try (debugName "semicolon" semicolonBetweenRules
+               *> optional dnl
+               *> manyIndentation (sameDepth (try pRule))
+               <* optional dnl)
+         )
+    <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
 semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
@@ -438,7 +443,7 @@ pTypeDeclaration :: Parser Rule
 pTypeDeclaration = debugName "pTypeDeclaration" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
-    <$$> pToken Declare *> declareLimb
+    <$$> pToken Declare *> someIndentation declareLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }

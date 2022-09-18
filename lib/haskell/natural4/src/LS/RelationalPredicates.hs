@@ -322,12 +322,12 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-        try ( debugName "RPConstraint"  rpConstraint )
-    <|> try ( debugName "RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR pMultiTerm)
+        try ( debugName "slRelPred/RPConstraint"  rpConstraint )
+    <|> try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
+    <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR slMultiTerm)
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
-    <|> try ( debugName "RPParamText (with typesig)" rpParamTextWithTypesig )
-    <|> try ( debugName "RPMT"          rpMT )
+    <|> try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
+    <|> try ( debugName "slRelPred/RPMT"          rpMT )
 
 rpParamTextWithTypesig :: SLParser RelationalPredicate
 rpParamTextWithTypesig = do
@@ -508,7 +508,7 @@ pKeyValuesAka :: Parser KVsPair
 pKeyValuesAka = debugName "pKeyValuesAka" $ finishSL slKeyValuesAka
 
 slKeyValuesAka :: SLParser KVsPair
-slKeyValuesAka = slAKA slKeyValues (toList . fst)
+slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
@@ -534,13 +534,14 @@ pAKA baseParser toMultiTerm = debugName "pAKA" $ do
   manyIndentation (slAKA baseParser toMultiTerm |<$ undeepers)
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
-slAKA baseParser toMultiTerm = do
+slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
   (base, entityalias, typicalval) <-
     debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
+    debugNameSL "slAKA base (multiterm,aka,typically)" $
     (,,)
       $*| debugName "slAKA base" baseParser
       |*| debugName "slAKA optional akapart"   ((|?|) akapart)
-      |*< debugName "slAKA optional typically" ((|?|) typically)
+      |*| debugName "slAKA optional typically" ((|?|) typically)
 
   debugPrint "slAKA: proceeding after base and entityalias are retrieved ..."
   let detail' = toMultiTerm base
@@ -579,33 +580,43 @@ mustNestHorn, nestedHorn
   -> (MultiTerm -> RuleName)    -- ^ turn the thing into the inner Hornlike's RuleName
   -> Parser MyToken     -- ^ the connector, usually meansIs
   -> Parser BoolStructR -- ^ parser for the thing after the connector, usually pBSR
-  -> Parser a
   -> SLParser a
-nestedHorn toMT toRN connector pbsr base =
-  try (mustNestHorn toMT toRN connector pbsr base)
+  -> SLParser a
+nestedHorn toMT toRN connector pbsr basesl =
+  try (mustNestHorn toMT toRN connector pbsr basesl)
     <|> noNested
   where
-    noNested = debugName "default noNested" (liftSL base)
+    noNested = debugName "noNested horn clause, defaulting to base" basesl
 
 
-mustNestHorn toMT toRN connector pbsr base =
-  debugName "trying hasNested" $ do
-      srcref <- liftSL getSrcRef
-      (subj, (meansTok, bsr)) <- liftSL $ liftSL base |&| ((,) $>| connector |-| pbsr)
-      let simpleHorn = Hornlike { name = toRN (toMT subj)
-                                , super = Nothing
-                                , keyword = meansTok
-                                , given = Nothing
-                                , upon = Nothing
-                                , clauses = [ HC2 (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
-                                , rlabel = Nothing
-                                , lsource = Nothing
-                                , srcref = Just srcref
-                                , defaults = []
-                                , symtab = [] }
-      debugPrint "constructed simpleHorn; running tellIdFirst"
-      _ <- liftSL $ tellIdFirst (return simpleHorn)
-      return subj
+mustNestHorn toMT toRN connector pbsr basesl =
+  debugNameSL "trying hasNested" $ do
+  srcref   <- liftSL getSrcRef
+              |-- (\n -> debugPrint $ "mustNestHorn before basesl: " ++ show n ++ " UnDeepers")
+  (subj, meansTok, bsr) <- (,,)
+                           $*| basesl
+                           |-- (\n -> debugPrint $ "mustNestHorn after basesl: " ++ show n ++ " UnDeepers")
+                           |<<| ()
+                           |-- (\n -> debugPrint $ "mustNestHorn after undeepering: " ++ show n ++ " UnDeepers")
+                           |-| connector
+                           |-| pbsr
+
+  -- the conceptual positioning of the cursor above is critical
+
+  let simpleHorn = Hornlike { name = toRN (toMT subj)
+                            , super = Nothing
+                            , keyword = meansTok
+                            , given = Nothing
+                            , upon = Nothing
+                            , clauses = [ HC2 (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Just srcref
+                            , defaults = []
+                            , symtab = [] }
+  debugPrint "constructed simpleHorn; running tellIdFirst"
+  _ <- liftSL $ tellIdFirst (return simpleHorn)
+  return subj
 
 
 meansIs :: Parser MyToken

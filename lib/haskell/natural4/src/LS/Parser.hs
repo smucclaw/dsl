@@ -52,6 +52,8 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 -- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
+
+
 expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = termIndent p

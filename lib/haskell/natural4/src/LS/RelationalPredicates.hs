@@ -10,7 +10,7 @@ import Text.Parser.Permutation
 import qualified AnyAll as AA
 import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
 import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe, catMaybes, isJust)
+import Data.Maybe (fromMaybe)
 import Data.Semigroup (sconcat)
 import Data.Maybe (mapMaybe)
 
@@ -232,18 +232,12 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                     , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                     , keyword = fromMaybe Means keyword
                     , given
-                    , clauses = addWhen topwhen $ clauses
+                    , clauses = addWhen topwhen clauses
                     , upon, rlabel, srcref
                     , lsource = noLSource
                     , defaults = mempty, symtab = mempty
                     }
   where
-    addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
-    addHead Nothing hcs   = hcs
-    addHead (Just pt) hcs = -- trace ("addHead running, overwriting hHead with RPParamText " <> show pt) $
-                            [ hc2 { hHead = RPParamText pt }
-                            | hc2 <- hcs ]
-
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
                          -- trace ("addWhen running, appending the mbsr " <> show mbsr) $
@@ -324,7 +318,7 @@ slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
         try ( debugName "slRelPred/RPConstraint"  rpConstraint )
     <|> try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR slMultiTerm)
+    <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
     <|> try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
     <|> try ( debugName "slRelPred/RPMT"          rpMT )
@@ -341,7 +335,7 @@ rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
 rpConstraint :: SLParser RelationalPredicate
-rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
+rpConstraint  = nestedHorn rpHead id meansIs pBSR (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
 
 rpBoolStructR :: SLParser RelationalPredicate
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
@@ -434,7 +428,10 @@ hasTypeSig ((_,_      ) :| _) = True
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
-  _           <- pToken TypeSeparator <|> pToken Is
+  _           <- choice [ try (pToken TypeSeparator <* pToken A_An)
+                        , pToken TypeSeparator
+                        , pToken Is
+                        ]
   manyIndentation (simpletype <|> inlineenum) -- sometimes there is no GoDeeper between the TypeSeparator and the A_An due to toToken "IS A"
   where
     simpletype = do
@@ -449,7 +446,8 @@ pTypeSig = debugName "pTypeSig" $ do
       InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
-pOneOf = pToken OneOf *> someIndentation pParamText
+pOneOf = pToken OneOf *> someIndentation (fromList . concatMap toList <$> sameDepth pParamText)
+                                         -- i thought we could use sequence, but i guess not?
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
@@ -513,12 +511,23 @@ slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
+-- | a ParamText key value pair is simply a (key : [v1,v2,v3]).
+-- we use nestedHorn to allow a MEANS under the v1.
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
-             (lhs, typesig)   <- (,)
-                                 $*| someLiftSL pNumOrText
-                                 |*| (|?|) slTypeSig
-             return (fromList lhs, typesig)
+  (lhs, (rhs, typesig))   <- try (
+    (,) -- key followed by values, and the values can sit on top of a MEANS
+      $>|                                           pNumOrText
+      ->| 1
+      |*| nestedHorn fst id meansIsWhose pBSR
+           ((,) $>| someDeep pNumOrText |*| (|?|) slTypeSig))
+    <|> -- key without values, so we put the MEANS under the key
+    nestedHorn (pure.fst) id meansIsWhose pBSR
+    ((\l rt -> (l,([],rt)))
+     $>| pNumOrText
+     |*| (|?|) slTypeSig)
+  return (fromList (lhs : rhs), typesig)
+
 
 getSrcRef :: Parser SrcRef
 getSrcRef = do
@@ -619,8 +628,9 @@ mustNestHorn toMT toRN connector pbsr basesl =
   return subj
 
 
-meansIs :: Parser MyToken
+meansIs,meansIsWhose :: Parser MyToken
 meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]
+meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ prePostParse pRelPred

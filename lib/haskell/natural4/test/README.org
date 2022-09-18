@@ -2814,6 +2814,8 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+this doesn't actually compile, i think the syntax has changed
+
 |   | DEFINE | Chirality |       |           |           |
 |   | ONE OF | Left      |       |           |           |
 |   |        | Right     |       |           |           |

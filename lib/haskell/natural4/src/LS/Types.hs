@@ -240,6 +240,7 @@ data Rule = Regulative
         --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -254,6 +255,7 @@ data Rule = Regulative
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -268,6 +270,7 @@ data Rule = Regulative
             , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -279,6 +282,7 @@ data Rule = Regulative
 --          , redrule  :: [Rule]                -- a test could return a reduction of existing rules
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -686,6 +690,7 @@ toToken "IS" =     pure Is
 toToken "OR" =     pure Or
 toToken "AND" =    pure And
 toToken "UNLESS" = pure Unless
+toToken "EXCEPT" = pure Unless
 toToken "IF NOT" = pure Unless
 toToken "NOT"    = pure MPNot
 
@@ -740,6 +745,7 @@ toToken "::"     = [TypeSeparator, A_An]
 toToken "TYPE"   = [TypeSeparator, A_An]
 toToken "IS A"   = [TypeSeparator, A_An]
 toToken "IS AN"  = [TypeSeparator, A_An]
+toToken "IS THE" = [TypeSeparator, A_An]
 toToken "A"      = pure A_An
 toToken "AN"     = pure A_An
 toToken "THE"    = pure A_An
@@ -747,7 +753,9 @@ toToken "THE"    = pure A_An
 toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define
 toToken "DECIDE"    = pure Decide
+toToken "ONEOF"    = pure OneOf
 toToken "ONE OF"    = pure OneOf
+toToken "IS ONE OF" = pure OneOf
 toToken "AS ONE OF" = pure OneOf
 toToken "DEEM"      = pure Deem
 toToken "HAS"       = pure Has

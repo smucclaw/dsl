@@ -91,7 +91,7 @@ asValue  l4i hc2@(HC2 { hHead = RPParamText pt })              = trace ("asValue
                                                                      pretty (PT4 pt l4i)
 
 asValuePT :: Interpreted -> [HornClause2] -> Doc ann
-asValuePT l4i hc2s = trace ("asValuePT: " <> show hc2s) $
+asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
                      vsep [ pretty (PT4 pt l4i) <> comma
                           | HC2 { hHead = RPParamText pt } <- hc2s ]
                  

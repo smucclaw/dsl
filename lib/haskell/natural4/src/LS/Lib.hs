@@ -47,9 +47,9 @@ import Control.Monad.Writer.Lazy
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 import Data.List (transpose)
-import Debug.Trace (trace)
 import Data.Void (Void)
 import Data.Either (rights)
+import Control.Monad.Combinators.Expr
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -493,7 +493,7 @@ pVarDefn = debugName "pVarDefn" $ do
                  }
   where
     defineLimb = debugName "pVarDefn/defineLimb" $ do
-      (name,mytype) <- manyIndentation (pKeyValuesAka)
+      (name,mytype) <- manyIndentation pKeyValuesAka
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
       hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
@@ -707,9 +707,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 
 
 pDoAction ::  Parser BoolStructP
-pDoAction = do
-  _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ someIndentation pAction
+pDoAction = debugName "pDoAction" $ snd <$> preambleBoolStructP [ Do ]
 
 
 pAction :: Parser BoolStructP
@@ -797,7 +795,7 @@ pDT = debugName "pDT" $ do
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- someIndentation pAction
+  pa <- someIndentation dBoolStructP
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
@@ -808,12 +806,15 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
   return (condWord, ands)
 
 
-
-
--- [TODO]: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
-dBoolStructP = debugName "dBoolStructP calling exprP" $ do
-  either fail pure . toBoolStruct =<< exprP
+dBoolStructP = debugName "dBoolStructP" $ do
+  raw <- makeExprParser (manyIndentation $ AA.Leaf <$> pParamText)
+         [ [ prefix MPNot   (\x   -> AA.Not x) ]
+         , [ binary Or      (\x y -> AA.Any Nothing [x, y]) ]
+         , [ binary Unless  (\x y -> AA.All Nothing [x, AA.Not y]) ]
+         , [ binary And     (\x y -> AA.All Nothing [x, y]) ]
+         ]
+  return raw
 
 exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do

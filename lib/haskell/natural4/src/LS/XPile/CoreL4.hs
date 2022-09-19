@@ -43,7 +43,19 @@ sfl4ToCorel4 rs =
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , "\nclass Asset\nclass Money\nclass Interval\nclass Person\nclass Business\n"
+               -- some hardcoding while we debug the transpiler and babyl4 interpreter
+               , "class Asset"
+               , "class Money"
+               , "class Interval"
+               , "class Person"
+               , "class Business"
+               , "decl InsuredVehicle: Object -> Boolean"
+               , "decl age: Integer"
+               , "decl years: Integer -> Integer"
+               , "decl meters: Float -> Float"
+               , "decl TB_Length : Float"
+               , "decl Valid: Object -> Boolean               "
+
                , "\n\n## classes\n",                   show $ prettyClasses cTable
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 

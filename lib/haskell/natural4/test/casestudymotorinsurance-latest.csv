@@ -316,7 +316,7 @@
 //,//,,,,,,,,,,,,,
 //,//,,,,,,,,,,,,,
 //,//,Section C – General exclusions,,,,,,,,,,,,
-,§,Section C – General Exclusions,,,,,,,,,,,,
+,§,Section C - General Exclusions,,,,,,,,,,,,
 ,DECIDE,Exclusions apply,,,,,,,,,,,,
 ,IF,,Incident Vehicle,is,partly,,,,,,,,,
 ,,,,OR,completely,,,,,,,,,

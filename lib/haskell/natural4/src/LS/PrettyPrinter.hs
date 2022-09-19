@@ -139,8 +139,9 @@ snake_inner = pretty . untaint
 
 untaint = T.replace " " "_" .
           T.replace "," "_" .
-          T.replace "'" "_"
---          T.replace "\’" "_" we need to replace all non-low-unicode characters with underscores.
+          T.replace "'" "_" .
+          T.replace "-" "_"
+--          T.replace "\’" "_" -- [TODO] we need to replace all non-low-unicode characters with underscores.
 
 
 instance Pretty RPRel where
@@ -230,9 +231,9 @@ typeOfTerm l4i tm =
 --                                         walk l4i (Just ct1) xs ot
 
 typedOrNot :: String -> TypedMulti -> Doc ann
-typedOrNot        _ (multitext, Nothing)                        = snake_case (toList multitext)
+typedOrNot        _ (multitext, Nothing)                        = snake_case (toList multitext) <> ":"  <+> "Object"
 typedOrNot        _ (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
-typedOrNot "corel4" (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":" <+> pretty s1
+typedOrNot "corel4" (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
 typedOrNot        _ (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
 typedOrNot        _ (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
 typedOrNot        _ (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)

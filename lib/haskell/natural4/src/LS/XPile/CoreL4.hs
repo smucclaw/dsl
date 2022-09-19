@@ -43,6 +43,7 @@ sfl4ToCorel4 rs =
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
+               , "\nclass Asset\nclass Money\nclass Interval\nclass Person\nclass Business\n"
                , "\n\n## classes\n",                   show $ prettyClasses cTable
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 
@@ -185,6 +186,10 @@ sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 
 
 -- see also comments in Prettyprinter.hs around RP1
+
+-- [TODO] we have a situation where we have class Incident attribute Vehicle that is typed Asset
+-- and in a rule which speaks of Vehicle we need to know how to resolve that type intelligently.
+-- i am guessing we need to quantify the entire class ancestry?
 
 directToCore :: SFL4.Rule -> Doc ann
 directToCore r@Hornlike{keyword}
@@ -388,7 +393,7 @@ prettyClasses ct@(CT ch) =
          ]
   , ""
   ]
-  | className <- getCTkeys ct
+  | className <- nub $ getCTkeys ct -- [TODO] ++ getSuperClasses ct using clsParent
   , let c_name = snake_inner className
   , Just (ctype, children) <- [Map.lookup className ch]
   ]

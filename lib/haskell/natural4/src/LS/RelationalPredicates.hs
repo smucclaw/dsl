@@ -8,6 +8,7 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import qualified AnyAll as AA
+import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
 import qualified Data.Foldable as DF
 import Data.Maybe (fromMaybe)
@@ -316,12 +317,21 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-        try ( debugName "slRelPred/RPConstraint"  rpConstraint )
+  try ( debugName "slRelPred/RPConstraint"  rpConstraint )
     <|> try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
     <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
     <|> try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
     <|> try ( debugName "slRelPred/RPMT"          rpMT )
+    -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" $ do
+    --             pt <- slParamText
+    --             if NE.length pt == 1
+    --               then return $ RPMT (toList $ NE.head $ untypePT pt)
+    --               else return $ RPParamText pt
+    --         )
+
+-- nuParamText :: SLParser ParamText
+-- nuParamText = sameDepth slKeyValuesAka
 
 rpParamTextWithTypesig :: SLParser RelationalPredicate
 rpParamTextWithTypesig = do
@@ -460,6 +470,7 @@ pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 pSingleTerm :: Parser KVsPair
 pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple` pTypeSig
 
+-- [TODO] rewrite this in terms of slKeyValuesAka
 slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 

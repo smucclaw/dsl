@@ -309,7 +309,7 @@ parserTests nlgEnv runConfig_ = do
         (parseR pRules) [srcrow2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg

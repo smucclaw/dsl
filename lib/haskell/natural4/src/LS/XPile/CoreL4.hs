@@ -54,7 +54,7 @@ sfl4ToCorel4 rs =
                , "decl years: Integer -> Integer"
                , "decl meters: Float -> Float"
                , "decl TB_Length : Float"
-               , "decl Valid: Object -> Boolean               "
+               , "decl Valid: Object -> Boolean"
 
                , "\n\n## classes\n",                   show $ prettyClasses cTable
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable

@@ -196,9 +196,9 @@ directToCore r@Hornlike{keyword}
           in
           vsep
           [ "rule" <+> angles rname
-          , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
-          ,                                "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
-          ,                                "then" <+> pretty (RP1  $  hHead c)
+          , maybe "# for-limb absent" (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
+          ,                                  "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
+          ,                                  "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
           , commentShow "#" $ given r
           , commentShow "#" $ hc2preds c
@@ -224,11 +224,16 @@ prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pret
 prettyDecls :: ScopeTabs -> Doc ann
 prettyDecls sctabs =
   vsep [ "##" <+> scope_name <> Prettyprinter.line <>
-         "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
+         "decl" <+> typedOrNot "corel4" (NE.fromList mt, getSymType symtype)
        | (scopename , symtab') <- Map.toList sctabs
        , let scope_name = snake_inner (T.unwords scopename)
        , (mt, (symtype,_vals)) <- Map.toList symtab'
        ]
+
+-- [TODO]
+-- fact <helplimit>
+-- for p : Policy
+-- HelpLimit p 7
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
@@ -255,9 +260,9 @@ prettyBoilerplate ct@(CT ch) =
   ]
   | className <- getCTkeys ct
   , Just (ctype, _) <- [Map.lookup className ch]
-  , (Just (InlineEnum TOne (( nelist, _ ) :| _)), _) <- [ctype]
+  , (Just (InlineEnum TOne nelist),_) <- [ctype]
   , let c_name = snake_inner className
-        enumList = NE.toList nelist
+        enumList = enumLabels_ nelist
   ]
   where
     pairwise :: [a] -> [(a, a)]
@@ -298,6 +303,15 @@ prettyDefnCs rname cs =
   , let clHead = hHead cl
         clBody = hBody cl
   , clBody == Nothing
+
+  -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
+  -- encountered, and which was new. The new word (suppose it's Bar) would be the
+  -- predicate, so it would turn into (Bar Foo).
+  -- And that would work whether the input was (Foo IS Bar) or (Bar IS Foo).
+
+  -- [TODO] convert "age < 16 years" to "age_in_years < 16"
+  -- OR just convert to "age < 16"
+  
   , (RPConstraint lhs RPis rhs) <- [clHead]
   , let rhss = T.unpack (T.unwords rhs)
   , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
@@ -341,8 +355,8 @@ prettyClasses ct@(CT ch) =
       -- decl Enum2: Something
   , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentShow "# ctype:" ctype
   , vsep [ "decl" <+> pretty member <> ":" <+> pretty className
-         | (Just (InlineEnum TOne (( nelist, _ ) :| _)), _) <- [ctype]
-         , member <- NE.toList nelist
+         | (Just (InlineEnum TOne nelist), _) <- [ctype]
+         , member <- enumLabels_ nelist
          ]
 
     -- two, a top-level DECLARE Someclass HAS Attr1 IS ONE OF enum1 enum2
@@ -353,15 +367,22 @@ prettyClasses ct@(CT ch) =
   , vsep [ "decl" <+> snake_inner attrname <>
            case attrType children attrname of
              -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
-             Just t@(SimpleType _ptype pt) ->
+             Just t@(SimpleType ptype pt) ->
                encloseSep ": " "" " -> " ([ c_name
-                                          , prettySimpleType snake_inner t
+                                          , prettySimpleType "corel4" snake_inner t
                                           ] ++ case pt of
                                                  "Boolean" -> []
                                                  _         -> ["Boolean"]
                                          )
+               <> if ptype == TOptional
+                  then Prettyprinter.line <>
+                       "decl" <+> snake_inner ("has" <> attrname) <>
+                       encloseSep ": " "" " -> " [ c_name , "Boolean" ]
+                       <+> "# auto-gen by CoreL4.hs, optional " <> snake_inner attrname
+                  else emptyDoc
+
              Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
-             Nothing   -> " #" <+> pretty attrname <+> "##" <+> "not typed"
+             Nothing   -> " ##" <+> "not typed"
          | attrname <- getCTkeys children
          -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
          ]
@@ -371,4 +392,7 @@ prettyClasses ct@(CT ch) =
   , let c_name = snake_inner className
   , Just (ctype, children) <- [Map.lookup className ch]
   ]
+
+-- [TODO] handle children recursively
+
 

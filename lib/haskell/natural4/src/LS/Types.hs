@@ -13,6 +13,7 @@ module LS.Types ( module LS.BasicTypes
 
 import qualified Data.Text as Text
 import Text.Megaparsec
+import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import Data.Void (Void)
 import qualified Data.Set           as Set
@@ -848,3 +849,7 @@ rLabelR Scenario     {..} = rlabel
 rLabelR RuleGroup    {..} = rlabel
 rLabelR _                 = Nothing
 
+enumLabels, enumLabels_ :: ParamText -> [Text.Text]
+enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
+
+enumLabels_ = fmap (Text.replace " " "_") . enumLabels

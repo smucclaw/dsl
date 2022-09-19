@@ -47,7 +47,7 @@ tsClasses l4i =
          <+> lbrace <> Prettyprinter.line
          <> indent 2 ( vsep [ snake_case [attrname] <>
                               case attrType children attrname of
-                                Just t -> " :" <+> prettySimpleType snake_inner t
+                                Just t -> " :" <+> prettySimpleType "ts" snake_inner t
                                 Nothing -> ""
                               <> semi
                           | attrname <- getCTkeys children
@@ -65,7 +65,7 @@ jsInstances l4i =
   let sctabs = scopetable l4i
   in
   vsep [ "//" <+> scopenameStr scopename <+> "scope" <> Prettyprinter.line
-         <> vsep [ "const" <+> snake_case mt <+> prettyMaybeType snake_inner (getSymType symtype) <+> equals <+> nest 2 value <> Prettyprinter.line
+         <> vsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" snake_inner (getSymType symtype) <+> equals <+> nest 2 value <> Prettyprinter.line
                  | (mt, (symtype, vals)) <- Map.toList symtab'
                  , value <- case vals of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,

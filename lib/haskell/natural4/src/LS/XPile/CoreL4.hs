@@ -225,6 +225,12 @@ directToCore r@Hornlike{keyword}
   | otherwise = "# DEFINE rules unsupported at the moment"
 -- fact <rulename> multiterm
 
+-- [TODO] -- we can relate classes and attributes by saying in babyl4:
+--                     for i: Incident.  a: Asset.  i.vehicle(a)
+-- we can also say:    for i: Incident,  a: Asset  -- this one will work better for translation to Epilog.
+--                     if (vehicle i a && ...)
+--                     then ...
+
 directToCore r@TypeDecl{} = ""
 directToCore _ = ""
 
@@ -405,7 +411,7 @@ prettyClasses ct@(CT ch) =
          ]
   , ""
   ]
-  | className <- nub $ getCTkeys ct -- [TODO] ++ getSuperClasses ct using clsParent
+  | className <- nub $ getCTkeys ct
   , let c_name = snake_inner className
   , Just (ctype, children) <- [Map.lookup className ch]
   ]
@@ -425,10 +431,9 @@ prettyClasses ct@(CT ch) =
         foundTypes = rights $ getUnderlyingType <$> concatMap (getAttrTypesIn ct) (getCTkeys ct)
         knownClasses = getCTkeys ct
       in vsep $ ("### types not explicitly defined" :
-                 ( ("class" <+>) . pretty <$> (foundTypes \\ knownClasses) ))
+                 ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
          ++ ["###"]
 
-
--- [TODO] handle children recursively
+  -- [TODO] handle children recursively. anonymous classes are attributes which HAS their own attributes.
 
 

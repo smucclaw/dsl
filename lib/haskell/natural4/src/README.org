@@ -640,6 +640,35 @@ There would be an EOL in the way, which we would accept
 
 And, on the same line, we should be fine with Foo9 ( MEANS ( foo10 ))
 
+
+** let's look at an example of how this works
+
+pTypeDeclaration lets us say something like
+
+| DECLARE | someTerm | :: | MyTermType | AKA | someAlias | TYPICALLY | Yes | (optional linebreak) | HAS | someAttribute |                | IS | A | TypeSig |
+|         |          |    |            |     |           |           |     |                      |     | MEANS         | someDefinition |    |   |         |
+|         |          |    |            |     |           |           |     |                      |     |               |                |    |   |         |
+
+The component parsers are:
+- declareLimb: slKeyValuesAka |&| parseHas
+  - slKeyValuesAka: slAKA slKeyValues
+    - slAKA: nestedHorn $ baseParser (=slKeyValues), optional akapart, optional typically
+    - slKeyValues: someLiftSL pNumOrText, optional slTypeSig
+    - slTypeSig: IS A TypeSig
+  - parseHas: pToken Has |>| sameDepth declareLimb
+
+Note that there are two levels of declareLimb going on! The first level defines ~someTerm~.
+
+The second level, called via parseHas, defines ~someAttribute~.
+
+And it is that ~someAttribute~ which takes ~MEANS someDefintion~ by way of the ~nestedHorn~.
+
+The |&| allows an optional linebreak between ~TYPICALLY Yes~ and ~HAS someAttribute~.
+
+The ~nestedHorn~, in turn, also uses a |&| combinator to look for the MEANS.
+
+Crucially, it may be important to remain in SLParser context all the way. Can the sameOrNextLine operator |&| afford to insist that it end with undeepers? This may cause problems for the recursed ~HAS someAttribute~ parser. To investigate.
+
 * Indentation Parsing
 
 We use ( and ) to represent going deeper and going undeeper.

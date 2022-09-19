@@ -28,7 +28,8 @@ import qualified Data.Text.Lazy as TL
 import Control.Monad (guard)
 
 import Text.Regex.TDFA
-import Data.List (nub, intercalate)
+import Data.List (nub, intercalate, (\\))
+import Data.Either (rights)
 
 -- output to Core L4 for further transformation
 
@@ -44,11 +45,6 @@ sfl4ToCorel4 rs =
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                -- some hardcoding while we debug the transpiler and babyl4 interpreter
-               , "class Asset"
-               , "class Money"
-               , "class Interval"
-               , "class Person"
-               , "class Business"
                , "decl InsuredVehicle: Object -> Boolean"
                , "decl age: Integer"
                , "decl years: Integer -> Integer"
@@ -357,7 +353,11 @@ prettyDefns rs =
 
 prettyClasses :: ClsTab -> Doc ann
 prettyClasses ct@(CT ch) =
-  vsep $ concat [
+  vsep $
+  superClassesNotExplicitlyDefined :
+  typesNotExplicitlyDefined :
+  "### explicitly defined classes" :
+  concat [
   [ "class" <+> c_name <>
     case clsParent ct className of
       Nothing       -> mempty
@@ -409,6 +409,25 @@ prettyClasses ct@(CT ch) =
   , let c_name = snake_inner className
   , Just (ctype, children) <- [Map.lookup className ch]
   ]
+  where -- [TODO] -- move this to the Interpreter
+    superClassesNotExplicitlyDefined :: Doc ann
+    superClassesNotExplicitlyDefined =
+      let
+        knownClasses = getCTkeys ct
+        superClasses = nub $ catMaybes $ clsParent ct <$> knownClasses
+      in vsep $ ("### superclasses not explicitly defined" :
+                 ( ("class" <+>) . pretty <$> (superClasses \\ knownClasses) ))
+         ++ ["###"]
+
+    typesNotExplicitlyDefined :: Doc ann
+    typesNotExplicitlyDefined =
+      let
+        foundTypes = rights $ getUnderlyingType <$> concatMap (getAttrTypesIn ct) (getCTkeys ct)
+        knownClasses = getCTkeys ct
+      in vsep $ ("### types not explicitly defined" :
+                 ( ("class" <+>) . pretty <$> (foundTypes \\ knownClasses) ))
+         ++ ["###"]
+
 
 -- [TODO] handle children recursively
 

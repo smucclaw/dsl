@@ -87,7 +87,8 @@ classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   -- multiple DECLARE of the same class are allowed, so we have to merge.
   -- we do some violence to the inferred types here.
-  CT $ Map.fromListWith (\((ts1inf,ts1s),CT clstab1) ((ts2inf,ts2s),CT clstab2) ->
+  CT $ Map.fromListWith (\((ts1inf,ts1s),CT clstab1)
+                          ((ts2inf,ts2s),CT clstab2) ->
                             ( (listToMaybe (maybeToList ts1inf <> maybeToList ts2inf)
                               ,ts1s <> ts2s)
                             , CT $ clstab1 <> clstab2))

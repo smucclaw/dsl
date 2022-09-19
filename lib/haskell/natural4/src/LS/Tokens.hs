@@ -173,6 +173,7 @@ pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStre
 
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
+-- Followup: we have a new operator |<<| that calls upToNUndeepers, but doesn't handle the EOL
 
 someUndeepersOrEOL :: SLParser a -> Parser a
 someUndeepersOrEOL p = do
@@ -183,6 +184,20 @@ someUndeepersOrEOL p = do
     pos <- lookAhead pGetTokenPos
     replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
   return x
+
+-- calls upToNUndeepers and continues. Usage: ... |<<| () ...
+(|<<|) :: SLParser a -> () -> SLParser a
+p1 |<<| _ = mkSL $ do
+  (result, n) <- runSL p1
+  (_, u) <- runSL $ upToNUndeepers n
+  let remaining = n + u
+  debugPrint $ "|<<| consumed " ++ show (-1*u) ++ " of " ++ show n ++ " undeepers; " ++ show remaining ++ " remain"
+  eof <|> do
+    pos <- lookAhead pGetTokenPos
+    replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
+  return (result, remaining)
+  
+infixl 4 |<<|
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
 liftedDBG = mapWhenDebug . liftRawPFun . dbg
@@ -266,13 +281,13 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 --             bar bar
 -- if we wanted to try to be super clever we could remain in the SL context the whole time and limit the <|> bit to the dnl newline vs the ) ( vs the samedepth
 
+(|&|) = sameOrNextLine
 sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
 sameOrNextLine pa pb =
   try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
   <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
 
--- [TODO] have a combinator that does sameOrNextLine -- though would that be the same as |^|?
--- |&| :: (Show a, Show b) => SLParser (a -> b) -> SLParser a -> SLParser b
+-- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
 
 pNumOrText :: Parser Text.Text
 pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
@@ -452,6 +467,8 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any GoDeepers or UnDeepers, then parse -- fancy
 (|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- fancy
 (|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse, then consume GoDeepers
+
+(|&|)  ::(Show a, Show b)  => SLParser  a       -> SLParser b  ->   Parser (a,b) -- ^ standalone fancy fancy on same or next line
 
 -- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
 (+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.
@@ -693,6 +710,10 @@ l ->| n = do
 
 infixl 4 ->|
 
+howDeep :: SLParser Int
+howDeep = mkSL $ do
+  (_, n) <- runSL $ pure ()
+  return (n,n)
 
 -- | Complete an SL parser and consume any outstanding UnDeepers
 finishSL :: SLParser a -> Parser a

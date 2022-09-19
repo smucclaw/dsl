@@ -3,7 +3,7 @@
 
 module Main where
 
--- import Test.Hspec.Megaparsec hiding (shouldParse)
+import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
 import LS.Parser
@@ -309,7 +309,7 @@ parserTests nlgEnv runConfig_ = do
         (parseR pRules) [srcrow2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing}) }]
 
       let imbibeRule2 srcrow srccol = [
             defaultReg
@@ -1588,9 +1588,9 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "class-fa-1" "financial advisor data modelling"
         (parseR pToplevel) [
-          TypeDecl { name = ["FinancialStatus"], super = Just (InlineEnum TOne (("adequate" :| ["inadequate"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},
-          TypeDecl {name = ["EarningsStatus"], super = Just (InlineEnum TOne (("steady" :| ["unsteady"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 2, version = Nothing}), defaults = [], symtab = []},
-          TypeDecl {name = ["InvestmentStrategy"], super = Just (InlineEnum TOne (("savings" :| ["stocks","combination"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 3, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl { name = ["FinancialStatus"], super = Just (InlineEnum TOne (("adequate" :| ["inadequate"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl {name = ["EarningsStatus"], super = Just (InlineEnum TOne (("steady" :| ["unsteady"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing}), defaults = [], symtab = []},
+          TypeDecl {name = ["InvestmentStrategy"], super = Just (InlineEnum TOne (("savings" :| ["stocks","combination"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []},
           TypeDecl {name = ["Person"], super = Nothing, has = [
             TypeDecl {name = ["dependents"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["amountSaved"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
@@ -1601,7 +1601,7 @@ parserTests nlgEnv runConfig_ = do
             TypeDecl {name = ["isDead"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["spendthrift"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
             TypeDecl {name = ["investment"], super = Just (SimpleType TOne "InvestmentStrategy"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}],
-            enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 5, version = Nothing}), defaults = [], symtab = []}
+            enums = Nothing, given = Nothing, upon = Nothing, rlabel = Just ("\167",2,"person type"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 5, version = Nothing}), defaults = [], symtab = []}
           ]
 
       filetest "class-fa-2" "financial advisor decision modelling"
@@ -1644,6 +1644,25 @@ parserTests nlgEnv runConfig_ = do
       filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
       filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
       filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
+
+-- declare should be able to have nestedHorn, not just pBSR
+    describe "nestedHorn" $ do
+      filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
+        (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["genus","species"] RPis (Leaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
+
+  -- |&|
+    describe "ampersand" $ do
+      let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
+      xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-2" "this bed is just right"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-3" "to the right shouldbe OK"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      xfiletest "ampersand-4" "to the right with extra should leave uncaptured uncaptured"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-4" "to the right with extra"
+        (parseOther nextLineP) ((["Potato", "uncaptured"],["genus", "species"]), [])
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

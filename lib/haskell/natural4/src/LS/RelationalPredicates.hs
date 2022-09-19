@@ -8,9 +8,10 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import qualified AnyAll as AA
+import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
 import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe, catMaybes, isJust)
+import Data.Maybe (fromMaybe)
 import Data.Semigroup (sconcat)
 import Data.Maybe (mapMaybe)
 
@@ -117,7 +118,7 @@ pConstitutiveRule :: Parser Rule
 pConstitutiveRule = debugName "pConstitutiveRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   leftY              <- lookAhead pYLocation
-  namep              <- debugName "calling myindented pNameParens" $ manyIndentation pNameParens
+  namep              <- debugName "calling someIndentation pNameParens, skipping over invisible DEFINE keyword" $ someIndentation pNameParens
   leftX              <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
 
   -- [TODO] we should delete the Unless here because we've got it in Expr
@@ -146,7 +147,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" $ do
 -- OR bob's your father's mother
 
 permutationsCon :: [MyToken] -> [MyToken] -> [MyToken] -> [MyToken]
-                           -- preamble = copula   (means,deem,decide)
+                           -- preamble = copula   (means)
                 -> Parser (  (Preamble, BoolStructR)  -- body of horn clause
                           , [(Preamble, BoolStructR)] -- positive conditions (when,if)
                           , [(Preamble, BoolStructR)] -- negative conditions (unless)
@@ -217,7 +218,7 @@ pHornlike' :: Bool -> Parser Rule
 pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") $ do
   (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
   let dKeyword = if needDkeyword
-                 then Just <$> choice [ pToken Decide ]
+                 then Just <$> choice [ pToken Decide ] -- [TODO] try allowing DEFINE in future, for things like simple-constitutive-1
                  else Nothing <$ pure ()
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
@@ -232,18 +233,12 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                     , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                     , keyword = fromMaybe Means keyword
                     , given
-                    , clauses = addWhen topwhen $ clauses
+                    , clauses = addWhen topwhen clauses
                     , upon, rlabel, srcref
                     , lsource = noLSource
                     , defaults = mempty, symtab = mempty
                     }
   where
-    addHead :: Maybe ParamText -> [HornClause2] -> [HornClause2]
-    addHead Nothing hcs   = hcs
-    addHead (Just pt) hcs = -- trace ("addHead running, overwriting hHead with RPParamText " <> show pt) $
-                            [ hc2 { hHead = RPParamText pt }
-                            | hc2 <- hcs ]
-
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
                          -- trace ("addWhen running, appending the mbsr " <> show mbsr) $
@@ -297,7 +292,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPBoolStructR mt _ _) = mt
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
-rpSameNextLineWhen = sameOrNextLine slRelPred (fmap join <$> liftSL $ optional whenCase)
+rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
 
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" $ do
@@ -322,12 +317,21 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-        try ( debugName "RPConstraint"  rpConstraint )
-    <|> try ( debugName "RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIs pBSR slMultiTerm)
+  try ( debugName "slRelPred/RPConstraint"  rpConstraint )
+    <|> try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
+    <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
     -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
-    <|> try ( debugName "RPParamText (with typesig)" rpParamTextWithTypesig )
-    <|> try ( debugName "RPMT"          rpMT )
+    <|> try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
+    <|> try ( debugName "slRelPred/RPMT"          rpMT )
+    -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" $ do
+    --             pt <- slParamText
+    --             if NE.length pt == 1
+    --               then return $ RPMT (toList $ NE.head $ untypePT pt)
+    --               else return $ RPParamText pt
+    --         )
+
+-- nuParamText :: SLParser ParamText
+-- nuParamText = sameDepth slKeyValuesAka
 
 rpParamTextWithTypesig :: SLParser RelationalPredicate
 rpParamTextWithTypesig = do
@@ -341,7 +345,7 @@ rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
 rpConstraint :: SLParser RelationalPredicate
-rpConstraint  = RPConstraint  $*| slMultiTerm |>| tok2rel |*| slMultiTerm
+rpConstraint  = nestedHorn rpHead id meansIs pBSR (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
 
 rpBoolStructR :: SLParser RelationalPredicate
 rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
@@ -434,7 +438,10 @@ hasTypeSig ((_,_      ) :| _) = True
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do
-  _           <- pToken TypeSeparator <|> pToken Is
+  _           <- choice [ try (pToken TypeSeparator <* pToken A_An)
+                        , pToken TypeSeparator
+                        , pToken Is
+                        ]
   manyIndentation (simpletype <|> inlineenum) -- sometimes there is no GoDeeper between the TypeSeparator and the A_An due to toToken "IS A"
   where
     simpletype = do
@@ -449,7 +456,8 @@ pTypeSig = debugName "pTypeSig" $ do
       InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
-pOneOf = pToken OneOf *> someIndentation pParamText
+pOneOf = pToken OneOf *> someIndentation (fromList . concatMap toList <$> sameDepth pParamText)
+                                         -- i thought we could use sequence, but i guess not?
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
@@ -462,6 +470,7 @@ pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 pSingleTerm :: Parser KVsPair
 pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple` pTypeSig
 
+-- [TODO] rewrite this in terms of slKeyValuesAka
 slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
@@ -508,17 +517,28 @@ pKeyValuesAka :: Parser KVsPair
 pKeyValuesAka = debugName "pKeyValuesAka" $ finishSL slKeyValuesAka
 
 slKeyValuesAka :: SLParser KVsPair
-slKeyValuesAka = slAKA slKeyValues (toList . fst)
+slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 
 pKeyValues :: Parser KVsPair
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
+-- | a ParamText key value pair is simply a (key : [v1,v2,v3]).
+-- we use nestedHorn to allow a MEANS under the v1.
 slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
-             (lhs, typesig)   <- (,)
-                                 $*| someLiftSL pNumOrText
-                                 |*| (|?|) slTypeSig
-             return (fromList lhs, typesig)
+  (lhs, (rhs, typesig))   <- try (
+    (,) -- key followed by values, and the values can sit on top of a MEANS
+      $>|                                           pNumOrText
+      ->| 1
+      |*| nestedHorn fst id meansIsWhose pBSR
+           ((,) $>| someDeep pNumOrText |*| (|?|) slTypeSig))
+    <|> -- key without values, so we put the MEANS under the key
+    nestedHorn (pure.fst) id meansIsWhose pBSR
+    ((\l rt -> (l,([],rt)))
+     $>| pNumOrText
+     |*| (|?|) slTypeSig)
+  return (fromList (lhs : rhs), typesig)
+
 
 getSrcRef :: Parser SrcRef
 getSrcRef = do
@@ -531,12 +551,13 @@ getSrcRef = do
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" $ do
-  slAKA baseParser toMultiTerm |<$ undeepers
+  manyIndentation (slAKA baseParser toMultiTerm |<$ undeepers)
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
-slAKA baseParser toMultiTerm = do
+slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
   (base, entityalias, typicalval) <-
---    debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
+    debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
+    debugNameSL "slAKA base (multiterm,aka,typically)" $
     (,,)
       $*| debugName "slAKA base" baseParser
       |*| debugName "slAKA optional akapart"   ((|?|) akapart)
@@ -579,39 +600,48 @@ mustNestHorn, nestedHorn
   -> (MultiTerm -> RuleName)    -- ^ turn the thing into the inner Hornlike's RuleName
   -> Parser MyToken     -- ^ the connector, usually meansIs
   -> Parser BoolStructR -- ^ parser for the thing after the connector, usually pBSR
-  -> SLParser a         -- ^ the thing we're parsing -- but should this be a Parser because we don't want to over undeepen?
   -> SLParser a
-nestedHorn toMT toRN connector pbsr base =
-  try (mustNestHorn toMT toRN connector pbsr base)
+  -> SLParser a
+nestedHorn toMT toRN connector pbsr basesl =
+  try (mustNestHorn toMT toRN connector pbsr basesl)
     <|> noNested
   where
-    noNested = debugName "default noNested" base
-
-mustNestHorn toMT toRN connector pbsr base =
-  debugName "trying hasNested" $ do
-      srcref <- liftSL getSrcRef
-      (subj, meansTok, bsr) <- (,,)
-                               $*| base
-                               |^| liftSL connector
-                               |-| pbsr
-      let simpleHorn = Hornlike { name = toRN (toMT subj)
-                                , super = Nothing
-                                , keyword = meansTok
-                                , given = Nothing
-                                , upon = Nothing
-                                , clauses = [ HC2 (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
-                                , rlabel = Nothing
-                                , lsource = Nothing
-                                , srcref = Just srcref
-                                , defaults = []
-                                , symtab = [] }
-      debugPrint "constructed simpleHorn; running tellIdFirst"
-      _ <- liftSL $ tellIdFirst (return simpleHorn)
-      return subj
+    noNested = debugName "noNested horn clause, defaulting to base" basesl
 
 
-meansIs :: Parser MyToken
+mustNestHorn toMT toRN connector pbsr basesl =
+  debugNameSL "trying hasNested" $ do
+  srcref   <- liftSL getSrcRef
+              |-- (\n -> debugPrint $ "mustNestHorn before basesl: " ++ show n ++ " UnDeepers")
+  (subj, meansTok, bsr) <- (,,)
+                           $*| basesl
+                           |-- (\n -> debugPrint $ "mustNestHorn after basesl: " ++ show n ++ " UnDeepers")
+                           |<<| ()
+                           |-- (\n -> debugPrint $ "mustNestHorn after undeepering: " ++ show n ++ " UnDeepers")
+                           |-| connector
+                           |-| pbsr
+
+  -- the conceptual positioning of the cursor above is critical
+
+  let simpleHorn = Hornlike { name = toRN (toMT subj)
+                            , super = Nothing
+                            , keyword = meansTok
+                            , given = Nothing
+                            , upon = Nothing
+                            , clauses = [ HC2 (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                            , rlabel = Nothing
+                            , lsource = Nothing
+                            , srcref = Just srcref
+                            , defaults = []
+                            , symtab = [] }
+  debugPrint "constructed simpleHorn; running tellIdFirst"
+  _ <- liftSL $ tellIdFirst (return simpleHorn)
+  return subj
+
+
+meansIs,meansIsWhose :: Parser MyToken
 meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]
+meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ prePostParse pRelPred

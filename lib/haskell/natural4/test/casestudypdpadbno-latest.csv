@@ -15,7 +15,7 @@
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,§,Assessment,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,(Act §26C.2),,,EVERY,Organisation,,Potato,,,,,,,,AKA,You,,,,,,,,,,,,,,,,,,,,,
+,,,,(Act §26C.2),,,EVERY,Organisation,,,,,,,,,,AKA,You,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §4.1.c),,,WHICH,NOT,is,,a Public Agency,,,,,,,TYPICALLY,not,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26C.2),,,UPON,becoming aware a data breach may have occurred,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26C.1),,,IF,the data breach occurs on or after 1 Feb 2022,,,,,,,,,,TYPICALLY,yes,,,,,,,,,,,,,,,,,,,,,
@@ -32,8 +32,8 @@
 ,,,,(AdvG §20.4),,,,,,,,MUST,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(AdvG §20.4),,,,,,,,➔,,NOTIFY,the PDPC,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(AdvG §20.4),,,,,,,,,,with,an explanation of your inaction,,,,,,,,,,,,,,,,,,,,,,,,,
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-//,,,,,,"For purposes of the demo we will exclude the Data Intermediary category so as not to confuse the typical user, which is an Organisation as above",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,//,,,,,"For purposes of the demo we will exclude the Data Intermediary category so as not to confuse the typical user, which is an Organisation as above",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,//,,,(Act §26C.3),,,EVERY,Data Intermediary,,,AKA,You,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,//,,,(Act §26C.3),,,WHO,,NOT,processes personal data on behalf of and for the purposes of a public agency,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,//,,,(Act §26C.2),,,MUST,without undue delay,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -48,7 +48,7 @@
 ,//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,//,,,(Act §26E),,,➔,NOTIFY,,the public agency for which you act as a Data Intermediary,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-//,,,,,,,§,NDB Qualification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,§,NDB Qualification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26B.1),TRUE,,DECIDE,it is a Notifiable Data Breach,,,,,,,,AKA,NDB,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26A),,,IF,TRUE,a data breach,,,occurred,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,MEANS,,any,unauthorised,,,FALSE,26A.a.1,access,,,,,,,,,,,,,,,,,,,,,,,
@@ -73,44 +73,30 @@
 ,,,,(Regs §3.1.a),,,,,,,,,,,,,,,,OR,FALSE,identification number,,,,,,,,,,,,,,,,,,
 ,,,,(Regs §3.1.a),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Regs §3.1.a),,,,,,,AND,,the data breach relates to,,,,any of the prescribed personal data or classes of personal data relating to the individual,,,,,,,,,,,,,,,,,,,,,,,
-//,,,,(Regs §3.1.a),,,,,,,,,,,set out in,Part 1 of the Schedule,,,,,,,,,,,,,,,,,,,,,,,,
-//,,,,,,,,,,,,,,,subject to,Part 2 of the Schedule,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,(Act §26B.2.b),,,,,OR,TRUE,in other prescribed circumstances.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,(Regs §3.1.b),,,,,,,MEANS,all of,the following personal data relating to an individual’s account with an organisation:,,,,,,,,,,,,,,TRUE,the individual’s account identifier,,,,,,,,,,,,
-,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,MEANS,FALSE,an account,,name,,,,,,,,
-,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,some condition,,number,,,,,,,,
-,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,a number assigned to any account the individual has with an organisation that is a bank or finance company.,,,,,,,,,,
-,,,,(Regs §3.2),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,(Regs §3.1.b.ii),,,,,,,AND,,,,,,,,,,,,,,,,TRUE,any,FALSE,password,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,security code,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,access code,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,response to a security question,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,biometric data,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,other data,,that is,,,,TRUE,used,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,required,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,to,allow,,FALSE,access to,,,
-//,our BoolStruct doesn't quote handle this syntax yet,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,use of,,,the individual's account
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-//,,,,,,,,,,,,,,,,,,,,,,,,,,,"data Multi a = Singular a
-             | Not  (Sentence a)
-             | Ors  (Sentence a)
-             | Ands (Sentence a)
-
-data Sentence a = [Multi a]
-
-mySentence = [Singular ""other data""
-             ,Singular ""that is""
-             ,Ors (Singular <$> [""used"",""required""])
-             ,Singular ""to allow""
-             ,Ors [Singular ""access to""
-                  ,Singular ""use of""]
-             ,Singular ""the individual's account""
-             ]",,,,,,,,,,,,,
+,//,,,,,,,,,,,,,,,,MEANS,,,Part 1 of the Schedule,,,,,,,,,,,,,,,,,,,,
+,//,,,(Regs §3.1.a),,,,,,,,,,,,,,,subject to,Part 2 of the Schedule,,,,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+//,,,,(Act §26B.2.b),,,,,OR,TRUE,in other prescribed circumstances.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+//,,,,(Regs §3.1.b),,,,,,,MEANS,,all of the following personal data relating to an individual’s account with an organisation:,,,,,,,,,,,,,,TRUE,the individual’s account identifier,,,,,,,,,,,,
+//,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,MEANS,FALSE,an account,,name,,,,,,,,
+//,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,some condition,,number,,,,,,,,
+//,,,,(Regs §3.1.b.i),,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,a number assigned to any account the individual has with an organisation that is a bank or finance company.,,,,,,,,,,
+//,,,,(Regs §3.2),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+//,,,,(Regs §3.1.b.ii),,,,,,,AND,,,,,,,,,,,,,,,,TRUE,any,FALSE,password,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,security code,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,access code,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,response to a security question,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,biometric data,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,other data,,that is,,,,TRUE,used,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,FALSE,required,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,to,allow,,FALSE,access to,,,
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OR,TRUE,use of,,,the individual's account
+//,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26B.1.b),,,OR,FALSE,"it is, or is likely to be, of a significant scale",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,DECIDE,"it is, or is likely to be, of a significant scale",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,(Act §26B.3.a),,,IF,FALSE,the number of affected individuals,,,,,<,,the prescribed threshold of affected individuals,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -123,7 +109,7 @@ mySentence = [Singular ""other data""
 //,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,§,Notification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,Notification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,Notification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,MEANS,Notify PDPC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,AND,Notify Individuals,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

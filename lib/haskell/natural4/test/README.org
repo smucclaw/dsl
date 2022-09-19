@@ -1326,8 +1326,8 @@ This is a speculative syntax, it may turn out to be too loose to work with.
 
 | DECLARE |   | Round    | IS | A | Type   |        |   |      |                  |       |                  |
 | HAS     |   | Player A | IS | A | Player |        |   |      |                  |       |                  |
-| HAS     |   | Player B | IS | A | Player |        |   |      |                  |       |                  |
-| HAS     | 1 | winner   | IS | A | Player |        |   |      |                  |       |                  |
+|         |   | Player B | IS | A | Player |        |   |      |                  |       |                  |
+|         | 1 | winner   | IS | A | Player |        |   |      |                  |       |                  |
 |         |   |          | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
 
 HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
@@ -1514,20 +1514,23 @@ This example serves multiple tests:
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
-| DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |
-| DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |
-| DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |
-|         |                    |    |        |                    |          |             |
-| DECLARE | Person             |    |        |                    |          |             |
-| HAS     | dependents         | IS | A      | Number             |          |             |
-|         | amountSaved        | IS | A      | Number             |          |             |
-|         | earnings           | IS | A      | Number             |          |             |
-|         | steadiness         | IS | A      | EarningsStatus     |          |             |
-|         | income             | IS | A      | FinancialStatus    |          |             |
-|         | savingsAccount     | IS | A      | FinancialStatus    |          |             |
-|         | isDead             | IS | A      | Boolean            |          |             |
-|         | spendthrift        | IS | A      | Boolean            |          |             |
-|         | investment         | IS | AN     | InvestmentStrategy |          |             |
+this is indented deliberately to exercise the parser.
+
+|   | DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |
+|   | DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |
+|   | DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |
+|   |         |                    |    |        |                    |          |             |
+|   | §§      | person type        |    |        |                    |          |             |
+|   | DECLARE | Person             |    |        |                    |          |             |
+|   | HAS     | dependents         | IS | A      | Number             |          |             |
+|   |         | amountSaved        | IS | A      | Number             |          |             |
+|   |         | earnings           | IS | A      | Number             |          |             |
+|   |         | steadiness         | IS | A      | EarningsStatus     |          |             |
+|   |         | income             | IS | A      | FinancialStatus    |          |             |
+|   |         | savingsAccount     | IS | A      | FinancialStatus    |          |             |
+|   |         | isDead             | IS | A      | Boolean            |          |             |
+|   |         | spendthrift        | IS | A      | Boolean            |          |             |
+|   |         | investment         | IS | AN     | InvestmentStrategy |          |             |
 
 ***** Financial Advisor decisions
 :PROPERTIES:
@@ -1630,6 +1633,60 @@ a scenario would look like:
 
 |   | DECLARE | Potato |       |         |
 |   |         | HAS    | genus | species |
+*** ampersand: |&| declare with inline nestedHorn
+:PROPERTIES:
+:TABLE_EXPORT_FILE: declare-nestedhorn-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |                    |         |
+|         | HAS    | genus              | species |
+|         |        | MEANS              |         |
+|         |        | some Linnaen thing |         |
+
+
+*** ampersand: |&| too far left -- should fail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|              | Potato |         |
+| too far left | genus  | species |
+
+*** ampersand: |&| just underneath -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |         |
+|   | genus  | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |       |         |
+|   |        | genus | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+similar to the situation in pdpadbno, where we have SOMETHING occurred
+
+|   | Potato |       |         | uncaptured |
+|   |        | genus | species |            |
+
+we want the SOMETHING to have a MEANS under it, but the "occurred" should not.
+
+we'll leave this as a [TODO] for now.
+
 ** Keywords
 
 *** DECIDE
@@ -1780,6 +1837,8 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 defined terms are T-shaped rules
 
+this should get picked up by the pConstitutiveRule and rewritten to Hornlike
+
 |       | degustates |
 | MEANS | eats       |
 | OR    | drinks     |
@@ -1798,7 +1857,7 @@ defined terms are T-shaped rules
 ...ignoring checkboxes...
 
 |   |   |       |      |            |   |   |
-|   |   | TRUE  |      | degustates |   |   |
+|   |   |       |      | degustates |   |   |
 |   |   | MEANS | TRUE | eats       |   |   |
 |   |   | OR    | TRUE | drinks     |   |   |
 |   |   |       |      |            |   |   |
@@ -2754,6 +2813,8 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FILE: define-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+this doesn't actually compile, i think the syntax has changed
 
 |   | DEFINE | Chirality |       |           |           |
 |   | ONE OF | Left      |       |           |           |

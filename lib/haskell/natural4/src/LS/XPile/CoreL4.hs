@@ -29,7 +29,7 @@ import qualified Data.Text.Lazy as TL
 import Control.Monad (guard, join)
 
 import Text.Regex.TDFA
-import Data.List (nub, intercalate, (\\))
+import Data.List (nub, intercalate, (\\), isPrefixOf)
 import Data.Either (rights, isRight, fromRight)
 import qualified Data.Traversable as DT
 import qualified Data.Foldable as DF
@@ -45,6 +45,7 @@ sfl4ToCorel4 rs =
       sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
+      pBoilerplate = myrender $ prettyBoilerplate cTable
       hardCoded = unlines [ "decl age: Number"
                           , "decl weight: Number"
                           , "decl height: Number"
@@ -56,32 +57,50 @@ sfl4ToCorel4 rs =
 
                           , "class Unit"
                           , "class Tire" -- [TODO] get this out by recursing into the type hierarchy
+                          , "class Address"
                           , "decl tb_length: Number" -- [TODO] the hc2decls should be responsible for this.
                           , "decl wingspan: Number"
                           , ""
                           ]
 
-  in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
-                 -- , ppCorel4 . sfl4ToCorel4Program $ rs
-               "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               -- some hardcoding while we debug the transpiler and babyl4 interpreter
-               , hardCoded
-               , "\n\n## classes\n",                   T.unpack pclasses
-               , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
-
-               , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-               , show $ prettyDecls (T.pack hardCoded <> pclasses) rs
-
--- honestly i think we can just live without these
---               , "\n\n## facts\n",                     show $ prettyFacts   sTable
---               , "\n\n## defn from decision rules\n",  show $ prettyDefns   rs
-
-               , "\n# directToCore\n\n"
-               ] ++
-               [ show (directToCore r)
-               | r <- rs
-               ]
-             )
+  in unlines $ nubstrings $ concatMap lines
+  ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
+      -- , ppCorel4 . sfl4ToCorel4Program $ rs
+      "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
+      -- some hardcoding while we debug the transpiler and babyl4 interpreter
+    , hardCoded
+    , "\n\n## classes\n",                   T.unpack pclasses
+    , "\n\n## boilerplate\n",               T.unpack pBoilerplate
+    
+    , "\n\n## decls for predicates used in rules (and not defined above already)\n"
+    , T.unpack . myrender $ prettyDecls (T.pack hardCoded <> pclasses <> pBoilerplate) rs
+    
+    -- honestly i think we can just live without these
+    --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
+    --               , "\n\n## defn from decision rules\n",  show $ prettyDefns   rs
+    
+    , "\n# directToCore\n\n"
+    ] ++
+    [ T.unpack $ myrender (directToCore r)
+    | r <- rs
+    ]
+  )
+  where
+    -- dedup input; if a line has previously been output, don't output it again.
+    nubstrings :: [String] -> [String]
+    nubstrings xs =
+      let zipped = zip xs [1..]
+          xMap2 = Map.fromList (reverse zipped)
+      in
+        [ l
+        | (l,n) <- zipped
+        , or [ l == ""
+             , "for " `isPrefixOf` l
+             , "#" `isPrefixOf` l
+             , (n :: Int) <= xMap2 Map.! l
+             ]
+        ]
+  
 
 sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
 sfl4ToCorel4Program rus
@@ -89,7 +108,7 @@ sfl4ToCorel4Program rus
 
 ppCorel4 :: CoreL4.Program SRng -> String
 ppCorel4 p =
-  show (vsep $ pptle <$> elementsOfProgram p)
+  T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
 
 pptle :: TopLevelElement SRng -> Doc ann
 pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
@@ -233,6 +252,7 @@ directToCore r@Hornlike{keyword}
           ,                                  "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
           ]
+            -- [TODO] when testing for an optional boolean, add a hasAttrname test inside bodyNonEx
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
       , (HC2 _headRP hBod) <- [c]
@@ -302,7 +322,7 @@ prettyDecls previously rs =
 
 
 myrender :: Doc ann -> T.Text
-myrender = renderStrict . layoutPretty defaultLayoutOptions
+myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
 
 -- [TODO]
 -- fact <helplimit>
@@ -433,13 +453,19 @@ prettyClasses ct@(CT ch) =
   "### explicitly defined classes" :
   concat [
   [ if isJust mytype
-    then "###" <+> "class" <+> c_name <> extends
+    then vsep [ "###" <+> "class" <+> c_name <+> "is a" <+> viaShow mytype
+              , "###" <+> "dot_name = " <> viaShow dot_name
+              , "###" <+> "ctype = " <> viaShow ctype
+              , "###" <+> "mytype = " <> viaShow mytype
+              ]
     else "class" <+> c_name <> extends
   , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
   , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
   ]
   | (classpath, (ctype, children)) <- classGraph ct []
-  , let c_name = encloseSep "" "" "." $ snake_inner <$> reverse classpath
+  , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
+                   snake_inner <$> reverse classpath
+        c_name = pretty . untaint $ head classpath
         mytype = case getUnderlyingType <$> getSymType ctype of
                    Just (Right s1) -> Just s1
                    _               -> Nothing
@@ -448,26 +474,29 @@ prettyClasses ct@(CT ch) =
                     | (Just (InlineEnum TOne nelist), _) <- [ctype]
                     , member <- enumLabels_ nelist
                     ]
-        childDecls = [ "decl" <+> snake_inner attrname <>
-           case attrType children attrname of
-             -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
-             Just t@(SimpleType ptype pt) ->
-               encloseSep ": " "" " -> " ([ maybe c_name pretty mytype
-                                          , prettySimpleType "corel4" snake_inner t
-                                          ] ++ case pt of
-                                                 "Boolean" -> []
-                                                 _         -> ["Boolean"]
-                                         )
-               <> if ptype == TOptional
-                  then Prettyprinter.line <>
-                       "decl" <+> snake_inner ("has" <> attrname) <>
-                       encloseSep ": " "" " -> " [ c_name , "Boolean" ]
-                       <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
-                  else emptyDoc
+        childDecls = [
+          "decl" <+> snake_inner attrname <>
+          case attrType children attrname of
+            -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
+            Just t@(SimpleType ptype pt) ->
+              encloseSep ": " "" " -> " ([ -- c_name
+                                           lhstype
+                                         , prettySimpleType "corel4" snake_inner t
+                                         ] ++ case pt of
+                                                "Boolean" -> []
+                                                _         -> ["Boolean"]
+                                        )
+              <> if ptype == TOptional
+                 then Prettyprinter.line <>
+                      "decl" <+> snake_inner ("has" <> attrname) <>
+                      encloseSep ": " "" " -> " [ lhstype , "Boolean" ]
+                      <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
+                 else emptyDoc
 
-             Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
-             Nothing   -> " ##" <+> "not typed"
-         | attrname <- getCTkeys children
+            Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
+            Nothing   -> " ##" <+> "not typed"
+          | attrname <- getCTkeys children
+          , let lhstype = maybe c_name pretty mytype
          ]
     -- guard to exclude certain forms which should not appear in the output
   , case (ctype,children) of

@@ -42,6 +42,7 @@ instance Pretty RP1 where
   pretty (RP1 o@(RPConstraint  mt1 RPis  ["No"])) = hsep $ "not" : (pretty <$> inPredicateForm o)
   pretty (RP1 o@(RPConstraint  mt1 RPis  mt2))     = hsep $ pretty <$> inPredicateForm o
   pretty (RP1 o@(RPConstraint  mt1 RPhas mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1   (RPConstraint  mt1 rprel mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint <$> mt2 ]
   pretty (RP1   (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
                                                -- [TODO] confirm RP1 <$> bsr is the right thing to do
   pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o

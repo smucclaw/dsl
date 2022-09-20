@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, TupleSections #-}
 
 module LS.XPile.CoreL4 where
 
@@ -45,19 +45,28 @@ sfl4ToCorel4 rs =
       sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
+      hardCoded = unlines [ "decl age: Number"
+                          , "decl years: Unit"
+                          , "decl meters: Unit"
+                          , "decl weight: Unit"
+                          , "decl kg: Unit"
+                          , "decl relLT: Number -> Number -> Unit"
+                          , "decl relLTE: Number -> Number -> Unit"
+                          , "class Unit"
+                          , ""
+                          ]
+
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                -- some hardcoding while we debug the transpiler and babyl4 interpreter
-               , "decl age: Integer"
-               , "decl years: Integer -> Integer"
-               , "decl meters: Float -> Float"
-               , "class Tire"
+               , hardCoded
+               , "class Tire" -- [TODO] get this out by recursing into the type hierarchy
                , "\n\n## classes\n",                   T.unpack pclasses
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 
                , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-               , show $ prettyDecls pclasses rs
+               , show $ prettyDecls (T.pack hardCoded <> pclasses) rs
 
 -- honestly i think we can just live without these
 --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
@@ -279,11 +288,13 @@ prettyTypedMulti pt = pretty $ PT3 pt
 prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
 prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
 
--- we really should be dealing with the nubbing more intelligently, [TODO] use a map to track types, not this stringy stuff.
+-- deal with this properly rather than doing all this icky string manipulation
+--- -- but we would have to refactor the output from hc2decls to not be a Doc, and it would be harder to insert manual overrides
 prettyDecls :: T.Text -> [SFL4.Rule] -> Doc ann
 prettyDecls previously rs =
-  let previousDecls = T.strip . T.takeWhile (/= '#') <$> filter (("decl " ==) . T.take 5) (T.lines previously)
-  in pretty $ T.unlines $ (nub $ T.lines $ myrender $ vsep (hc2decls <$> rs)) \\ previousDecls
+  let previousDecls = Map.fromList $ (,"") . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
+      predDecls = Map.fromList $ T.breakOn ":" <$> T.lines (myrender $ vsep (hc2decls <$> rs))
+  in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
 
 
 myrender :: Doc ann -> T.Text

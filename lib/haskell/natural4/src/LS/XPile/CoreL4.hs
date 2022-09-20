@@ -46,13 +46,18 @@ sfl4ToCorel4 rs =
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       hardCoded = unlines [ "decl age: Number"
+                          , "decl weight: Number"
+                          , "decl height: Number"
                           , "decl years: Unit"
                           , "decl meters: Unit"
-                          , "decl weight: Unit"
                           , "decl kg: Unit"
-                          , "decl relLT: Number -> Number -> Unit"
-                          , "decl relLTE: Number -> Number -> Unit"
+                          , "decl relLT: Number -> Number -> Unit -> Boolean"
+                          , "decl relLTE: Number -> Number -> Unit -> Boolean"
+
                           , "class Unit"
+                          , "class Tire" -- [TODO] get this out by recursing into the type hierarchy
+                          , "decl tb_length: Number" -- [TODO] the hc2decls should be responsible for this.
+                          , "decl wingspan: Number"
                           , ""
                           ]
 
@@ -61,7 +66,6 @@ sfl4ToCorel4 rs =
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                -- some hardcoding while we debug the transpiler and babyl4 interpreter
                , hardCoded
-               , "class Tire" -- [TODO] get this out by recursing into the type hierarchy
                , "\n\n## classes\n",                   T.unpack pclasses
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 

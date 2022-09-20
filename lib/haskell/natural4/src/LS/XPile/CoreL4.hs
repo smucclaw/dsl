@@ -20,7 +20,7 @@ import Data.Functor ( (<&>) )
 
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust)
 import qualified Data.List.NonEmpty as NE
 import           Data.List.NonEmpty (NonEmpty((:|)))
 import Text.Pretty.Simple (pShow, pShowNoColor)
@@ -51,6 +51,14 @@ sfl4ToCorel4 rs =
                , "decl meters: Float -> Float"
                , "decl TB_Length : Float"
                , "decl Valid: Object -> Boolean"
+               , "class Tire"
+               , "decl spare: Automobile -> Tire -> Boolean"
+               , "decl satisfiedTire: Tire -> Boolean"
+               , "decl designed_to_carry_spare: Automobile -> Boolean"
+               , "decl hasSSTW: Automobile -> Boolean"
+               , "decl hasWheelNutKey: Automobile -> Boolean"
+               , "decl repair_kit_supplied: Automobile -> Boolean"
+               , "decl repair_kit_is_approved_by_manufacturer: Automobile -> Boolean"
 
                , "\n\n## classes\n",                   show $ prettyClasses cTable
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
@@ -193,6 +201,9 @@ sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 -- | p's dependents |
 
 
+-- every predicate in a Hornlike Declare rule needs to be typed.
+-- let's walk through all the bodyNonEx
+
 -- see also comments in Prettyprinter.hs around RP1
 
 -- [TODO] we have a situation where we have class Incident attribute Vehicle that is typed Asset
@@ -240,6 +251,16 @@ prettyTypedMulti pt = pretty $ PT3 pt
 prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
 prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
 
+-- [TODO] produce decls for every predicate used in a rule
+-- decl spare: Automobile -> Tire -> Boolean
+-- decl SatisfiedTire: Tire -> Boolean
+-- decl designed_to_carry_spare: Automobile -> Boolean
+-- decl hasSSTW: Automobile -> Boolean
+-- decl hasWheelNutKey: Automobile -> Boolean
+-- decl repair_kit_supplied: Automobile -> Boolean
+-- decl repair_kit_is_approved_by_manufacturer: Automobile -> Boolean
+
+
 prettyDecls :: ScopeTabs -> Doc ann
 prettyDecls sctabs =
   vsep [ "##" <+> scope_name <> Prettyprinter.line <>
@@ -253,6 +274,11 @@ prettyDecls sctabs =
 -- fact <helplimit>
 -- for p : Policy
 -- HelpLimit p 7
+
+
+
+
+
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
@@ -355,43 +381,44 @@ prettyDefns rs =
                 , hasClauses r
                 ]
 
-
+-- | redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
+classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
+classGraph ct@(CT ch) ancestors = concat
+  [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath
+  | (childname, (_itypesig, childct)) <- Map.toList ch
+  , let nodePath = childname : ancestors
+  ]
+  
 
 prettyClasses :: ClsTab -> Doc ann
 prettyClasses ct@(CT ch) =
   vsep $
+  ("## allCTkeys:" <+> hsep (pretty <$> allCTkeys ct)) :
   superClassesNotExplicitlyDefined :
   typesNotExplicitlyDefined :
   "### explicitly defined classes" :
   concat [
-  [ "class" <+> c_name <>
-    case clsParent ct className of
-      Nothing       -> mempty
-      (Just parent) -> " extends" <+> pretty parent
-      -- attributes of the class are shown as decls
-
-      -- there are a couple scenarios here to consider.
-      -- one, a top-level DECLARE Something IS ONE OF Enum1 Enum2
-      -- corel4 wants that in the format of 
-      -- # Enumeration of members of Something
-      -- decl Enum1: Something
-      -- decl Enum2: Something
-  , if ctype == (Nothing, []) then Prettyprinter.emptyDoc else commentShow "# ctype:" ctype
-  , vsep [ "decl" <+> pretty member <> ":" <+> pretty className
-         | (Just (InlineEnum TOne nelist), _) <- [ctype]
-         , member <- enumLabels_ nelist
-         ]
-
-    -- two, a top-level DECLARE Someclass HAS Attr1 IS ONE OF enum1 enum2
-    -- the correct representation would be something like
-    -- decl Enum1 : Someclass -> Attr1 -> Boolean
-    -- [TODO] however, we do not have a sensible treatment of recursive class declarations, so we need to think about that.
-  , if children == CT Map.empty then Prettyprinter.emptyDoc else commentShow "# children:" children
-  , vsep [ "decl" <+> snake_inner attrname <>
+  [ if isJust mytype
+    then "###" <+> "class" <+> c_name <> extends
+    else "class" <+> c_name <> extends
+  , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
+  , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
+  ]
+  | (classpath, (ctype, children)) <- classGraph ct []
+  , let c_name = encloseSep "" "" "." $ snake_inner <$> reverse classpath
+        mytype = case getUnderlyingType <$> getSymType ctype of
+                   Just (Right s1) -> Just s1
+                   _               -> Nothing
+        extends = maybe emptyDoc ((" extends" <+>) . pretty) mytype
+        enumDecls = [ "decl" <+> pretty member <> ":" <+> c_name
+                    | (Just (InlineEnum TOne nelist), _) <- [ctype]
+                    , member <- enumLabels_ nelist
+                    ]
+        childDecls = [ "decl" <+> snake_inner attrname <>
            case attrType children attrname of
              -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
              Just t@(SimpleType ptype pt) ->
-               encloseSep ": " "" " -> " ([ c_name
+               encloseSep ": " "" " -> " ([ maybe c_name pretty mytype
                                           , prettySimpleType "corel4" snake_inner t
                                           ] ++ case pt of
                                                  "Boolean" -> []
@@ -401,21 +428,22 @@ prettyClasses ct@(CT ch) =
                   then Prettyprinter.line <>
                        "decl" <+> snake_inner ("has" <> attrname) <>
                        encloseSep ": " "" " -> " [ c_name , "Boolean" ]
-                       <+> "# auto-gen by CoreL4.hs, optional " <> snake_inner attrname
+                       <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
                   else emptyDoc
 
              Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
              Nothing   -> " ##" <+> "not typed"
          | attrname <- getCTkeys children
-         -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
          ]
-  , ""
-  ]
-  | className <- nub $ getCTkeys ct
-  , let c_name = snake_inner className
-  , Just (ctype, children) <- [Map.lookup className ch]
+    -- guard to exclude certain forms which should not appear in the output
+  , case (ctype,children) of
+      ((Nothing, []),                 CT m) | m == Map.empty -> False | otherwise -> True
+      ((Just (SimpleType TOne _), []),CT m) | m == Map.empty -> False | otherwise -> True
+      _                                   -> True -- commentShow "# ctype:" ctype
+      -- [TODO] and how do we treat enum types?
   ]
   where -- [TODO] -- move this to the Interpreter
+    
     superClassesNotExplicitlyDefined :: Doc ann
     superClassesNotExplicitlyDefined =
       let
@@ -434,6 +462,6 @@ prettyClasses ct@(CT ch) =
                  ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
          ++ ["###"]
 
-  -- [TODO] handle children recursively. anonymous classes are attributes which HAS their own attributes.
+
 
 

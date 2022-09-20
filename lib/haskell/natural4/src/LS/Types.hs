@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass, DeriveFunctor #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -314,6 +314,22 @@ data Rule = Regulative
           | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
 
+
+-- | does a rule have a Given attribute? 
+hasGiven :: Rule -> Bool
+hasGiven     Hornlike{} = True
+hasGiven   Regulative{} = True
+hasGiven     TypeDecl{} = True
+hasGiven Constitutive{} = True
+hasGiven             __ = False
+
+-- | does a rule have Clauses?
+-- [TODO] it's beginning to look like we need to break out the Rule Types into different types not just constructors
+hasClauses :: Rule -> Bool
+hasClauses     Hornlike{} = True
+hasClauses             __ = False
+
+
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
             deriving (Eq, Show, Generic, ToJSON)
@@ -473,7 +489,10 @@ newtype ClsTab = CT ClassHierarchyMap
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT (CT x) = x
-type ClassHierarchyMap = Map.Map EntityType (Inferrable TypeSig, ClsTab)
+
+type TypedClass = (Inferrable TypeSig, ClsTab)
+
+type ClassHierarchyMap = Map.Map EntityType TypedClass
 
 -- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
 -- those end up in the ScopeTabs object returned by the `symbolTable` function.

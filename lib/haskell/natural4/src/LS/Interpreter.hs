@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | see documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
--- This runs after the parser and prepares for transpilation by organizing the ruleset, performing type checking and type inference, and so on.
+-- This runs after the parser and prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
+-- in future, we may be so ambitious as to attempt some type checking and type inference, and so on, though that may be better left to corel4.
 
 module LS.Interpreter where
 
@@ -59,20 +60,7 @@ symbolTable iopts rs =
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
- 
-
-hasGiven :: Rule -> Bool
-hasGiven     Hornlike{} = True
-hasGiven   Regulative{} = True
-hasGiven     TypeDecl{} = True
-hasGiven Constitutive{} = True
-hasGiven             __ = False
-
--- | it's beginning to look like we need to break out the Rule Types into different types not just constructors
-hasClauses :: Rule -> Bool
-hasClauses     Hornlike{} = True
-hasClauses             __ = False
-
+-- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
 l4interpret iopts rs =
   let ct = classHierarchy rs
@@ -83,6 +71,7 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
+-- | classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   -- multiple DECLARE of the same class are allowed, so we have to merge.
@@ -99,12 +88,20 @@ classHierarchy rs =
         attributes = classHierarchy (has r)
   ]
 
+-- | deprecated, use classGraph instead.
+allCTkeys :: ClsTab -> [EntityType]
+allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
+                                     | (childname, (_ts, childct)) <- Map.toList ct
+                                     , gcname <- allCTkeys childct
+                                     ]
+
+-- | attributes of a given class. Enums are dealt with separately.
 getCTkeys :: ClsTab -> [EntityType]
 getCTkeys (CT ct) = Map.keys ct
 
 
 type MyClassName = EntityType
--- | class names, topologically sorted to eliminate forward references
+-- | class names, topologically sorted by inheritance to eliminate forward references in "extends" relationships
 -- note: this code will probably fail silently on any input that isn't as expected
 topsortedClasses :: ClsTab -> [MyClassName]
 topsortedClasses ct =
@@ -135,6 +132,8 @@ topsortedClasses ct =
                    , (Just aid) <- [Map.lookup a typeToID]
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
+
+-- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
 attrType (CT clstab) attrName = do
   (t, CT _ct) <- Map.lookup attrName clstab
@@ -149,6 +148,7 @@ getInheritances ct =
   , (Just parent) <- [clsParent ct child]
   ]
 
+-- | recursively return all attribute types found under a given class, i think?
 getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]
 getAttrTypesIn ct classname =
   case thisAttributes ct classname of
@@ -176,7 +176,6 @@ stitchRules l4i rs = rs
 
 -- multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
--- some helper functions that are used by multiple XPile modules
 getAndOrTree :: Interpreted -> Rule -> Maybe (AA.ItemMaybeLabel T.Text) -- Vue wants AA.Item T.Text
 getAndOrTree _l4i r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
@@ -199,10 +198,11 @@ getAndOrTree _l4i r = -- trace ("ERROR: getAndOrTree called invalidly against ru
                       Nothing
 
 -- convert clauses to a boolStruct MT
+bsmtOfClauses :: Rule -> [Maybe (AA.ItemMaybeLabel RelationalPredicate)]
 bsmtOfClauses r = [ mhead <> mbody
                   | c <- clauses r
                   , (hhead, hbody)  <- [(hHead c, hBody c)]
-                  , let (bodyEx, bodyNonEx) = partitionExistentials c
+                  , let (_bodyEx, bodyNonEx) = partitionExistentials c
                   , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
                         mhead = case hhead of
                                   RPBoolStructR _mt1 _rprel1 bsr1 -> -- trace "bsmtOfClauses: returning bsr part of head's RPBoolStructRJust"

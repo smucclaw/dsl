@@ -6,6 +6,8 @@ module LS.PrettyPrinter where
 -- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
 -- This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
 
+import qualified Data.Traversable as DT
+import qualified Data.Foldable as DF
 import qualified Data.Text as T
 import LS.Types
 import qualified AnyAll as AA
@@ -36,22 +38,30 @@ instance Pretty RelationalPredicate where
 -- or add a string argument to RP1 String RelationalPredicate, so we can say RP1 "corel4" ....
 newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
-  pretty (RP1 (RPParamText   pt)           ) = pretty (pt2text pt)
-  pretty (RP1 (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
-  pretty (RP1 (RPMT          mt)           ) = pred_snake mt
-  pretty (RP1 (RPConstraint  mt1 RPis  ["Yes"])) = pred_snake mt1
-  pretty (RP1 (RPConstraint  mt1 RPis  ["No"]))  = hsep [ "not", pred_snake mt1 ]
-  pretty (RP1 (RPConstraint  mt1 RPis  mt2)) = hsep $ reverse [ pred_snake mt1, pred_snake mt2 ]
+  pretty (RP1   (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
+  pretty (RP1 o@(RPConstraint  mt1 RPis  ["No"])) = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (RP1 o@(RPConstraint  mt1 RPis  mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1 o@(RPConstraint  mt1 RPhas mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1   (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
+                                               -- [TODO] confirm RP1 <$> bsr is the right thing to do
+  pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
 
--- [TODO] the Yes/No stuff above really should be in the interpreter.
+inPredicateForm :: RelationalPredicate -> MultiTerm
+inPredicateForm (RPParamText   pt)                = pure $ untaint $ pt2text pt
+inPredicateForm (RPMT     ["OTHERWISE"])          = mempty
+inPredicateForm (RPMT          mt)                = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  ["Yes"]) = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  ["No"])  = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt1 RPis  mt2)     = untaint <$> pred_flip mt2 ++ pred_flip mt1
+inPredicateForm (RPConstraint  mt1 RPhas mt2)     = untaint <$> addHas (pred_flip mt2) ++ mt1
+  where
+    addHas (x:xs) = ("has"<>x) : xs
+    addHas [] = []
+inPredicateForm (RPConstraint  mt1 rprel mt2)     = untaint <$> rel2txt rprel : mt1 ++ mt2
+inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = untaint <$> mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
 
---  somePred(X) :- ...
---  somePred(Y) :- ...
---  somePred(Z).       % prolog calls this a fact but it's really a default branch of the rule. so we have the same issue. ¯\_(ツ)_/¯
-
-  pretty (RP1 (RPConstraint  mt1 RPhas mt2)) = hsep [ "has" <> pred_snake mt2, pred_snake mt1 ]
-  pretty (RP1 (RPConstraint  mt1 rprel mt2)) = hsep [ pred_snake mt1, pretty (rel2op rprel), pred_snake mt2 ]
-  pretty (RP1 (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_snake mt1, pretty rprel, pretty bsr ] -- need to RP1 <$> bsr?
+pred_flip :: [a] -> [a]
+pred_flip xs = last xs : init xs
 
 {-
 GIVEN p IS A Person

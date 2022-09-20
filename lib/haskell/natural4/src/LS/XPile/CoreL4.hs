@@ -5,6 +5,7 @@
 
 module LS.XPile.CoreL4 where
 
+import Prettyprinter.Render.Text
 import Prettyprinter
 
 import AnyAll
@@ -20,16 +21,18 @@ import Data.Functor ( (<&>) )
 
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (catMaybes, fromMaybe, isJust, fromJust)
 import qualified Data.List.NonEmpty as NE
 import           Data.List.NonEmpty (NonEmpty((:|)))
 import Text.Pretty.Simple (pShow, pShowNoColor)
 import qualified Data.Text.Lazy as TL
-import Control.Monad (guard)
+import Control.Monad (guard, join)
 
 import Text.Regex.TDFA
 import Data.List (nub, intercalate, (\\))
-import Data.Either (rights)
+import Data.Either (rights, isRight, fromRight)
+import qualified Data.Traversable as DT
+import qualified Data.Foldable as DF
 
 -- output to Core L4 for further transformation
 
@@ -41,32 +44,24 @@ sfl4ToCorel4 rs =
   let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
       sTable = scopetable interpreted
       cTable = classtable interpreted
+      pclasses = myrender $ prettyClasses cTable
   in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
                  -- , ppCorel4 . sfl4ToCorel4Program $ rs
                "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
                -- some hardcoding while we debug the transpiler and babyl4 interpreter
-               , "decl InsuredVehicle: Object -> Boolean"
                , "decl age: Integer"
                , "decl years: Integer -> Integer"
                , "decl meters: Float -> Float"
-               , "decl TB_Length : Float"
-               , "decl Valid: Object -> Boolean"
                , "class Tire"
-               , "decl spare: Automobile -> Tire -> Boolean"
-               , "decl satisfiedTire: Tire -> Boolean"
-               , "decl designed_to_carry_spare: Automobile -> Boolean"
-               , "decl hasSSTW: Automobile -> Boolean"
-               , "decl hasWheelNutKey: Automobile -> Boolean"
-               , "decl repair_kit_supplied: Automobile -> Boolean"
-               , "decl repair_kit_is_approved_by_manufacturer: Automobile -> Boolean"
-
-               , "\n\n## classes\n",                   show $ prettyClasses cTable
+               , "\n\n## classes\n",                   T.unpack pclasses
                , "\n\n## boilerplate\n",               show $ prettyBoilerplate cTable
 
+               , "\n\n## decls for predicates used in rules (and not defined above already)\n"
+               , show $ prettyDecls pclasses rs
+
 -- honestly i think we can just live without these
---               , "\n\n-- decls\n",                     show $ prettyDecls   sTable
---               , "\n\n-- facts\n",                     show $ prettyFacts   sTable
---               , "\n\n-- defn from decision rules\n",  show $ prettyDefns   rs
+--               , "\n\n## facts\n",                     show $ prettyFacts   sTable
+--               , "\n\n## defn from decision rules\n",  show $ prettyDefns   rs
 
                , "\n# directToCore\n\n"
                ] ++
@@ -224,8 +219,6 @@ directToCore r@Hornlike{keyword}
           ,                                  "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
           ,                                  "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
-          , commentShow "#" $ given r
-          , commentShow "#" $ hc2preds c
           ]
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
@@ -242,8 +235,43 @@ directToCore r@Hornlike{keyword}
 --                     if (vehicle i a && ...)
 --                     then ...
 
-directToCore r@TypeDecl{} = ""
+directToCore TypeDecl{} = ""
 directToCore _ = ""
+
+
+hc2decls :: SFL4.Rule -> Doc ann
+hc2decls r
+  | hasClauses r =
+    vsep
+    [ "decl" <+> pretty pf <> encloseSep ": " "" " -> " (declType ++ ["Boolean"])
+  --    <> Prettyprinter.line
+  --    <> "### headRP: " <> viaShow headRP <> Prettyprinter.line
+  --    <> "### hBod: "   <> viaShow hBod   <> Prettyprinter.line
+  --    <> "### xform 1 headRP:" <+> viaShow headRP <> Prettyprinter.line
+  --    <> "### xform 1 hBod:"   <+> viaShow (maybe [] DF.toList hBod) <> Prettyprinter.line
+  --    <> "### xform 2:"        <+> viaShow (inPredicateForm <$> headRP : maybe [] DF.toList hBod) <> Prettyprinter.line
+  --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
+    | c@(HC2 headRP hBod) <- clauses r
+    , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
+    , T.take 3 pf /= "rel" 
+    , let predname = ""
+          (bodyEx, bodyNonEx) = partitionExistentials c
+          localEnv = given r <> bsr2pt bodyEx
+          typeMap = Map.fromList [ (varName, fromJust varType)
+                                 | (varName, mtypesig) <- maybe [] (fmap (mapFst NE.head) . NE.toList) localEnv
+                                 , let underlyingm = getUnderlyingType <$> mtypesig
+                                         , isJust underlyingm
+                                         , isRight $ fromJust underlyingm
+                                         , let varType = rightToMaybe =<< underlyingm
+                                 ]
+          declType = fmap pretty $ catMaybes $ flip Map.lookup typeMap <$> pfs
+    ]
+  where
+    mapFst f (x,y) = (f x,y)
+    rightToMaybe (Left _) = Nothing
+    rightToMaybe (Right x) = Just x
+hc2decls _ = emptyDoc
+
 
 prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
@@ -251,24 +279,15 @@ prettyTypedMulti pt = pretty $ PT3 pt
 prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
 prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
 
--- [TODO] produce decls for every predicate used in a rule
--- decl spare: Automobile -> Tire -> Boolean
--- decl SatisfiedTire: Tire -> Boolean
--- decl designed_to_carry_spare: Automobile -> Boolean
--- decl hasSSTW: Automobile -> Boolean
--- decl hasWheelNutKey: Automobile -> Boolean
--- decl repair_kit_supplied: Automobile -> Boolean
--- decl repair_kit_is_approved_by_manufacturer: Automobile -> Boolean
+-- we really should be dealing with the nubbing more intelligently, [TODO] use a map to track types, not this stringy stuff.
+prettyDecls :: T.Text -> [SFL4.Rule] -> Doc ann
+prettyDecls previously rs =
+  let previousDecls = T.strip . T.takeWhile (/= '#') <$> filter (("decl " ==) . T.take 5) (T.lines previously)
+  in pretty $ T.unlines $ (nub $ T.lines $ myrender $ vsep (hc2decls <$> rs)) \\ previousDecls
 
 
-prettyDecls :: ScopeTabs -> Doc ann
-prettyDecls sctabs =
-  vsep [ "##" <+> scope_name <> Prettyprinter.line <>
-         "decl" <+> typedOrNot "corel4" (NE.fromList mt, getSymType symtype)
-       | (scopename , symtab') <- Map.toList sctabs
-       , let scope_name = snake_inner (T.unwords scopename)
-       , (mt, (symtype,_vals)) <- Map.toList symtab'
-       ]
+myrender :: Doc ann -> T.Text
+myrender = renderStrict . layoutPretty defaultLayoutOptions
 
 -- [TODO]
 -- fact <helplimit>

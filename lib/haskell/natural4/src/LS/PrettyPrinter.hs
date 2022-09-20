@@ -6,6 +6,8 @@ module LS.PrettyPrinter where
 -- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
 -- This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
 
+import qualified Data.Traversable as DT
+import qualified Data.Foldable as DF
 import qualified Data.Text as T
 import LS.Types
 import qualified AnyAll as AA
@@ -30,20 +32,37 @@ instance Pretty RelationalPredicate where
 -- 3   p minSavings IS p's dependents * 5000  ( NO WHEN )    => defn p minsavings : \dependents -> dependents * 5000
 -- 4   p dependents IS 5                      ( NO WHEN )    => fact <dependentsAdam> dependents adam 5
 
--- | RPCore is used by the CoreL4 transpiler to produce CoreL4-style function predicates, which are space-separated
+-- | RPCore is used ONLY by the CoreL4 transpiler to produce CoreL4-style function predicates, which are space-separated.
+-- if we want to generalize this we can just have RP2 etc for other targets
+-- or rename to RPcore or RPbabyl4
+-- or add a string argument to RP1 String RelationalPredicate, so we can say RP1 "corel4" ....
 newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
-  pretty (RP1 (RPParamText   pt)           ) = pretty (pt2text pt)
-  pretty (RP1 (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
-  pretty (RP1 (RPMT          mt)           ) = space_join mt
-  pretty (RP1 (RPConstraint  mt1 RPis  mt2)) = hsep [ pred_snake mt1, space_join mt2 ]
+  pretty (RP1   (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
+  pretty (RP1 o@(RPConstraint  mt1 RPis  ["No"])) = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (RP1 o@(RPConstraint  mt1 RPis  mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1 o@(RPConstraint  mt1 RPhas mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1   (RPConstraint  mt1 rprel mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint <$> mt2 ]
+  pretty (RP1   (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
+                                               -- [TODO] confirm RP1 <$> bsr is the right thing to do
+  pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
 
---  somePred(X) :- ...
---  somePred(Y) :- ...
---  somePred(Z).       % prolog calls this a fact but it's really a default branch of the rule. so we have the same issue. ¯\_(ツ)_/¯
+inPredicateForm :: RelationalPredicate -> MultiTerm
+inPredicateForm (RPParamText   pt)                = pure $ untaint $ pt2text pt
+inPredicateForm (RPMT     ["OTHERWISE"])          = mempty
+inPredicateForm (RPMT          mt)                = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  ["Yes"]) = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  ["No"])  = untaint <$> pred_flip mt
+inPredicateForm (RPConstraint  mt1 RPis  mt2)     = untaint <$> pred_flip mt2 ++ pred_flip mt1
+inPredicateForm (RPConstraint  mt1 RPhas mt2)     = untaint <$> addHas (pred_flip mt2) ++ mt1
+  where
+    addHas (x:xs) = ("has"<>x) : xs
+    addHas [] = []
+inPredicateForm (RPConstraint  mt1 rprel mt2)     = untaint <$> rel2txt rprel : mt1 ++ mt2
+inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = untaint <$> mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
 
-  pretty (RP1 (RPConstraint  mt1 rprel mt2)) = hsep [ pred_join mt1, pretty (rel2op rprel), pred_join mt2 ]
-  pretty (RP1 (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_join mt1, pretty rprel, pretty bsr ] -- need to RP1 <$> bsr?
+pred_flip :: [a] -> [a]
+pred_flip xs = last xs : init xs
 
 {-
 GIVEN p IS A Person
@@ -86,10 +105,16 @@ possessiveToObject str = T.intercalate " " $ reverse $ T.splitOn "'s " str
 pred_snake :: [T.Text] -> Doc ann
 pred_snake xs = encloseSep "" "" " " (snake_inner <$> last xs : init xs)
 
+-- generalize the elimination of the units, across all the {pred,space}_{snake,join} functions.
+
+
 -- | pred_join
 -- "foo bar" "baz" --> "baz foo bar
 -- "fooBar" "baz"  --> "baz fooBar"
 pred_join :: [T.Text] -> Doc ann
+pred_join (x:["years"]) = pred_join [x]
+pred_join (x:["meters"]) = pred_join [x]
+pred_join (x:["kg"]) = pred_join [x]
 pred_join xs = encloseSep "" "" " " (pretty <$> last xs : init xs)
 
 
@@ -121,7 +146,14 @@ snake_case xs = encloseSep "" "" "_" (snake_inner <$> xs)
 -- "foo bar" --> "foo_bar"
 -- "fooBar"" --> "fooBar"
 snake_inner :: T.Text -> Doc ann
-snake_inner = pretty . T.replace " " "_"
+snake_inner = pretty . untaint
+
+untaint = T.replace " " "_" .
+          T.replace "," "_" .
+          T.replace "'" "_" .
+          T.replace "-" "_"
+--          T.replace "\’" "_" -- [TODO] we need to replace all non-low-unicode characters with underscores.
+
 
 instance Pretty RPRel where
   pretty rpr = pretty $ rel2txt rpr
@@ -139,7 +171,7 @@ instance Pretty ParamText2 where
 -- | ParamText3 is used by the CoreL4 transpiler to produce colon-annotated paramtexts.
 newtype ParamText3 = PT3 ParamText
 instance Pretty ParamText3 where
-  pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot <$> pt))
+  pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot "_" <$> pt))
 
 -- | ParamText4 is used to approximate a recursive record. currently we can only go 2 deep.
 -- in future we will have to upgrade ParamText to a full Tree type which can nest arbitrarily deep.
@@ -154,7 +186,7 @@ instance Pretty ParamText4 where
                      <> rbrace
     where
       word1,lrest :: TypedMulti -> Doc ann
-      word1 l = typedOrNot       ((NE.head . fst $ l) :| [], snd l)
+      word1 l = typedOrNot "_"      ((NE.head . fst $ l) :| [], snd l)
       lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
       -- quote based on type.
       quoteBoT :: TypedMulti -> Doc ann
@@ -209,25 +241,26 @@ typeOfTerm l4i tm =
 --                      Just (its, ct1) -> trace ("yes it does! we got back ct2 " ++ show ct1 ++ " so we will recurse, dropping " ++ show x) $
 --                                         walk l4i (Just ct1) xs ot
 
-typedOrNot :: TypedMulti -> Doc ann
-typedOrNot (multitext, Nothing)                        = snake_case (toList multitext)
-typedOrNot (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
-typedOrNot (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
-typedOrNot (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
-typedOrNot (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
-typedOrNot (multitext, Just (InlineEnum pt1       s1)) = snake_case (toList multitext) <> ":"  <+>
-  "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+typedOrNot :: String -> TypedMulti -> Doc ann
+typedOrNot        _ (multitext, Nothing)                        = snake_case (toList multitext) <> ":"  <+> "Object"
+typedOrNot        _ (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
+typedOrNot "corel4" (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
+typedOrNot        _ (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
+typedOrNot        _ (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multitext, Just (InlineEnum pt1       s1)) = snake_case (toList multitext) <> "# :"  <+> "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
-prettySimpleType :: (T.Text -> Doc ann) -> TypeSig -> Doc ann
-prettySimpleType prty (SimpleType TOne      s1) = prty s1
-prettySimpleType prty (SimpleType TOptional s1) = prty s1 <> "?"
-prettySimpleType prty (SimpleType TList0    s1) = brackets (prty s1)
-prettySimpleType prty (SimpleType TList1    s1) = brackets (prty s1)
-prettySimpleType prty (InlineEnum pt1       s1) = "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
+prettySimpleType _        prty (SimpleType TOne      s1) = prty s1
+prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
+prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
+prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
+prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
+prettySimpleType _        prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
-prettyMaybeType :: (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
-prettyMaybeType inner Nothing   = ""
-prettyMaybeType inner (Just ts) = colon <+> prettySimpleType inner ts
+prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
+prettyMaybeType _ inner Nothing   = ""
+prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 
 -- | comment a block of lines

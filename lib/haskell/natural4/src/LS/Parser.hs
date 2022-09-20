@@ -14,7 +14,7 @@ import Control.Monad.Combinators.Expr
 import Text.Megaparsec
 import qualified Data.Text as Text
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Debug.Trace
+-- import Debug.Trace
 
 data MyItem lbl a =
     MyLeaf                a

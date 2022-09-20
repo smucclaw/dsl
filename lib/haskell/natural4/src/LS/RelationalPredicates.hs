@@ -8,7 +8,7 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import qualified AnyAll as AA
-import qualified Data.List.NonEmpty as NE
+-- import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
 import qualified Data.Foldable as DF
 import Data.Maybe (fromMaybe)

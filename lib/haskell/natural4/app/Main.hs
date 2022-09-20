@@ -30,6 +30,8 @@ import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import qualified Text.RawString.QQ as QQ
+import qualified Data.Foldable as DF
+import qualified Data.Traversable as DT
 
 main :: IO ()
 main = do
@@ -62,7 +64,11 @@ main = do
                                                                ])
 
                                    , "-- getAndOrTrees"
-                                   , unlines $ (\r -> ("\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n") <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+                                   , unlines $ (\r -> "\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n" <>
+                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+
+                                   , "-- traverse id of the getAndOrTrees"
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i <$> rules
 
                                    , "\n\n-- class hierarchy:\n"
                                    , TL.unpack (pShowNoColor (SFL4.classtable l4i))

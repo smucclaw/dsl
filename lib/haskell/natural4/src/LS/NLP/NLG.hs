@@ -545,6 +545,10 @@ combineActionMods ("CN", noun) (("Adv",mod):rest) = combineActionMods ("CN", gf 
   where
     resultCN :: GCN
     resultCN = GAdvCN (fg noun) (fg mod)
+combineActionMods ("CN", noun) (("NP", mod):rest) = combineActionMods ("CN", gf resultCN) rest
+  where
+    resultCN :: GCN
+    resultCN = GPossNP (fg noun) (fg mod)
 combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
@@ -600,6 +604,18 @@ combineExpr pred compl = result
     predTyped = udsToTreeGroups pred
     complTyped = udsToTreeGroups compl
     result = case predTyped of
+      -- root_only (rootN_ (MassNP (UseN (StrN "propernoun"))))with complement root_nmod (rootDAP_ (DetDAP each_Det)) (nmod_ of_Prep (DetCN thePl_Det (AdjCN (PositA notifiable_A) (UseN individual_N))))
+
+      -- TG {gfNP = Just propernoun} ->
+      --   ("RS", case complTyped of
+      --     TG {gfAdv = Just (Groot_nmod $ (GrootDAP_ (GDetDAP each)) (Gnmod_ of_Prep individuals))} -> gf $ GApposNP propernoun $ GAdvNP (GDetNP each) (GPrepNP of_Prep individuals)
+      --   )
+        -- each of the notifiable individuals
+
+        -- root_nmod (rootDAP_ (DetDAP each_Det)) (nmod_ of_Prep (DetCN thePl_Det (AdjCN (PositA notifiable_A) (UseN individual_N))))
+
+        -- root_only (rootN_ (MassNP (UseN (StrN "propernoun")))) with complement root_nmod (rootDAP_ (DetDAP each_Det)) (nmod_ of_Prep (DetCN thePl_Det (AdjCN (PositA notifiable_A) (UseN individual_N))))
+
       TG {gfRP=Just for_which} ->
         ("RS", case complTyped of
           TG {gfS= Just (GUseCl t p you_work)} -> gf $ GUseRCl t p $ GRelSlash for_which (GSlashCl you_work)
@@ -1197,10 +1213,13 @@ npFromUDS x = case x of
   Groot_aclRelcl (GrootN_ np) (GaclRelclUDSRP_ _rp relcl) -> Just $ GRelNP np (udRelcl2rglRS relcl)
   -- the occurence at the beach
   Groot_nmod (GrootN_ rootNP) (Gnmod_ prep nmodNP) -> Just $ GAdvNP rootNP (GPrepNP prep nmodNP)
+  -- each of the notifiable individuals
+  -- Groot_nmod (GrootDAP_ det_DAP) (Gnmod_ prep )
   -- service from the provider to the payer
   Groot_nmod_nmod (GrootN_ service_NP) (Gnmod_ from_Prep provider_NP) (Gnmod_ to_Prep payer_NP) -> Just $ GAdvNP (GAdvNP service_NP (GPrepNP from_Prep provider_NP)) (GPrepNP to_Prep payer_NP)
   -- great harm that she suffered
   Groot_acl (GrootN_ great_harm_NP) (GaclUDS_ (Groot_nsubj (GrootV_ _temp _pol suffer_VP) (Gnsubj_ she_NP))) -> Just $ GRelNP great_harm_NP (GRS_that_NP_VP she_NP suffer_VP)
+
 
   _ -> case getRoot x of -- TODO: fill in other cases
               GrootN_ np:_ -> Just np

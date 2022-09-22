@@ -387,6 +387,7 @@ data Tree :: * -> * where
   GGerundAdv :: GVP -> Tree GAdv_
   GPositAdvAdj :: GA -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  GStrAdv :: GString -> Tree GAdv_
   GSubjS :: GSubj -> GS -> Tree GAdv_
   Gacl2Adv :: Gacl -> Tree GAdv_
   Gadvcl2Adv :: Gadvcl -> Tree GAdv_
@@ -894,6 +895,7 @@ instance Eq (Tree a) where
     (GGerundAdv x1,GGerundAdv y1) -> and [ x1 == y1 ]
     (GPositAdvAdj x1,GPositAdvAdj y1) -> and [ x1 == y1 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GStrAdv x1,GStrAdv y1) -> and [ x1 == y1 ]
     (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gacl2Adv x1,Gacl2Adv y1) -> and [ x1 == y1 ]
     (Gadvcl2Adv x1,Gadvcl2Adv y1) -> and [ x1 == y1 ]
@@ -1473,6 +1475,7 @@ instance Gf GAdv where
   gf (GGerundAdv x1) = mkApp (mkCId "GerundAdv") [gf x1]
   gf (GPositAdvAdj x1) = mkApp (mkCId "PositAdvAdj") [gf x1]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf (GStrAdv x1) = mkApp (mkCId "StrAdv") [gf x1]
   gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
   gf (Gacl2Adv x1) = mkApp (mkCId "acl2Adv") [gf x1]
   gf (Gadvcl2Adv x1) = mkApp (mkCId "advcl2Adv") [gf x1]
@@ -1489,6 +1492,7 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "GerundAdv" -> GGerundAdv (fg x1)
       Just (i,[x1]) | i == mkCId "PositAdvAdj" -> GPositAdvAdj (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "StrAdv" -> GStrAdv (fg x1)
       Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "acl2Adv" -> Gacl2Adv (fg x1)
       Just (i,[x1]) | i == mkCId "advcl2Adv" -> Gadvcl2Adv (fg x1)
@@ -3633,6 +3637,7 @@ instance Compos Tree where
     GGerundAdv x1 -> r GGerundAdv `a` f x1
     GPositAdvAdj x1 -> r GPositAdvAdj `a` f x1
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GStrAdv x1 -> r GStrAdv `a` f x1
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
     Gacl2Adv x1 -> r Gacl2Adv `a` f x1
     Gadvcl2Adv x1 -> r Gadvcl2Adv `a` f x1

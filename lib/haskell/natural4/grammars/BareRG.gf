@@ -117,6 +117,7 @@ abstract BareRG =
     StrPN : String -> PN ;
     StrN : String -> N ;
     StrA : String -> A ;
+    StrAdv : String -> Adv ;
     StrAP : String -> AP ;
     StrCard : String -> Card ;
     StrNum : String -> Num ;

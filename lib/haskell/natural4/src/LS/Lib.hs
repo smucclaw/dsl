@@ -13,6 +13,11 @@
 {-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
 {-# LANGUAGE TupleSections #-}
 
+{-|
+Parser functions not organized into their own separate modules elsewhere.
+
+This includes some top-leve parsers like pRules and pBoolStruct.
+-}
 
 module LS.Lib where
 

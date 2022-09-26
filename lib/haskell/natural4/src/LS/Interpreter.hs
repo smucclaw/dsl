@@ -1,8 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | see documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
--- This runs after the parser and prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
--- in future, we may be so ambitious as to attempt some type checking and type inference, and so on, though that may be better left to corel4.
+{-|
+
+The Interpreter runs after the Parser. It prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
+
+In future, we may be so ambitious as to attempt some type checking and type inference, and so on, here, though that may be better left to corel4.
+
+See also documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
+
+Typical usage runs `l4interpret` and then makes use of the attributes returned in the `l4i` object.
+
+-}
 
 module LS.Interpreter where
 
@@ -19,6 +27,17 @@ import Data.Maybe
 import Data.Graph.Inductive
 import Data.Tuple (swap)
 import Data.List (find)
+
+-- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
+l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
+l4interpret iopts rs =
+  let ct = classHierarchy rs
+      st = symbolTable    iopts rs
+  in
+    L4I { classtable = ct
+        , scopetable = st
+        , origrules  = rs
+        }
 
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
@@ -60,17 +79,6 @@ symbolTable iopts rs =
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
--- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
-l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
-l4interpret iopts rs =
-  let ct = classHierarchy rs
-      st = symbolTable    iopts rs
-  in
-    L4I { classtable = ct
-        , scopetable = st
-        , origrules  = rs
-        }
-
 -- | classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
@@ -99,6 +107,7 @@ allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gc
 getCTkeys :: ClsTab -> [EntityType]
 getCTkeys (CT ct) = Map.keys ct
 
+-- | passthrough type, present in case we decide to represent the names of classes differently.
 
 type MyClassName = EntityType
 -- | class names, topologically sorted by inheritance to eliminate forward references in "extends" relationships
@@ -174,7 +183,11 @@ stitchRules l4i rs = rs
   -- here we do it directly.
 
 
--- multiple rules with the same head should get &&'ed together and jammed into a single big rule
+-- | return the internal conditions of the rule, if any, as an and-or tree.
+-- a Regulative rule exposes its `who` and `cond` attributes
+-- a Constitutive rule exposes the body of its `clauses`
+
+-- todo: multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
 getAndOrTree :: Interpreted -> Rule -> Maybe (AA.ItemMaybeLabel T.Text) -- Vue wants AA.Item T.Text
 getAndOrTree _l4i r@Regulative{who=whoMBSR, cond=condMBSR} =

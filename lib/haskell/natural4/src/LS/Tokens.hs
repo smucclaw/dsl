@@ -5,6 +5,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 
+{-|
+This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).
+
+This module also provides a family of SLParser combinators ("Same Line").
+-}
+
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import qualified Data.Set           as Set

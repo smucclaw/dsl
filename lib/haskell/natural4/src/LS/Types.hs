@@ -8,6 +8,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 
+{-|
+Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
+-}
+
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
 
@@ -452,7 +456,7 @@ data TypeSig = SimpleType ParamType EntityType
 type VarPath = [TypedMulti]
 
 data InterpreterOptions = IOpts
-  { enums2decls :: Bool -- | convert inlineEnums in a class declaration to top-level decls? Used by corel4.
+  { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
   deriving (Eq, Show)
 
@@ -677,154 +681,6 @@ increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 
 magicKeywords :: [Text.Text]
 magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS DEFINE"
-
--- the Rule types employ these tokens, which are meaningful to L4.
---
-toToken :: Text.Text -> [MyToken]
-
--- start a regulative rule
-toToken "EVERY" =  pure Every
-toToken "PARTY" =  pure Party
-toToken "ALL"   =  pure TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
-
--- start a boolstruct
-toToken "ALWAYS" = pure Always
-toToken "NEVER"  = pure Never
-
--- qualify a subject
-toToken "WHO" =    pure Who
-toToken "WHICH" =  pure Which
-toToken "WHOSE" =  pure Whose
-
-toToken "WHEN" =   pure When
-toToken "IF" =     pure If
-toToken "UPON" =   pure Upon
-toToken "GIVEN" =  pure Given
-toToken "HAVING" = pure Having
-
-toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
-toToken "INCLUDES" =  pure Includes
-toToken "IS" =     pure Is
-
--- boolean connectors
-toToken "OR" =     pure Or
-toToken "AND" =    pure And
-toToken "UNLESS" = pure Unless
-toToken "EXCEPT" = pure Unless
-toToken "IF NOT" = pure Unless
-toToken "NOT"    = pure MPNot
-
--- set operators
-toToken "PLUS"   = pure SetPlus
-toToken "LESS"   = pure SetLess
-
--- deontics
-toToken "MUST" =   pure Must
-toToken "MAY" =    pure May
-toToken "SHANT" =  pure Shant
-
--- temporals
-toToken "UNTIL"  = pure Before  -- <
-toToken "BEFORE" = pure Before  -- <
-toToken "WITHIN" = pure Before  -- <=
-toToken "AFTER"  = pure After   -- >
-toToken "BY"     = pure By
-toToken "ON"     = pure On      -- ==
-toToken "EVENTUALLY" = pure Eventually
-
--- the rest of the regulative rule
-toToken "➔"       =     pure Do
-toToken "->"      =     pure Do
-toToken "DO"      =     pure Do
-toToken "PERFORM" =     pure Do
-
--- for discarding
-toToken "" =       pure Empty
-toToken "TRUE" =   pure Checkbox
-toToken "FALSE" =  pure Checkbox
-toToken "HOLDS" =  pure Holds
-
--- regulative chains
-toToken "HENCE" = pure Hence
-toToken  "THEN" = pure Hence
--- trivial contracts
-toToken  "FULFILLED" = pure Fulfilled
-toToken  "BREACH" = pure Breach
-
-toToken     "LEST" = pure Lest
-toToken     "ELSE" = pure Lest
-toToken  "OR ELSE" = pure Lest
-toToken "XOR ELSE" = pure Lest
-toToken    "XELSE" = pure Lest
-toToken  "GOTO" = pure Goto
-
-toToken ";"      = pure EOL
-
-toToken ":"      = [TypeSeparator, A_An]
-toToken "::"     = [TypeSeparator, A_An]
-toToken "TYPE"   = [TypeSeparator, A_An]
-toToken "IS A"   = [TypeSeparator, A_An]
-toToken "IS AN"  = [TypeSeparator, A_An]
-toToken "IS THE" = [TypeSeparator, A_An]
-toToken "A"      = pure A_An
-toToken "AN"     = pure A_An
-toToken "THE"    = pure A_An
-
-toToken "DECLARE"   = pure Declare
-toToken "DEFINE"    = pure Define
-toToken "DECIDE"    = pure Decide
-toToken "ONEOF"    = pure OneOf
-toToken "ONE OF"    = pure OneOf
-toToken "IS ONE OF" = pure OneOf
-toToken "AS ONE OF" = pure OneOf
-toToken "DEEM"      = pure Deem
-toToken "HAS"       = pure Has
-
-toToken "ONE"       = pure One
-toToken "OPTIONAL"  = pure Optional
-toToken "LIST0"     = pure List0
-toToken "LIST1"     = pure List1
-toToken "LIST OF"   = pure List1
-toToken "LISTOF"    = pure List1
-toToken "LIST"      = pure List1
-
-toToken "AKA"       = pure Aka
-toToken "TYPICALLY" = pure Typically
-
-toToken "-§"        = pure $ RuleMarker (-1) "§"
-toToken "SECTION"   = pure $ RuleMarker   1  "§"
-toToken "§"         = pure $ RuleMarker   1  "§"
-toToken "§§"        = pure $ RuleMarker   2  "§"
-toToken "§§§"       = pure $ RuleMarker   3  "§"
-toToken "§§§§"      = pure $ RuleMarker   4  "§"
-toToken "§§§§§"     = pure $ RuleMarker   5  "§"
-toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
-
-toToken "SCENARIO"  = pure ScenarioTok
-toToken "EXPECT"    = pure Expect
-toToken "<"         = pure TokLT
-toToken "=<"        = pure TokLTE
-toToken "<="        = pure TokLTE
-toToken ">"         = pure TokGT
-toToken ">="        = pure TokGTE
-toToken "="         = pure TokEQ
-toToken "=="        = pure TokEQ
-toToken "==="       = pure TokEQ
-toToken "IN"        = pure TokIn
-toToken "NOT IN"    = pure TokNotIn
-
-toToken "OTHERWISE" = pure Otherwise
-
-toToken "WHERE"     = pure Where
-
-toToken ";;"        = pure Semicolon
-
--- we recognize numbers
--- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
-
--- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
-toToken x = pure $ Other x
 
 
 

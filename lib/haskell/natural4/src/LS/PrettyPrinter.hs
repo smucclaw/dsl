@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- the job of this module is to create orphan instances
 
-module LS.PrettyPrinter where
+{-|
+This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
+This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
+The pretty-printing then gets used by the transpilers.
+-}
 
--- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
--- This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
+module LS.PrettyPrinter where
 
 import qualified Data.Traversable as DT
 import qualified Data.Foldable as DF
@@ -15,7 +18,7 @@ import Prettyprinter
 import Data.List (intersperse)
 -- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
-import Debug.Trace
+-- import Debug.Trace
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where

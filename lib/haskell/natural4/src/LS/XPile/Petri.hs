@@ -4,6 +4,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
+{-| transpiler to Petri net visualizer -}
+
 module LS.XPile.Petri(module LS.XPile.Petri) where
 
 import qualified Data.Text     as Text

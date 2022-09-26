@@ -4,6 +4,12 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-|
+Abstract parser functions that help build other parsers.
+
+This module imports Control.Monad.Combinators.Expr which is the basis for the BoolStruct family of parsers.
+
+-}
 module LS.Parser where
 
 import LS.Types

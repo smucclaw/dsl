@@ -6,6 +6,12 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE EmptyCase #-}
 
+{-|
+
+Show parser errors with more helpful context.
+
+-}
+
 module LS.Error where
 
 import qualified Data.List.NonEmpty as NE

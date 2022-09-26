@@ -3,6 +3,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase, TupleSections #-}
 
+{-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
+
 module LS.XPile.CoreL4 where
 
 import Prettyprinter.Render.Text
@@ -537,7 +539,10 @@ prettyClasses ct =
           "decl" <+> lc_childname <>
           case getSymType attrtype of
             -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
-            Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
+            Just (InlineEnum _ptype _pt) -> -- " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
+              encloseSep ": " "" " -> " [ uc_name
+                                        , uc_childname
+                                        , "Boolean"]
             Nothing ->
               encloseSep ": " "" " -> " [ uc_name
                                         , uc_childname

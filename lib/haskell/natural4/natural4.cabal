@@ -41,8 +41,6 @@ library
       LS.Tokens
       LS.Types
       LS.XPile.CoreL4
-      LS.XPile.CSV
-      LS.XPile.Odoyle
       LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.SVG

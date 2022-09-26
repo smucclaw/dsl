@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-| transpiler to Purescript and JSON types intended for consumption by Vue. -}
+
+-- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
+
 module LS.XPile.VueJSON where
 
 import LS

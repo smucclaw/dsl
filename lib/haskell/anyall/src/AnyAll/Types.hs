@@ -125,6 +125,7 @@ instance Monoid lbl => Semigroup (Item lbl a) where
   (<>) l            r            = All mempty [l, r]
 
 
+{-
 -- | prepend something to the Pre/Post label, shallowly
 -- shallowPrependBSR :: (IsString a, Semigroup a) => a -> Item a -> Item a
 -- x `shallowPrependBSR` Leaf z    = Leaf (x <> " " <> z)
@@ -145,7 +146,7 @@ instance Monoid lbl => Semigroup (Item lbl a) where
 -- prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
 -- prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
-
+-}
 
 
 -- | flatten redundantly nested structure

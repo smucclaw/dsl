@@ -378,16 +378,16 @@ rowLayouter sc (bbold, old) (bbnew, new) =
         then svgConnector $ rowConnectorData sc bbold bbnew
         else mempty
 
-data Dot = Dot {x::Length, y::Length}
+data Dot = Dot {xPos::Length, yPos::Length}
 data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
 
 rowConnectorData :: Scale -> BBox -> BBox -> Curve
 rowConnectorData sc bbold bbnew =
   Curve
-    { start = Dot {x = bbold ^. bboxWidth - rightMargin', y = startPortY},
-      startGuide = Dot {x = endPortX `div` 2, y = 0},
-      endGuide = Dot {x = endPortX `div` 2, y = endPortY},
-      end = Dot {x = endPortX, y = endPortY}
+    { start = Dot {xPos = bbold ^. bboxWidth - rightMargin', yPos = startPortY},
+      startGuide = Dot {xPos = endPortX `div` 2, yPos = 0},
+      endGuide = Dot {xPos = endPortX `div` 2, yPos = endPortY},
+      end = Dot {xPos = endPortX, yPos = endPortY}
     }
   where
     myScale = getScale sc
@@ -400,10 +400,10 @@ rowConnectorData sc bbold bbnew =
 svgConnector :: Curve -> SVGElement
 svgConnector
   Curve
-    { start = Dot {x = sx, y = sy},
-      startGuide = Dot {x = sgx, y = sgy},
-      endGuide = Dot {x = egx, y = egy},
-      end = Dot {x = ex, y = ey}
+    { start = Dot {xPos = sx, yPos = sy},
+      startGuide = Dot {xPos = sgx, yPos = sgy},
+      endGuide = Dot {xPos = egx, yPos = egy},
+      end = Dot {xPos = ex, yPos = ey}
     } =
     path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
     where

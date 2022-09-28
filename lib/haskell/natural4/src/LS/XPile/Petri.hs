@@ -367,6 +367,7 @@ addDeets (PN a b c d) dts = PN a b c (dts++d)
 getOrigRL :: PNodeD -> Maybe Text
 getOrigRL (PN _ _ _ ds) = listToMaybe [ t | (OrigRL t) <- ds ]
 
+-- [TODO] we should refactor this into something that is output-independent and lives in Interpreter.
 connectRules :: PetriD -> [Rule] -> PetriD
 connectRules sg rules =
   -- a node that is any HENCE GOTO RuleName will have the deet "FromRuleAlias"
@@ -426,39 +427,6 @@ connectRules sg rules =
       foldl (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
 
-expandRulesByLabel :: [Rule] -> Text -> [Rule]
-expandRulesByLabel rules txt =
-  let toreturn =
-        [ q
-        | r <- rules
-        , let mt = rl2text <$> rLabelR r
-        , Just txt == mt
-        , let qs = expandRule rules r
-        , q <- qs
-        ]
-  in -- trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
-     toreturn
-
-expandRule :: [Rule] -> Rule -> [Rule]
-expandRule rules r@Regulative{..} = [r]
-expandRule rules r@Hornlike{..} =
-  let toreturn =
-        -- we support hornlike expressions of the form x is y and z; we return y and z
-        [ q
-        | clause <- clauses
-        , let rlbl' = rl2text <$> rLabelR r
-              bsr = -- trace ("expandRule: got head " ++ show (hHead clause))
-                    hHead clause
-        , isJust rlbl'
-        , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
-                aaLeaves (AA.Leaf bsr)
-        -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
-        , q <- expandRulesByLabel rules (mt2text mt)
-        ]
-  in -- trace ("expandRule: called with input " ++ show rlabel)
-     -- trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
-     toreturn
-expandRule _ _ = []
 
 
 showNode :: PNodeD -> Text

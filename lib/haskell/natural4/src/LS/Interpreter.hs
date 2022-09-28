@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 
@@ -49,6 +51,9 @@ l4interpret iopts rs =
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
+      expandedRules = DL.nub $ concatMap (expandRule rs) rs
+      ridmap = Map.fromList (Prelude.zip rs [1..])
+      decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
@@ -65,12 +70,23 @@ musings l4i rs =
                              
                            | (mt, (its, hc)) <- Map.toList st ]
                    | (rn, st) <- Map.toList $ scopetable l4i ]
-           , "** the Rule Graph"
-           , example (pretty (prettify (first ruleLabelName $ ruleGraph rs)))
+
+           , "** the Rule Decision Graph"
+           , example (pretty (prettify (first ruleLabelName decisionGraph)))
+
+           , "** Decision Roots"
+           , "rules which are not relied on by any other rule"
+           , srchs (ruleLabelName <$> decisionRoots decisionGraph)
+
+
+           , "** Expanded rules"
+           , if expandedRules == DL.nub rs
+             then "(ahem, they're actually the same as unexpanded, not showing)"
+             else vvsep [ "*** ruleLabelName:" <+> pretty (ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees"
            , vvsep [ "*** ruleLabelName:" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i r) | r <- rs ]
            , "** The original rules"
-           , vvsep [ "*** " <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
+           , vvsep [ "*** ruleLabelName:" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
   where
     srchs :: (Show a) => a -> Doc ann
@@ -241,13 +257,61 @@ type RuleIDMap = Map.Map Rule Int
 -- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
 -- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
 
-ruleGraph :: [Rule] -> Gr Rule ()
-ruleGraph rs =
+type RuleGraphEdgeLabel = ()
+type RuleGraph = Gr Rule RuleGraphEdgeLabel
+
+
+
+ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
+ruleDecisionGraph l4i rs =
   let ruleIDmap = Map.fromList (Prelude.zip rs [1..])
   in mkGraph
   (swap <$> Map.toList ruleIDmap) -- the nodes
-  [] -- the edges
+  (relPredRefsAll l4i rs ruleIDmap)
   
+-- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
+relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
+relPredRefsAll l4i rs ridmap =
+  concatMap (relPredRefs l4i rs ridmap) rs
+
+-- | in a particular rule, walk all the relational predicates available, and show outdegree links
+-- that correspond to known BSR heads from the entire ruleset.
+-- in other words, if a rule R1 says something like (a WHEN b OR c), it defines a, and relies on b and c;
+-- if we find a rule R2 which defines (c MEANS c1 AND c2), then it defines c, and relies on c1 and c2.
+-- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
+-- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
+-- the brute way first and then refactor later once we have a better idea if this approach even works.
+relPredRefs :: Interpreted -> [Rule] -> RuleIDMap -> Rule -> [LEdge RuleGraphEdgeLabel]
+relPredRefs l4i rs ridmap r =
+  let headElements :: Map.Map MultiTerm Rule -- does this get recomputed each time or cached?
+      -- given a term, see which rule defines it
+      headElements = Map.fromList $
+                     [ (headName,r')
+                     | r' <- rs
+                     , headName <- getDecisionHeads r'
+                     ]
+      -- given a rule, see which terms it relies on
+      bodyElements = concat $ rp2bodytexts <$> concatMap AA.extractLeaves (getBSR r)
+  -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
+  in [ (rid, targetRuleId', ())
+     | bElem <- bodyElements
+     , let targetRule = Map.lookup bElem headElements
+           targetRule' = fromJust targetRule
+           targetRuleId = Map.lookup targetRule' ridmap
+           targetRuleId' = fromJust targetRuleId
+           rid = ridmap Map.! r
+     , isJust targetRule
+     , isJust targetRuleId
+     ]
+  
+
+-- | all the rules which have no indegrees, as far as decisioning goes
+decisionRoots :: RuleGraph -> [Rule]
+decisionRoots rg =
+  catMaybes [ lab rg r
+            | r <- nodes rg
+            , null (pre rg r)
+            ]
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
@@ -391,6 +455,43 @@ expandBSR' l4i depth (AA.Any lbl xs) = AA.Any lbl (expandBSR l4i (depth + 1) <$>
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody l4i = id
+
+
+-- | used by the Petri xpiler.
+expandRulesByLabel :: [Rule] -> T.Text -> [Rule]
+expandRulesByLabel rules txt =
+  let toreturn =
+        [ q
+        | r <- rules
+        , let mt = rl2text <$> rLabelR r
+        , Just txt == mt
+        , let qs = expandRule rules r
+        , q <- qs
+        ]
+  in -- trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
+     toreturn
+
+expandRule :: [Rule] -> Rule -> [Rule]
+expandRule rules r@Regulative{..} = [r]
+expandRule rules r@Hornlike{..} =
+  let toreturn =
+        -- we support hornlike expressions of the form x is y and z; we return y and z
+        [ q
+        | clause <- clauses
+        , let rlbl' = rl2text <$> rLabelR r
+              bsr = -- trace ("expandRule: got head " ++ show (hHead clause))
+                    hHead clause
+        , isJust rlbl'
+        , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
+                aaLeaves (AA.Leaf bsr)
+        -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
+        , q <- expandRulesByLabel rules (mt2text mt)
+        ]
+  in -- trace ("expandRule: called with input " ++ show rlabel)
+     -- trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
+     toreturn
+expandRule _ _ = []
+
 
 -- | used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text

@@ -31,7 +31,7 @@ import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import qualified Text.RawString.QQ as QQ
 import qualified Data.Foldable as DF
-import qualified Data.Traversable as DT
+-- import qualified Data.Traversable as DT
 
 main :: IO ()
 main = do

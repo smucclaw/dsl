@@ -854,6 +854,10 @@ c = a || (b1 && b2)
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+c is a horn head definition
+
+b is a horn body definition
+
 |        | c  |
 | MEANS  | a  |
 | OR     | b  |
@@ -863,6 +867,8 @@ c = a || (b1 && b2)
 | AND    | b2 |
 
 This should define c = a || (b1 && b2)
+
+We need to think through the semantics of relationalpredicates in the horn head and horn body a little more.
 
 **** varsub-3-bodybody: define one thing in terms of another thing, in the body and body
 :PROPERTIES:

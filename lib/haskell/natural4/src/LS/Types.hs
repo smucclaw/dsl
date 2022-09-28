@@ -28,6 +28,7 @@ import Data.Aeson (ToJSON)
 import GHC.Generics
 import qualified Data.Tree as Tree
 import qualified Data.Map as Map
+import Data.Maybe (maybeToList, catMaybes)
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -333,6 +334,23 @@ hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
 
+-- | convert all decision logic in a rule to BoolStructR format.
+-- the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.
+-- the `cond` of a regulative rule is passed along.
+getBSR :: Rule -> [BoolStructR]
+getBSR Hornlike{..}   = catMaybes $
+                        [ hbody
+                        | HC2 _hhead hbody <- clauses
+                        ]
+getBSR Regulative{..} = maybeToList who ++
+                        maybeToList cond
+
+getBSR _              = []
+
+getDecisionHeads :: Rule -> [MultiTerm]
+getDecisionHeads Hornlike{..} = [ rpHead hhead
+                                | HC2 hhead _hbody <- clauses ]
+getDecisionHeads _ = []
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
@@ -400,6 +418,13 @@ rp2texts (RPParamText    pt)            = pt2multiterm pt
 rp2texts (RPMT           mt)            = mt
 rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
+
+-- | pull out all the body leaves of RelationalRredicates as multiterms
+rp2bodytexts :: RelationalPredicate -> [MultiTerm]
+rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
+rp2bodytexts (RPMT           mt)            = [mt]
+rp2bodytexts (RPConstraint   _mt1 _rel mt2)   = [mt2]
+rp2bodytexts (RPBoolStructR  _mt1 _rel bsr)   = concatMap rp2bodytexts (AA.extractLeaves bsr)
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts

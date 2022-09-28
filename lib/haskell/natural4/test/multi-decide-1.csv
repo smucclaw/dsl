@@ -1,0 +1,5 @@
+GIVEN,Sign1,,Sign2,IS,A,Sign,,,
+DECIDE,Sign1,beats,Sign2,,,,,,
+IS,TRUE,WHEN,Sign1,IS,Rock,AND,Sign2,IS,Scissors
+,"""","""","""","""",Scissors,"""","""","""",Paper
+,"""","""","""","""",Paper,"""","""","""",Rock

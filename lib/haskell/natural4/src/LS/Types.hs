@@ -154,7 +154,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
                          , rbwhere    :: [Rule]      -- Hornlike rules only, please       -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
-                      deriving (Eq, Show, Generic)
+                      deriving (Eq, Ord, Show, Generic)
 
 -- | find some unique name for the rule for purposes of scoping the symbol table.
 -- if a rule label is provided, we use that.
@@ -203,7 +203,7 @@ data KW a = KW { dictK :: MyToken
 
 data RegKeywords =
   REvery | RParty | RTokAll
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 class HasToken a where
   tokenOf :: a -> MyToken
@@ -316,7 +316,7 @@ data Rule = Regulative
           -- , eqtest :: Maybe ParamText
           -- }
           | NotARule [MyToken]
-          deriving (Eq, Show, Generic, ToJSON)
+          deriving (Eq, Ord, Show, Generic, ToJSON)
 
 
 -- | does a rule have a Given attribute? 
@@ -336,16 +336,16 @@ hasClauses             __ = False
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
-            deriving (Eq, Show, Generic, ToJSON)
+            deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data HornClause2 = HC2
   { hHead :: RelationalPredicate
   , hBody :: Maybe BoolStructR
   }
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data IsPredicate = IP ParamText ParamText
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
@@ -368,7 +368,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                                                                        --          AND
                                                                        --          right IS brown)
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
@@ -422,7 +422,7 @@ rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
 
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: RuleName }
 
@@ -436,20 +436,20 @@ noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                          deriving (Eq, Show, Generic, ToJSON)
+                          deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
-                          deriving (Eq, Show, Generic, ToJSON)
+                          deriving (Eq, Ord, Show, Generic, ToJSON)
 type RuleName   = MultiTerm
 type EntityType = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
-             deriving (Eq, Show, Generic, ToJSON)
+             deriving (Eq, Ord, Show, Generic, ToJSON)
 
 -- for use by the interpreter
 
@@ -458,7 +458,7 @@ type VarPath = [TypedMulti]
 data InterpreterOptions = IOpts
   { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 defaultInterpreterOptions :: InterpreterOptions
 defaultInterpreterOptions = IOpts
@@ -470,7 +470,7 @@ data Interpreted = L4I
   , scopetable :: ScopeTabs
   , origrules  :: [Rule]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | a basic symbol table to track "variable names" and their associated types.
 
@@ -489,7 +489,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Eq, Generic)
+  deriving (Show, Ord, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT (CT x) = x
@@ -596,7 +596,7 @@ bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -604,7 +604,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Show, Generic, ToJSON)
+              deriving (Eq, Ord, Show, Generic, ToJSON)
 
 
 mkTComp :: MyToken -> Maybe TComparison
@@ -649,7 +649,7 @@ data RunConfig = RC { debug     :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
                     , runNLGtests :: Bool
-                    } deriving (Show, Eq)
+                    } deriving (Show, Ord, Eq)
 
 defaultRC :: RunConfig
 defaultRC = RC

@@ -7,7 +7,6 @@
 
 module LS.XPile.CoreL4 where
 
-import Prettyprinter.Render.Text
 import Prettyprinter
 
 import AnyAll
@@ -322,9 +321,6 @@ prettyDecls previously rs =
   in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
 
 
-myrender :: Doc ann -> T.Text
-myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
-
 -- [TODO]
 -- fact <helplimit>
 -- for p : Policy
@@ -436,14 +432,6 @@ prettyDefns rs =
                 , hasClauses r
                 ]
 
--- | redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
-classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
-classGraph (CT ch) ancestors = concat
-  [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath
-  | (childname, (_itypesig, childct)) <- Map.toList ch
-  , let nodePath = childname : ancestors
-  ]
-  
 
 {-
  a word or two about our type system.
@@ -517,7 +505,7 @@ prettyClasses ct =
   , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
   , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
   ]
-  | (classpath, (ctype, children)) <- classGraph ct []
+  | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
                    snake_inner <$> reverse classpath
         c_name' = untaint $ head classpath

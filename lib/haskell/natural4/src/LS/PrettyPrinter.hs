@@ -19,6 +19,7 @@ import Data.List (intersperse)
 -- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
 -- import Debug.Trace
+import Prettyprinter.Render.Text
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
@@ -269,3 +270,21 @@ prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
 commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line
+
+-- | pretty print output without folding
+myrender :: Doc ann -> T.Text
+myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
+
+-- | utility function to add newlines between vsep output lines
+vvsep :: [Doc ann] -> Doc ann
+vvsep = vsep . Data.List.intersperse ""
+
+-- | utility function similar to `brackets` or `parens` but with tildes, useful for org-mode
+tildes :: Doc ann -> Doc ann
+tildes x = "~" <> x <> "~"
+
+-- | similar to ... <> Prettyprinter.line <> ...
+(</>) :: Doc ann -> Doc ann -> Doc ann
+a </> b = vvsep [ a, b ]
+infixr 5 </>
+

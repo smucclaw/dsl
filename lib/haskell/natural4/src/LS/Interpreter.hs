@@ -16,17 +16,23 @@ module LS.Interpreter where
 
 import LS.Types
 import LS.RelationalPredicates
+import LS.PrettyPrinter
 import qualified AnyAll as AA
 import Data.List.NonEmpty
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map as Map
+import Prettyprinter
 import Text.Pretty.Simple
 import Debug.Trace
 import Data.Maybe
 import Data.Graph.Inductive
 import Data.Tuple (swap)
-import Data.List (find)
+import Data.List (find, intersperse)
+import qualified Data.List as DL
+import qualified Data.Foldable as DF
+import qualified Data.Traversable as DT
+import Data.Bifunctor (first)
 
 -- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
@@ -38,6 +44,39 @@ l4interpret iopts rs =
         , scopetable = st
         , origrules  = rs
         }
+
+-- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
+musings :: Interpreted -> [Rule] -> Doc ann
+musings l4i rs =
+  let cg = classGraph (classtable l4i) []
+  in vvsep [ "* musings"
+           , "** Class Hierarchy"
+           , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
+                                                                     else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
+                   | (cname, child) <- cg ]
+           , "*** The entire classgraph"
+           , srchs cg
+           , "** Symbol Table"
+           , "we know about the following scopes"
+           , vvsep [ "*** Rule:" <+> hsep (pretty <$> rn) </>
+                     vvsep [ "**** symbol:" <+> tildes (pretty mt)
+                             </> srchs hc
+                             </> "**** typesig:" <+> tildes (viaShow its)
+                             
+                           | (mt, (its, hc)) <- Map.toList st ]
+                   | (rn, st) <- Map.toList $ scopetable l4i ]
+           , "** the Rule Graph"
+           , example (pretty (prettify (first ruleLabelName $ ruleGraph rs)))
+           , "** getAndOrTrees"
+           , vvsep [ "*** ruleLabelName:" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i r) | r <- rs ]
+           , "** The original rules"
+           , vvsep [ "*** " <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
+           ]
+  where
+    srchs :: (Show a) => a -> Doc ann
+    srchs = src "haskell" . pretty . pShowNoColor
+    src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
+    example  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
@@ -96,6 +135,14 @@ classHierarchy rs =
         attributes = classHierarchy (has r)
   ]
 
+-- | redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
+classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
+classGraph (CT ch) ancestors = concat
+  [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath
+  | (childname, (_itypesig, childct)) <- Map.toList ch
+  , let nodePath = childname : ancestors
+  ]
+  
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
 allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
@@ -112,6 +159,7 @@ getCTkeys (CT ct) = Map.keys ct
 type MyClassName = EntityType
 -- | class names, topologically sorted by inheritance to eliminate forward references in "extends" relationships
 -- note: this code will probably fail silently on any input that isn't as expected
+-- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
 topsortedClasses :: ClsTab -> [MyClassName]
 topsortedClasses ct =
   [ cn
@@ -181,6 +229,25 @@ stitchRules l4i rs = rs
   -- filter out providers; return only consumers.
   -- the Petri transpiler uses fgl to think about this stuff.
   -- here we do it directly.
+
+
+type RuleIDMap = Map.Map Rule Int
+
+-- | structure the rules as a graph.
+-- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
+-- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
+-- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
+--
+-- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
+-- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
+
+ruleGraph :: [Rule] -> Gr Rule ()
+ruleGraph rs =
+  let ruleIDmap = Map.fromList (Prelude.zip rs [1..])
+  in mkGraph
+  (swap <$> Map.toList ruleIDmap) -- the nodes
+  [] -- the edges
+  
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
@@ -325,6 +392,7 @@ expandBSR' l4i depth (AA.Any lbl xs) = AA.Any lbl (expandBSR l4i (depth + 1) <$>
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody l4i = id
 
+-- | used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
 onlyTheItems l4i =
   let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i <$> origrules l4i)
@@ -333,6 +401,32 @@ onlyTheItems l4i =
      -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
      simplified
 
+onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> AA.ItemMaybeLabel T.Text
+onlyItemNamed l4i rs wanteds =
+  let ibr = itemsByRule l4i rs
+      found = DL.filter (\(rn, simp) -> rn `elem` wanteds) ibr
+  in
+    if null found
+    then AA.Leaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
+    else snd $ DL.head found
+
+-- | let's hazard a guess that the item with the mostest is the thing we should put in front of the user.
+biggestItem :: Interpreted -> [Rule] -> AA.ItemMaybeLabel T.Text
+biggestItem l4i rs =
+  let ibr = itemsByRule l4i rs
+      flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
+      sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
+  in (Map.fromList ibr) Map.! (fst $ DL.head sorted)
+
+itemsByRule :: Interpreted -> [Rule] -> [(RuleName, AA.ItemMaybeLabel T.Text)]
+itemsByRule l4i rs =
+  [ (ruleLabelName r, simplified)
+  | r <- rs
+  , let aot = getAndOrTree l4i r
+        simplified = fromJust aot
+  , isJust aot
+  ]
+
 alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
 alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)
 alwaysLabel (AA.Any Nothing xs)  = AA.Any (AA.Pre "any of the following") (alwaysLabel <$> xs)
@@ -340,7 +434,6 @@ alwaysLabel (AA.All (Just x) xs) = AA.All x (alwaysLabel <$> xs)
 alwaysLabel (AA.Any (Just x) xs) = AA.Any x (alwaysLabel <$> xs)
 alwaysLabel (AA.Leaf x)          = AA.Leaf x
 alwaysLabel (AA.Not x)           = AA.Not (alwaysLabel x)
-
 
 -- we must be certain it's always going to be an RPMT
 -- we extract so that it's easier to convert to JSON or to purescript Item Text

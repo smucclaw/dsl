@@ -1,0 +1,17 @@
+§,Rule1,
+PARTY,Alice,
+MAY,act,
+BEFORE,deadline,
+HENCE,TwoRules,
+;;,,
+,TwoRules,
+MEANS,Rule2a,
+AND,Rule2b,
+;;,,
+§,Rule2a,
+PARTY,Bob,
+MUST,acknowledge,action
+;;,,
+§,Rule2b,
+PARTY,Carol,
+MUST,pay,Alice

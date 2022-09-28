@@ -1,10 +1,18 @@
 #+TITLE: L4 Dev Guide: Parser Internals
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 * Skills
 
 After working through these examples, you should know:
 
 ** what primitives the parser deals with
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | Parser       | Token Constructor   | Example     | Description              |
 |--------------+---------------------+-------------+--------------------------|
@@ -44,6 +52,10 @@ two,three
 A spreadsheet e.g. Microsoft Excel or Google Sheets can likewise "Save As" a CSV file. All the cell formatting is lost, formulas are evaluated to their values, and checkboxes are shown as TRUE and FALSE.
 
 ** how the parser preprocessor sets up indentation over single and multiple lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 Many languages have "semantically meaningful whitespace". YAML, Python, and Haskell, among others. Parsers for such languages employ a variety of strategies to handle indentation: see BNFC's layout rule for an example.
 
@@ -92,7 +104,7 @@ foo GoDeeper bar GoDeeper baz UnDeeper quux honk UnDeeper
 
 To export as .csv, put your cursor over the desired table and run ~M-x org-table-export~
 
-Or you can just run, from the ~mp/~ directory,
+Or you can just run, from the ~natural4/~ directory,
 
 #+begin_src sh
   make csv
@@ -116,6 +128,10 @@ L4Leaf (["eats"], Notype)
 L4Leaf (["foo", "bar", "baz"], Notype)
 
 **** multiline lists of words
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | foo |
 | bar |
@@ -127,6 +143,10 @@ L4List [ L4Leaf (["foo"], Notype)
        ]
            
 **** and/or trees
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | all of: |     |
 |         | foo |
@@ -153,6 +173,10 @@ ValueExp "AKA" SingleWord
 annexes a DefNameAlias rule connecting SingleWord to ValueExp
 
 **** optional TypeSig type signatures
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 can be thought of as inline type annotations
 
@@ -187,6 +211,10 @@ paramtext OR paramtext AND paramtext
 paramtext OR ( paramtext AND paramtext )
 
 **** labeled elements in an anyall list
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | EVERY | person |             |              |          |
 | MUST  | fart   | loudly      |              |          |
@@ -945,6 +973,10 @@ whenever we decrease indentation level we insert a )
 Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.
 
 **** Deriving the Grammar
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 So we know that a binary term looks like this:
 

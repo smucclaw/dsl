@@ -1,10 +1,10 @@
 #+TITLE: L4 Dev Guide: Parser Internals
+
+* Skills
 :PROPERTIES:
 :TABLE_EXPORT_FILE: /dev/null
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
-
-* Skills
 
 After working through these examples, you should know:
 
@@ -111,6 +111,11 @@ Or you can just run, from the ~natural4/~ directory,
 #+end_src
 
 * Tests
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
 ** Types [2021-12-02 Thu]
 
 *** Value Expressions
@@ -944,6 +949,10 @@ if (and a (or b c (not d)))
 #+end_example
 
 ***** explicitly
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | IF  | (A)  |      |
 | AND | (B)  |      |
@@ -957,6 +966,10 @@ whenever we increase indentation level we insert a (
 whenever we decrease indentation level we insert a )
 
 ***** does that rule work for
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 |             | (a   | (aa | (aaa |   |   | (((:: | (AType |
 | ))))))) AND | (b   |     |      |   |   |       |        |
@@ -1062,6 +1075,11 @@ still means the same thing but with slightly more indentation
 OR, (godeeper, label, undeeper), boolstructr
 
 ***** becomes
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
 |    | (top1) |                  |
 | OR | (top2) |                  |
 | OR | (      | (this is a label |
@@ -1190,12 +1208,20 @@ one or more normal words with optional typesig
 | next | line  |    |        |     |          |
 
 ****** example: rule action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | NOTIFY | the PDPC            |
 | with   | a list of names     |
 | using  | a prescribed format |
 
 ****** example: GIVEN parameter input to a DECIDE function
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | GIVEN | Sign1 |   | Sign2 | IS | A | Sign |   |   |   |
 
@@ -1345,6 +1371,10 @@ BoolStructR should be (OR (z is q) (p gt np))
 Explicit nesting only activates when there's a boolconnector after a newline. if the boolconnector is on the same line we keep going.
 
 ***** HornClauseRHS
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 something ... IS HornClauseRHS
 
@@ -1353,6 +1383,10 @@ ParamText <*> optional (pToken WHEN *> RelationalPredicate)
 fragment of a HornClause with a constraint RelationalPredicate sans the X part
 
 ****** examples: HAS IS method definition in a type declaration
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 This is a speculative syntax, it may turn out to be too loose to work with.
 
@@ -1365,6 +1399,10 @@ This is a speculative syntax, it may turn out to be too loose to work with.
 HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
 
 ****** contexts
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 constitutive rule
 
@@ -1420,6 +1458,10 @@ nope.
 | OR   | Y | IS       | a sibling    |
 
 ***** RelationalPredicate: IsRelation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 MultiText (pToken IS) MultiText
 
@@ -1439,6 +1481,10 @@ used for equality and unification
 
 
 ***** RelationalPredicate: Constraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 MultiText RelToken MultiText
 
@@ -1457,6 +1503,10 @@ MultiText RelToken MultiText
 - part of a HornClause
   
 ***** RelationalPredicate: N-ary Predicate
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 ParamText list of words, untyped.
 
@@ -1507,8 +1557,14 @@ without the IS TRUE
 | "      | "     | "     | Paper    | "   | "     | "    | Rock     |   |   |
 
 ***** Binary Predicate definition, compact
+:PROPERTIES:
+:TABLE_EXPORT_FILE: beat-means.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-|       |          | beats |          |
+don't think we ever got around to testing this one.
+
+|       | beats    |       |          |
 | MEANS | Rock     | beats | Scissors |
 |       | Scissors | beats | Rock     |
 |       | Paper    | beats | Rock     |
@@ -1595,7 +1651,13 @@ Map Term Lambda = zip (nub terms, [1..])
 minIncome(MI, D, SD) :- MI IS 15000 + 4000 * D + 1000 * D / 2 + 500 * SD / 3.
 
 
-a scenario would look like:
+****** a scenario would look like:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-2-scenario.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+the HAS isn't parseable yet. [TODO]
 
 | GIVEN  | p   | IS A          | Person |         |                |
 |        | HAS | dependents    | IS     |       5 |                |

@@ -789,6 +789,7 @@ treeContents conj contents = case groupByRGLtype conj contents of
 treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
   [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
+  -- [TG {conjS}, TG {root_obj}]
   _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
            $ treeContents conj contents
 
@@ -1136,7 +1137,9 @@ toUDS pgf e = case findType pgf e of
             GPredVP np vp -> Groot_nsubj (GrootV_ presSimul GPPos vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
             _ -> fg  $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
-  _ -> fg $ dummyExpr $ "unable to convert to UDS: " ++ showExpr e
+  -- "ConjS" -> case (fg e) :: GS of
+  --               GConjS conj (GConsS (GUseCl t p (GPredVP np vp))) -> Groot_nsubj
+  _ -> fg $ dummyExpr $ "all : unable to convert to UDS: " ++ showExpr e
   where
     vps2uds :: GVPS -> GUDS
     vps2uds (GMkVPS t p vp) = Groot_only (GrootV_ t p vp)
@@ -1387,6 +1390,7 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_advmod_obj root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_advmod root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_advmod_obj_advcl root (Gnsubj_ np) _ _ _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_aux_cop_nmod root (Gnsubj_ np)_ _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obj root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obj_obl root (Gnsubj_ np) _ _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obj_obl_advmod_advcl root (Gnsubj_ np) _ _ _ _ _  -> predVPS np <$> root2vps root
@@ -1405,7 +1409,9 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
-    -- GaddMark (Gmark_ subj) uds -> sFromUDS uds
+    Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
+    -- GaddMark (Gmark_ subj)s uds -> sFromUDS uds
+    -- Groot_ccomp root (Gccomp_ ccomp) -> root ccomp
     GaddMark (Gmark_ subj)(Groot_nsubj_cop root (Gnsubj_ np) _) -> do
       s <- predVPS np <$> root2vps root
       GMkVPS t p vp <- (root2vps root)

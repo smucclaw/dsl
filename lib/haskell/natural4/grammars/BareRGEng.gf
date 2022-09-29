@@ -182,6 +182,7 @@ concrete BareRGEng of BareRG =
     StrCard str = symb (mkSymb str.s) ;
     StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
     StrSymb = SyE.MkSymb ; -- String -> Symb
+    StrV str = <P.mkV "dummy" : V>** {s = \\_ => str.s} ;
     SymbNP x = symb x ;
 
     DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;

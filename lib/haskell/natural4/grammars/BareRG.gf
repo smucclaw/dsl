@@ -121,6 +121,7 @@ abstract BareRG =
     StrAP : String -> AP ;
     StrCard : String -> Card ;
     StrNum : String -> Num ;
+    StrV : String -> V ;
     StrSymb : String -> Symb ; -- e.g. URLs
   -- 	SymbNP : Symb -> NP ; -- so that words tagged as X can be used in other funs easier
 

@@ -738,6 +738,7 @@ data Tree :: * -> * where
   Groot_xcomp :: Groot -> Gxcomp -> Tree GUDS_
   Groot_xcomp_ccomp :: Groot -> Gxcomp -> Gccomp -> Tree GUDS_
   Groot_xcomp_obj :: Groot -> Gxcomp -> Gobj -> Tree GUDS_
+  GStrV :: GString -> Tree GV_
   LexV :: String -> Tree GV_
   GAdVVP :: GAdV -> GVP -> Tree GVP_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
@@ -1246,6 +1247,7 @@ instance Eq (Tree a) where
     (Groot_xcomp x1 x2,Groot_xcomp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp_ccomp x1 x2 x3,Groot_xcomp_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_xcomp_obj x1 x2 x3,Groot_xcomp_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GStrV x1,GStrV y1) -> and [ x1 == y1 ]
     (LexV x,LexV y) -> x == y
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -2741,10 +2743,12 @@ instance Gf GUDS where
       _ -> error ("no UDS " ++ show t)
 
 instance Gf GV where
+  gf (GStrV x1) = mkApp (mkCId "StrV") [gf x1]
   gf (LexV x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "StrV" -> GStrV (fg x1)
 
       Just (i,[]) -> LexV (showCId i)
       _ -> error ("no V " ++ show t)
@@ -3903,6 +3907,7 @@ instance Compos Tree where
     Groot_xcomp x1 x2 -> r Groot_xcomp `a` f x1 `a` f x2
     Groot_xcomp_ccomp x1 x2 x3 -> r Groot_xcomp_ccomp `a` f x1 `a` f x2 `a` f x3
     Groot_xcomp_obj x1 x2 x3 -> r Groot_xcomp_obj `a` f x1 `a` f x2 `a` f x3
+    GStrV x1 -> r GStrV `a` f x1
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplSVP x1 x2 -> r GComplSVP `a` f x1 `a` f x2

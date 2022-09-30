@@ -33,9 +33,12 @@ import qualified Data.Map as Map
 import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TLE
 import Test.QuickCheck.Arbitrary.Generic
 import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
+import qualified Data.Text.Encoding as TE
 -- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
@@ -138,7 +141,21 @@ xfiletest testfile desc parseFunc expected =
   xit (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
-    `shouldParse` [ expected ]    
+    `shouldParse` [ expected ]
+
+texttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+texttest testText desc parseFunc expected =
+  it desc $ do
+  let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
+  parseFunc (show testText) `traverse` exampleStreams testcsv
+    `shouldParse` [ expected ]
+
+xtexttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+xtexttest testText desc parseFunc expected =
+  xit desc $ do
+    let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
+    parseFunc (show testText) `traverse` exampleStreams testcsv
+      `shouldParse` [ expected ]
 
 filetest2 testfile desc parseFunc expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
@@ -1547,6 +1564,18 @@ parserTests nlgEnv runConfig_ = do
       xfiletest "scenario-units-1" "unit test 1 for scenarios"
         (parseOther pScenarioRule )
         ( defaultScenario
+        , []
+        )
+
+      texttest "EXPECT,IT IS,,A Notifiable Data Breach," "unit test 1 for scenarios"
+        (parseOther pExpect )
+        ( ExpRP (RPMT ["IT IS","A Notifiable Data Breach"])
+        , []
+        )
+
+      texttest "EXPECT,IT IS,NOT,A Notifiable Data Breach," "unit test 1 for scenarios"
+        (parseOther pExpect )
+        ( ExpRP (RPMT ["IT IS","NOT", "A Notifiable Data Breach"])
         , []
         )
 

@@ -129,6 +129,21 @@ defaultScenario = Scenario
   , symtab = []
   }
 
+scenario1 = Scenario
+    { scgiven =
+        [ RPMT
+            [ "the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"
+            ],
+          RPMT ["loss of storage medium on which personal data is stored in circumstances where the unauthorised", "disposal", "of the personal data is likely to occur"],
+          RPMT ["the data breach occurred only within an organisation"]
+        ],
+      expect = [ExpRP (RPMT ["IT IS", "not", "A Notifiable Data Breach"])],
+      rlabel = Just ("SCENARIO", 1, "Misplaced storage drive"),
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
@@ -1561,21 +1576,21 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      xfiletest "scenario-units-1" "unit test 1 for scenarios"
+      filetest "scenario-units-1" "unit test 1 for scenarios"
         (parseOther pScenarioRule )
-        ( defaultScenario
+        ( scenario1
         , []
         )
 
-      texttest "EXPECT,IT IS,,A Notifiable Data Breach," "unit test 1 for scenarios"
+      texttest "EXPECT,IT IS,A Notifiable Data Breach," "unit test 1 for scenarios"
         (parseOther pExpect )
         ( ExpRP (RPMT ["IT IS","A Notifiable Data Breach"])
         , []
         )
 
-      texttest "EXPECT,IT IS,NOT,A Notifiable Data Breach," "unit test 1 for scenarios"
+      texttest "EXPECT,IT IS,not,A Notifiable Data Breach," "unit test 1 for scenarios"
         (parseOther pExpect )
-        ( ExpRP (RPMT ["IT IS","NOT", "A Notifiable Data Breach"])
+        ( ExpRP (RPMT ["IT IS","not", "A Notifiable Data Breach"])
         , []
         )
 

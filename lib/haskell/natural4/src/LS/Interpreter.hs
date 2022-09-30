@@ -54,6 +54,8 @@ musings l4i rs =
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
       ridmap = Map.fromList (Prelude.zip rs [1..])
       decisionGraph = ruleDecisionGraph l4i rs
+      decisionroots = decisionRoots decisionGraph
+      groupedByAOTree = Map.toList $ Map.fromListWith (++) $ (\r -> (getAndOrTree l4i r, [r])) <$> decisionroots
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
@@ -76,17 +78,25 @@ musings l4i rs =
 
            , "** Decision Roots"
            , "rules which are not relied on by any other rule"
-           , srchs (ruleLabelName <$> decisionRoots decisionGraph)
+           , srchs (ruleLabelName <$> decisionroots)
 
+           , "*** Nubbed Decision Roots"
+           , "maybe some of thee decision roots are identical and don't need to be repeated"
+           , vvsep [ vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
+                     </> srchs (expandBSR l4i 0 <$> getBSR (DL.head uniqrs))
+                   | (_, uniqrs) <- groupedByAOTree
+                   ]
 
-           , "** Expanded rules"
+           , "** TODO Expanded rules"
+           , "this isn't quite what we want yet -- we're looking for the rules to be expanded not just in terms of inter-rule HENCE/LEST connections, but also in terms of the defined terms"
+
            , if expandedRules == DL.nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"
-             else vvsep [ "*** ruleLabelName:" <+> pretty (ruleLabelName r) </> srchs r | r <- expandedRules ]
+             else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees"
-           , vvsep [ "*** ruleLabelName:" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i r) | r <- rs ]
+           , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i r) | r <- rs ]
            , "** The original rules"
-           , vvsep [ "*** ruleLabelName:" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
+           , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
   where
     srchs :: (Show a) => a -> Doc ann

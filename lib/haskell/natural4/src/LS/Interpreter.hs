@@ -264,11 +264,13 @@ type RuleGraph = Gr Rule RuleGraphEdgeLabel
 
 ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
 ruleDecisionGraph l4i rs =
-  let ruleIDmap = Map.fromList (Prelude.zip rs [1..])
+  let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
   in mkGraph
   (swap <$> Map.toList ruleIDmap) -- the nodes
   (relPredRefsAll l4i rs ruleIDmap)
-  
+  where
+    decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
+    
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
 relPredRefsAll l4i rs ridmap =
@@ -310,7 +312,8 @@ decisionRoots :: RuleGraph -> [Rule]
 decisionRoots rg =
   catMaybes [ lab rg r
             | r <- nodes rg
-            , null (pre rg r)
+            ,  indeg rg r == 0
+            , outdeg rg r  > 0
             ]
 
 

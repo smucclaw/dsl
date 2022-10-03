@@ -10,7 +10,7 @@ concrete UDExtMay of UDExt = UDAppMay,
   IdiomMay [
     GenericCl, ImpersCl
   ],
-  SentenceMay [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+  SentenceMay [PredSCVP, EmbedS, EmbedQS]
  ** open
   Prelude,
   SyntaxMay, (P=ParadigmsMay), ExtendMay,

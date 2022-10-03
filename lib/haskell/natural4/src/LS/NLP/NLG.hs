@@ -789,7 +789,7 @@ treeContents conj contents = case groupByRGLtype conj contents of
 treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
   [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
-  -- [TG {conjS}, TG {root_obj}]
+  [TG {gfNP = Just np}, TG {gfVP = Just vp}] -> gf $ predVPS np vp
   _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
            $ treeContents conj contents
 
@@ -1411,7 +1411,14 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
     -- GaddMark (Gmark_ subj)s uds -> sFromUDS uds
-    -- Groot_ccomp root (Gccomp_ ccomp) -> root ccomp
+    Groot_ccomp root (Groot_nsubj_obl rt (Gnsubj_ np) (Gobl_ adv)) -> do
+      GMkVPS t p vp <- root2vps root
+      vps <- root2vps rt
+      pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
+      -- GMkVPS t p $GaclUDS_ (Groot_ rt) (GAdvVP vp adv)
+    --  Groot_ccomp (GrootA_ ap) (GccompMarkUDS_ (Gmark_ subj) uds) -> do
+    -- sent <- sFromUDS uds
+    -- pure $ GAdvAP ap (GSubjS subj sent)
     GaddMark (Gmark_ subj)(Groot_nsubj_cop root (Gnsubj_ np) _) -> do
       s <- predVPS np <$> root2vps root
       GMkVPS t p vp <- (root2vps root)

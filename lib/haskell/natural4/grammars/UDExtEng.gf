@@ -10,7 +10,7 @@ concrete UDExtEng of UDExt = UDAppEng,
   IdiomEng [
     GenericCl, ImpersCl
   ],
-  SentenceEng [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+  SentenceEng [PredSCVP, EmbedS, EmbedQS]
 
  ** open
   Prelude,

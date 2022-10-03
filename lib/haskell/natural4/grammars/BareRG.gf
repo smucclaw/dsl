@@ -14,7 +14,7 @@ abstract BareRG =
 
   Sentence [
     PredVP, UseCl, UseRCl, UseQCl
-    , SSubjS
+    , SSubjS , EmbedVP
     ],
 
   Verb [
@@ -138,4 +138,5 @@ abstract BareRG =
     ConjPrep : Conj -> [Prep] -> Prep ;
     ConjVP : Conj -> [VP] -> VP ;
     -- ConjVPS : Conj -> [VPS] -> VPS ;
+    SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
   }

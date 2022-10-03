@@ -11,7 +11,7 @@ concrete BareRGEng of BareRG =
 
   SentenceEng [
     PredVP, UseCl, UseRCl, UseQCl
-    , SSubjS
+    , SSubjS , EmbedVP
     ],
 
 

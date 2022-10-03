@@ -12,7 +12,7 @@ concrete BareRGMay of BareRG =
 
   SentenceMay [
     PredVP, UseCl, UseRCl, UseQCl
-    , SSubjS
+    , SSubjS , EmbedVP
     ],
 
 

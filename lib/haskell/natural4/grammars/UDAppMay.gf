@@ -158,7 +158,7 @@ lin
 
     -- : root -> obj -> ccomp -> UDS ;
     --includes a [number] assigned to any account the individual [has]:ccomp with an organisation that is a bank or finance company. ;
-    root_obj_ccomp
+    -- root_obj_ccomp
 
     -- : root -> obj -> nmod -> UDS ;
     --processes personal data on behalf of and for the purposes of a public agency ;

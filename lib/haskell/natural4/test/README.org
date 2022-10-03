@@ -838,6 +838,10 @@ no, the parser fails, which is correct.
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+This gets parsed into:
+- c :: HC2 { hHead = c RPis All [a  b ], hBody = Nothing }
+- b :: HC2 { hHead = b RPis All [b1 b2], hBody = Nothing }
+
 |       | c  |
 | MEANS | a  |
 | OR    | b  |
@@ -847,6 +851,8 @@ no, the parser fails, which is correct.
 | AND   | b2 |
 
 c = a || (b1 && b2)
+
+we know how to expand a head with a head
 
 **** varsub-2-headbody: define one thing in terms of another thing, in the head and body
 :PROPERTIES:
@@ -858,6 +864,10 @@ c is a horn head definition
 
 b is a horn body definition
 
+This gets parsed into:
+- c :: HC2 { hHead = c RPis All [a  b ], hBody = Nothing     }
+- b :: HC2 { hHead = b,                  hBody = All [b1 b2] }
+
 |        | c  |
 | MEANS  | a  |
 | OR     | b  |
@@ -868,13 +878,17 @@ b is a horn body definition
 
 This should define c = a || (b1 && b2)
 
-We need to think through the semantics of relationalpredicates in the horn head and horn body a little more.
+we need to be able to expand a head with a body
 
 **** varsub-3-bodybody: define one thing in terms of another thing, in the body and body
 :PROPERTIES:
 :TABLE_EXPORT_FILE: varsub-3-bodybody.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+This gets parsed into:
+- c :: HC2 { hHead = c, hBody = Any [a  b ] }
+- b :: HC2 { hHead = b, hBody = All [b1 b2] }
 
 | DECIDE | c  |
 | IF     | a  |
@@ -886,11 +900,17 @@ We need to think through the semantics of relationalpredicates in the horn head 
 
 This should define c = a || (b1 && b2)
 
+we need to be able to expand a body with a body
+
 **** varsub-4-bodyhead: define one thing in terms of another thing, in the body and head
 :PROPERTIES:
 :TABLE_EXPORT_FILE: varsub-4-bodyhead.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+This gets parsed into:
+- c :: HC2 { hHead = c,                  hBody = Any a b }
+- b :: HC2 { hHead = b RPis All [b1 b2], hBody = Nothing }
 
 | DECIDE | c  |
 | IF     | a  |
@@ -901,6 +921,8 @@ This should define c = a || (b1 && b2)
 | AND    | b2 |
 
 This should define c = a || (b1 && b2)
+
+we know how to expand a body with a head
 
 **** regexpand-1: regulatives conjoined via a rulealias
 :PROPERTIES:

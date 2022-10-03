@@ -1665,11 +1665,10 @@ parserTests nlgEnv runConfig_ = do
         (parseOther nextLineP) ((["Potato", "uncaptured"],["genus", "species"]), [])
 
     describe "variable substitution and rule expansion" $ do
-      filetest "varsub-1-headhead" "should expand hornlike bodies"
-        (\s m -> do
-          rs <- parseR pToplevel s m
-          return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) (head rs)
-        ) $ Just
+      let parseSM s m = do
+            rs <- parseR pToplevel s m
+            return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) (head rs)
+          ab1b2 = Just
             ( Any Nothing
               [ Leaf "a"
               , All Nothing
@@ -1678,6 +1677,11 @@ parserTests nlgEnv runConfig_ = do
                 ]
               ]
             )
+
+      filetest "varsub-1-headhead" "should expand hornlike" parseSM ab1b2
+      filetest "varsub-2-headbody" "should expand hornlike" parseSM ab1b2
+      filetest "varsub-3-bodybody" "should expand hornlike" parseSM ab1b2
+      filetest "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
 
 -- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule

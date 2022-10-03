@@ -51,7 +51,7 @@ library
       Paths_natural4
   hs-source-dirs:
       src
-  ghc-options: -Wall
+  ghc-options: -Wall -Wno-missed-extra-shared-lib
   build-depends:
       QuickCheck
     , aeson
@@ -105,7 +105,7 @@ executable natural4-exe
       Paths_natural4
   hs-source-dirs:
       app
-  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  ghc-options: -Wall -Wno-missed-extra-shared-lib -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
       QuickCheck
     , aeson
@@ -162,7 +162,7 @@ test-suite natural4-test
       Paths_natural4
   hs-source-dirs:
       test
-  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  ghc-options: -Wall -Wno-missed-extra-shared-lib -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
   build-depends:
       QuickCheck
     , aeson

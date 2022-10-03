@@ -3,9 +3,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase, TupleSections #-}
 
+{-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
+
 module LS.XPile.CoreL4 where
 
-import Prettyprinter.Render.Text
 import Prettyprinter
 
 import AnyAll
@@ -23,15 +24,15 @@ import qualified Data.Map as Map
 import qualified Data.Text as T
 import Data.Maybe (catMaybes, fromMaybe, isJust, fromJust)
 import qualified Data.List.NonEmpty as NE
-import           Data.List.NonEmpty (NonEmpty((:|)))
-import Text.Pretty.Simple (pShow, pShowNoColor)
-import qualified Data.Text.Lazy as TL
-import Control.Monad (guard, join)
+-- import           Data.List.NonEmpty (NonEmpty((:|)))
+-- import Text.Pretty.Simple (pShow, pShowNoColor)
+-- import qualified Data.Text.Lazy as TL
+-- import Control.Monad (guard, join)
+import Data.Either (rights, isRight)
+-- import qualified Data.Traversable as DT
 
 import Text.Regex.TDFA
 import Data.List (nub, intercalate, (\\), isPrefixOf)
-import Data.Either (rights, isRight, fromRight)
-import qualified Data.Traversable as DT
 import qualified Data.Foldable as DF
 
 -- output to Core L4 for further transformation
@@ -56,8 +57,6 @@ sfl4ToCorel4 rs =
                           , "decl relLTE: Number -> Number -> Unit -> Boolean"
 
                           , "class Unit"
-                          , "class Tire" -- [TODO] get this out by recursing into the type hierarchy
-                          , "class Address"
                           , "decl tb_length: Number" -- [TODO] the hc2decls should be responsible for this.
                           , "decl wingspan: Number"
                           , ""
@@ -91,14 +90,15 @@ sfl4ToCorel4 rs =
     nubstrings xs =
       let zipped = zip xs [1..]
           xMap2 = Map.fromList (reverse zipped)
+          xtends = Map.fromListWith (<>) (T.breakOn " extends " . T.pack <$> xs)
       in
-        [ l
+        [ -- show n ++ ": " ++ show (xMap2 Map.! l) ++ ": " ++
+          l
         | (l,n) <- zipped
-        , or [ l == ""
-             , "for " `isPrefixOf` l
-             , "#" `isPrefixOf` l
-             , (n :: Int) <= xMap2 Map.! l
-             ]
+        , if "decl" `isPrefixOf` l || "class" `isPrefixOf` l
+          then (n :: Int) <= xMap2 Map.! l
+               && maybe True (== "") (Map.lookup (T.pack l) xtends)
+          else True
         ]
   
 
@@ -321,9 +321,6 @@ prettyDecls previously rs =
   in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
 
 
-myrender :: Doc ann -> T.Text
-myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
-
 -- [TODO]
 -- fact <helplimit>
 -- for p : Policy
@@ -435,68 +432,139 @@ prettyDefns rs =
                 , hasClauses r
                 ]
 
--- | redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
-classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
-classGraph ct@(CT ch) ancestors = concat
-  [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath
-  | (childname, (_itypesig, childct)) <- Map.toList ch
-  , let nodePath = childname : ancestors
-  ]
-  
+
+{-
+ a word or two about our type system.
+
+we do have a notion of extension: sub extends super.
+
+the novel element here is, we use the same annotation syntax for both extension and typing!
+
+suppose we have: DECLARE Thing1
+we know thing1 extends thing0 because thing1 is the direct subject of a DECLARE.
+so we emit: class Thing1
+
+we support extension.
+suppose we have: DECLARE Thing1 IS A Thing0
+we would emit: class Thing1 extends Thing0
+
+supppose we have: DECLARE Thing1 HAS thing2 IS A Thing3
+we know that thing2 is an attribute of type Thing3
+so we emit: class Thing1
+            decl thing2: Thing1 -> Thing3 -> Boolean
+
+however:
+
+suppose we have: DECLARE Thing1 HAS Thing2 IS A Thing3
+                                    HAS thing4 IS a Thing5
+
+we would want to treat Thing2 as a class as well, extending Thing3, with its own attribute Thing4.
+the way to sense this is to see if a child has children; if it does, it's a class.
+
+so we emit: class Thing1
+            class Thing2 extends thing3
+            decl thing2: Thing1 -> Thing2 -> Boolean
+            decl thing4: Thing2 -> Thing5 -> Boolean
+
+Note the automatic downcasing of thing2 from the class version to the decl
+
+And there would be an automatic corresponding upcasing from the decl to the class version.
+
+special case for enums:
+
+suppose we have: DECLARE Thing 1 HAS Thing2 IS ONEOF enumA enumB enumC
+
+we treat Thing2 as a class, and enumA, enumB, enumC as members of the class.
+
+so we emit: class Thing1
+            class Thing2
+            decl thing2: Thing1 -> Thing2 -> Boolean
+            decl enumA: Thing2
+            decl enumB: Thing2
+            decl enumC: Thing2
+
+-}
 
 prettyClasses :: ClsTab -> Doc ann
-prettyClasses ct@(CT ch) =
+prettyClasses ct =
   vsep $
   ("## allCTkeys:" <+> hsep (pretty <$> allCTkeys ct)) :
-  superClassesNotExplicitlyDefined :
-  typesNotExplicitlyDefined :
   "### explicitly defined classes" :
   concat [
-  [ if isJust mytype
-    then vsep [ "###" <+> "class" <+> c_name <+> "is a" <+> viaShow mytype
+  [ if null mytype && Map.null (unCT children) && null enumDecls
+    then "###" <+> "type annotation for" <+> c_name <+> "is blank, is not enum, and has no children; not emitting a class" <+> uc_name
+    else vsep [ if Map.null (unCT children) && null enumDecls
+                then "###" <+> lc_name <+> "is a" <+> viaShow mytype <> "; without children; we know it is a decl dealt with by my parent function call"
+                else "class" <+> uc_name <> extends
+              , "###" <+> "children length = " <> viaShow (Map.size (unCT children))
+              , "###" <+> "c_name = " <> viaShow c_name
               , "###" <+> "dot_name = " <> viaShow dot_name
               , "###" <+> "ctype = " <> viaShow ctype
               , "###" <+> "mytype = " <> viaShow mytype
               ]
-    else "class" <+> c_name <> extends
   , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
   , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
   ]
-  | (classpath, (ctype, children)) <- classGraph ct []
+  | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
                    snake_inner <$> reverse classpath
-        c_name = pretty . untaint $ head classpath
+        c_name' = untaint $ head classpath
+        c_name = pretty c_name'
+        uc_name = pretty $ ucfirst c_name'
+        lc_name = pretty $ lcfirst c_name'
         mytype = case getUnderlyingType <$> getSymType ctype of
                    Just (Right s1) -> Just s1
                    _               -> Nothing
         extends = maybe emptyDoc ((" extends" <+>) . pretty) mytype
-        enumDecls = [ "decl" <+> pretty member <> ":" <+> c_name
+        enumDecls = [ "decl" <+> pretty member <> ":" <+> uc_name
                     | (Just (InlineEnum TOne nelist), _) <- [ctype]
                     , member <- enumLabels_ nelist
                     ]
+
+
         childDecls = [
-          "decl" <+> snake_inner attrname <>
-          case attrType children attrname of
+          "###" <+> uc_name <+> "has a child attribute" <+> dquotes (pretty attrname) <> Prettyprinter.line <>
+          "decl" <+> lc_childname <>
+          case getSymType attrtype of
             -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
+            Just (InlineEnum _ptype _pt) -> -- " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
+              encloseSep ": " "" " -> " [ uc_name
+                                        , uc_childname
+                                        , "Boolean"]
+            Nothing ->
+              encloseSep ": " "" " -> " [ uc_name
+                                        , uc_childname
+                                        , "Boolean"]
             Just t@(SimpleType ptype pt) ->
-              encloseSep ": " "" " -> " ([ -- c_name
-                                           lhstype
-                                         , prettySimpleType "corel4" snake_inner t
+              encloseSep ": " "" " -> " ([ uc_name
+                                         , child_simpletype
                                          ] ++ case pt of
                                                 "Boolean" -> []
                                                 _         -> ["Boolean"]
                                         )
               <> if ptype == TOptional
                  then Prettyprinter.line <>
-                      "decl" <+> snake_inner ("has" <> attrname) <>
-                      encloseSep ": " "" " -> " [ lhstype , "Boolean" ]
+                      "decl" <+> ("has" <> uc_childname) <>
+                      encloseSep ": " "" " -> " [ uc_name , "Boolean" ]
                       <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
                  else emptyDoc
 
-            Just (InlineEnum _ptype _pt) -> " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
             Nothing   -> " ##" <+> "not typed"
-          | attrname <- getCTkeys children
-          , let lhstype = maybe c_name pretty mytype
+          <> if childIsClass
+             then Prettyprinter.line <> "class" <+> uc_childname
+             else Prettyprinter.line <> "   # " <> lc_childname <+> "is an attribute, not a class." <>
+                  if isJust child_ts && show child_simpletype `notElem` ["Boolean", "Number"]
+                  then Prettyprinter.line <> "   # let's print its type as a class anyway." <>
+                       Prettyprinter.line <> "class" <+> child_simpletype
+                  else emptyDoc
+                  
+
+          | (attrname, (attrtype, attrchildren)) <- Map.toList (unCT children)
+          , let childIsClass = not $ Map.null (unCT attrchildren)
+                lc_childname = pretty $ lcfirst $ untaint attrname
+                uc_childname = pretty $ ucfirst $ untaint attrname
+                child_ts = getSymType attrtype
+                child_simpletype = maybe emptyDoc (prettySimpleType "corel4" snake_inner) child_ts
          ]
     -- guard to exclude certain forms which should not appear in the output
   , case (ctype,children) of
@@ -505,6 +573,9 @@ prettyClasses ct@(CT ch) =
       _                                   -> True -- commentShow "# ctype:" ctype
       -- [TODO] and how do we treat enum types?
   ]
+  ++ [ superClassesNotExplicitlyDefined
+     , typesNotExplicitlyDefined ]
+
   where -- [TODO] -- move this to the Interpreter
     
     superClassesNotExplicitlyDefined :: Doc ann
@@ -524,6 +595,9 @@ prettyClasses ct@(CT ch) =
       in vsep $ ("### types not explicitly defined" :
                  ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
          ++ ["###"]
+
+    ucfirst x = T.toUpper (T.singleton $ T.head x) <> T.tail x
+    lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
 
 
 

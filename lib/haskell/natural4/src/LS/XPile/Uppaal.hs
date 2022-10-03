@@ -1,4 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
+
+{-| transpiler to Uppaal, work in progress. -}
+
 module LS.XPile.Uppaal where
 
 

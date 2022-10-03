@@ -1,9 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+
+{-| transpiler to Typescript -}
+
 module LS.XPile.Typescript where
 
--- | the job of this module is to output valid typescript class definitions, decision functions, and variable instances.
+-- the job of this module is to output valid typescript class definitions, decision functions, and variable instances.
 
 -- consider: https://hackage.haskell.org/package/aeson-typescript
 -- not suitable because L4 allows users to define their own types which are not known to Haskell's type system.

@@ -13,6 +13,11 @@
 {-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
 {-# LANGUAGE TupleSections #-}
 
+{-|
+Parser functions not organized into their own separate modules elsewhere.
+
+This includes some top-leve parsers like pRules and pBoolStruct.
+-}
 
 module LS.Lib where
 
@@ -447,6 +452,15 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
+    -- [TODO] this doesn't correctly parse something that looks like
+    -- DECLARE whatever
+    --     HAS this
+    --     HAS that
+
+    -- it treats the "that" as a child of "this", which is wrong.
+    -- workaround: remove the "HAS" from the "that" line
+    -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
+    
     parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas

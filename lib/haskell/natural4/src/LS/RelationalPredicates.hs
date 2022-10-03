@@ -2,6 +2,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase #-}
 
+{-|
+This module provides parser and utility functions for the RelationalPredicate group of types.
+-}
+
 module LS.RelationalPredicates where
 
 import Text.Megaparsec

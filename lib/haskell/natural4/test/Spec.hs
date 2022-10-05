@@ -144,6 +144,88 @@ scenario1 = Scenario
       defaults = [],
       symtab = []
     }
+scenario2a = Scenario
+    { scgiven =
+        [ RPConstraint ["Organisation's name"] RPis ["ABC"],
+          RPMT ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
+          RPMT ["unauthorised", "disclosure", "of personal data", "occurred"],
+          RPMT ["not", "the data breach occurred only within an organisation"],
+          RPMT ["the data breach relates to", "the individual's", "full name"],
+          RPMT ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
+        ],
+      expect =
+        [ ExpRP (RPMT ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (RPMT ["Organisation", "must", "notify PDPC"]),
+          ExpRP (RPMT ["Organisation", "must", "notify Affected Individuals"])
+        ],
+      rlabel = Just ("SCENARIO", 1, "Data breach involving multiple organisations for ABC"),
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
+
+scenario2b = Scenario
+    { scgiven =
+        [ RPParamText (("Organisation's name" :| [], Just (InlineEnum TOne (("DEF" :| ["GHI"], Nothing) :| []))) :| []),
+          RPMT ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
+          RPMT ["unauthorised", "disclosure", "of personal data", "occurred"],
+          RPMT ["not", "the data breach occurred only within an organisation"],
+          RPMT ["the data breach relates to", "the individual's", "full name"],
+          RPMT ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."],
+          RPMT ["PDPC instructs you not to notify them"]
+        ],
+      expect =
+        [ ExpRP (RPMT ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (RPMT ["Organisation", "must", "notify PDPC"]),
+          ExpRP (RPMT ["not", "Organisation", "must", "notify Affected Individuals"])
+        ],
+      rlabel = Just ("SCENARIO", 1, "Data breach involving multiple organisations for DEF and GHI"),
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
+
+scenario3 = Scenario
+    { scgiven =
+        [ RPConstraint ["the prescribed number of affected individuals"] RPis ["50"],
+          RPMT ["unauthorised", "access", "of personal data", "occurred"],
+          RPMT ["the data breach relates to", "the individual's", "identification number"],
+          RPMT ["the data breach relates to", "The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:", "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"]
+        ],
+      expect =
+        [ ExpRP (RPMT ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (RPMT ["Organisation", "must", "notify PDPC"]),
+          ExpRP (RPMT ["Organisation", "must", "notify Affected Individuals"])
+        ],
+      rlabel = Just ("SCENARIO", 1, "Unauthorised access of patients\8217 medical records"),
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
+
+scenario4 = Scenario
+    { scgiven =
+        [ RPConstraint ["the prescribed number of affected individuals"] RPis ["1000"],
+          RPMT ["unauthorised", "access", "of personal data", "occurred"],
+          RPMT ["the data breach relates to", "the individual's", "full name"],
+          RPMT ["the data breach relates to", "the individual's", "identification number", "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"],
+          RPMT ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
+        ],
+      expect =
+        [ ExpRP (RPMT ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (RPMT ["Organisation", "must", "notify PDPC"]),
+          ExpRP (RPMT ["Organisation", "must", "notify Affected Individuals"])
+        ],
+      rlabel = Just ("SCENARIO", 1, "Theft of portable storage drive containing hotel guests\8217 details"),
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
+
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
@@ -1588,9 +1670,39 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      texttest "EXPECT,IT IS,not,A Notifiable Data Breach," "unit test 1 for scenarios"
+      xtexttest "EXPECT,IT IS,NOT,A Notifiable Data Breach," "unit test EXPECT ... IT IS,NOT"
         (parseOther pExpect )
         ( ExpRP (RPMT ["IT IS","not", "A Notifiable Data Breach"])
+        , []
+        )
+      
+      filetest "scenario-units-2-a" "unit test 2a for scenarios"
+        (parseOther pScenarioRule )
+        ( scenario2a
+        , []
+        )
+
+      texttest "EXPECT,,Organisation,,must,,notify PDPC,,,," "unit test EXPECT ... MUST"
+        (parseOther pExpect )
+        ( ExpRP (RPMT ["Organisation","must","notify PDPC"])
+        , []
+        )
+
+      filetest "scenario-units-2-b" "unit test 2b for scenarios"
+        (parseOther pScenarioRule )
+        ( scenario2b
+        , []
+        )
+
+      filetest "scenario-units-3" "unit test 3 for scenarios"
+        (parseOther pScenarioRule )
+        ( scenario3
+        , []
+        )
+
+      filetest "scenario-units-4" "unit test 4 for scenarios"
+        (parseOther pScenarioRule )
+        ( scenario4
         , []
         )
 

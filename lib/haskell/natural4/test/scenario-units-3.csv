@@ -1,10 +1,8 @@
-,(AdvG p138),,§,SCENARIO,,Unauthorised access of patients’ medical records,,,,,,,,
-,,,,GIVEN,,the prescribed number of affected individuals,,,,,,IS,50,
-,,,,GIVEN,,unauthorised,,,access,,of personal data,occurred,,
-,,,,GIVEN,,the data breach relates to,,,,,the individual's,,identification number,
-,,,,GIVEN,,the data breach relates to,,,,,"The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:",,,"any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"
-,,,,EXPECT,,IT IS,,A Notifiable Data Breach,,,,,,
-,,,,EXPECT,,Organisation,,MUST,,notify PDPC,,,,
-,,,,EXPECT,,Organisation,,MUST,,notify Affected Individuals,,,,
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
+SCENARIO,,Unauthorised access of patients’ medical records,,,,,,,,
+GIVEN,,the prescribed number of affected individuals,,,,,,IS,50,
+GIVEN,,unauthorised,,,access,,of personal data,occurred,,
+GIVEN,,the data breach relates to,,,,,the individual's,,identification number,
+GIVEN,,the data breach relates to,,,,,"The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:",,,"any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"
+EXPECT,,IT IS,,A Notifiable Data Breach,,,,,,
+EXPECT,,Organisation,,must,,notify PDPC,,,,
+EXPECT,,Organisation,,must,,notify Affected Individuals,,,,

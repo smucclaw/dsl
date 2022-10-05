@@ -315,6 +315,11 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 -- MEANS/IS puts a RelationalPredicate in the hHead
 
 
+-- | sameline parser for a single RelationalPredicate
+-- RelationalPredicates come in four forms. See Types.hs for documentation.
+-- We add the ability to do nested hornlike rules inline, in the midst of some of these forms,
+-- which is how you get support for the MEANS stuff that shows up sometimes in the middle of a relationalpredicate.
+
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
   try ( debugName "slRelPred/RPConstraint"  rpConstraint )

@@ -530,10 +530,29 @@ pScenarioRule = debugName "pScenarioRule" $ do
     , defaults = [], symtab   = []
     }
 
+-- | this is intended to parse:
+-- @EXPECT   The Sky IS Blue
+-- which should turn into RPConstraint ["The Sky"] RPis ["Blue"]
+--
+-- @EXPECT   NOT The Sky IS Blue
+-- turns into RPBoolStructR [] RPis (AA.Not (AA.Leaf (RPConstraint ["The Sky"] RPis ["Blue"])))
+-- which isn't great because the `[] RPis` was just made up to let the type fit
+--
+-- maybe in a glorious future we can have that parse into
+-- RPConstraint (RPNot (RPIs ["The Sky", "Blue"]))
+
 pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  (relPred, _whenpart) <- someIndentation rpSameNextLineWhen
+  relPred <- someIndentation $
+             try (do
+                     (tmp, _when) <- rpSameNextLineWhen
+                     return tmp
+                 )
+             <|> (do
+                     tmp <- pBSR
+                     return $ RPBoolStructR [] RPis tmp
+                 )
   return $ ExpRP relPred
 
 -- | we want to parse two syntaxes:

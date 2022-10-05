@@ -1670,9 +1670,11 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      xtexttest "EXPECT,IT IS,NOT,A Notifiable Data Breach," "unit test EXPECT ... IT IS,NOT"
+      texttest "EXPECT,NOT,IT IS,A Notifiable Data Breach," "unit test EXPECT ... NOT"
         (parseOther pExpect )
-        ( ExpRP (RPMT ["IT IS","not", "A Notifiable Data Breach"])
+        ( ExpRP (RPBoolStructR
+                 [] RPis -- [TODO] this sucks, refactor it away
+                 (Not (Leaf (RPMT ["IT IS","A Notifiable Data Breach"]))))
         , []
         )
       
@@ -1682,9 +1684,10 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      texttest "EXPECT,,Organisation,,must,,notify PDPC,,,," "unit test EXPECT ... MUST"
+  -- [TODO] we need a better notion of how to handle a nested regulative rule under a scenario EXPECT
+      xtexttest "EXPECT,,Organisation,,MUST,,notify PDPC,,,," "unit test EXPECT ... MUST"
         (parseOther pExpect )
-        ( ExpRP (RPMT ["Organisation","must","notify PDPC"])
+        ( ExpRP (RPMT ["Organisation","MUST","notify PDPC"])
         , []
         )
 

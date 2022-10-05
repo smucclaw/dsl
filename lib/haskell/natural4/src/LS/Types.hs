@@ -357,12 +357,50 @@ instance PrependHead RelationalPredicate where
   prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
 
+-- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
+-- 
+-- the simplest form is a MultiTerm wrapped in an RPMT:
+-- `foo | bar baz` turns into `RPMT ["foo", "bar baz"]`
+-- 
+-- the next simplest form, a (one-or-more-line ParamText) wrapped in an RPPT, allows type annotation:
+-- `foo | IS A | Potato` turns into `RPPT [ ("foo" :| [], SimpleType TOne "Potato") ]`
+-- 
+-- the next two allow you to actually express relations, which is why we call this a relational predicate!
+-- 
+-- something like `Bob | IS | your uncle` gets read into an `RPConstraint ["Bob"] RPis ["your uncle"]`
+-- Other relations available inside the RPRel are the usual `<`, `>`, `<=`, `>=`, etc.
+-- Currently every RPConstraint is a binary relation.
+-- There is a strong argument that we should allow simple constraint relations of any arity.
+-- [TODO] this we would rewrite the form of an `RPConstraint` to `RPConstraint RPRel [ MultiTerm ]`
+-- 
+-- The final form is a recursion: we have a Boolean Struct of RelationalPredicates, so we can do a full treelike thing:
+-- `RPBoolStructR "Uncle" RPis (AA.Any Nothing [ AA.Leaf $ RPMT ["your", "mother's", "brother" ]
+--                                             , AA.Leaf $ RPMT ["your", "father's", "brother" ]
+--                                             , AA.Leaf $ RPMT ["some random old guy you want to call uncle" ]
+--                                             ])`
+-- So how do we say something like:
+-- `EXPECT    NOT Sky IS Blue`
+--
+--
+--
+-- We would use a BoolStructR:
+--
+--    AA.Not (AA.Leaf (RPConstraint ["Sky"] RPis ["Blue"]))
+--
+-- In another universe we could recurse the RPConstraints and have an `RPConstraint (Not (RPConstraint (Is Sky Blue)))`
+-- [TODO] Let's think about refactoring to that in future.
+
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
                                                                        --          AND
                                                                        --          right IS brown)
+
+                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
+                         -- | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
+
+
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
   deriving (Eq, Show, Generic, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))

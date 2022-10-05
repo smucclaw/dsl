@@ -55,6 +55,7 @@ inPredicateForm (RPConstraint  mt  RPis  ["Yes"]) = untaint <$> pred_flip mt
 inPredicateForm (RPConstraint  mt  RPis  ["No"])  = untaint <$> pred_flip mt
 inPredicateForm (RPConstraint  mt1 RPis  mt2)     = untaint <$> pred_flip mt2 ++ pred_flip mt1
 inPredicateForm (RPConstraint  mt1 RPhas mt2)     = untaint <$> addHas (pred_flip mt2) ++ mt1
+-- inPredicateForm (RPnary ...
   where
     addHas (x:xs) = ("has"<>x) : xs
     addHas [] = []

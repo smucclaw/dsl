@@ -26,7 +26,7 @@ asAAsvg aavc l4i rs =
   in Map.fromList [ (rn, (svgtiny, svgfull, aaT, qtree))
                   | r <- rs'
                   , let rn      = ruleLabelName r
-                  , aaT <- maybeToList (getAndOrTree l4i r)
+                  , aaT <- maybeToList (getAndOrTree l4i 1 r)
                   , let qtree   = hardnormal (cgetMark aavc) aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                         svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree

@@ -60,7 +60,7 @@ main = do
                                    , TL.unpack (pShowNoColor rules)
 
                                    , "-- variable-substitution expanded AnyAll rules\n"
-                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }
+                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
                                                                | r@SFL4.Hornlike{} <- rules
                                                                ])
 
@@ -72,10 +72,10 @@ main = do
 
                                    , "-- getAndOrTrees"
                                    , unlines $ (\r -> "\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n" <>
-                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
 
                                    , "-- traverse toList of the getAndOrTrees"
-                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i <$> rules
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i 1 <$> rules
 
                                    , "-- onlyTheItems"
                                    , TL.unpack $ pShowNoColor (onlyTheItems l4i)
@@ -118,7 +118,7 @@ main = do
     putStrLn "natural4: output to workdir done"
 
   when (SFL4.only opts == "petri")  $ putStrLn asPetri
-  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i <$> rules)
+  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
   when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
   when (SFL4.toNLG rc && null (SFL4.only opts)) $ do

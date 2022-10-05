@@ -1711,7 +1711,7 @@ parserTests nlgEnv runConfig_ = do
     describe "variable substitution and rule expansion" $ do
       let parseSM s m = do
             rs <- parseR pToplevel s m
-            return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) (head rs)
+            return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) 1 (head rs)
           ab1b2 = Just
             ( Any Nothing
               [ Leaf "a"

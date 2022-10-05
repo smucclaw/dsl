@@ -1411,14 +1411,10 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
     -- GaddMark (Gmark_ subj)s uds -> sFromUDS uds
-    Groot_ccomp root (Groot_nsubj_obl rt (Gnsubj_ np) (Gobl_ adv)) -> do
-      GMkVPS t p vp <- root2vps root
-      vps <- root2vps rt
-      pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
-      -- GMkVPS t p $GaclUDS_ (Groot_ rt) (GAdvVP vp adv)
-    --  Groot_ccomp (GrootA_ ap) (GccompMarkUDS_ (Gmark_ subj) uds) -> do
-    -- sent <- sFromUDS uds
-    -- pure $ GAdvAP ap (GSubjS subj sent)
+    Groot_ccomp root (Gccomp_ ccomp) -> do
+      GMkVPS t p vp <- (root2vps root)
+      sc <- GEmbedS <$> sFromUDS ccomp
+      pure $ GUseCl t p $ GPredSCVP sc vp
     GaddMark (Gmark_ subj)(Groot_nsubj_cop root (Gnsubj_ np) _) -> do
       s <- predVPS np <$> root2vps root
       GMkVPS t p vp <- (root2vps root)

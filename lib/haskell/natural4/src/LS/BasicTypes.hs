@@ -53,6 +53,7 @@ data MyToken = Every | Party | TokAll
              | Distinct -- entity modifier in GIVEN
              | Unless
              | Hence | Lest | Fulfilled | Breach | Goto
+             | Then | Else
              | TNumber Integer
              | Other Text.Text
              | Do
@@ -139,16 +140,19 @@ toToken "HOLDS" =  pure Holds
 
 -- regulative chains
 toToken "HENCE" = pure Hence
-toToken  "THEN" = pure Hence
+
+-- mutable state variables are modified by UPON THEN ELSE
+toToken     "THEN" = pure Then
+toToken     "ELSE" = pure Else
+toToken  "OR ELSE" = pure Else
+toToken "XOR ELSE" = pure Else
+toToken    "XELSE" = pure Else
+
 -- trivial contracts
 toToken  "FULFILLED" = pure Fulfilled
 toToken  "BREACH" = pure Breach
 
 toToken     "LEST" = pure Lest
-toToken     "ELSE" = pure Lest
-toToken  "OR ELSE" = pure Lest
-toToken "XOR ELSE" = pure Lest
-toToken    "XELSE" = pure Lest
 toToken  "GOTO" = pure Goto
 
 toToken ";"      = pure EOL

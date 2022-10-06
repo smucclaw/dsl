@@ -425,11 +425,12 @@ unleaf (AA.Leaf x     ) = AA.Leaf    x
 --
 
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
-expandTrace fname dpth toSay toShow = if True -- switch to True for debugging
-                             then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
-                                        "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
-                                  toShow
-                             else toShow
+expandTrace fname dpth toSay toShow =
+  if False -- True for debugging, False for prod
+  then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
+               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
+       toShow
+  else toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON / WHEN / GIVEN preconditions.

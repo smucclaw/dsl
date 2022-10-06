@@ -1132,14 +1132,18 @@ toUDS pgf e = case findType pgf e of
   "RCl" -> case fg e :: GRCl of
              GRelVP _rp vp -> toUDS pgf (gf vp)
              GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
-             _ -> fg $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
+             _ -> fg $ dummyExpr ("unable to convert to UDS rcl: " ++ showExpr e)
   "Cl" -> case fg e :: GCl of
             GPredVP np vp -> Groot_nsubj (GrootV_ presSimul GPPos vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
-            _ -> fg  $ dummyExpr ("unable to convert to UDS: " ++ showExpr e)
+            _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e)
+  "S" -> case fg e :: GS of
+    GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
+    _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e)
+
   -- "ConjS" -> case (fg e) :: GS of
   --               GConjS conj (GConsS (GUseCl t p (GPredVP np vp))) -> Groot_nsubj
-  _ -> fg $ dummyExpr $ "all : unable to convert to UDS: " ++ showExpr e
+  _ -> fg $ dummyExpr $ "unable to convert to UDS all: " ++ showExpr e
   where
     vps2uds :: GVPS -> GUDS
     vps2uds (GMkVPS t p vp) = Groot_only (GrootV_ t p vp)
@@ -1415,10 +1419,9 @@ sFromUDS x = case getNsubj x of
       GMkVPS t p vp <- (root2vps root)
       sc <- GEmbedS <$> sFromUDS ccomp
       pure $ GUseCl t p $ GPredSCVP sc vp
-    GaddMark (Gmark_ subj)(Groot_nsubj_cop root (Gnsubj_ np) _) -> do
-      s <- predVPS np <$> root2vps root
-      GMkVPS t p vp <- (root2vps root)
-      pure $ GUseCl t p $ GGenericCl $ GUseComp $ GCompAdv $ GSubjS subj s
+    -- GaddMark (Gmark_ subj)(Groot_nsubj_cop uds) -> do
+    --   s <- sToUDS uds
+    --   pure $ GUseCl t p $ GGenericCl $ GUseComp $ GCompAdv $ GSubjS subj s
 
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
                 Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp

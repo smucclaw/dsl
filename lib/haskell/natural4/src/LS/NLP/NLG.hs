@@ -98,8 +98,9 @@ parseUD env txt = do
   -- print "string that's being replaced"
   -- print nonWords
   -- print "origin string"
-  -- print txt
-  lowerConll <- udpipe (lowerButPreserveAllCaps $ Text.pack $ unwords $ concat $ combinePROPERNOUN $ group $ replaceChunks txt) -- fallback: if parse fails with og text, try parsing all lowercase
+  print txt
+  lowerConll <- udpipe (lowerButPreserveAllCaps txt)
+  -- lowerConll <- udpipe (lowerButPreserveAllCaps $ Text.pack $ unwords $ concat $ combinePROPERNOUN $ group $ replaceChunks txt) -- fallback: if parse fails with og text, try parsing all lowercase
   -- print ("lowerconll")
   -- print lowerConll
   when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
@@ -110,9 +111,9 @@ parseUD env txt = do
   -- print "the original expression"
   -- print $ words $ showExpr expr
   -- print "replaced expression as string"
-  let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
+  -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
   -- print replaced
-  when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
+  -- when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
   -- let replacedToExpr = fromMaybe (dummyExpr "") (PGF.readExpr replaced)
   -- print "show replaced as expr"
   -- print $ showExpr replacedToExpr
@@ -219,7 +220,7 @@ nlgQuestion env rl = do
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
     mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
-    mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
+    mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e  ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
       where
         tg = case findType gr e of
               "VPS" -> vpTG $ fg e
@@ -713,7 +714,7 @@ parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
 
 findType :: PGF -> PGF.Expr -> String
 findType pgf e = case inferExpr pgf e of
-  Left te -> error $ "Tried to infer type of:\n\t* " ++ showExpr e ++ "\nGot the error:\n\t* " ++ GfPretty.render (ppTcError te) -- gives string of error
+  Left te -> error $ "Tried to infer type of:\n\t* " ++ showExpr e  ++ "\nGot the error:\n\t* " ++ GfPretty.render (ppTcError te) -- gives string of error
   Right (_, typ) -> showType [] typ -- string of type
 
 -- Given a list of ambiguous words like
@@ -1132,14 +1133,16 @@ toUDS pgf e = case findType pgf e of
   "RCl" -> case fg e :: GRCl of
              GRelVP _rp vp -> toUDS pgf (gf vp)
              GRelSlash _rp (GSlashCl cl) -> toUDS pgf (gf cl)
-             _ -> fg $ dummyExpr ("unable to convert to UDS rcl: " ++ showExpr e)
+             _ -> fg $ dummyExpr ("unable to convert to UDS rcl: " ++ showExpr e )
   "Cl" -> case fg e :: GCl of
             GPredVP np vp -> Groot_nsubj (GrootV_ presSimul GPPos vp) (Gnsubj_ np)
             GGenericCl vp -> toUDS pgf (gf vp)
-            _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e)
+            _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e )
   "S" -> case fg e :: GS of
     GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
-    _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e)
+    -- GConjS conj (GListS GPredVP (Conjg)) -> Groot_nsubj (GrootV_ t p (GConjVP vp))
+    _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
+    -- vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
 
   -- "ConjS" -> case (fg e) :: GS of
   --               GConjS conj (GConsS (GUseCl t p (GPredVP np vp))) -> Groot_nsubj
@@ -1414,15 +1417,22 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
-    -- GaddMark (Gmark_ subj)s uds -> sFromUDS uds
+    -- GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) _) -> do
+    --   GMkVPS t p (GUseComp (GCompNP np)) <- root2vps root
+    --   adv <- pure $ GSubjS subj (GExistS t p nsubj)
+    --   pure $ GPostAdvS (GExistS t p nsubj) adv
+    --   -- pure $ GUseCl t p $ GExistsNP $ GAdvNP np adv
+    Groot_xcomp root xcomp -> case xcomp of
+      GxcompN_ np -> predVPS np <$> root2vps root
+      GxcompToBeN_ _ _ np -> predVPS np <$> root2vps root
+    -- add other xcomps
+    GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) cop) -> do
+      xcomp <- pure $ GxcompToBeN_ (Gmark_ subj) cop nsubj
+      sFromUDS $ Groot_xcomp root xcomp
     Groot_ccomp root (Gccomp_ ccomp) -> do
       GMkVPS t p vp <- (root2vps root)
       sc <- GEmbedS <$> sFromUDS ccomp
       pure $ GUseCl t p $ GPredSCVP sc vp
-    -- GaddMark (Gmark_ subj)(Groot_nsubj_cop uds) -> do
-    --   s <- sToUDS uds
-    --   pure $ GUseCl t p $ GGenericCl $ GUseComp $ GCompAdv $ GSubjS subj s
-
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
                 Just (GMkVPS t p vp) -> Just $ GUseCl t p $ GGenericCl vp
                 --_       -> Nothing

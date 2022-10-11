@@ -83,9 +83,19 @@ executables:
     - natural4
 
 tests:
-  natural4-test:
+  # natural4-test:
+  #   main:                Spec.hs
+  #   source-dirs:         test
+  #   ghc-options:
+  #   - -threaded
+  #   - -rtsopts
+  #   - '"-with-rtsopts=-N -H500M -qg"'
+  #   dependencies:
+  #   - natural4
+
+  natural4-unittest:
     main:                Spec.hs
-    source-dirs:         test
+    source-dirs:         utest
     ghc-options:
     - -threaded
     - -rtsopts

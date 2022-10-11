@@ -690,7 +690,6 @@ c2n (_, n, nl, _) = n
 subj2nl :: NatLang -> BoolStructP -> Text.Text
 subj2nl NLen (AA.Leaf pt) = pt2text pt
 
-
 deonticTemporal :: Rule -> [(Text.Text, Text.Text)]
 deonticTemporal r@(Regulative{..}) =
   let d = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }

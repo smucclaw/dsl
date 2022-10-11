@@ -284,10 +284,9 @@ expandMT l4i depth mt0 =
                                 RPParamText   pt           -> [          ] -- no change
                                 RPConstraint  mt RPis  rhs -> [ RPMT rhs ] -- substitute with rhs
                                 RPConstraint  mt rprel rhs -> [ hHead c  ] -- maintain inequality
-                                RPBoolStructR mt RPis  bsr -> [ -- trace ("expandMT: " ++ replicate depth '|' ++ " big return: BSR " ++ show mt ++ " RPis expandBSR") $
-                                                                RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
-                 , out <- -- trace("expandMT: " ++ replicate depth '|' ++ "will return outs " ++ show outs)
-                          outs
+                                RPBoolStructR mt RPis  bsr -> [RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
+                                RPnary      rprel rp       -> []
+                 , out <- outs
                  ]
       toreturn = fromMaybe (RPMT mt0) $ expanded
   in -- trace ("expandMT: scopetable toplevel is " ++ TL.unpack (pShow $ scopetable l4i)) $
@@ -357,10 +356,8 @@ bsr2bsmt :: BoolStructR -> BoolStructR
 bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf (RPMT mt)
 bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (RPMT $ pt2multiterm pt)
 bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf (RPMT mt2)
-bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = let output = bsr2bsmt bsr2
-                                                     in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
-                                                        -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
-                                                        output
+bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = bsr2bsmt bsr2
+bsr2bsmt (AA.Leaf (RPnary      rprel rp) )         = AA.Leaf rp
 bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)

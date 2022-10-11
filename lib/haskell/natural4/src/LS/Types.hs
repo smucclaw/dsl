@@ -314,7 +314,6 @@ data Rule = Regulative
           | NotARule [MyToken]
           deriving (Eq, Show, Generic, ToJSON)
 
-
 -- | does a rule have a Given attribute? 
 hasGiven :: Rule -> Bool
 hasGiven     Hornlike{} = True
@@ -328,7 +327,6 @@ hasGiven             __ = False
 hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
-
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
@@ -351,11 +349,13 @@ instance PrependHead Text.Text where
   prependHead s = ((s <> " ") <>)
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure s <> xs, ts) :| xss
+
 instance PrependHead RelationalPredicate where
   prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
   prependHead s (RPMT txts)             = RPMT (s : txts)
   prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
+  prependHead s (RPnary rel rp)         = RPnary rel $ prependHead s rp
 
 -- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
 -- 
@@ -393,13 +393,9 @@ instance PrependHead RelationalPredicate where
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
-                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
-                                                                       --          AND
-                                                                       --          right IS brown)
-
-                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
-                         -- | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
-
+                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
+                         | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
+                        -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
   deriving (Eq, Show, Generic, ToJSON)
@@ -417,6 +413,7 @@ rel2txt RPgt      = "relGT"
 rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
+rel2txt RPnot     = "relNot"
 
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "=="
@@ -428,12 +425,14 @@ rel2op RPgt      = ">"
 rel2op RPgte     = ">="
 rel2op RPelem    = "IN"
 rel2op RPnotElem = "NOT IN"
+rel2op RPnot     = "NOT"
 
 rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt
 rp2texts (RPMT           mt)            = mt
 rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
+rp2texts (RPnary         rel rp)        = rel2op rel : rp2texts rp
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts
@@ -454,8 +453,9 @@ rpHead (RPParamText    pt)            = pt2multiterm pt
 rpHead (RPMT           mt)            = mt
 rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
+rpHead (RPnary         rel rp)        = rel2op rel : rpHead rp
 
-data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
   deriving (Eq, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: RuleName }

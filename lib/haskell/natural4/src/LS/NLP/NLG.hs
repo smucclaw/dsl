@@ -240,6 +240,7 @@ nlgQuestion env rl = do
         -}
         lin indentation x = [linearize gr lang (gf x)]
         qnPunct :: [String] -> [String]
+        qnPunct [] = []
         qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
@@ -409,6 +410,7 @@ parseFields env rl = case rl of
       let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
       let rprel = if is==RPis then fun else keyword2cid is
       return $ mkApp rprel [skyNP, blueUDS]
+    parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
 
     -- ConstitutiveName is [Text.Text]
     parseMulti :: NLGEnv -> [Text.Text] -> IO Expr

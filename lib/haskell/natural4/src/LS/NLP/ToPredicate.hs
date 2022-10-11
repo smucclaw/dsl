@@ -122,7 +122,7 @@ findRoot x = composOpMonoid findRoot x
 headXC :: Gxcomp -> String
 headXC (GxcompA_ a) = headAP a
 headXC (GxcompAdv_ adv) = headAdv adv
-headXC (GxcompA_ccomp_ ap cc) = error "not implemented"
+headXC _ = error "not implemented"
 
 headVP :: GVP -> String
 headVP (GUseV v) | Just (v', []) <- unApp (gf v) = headName v'

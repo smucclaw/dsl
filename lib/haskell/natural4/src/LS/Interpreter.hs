@@ -424,9 +424,13 @@ unleaf (AA.Leaf x     ) = AA.Leaf    x
 --        ]
 --
 
+-- True for debugging, False for prod
+expandTraceDebugging :: Bool
+expandTraceDebugging = True
+
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
 expandTrace fname dpth toSay toShow =
-  if False -- True for debugging, False for prod
+  if expandTraceDebugging
   then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
                "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
        toShow

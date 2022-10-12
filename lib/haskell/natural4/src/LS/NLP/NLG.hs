@@ -95,21 +95,21 @@ parseUD env txt = do
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
 --  conll <- udpipe txt -- Initial parse
   let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
-  -- print "string that's being replaced"
-  -- print nonWords
-  -- print "origin string"
+  print "string that's being replaced"
+  print nonWords
+  print "origin string"
   print txt
-  lowerConll <- udpipe (lowerButPreserveAllCaps txt)
-  -- lowerConll <- udpipe (lowerButPreserveAllCaps $ Text.pack $ unwords $ concat $ combinePROPERNOUN $ group $ replaceChunks txt) -- fallback: if parse fails with og text, try parsing all lowercase
-  -- print ("lowerconll")
-  -- print lowerConll
-  when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
+  -- check that it's not just a capitalised real word
+  print ("lowerconll")
+  lowerConll <- checkAllCapsIsWord txt
+  print lowerConll
+  -- when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   -- let expr = case ud2gf conll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   expr <- either errorMsg pure (ud2gf lowerConll)
-  -- print "the original expression"
-  -- print $ words $ showExpr expr
+  print "the original expression"
+  print $ words $ showExpr expr
   -- print "replaced expression as string"
   -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
   -- print replaced
@@ -177,7 +177,6 @@ parseUD env txt = do
       | head x == "propernoun" = [intercalate "_" x] : combinePROPERNOUN xs
       | otherwise = x : combinePROPERNOUN xs
 
-
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords
       [ if all isUpper (Text.unpack wd)
@@ -186,6 +185,13 @@ parseUD env txt = do
       | wd <- Text.words txt
       ]
 
+    checkAllCapsIsWord :: Text.Text -> IO String
+    checkAllCapsIsWord txt = do
+      lowerConll <- udpipe (Text.map toLower txt)
+      defaultConll <- udpipe $ lowerButPreserveAllCaps txt
+      let check | (map toLower lowerConll) == (map toLower defaultConll) = defaultConll
+                | otherwise = lowerConll
+      return check
 -----------------------------------------------------------------------------
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
@@ -621,7 +627,7 @@ combineExpr pred compl = result
         ("RS", case complTyped of
           TG {gfS= Just (GUseCl t p you_work)} -> gf $ GUseRCl t p $ GRelSlash for_which (GSlashCl you_work)
           TG {gfVP= Just (GMkVPS t p works)}   -> gf $ GUseRCl t p $ GRelVP for_which works
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+          _ -> error ("rp combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfPrep=Just under} ->
         case complTyped of
@@ -634,7 +640,7 @@ combineExpr pred compl = result
           TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
           TG {gfVP=Just (GMkVPS _t _p haunt)}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
           -- TG {gfS=Just you_see} -> ???
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+          _ -> error ("prep combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
 
       TG {gfVP=Just (GMkVPS t p notify)} ->
         ("VPS", case complTyped of
@@ -647,7 +653,10 @@ combineExpr pred compl = result
           TG {gfPrep=Just with}  -> gf $ GMkVPS t p $ GPrepVP notify with
           -- TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
           -- TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+
+-- natural4-exe: vp combineExpr: can't combine predicate root_only (rootV_ (TTAnt TPres ASimul) PPos (UseV notify_V))with complement root_nmod (rootDAP_ (DetDAP each_Det)) (nmod_ of_Prep (DetCN thePl_Det (AdjCN (PositA notifiable_A) (UseN individual_N))))
+
+          _ -> error ("vp combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr ++ " pred " ++ show predTyped ++ " compl " ++ show complTyped)
         )
       TG {gfCN=Just house} ->
         ("CN", case complTyped of
@@ -656,7 +665,8 @@ combineExpr pred compl = result
           TG {gfDet=Just my}      -> gf $ GApposCN house (GDetNP my)
           TG {gfAdv=Just quickly} -> gf $ GAdvCN  house quickly
           TG {gfAP=Just haunted}  -> gf $ GAdjCN  haunted house
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+
+          _ -> error ("cn combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfNP=Just the_customer} ->
         ("NP", case complTyped of
@@ -665,28 +675,28 @@ combineExpr pred compl = result
           TG {gfDet=Just my}      -> gf $ GApposNP  the_customer (GDetNP my)
           TG {gfAdv=Just quickly} -> gf $ GAdvNP    the_customer quickly
           TG {gfAP=Just haunted}  -> gf $ GApposNP  the_customer (GAdjAsNP haunted)
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+          _ -> error ("np combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
       TG {gfDet=Just any} -> case complTyped of
           TG {gfCN=Just house}   -> ("NP", gf $ GDetCN any house)
           TG {gfAP=Just haunted} -> ("DAP", gf $ GAdjDAP (GDetDAP any) haunted)
-          _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+          _ -> error ("det combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       TG {gfAdv=Just happily} -> case complTyped of
         TG {gfCN=Just house}   -> ("CN", gf $ GAdvCN house happily)
         TG {gfNP=Just johnson} -> ("NP", gf $ GAdvNP johnson happily)
         TG {gfAP=Just haunted} -> ("AP", gf $ GAdvAP haunted happily)
-        _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        _ -> error ("adv combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       TG {gfAP=Just happy} -> case complTyped of
         TG {gfCN=Just house}    -> ("CN", gf $ GAdjCN happy house)
         TG {gfNP=Just johnson}  -> ("NP", gf $ GApposNP (GAdjAsNP happy) johnson)
         TG {gfDet=Just my}      -> ("DAP", gf $ GAdjDAP (GDetDAP my) happy)
         TG {gfAdv=Just quickly} -> ("AP", gf $ GAdvAP happy quickly)
         TG {gfAP=Just (GPositA haunted)} -> ("AP", gf $ GAdvAP happy (GPositAdvAdj haunted))
-        _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
+        _ -> error ("ap combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       -- ("Cl", you_work) -> case complTyped of
       --   ("RP", for_which) -> ("RS", gf $ GRelSlash (fg for_which) (GSlashCl (fg you_work)))
       --   _ -> error ("combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
-      tg -> error ("combineExpr: can't find type " ++ show tg ++ " for the predicate " ++ showExpr predExpr)
+      tg -> error ("all combineExpr: can't find type " ++ show tg ++ " for the predicate " ++ showExpr predExpr)
 
 
 -- | Takes a UDS, peels off the UD layer, returns a pair ("RGL type", the peeled off Expr)
@@ -1140,12 +1150,8 @@ toUDS pgf e = case findType pgf e of
             _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e )
   "S" -> case fg e :: GS of
     GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
-    -- GConjS conj (GListS GPredVP (Conjg)) -> Groot_nsubj (GrootV_ t p (GConjVP vp))
     _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
     -- vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
-
-  -- "ConjS" -> case (fg e) :: GS of
-  --               GConjS conj (GConsS (GUseCl t p (GPredVP np vp))) -> Groot_nsubj
   _ -> fg $ dummyExpr $ "unable to convert to UDS all: " ++ showExpr e
   where
     vps2uds :: GVPS -> GUDS
@@ -1417,15 +1423,10 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
-    -- GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) _) -> do
-    --   GMkVPS t p (GUseComp (GCompNP np)) <- root2vps root
-    --   adv <- pure $ GSubjS subj (GExistS t p nsubj)
-    --   pure $ GPostAdvS (GExistS t p nsubj) adv
-    --   -- pure $ GUseCl t p $ GExistsNP $ GAdvNP np adv
     Groot_xcomp root xcomp -> case xcomp of
       GxcompN_ np -> predVPS np <$> root2vps root
       GxcompToBeN_ _ _ np -> predVPS np <$> root2vps root
-    -- add other xcomps
+    -- todo: add other xcomps
     GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) cop) -> do
       xcomp <- pure $ GxcompToBeN_ (Gmark_ subj) cop nsubj
       sFromUDS $ Groot_xcomp root xcomp

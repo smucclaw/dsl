@@ -320,11 +320,22 @@ relPredRefs l4i rs ridmap r =
 -- | all the rules which have no indegrees, as far as decisioning goes
 decisionRoots :: RuleGraph -> [Rule]
 decisionRoots rg =
-  catMaybes [ lab rg r
-            | r <- nodes rg
-            ,  indeg rg r == 0
-            , outdeg rg r  > 0
+  let rg' = dereflexed
+  in
+  catMaybes [ lab rg' r
+            | r <- nodes rg'
+            ,  indeg rg' r == 0
+--            , outdeg rg' r  > 0
             ]
+  where
+    -- remove reflexive edges that go from node n to node n
+    dereflexed :: RuleGraph
+    dereflexed =
+      let toreturn = foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
+      in
+--        trace ("dereflexed before: " ++ prettify rg) $
+--        trace ("dereflexed after:  " ++ prettify toreturn) $
+        toreturn
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.

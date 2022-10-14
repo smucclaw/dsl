@@ -1299,6 +1299,7 @@ advFromUDS x = case x of
   Groot_only (GrootAdv_ someAdv) -> Just someAdv
   Groot_obl (GrootAdv_ someAdv) (Gobl_ oblAdv) -> Just $ GAdvAdv someAdv oblAdv
   -- very much overfitted to catch "unless we go where it's warm"
+  Groot_nmod  (GrootDAP_ (GDetDAP det)) (Gnmod_ prep np) -> Just $ GPrepNP prep (GApposNP (GDetNP det) np)
   Groot_advcl (GrootAdv_ whereItsWarm) (GadvclMarkUDS_ (Gmark_ subj) uds) -> do
     weGo <- sFromUDS uds
     let weGoWarm = GPostAdvS weGo whereItsWarm

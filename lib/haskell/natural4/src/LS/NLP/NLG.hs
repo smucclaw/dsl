@@ -563,7 +563,17 @@ combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf 
 
     advVPS :: GVPS -> GAdv -> GVPS
     advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
+
+combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+  where
+    resultVP :: GVPS
+    resultVP = npVPS (fg act) (fg mod)
+
+    npVPS :: GVPS -> GNP -> GVPS
+    npVPS vps np = GMkVPS presSimul GPPos $ GComplVP (vps2vp vps) np
+
 combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+
   where
     -- Assumption: RCl doesn't modify the whole VP, but rather the object of the VP
     resultVP :: GVPS
@@ -651,6 +661,7 @@ combineExpr pred compl = result
           TG {gfDet=Just my}     -> gf $ GMkVPS t p $ complVP notify (GDetNP my)
           TG {gfCN=Just car}     -> gf $ GMkVPS t p $ complVP notify (GMassNP car)
           TG {gfPrep=Just with}  -> gf $ GMkVPS t p $ GPrepVP notify with
+          -- TG {gfNP = Just (GDet each (GPrepNP of_Prep theindividual))} -> gf $ GMkVPS t p $ GAdvVP notify (GPrepNP of_Prep theindividual)
           -- TG {gfRP=Just which}   -> ("RP", gf $ GPrepRP under which)
           -- TG {gfVP=Just haunt}   -> ("Adv", gf $ GPrepNP under (GGerundNP haunt))
 

@@ -740,15 +740,6 @@ pTokenMatch f c = do
         then Just x
         else Nothing
 
-rLabelR :: Rule -> Maybe RuleLabel
-rLabelR Regulative   {..} = rlabel
-rLabelR Constitutive {..} = rlabel
-rLabelR Hornlike     {..} = rlabel
-rLabelR TypeDecl     {..} = rlabel
-rLabelR Scenario     {..} = rlabel
-rLabelR RuleGroup    {..} = rlabel
-rLabelR _                 = Nothing
-
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
 enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
 

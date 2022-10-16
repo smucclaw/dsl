@@ -389,7 +389,7 @@ connectRules sg rules =
       aliasNodes = nodes subgraphOfAliases
 
       -- all labeled rules
-      rls = {- trace "rls = " $ traceShowId $ -} fmap rl2text . rLabelR <$> rules
+      rls = {- trace "rls = " $ traceShowId $ -} fmap rl2text . getRlabel <$> rules
 
       -- if the ruleLabel is for a Hornlike, expand accordingly.
       -- we mirror the structure of the BoolStruct inside the head of the Hornlike,

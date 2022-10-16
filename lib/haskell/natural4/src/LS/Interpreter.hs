@@ -528,7 +528,7 @@ expandRulesByLabel rules txt =
   let toreturn =
         [ q
         | r <- rules
-        , let mt = rl2text <$> rLabelR r
+        , let mt = rl2text <$> getRlabel r
         , Just txt == mt
         , let qs = expandRule rules r
         , q <- qs
@@ -543,7 +543,7 @@ expandRule rules r@Hornlike{..} =
         -- we support hornlike expressions of the form x is y and z; we return y and z
         [ q
         | clause <- clauses
-        , let rlbl' = rl2text <$> rLabelR r
+        , let rlbl' = rl2text <$> getRlabel r
               bsr = -- trace ("expandRule: got head " ++ show (hHead clause))
                     hHead clause
         , isJust rlbl'
@@ -616,10 +616,10 @@ getRuleByName :: RuleSet -> RuleName -> Maybe Rule
 getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 
 getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
-getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
+getRuleByLabel rs t = find (\r -> (rl2text <$> getRlabel r) == Just t) rs
 
 getRuleByLabelName :: RuleSet -> T.Text -> Maybe Rule
-getRuleByLabelName rs t = find (\r -> (rl2text <$> rLabelR r) == Just t
+getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
                                       ||
                                       T.unwords (ruleName r) == t
                                ) rs

@@ -23,10 +23,13 @@ import Data.Maybe (maybeToList)
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, ItemMaybeLabel T.Text, QTree T.Text)
 asAAsvg aavc l4i rs =
   let rs' = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
+      rs2 = groupedByAOTree l4i rs
   in Map.fromList [ (rn, (svgtiny, svgfull, aaT, qtree))
-                  | r <- rs'
+                  | (_,rulegroup) <- rs2
+                  , not $ null rulegroup
+                  , let r = Prelude.head rulegroup
                   , let rn      = ruleLabelName r
-                  , aaT <- maybeToList (getAndOrTree l4i 1 r)
+                  , aaT <- fmap rp2text <$> (expandBSR l4i 1 <$> getBSR r)
                   , let qtree   = hardnormal (cgetMark aavc) aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                         svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree

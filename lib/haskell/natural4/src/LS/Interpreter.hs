@@ -47,15 +47,20 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
+groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe (AA.ItemMaybeLabel T.Text), [Rule])]
+groupedByAOTree l4i rs =
+  Map.toList $ Map.fromListWith (++) $
+  (\r -> (getAndOrTree l4i 1 r, [r])) <$>
+  decisionRoots (ruleDecisionGraph l4i rs)
+
+
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
-      ridmap = Map.fromList (Prelude.zip rs [1..])
       decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
-      groupedByAOTree = Map.toList $ Map.fromListWith (++) $ (\r -> (getAndOrTree l4i 1 r, [r])) <$> decisionroots
+      decisionroots = decisionRoots (ruleDecisionGraph l4i rs)
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
@@ -82,9 +87,12 @@ musings l4i rs =
 
            , "*** Nubbed Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated"
-           , vvsep [ vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
-                     </> srchs (expandBSR l4i 0 <$> getBSR (DL.head uniqrs))
-                   | (_, uniqrs) <- groupedByAOTree
+           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
+                     </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
+                     </> "***** grpval" </> srchs grpval
+                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i rs) [1..]
+                   , not $ null uniqrs
                    ]
 
            , "** TODO Expanded rules"

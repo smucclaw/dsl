@@ -445,7 +445,7 @@ unleaf (AA.Leaf x     ) = AA.Leaf    x
 
 -- True for debugging, False for prod
 expandTraceDebugging :: Bool
-expandTraceDebugging = True
+expandTraceDebugging = False
 
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
 expandTrace fname dpth toSay toShow =

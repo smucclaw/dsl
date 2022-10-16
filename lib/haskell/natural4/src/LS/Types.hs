@@ -341,6 +341,9 @@ getBSR :: Rule -> [BoolStructR]
 getBSR Hornlike{..}   = catMaybes $
                         [ hbody
                         | HC2 _hhead hbody <- clauses
+                        ] ++
+                        [ Just bsr
+                        | HC2 (RPBoolStructR rp1 rprel bsr) _hbody <- clauses
                         ]
 getBSR Regulative{..} = maybeToList who ++
                         maybeToList cond

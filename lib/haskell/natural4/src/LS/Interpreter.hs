@@ -60,7 +60,7 @@ musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
       decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots (ruleDecisionGraph l4i rs)
+      decisionroots = decisionRoots decisionGraph
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc

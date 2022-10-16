@@ -395,7 +395,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
-rel2txt RPis      = "relIs"
+rel2txt RPis      = "Is"
 rel2txt RPhas     = "relHas"
 rel2txt RPeq      = "relEq"
 rel2txt RPlt      = "relLT"
@@ -406,7 +406,7 @@ rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
 
 rel2op :: RPRel -> Text.Text
-rel2op RPis      = "=="
+rel2op RPis      = "IS"
 rel2op RPhas     = ".?"
 rel2op RPeq      = "=="
 rel2op RPlt      = "<"
@@ -426,8 +426,9 @@ rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   _mt1 _rel mt2)   = [mt2]
-rp2bodytexts (RPBoolStructR  _mt1 _rel bsr)   = concatMap rp2bodytexts (AA.extractLeaves bsr)
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [rel2op rel], mt2]
+rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ rel2op rel : bod
+                                              | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts

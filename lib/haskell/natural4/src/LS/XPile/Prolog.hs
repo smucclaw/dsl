@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{-| transpiler to Prolog. This module is on hold; instead, see how baby-l4 generates Prolog-like outoputs. -}
+
 module LS.XPile.Prolog where
 
 import LS as SFL4

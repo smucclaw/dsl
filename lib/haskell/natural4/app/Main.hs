@@ -31,7 +31,7 @@ import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import qualified Text.RawString.QQ as QQ
 import qualified Data.Foldable as DF
-import qualified Data.Traversable as DT
+-- import qualified Data.Traversable as DT
 
 main :: IO ()
 main = do
@@ -50,10 +50,11 @@ main = do
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems l4i)) <> "\n\n" <> psSuffix)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ biggestItem l4i rules)) <> "\n\n" <> psSuffix)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
+      (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -63,22 +64,30 @@ main = do
                                                                | r@SFL4.Hornlike{} <- rules
                                                                ])
 
-                                   , "-- getAndOrTrees"
-                                   , unlines $ (\r -> "\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n" <>
-                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
-
-                                   , "-- traverse id of the getAndOrTrees"
-                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i <$> rules
-
                                    , "\n\n-- class hierarchy:\n"
                                    , TL.unpack (pShowNoColor (SFL4.classtable l4i))
 
                                    , "\n\n-- symbol table:\n"
                                    , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
+
+                                   , "-- getAndOrTrees"
+                                   , unlines $ (\r -> "\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n" <>
+                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
+
+                                   , "-- traverse toList of the getAndOrTrees"
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i <$> rules
+
+                                   , "-- onlyTheItems"
+                                   , TL.unpack $ pShowNoColor (onlyTheItems l4i)
+
+                                   , "-- ItemsByRule"
+                                   , TL.unpack $ pShowNoColor (SFL4.itemsByRule l4i rules)
+
                                    ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
 --    putStrLn "going to start dumping to workdir outputs"
+    unless (not (SFL4.tonative  opts)) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     unless (not (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr

@@ -49,7 +49,7 @@ anyof = Just $ Pre "any of:"
 
 data Hardness = Soft -- use Left defaults
               | Hard -- require Right input
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 type AnswerToExplain = Bool
 
@@ -58,7 +58,7 @@ data BinExpr a b =
   | BEAll b [BinExpr a b]
   | BEAny b [BinExpr a b]
   | BENot (BinExpr a b)
-  deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
 
@@ -67,11 +67,17 @@ data Item lbl a =
   | All lbl [Item lbl a]
   | Any lbl [Item lbl a]
   | Not             (Item lbl a)
-  deriving (Eq, Show, Generic, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 type ItemMaybeLabel a = Item (Maybe (Label T.Text)) a
 
 type ItemJSONText = Item (Label T.Text) T.Text
+
+extractLeaves :: Item lbl a -> [a]
+extractLeaves (Leaf x) = [x]
+extractLeaves (Not x)  = extractLeaves x
+extractLeaves (All _ xs) = concatMap extractLeaves xs
+extractLeaves (Any _ xs) = concatMap extractLeaves xs
 
 addJust :: ItemJSONText -> ItemMaybeLabel T.Text
 addJust (Any lbl xs) = Any (Just lbl) (addJust <$> xs)
@@ -125,6 +131,7 @@ instance Monoid lbl => Semigroup (Item lbl a) where
   (<>) l            r            = All mempty [l, r]
 
 
+{-
 -- | prepend something to the Pre/Post label, shallowly
 -- shallowPrependBSR :: (IsString a, Semigroup a) => a -> Item a -> Item a
 -- x `shallowPrependBSR` Leaf z    = Leaf (x <> " " <> z)
@@ -145,7 +152,7 @@ instance Monoid lbl => Semigroup (Item lbl a) where
 -- prependToLabel x (Just (Pre     y  )) = Just $ Pre     (x <> " " <> y)
 -- prependToLabel x (Just (PrePost y z)) = Just $ PrePost (x <> " " <> y) z
 
-
+-}
 
 
 -- | flatten redundantly nested structure
@@ -210,7 +217,7 @@ strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
 --   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: ItemMaybeLabel T.Text }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
 instance FromJSON (StdinSchema T.Text) where
   parseJSON = withObject "StdinSchema" $ \o -> do
@@ -229,7 +236,7 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (Item lbl a)
 
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (Item lbl a)
 
-data AndOr a = And | Or | Simply a | Neg deriving (Eq, Show, Generic)
+data AndOr a = And | Or | Simply a | Neg deriving (Eq, Ord, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
 type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
@@ -246,14 +253,14 @@ tree2native (Node (And, lbl) children) = All lbl (tree2native <$> children)
 tree2native (Node ( Or, lbl) children) = Any lbl (tree2native <$> children)
 
 newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
 instance (FromJSON a) => FromJSON (Default a)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
 asJSONDefault = encode
 
 newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 type TextMarking = Marking T.Text
 
@@ -273,14 +280,14 @@ parseMarking = withObject "marking" $ \o -> do
     return $ Marking $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
 
 
-data ShouldView = View | Hide | Ask deriving (Eq, Show, Generic)
+data ShouldView = View | Hide | Ask deriving (Eq, Ord, Show, Generic)
 instance ToJSON ShouldView; instance FromJSON ShouldView
 
 data Q a = Q { shouldView :: ShouldView
              , andOr      :: AndOr a
              , prePost    :: Maybe (Label a)
              , mark       :: Default Bool
-             } deriving (Eq, Show, Generic)
+             } deriving (Eq, Ord, Show, Generic)
 
 type QTree a = Tree (Q a)
 
@@ -295,7 +302,7 @@ fromJSON :: FromJSON a => B.ByteString -> Maybe (QTree a)
 fromJSON = decode
 
 data DisplayPref = DPTerse | DPNormal | DPVerbose
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 getSV :: ShouldView -> Q a -> Maybe (a, Default Bool)
 getSV sv1 (Q sv2 (Simply x) pp m)

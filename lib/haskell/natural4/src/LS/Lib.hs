@@ -549,10 +549,7 @@ pExpect = debugName "pExpect" $ do
                      (tmp, _when) <- rpSameNextLineWhen
                      return tmp
                  )
-             <|> (do
-                     tmp <- pBSR
-                     return $ RPBoolStructR [] RPis tmp
-                 )
+             <|> RPBoolStructR [] RPis <$> pBSR
   return $ ExpRP relPred
 
 -- | we want to parse two syntaxes:

@@ -1670,14 +1670,22 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-      texttest "EXPECT,NOT,IT IS,A Notifiable Data Breach," "unit test EXPECT ... NOT"
-        (parseOther pExpect )
+      xtexttest "EXPECT,NOT,IT IS,A Notifiable Data Breach," "unit test EXPECT ... NOT"
+        (parseOther pExpect)
         ( ExpRP (RPBoolStructR
                  [] RPis -- [TODO] this sucks, refactor it away
                  (Not (Leaf (RPMT ["IT IS","A Notifiable Data Breach"]))))
         , []
         )
-      
+    
+      xtexttest "GIVEN,not,IT IS,A Notifiable Data Breach," "unit test GIVEN ... NOT"
+        (parseOther pGivens )
+        (  [RPBoolStructR
+                 [] RPis -- [TODO] this sucks, refactor it away
+                 (Not (Leaf (RPMT ["IT IS","A Notifiable Data Breach"])))]
+        , []
+        )
+
       filetest "scenario-units-2-a" "unit test 2a for scenarios"
         (parseOther pScenarioRule )
         ( scenario2a

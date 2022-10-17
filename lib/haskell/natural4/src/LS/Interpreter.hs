@@ -275,7 +275,7 @@ expandMT l4i depth mt0 =
                  [ out
                  | (scopename,symtab) <- Map.toList (scopetable l4i)
                  , (mytype, cs) <- maybeToList $
-                                   -- trace ("expandMT: " ++ replicate depth '|' ++ "considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
+                                   trace ("expandMT: " ++ replicate depth '|' ++ "considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
                                    Map.lookup mt0 symtab
                  , c <- -- trace ("expandMT: " ++ replicate depth '|' ++ "working through clauses " ++ show cs)
                         cs
@@ -289,10 +289,7 @@ expandMT l4i depth mt0 =
                  , out <- outs
                  ]
       toreturn = fromMaybe (RPMT mt0) $ expanded
-  in -- trace ("expandMT: scopetable toplevel is " ++ TL.unpack (pShow $ scopetable l4i)) $
-     -- trace ("expandMT: " ++ replicate depth '|' ++ "expanded = " ++ show expanded) $
-     -- trace ("expandMT: " ++ replicate depth '|' ++ "will return " ++ show toreturn) $
-     toreturn
+  in toreturn
 
 
 expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR

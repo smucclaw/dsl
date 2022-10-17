@@ -156,6 +156,63 @@ executable natural4-exe
     , wordnet
   default-language: Haskell2010
 
+test-suite natural4-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      TestNLG
+      Paths_natural4
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , async
+    , baby-l4-core
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , directory
+    , edit-distance
+    , extra
+    , fgl
+    , generic-arbitrary
+    , generic-data
+    , gf
+    , gf-ud
+    , graphviz
+    , hspec
+    , hspec-megaparsec
+    , iso8601-time
+    , lens
+    , megaparsec
+    , mtl
+    , natural4
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pretty-simple
+    , prettyprinter
+    , prolog
+    , raw-strings-qq
+    , regex-tdfa
+    , replace-megaparsec
+    , split
+    , stm
+    , text
+    , time
+    , typed-process
+    , udpipe-hs
+    , utf8-string
+    , vector
+    , wordnet
+  default-language: Haskell2010
+
 test-suite natural4-unittest
   type: exitcode-stdio-1.0
   main-is: Spec.hs

@@ -432,7 +432,7 @@ rp2texts (RPParamText    pt)            = pt2multiterm pt
 rp2texts (RPMT           mt)            = mt
 rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
-rp2texts (RPnary         rel rp)        = rel2op rel : rp2texts rp
+rp2texts (RPnary         rel rp)        = rel2txt rel : rp2texts rp
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts

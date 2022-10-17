@@ -35,11 +35,10 @@ asAAsvg aavc l4i rs =
                         ebsr = expandBSR l4i 1 <$>
                                -- trace ("asAAsvg getBSR = " ++ show (getBSR r))
                                (getBSR r)
-                        totext = fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
+                        totext = filter isInteresting $ fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
                                  ebsr
                   , (rn_n, aaT) <- zip [1..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
-                  , isInteresting aaT
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
                                   aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree

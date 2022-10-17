@@ -39,8 +39,15 @@ asAAsvg aavc l4i rs =
                                  ebsr
                   , (rn_n, aaT) <- zip [1..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
+                  , isInteresting aaT
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
                                   aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                         svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
                   ]
+  where
+    -- | don't show SVG diagrams if they only have a single element
+    isInteresting :: Item lbl a -> Bool
+    isInteresting (AA.Leaf _) = False
+    isInteresting (AA.Not (AA.Leaf _)) = False
+    isInteresting _ = True

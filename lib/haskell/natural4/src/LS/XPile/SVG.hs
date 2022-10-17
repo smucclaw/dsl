@@ -15,8 +15,7 @@ import LS
 import AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (maybeToList)
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 -- | extract the tree-structured rules from Interpreter
 -- for each rule, print as svg according to options we were given
@@ -31,13 +30,13 @@ asAAsvg aavc l4i rs =
                   , let r = Prelude.head rulegroup
                         rn      = ruleLabelName r
                         ebsr = expandBSR l4i 1 <$>
-                               trace ("asAAsvg getBSR = " ++ show (getBSR r))
+                               -- trace ("asAAsvg getBSR = " ++ show (getBSR r))
                                (getBSR r)
-                        totext = fmap rp2text <$> trace ("asAAsvg expandBSR = " ++ show ebsr) ebsr
-                  , (rn_n, aaT) <- zip [1..] $ trace ("asAAsvg aaT <- totext = " ++ show totext)
+                        totext = fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
+                                 ebsr
+                  , (rn_n, aaT) <- zip [1..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
-                  , let qtree   = hardnormal (cgetMark aavc) $
-                                  trace ("asAAsvg aaT = " ++ show aaT)
+                  , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
                                   aaT
                         svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                         svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree

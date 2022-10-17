@@ -24,7 +24,10 @@ asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, S
 asAAsvg aavc l4i rs =
   let rs' = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
       rs2 = groupedByAOTree l4i rs
-  in Map.fromList [ (rn ++ [T.pack (show rn_n)], (svgtiny, svgfull, aaT, qtree))
+  in Map.fromList [ (rn ++ if length totext > 1
+                           then [T.pack (show rn_n)]
+                           else []
+                    , (svgtiny, svgfull, aaT, qtree))
                   | (_,rulegroup) <- rs2
                   , not $ null rulegroup
                   , let r = Prelude.head rulegroup

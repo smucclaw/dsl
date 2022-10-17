@@ -90,8 +90,8 @@ asValue :: Interpreted -> HornClause2 -> Doc ann
 asValue _l4i hc2@(HC2 { hHead = RPMT        _ })               = "value" <+> colon <+> dquotes (pretty (hHead hc2))
 asValue _l4i hc2@(HC2 { hHead = RPConstraint  mt1 rprel mt2 }) = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
 asValue _l4i hc2@(HC2 { hHead = RPBoolStructR mt1 rprel bsr }) = snake_case mt1 <+> colon <+> "(some => lambda)"
-asValue  l4i hc2@(HC2 { hHead = RPParamText pt })              = trace ("asValue branch 4: " ++ show pt) $
-                                                                     pretty (PT4 pt l4i)
+asValue  l4i hc2@(HC2 { hHead = RPParamText pt })              = pretty (PT4 pt l4i)
+asValue  l4i hc2@(HC2 { hHead = RPnary      rprel rp })        = asValue l4i hc2 {hHead = rp}
 
 asValuePT :: Interpreted -> [HornClause2] -> Doc ann
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $

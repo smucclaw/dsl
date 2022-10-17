@@ -27,8 +27,7 @@ instance Pretty RelationalPredicate where
   pretty (RPMT          mt)            = snake_join mt
   pretty (RPConstraint  mt1 rprel mt2) = hsep [ snake_join mt1, pretty (rel2op rprel), snake_join mt2 ]
   pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snake_join mt1, pretty rprel, pretty bsr ]
-
-
+  pretty (RPnary rprel rp)             = hsep [ pretty rprel, pretty rp ]
 
 -- Hornlike rule transformations -- these form HC2 situations
 -- 1   p investment IS savings                     WHEN blah => if blah then investment p savings
@@ -64,6 +63,7 @@ inPredicateForm (RPConstraint  mt1 RPhas mt2)     = untaint <$> addHas (pred_fli
     addHas [] = []
 inPredicateForm (RPConstraint  mt1 rprel mt2)     = untaint <$> rel2txt rprel : mt1 ++ mt2
 inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = untaint <$> mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
+inPredicateForm (RPnary        rprel rp)          = untaint <$> rel2txt rprel : inPredicateForm rp
 
 pred_flip :: [a] -> [a]
 pred_flip xs = last xs : init xs

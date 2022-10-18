@@ -1,4 +1,5 @@
 .stack-work/
+natural4.cabal
 *.hie
 *~
 .#*

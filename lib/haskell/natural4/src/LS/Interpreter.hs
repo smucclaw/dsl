@@ -47,15 +47,20 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
+groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe (AA.ItemMaybeLabel T.Text), [Rule])]
+groupedByAOTree l4i rs =
+  Map.toList $ Map.fromListWith (++) $
+  (\r -> (getAndOrTree l4i 1 r, [r])) <$>
+  decisionRoots (ruleDecisionGraph l4i rs)
+
+
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
-      ridmap = Map.fromList (Prelude.zip rs [1..])
       decisionGraph = ruleDecisionGraph l4i rs
       decisionroots = decisionRoots decisionGraph
-      groupedByAOTree = Map.toList $ Map.fromListWith (++) $ (\r -> (getAndOrTree l4i r, [r])) <$> decisionroots
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
@@ -82,9 +87,12 @@ musings l4i rs =
 
            , "*** Nubbed Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated"
-           , vvsep [ vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
-                     </> srchs (expandBSR l4i 0 <$> getBSR (DL.head uniqrs))
-                   | (_, uniqrs) <- groupedByAOTree
+           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
+                     </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
+                     </> "***** grpval" </> srchs grpval
+                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i rs) [1..]
+                   , not $ null uniqrs
                    ]
 
            , "** TODO Expanded rules"
@@ -93,8 +101,8 @@ musings l4i rs =
            , if expandedRules == DL.nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
-           , "** getAndOrTrees"
-           , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i r) | r <- rs ]
+           , "** getAndOrTrees, direct"
+           , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
            , "** The original rules"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
@@ -320,11 +328,22 @@ relPredRefs l4i rs ridmap r =
 -- | all the rules which have no indegrees, as far as decisioning goes
 decisionRoots :: RuleGraph -> [Rule]
 decisionRoots rg =
-  catMaybes [ lab rg r
-            | r <- nodes rg
-            ,  indeg rg r == 0
-            , outdeg rg r  > 0
+  let rg' = dereflexed
+  in
+  catMaybes [ lab rg' r
+            | r <- nodes rg'
+            ,  indeg rg' r == 0
+--            , outdeg rg' r  > 0
             ]
+  where
+    -- remove reflexive edges that go from node n to node n
+    dereflexed :: RuleGraph
+    dereflexed =
+      let toreturn = foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
+      in
+--        trace ("dereflexed before: " ++ prettify rg) $
+--        trace ("dereflexed after:  " ++ prettify toreturn) $
+        toreturn
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
@@ -333,59 +352,64 @@ decisionRoots rg =
 
 -- todo: multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
-getAndOrTree :: Interpreted -> Rule -> Maybe (AA.ItemMaybeLabel T.Text) -- Vue wants AA.Item T.Text
-getAndOrTree _l4i r@Regulative{who=whoMBSR, cond=condMBSR} =
+getAndOrTree :: Interpreted -> Int -> Rule -> Maybe (AA.ItemMaybeLabel T.Text) -- Vue wants AA.Item T.Text
+getAndOrTree _l4i depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
   
-getAndOrTree  l4i r@Hornlike{} = fmap extractRPMT2Text <$>
-                                 mconcat (-- traceShowId $
-  bsmtOfClauses $
-  r { clauses = expandClauses l4i (clauses r) } )
+getAndOrTree  l4i depth r@Hornlike{} = expandTrace "getAndOrTree" depth "fmap extractRPMT2Text ..." $
+                                       fmap extractRPMT2Text <$>
+                                       (expandTrace "getAndOrTree" depth "mconcat bsmtOfClauses..." $
+                                        mconcat (-- traceShowId $
+                                           bsmtOfClauses l4i (depth+1) $
+                                           r { clauses = expandClauses l4i (depth+1) (clauses r) } ))
   where
     defaultElem :: a -> [a] -> [a]
     defaultElem dflt []  = [ dflt ]
     defaultElem _    lst = lst
 
-getAndOrTree l4i _r@(RuleAlias rn) = do
+getAndOrTree l4i depth _r@(RuleAlias rn) = do
   r' <- getRuleByName (origrules l4i) rn
-  getAndOrTree l4i r'
+  getAndOrTree l4i (depth+1) r'
 
-getAndOrTree _l4i r = -- trace ("ERROR: getAndOrTree called invalidly against rule " <> show r) $
-                      Nothing
+getAndOrTree _l4i depth r = -- trace ("ERROR: getAndOrTree called invalidly against rule " <> show r) $
+  Nothing
 
 -- convert clauses to a boolStruct MT
-bsmtOfClauses :: Rule -> [Maybe (AA.ItemMaybeLabel RelationalPredicate)]
-bsmtOfClauses r = [ mhead <> mbody
-                  | c <- clauses r
-                  , (hhead, hbody)  <- [(hHead c, hBody c)]
-                  , let (_bodyEx, bodyNonEx) = partitionExistentials c
-                  , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
-                        mhead = case hhead of
-                                  RPBoolStructR _mt1 _rprel1 bsr1 -> -- trace "bsmtOfClauses: returning bsr part of head's RPBoolStructRJust"
-                                                                     Just (bsr2bsmt bsr1)
-                                  _                               -> -- trace ("bsmtOfClauses: returning nothing for " <> show hhead)
-                                                                     Nothing
-                        mbody = case hbody of
-                                  Nothing -> Nothing
-                                  _       -> 
-                                    let output = bsr2bsmt bodyNonEx in
-                                      -- trace ("bsmtOfClauses: got output " <> show output)
-                                      Just output
-                  ]
+bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe (AA.ItemMaybeLabel RelationalPredicate)]
+bsmtOfClauses l4i depth r =
+  let toreturn =
+        [ listToMaybe $ maybeToList $ mbody <> mhead
+        | c <- expandClauses l4i 2 (clauses r)
+        , (hhead, hbody)  <- [(hHead c, hBody c)]
+        , let (_bodyEx, bodyNonEx) = partitionExistentials c
+        , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
+              mhead = case hhead of
+                        RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
+                                                           Just (bsr2bsmt bsr1)
+                        _                               -> expandTrace "bsmtOfClauses" depth ("returning nothing for " <> show hhead) $
+                                                           Nothing
+              mbody = case hbody of
+                        Nothing -> Nothing
+                        _       -> 
+                          let output = bsr2bsmt bodyNonEx in
+                            expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
+                            Just output
+        ]
+  in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
 
-expandClauses, expandClauses' :: Interpreted -> [HornClause2] -> [HornClause2]
-expandClauses l4i hcs = (expandTrace "expandClauses" 1 $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i hcs
-expandClauses' l4i hcs =
+expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
+expandClauses l4i depth hcs = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i (depth+1) hcs
+expandClauses' l4i depth hcs =
   let toreturn = [ newhc
                  | oldhc <- hcs
-                 , let newhead = (expandTrace "expandClauses" 2 $ "expanding the head") $                expandRP l4i 3   $  hHead oldhc
-                       newbody = (expandTrace "expandClauses" 2 $ "expanding the body") $ unleaf . fmap (expandRP l4i 3) <$> hBody oldhc
+                 , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
+                       newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
                                  HC2 oldh Nothing -> HC2 newhead Nothing
                                  HC2 oldh _       -> HC2 oldh    newbody
                  ]
-  in expandTrace "expandClauses" 1 ("returning " ++ show toreturn) $
+  in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
      toreturn
 
 unleaf :: BoolStructR -> BoolStructR
@@ -419,21 +443,30 @@ unleaf (AA.Leaf x     ) = AA.Leaf    x
 --        ]
 --
 
-expandTrace fname dpth str = if False -- switch to True for debugging
-                             then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ str)
-                             else id
+-- True for debugging, False for prod
+expandTraceDebugging :: Bool
+expandTraceDebugging = False
+
+expandTrace :: (Show a) => String -> Int -> String -> a -> a
+expandTrace fname dpth toSay toShow =
+  if expandTraceDebugging
+  then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
+               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
+       toShow
+  else toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON / WHEN / GIVEN preconditions.
 -- for now we just scan across the entire ruleset to see if it matches.
 expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
-expandRP l4i depth (RPMT                   mt2) = (expandTrace "expandRP" depth $ "RPMT " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
+expandRP l4i depth (RPMT                   mt2) = expandTrace "expandRP" depth ("RPMT " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
                                                   expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPConstraint  mt1 RPis mt2) = (expandTrace "expandRP" depth $ "RPConstraint " ++ show mt1 ++ " is " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
-                                                  expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPBoolStructR mt1 RPis bsr) = (expandTrace "expandRP" depth $ "RPBoolStructR " ++ show mt1 ++ " is BSR: calling expandBSR on " ++ show bsr) $
-                                                  RPBoolStructR mt1 RPis (expandBSR l4i (depth + 1) bsr)
-expandRP l4i depth x                            = (expandTrace "expandRP" depth $ "returning unchanged " ++ show x) $
+expandRP l4i depth (RPConstraint  mt1 RPis mt2) = expandTrace "expandRP" depth ("RPConstraint " ++ show mt1 ++ " is " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
+                                                  expandMT  l4i (depth + 1) (mt1 ++ rel2txt RPis : mt2)
+expandRP l4i depth (RPBoolStructR mt1 RPis bsr) = expandTrace "expandRP" depth ("RPBoolStructR " ++ show mt1 ++ " is BSR: calling expandBSR on " ++ show bsr) $
+                                                  RPBoolStructR mt1 RPis (-- (\(RPMT rpmt) -> RPMT (mt1 ++ rel2txt RPis : rpmt)) <$>
+                                                                          expandBSR l4i (depth + 1) bsr)
+expandRP l4i depth x                            = expandTrace "expandRP" depth ("returning unchanged " ++ show x) $
                                                   x
 
 expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate
@@ -442,20 +475,20 @@ expandMT l4i depth mt0 =
                  [ out
                  | (scopename,symtab) <- Map.toList (scopetable l4i)
                  , (mytype, cs) <- maybeToList $
-                                   (expandTrace "expandMT" depth $ "considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
+                                   expandTrace "expandMT" depth ("considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
                                    Map.lookup mt0 symtab
-                 , c <- (expandTrace "expandMT" depth $ "working through clauses " ++ show cs)
+                 , c <- expandTrace "expandMT" depth ("working through clauses " ++ show cs)
                         cs
                  , let outs = expandClause l4i depth c
-                 , out <- (expandTrace "expandMT" depth $ "may  return " ++ show outs)
+                 , out <- expandTrace "expandMT" depth ("may  return " ++ show outs)
                           outs
                  ]
       toreturn = fromMaybe (
-        (expandTrace "expandMT" depth $ "defaulting to RPMT " ++ show mt0) $
+        expandTrace "expandMT" depth ("defaulting to RPMT " ++ show mt0) $
           RPMT mt0
         ) expanded
   in -- (expandTrace "expandMT" depth $ "expanded = " ++ show expanded) $
-     (expandTrace "expandMT" depth $ "will return " ++ show toreturn) $
+     expandTrace "expandMT" depth ("will return " ++ show toreturn) $
      toreturn
 
 -- | expand a horn clause that may have both head and body containing stuff we want to fill.
@@ -463,12 +496,12 @@ expandMT l4i depth mt0 =
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
 expandClause l4i depth (HC2   (RPMT          mt          ) (Nothing) ) = [          ] -- no change
 expandClause l4i depth (HC2   (RPParamText   pt          ) (Nothing) ) = [          ] -- no change
-expandClause l4i depth (HC2   (RPConstraint  mt RPis  rhs) (Nothing) ) = [ RPMT rhs ] -- substitute with rhs
+expandClause l4i depth (HC2   (RPConstraint  mt RPis  rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
 expandClause l4i depth (HC2 o@(RPConstraint  mt rprel rhs) (Nothing) ) = [     o    ] -- maintain inequality
-expandClause l4i depth (HC2   (RPBoolStructR mt RPis  bsr) (Nothing) ) = [ (expandTrace "expandMT" depth $ "body=Nothing; returning from head: BSR " ++ show mt ++ " RPis expandBSR") $
+expandClause l4i depth (HC2   (RPBoolStructR mt RPis  bsr) (Nothing) ) = [ expandTrace "expandMT" depth ("body=Nothing; returning from head: BSR " ++ show mt ++ " RPis expandBSR") $
                                                                            RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
                               
-expandClause l4i depth (HC2   (RPMT          mt          ) (Just bodybsr) ) = [ (expandTrace "expandMT" depth $ "body=Just, returning from body: BSR " ++ show mt ++ " RPis expandBSR") $
+expandClause l4i depth (HC2   (RPMT          mt          ) (Just bodybsr) ) = [ expandTrace "expandMT" depth ("body=Just, returning from body: BSR " ++ show mt ++ " RPis expandBSR") $
                                                                                 RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bodybsr) ]
 expandClause l4i depth (HC2   (RPParamText   pt          ) (Just bodybsr) ) = [          ] -- no change
 expandClause l4i depth (HC2   (RPConstraint  mt RPis  rhs) (Just bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
@@ -478,20 +511,20 @@ expandClause l4i depth (HC2   (RPBoolStructR mt RPis  bsr) (Just bodybsr) ) = [ 
 
 
 expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR  l4i depth x = let y = expandBSR' l4i depth x in (expandTrace "expandBSR" depth $ "given " ++ show x) $
-                                                           (expandTrace "expandBSR" depth $ "returning " ++ show y) $
+expandBSR  l4i depth x = let y = expandBSR' l4i depth x in expandTrace "expandBSR" depth ("given " ++ show x) $
+                                                           expandTrace "expandBSR" depth ("returning " ++ show y) $
                                                            y
-expandBSR' l4i depth (AA.Leaf rp)    = (expandTrace "expandBSR" depth $ "handling Leaf " ++ show rp ++ " by expanding; next will test output of expansion") $
+expandBSR' l4i depth (AA.Leaf rp)    = expandTrace "expandBSR" depth ("handling Leaf " ++ show rp ++ " by expanding; next will test output of expansion") $
   case expandRP l4i (depth + 1) rp of
-    RPBoolStructR mt1 RPis bsr -> (expandTrace "expandBSR" depth $ "bsr track: " ++ show bsr)
+    RPBoolStructR mt1 RPis bsr -> expandTrace "expandBSR" depth ("bsr track: " ++ show bsr)
                                   bsr
-    o                          -> (expandTrace "expandBSR" depth $ "o track: Leaf " ++ show o) $
+    o                          -> expandTrace "expandBSR" depth ("o track: Leaf " ++ show o) $
                                   AA.Leaf o
-expandBSR' l4i depth (AA.Not item)   = (expandTrace "expandBSR" depth $ "recursing into Not") $
+expandBSR' l4i depth (AA.Not item)   = expandTrace "expandBSR" depth "recursing into Not" $
                                        AA.Not     (expandBSR l4i (depth + 1) item)
-expandBSR' l4i depth (AA.All lbl xs) = (expandTrace "expandBSR" depth $ "recursing into All") $
+expandBSR' l4i depth (AA.All lbl xs) = expandTrace "expandBSR" depth "recursing into All" $
                                        AA.All lbl (expandBSR l4i (depth + 1) <$> xs)
-expandBSR' l4i depth (AA.Any lbl xs) = (expandTrace "expandBSR" depth $ "recursing into Any") $
+expandBSR' l4i depth (AA.Any lbl xs) = expandTrace "expandBSR" depth "recursing into Any" $
                                        AA.Any lbl (expandBSR l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
@@ -504,7 +537,7 @@ expandRulesByLabel rules txt =
   let toreturn =
         [ q
         | r <- rules
-        , let mt = rl2text <$> rLabelR r
+        , let mt = rl2text <$> getRlabel r
         , Just txt == mt
         , let qs = expandRule rules r
         , q <- qs
@@ -519,7 +552,7 @@ expandRule rules r@Hornlike{..} =
         -- we support hornlike expressions of the form x is y and z; we return y and z
         [ q
         | clause <- clauses
-        , let rlbl' = rl2text <$> rLabelR r
+        , let rlbl' = rl2text <$> getRlabel r
               bsr = -- trace ("expandRule: got head " ++ show (hHead clause))
                     hHead clause
         , isJust rlbl'
@@ -537,7 +570,7 @@ expandRule _ _ = []
 -- | used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
 onlyTheItems l4i =
-  let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i <$> origrules l4i)
+  let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
       simplified = AA.simplifyItem myitem
   in -- trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
      -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
@@ -564,7 +597,7 @@ itemsByRule :: Interpreted -> [Rule] -> [(RuleName, AA.ItemMaybeLabel T.Text)]
 itemsByRule l4i rs =
   [ (ruleLabelName r, simplified)
   | r <- rs
-  , let aot = getAndOrTree l4i r
+  , let aot = getAndOrTree l4i 1 r
         simplified = fromJust aot
   , isJust aot
   ]
@@ -592,10 +625,10 @@ getRuleByName :: RuleSet -> RuleName -> Maybe Rule
 getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 
 getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
-getRuleByLabel rs t = find (\r -> (rl2text <$> rLabelR r) == Just t) rs
+getRuleByLabel rs t = find (\r -> (rl2text <$> getRlabel r) == Just t) rs
 
 getRuleByLabelName :: RuleSet -> T.Text -> Maybe Rule
-getRuleByLabelName rs t = find (\r -> (rl2text <$> rLabelR r) == Just t
+getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
                                       ||
                                       T.unwords (ruleName r) == t
                                ) rs
@@ -604,8 +637,11 @@ getRuleByLabelName rs t = find (\r -> (rl2text <$> rLabelR r) == Just t
 bsr2bsmt :: BoolStructR -> BoolStructR
 bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf (RPMT mt)
 bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (RPMT $ pt2multiterm pt)
-bsr2bsmt (AA.Leaf (RPConstraint  _mt1 _rpr mt2)  ) = AA.Leaf (RPMT mt2)
-bsr2bsmt (AA.Leaf (RPBoolStructR _mt1 _rpr bsr2) ) = bsr2bsmt bsr2
+bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.Leaf (RPMT (mt1 ++ rel2txt rpr : mt2))
+bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ rel2txt rpr : rpmt)) <$> bsr2bsmt bsr2
+                                                     in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
+                                                        -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
+                                                        output
 bsr2bsmt (AA.Leaf (RPnary      rprel rp) )         = AA.Leaf rp
 bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)

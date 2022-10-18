@@ -340,6 +340,9 @@ getBSR :: Rule -> [BoolStructR]
 getBSR Hornlike{..}   = catMaybes $
                         [ hbody
                         | HC2 _hhead hbody <- clauses
+                        ] ++
+                        [ Just bsr
+                        | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
                         ]
 getBSR Regulative{..} = maybeToList who ++
                         maybeToList cond
@@ -427,7 +430,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
-rel2txt RPis      = "relIs"
+rel2txt RPis      = "Is"
 rel2txt RPhas     = "relHas"
 rel2txt RPeq      = "relEq"
 rel2txt RPlt      = "relLT"
@@ -439,7 +442,7 @@ rel2txt RPnotElem = "relNotIn"
 rel2txt RPnot     = "relNot"
 
 rel2op :: RPRel -> Text.Text
-rel2op RPis      = "=="
+rel2op RPis      = "IS"
 rel2op RPhas     = ".?"
 rel2op RPeq      = "=="
 rel2op RPlt      = "<"
@@ -461,8 +464,9 @@ rp2texts (RPnary         rel rp)        = rel2txt rel : rp2texts rp
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   _mt1 _rel mt2)   = [mt2]
-rp2bodytexts (RPBoolStructR  _mt1 _rel bsr)   = concatMap rp2bodytexts (AA.extractLeaves bsr)
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [rel2op rel], mt2]
+rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ rel2op rel : bod
+                                              | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts
@@ -779,16 +783,10 @@ pTokenMatch f c = do
         then Just x
         else Nothing
 
-rLabelR :: Rule -> Maybe RuleLabel
-rLabelR Regulative   {..} = rlabel
-rLabelR Constitutive {..} = rlabel
-rLabelR Hornlike     {..} = rlabel
-rLabelR TypeDecl     {..} = rlabel
-rLabelR Scenario     {..} = rlabel
-rLabelR RuleGroup    {..} = rlabel
-rLabelR _                 = Nothing
-
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
 enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
+
+
+

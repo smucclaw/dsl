@@ -34,7 +34,7 @@ asTypescript :: [SFL4.Rule] -> Doc ann
 asTypescript rs =
   let l4i = l4interpret defaultInterpreterOptions rs
   in
-    vsep [ tsClasses l4i
+    vvsep [ tsClasses l4i
          , jsInstances l4i
          ]
 

@@ -1274,19 +1274,10 @@ parserTests nlgEnv runConfig_ = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
 
-  -- this same function is defined slightly differently in aboveNextLineKeyword
-      -- let aboveNextLineKeyword :: SLParser ([T.Text],MyToken)
-      --     aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
-      --       (_,x,y) <- (,,)
-      --                      $*| return ((),0)
-      --                      ->| 1
-      --                      |*| slMultiTerm
-      --                      |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
-      --      return (x,y)
-
+-- [TODO] disturbingly, this fails if we use the "standard" version from Parser.
       let aNLK :: Int -> SLParser ([T.Text],MyToken)
           aNLK maxDepth = mkSL $ do
-            (toreturn, n) <- runSL aboveNextLineKeyword
+            (toreturn, n) <- runSL aboveNextLineKeyword2
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
             guard (n < maxDepth)
             return (toreturn, n)
@@ -1295,10 +1286,10 @@ parserTests nlgEnv runConfig_ = do
       -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
       -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
 
-      it "SLParser combinators 5 aboveNextLineKeyword" $ do
+      it "SLParser combinators 5 aboveNextLineKeyword2" $ do
         parseOther ((,,)
                     $>| pOtherVal
-                    |*| aboveNextLineKeyword
+                    |*| aboveNextLineKeyword2
                     |>< pOtherVal
                    ) ""
          (exampleStream "foo,foo,foo,\n,OR,bar")

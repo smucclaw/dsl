@@ -255,3 +255,14 @@ aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
 -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
+
+-- slightly different, unfortunately. see test/Spec.hs
+aboveNextLineKeyword2 :: SLParser ([Text.Text],MyToken)
+aboveNextLineKeyword2 = debugName "aboveNextLineKeyword2" $ do
+  (_,x,y) <- (,,)
+                 $*| return ((),0::Int)
+                 ->| 1
+                 |*| slMultiTerm
+                 |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+  return (x,y)
+

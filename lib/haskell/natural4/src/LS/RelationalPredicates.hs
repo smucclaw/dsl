@@ -91,7 +91,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
     rp2mt (RPParamText    pt)           = [pt2multiterm pt]
     rp2mt (RPConstraint  _mt1 _rpr mt2) = [mt2]
     rp2mt (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
-    rp2mt (RPnary        rprel rp)      = rp2mt rp
+    rp2mt (RPnary        _rprel rps)      = rp2mt rps
 
   
 -- this is probably going to need cleanup
@@ -295,7 +295,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPMT mt)              = mt
     inferRuleName (RPConstraint  mt _ _) = mt
     inferRuleName (RPBoolStructR mt _ _) = mt
-    inferRuleName (RPnary      rprel rp) = inferRuleName rp
+    inferRuleName (RPnary     _rprel rp) = inferRuleName rp
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)

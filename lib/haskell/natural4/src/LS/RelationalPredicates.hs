@@ -91,6 +91,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
     rp2mt (RPParamText    pt)           = [pt2multiterm pt]
     rp2mt (RPConstraint  _mt1 _rpr mt2) = [mt2]
     rp2mt (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
+    rp2mt (RPnary        rprel rp)      = rp2mt rp
 
   
 -- this is probably going to need cleanup
@@ -294,6 +295,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPMT mt)              = mt
     inferRuleName (RPConstraint  mt _ _) = mt
     inferRuleName (RPBoolStructR mt _ _) = mt
+    inferRuleName (RPnary      rprel rp) = inferRuleName rp
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
@@ -318,6 +320,11 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 -- WHEN/IF  puts a BoolStructR in the hBody
 -- MEANS/IS puts a RelationalPredicate in the hHead
 
+
+-- | sameline parser for a single RelationalPredicate
+-- RelationalPredicates come in four forms. See Types.hs for documentation.
+-- We add the ability to do nested hornlike rules inline, in the midst of some of these forms,
+-- which is how you get support for the MEANS stuff that shows up sometimes in the middle of a relationalpredicate.
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do

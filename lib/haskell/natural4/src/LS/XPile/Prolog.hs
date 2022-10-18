@@ -132,7 +132,7 @@ rp2goal (RPMT [x])           = pure $ vart x
 rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
 rp2goal (RPBoolStructR lhs rel bsr) = Struct (Text.unpack $ Text.unwords lhs) <$> [bsr2struct bsr]
 rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (vart <$> mt1) ++ (vart <$> mt2)
-
+rp2goal (RPnary      rprel rp) = pure $ Struct (rel2f rprel) $ rp2goal rp
 
 rel2f = Text.unpack . rel2txt
 

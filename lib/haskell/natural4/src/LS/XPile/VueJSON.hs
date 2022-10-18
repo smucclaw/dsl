@@ -11,14 +11,14 @@ import LS
 import LS.NLP.NLG
 import AnyAll.Types
 
-import Data.Maybe (maybeToList, catMaybes)
+import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text
 import Control.Monad (when)
 
 import PGF ( linearize, languages )
 import LS.NLP.UDExt (gf)
-import Data.Graph.Inductive.Internal.Thread (threadList)
+-- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
 import qualified Data.Text as T
 
@@ -29,7 +29,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
-                  | r@DefTypically{..} <- rs ]
+                  | r@DefTypically{} <- rs ]
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
 checklist env _ rs = do
@@ -54,7 +54,7 @@ rulegrounds rc globalrules r@Hornlike{..} =
 
   in concat $ concat [givenGrounds, uponGrounds, clauseGrounds]
 
-rulegrounds rc globalrules r = [ ]
+rulegrounds _rc _globalrules _r = [ ]
 
 -- [TODO]: other forms of Rule need their ground terms expressed.
 -- [TODO]: also, we should return the terms as a plain BoolStruct (Item Text.Text) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item Text.
@@ -75,7 +75,7 @@ rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
 rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
 rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
 rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds rc globalrules r (Just bsr)
-rp2grounds  rc  globalrules  r (RPnary      rprel rp) = rp2grounds rc  globalrules  r rp
+rp2grounds  rc  globalrules  r (RPnary     _rprel rp) = rp2grounds rc  globalrules  r rp
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP rc globalrules r =

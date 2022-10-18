@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 
 module Main where
 
-import qualified Test.Hspec.Megaparsec as THM
+-- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
 import LS.Parser
@@ -18,18 +17,18 @@ import TestNLG
 import Test.QuickCheck
 import LS.NLP.WordNet
 
-import LS.XPile.SVG
+-- import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.XPile.CoreL4
-import LS.XPile.Typescript
+-- import LS.XPile.Typescript
 
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Debug.Trace (traceM, trace)
+import Debug.Trace (traceM)
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
-import qualified Data.Map as Map
+-- import qualified Data.Map as Map
 import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Text as T
@@ -38,7 +37,7 @@ import qualified Data.Text.Lazy.Encoding as TLE
 import Test.QuickCheck.Arbitrary.Generic
 import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
-import qualified Data.Text.Encoding as TE
+-- import qualified Data.Text.Encoding as TE
 -- import LS.BasicTypes (MyToken)
 
 -- if you just want to run a test in the repl, this might be enough:
@@ -70,55 +69,8 @@ r `shouldParse` v = case r of
         ++ errorBundlePrettyCustom e
   Right x -> x `shouldBe` v
 
-defaultReg, defaultCon, defaultHorn, defaultScenario :: Rule
-defaultReg = Regulative
-  { subj = mkLeaf "person"
-  , rkeyword = REvery
-  , who = Nothing
-  , cond = Nothing
-  , deontic = DMust
-  , action = mkLeaf "sing"
-  , temporal = Nothing
-  , hence = Nothing
-  , lest = Nothing
-  , rlabel = Nothing
-  , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-  , upon = Nothing
-  , given = Nothing
-  , having = Nothing
-  , wwhere = []
-  , defaults = []
-  , symtab   = []
-  }
 
-defaultCon = Constitutive
-  { name = []
-  , keyword = Means
-  , letbind = mkLeafR "Undefined"
-  , cond = Nothing
-  , rlabel = Nothing
-  , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-  , given = Nothing
-  , defaults = []
-  , symtab   = []
-  }
-
-defaultHorn = Hornlike
-  { name = []
-  , super = Nothing
-  , keyword = Means
-  , given = Nothing
-  , upon  = Nothing
-  , clauses = []
-  , rlabel = Nothing
-  , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-  , defaults = []
-  , symtab   = []
-  }
-
+defaultScenario :: Rule
 defaultScenario = Scenario
   { scgiven = []
   , expect = []
@@ -129,6 +81,7 @@ defaultScenario = Scenario
   , symtab = []
   }
 
+scenario1 :: Rule
 scenario1 = Scenario
     { scgiven =
         [ RPMT
@@ -144,6 +97,7 @@ scenario1 = Scenario
       defaults = [],
       symtab = []
     }
+scenario2a :: Rule
 scenario2a = Scenario
     { scgiven =
         [ RPConstraint ["Organisation's name"] RPis ["ABC"],
@@ -165,6 +119,7 @@ scenario2a = Scenario
       symtab = []
     }
 
+scenario2b :: Rule
 scenario2b = Scenario
     { scgiven =
         [ RPParamText (("Organisation's name" :| [], Just (InlineEnum TOne (("DEF" :| ["GHI"], Nothing) :| []))) :| []),
@@ -187,6 +142,7 @@ scenario2b = Scenario
       symtab = []
     }
 
+scenario3 :: Rule
 scenario3 = Scenario
     { scgiven =
         [ RPConstraint ["the prescribed number of affected individuals"] RPis ["50"],
@@ -206,6 +162,7 @@ scenario3 = Scenario
       symtab = []
     }
 
+scenario4 :: Rule
 scenario4 = Scenario
     { scgiven =
         [ RPConstraint ["the prescribed number of affected individuals"] RPis ["1000"],
@@ -226,7 +183,7 @@ scenario4 = Scenario
       symtab = []
     }
 
-filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+filetest,filetest2 :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
@@ -234,7 +191,7 @@ filetest testfile desc parseFunc expected =
     `shouldParse` [ expected ]
 
 xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
-xfiletest testfile desc parseFunc expected =
+xfiletest testfile _desc parseFunc expected =
   xit (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
@@ -254,15 +211,15 @@ xtexttest testText desc parseFunc expected =
     parseFunc (show testText) `traverse` exampleStreams testcsv
       `shouldParse` [ expected ]
 
-filetest2 testfile desc parseFunc expected =
+filetest2 testfile _desc parseFunc _expected =
   it (testfile {- ++ ": " ++ desc -}) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
-  let parsed = parseFunc testfile `traverse` exampleStreams testcsv
+  let _parsed = parseFunc testfile `traverse` exampleStreams testcsv
   return ()
 
 
 preprocess :: String -> String
-preprocess text = filter (not . (`elem` ['!', '.'])) text
+preprocess = filter (not . (`elem` ['!', '.']))
 
 prop_gerundcheck :: T.Text -> Bool
 prop_gerundcheck string = let str = T.unpack string in
@@ -340,14 +297,14 @@ parserTests :: NLGEnv -> RunConfig -> Spec
 parserTests nlgEnv runConfig_ = do
     let runConfig = runConfig_ { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
-    let combine (a,b) = a ++ b
-    let dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
-    let parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
-    let parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
-    let parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-    let parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-    let parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-    let parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
+    let  combine (a,b) = a ++ b
+    let  dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
+    let  parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
+    let _parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
+    let  parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
+    let _parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
+    let  parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
+    let _parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
     describe "megaparsing" $ do
 
 
@@ -425,6 +382,7 @@ parserTests nlgEnv runConfig_ = do
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
         (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing}) }]
 
+{-
       let imbibeRule2 srcrow srccol = [
             defaultReg
               { who = Just $ All Nothing
@@ -442,7 +400,7 @@ parserTests nlgEnv runConfig_ = do
                                                   , version = Nothing})
                           }
             ]
-
+-}
 
       -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
       -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
@@ -557,9 +515,9 @@ parserTests nlgEnv runConfig_ = do
             [ DefNameAlias ["singer"] ["person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})) ]
 
-      let if_king_wishes_singer_2 = if_king_wishes ++
-            [ DefNameAlias ["singer"] ["person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
+      -- let if_king_wishes_singer_2 = if_king_wishes ++
+      --       [ DefNameAlias ["singer"] ["person"] Nothing
+      --         (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing})) ]
 
       filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names"
         (parseR pRules) if_king_wishes_singer
@@ -653,7 +611,7 @@ parserTests nlgEnv runConfig_ = do
       let silenceKing =
             [ defaultReg { cond = Just ( All Nothing wishSilence ) } ]
 
-      let silenceKingReversed =
+      let _silenceKingReversed =
             [ defaultReg { cond = Just ( All Nothing (reverse wishSilence) ) } ]
 
       filetest "unless-regulative-1" "read EVERY MUST UNLESS"
@@ -795,17 +753,17 @@ parserTests nlgEnv runConfig_ = do
                   } ]
               }
             ]
-      let simpleHorn10 = [ defaultHorn
-              { name = ["X"]
-              , keyword = Decide
-              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-              , clauses =
-                [ HC2
-                  { hHead = RPConstraint ["X"] RPis ["Y"]
-                  , hBody = Just $ Leaf (RPConstraint ["Z"] RPis ["Q"])
-                  } ]
-              }
-            ]
+      -- let simpleHorn10 = [ defaultHorn
+      --         { name = ["X"]
+      --         , keyword = Decide
+      --         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+      --         , clauses =
+      --           [ HC2
+      --             { hHead = RPConstraint ["X"] RPis ["Y"]
+      --             , hBody = Just $ Leaf (RPConstraint ["Z"] RPis ["Q"])
+      --             } ]
+      --         }
+      --       ]
       let simpleHorn02 = [ defaultHorn
               { name = ["X"]
               , keyword = Decide
@@ -931,17 +889,10 @@ parserTests nlgEnv runConfig_ = do
 
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
-      let whoStructR_1 = defaultReg
-                         { who = Just ( Leaf ( RPMT ["eats"] ) ) }
-
-          whoStructR_2 = defaultReg
-                         { who = Just ( Leaf ( RPMT ["eats", "rudely"] ) ) }
-
-          whoStructR_3 = defaultReg
-                         { who = Just ( Leaf ( RPMT ["eats", "without", "manners"] ) ) }
-
-          whoStructR_4 = defaultReg
-                         { who = Just ( Leaf ( RPMT ["eats", "sans", "decorum"] )) }
+      let whoStructR_1 = defaultReg { who = Just ( Leaf ( RPMT ["eats"] ) ) }
+          whoStructR_2 = defaultReg { who = Just ( Leaf ( RPMT ["eats", "rudely"] ) ) }
+          whoStructR_3 = defaultReg { who = Just ( Leaf ( RPMT ["eats", "without", "manners"] ) ) }
+       -- whoStructR_4 = defaultReg { who = Just ( Leaf ( RPMT ["eats", "sans", "decorum"] )) }
 
       filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ]
@@ -1077,7 +1028,7 @@ parserTests nlgEnv runConfig_ = do
                 )
             }
             ]
- 
+
       filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1
       filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
@@ -1323,16 +1274,17 @@ parserTests nlgEnv runConfig_ = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
 
-      let aboveNextLineKeyword :: SLParser ([T.Text],MyToken)
-          aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
-            (_,x,y) <- (,,)
-                           $*| return ((),0)
-                           ->| 1
-                           |*| slMultiTerm
-                           |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
-            return (x,y)
+  -- this same function is defined slightly differently in aboveNextLineKeyword
+      -- let aboveNextLineKeyword :: SLParser ([T.Text],MyToken)
+      --     aboveNextLineKeyword = debugName "aboveNextLineKeyword" $ do
+      --       (_,x,y) <- (,,)
+      --                      $*| return ((),0)
+      --                      ->| 1
+      --                      |*| slMultiTerm
+      --                      |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+      --      return (x,y)
 
-          aNLK :: Int -> SLParser ([T.Text],MyToken)
+      let aNLK :: Int -> SLParser ([T.Text],MyToken)
           aNLK maxDepth = mkSL $ do
             (toreturn, n) <- runSL aboveNextLineKeyword
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
@@ -1456,7 +1408,6 @@ parserTests nlgEnv runConfig_ = do
           inline_4xs= Any Nothing [inline_pp, inline4_pp]
 
           pInline1 = parseOther $ do
-            let getLHS ((x,_),z) = (x,z)
             (,,)
               >*| debugName "subject slMultiTerm" slMultiTerm  -- "Bad"
               |<| pToken Means
@@ -1677,7 +1628,7 @@ parserTests nlgEnv runConfig_ = do
                  (Not (Leaf (RPMT ["IT IS","A Notifiable Data Breach"]))))
         , []
         )
-    
+
       xtexttest "GIVEN,not,IT IS,A Notifiable Data Breach," "unit test GIVEN ... NOT"
         (parseOther pGivens )
         (  [RPBoolStructR
@@ -1773,7 +1724,7 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "class-fa-2" "financial advisor decision modelling"
         (parseR pToplevel)
-        [ Hornlike { 
+        [ Hornlike {
           name = ["p", "investment"],
           super = Nothing,
           keyword = Decide,
@@ -1806,7 +1757,7 @@ parserTests nlgEnv runConfig_ = do
                                       (flip const $>| (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
           potatoExpect = ( ( [ "Potato" ]
                            , [ "genus", "species" ] ), [] )
-                         
+
       filetest "sameornext-1-same"  "a b on same line"  potatoParser potatoExpect
       filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
       filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect

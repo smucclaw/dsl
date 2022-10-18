@@ -319,6 +319,55 @@ data Rule = Regulative
           | NotARule [MyToken]
           deriving (Eq, Ord, Show, Generic, ToJSON)
 
+defaultReg, defaultCon, defaultHorn :: Rule
+defaultReg = Regulative
+  { subj = mkLeaf "person"
+  , rkeyword = REvery
+  , who = Nothing
+  , cond = Nothing
+  , deontic = DMust
+  , action = mkLeaf "sing"
+  , temporal = Nothing
+  , hence = Nothing
+  , lest = Nothing
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , upon = Nothing
+  , given = Nothing
+  , having = Nothing
+  , wwhere = []
+  , defaults = []
+  , symtab   = []
+  }
+
+defaultCon = Constitutive
+  { name = []
+  , keyword = Means
+  , letbind = mkLeafR "Undefined"
+  , cond = Nothing
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , given = Nothing
+  , defaults = []
+  , symtab   = []
+  }
+
+defaultHorn = Hornlike
+  { name = []
+  , super = Nothing
+  , keyword = Means
+  , given = Nothing
+  , upon  = Nothing
+  , clauses = []
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , defaults = []
+  , symtab   = []
+  }
+
 -- | does a rule have a Given attribute? 
 hasGiven :: Rule -> Bool
 hasGiven     Hornlike{} = True

@@ -42,11 +42,11 @@ instance Pretty RelationalPredicate where
 newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
   pretty (RP1   (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
-  pretty (RP1 o@(RPConstraint  mt1 RPis  ["No"])) = hsep $ "not" : (pretty <$> inPredicateForm o)
-  pretty (RP1 o@(RPConstraint  mt1 RPis  mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1 o@(RPConstraint  mt1 RPhas mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1   (RPConstraint  mt1 rprel mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint <$> mt2 ]
-  pretty (RP1   (RPBoolStructR mt1 rprel bsr)) = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
+  pretty (RP1 o@(RPConstraint  _mt1 RPis  ["No"]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (RP1 o@(RPConstraint  _mt1 RPis  _mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1 o@(RPConstraint  _mt1 RPhas _mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint <$> mt2 ]
+  pretty (RP1   (RPBoolStructR  mt1 rprel  bsr))     = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
                                                -- [TODO] confirm RP1 <$> bsr is the right thing to do
   pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
 
@@ -152,6 +152,7 @@ snake_case xs = encloseSep "" "" "_" (snake_inner <$> xs)
 snake_inner :: T.Text -> Doc ann
 snake_inner = pretty . untaint
 
+untaint :: T.Text -> T.Text
 untaint = T.replace " " "_" .
           T.replace "," "_" .
           T.replace "'" "_" .
@@ -194,7 +195,7 @@ instance Pretty ParamText4 where
       lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
       -- quote based on type.
       quoteBoT :: TypedMulti -> Doc ann
-      quoteBoT l@(net, mts) =
+      quoteBoT l@(net, _mts) =
         let unquoted = hsep $ pretty <$> NE.tail net
         in case typeOfTerm l4i {-varpath-} l of
           Just (SimpleType _ s1)  -> case s1 of
@@ -214,8 +215,8 @@ instance Pretty ParamText4 where
 -- the RHS Bob is a variable name, not a string, so we shoudn't double-quote it.
 
 typeOfTerm :: Interpreted {- -> VarPath -} -> TypedMulti -> Maybe TypeSig
-typeOfTerm l4i tm =
-  let (ct@(CT ch), _scopetabs) = (classtable l4i, scopetable l4i)
+typeOfTerm l4i _tm =
+  let (CT _ch, _scopetabs) = (classtable l4i, scopetable l4i)
   in
     Nothing
 
@@ -260,10 +261,10 @@ prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
 prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
-prettySimpleType _        prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
 prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
-prettyMaybeType _ inner Nothing   = ""
+prettyMaybeType _ _inner Nothing   = ""
 prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 

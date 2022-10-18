@@ -14,7 +14,7 @@ import Data.Text (unpack)
 import qualified Data.Text as TL
 import qualified AnyAll as AA
 import L4.PrintProg
-import qualified Data.ByteString.Char8 as T
+-- import qualified Data.ByteString.Char8 as T
 import L4.SyntaxManipulation
 import Data.Maybe (fromMaybe)
 
@@ -42,7 +42,7 @@ emptyTASys
 addRule :: Set.Set ChannelName -> SFL4.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
 addRule hc r@Regulative{rlabel = Just (_,_,lb)} ts | unpack lb `Set.member` hc = ts {automataOfSys = fst (ruleToTA r (Just lb)) : automataOfSys ts}
                                                    | otherwise = ts {automataOfSys = fst (ruleToTA r Nothing) : automataOfSys ts} -- TODO: Use the decls in snd
-addRule hc r ts = ts
+addRule _hc _r ts = ts
 
 -- TODO Nested
 -- TODO Handle party

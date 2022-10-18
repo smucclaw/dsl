@@ -13,22 +13,18 @@ import           Data.Text              (Text)
 import qualified Data.Text.Lazy as LT
 import qualified Data.List.NonEmpty as NE
 import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
-import           Data.Foldable (find)
-import           System.IO.Unsafe (unsafePerformIO)
-import           Control.Monad (forM_, when, unless, msum)
-import qualified Data.Map           as Map
-import           Data.List (isPrefixOf, sortOn, isSuffixOf, nub)
-import           Control.Monad.State.Strict (State, MonadState (get, put), evalState, runState, gets)
+-- import           System.IO.Unsafe (unsafePerformIO)
+import           Control.Monad (forM_, when)
+import           Data.List (nub)
+import           Control.Monad.State.Strict (State, MonadState (get, put), runState, gets)
 import           Control.Applicative.Combinators
 
 import Data.GraphViz
-import Data.GraphViz.Attributes
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment, Rank)
-                                         , StyleItem(..), StyleName(..))
-import Data.GraphViz.Attributes.Complete (Attribute(TailPort)
+import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment, Rank, TailPort)
+                                         , StyleItem(..), StyleName(..)
                                          , CompassPoint(..)
                                          , PortPos(..))
 
@@ -36,9 +32,6 @@ import Data.GraphViz.Attributes.Complete (Attribute(TailPort)
 import LS
 import AnyAll as AA
 
-import LS.NLP.WordNet
-
-import Debug.Trace
 
 --------------------------------------------------------------------------------
 -- fgl
@@ -201,7 +194,7 @@ elideNodes limit1 desc pnpred og = runGM og $ do
   
 
 reorder :: [Rule] -> PetriD -> PetriD
-reorder rules og = runGM og $ do
+reorder _rules og = runGM og $ do
   -- x You if then must -> x if then you must
   forM_ [ (x0, you1, if2, then3, must4)
         | you1  <- nodes $ labfilter (hasDeet IsParty) og
@@ -250,7 +243,7 @@ mergePetri' rules og splitNode = runGM og $ do
     GM . put $ gs {curentGraph = mergePetri' rules newPetri splitNode }
 
 condElimination :: [Rule] -> PetriD -> PetriD
-condElimination rules og = runGM og $ do
+condElimination _rules og = runGM og $ do
   -- if (a) { ... if (x y z a) { ...
   --                        ^ delete
   return ()
@@ -288,7 +281,7 @@ splitJoin :: [Rule]      -- background input ruleset
           -> PetriD    -- subgraphs which are to live together under the split/join.
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
-splitJoin rs og sj sgs entry = runGM og $ do
+splitJoin _rs og _sj sgs entry = runGM og $ do
       -- Sometimes, entry satisfies hasDeet IsFirstNode and so it appears
       -- in the resulting list of nodes as returned by the call to nodes below.
       -- Since we only want the children of entry and not entry itself, we can
@@ -389,7 +382,7 @@ connectRules sg rules =
       aliasNodes = nodes subgraphOfAliases
 
       -- all labeled rules
-      rls = {- trace "rls = " $ traceShowId $ -} fmap rl2text . getRlabel <$> rules
+      -- rls = {- trace "rls = " $ traceShowId $ -} fmap rl2text . getRlabel <$> rules
 
       -- if the ruleLabel is for a Hornlike, expand accordingly.
       -- we mirror the structure of the BoolStruct inside the head of the Hornlike,
@@ -408,14 +401,14 @@ connectRules sg rules =
                                                                        , let rlout' = fromJust rlout
                                                                        ] ) sg
                    ]
-      headNodes = [ headNode
-                  | (orign, outgraph) <- aliasRules
-                  , headNode <- nodes $ labfilter (hasDeet IsFirstNode) outgraph
-                  ]
-      tailNodes = [ tailNode
-                  | (orign, outgraph) <- aliasRules
-                  , tailNode <- nodes $ labfilter (hasDeet IsLastHappy) outgraph
-                  ]
+      -- headNodes = [ headNode
+      --             | (_orign, outgraph) <- aliasRules
+      --             , headNode <- nodes $ labfilter (hasDeet IsFirstNode) outgraph
+      --             ]
+      -- tailNodes = [ tailNode
+      --             | (_orign, outgraph) <- aliasRules
+      --             , tailNode <- nodes $ labfilter (hasDeet IsLastHappy) outgraph
+      --           ]
   in  -- trace (unlines ((\n -> "node " <> show n <> " is a ruleAlias: " <>
       --                   Text.unpack (maybe "(nothing)" showNode (lab subgraphOfAliases n)))
       --                  <$> aliasNodes))
@@ -525,21 +518,21 @@ getGraph = do
 
 -- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> GraphMonad (Maybe Node)
-r2fgl rs defRL RegFulfilled   = pure Nothing
-r2fgl rs defRL RegBreach      = pure Nothing
+r2fgl _rs _defRL RegFulfilled   = pure Nothing
+r2fgl _rs _defRL RegBreach      = pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl rs defRL (RuleAlias rn) = do
+r2fgl _rs _defRL (RuleAlias rn) = do
   sg <- getGraph
   let ntxt = Text.unwords rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
 
-r2fgl rs defRL r@Regulative{..} = do
+r2fgl rs defRL Regulative{..} = do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
@@ -547,7 +540,7 @@ r2fgl rs defRL r@Regulative{..} = do
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
 
-  let everywho = Text.unwords ( ( if rkeyword == REvery then [ Text.pack (show (tokenOf rkeyword)) ] else [] )
+  let everywho = Text.unwords ( if rkeyword == REvery then [ Text.pack (show (tokenOf rkeyword)) ] else []
                                 <> [ subj2nl NLen subj ] )
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
@@ -617,8 +610,8 @@ r2fgl rs defRL r@Regulative{..} = do
   -- Return the first node
   pure $ Just whoN
   where
-    vp2np :: Text -> Text
-    vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
+    -- vp2np :: Text -> Text
+    -- vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive", color Green]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]
@@ -630,11 +623,11 @@ r2fgl rs defRL r@Regulative{..} = do
     lestWord DShant = "violation"
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
-r2fgl rs defRL r = pure Nothing
+r2fgl _rs _defRL _r = pure Nothing
 
 
 c2n :: Context a b -> Node
-c2n (_, n, nl, _) = n
+c2n (_, n, _nl, _) = n
 
 {-
   party Who is Nothing       (party)
@@ -659,9 +652,10 @@ c2n (_, n, nl, _) = n
 
 subj2nl :: NatLang -> BoolStructP -> Text.Text
 subj2nl NLen (AA.Leaf pt) = pt2text pt
+subj2nl _ bsp = "Petri/subj2nl: " <> Text.pack (show bsp)
 
 deonticTemporal :: Rule -> [(Text.Text, Text.Text)]
-deonticTemporal r@(Regulative{..}) =
+deonticTemporal Regulative{..} =
   let d = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
       temp = Text.replace "  " " " $ tc2nl NLen temporal
       actions = actionFragments action
@@ -674,6 +668,8 @@ deonticTemporal r@(Regulative{..}) =
       in (aW, addnewlines [ deon
                           , "(" <> temp <> ")"
                           , aLine1 ])
+
+deonticTemporal _ = error "Petri/deonticTemporal called for a non-Regulative rule"
 
 addnewlines :: [Text] -> Text
 addnewlines = Text.intercalate "\\n"
@@ -694,4 +690,4 @@ actionWord = NE.head . fst . NE.head
 
 
 
-
+ 

@@ -22,7 +22,7 @@ import qualified Data.Text as T
 
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, ItemMaybeLabel T.Text, QTree T.Text)
 asAAsvg aavc l4i rs =
-  let rs' = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
+  let _rs = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
       rs2 = groupedByAOTree l4i rs
   in Map.fromList [ (rn ++ if length totext > 1
                            then [T.pack (show rn_n)]
@@ -33,11 +33,11 @@ asAAsvg aavc l4i rs =
                   , let r = Prelude.head rulegroup
                         rn      = ruleLabelName r
                         ebsr = expandBSR l4i 1 <$>
-                               -- trace ("asAAsvg getBSR = " ++ show (getBSR r))
-                               (getBSR r)
+                               -- trace ("asAAsvg getBSR = " ++ show (getBSR r)) $
+                               getBSR r
                         totext = filter isInteresting $ fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
                                  ebsr
-                  , (rn_n, aaT) <- zip [1..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
+                  , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
                                   aaT

@@ -43,7 +43,7 @@ sfl4Dummy = DummySRng "From spreadsheet"
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
   let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
-      sTable = scopetable interpreted
+   -- sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       pBoilerplate = myrender $ prettyBoilerplate cTable
@@ -129,36 +129,9 @@ pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell sou
                                    : (pretty . ("## " <>) <$> lines (show tle)) )
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement SRng]
-sfl4ToCorel4Rule Regulative
-            { subj     -- every person
-            , rkeyword  -- every / party / all
-            , who      -- who walks and (eats or drinks)
-            , cond     -- if it is a saturday
-            , deontic  -- must
-            , action   -- fart loudly AND run away
-            , temporal -- Before "midnight"
-            , hence
-            , lest
-            , rlabel
-            , lsource
-            , srcref
-            , upon     -- UPON entering the club (event prereq trigger)
-            , given
-            , having   -- HAVING sung...
-            } = undefined
+sfl4ToCorel4Rule Regulative{} = undefined
 
-sfl4ToCorel4Rule hornlike@Hornlike
-            { name     -- :: RuleName           -- colour
-            , keyword  -- :: MyToken            -- decide / define / means
-            , given    -- :: Maybe ParamText    -- applicant has submitted fee
-            , upon     -- :: Maybe ParamText    -- second request occurs
-            , clauses  -- :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
-            , rlabel   -- :: Maybe RuleLabel
-            , lsource  -- :: Maybe Text.Text
-            , srcref   -- :: Maybe SrcRef
-            , defaults -- :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            , symtab   -- :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            } =
+sfl4ToCorel4Rule Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
             given2classdecls given ++
@@ -185,34 +158,12 @@ sfl4ToCorel4Rule hornlike@Hornlike
       }
 
 
-sfl4ToCorel4Rule Constitutive
-            { name     -- the thing we are defining
-            , keyword  -- Means, Includes, Is, Deem
-            , letbind  -- might be just a bunch of words to be parsed downstream
-            , cond     -- a boolstruct set of conditions representing When/If/Unless
-            , given
-            , rlabel
-            , lsource
-            , srcref
-            } = undefined
-sfl4ToCorel4Rule TypeDecl
-            { name     --      DEFINE Sign
-            , super    --                 
-            , has      -- HAS foo :: List Hand \n bar :: Optional Restaurant
-            , enums    -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
-            , rlabel
-            , lsource
-            , srcref
-            } = [ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
-                                         , nameOfClassDecl  = ClsNm $ T.unpack (T.unwords name)
-                                         , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   -- "Thing"
-            , detail -- "some thing"
-            , nlhint -- "lang=en number=singular"
-            , srcref
-            } = undefined
-sfl4ToCorel4Rule (RuleAlias t) = undefined -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule Constitutive{ } = undefined
+sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
+                                                         , nameOfClassDecl  = ClsNm $ T.unpack (T.unwords name)
+                                                         , defOfClassDecl   = ClassDef [] []}) ]
+sfl4ToCorel4Rule DefNameAlias { } = undefined
+sfl4ToCorel4Rule (RuleAlias _) = undefined -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled = undefined -- trivial top = _
 sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
 sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
@@ -287,8 +238,7 @@ hc2decls r
     | c@(HC2 headRP hBod) <- clauses r
     , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
     , T.take 3 pf /= "rel" 
-    , let predname = ""
-          (bodyEx, bodyNonEx) = partitionExistentials c
+    , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
           typeMap = Map.fromList [ (varName, fromJust varType)
                                  | (varName, mtypesig) <- maybe [] (fmap (mapFst NE.head) . NE.toList) localEnv
@@ -316,7 +266,7 @@ prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pret
 --- -- but we would have to refactor the output from hc2decls to not be a Doc, and it would be harder to insert manual overrides
 prettyDecls :: T.Text -> [SFL4.Rule] -> Doc ann
 prettyDecls previously rs =
-  let previousDecls = Map.fromList $ (,"") . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
+  let previousDecls = Map.fromList $ (,""::String) . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
       predDecls = Map.fromList $ T.breakOn ":" <$> T.lines (myrender $ vsep (hc2decls <$> rs))
   in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
 
@@ -339,7 +289,7 @@ prettyFacts sctabs =
     , commentShow "#" symtab'
     ]
   | (scopename , symtab') <- Map.toList sctabs
-  , (mt, (symtype,_vals)) <- Map.toList symtab'
+  , (_mt, (_symtype,_vals)) <- Map.toList symtab'
   ]
 
 -- | enums are exhaustive and disjoint
@@ -369,6 +319,7 @@ prettyBoilerplate ct@(CT ch) =
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
 --     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
 
+commentShow :: Show a => T.Text -> a -> Doc ann
 commentShow c x = commentWith c (T.lines (T.pack (show x)))
 
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
@@ -535,7 +486,7 @@ prettyClasses ct =
               encloseSep ": " "" " -> " [ uc_name
                                         , uc_childname
                                         , "Boolean"]
-            Just t@(SimpleType ptype pt) ->
+            Just (SimpleType ptype pt) ->
               encloseSep ": " "" " -> " ([ uc_name
                                          , child_simpletype
                                          ] ++ case pt of
@@ -549,7 +500,6 @@ prettyClasses ct =
                       <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
                  else emptyDoc
 
-            Nothing   -> " ##" <+> "not typed"
           <> if childIsClass
              then Prettyprinter.line <> "class" <+> uc_childname
              else Prettyprinter.line <> "   # " <> lc_childname <+> "is an attribute, not a class." <>

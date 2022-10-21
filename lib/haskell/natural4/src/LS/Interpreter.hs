@@ -45,7 +45,7 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
-groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe (AA.ItemMaybeLabel T.Text), [Rule])]
+groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
   Map.toList $ Map.fromListWith (++) $
   (\r -> (getAndOrTree l4i 1 r, [r])) <$>
@@ -350,7 +350,7 @@ decisionRoots rg =
 
 -- todo: multiple rules with the same head should get &&'ed together and jammed into a single big rule
 
-getAndOrTree :: Interpreted -> Int -> Rule -> Maybe (AA.ItemMaybeLabel T.Text) -- Vue wants AA.Item T.Text
+getAndOrTree :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.Item T.Text
 getAndOrTree _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
@@ -370,14 +370,14 @@ getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly ag
   Nothing
 
 -- convert clauses to a boolStruct MT
-bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe (AA.ItemMaybeLabel RelationalPredicate)]
+bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe BoolStructR]
 bsmtOfClauses l4i depth r =
   let toreturn =
         [ listToMaybe $ maybeToList $ mbody <> mhead
         | c <- expandClauses l4i 2 (clauses r)
         , (hhead, hbody)  <- [(hHead c, hBody c)]
         , let (_bodyEx, bodyNonEx) = partitionExistentials c
-        , let mhead, mbody :: Maybe (AA.ItemMaybeLabel RelationalPredicate)
+        , let mhead, mbody :: Maybe BoolStructR
               mhead = case hhead of
                         RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
                                                            Just (bsr2bsmt bsr1)
@@ -573,7 +573,7 @@ expandRule _ _ = []
 
 
 -- | used for purescript output -- this is the toplevel function called by Main
-onlyTheItems :: Interpreted -> AA.ItemMaybeLabel T.Text
+onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
   let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
       simplified = AA.simplifyItem myitem
@@ -581,7 +581,7 @@ onlyTheItems l4i =
      -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
      simplified
 
-onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> AA.ItemMaybeLabel T.Text
+onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> BoolStructT
 onlyItemNamed l4i rs wanteds =
   let ibr = itemsByRule l4i rs
       found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
@@ -591,14 +591,14 @@ onlyItemNamed l4i rs wanteds =
     else snd $ DL.head found
 
 -- | let's hazard a guess that the item with the mostest is the thing we should put in front of the user.
-biggestItem :: Interpreted -> [Rule] -> AA.ItemMaybeLabel T.Text
+biggestItem :: Interpreted -> [Rule] -> BoolStructT
 biggestItem l4i rs =
   let ibr = itemsByRule l4i rs
       flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
       sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
   in (Map.fromList ibr) Map.! (fst $ DL.head sorted)
 
-itemsByRule :: Interpreted -> [Rule] -> [(RuleName, AA.ItemMaybeLabel T.Text)]
+itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =
   [ (ruleLabelName r, simplified)
   | r <- rs
@@ -606,14 +606,6 @@ itemsByRule l4i rs =
         simplified = fromJust aot
   , isJust aot
   ]
-
-alwaysLabel :: AA.ItemMaybeLabel T.Text -> AA.ItemJSONText
-alwaysLabel (AA.All Nothing xs)  = AA.All (AA.Pre "all of the following") (alwaysLabel <$> xs)
-alwaysLabel (AA.Any Nothing xs)  = AA.Any (AA.Pre "any of the following") (alwaysLabel <$> xs)
-alwaysLabel (AA.All (Just x) xs) = AA.All x (alwaysLabel <$> xs)
-alwaysLabel (AA.Any (Just x) xs) = AA.Any x (alwaysLabel <$> xs)
-alwaysLabel (AA.Leaf x)          = AA.Leaf x
-alwaysLabel (AA.Not x)           = AA.Not (alwaysLabel x)
 
 -- we must be certain it's always going to be an RPMT
 -- we extract so that it's easier to convert to JSON or to purescript Item Text

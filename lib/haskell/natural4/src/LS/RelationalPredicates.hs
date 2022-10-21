@@ -78,10 +78,10 @@ hc2preds :: HornClause2 -> BoolStructR
 hc2preds (HC2 _headRP Nothing) = AA.Leaf (RPMT ["TRUE"])
 hc2preds (HC2 _headRP (Just bsr)) = bsr
 
-aaLeaves :: AA.ItemMaybeLabel RelationalPredicate -> [MultiTerm]
+aaLeaves :: BoolStructR -> [MultiTerm]
 aaLeaves = aaLeavesFilter (const True)
 
-aaLeavesFilter :: (RelationalPredicate -> Bool) -> AA.ItemMaybeLabel RelationalPredicate -> [MultiTerm]
+aaLeavesFilter :: (RelationalPredicate -> Bool) -> BoolStructR -> [MultiTerm]
 aaLeavesFilter f (AA.All _ xs) = concatMap (aaLeavesFilter f) xs
 aaLeavesFilter f (AA.Any _ xs) = concatMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
 aaLeavesFilter f (AA.Not x) = aaLeavesFilter f x

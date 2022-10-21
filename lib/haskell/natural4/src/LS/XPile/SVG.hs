@@ -20,7 +20,7 @@ import qualified Data.Text as T
 -- | extract the tree-structured rules from Interpreter
 -- for each rule, print as svg according to options we were given
 
-asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, ItemMaybeLabel T.Text, QTree T.Text)
+asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
 asAAsvg aavc l4i rs =
   let _rs = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
       rs2 = groupedByAOTree l4i rs
@@ -46,7 +46,7 @@ asAAsvg aavc l4i rs =
                   ]
   where
     -- | don't show SVG diagrams if they only have a single element
-    isInteresting :: Item lbl a -> Bool
+    isInteresting :: BoolStruct lbl a -> Bool
     isInteresting (AA.Leaf _) = False
     isInteresting (AA.Not (AA.Leaf _)) = False
     isInteresting _ = True

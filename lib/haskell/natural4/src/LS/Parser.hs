@@ -33,16 +33,16 @@ data MyItem lbl a =
 -- hm, shouldn't this be a MyItem (Maybe MultiTerm) to capture scenarios where there is no "any of the following" text?
 type MyBoolStruct = MyItem MultiTerm
 
-pBoolStruct :: Parser BoolStruct
+pBoolStruct :: Parser BoolStructT
 pBoolStruct = prePostParse pOtherVal
 
-prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.ItemMaybeLabel a)
+prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.OptionallyLabeledBoolStruct a)
 prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.ItemMaybeLabel a)
+toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.OptionallyLabeledBoolStruct a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
 toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs

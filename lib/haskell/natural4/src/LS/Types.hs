@@ -46,9 +46,9 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 
 -- * BoolStructs wrap Phrasal types
 
-type BoolStruct  = AA.ItemMaybeLabel Text.Text
-type BoolStructP = AA.ItemMaybeLabel ParamText
-type BoolStructR = AA.ItemMaybeLabel RelationalPredicate
+type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
+type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
+type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
@@ -101,7 +101,7 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> AA.ItemMaybeLabel ParamText
+mkLeaf :: Text.Text -> BoolStructP
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR

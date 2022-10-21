@@ -54,7 +54,7 @@ renderLeaf desc =
       geom = item 0 0 desc
   in (height, geom)
 
-renderNot :: (ToElement a) => [ItemMaybeLabel a] -> (Height, Element)
+renderNot :: (ToElement a) => [OptionallyLabeledBoolStruct a] -> (Height, Element)
 renderNot children =
   let
       (h, g) = renderItem $ head children
@@ -74,7 +74,7 @@ renderSuffix x y desc =
       geom = g_ [] ( text_ [ X_ <<-* x, Y_ <<-* (y + h - 5) ] (toElement desc) )
   in (h, geom)
 
-renderAll :: (ToElement a) => Maybe (Label T.Text) -> [ItemMaybeLabel a] -> (Height, Element)
+renderAll :: (ToElement a) => Maybe (Label T.Text) -> [OptionallyLabeledBoolStruct  a] -> (Height, Element)
 renderAll Nothing childnodes = renderAll allof childnodes
 renderAll (Just (Pre prefix)) childnodes =
   let
@@ -109,7 +109,7 @@ renderAll (Just (PrePost prefix suffix)) childnodes =
                    <> move (40, 30 + sum hs) fg  )
   in (height, geom)
 
-renderAny :: (ToElement a) => Maybe (Label T.Text) -> [ItemMaybeLabel a] -> (Height, Element)
+renderAny :: (ToElement a) => Maybe (Label T.Text) -> [OptionallyLabeledBoolStruct a] -> (Height, Element)
 renderAny Nothing childnodes = renderAny (Just (Pre "any of:")) childnodes
 renderAny (Just (Pre prefix)) childnodes =
   let hg = map renderItem childnodes
@@ -148,7 +148,7 @@ renderAny (Just (PrePost prefix suffix)) childnodes =
   in (height, geom)
 
 
-renderItem :: (ToElement a) => ItemMaybeLabel a -> (Height, Element)
+renderItem :: (ToElement a) => OptionallyLabeledBoolStruct a -> (Height, Element)
 renderItem (Leaf label) = renderLeaf label
 renderItem (Not       args) = renderNot      [args]
 renderItem (All label args) = renderAll label args

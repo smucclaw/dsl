@@ -363,7 +363,7 @@ spec = do
 
 type SingLabel = T.Text
 
-mustSing :: ItemMaybeLabel SingLabel
+mustSing :: OptionallyLabeledBoolStruct SingLabel
 mustSing =
   All (Just $ Pre "both")
   [ Leaf "walk"
@@ -371,13 +371,13 @@ mustSing =
     [ Leaf "eat"
     , Leaf "drink" ] ]
 
-mustNot :: ItemMaybeLabel SingLabel
+mustNot :: OptionallyLabeledBoolStruct SingLabel
 mustNot =
   All (Just $ Pre "both")
   [ Leaf "walk"
   , Not (Leaf "eat") ]
 
-mustDance :: ItemMaybeLabel SingLabel
+mustDance :: OptionallyLabeledBoolStruct SingLabel
 mustDance =
   All (Just $ Pre "three of:")
   [ All (Just $ Pre "both")

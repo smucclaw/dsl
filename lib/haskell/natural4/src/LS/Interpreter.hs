@@ -504,7 +504,7 @@ expandClause _l4i _depth (HC2   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) 
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
 nnf :: BoolStructR -> BoolStructR
-nnf (AA.Not (AA.Not p)) = p
+nnf (AA.Not (AA.Not p)) = nnf p
 nnf (AA.Not (AA.All l ps)) = AA.Any l $ (nnf . AA.Not) <$> ps
 nnf (AA.Not (AA.Any l ps)) = AA.All l $ (nnf . AA.Not) <$> ps
 nnf (AA.All l ps) = AA.All l (nnf <$> ps)

@@ -5,28 +5,30 @@ import Test.Hspec
 import LS.Types
 import LS.Interpreter
 import AnyAll
+import Prelude hiding (any, all)
+
+all :: [BoolStructR] -> BoolStructR
+all = All Nothing
+
+any :: [BoolStructR] -> BoolStructR
+any = Any Nothing
 
 spec :: Spec
 spec = do
-  describe "deMorgan transformation" $ do
+  describe "nnf transformation" $ do
     let
-        x1 = Leaf (RPMT ["sky", "is", "blue"])
-        nnx1 = Not . Not $ x1
+        a = Leaf (RPMT ["foo"])
+        b = Leaf (RPMT ["bar"])
 
-        all_x2 = All Nothing [Leaf (RPMT ["foo"]), Leaf (RPMT ["bar"])]
-        n_all_x2 = Not all_x2
-        any_n_x2 = Any Nothing [ Not (Leaf (RPMT ["foo"]))
-                               , Not (Leaf (RPMT ["bar"]))]
+    it "nnf (not (not a)) == a" $ do
+      nnf (Not . Not $ a) `shouldBe` a
 
-        n_any_x3 = Not $ Any Nothing [Leaf (RPMT ["foo"]), Leaf (RPMT ["bar"])]
-        all_n_x3 = All Nothing [ Not (Leaf (RPMT ["foo"]))
-                               , Not (Leaf (RPMT ["bar"]))]
-    it "not not x == x" $ do
-      deMorgan nnx1 `shouldBe` x1
+    it "nnf (all [not not x, not not y]) == (all [x,y])" $ do
+      nnf (all [Not . Not $ a, Not . Not $ b]) `shouldBe` all [a, b]
 
-    xit "not (all x) == any (not x)" $ do
-      deMorgan n_all_x2 `shouldBe` any_n_x2
+    it "nnf (not (all x)) == (any (not x))" $ do
+      nnf (Not $ all [a, b]) `shouldBe` any [Not a, Not b]
 
-    xit "not (any x) == all (not x)" $ do
-      deMorgan n_any_x3 `shouldBe` all_n_x3
+    it "nnf (not (any x)) == (all (not x))" $ do
+      nnf (Not $ any [a, b]) `shouldBe` all [ Not a, Not b]
 

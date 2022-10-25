@@ -72,7 +72,7 @@ musings l4i rs =
                      vvsep [ "**** symbol:" <+> tildes (pretty mt)
                              </> srchs hc
                              </> "**** typesig:" <+> tildes (viaShow its)
-                             
+
                            | (mt, (its, hc)) <- Map.toList st ]
                    | (rn, st) <- Map.toList $ scopetable l4i ]
 
@@ -174,7 +174,7 @@ classGraph (CT ch) ancestors = concat
   | (childname, (_itypesig, childct)) <- Map.toList ch
   , let nodePath = childname : ancestors
   ]
-  
+
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
 allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
@@ -286,7 +286,7 @@ ruleDecisionGraph l4i rs =
   (relPredRefsAll l4i rs ruleIDmap)
   where
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
-    
+
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
 relPredRefsAll l4i rs ridmap =
@@ -321,7 +321,7 @@ relPredRefs _l4i rs ridmap r =
      , isJust targetRule
      , isJust targetRuleId
      ]
-  
+
 
 -- | all the rules which have no indegrees, as far as decisioning goes
 decisionRoots :: RuleGraph -> [Rule]
@@ -354,7 +354,7 @@ getAndOrTree :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.
 getAndOrTree _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
-  
+
 getAndOrTree  l4i depth r@Hornlike{} = expandTrace "getAndOrTree" depth "fmap extractRPMT2Text ..." $
                                        fmap extractRPMT2Text <$>
                                        (expandTrace "getAndOrTree" depth "mconcat bsmtOfClauses..." $
@@ -385,7 +385,7 @@ bsmtOfClauses l4i depth r =
                                                            Nothing
               mbody = case hbody of
                         Nothing -> Nothing
-                        _       -> 
+                        _       ->
                           let output = bsr2bsmt bodyNonEx in
                             expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
                             Just output
@@ -494,7 +494,7 @@ expandClause _l4i _depth (HC2   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ 
 expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
 expandClause  l4i  depth (HC2   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ expandTrace "expandMT" depth ("body=Nothing; returning from head: BSR " ++ show mt ++ " RPis expandBSR") $
                                                                               RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
-                              
+
 expandClause l4i depth (HC2   (RPMT          mt          ) (Just bodybsr) ) = [ expandTrace "expandMT" depth ("body=Just, returning from body: BSR " ++ show mt ++ " RPis expandBSR") $
                                                                                 RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
 expandClause _l4i _depth (HC2   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
@@ -503,21 +503,22 @@ expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) 
 expandClause _l4i _depth (HC2   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
-deMorgan :: BoolStructR -> BoolStructR
-deMorgan (AA.Not (AA.Not x)) = x
--- is this correct? not sure. would need to make it work for Not All as well
--- deMorgan (AA.Not (AA.Any pp xs)) = AA.All pp (AA.Not . deMorgan <$> xs)
-deMorgan x = x
+nnf :: BoolStructR -> BoolStructR
+nnf (AA.Not (AA.Not p)) = p
+nnf (AA.Not (AA.All l ps)) = AA.Any l $ (nnf . AA.Not) <$> ps
+nnf (AA.Not (AA.Any l ps)) = AA.All l $ (nnf . AA.Not) <$> ps
+nnf (AA.All l ps) = AA.All l (nnf <$> ps)
+nnf (AA.Any l ps) = AA.Any l (nnf <$> ps)
+nnf x = x
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR  l4i depth x =
   let y = expandBSR' l4i depth x
-      z = deMorgan y
+      z = nnf y
   in expandTrace "expandBSR" depth ("given " ++ show x) $
      expandTrace "expandBSR" depth ("returning " ++ show y) $
-     expandTrace "expandBSR" depth ("deMorgan = " ++ show z) $
-     z
+     expandTrace "expandBSR" depth ("nnf = " ++ show z) $ z
 
 expandBSR' l4i depth (AA.Leaf rp)    = expandTrace "expandBSR" depth ("handling Leaf " ++ show rp ++ " by expanding; next will test output of expansion") $
   case expandRP l4i (depth + 1) rp of

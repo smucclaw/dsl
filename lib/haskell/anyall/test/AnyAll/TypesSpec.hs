@@ -16,6 +16,12 @@ markingMap payload = Map.singleton "key" (Default payload)
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing
 
+allPre :: Text -> [BoolStruct (Maybe (Label Text)) a] -> BoolStruct (Maybe (Label Text)) a
+allPre label = All (Just (Pre label))
+
+anyPre :: Text -> [BoolStruct (Maybe (Label Text)) a] -> BoolStruct (Maybe (Label Text)) a
+anyPre label = All (Just (Pre label))
+
 any :: [BoolStruct (Maybe l) a ] -> BoolStruct (Maybe l) a
 any = Any Nothing
 
@@ -37,19 +43,18 @@ spec = do
       simplifyItem ( all
                       [ all [leaf "foo1", leaf "foo2"],
                         all [leaf "bar", all [leaf "bat"]],
-                        All
-                          (Just (Pre "something"))
+                        allPre "something"
                           [ leaf "baz",
-                            All (Just (Pre "something")) [leaf "bbb"]
+                            allPre "something" [leaf "bbb"]
                           ],
-                        Any (Just (Pre "something")) [leaf "qux"]
+                        anyPre "something" [leaf "qux"]
                       ] )
         `shouldBe` all
                     [ leaf "foo1",
                       leaf "foo2",
                       leaf "bar",
                       leaf "bat",
-                      All (Just (Pre "something")) [leaf "baz", leaf "bbb"],
+                      allPre "something" [leaf "baz", leaf "bbb"],
                       leaf "qux"
                     ]
         

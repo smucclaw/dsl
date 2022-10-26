@@ -6,41 +6,59 @@ import Data.Text (Text)
 import Data.Aeson (decode, encode)
 import qualified Data.Map as Map
 import AnyAll.Types
+import Prelude hiding (any, all)
 
 type MarkingMap = Map.Map Text (Default Bool)
 
 markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.Map Text (Default Bool)
 markingMap payload = Map.singleton "key" (Default payload)
 
+all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
+all = All Nothing
+
+any :: [BoolStruct (Maybe l) a ] -> BoolStruct (Maybe l) a
+any = Any Nothing
+
+atom :: Text -> BoolStruct (Maybe Text) Text
+atom = Leaf
+
+type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
+
+leaf :: Text -> WireBoolStruct
+leaf = Leaf
+
 spec :: Spec
 spec = do
   describe "simplifyItem" $ do
     it "should leave Leaf " $ do
-      simplifyItem (Leaf "foo")
-        `shouldBe` (Leaf "foo")
+      simplifyItem (leaf "foo") `shouldBe` leaf "foo"
+
     it "should elevate nested All children" $ do
-      simplifyItem ( All Nothing [All Nothing [ Leaf "foo1"
-                                              , Leaf "foo2"]
-                                 ,All Nothing [ Leaf "bar"
-                                              , All Nothing [Leaf "bat"] ]
-                                 ,All (Just (Pre "something")) [Leaf "baz"
-                                                               ,All (Just (Pre "something")) [Leaf "bbb"]]
-                                 ,Any (Just (Pre "something")) [Leaf "qux"]
-                                 ] )
-        `shouldBe` All Nothing [Leaf "foo1"
-                               ,Leaf "foo2"
-                               ,Leaf "bar"
-                               ,Leaf "bat"
-                               ,All (Just (Pre "something")) [Leaf "baz"
-                                                             ,Leaf "bbb"]
-                               ,Leaf "qux"]
+      simplifyItem ( all
+                      [ all [leaf "foo1", leaf "foo2"],
+                        all [leaf "bar", all [leaf "bat"]],
+                        All
+                          (Just (Pre "something"))
+                          [ leaf "baz",
+                            All (Just (Pre "something")) [leaf "bbb"]
+                          ],
+                        Any (Just (Pre "something")) [leaf "qux"]
+                      ] )
+        `shouldBe` all
+                    [ leaf "foo1",
+                      leaf "foo2",
+                      leaf "bar",
+                      leaf "bat",
+                      All (Just (Pre "something")) [leaf "baz", leaf "bbb"],
+                      leaf "qux"
+                    ]
         
     it "should simplify singleton Leaf" $ do
-      simplifyItem ( All Nothing [Leaf "foo"] )
-        `shouldBe`   Leaf "foo"
+      simplifyItem ( all [leaf "foo"] )
+        `shouldBe`   leaf "foo"
     it "should simplify not-nots" $ do
-      simplifyItem ( Not $ Not $ Leaf "not" )
-        `shouldBe`   Leaf "not"
+      simplifyItem ( Not $ Not $ leaf "not" )
+        `shouldBe`   leaf "not"
 
   describe "labelFirst" $ do
     it "extracts the only from Pre" $ do
@@ -123,3 +141,23 @@ spec = do
       let ma = markingMap $ Right $ Just False
           q = encode Marking {getMarking = ma}
       q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Right\":false}}}}"
+
+  describe "nnf transformation" $ do
+    let
+        a = atom "a"
+        b = atom "b"
+
+    it "nnf (not (not a)) == a" $ do
+      nnf (Not . Not $ a) `shouldBe` a
+
+    it "nnf (not (not all [not not a, not not b])) == all [a, b]" $ do
+      nnf (Not . Not $ all [Not . Not $ a, Not . Not $ b]) `shouldBe` all [a, b]
+
+    it "nnf (all [not not a, not not b]) == (all [a,b])" $ do
+      nnf (all [Not . Not $ a, Not . Not $ b]) `shouldBe` all [a, b]
+
+    it "nnf (not (all a)) == (any (not b))" $ do
+      nnf (Not $ all [a, b]) `shouldBe` any [Not a, Not b]
+
+    it "nnf (not (any a)) == (all (not b))" $ do
+      nnf (Not $ any [a, b]) `shouldBe` all [ Not a, Not b]

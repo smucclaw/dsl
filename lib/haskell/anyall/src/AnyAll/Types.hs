@@ -72,6 +72,14 @@ data BoolStruct lbl a =
 type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
 type BoolStructLT = BoolStruct (Label T.Text) T.Text
 
+nnf :: BoolStruct lbl a -> BoolStruct lbl a
+nnf (Not (Not p)) = nnf p
+nnf (Not (All l ps)) = Any l $ (nnf . Not) <$> ps
+nnf (Not (Any l ps)) = All l $ (nnf . Not) <$> ps
+nnf (All l ps) = All l (nnf <$> ps)
+nnf (Any l ps) = Any l (nnf <$> ps)
+nnf x = x
+
 extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]
 extractLeaves (Not x)  = extractLeaves x
@@ -130,7 +138,7 @@ instance Monoid lbl => Semigroup (BoolStruct lbl a) where
 --        All [x1, x2,       Any [y1, y2], Leaf z]
 -- but only if the labels match
 
-simplifyItem :: (Show a) => OptionallyLabeledBoolStruct a -> OptionallyLabeledBoolStruct a
+simplifyItem :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
 -- reverse not-nots
 simplifyItem (Not (Not x)) = simplifyItem x
 -- extract singletons
@@ -147,7 +155,7 @@ simplifyItem orig = orig
 --        All [Any [x1, x2], Any [y1, y2], Leaf z]
 -- output:
 --        All [Any [x1, x2, y1, y2], Leaf z]
-siblingfyItem :: (Show a) => [OptionallyLabeledBoolStruct a] -> [OptionallyLabeledBoolStruct a]
+siblingfyItem :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
 siblingfyItem xs =
   let grouped =
         mergeMatch

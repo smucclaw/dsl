@@ -7,6 +7,8 @@ import Data.Aeson (decode, encode)
 import qualified Data.Map as Map
 import AnyAll.Types
 import Prelude hiding (any, all)
+import AnyAll.Types (Formula(FAtom))
+import Data.Tree ( Tree( Node ))
 
 type MarkingMap = Map.Map Text (Default Bool)
 
@@ -27,6 +29,15 @@ any = Any Nothing
 
 atom :: Text -> BoolStruct (Maybe Text) Text
 atom = Leaf
+
+atomNode :: Text -> Tree (Maybe Text, Formula Text)
+atomNode t = Node (Nothing :: Maybe Text, FAtom t) []
+
+allDt ::  [Tree (Maybe Text, Formula Text)] -> Tree (Maybe Text, Formula Text)
+allDt = Node (Nothing :: Maybe Text, FAll :: Formula Text)
+
+anyDt ::  [Tree (Maybe Text, Formula Text)] -> Tree (Maybe Text, Formula Text)
+anyDt = Node (Nothing :: Maybe Text, FAny :: Formula Text)
 
 type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 
@@ -57,7 +68,7 @@ spec = do
                       allPre "something" [leaf "baz", leaf "bbb"],
                       leaf "qux"
                     ]
-        
+
     it "should simplify singleton Leaf" $ do
       simplifyItem ( all [leaf "foo"] )
         `shouldBe`   leaf "foo"
@@ -161,8 +172,28 @@ spec = do
     it "nnf (all [not not a, not not b]) == (all [a,b])" $ do
       nnf (all [Not . Not $ a, Not . Not $ b]) `shouldBe` all [a, b]
 
-    it "nnf (not (all a)) == (any (not b))" $ do
+    it "nnf (not (all [a, b])) == (any [not a, not b])" $ do
       nnf (Not $ all [a, b]) `shouldBe` any [Not a, Not b]
 
     it "nnf (not (any a)) == (all (not b))" $ do
       nnf (Not $ any [a, b]) `shouldBe` all [ Not a, Not b]
+
+  describe "nnfdt transformation" $ do
+    let
+        at = atomNode "a"
+        bt = atomNode "b"
+
+    it "nnf (not (not a)) == a" $ do
+      nnfDT (notDt . notDt $ at) `shouldBe` at
+
+    it "nnf (not (all [a, b])) == (any [not a, not b])" $ do
+      nnfDT (notDt $ allDt [at, bt]) `shouldBe` anyDt [notDt at, notDt bt]
+
+    it "nnf (not (any [a, b])) == (all [not a, not b])" $ do
+      nnfDT (notDt $ anyDt [at, bt]) `shouldBe` allDt [notDt at, notDt bt]
+
+    it "nnf (not (not all [not not a, not not b])) == all [a, b]" $ do
+      nnfDT (notDt . notDt $ allDt [notDt . notDt $ at, notDt . notDt $ bt]) `shouldBe` allDt [at, bt]
+
+    it "nnf (all [not not a, not not b]) == (all [a,b])" $ do
+      nnfDT (allDt [notDt . notDt $ at, notDt . notDt $ bt]) `shouldBe` allDt [at, bt]

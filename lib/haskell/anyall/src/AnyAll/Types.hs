@@ -69,6 +69,15 @@ data BoolStruct lbl a =
   | Not             (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
+data Formula a =
+    FAtom a
+  | FAll
+  | FAny
+  | FNot
+  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+type BoolStructDT lbl a = Tree (Maybe lbl, Formula a)
+
 type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
 type BoolStructLT = BoolStruct (Label T.Text) T.Text
 
@@ -79,6 +88,17 @@ nnf (Not (Any l ps)) = All l $ (nnf . Not) <$> ps
 nnf (All l ps) = All l (nnf <$> ps)
 nnf (Any l ps) = Any l (nnf <$> ps)
 nnf x = x
+
+notDt :: BoolStructDT lbl a -> BoolStructDT lbl a
+notDt at = Node (Nothing, FNot) [at]
+
+nnfDT :: BoolStructDT lbl a -> BoolStructDT lbl a
+nnfDT (Node (_,FNot) [Node (_, FNot) [st]] ) = nnfDT st
+nnfDT (Node (_,FNot) [Node (l, FAll) fs] ) = Node (l, FAny) (nnfDT . notDt <$> fs)
+nnfDT (Node (_,FNot) [Node (l, FAny) fs] ) = Node (l, FAll) (nnfDT . notDt <$> fs)
+nnfDT (Node (l, FAll) fs) = Node (l, FAll) (nnfDT <$> fs)
+nnfDT (Node (l, FAny) fs) = Node (l, FAny) (nnfDT <$> fs)
+nnfDT x = x
 
 extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]
@@ -183,9 +203,9 @@ siblingfyItem xs =
     mergeMatch ((x1,y1) : (x2,y2) : zs)
       | x1 == x2  =           mergeMatch ((x1, y1 <> y2) : zs)
       | otherwise = (x1,y1) : mergeMatch ((x2,       y2) : zs)
-      
+
 strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
-  
+
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.
 --   The marking comes from user input, and it "changes" at runtime,
 --   which is to say that whenever we get new input from the user we regenerate everything.

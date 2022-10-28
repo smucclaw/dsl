@@ -4,6 +4,7 @@ module CompoundSpec(spec) where
 import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
+import AnyAll.BoolStruct
 import qualified Data.Map.Strict as Map
 import Data.Tree
 import Data.Maybe (fromJust)

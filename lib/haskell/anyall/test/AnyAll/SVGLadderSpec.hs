@@ -5,6 +5,7 @@ module AnyAll.SVGLadderSpec (spec) where
 
 import AnyAll.SVGLadder hiding (tl)
 import AnyAll.Types
+import AnyAll.BoolStruct
 import Data.Text (Text, splitOn, pack, replace)
 import qualified Data.Text.Lazy.IO as TIO
 import Graphics.Svg

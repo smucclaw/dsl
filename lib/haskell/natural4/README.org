@@ -6,4 +6,62 @@ This detailed documentation is intended for Haskell programmers developing the L
 
 * Syntax Reference
 
-The surface syntax of L4 is documented in 
+The surface syntax of L4 is documented at
+https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit#gid=1453008311
+
+* Setup
+
+Clone the entire repo https://github.com/smucclaw/dsl
+
+* Prerequisites
+
+The language is Haskell, and the build tool is Stack.
+
+You do not need to install Haskell separately.
+
+Just install Stack from http://haskellstack.org/. It will install an appropriate version of Haskell locally.
+
+* Install the ~AnyAll~ library
+
+In the ~dsl/lib/haskell/anyall/~ directory, run
+
+#+begin_src bash
+  stack install
+#+end_src
+
+* Install the ~Natural4~ Library
+
+In the ~dsl/lib/haskell/natural/~ directory, run
+
+#+begin_src bash
+  stack install
+#+end_src
+
+* Running Tests
+
+In the ~dsl/lib/haskell/natural/~ directory, when you run
+
+#+begin_src bash
+  stack test
+#+end_src
+
+You should get a screenful of green.
+
+* Validating the Installation
+
+In the ~dsl/lib/haskell/natural/~ directory, if you run
+
+#+begin_src bash
+  stack run -- --workdir=workdir test/casestudypdpadbno-latest.csv
+#+end_src
+
+You should get a bunch of output onscreen, and you should get even more output inside the newly created directory ~workdir/~.
+
+Specifically, inside the directory ~workdir/no-uuid/~ you should see a dozen or more output files, arranged in a directory tree.
+
+If you browse those files you should see various representations of the PDPA DBNO encoding.
+
+The spreadsheet version of that encoding is found at
+https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit#gid=1779650637
+
+L4 legal engineers working in the spreadsheet IDE can access those output files in the spreadsheet sidebar.

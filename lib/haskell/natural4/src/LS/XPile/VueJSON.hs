@@ -10,6 +10,7 @@ module LS.XPile.VueJSON where
 import LS
 import LS.NLP.NLG
 import AnyAll.Types
+import AnyAll.BoolStruct
 
 import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
@@ -137,14 +138,14 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 -- define custom types here for things we care about in purescript
 
 itemRPToItemJSON :: BoolStructR -> BoolStructLT
-itemRPToItemJSON (Leaf b) = AnyAll.Types.Leaf (rp2text b)
-itemRPToItemJSON (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.All pp (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any Nothing items) = AnyAll.Types.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.Any pre (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.Any pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Not item) = AnyAll.Types.Not (itemRPToItemJSON item)
+itemRPToItemJSON (Leaf b) = AnyAll.BoolStruct.Leaf (rp2text b)
+itemRPToItemJSON (All Nothing items) = AnyAll.BoolStruct.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Any Nothing items) = AnyAll.BoolStruct.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.Any pre (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.Any pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Not item) = AnyAll.BoolStruct.Not (itemRPToItemJSON item)
 
 type RuleJSON = Map.Map String BoolStructLT
 

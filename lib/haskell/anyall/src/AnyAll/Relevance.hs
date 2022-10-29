@@ -3,6 +3,7 @@
 module AnyAll.Relevance where
 
 import AnyAll.Types
+import AnyAll.BoolStruct
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (lookup)
 import Data.List (any, all)

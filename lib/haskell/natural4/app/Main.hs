@@ -29,7 +29,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
-import AnyAll.Types (alwaysLabeled)
+import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Text.RawString.QQ as QQ
 import qualified Data.Foldable as DF
 -- import qualified Data.Traversable as DT

@@ -19,6 +19,7 @@ import Data.Aeson.Encode.Pretty ( encodePretty )
 import Data.Aeson.Types
 import Data.List
 import Text.Pretty.Simple (pPrint)
+import AnyAll.BoolStruct
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann

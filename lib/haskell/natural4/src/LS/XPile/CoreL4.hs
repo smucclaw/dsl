@@ -34,6 +34,7 @@ import Data.Either (rights, isRight)
 import Text.Regex.TDFA
 import Data.List (nub, intercalate, (\\), isPrefixOf)
 import qualified Data.Foldable as DF
+import Data.Map ((!))
 
 -- output to Core L4 for further transformation
 
@@ -96,7 +97,7 @@ sfl4ToCorel4 rs =
           l
         | (l,n) <- zipped
         , if "decl" `isPrefixOf` l || "class" `isPrefixOf` l
-          then (n :: Int) <= xMap2 Map.! l
+          then (n :: Int) <= xMap2 ! l
                && maybe True (== "") (Map.lookup (T.pack l) xtends)
           else True
         ]

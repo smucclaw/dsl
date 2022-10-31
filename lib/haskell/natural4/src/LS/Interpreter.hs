@@ -33,6 +33,7 @@ import Data.Tuple (swap)
 import Data.List (find)
 import qualified Data.List as DL
 import Data.Bifunctor (first)
+import Data.Map ((!))
 
 -- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
@@ -317,7 +318,7 @@ relPredRefs _l4i rs ridmap r =
            targetRule' = fromJust targetRule
            targetRuleId = Map.lookup targetRule' ridmap
            targetRuleId' = fromJust targetRuleId
-           rid = ridmap Map.! r
+           rid = ridmap ! r
      , isJust targetRule
      , isJust targetRuleId
      ]
@@ -589,7 +590,7 @@ biggestItem l4i rs =
   let ibr = itemsByRule l4i rs
       flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
       sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
-  in (Map.fromList ibr) Map.! (fst $ DL.head sorted)
+  in (Map.fromList ibr) ! (fst $ DL.head sorted)
 
 itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =

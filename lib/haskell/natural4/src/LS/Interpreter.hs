@@ -62,9 +62,14 @@ musings l4i rs =
       decisionroots = decisionRoots decisionGraph
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
-                                                                     else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                   | (cname, _child) <- cg ]
+           , vvsep [ vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <>
+                             if null (Prelude.tail cname) then emptyDoc
+                             else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
+                           , if null cchild then emptyDoc
+                             else "**** extends" </> srchs cchild
+                           , "**** deets" </> srchs cname
+                           ]
+                   | (cname, cchild) <- cg ]
            , "*** The entire classgraph"
            , srchs cg
            , "** Symbol Table"

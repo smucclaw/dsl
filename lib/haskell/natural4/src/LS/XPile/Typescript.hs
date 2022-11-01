@@ -28,6 +28,7 @@ import qualified Data.Map as Map
 -- import qualified Data.Text as T
 -- import Data.Maybe (catMaybes, fromMaybe, isJust)
 -- import qualified Data.List.NonEmpty as NE
+import Data.List (nub)
 
 
 asTypescript :: [SFL4.Rule] -> Doc ann
@@ -42,24 +43,26 @@ tsClasses :: Interpreted -> Doc ann
 tsClasses l4i =
   let ct@(CT ch) = classtable l4i
   in
-  vsep [ "class" <+> snake_case [className] <>
-         case clsParent ct className of
+  vvsep [ "class" <+> snake_case [className] <>
+          case clsParent ct className of
            Nothing       -> mempty
            (Just parent) -> " extends" <+> pretty parent
-         -- attributes of the class are shown as decls
-         <+> lbrace <> Prettyprinter.line
-         <> indent 2 ( vsep [ snake_case [attrname] <>
-                              case attrType children attrname of
-                                Just t -> " :" <+> prettySimpleType "ts" snake_inner t
-                                Nothing -> ""
-                              <> semi
-                          | attrname <- getCTkeys children
-                          -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
-                          ] )
-         <> Prettyprinter.line <> rbrace <> Prettyprinter.line
-       | className <- reverse $ topsortedClasses ct
-       , (Just (_ctype, children)) <- [Map.lookup className ch]
-       ]
+          -- attributes of the class are shown as decls
+          <+> lbrace
+          <//> indent 2 ( vsep [ snake_case [attrname] <>
+                                 case attrType children attrname of
+                                   Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" snake_inner t
+                                   Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" snake_inner t
+                                   Just t                          -> " : " <+> prettySimpleType "ts" snake_inner t
+                                   Nothing -> ""
+                                 <> semi
+                               | attrname <- getCTkeys children
+                               -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
+                               ] )
+          <//> rbrace
+        | className <- reverse $ topsortedClasses ct
+        , (Just (_ctype, children)) <- [Map.lookup className ch]
+        ]
 
 -- classes and variables need to be topologically sorted because typescript is picky about that.
 
@@ -67,24 +70,27 @@ jsInstances :: Interpreted -> Doc ann
 jsInstances l4i =
   let sctabs = scopetable l4i
   in
-  vsep [ "//" <+> scopenameStr scopename <+> "scope" <> Prettyprinter.line
-         <> vsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" snake_inner (getSymType symtype) <+> equals <+> nest 2 value <> Prettyprinter.line
-                 | (mt, (symtype, vals)) <- Map.toList symtab'
-                 , value <- case vals of
+  vvsep [ "//" <+> scopenameStr scopename <+> "scope" <//>
+          vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" snake_inner (getSymType symtype) <+> equals <+> nest 2 value
+                | (mt, (symtype, vals)) <- Map.toList symtab'
+                , value <- case vals of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
-                              HC2 { hHead = RPParamText {} } : _ -> [lbrace <> Prettyprinter.line <> asValuePT l4i vals <> Prettyprinter.line <>
+                              HC2 { hHead = RPParamText {} } : _ -> [lbrace </> asValuePT l4i vals </>
                                                                      rbrace <> Prettyprinter.line]
                               _                                  -> asValue l4i <$> vals
                  ]
-         <> Prettyprinter.line
-         <> "const GLOBALS" <+> equals <+> list [ snake_case mt | mt <- Map.keys symtab' ] <> semi
-         <> Prettyprinter.line
-       | (scopename , symtab') <- Map.toList sctabs
-       ]
+        | (scopename , symtab') <- Map.toList sctabs
+        ] </>
+  "const GLOBALS" <+> equals <+> hang 0 (
+    list ( snake_case <$> nub [ mt
+                              | (_scopename , symtab') <- Map.toList sctabs
+                              , mt <- Map.keys symtab' ] ) <> semi )
   where
     scopenameStr [] = "globals"
     scopenameStr x  = snake_case x
+
+-- [TODO] convert the GIVEN ... logic into functions that do the right thing.
 
 asValue :: Interpreted -> HornClause2 -> Doc ann
 asValue _l4i  hc2@HC2 { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))

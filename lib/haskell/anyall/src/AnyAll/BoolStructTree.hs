@@ -20,3 +20,9 @@ nnfDT (Node (_,FNot) [Node (l, FAny) fs] ) = Node (l, FAll) (nnfDT . notDt <$> f
 nnfDT (Node (l, FAll) fs) = Node (l, FAll) (nnfDT <$> fs)
 nnfDT (Node (l, FAny) fs) = Node (l, FAny) (nnfDT <$> fs)
 nnfDT x = x
+
+extractLeavesDT :: BoolStructDT lbl a -> [a]
+extractLeavesDT (Node (_, FAtom x) _  ) = [x]
+extractLeavesDT (Node (_, FNot)    x  ) = concatMap extractLeavesDT x
+extractLeavesDT (Node (_, FAll)    fs ) = concatMap extractLeavesDT fs
+extractLeavesDT (Node (_, FAny)    fs ) = concatMap extractLeavesDT fs

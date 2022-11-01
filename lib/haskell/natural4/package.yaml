@@ -7,7 +7,7 @@ maintainer:          "mwwong@smu.edu.sg"
 copyright:           "2022"
 
 extra-source-files:
-- README.md
+- README.org
 - ChangeLog.md
 
 # Metadata used when publishing your package

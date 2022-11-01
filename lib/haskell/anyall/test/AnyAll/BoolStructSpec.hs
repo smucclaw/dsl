@@ -78,3 +78,20 @@ spec = do
 
     it "nnf (not (any a)) == (all (not b))" $ do
       nnf (Not $ any [a, b]) `shouldBe` all [ Not a, Not b]
+
+  describe "extractLeaves" $ do
+    let
+        a = atom "a"
+        b = atom "b"
+
+    it "extractLeaves a == a" $ do
+      extractLeaves a `shouldBe` ["a"]
+
+    it "extractLeaves not a == a" $ do
+      extractLeaves (Not a) `shouldBe` ["a"]
+
+    it "extractLeaves (not (any [a, b])) == [a, b]" $ do
+      extractLeaves (Not $ any [a, b]) `shouldBe` ["a", "b"]
+
+    it "extractLeaves  (all [a, b]) == [a, b]" $ do
+      extractLeaves (all [a, b]) `shouldBe` ["a", "b"]

@@ -36,3 +36,20 @@ spec = do
 
     it "nnf (all [not not a, not not b]) == (all [a,b])" $ do
       nnfDT (allDt [notDt . notDt $ at, notDt . notDt $ bt]) `shouldBe` allDt [at, bt]
+
+  describe "extractLeaves" $ do
+    let
+        a = atomNode "a"
+        b = atomNode "b"
+
+    it "extractLeaves a == a" $ do
+      extractLeavesDT a `shouldBe` ["a"]
+
+    it "extractLeaves not a == a" $ do
+      extractLeavesDT (notDt a) `shouldBe` ["a"]
+
+    it "extractLeaves (not (any [a, b])) == [a, b]" $ do
+      extractLeavesDT (notDt $ anyDt [a, b]) `shouldBe` ["a", "b"]
+
+    it "extractLeaves  (all [a, b]) == [a, b]" $ do
+      extractLeavesDT (anyDt [a, b]) `shouldBe` ["a", "b"]

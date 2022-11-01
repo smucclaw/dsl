@@ -6,14 +6,14 @@ import Data.Tree
 import AnyAll.BoolStructTree
 import Test.Hspec
 
-atomNode :: Text -> Tree (Maybe Text, Formula Text)
-atomNode t = Node (Nothing :: Maybe Text, FAtom t) []
+atomNode :: Text -> Tree (Formula (Maybe Text) Text)
+atomNode t = Node (FAtom t) []
 
-allDt ::  [Tree (Maybe Text, Formula Text)] -> Tree (Maybe Text, Formula Text)
-allDt = Node (Nothing :: Maybe Text, FAll :: Formula Text)
+allDt ::  [Tree (Formula (Maybe Text) Text)] -> Tree (Formula (Maybe Text) Text)
+allDt = Node (FAll Nothing)
 
-anyDt ::  [Tree (Maybe Text, Formula Text)] -> Tree (Maybe Text, Formula Text)
-anyDt = Node (Nothing :: Maybe Text, FAny :: Formula Text)
+anyDt ::  [Tree (Formula (Maybe Text) Text)] -> Tree (Formula (Maybe Text) Text)
+anyDt = Node (FAny Nothing)
 
 spec :: Spec
 spec = do
@@ -53,3 +53,23 @@ spec = do
 
     it "extractLeaves  (all [a, b]) == [a, b]" $ do
       extractLeavesDT (anyDt [a, b]) `shouldBe` ["a", "b"]
+
+  describe "addJust" $ do
+    let
+        a = Node (FAtom "a") [] :: BoolStructDT Text Text
+        b = Node (FAtom "b") [] :: BoolStructDT Text Text
+        anyAB = Node (FAny "") [a, b]
+        aMaybe = Node (FAtom "a") [] :: BoolStructDT (Maybe Text) Text
+        bMaybe = Node (FAtom "b") [] :: BoolStructDT (Maybe Text) Text
+
+    it "addJust a == a" $ do
+      addJustDT a `shouldBe` aMaybe
+
+    it "addJust not a == a" $ do
+      addJustDT (notDt a) `shouldBe` notDt aMaybe
+
+    it "addJust (any [a, b]) == [a, b]" $ do
+      addJustDT (Node (FAny "") [a, b]) `shouldBe`  (Node (FAny (Just "")) [aMaybe, bMaybe])
+
+    it "addJust (any [a, b]) == [a, b]" $ do
+      addJustDT (Node (FAll "") [a, b]) `shouldBe` (Node (FAll (Just "")) [aMaybe, bMaybe])

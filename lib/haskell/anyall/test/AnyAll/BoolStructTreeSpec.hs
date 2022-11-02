@@ -5,6 +5,7 @@ import Data.Text
 import Data.Tree
 import AnyAll.BoolStructTree
 import Test.Hspec
+import AnyAll.Types
 
 atomNode :: Text -> Tree (Formula (Maybe Text) Text)
 atomNode t = Node (FAtom t) []
@@ -69,7 +70,34 @@ spec = do
       addJustDT (notDt a) `shouldBe` notDt aMaybe
 
     it "addJust (any [a, b]) == [a, b]" $ do
-      addJustDT (Node (FAny "") [a, b]) `shouldBe`  (Node (FAny (Just "")) [aMaybe, bMaybe])
+      addJustDT (Node (FAny "") [a, b]) `shouldBe` (Node (FAny (Just "")) [aMaybe, bMaybe])
 
     it "addJust (any [a, b]) == [a, b]" $ do
       addJustDT (Node (FAll "") [a, b]) `shouldBe` (Node (FAll (Just "")) [aMaybe, bMaybe])
+
+  describe "alwaysLabeled" $ do
+    let
+        a = Node (FAtom "a") [] :: BoolStructDT (Label Text) Text
+        b = Node (FAtom "b") [] :: BoolStructDT (Label Text) Text
+        aMaybe = Node (FAtom "a") [] :: BoolStructDT (Maybe (Label Text)) Text
+        bMaybe = Node (FAtom "b") [] :: BoolStructDT (Maybe (Label Text)) Text
+        preLabel = Pre "Label"
+        prePostLabel = PrePost "Label" "Suffix"
+
+    it "alwaysLabeled a == a" $ do
+      alwaysLabeledDT aMaybe `shouldBe` a
+
+    it "alwaysLabeled not a == a" $ do
+      alwaysLabeledDT (notDt aMaybe) `shouldBe` (notDt a)
+
+    it "alwaysLabeled (any Nothing [a, b]) == (any (pre 'any of:') [a, b])" $ do
+      alwaysLabeledDT (Node (FAny Nothing) [aMaybe, bMaybe]) `shouldBe` Node (FAny (Pre "any of:")) [a, b]
+
+    it "alwaysLabeled (all Nothing [a, b]) == (all (pre 'all of:') [a, b])" $ do
+      alwaysLabeledDT (Node (FAll Nothing) [aMaybe, bMaybe]) `shouldBe` Node (FAll (Pre "all of:")) [a, b]
+
+    it "alwaysLabeled (any (Just l) [a, b]) == (any l [a, b])" $ do
+      alwaysLabeledDT (Node (FAny (Just preLabel)) [aMaybe, bMaybe]) `shouldBe` Node (FAny preLabel) [a, b]
+
+    it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
+       alwaysLabeledDT (Node (FAll (Just prePostLabel)) [aMaybe, bMaybe]) `shouldBe` Node (FAll prePostLabel) [a, b]

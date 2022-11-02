@@ -113,5 +113,32 @@ spec = do
     it "addJust (any [a, b]) == [a, b]" $ do
       addJust (Any "" [a, b]) `shouldBe` Any (Just "") [aMaybe, bMaybe]
 
-    it "addJust (any [a, b]) == [a, b]" $ do
+    it "addJust (all [a, b]) == [a, b]" $ do
       addJust (All "" [a, b]) `shouldBe` All (Just "") [aMaybe, bMaybe]
+
+  describe "alwaysLabeled" $ do
+    let
+        a = Leaf "a" :: BoolStruct (Label Text) Text
+        b = Leaf "b" :: BoolStruct (Label Text) Text
+        aMaybe = Leaf "a" :: BoolStruct (Maybe (Label Text)) Text
+        bMaybe = Leaf "b" :: BoolStruct (Maybe (Label Text)) Text
+        preLabel = Pre "Label"
+        prePostLabel = PrePost "Label" "Suffix"
+
+    it "alwaysLabeled a == a" $ do
+      alwaysLabeled aMaybe `shouldBe` a
+
+    it "alwaysLabeled not a == a" $ do
+      alwaysLabeled (Not aMaybe) `shouldBe` Not a
+
+    it "alwaysLabeled (any Nothing [a, b]) == (any (pre 'any of:') [a, b])" $ do
+      alwaysLabeled (Any Nothing [aMaybe, bMaybe]) `shouldBe` Any (Pre "any of:") [a, b]
+
+    it "alwaysLabeled (all Nothing [a, b]) == (all (pre 'all of:') [a, b])" $ do
+      alwaysLabeled (All Nothing [aMaybe, bMaybe]) `shouldBe` All (Pre "all of:") [a, b]
+
+    it "alwaysLabeled (any (Just l) [a, b]) == (any l [a, b])" $ do
+      alwaysLabeled (Any (Just preLabel) [aMaybe, bMaybe]) `shouldBe` Any preLabel [a, b]
+
+    it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
+      alwaysLabeled (All (Just prePostLabel) [aMaybe, bMaybe]) `shouldBe` All prePostLabel [a, b]

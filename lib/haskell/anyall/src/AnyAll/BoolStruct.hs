@@ -47,7 +47,7 @@ addJust (All lbl xs) = All (Just lbl) (addJust <$> xs)
 addJust (Leaf x)     = Leaf x
 addJust (Not x)      = Not (addJust x)
 
-alwaysLabeled :: OptionallyLabeledBoolStruct T.Text -> BoolStructLT
+alwaysLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
 alwaysLabeled (Any Nothing    xs) = Any (Pre "any of:") (alwaysLabeled <$> xs)
 alwaysLabeled (All Nothing    xs) = All (Pre "all of:") (alwaysLabeled <$> xs)
 alwaysLabeled (Any (Just lbl) xs) = Any lbl (alwaysLabeled <$> xs)

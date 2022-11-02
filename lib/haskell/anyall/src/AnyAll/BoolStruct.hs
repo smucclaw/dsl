@@ -41,7 +41,7 @@ extractLeaves (Not x)  = extractLeaves x
 extractLeaves (All _ xs) = concatMap extractLeaves xs
 extractLeaves (Any _ xs) = concatMap extractLeaves xs
 
-addJust :: BoolStructLT -> OptionallyLabeledBoolStruct T.Text
+addJust ::  BoolStruct lbl a -> BoolStruct (Maybe lbl) a
 addJust (Any lbl xs) = Any (Just lbl) (addJust <$> xs)
 addJust (All lbl xs) = All (Just lbl) (addJust <$> xs)
 addJust (Leaf x)     = Leaf x

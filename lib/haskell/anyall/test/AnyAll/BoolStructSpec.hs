@@ -95,3 +95,23 @@ spec = do
 
     it "extractLeaves  (all [a, b]) == [a, b]" $ do
       extractLeaves (all [a, b]) `shouldBe` ["a", "b"]
+
+  describe "addJust" $ do
+    let
+        a = Leaf "a" :: BoolStruct Text Text
+        b = Leaf "b" :: BoolStruct Text Text
+        anyAB = Any "" [a, b]
+        aMaybe = Leaf "a" :: BoolStruct (Maybe Text) Text
+        bMaybe = Leaf "b" :: BoolStruct (Maybe Text) Text
+
+    it "addJust a == a" $ do
+      addJust a `shouldBe` aMaybe
+
+    it "addJust not a == a" $ do
+      addJust (Not a) `shouldBe` Not aMaybe
+
+    it "addJust (any [a, b]) == [a, b]" $ do
+      addJust (Any "" [a, b]) `shouldBe` Any (Just "") [aMaybe, bMaybe]
+
+    it "addJust (any [a, b]) == [a, b]" $ do
+      addJust (All "" [a, b]) `shouldBe` All (Just "") [aMaybe, bMaybe]

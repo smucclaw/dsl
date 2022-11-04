@@ -55,11 +55,6 @@ alwaysLabeled (All (Just lbl) xs) = All lbl (alwaysLabeled <$> xs)
 alwaysLabeled (Leaf x)            = Leaf x
 alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
-aaFilter :: (BoolStruct lbl a -> Bool) -> BoolStruct lbl a -> BoolStruct lbl a
-aaFilter f (Any lbl xs) = Any lbl (filter f (aaFilter f <$> xs))
-aaFilter f (All lbl xs) = All lbl (filter f (aaFilter f <$> xs))
-aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
-
 instance Monoid lbl => Semigroup (BoolStruct lbl a) where
   (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
 

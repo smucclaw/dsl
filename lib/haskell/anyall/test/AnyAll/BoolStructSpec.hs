@@ -32,20 +32,6 @@ type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 leaf :: Text -> WireBoolStruct
 leaf = Leaf
 
-genAll :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
-genAll = do
-  l1 <- Leaf <$> arbitrary
-  l2 <- Leaf <$> arbitrary
-  l <- arbitrary
-  return $ All l [l1, l2]
-
-genAny :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
-genAny = do
-  l1 <- Leaf <$> arbitrary
-  l2 <- Leaf <$> arbitrary
-  l <- arbitrary
-  return $ All l [l1, l2]
-
 instance (Eq lbl, Eq a) => EqProp (BoolStruct lbl a) where
     (=-=) = eq
 

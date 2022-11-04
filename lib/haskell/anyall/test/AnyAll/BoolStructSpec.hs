@@ -6,6 +6,11 @@ import Data.Text (Text)
 import AnyAll.BoolStruct
 import Prelude hiding (any, all)
 import AnyAll.Types
+import Test.QuickCheck
+import Test.QuickCheck.Classes
+import Test.QuickCheck.Checkers
+import Test.Hspec.Checkers (testBatch)
+import Control.Applicative
 
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing
@@ -26,6 +31,38 @@ type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 
 leaf :: Text -> WireBoolStruct
 leaf = Leaf
+
+genAll :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+genAll = do
+  l1 <- Leaf <$> arbitrary
+  l2 <- Leaf <$> arbitrary
+  l <- arbitrary
+  return $ All l [l1, l2]
+
+genAny :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+genAny = do
+  l1 <- Leaf <$> arbitrary
+  l2 <- Leaf <$> arbitrary
+  l <- arbitrary
+  return $ All l [l1, l2]
+
+instance (Eq lbl, Eq a) => EqProp (BoolStruct lbl a) where
+    (=-=) = eq
+
+instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
+  arbitrary = boolStruct
+
+boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+boolStruct = sized boolStruct'
+
+boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
+boolStruct' 0 = fmap Leaf arbitrary
+boolStruct' n =
+  oneof [fmap Leaf arbitrary,
+         liftA2 All arbitrary (vectorOf 2 subtree),
+         liftA2 Any arbitrary (vectorOf 2 subtree),
+         fmap Not subtree]
+  where subtree = boolStruct' (n `div` 2)
 
 spec :: Spec
 spec = do
@@ -142,3 +179,15 @@ spec = do
 
     it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
       alwaysLabeled (All (Just prePostLabel) [aMaybe, bMaybe]) `shouldBe` All prePostLabel [a, b]
+
+  describe "Monoid" $ do
+    testBatch (semigroup (undefined ::BoolStruct String String, 1::Int))
+
+  describe "Monoid fail" $ do
+    let
+        a = Leaf "" :: BoolStruct Text Text
+        b = Leaf "" :: BoolStruct Text Text
+        c = Leaf "c" :: BoolStruct Text Text
+
+    it "associativity (a <> b) <> c == a <> (b <> c)" $ do
+      (a <> b) <> c  `shouldBe` a <> (b <> c)

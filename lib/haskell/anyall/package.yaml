@@ -65,3 +65,6 @@ tests:
     dependencies:
     - anyall
     - xml
+    - hspec-checkers
+    - QuickCheck
+    - checkers

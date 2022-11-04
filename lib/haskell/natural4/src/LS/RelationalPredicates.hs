@@ -61,8 +61,13 @@ rpLeafVal = debugName "rpLeafVal" $ do
 -- | in the body of a HornClause, any elements which are defined with a type signature are considered local/private existential variables internal to the body.
 -- we partition the body of the Horn Clause into such existential variables, vs the rest of the logic.
 partitionExistentials :: HornClause2 -> (BoolStructR, BoolStructR)
-partitionExistentials c = ( AA.aaFilter (\case { AA.Leaf (RPParamText x) ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
-                          , AA.aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
+partitionExistentials c = ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
+                          , aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
+    where
+      aaFilter :: (AA.BoolStruct lbl a -> Bool) -> AA.BoolStruct lbl a -> AA.BoolStruct lbl a
+      aaFilter f (AA.Any lbl xs) = AA.Any lbl (filter f (aaFilter f <$> xs))
+      aaFilter f (AA.All lbl xs) = AA.All lbl (filter f (aaFilter f <$> xs))
+      aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
 
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText

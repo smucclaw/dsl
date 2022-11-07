@@ -53,6 +53,13 @@ groupedByAOTree l4i rs =
   decisionRoots (ruleDecisionGraph l4i rs)
 
 
+exposedRoots :: Interpreted -> [Rule]
+exposedRoots l4i =
+  let rs = origrules l4i
+      decisionGraph = ruleDecisionGraph l4i rs
+      decisionroots = decisionRoots decisionGraph
+  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
@@ -62,9 +69,14 @@ musings l4i rs =
       decisionroots = decisionRoots decisionGraph
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <> if null (Prelude.tail cname) then emptyDoc
-                                                                     else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                   | (cname, _child) <- cg ]
+           , vvsep [ vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <>
+                             if null (Prelude.tail cname) then emptyDoc
+                             else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
+                           , if null cchild then emptyDoc
+                             else "**** extends" </> srchs cchild
+                           , "**** deets" </> srchs cname
+                           ]
+                   | (cname, cchild) <- cg ]
            , "*** The entire classgraph"
            , srchs cg
            , "** Symbol Table"
@@ -81,16 +93,18 @@ musings l4i rs =
            , example (pretty (prettify (first ruleLabelName decisionGraph)))
 
            , "** Decision Roots"
-           , "rules which are not relied on by any other rule"
+           , "rules which are not just RuleAlises, and which are not relied on by any other rule"
            , srchs (ruleLabelName <$> decisionroots)
 
-           , "*** Nubbed Decision Roots"
+           , "*** Nubbed, Exposed, Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated"
            , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
                      </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i rs) [1..]
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i  -- NUBBED
+                                                          (exposedRoots l4i)   -- EXPOSED
+                                                         ) [1..]
                    , not $ null uniqrs
                    ]
 
@@ -102,6 +116,13 @@ musings l4i rs =
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees, direct"
            , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
+           , "** Things that are RuleAliases"
+           , vvsep [ "*** RuleAliases"
+                   , vvsep [ "-" <+> pretty rlname
+                           | r <- rs -- this is AccidentallyQuadratic in a pathological case.
+                           , let rlname = ruleLabelName r
+                           , isRuleAlias l4i rlname ]
+                   ]
            , "** The original rules"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
@@ -638,3 +659,12 @@ bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)
 
+-- | is a given RuleName the target of a Hence or Lest "GOTO"-style pointer?
+-- If it is, we deem it a RuleAlias.
+isRuleAlias :: Interpreted -> RuleName -> Bool
+isRuleAlias l4i rname =
+  any matchHenceLest (origrules l4i)
+  where
+    matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
+    matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
+    matchHenceLest _                                                = False

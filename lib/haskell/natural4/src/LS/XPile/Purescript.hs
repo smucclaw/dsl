@@ -12,6 +12,7 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 module LS.XPile.Purescript where
 
 import LS
+import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
@@ -35,11 +36,11 @@ asPurescript l4i =
   let rs1 = exposedRoots l4i -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
       rs2 = groupedByAOTree l4i rs1
   in show (vsep
-           [ "toplevel :: Map.Map (List String) (Item String)"
+           [ "toplevel :: Map.Map (String) (Item String)"
            , "toplevel = Map.fromFoldable "]) ++
      TL.unpack ( pShowNoColor
-                 [ toTuple (rn ++ [ T.pack (show rn_n) | length totext > 1 ]
-                   , aaT)
+                 [ toTuple (unwords ((T.unpack <$> rn) ++ [ show rn_n | length totext > 1 ])
+                   , alwaysLabeled aaT)
                  | (_mbst,rulegroup) <- rs2
                  , not $ null rulegroup
                  , let r = Prelude.head rulegroup

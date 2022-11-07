@@ -37,6 +37,7 @@ asAAsvg aavc l4i rs =
                                getBSR r
                         totext = filter isInteresting $ fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
                                  ebsr
+                  , not (isRuleAlias l4i rn)
                   , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)

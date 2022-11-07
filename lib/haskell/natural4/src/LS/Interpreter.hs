@@ -107,6 +107,13 @@ musings l4i rs =
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees, direct"
            , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
+           , "** Things that are RuleAliases"
+           , vvsep [ "*** RuleAliases"
+                   , vvsep [ "-" <+> pretty rlname
+                           | r <- rs -- this is AccidentallyQuadratic in a pathological case.
+                           , let rlname = ruleLabelName r
+                           , isRuleAlias l4i rlname ]
+                   ]
            , "** The original rules"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
@@ -643,3 +650,12 @@ bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)
 
+-- | is a given RuleName the target of a Hence or Lest "GOTO"-style pointer?
+-- If it is, we deem it a RuleAlias.
+isRuleAlias :: Interpreted -> RuleName -> Bool
+isRuleAlias l4i rname =
+  any matchHenceLest (origrules l4i)
+  where
+    matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
+    matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
+    matchHenceLest _                                                = False

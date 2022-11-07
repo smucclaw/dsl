@@ -53,6 +53,13 @@ groupedByAOTree l4i rs =
   decisionRoots (ruleDecisionGraph l4i rs)
 
 
+exposedRoots :: Interpreted -> [Rule]
+exposedRoots l4i =
+  let rs = origrules l4i
+      decisionGraph = ruleDecisionGraph l4i rs
+      decisionroots = decisionRoots decisionGraph
+  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
@@ -86,16 +93,18 @@ musings l4i rs =
            , example (pretty (prettify (first ruleLabelName decisionGraph)))
 
            , "** Decision Roots"
-           , "rules which are not relied on by any other rule"
+           , "rules which are not just RuleAlises, and which are not relied on by any other rule"
            , srchs (ruleLabelName <$> decisionroots)
 
-           , "*** Nubbed Decision Roots"
+           , "*** Nubbed, Exposed, Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated"
            , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
                      </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i rs) [1..]
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i  -- NUBBED
+                                                          (exposedRoots l4i)   -- EXPOSED
+                                                         ) [1..]
                    , not $ null uniqrs
                    ]
 

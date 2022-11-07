@@ -31,8 +31,9 @@ asAAsvg aavc l4i _rs =
                   , let r = Prelude.head rulegroup
                         rn      = ruleLabelName r
                         ebsr = expandBSR l4i 1 <$> getBSR r
-                        totext = filter isInteresting $ fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
-                          ebsr
+                        totext = filter isInteresting $
+                                 fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
+                                 ebsr
                   , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)

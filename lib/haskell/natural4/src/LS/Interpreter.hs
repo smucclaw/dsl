@@ -107,6 +107,8 @@ musings l4i rs =
            , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
                      </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
+                     </> "***** head uniqrs" </> srchs (DL.head uniqrs)
+                     </> "***** getBSR" </> srchs (getBSR (DL.head uniqrs))
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i  -- NUBBED
                                                           (exposedRoots l4i)   -- EXPOSED

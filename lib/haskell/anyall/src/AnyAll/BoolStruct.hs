@@ -56,22 +56,10 @@ alwaysLabeled (Leaf x)            = Leaf x
 alwaysLabeled (Not x)             = Not (alwaysLabeled x)
 
 instance Monoid lbl => Semigroup (BoolStruct lbl a) where
-  (<>)   (All x xs)   (All y ys) = All x (xs <> ys)
-
-  (<>) l@(Not  x)   r@(All y ys) = All y (l:ys)
-  (<>) l@(All x xs) r@(Not y)    = r <> l
-
-  (<>) l@(Leaf x)   r@(All y ys) = All y (l:ys)
-  (<>) l@(All x xs) r@(Leaf y)   = r <> l
-
-  (<>) l@(Leaf x)   r@(Any y ys) = All mempty [l,r]
-  (<>) l@(Any x xs) r@(Leaf y)   = r <> l
-
-  (<>) l@(Any x xs)   (All y ys) = All y (l:ys)
-  (<>) l@(All x xs) r@(Any y ys) = r <> l
-
-  -- all the other cases get ANDed together in the most straightforward way.
-  (<>) l            r            = All mempty [l, r]
+  (All x xs)  <> (All y ys) = All (x<>y) (xs <> ys)
+  l           <> (All y ys) = All y (l:ys)
+  l@(All _ _) <> r          = r <> l
+  l           <> r          = All mempty [l, r]
 
 -- | flatten redundantly nested structure
 -- example:

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 module AnyAll.BoolStructTree where
 import Data.Tree
 import AnyAll.Types
@@ -9,7 +10,7 @@ data Formula lbl a =
   | FAll lbl
   | FAny lbl
   | FNot
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 type BoolStructDT lbl a = Tree (Formula lbl a)
 
@@ -43,3 +44,9 @@ alwaysLabeledDT (Node (FAny (Just lbl)) fs) = Node (FAny lbl) (alwaysLabeledDT <
 alwaysLabeledDT (Node (FAll (Just lbl)) fs) = Node (FAll lbl) (alwaysLabeledDT <$> fs)
 alwaysLabeledDT (Node (FAtom x)         _ ) = Node (FAtom x) []
 alwaysLabeledDT (Node FNot              fs) = Node FNot (alwaysLabeledDT <$> fs)
+
+instance Monoid lbl => Semigroup (BoolStructDT lbl a) where
+  (Node (FAll x) xs)  <> (Node (FAll y) ys) = Node (FAll (x<>y)) (xs <> ys)
+  l                   <> (Node (FAll y) ys) = Node (FAll y) (l:ys)
+  l@(Node (FAll _) _) <> r          = r <> l
+  l                   <> r          = Node (FAll mempty) [l, r]

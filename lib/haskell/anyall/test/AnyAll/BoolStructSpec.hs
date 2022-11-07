@@ -11,6 +11,8 @@ import Test.QuickCheck.Classes
 import Test.QuickCheck.Checkers
 import Test.Hspec.Checkers (testBatch)
 import Control.Applicative
+import Data.List (sort)
+import Test.Hspec.QuickCheck (prop)
 
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing
@@ -32,8 +34,13 @@ type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 leaf :: Text -> WireBoolStruct
 leaf = Leaf
 
-instance (Eq lbl, Eq a) => EqProp (BoolStruct lbl a) where
-    (=-=) = eq
+instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
+    (Leaf x) =-= (Leaf y) = property (x == y)
+    (Not x) =-= (Not y) = property (x == y)
+    (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    _ =-= _ = property False
+
 
 instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
   arbitrary = boolStruct
@@ -166,14 +173,5 @@ spec = do
     it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
       alwaysLabeled (All (Just prePostLabel) [aMaybe, bMaybe]) `shouldBe` All prePostLabel [a, b]
 
-  describe "Monoid" $ do
+  describe "BoolStruct Semigroup" $ do
     testBatch (semigroup (undefined ::BoolStruct String String, 1::Int))
-
-  describe "Monoid fail" $ do
-    let
-        a = Leaf "" :: BoolStruct Text Text
-        b = Leaf "" :: BoolStruct Text Text
-        c = Leaf "c" :: BoolStruct Text Text
-
-    it "associativity (a <> b) <> c == a <> (b <> c)" $ do
-      (a <> b) <> c  `shouldBe` a <> (b <> c)

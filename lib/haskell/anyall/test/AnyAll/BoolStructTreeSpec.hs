@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 module AnyAll.BoolStructTreeSpec where
 
 import Data.Text
@@ -6,6 +8,12 @@ import Data.Tree
 import AnyAll.BoolStructTree
 import Test.Hspec
 import AnyAll.Types
+import Test.Hspec.Checkers
+import Test.QuickCheck.Classes
+import Test.QuickCheck.Checkers
+import Test.QuickCheck
+import Data.List (sort)
+import Control.Applicative
 
 atomNode :: Text -> Tree (Formula (Maybe Text) Text)
 atomNode t = Node (FAtom t) []
@@ -15,6 +23,17 @@ allDt = Node (FAll Nothing)
 
 anyDt ::  [Tree (Formula (Maybe Text) Text)] -> Tree (Formula (Maybe Text) Text)
 anyDt = Node (FAny Nothing)
+
+
+instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStructDT lbl a) where
+    (Node (FAtom x)         _ ) =-= (Node (FAtom y)         _ ) = property (x == y)
+    (Node FNot              xs) =-= (Node FNot              ys) = property (xs == ys)
+    (Node (FAny x) xs) =-= (Node (FAny y) ys) = property ((x == y) && (sort xs == sort ys))
+    (Node (FAll x) xs) =-= (Node (FAll y) ys) = property ((x == y) && (sort xs == sort ys))
+    _ =-= _ = property False
+
+instance (Arbitrary a, Arbitrary lbl) => Arbitrary (Formula lbl a) where
+  arbitrary = oneof [FAll <$> arbitrary, FAny <$> arbitrary, pure FNot, FAtom <$> arbitrary]
 
 spec :: Spec
 spec = do
@@ -101,3 +120,6 @@ spec = do
 
     it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
        alwaysLabeledDT (Node (FAll (Just prePostLabel)) [aMaybe, bMaybe]) `shouldBe` Node (FAll prePostLabel) [a, b]
+
+  describe "BoolStructDT Semigroup" $ do
+    testBatch (semigroup (undefined ::BoolStructDT String String, 1::Int))

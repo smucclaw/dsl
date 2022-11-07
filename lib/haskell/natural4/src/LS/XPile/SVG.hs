@@ -21,23 +21,18 @@ import qualified Data.Text as T
 -- for each rule, print as svg according to options we were given
 
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
-asAAsvg aavc l4i rs =
-  let _rs = stitchRules l4i rs -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
-      rs2 = groupedByAOTree l4i rs
-  in Map.fromList [ (rn ++ if length totext > 1
-                           then [T.pack (show rn_n)]
-                           else []
+asAAsvg aavc l4i _rs =
+  let rs1 = exposedRoots l4i -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
+      rs2 = groupedByAOTree l4i rs1
+  in Map.fromList [ (rn ++ [ T.pack (show rn_n) | length totext > 1 ]
                     , (svgtiny, svgfull, aaT, qtree))
-                  | (_,rulegroup) <- rs2
+                  | (_mbst,rulegroup) <- rs2
                   , not $ null rulegroup
                   , let r = Prelude.head rulegroup
                         rn      = ruleLabelName r
-                        ebsr = expandBSR l4i 1 <$>
-                               -- trace ("asAAsvg getBSR = " ++ show (getBSR r)) $
-                               getBSR r
+                        ebsr = expandBSR l4i 1 <$> getBSR r
                         totext = filter isInteresting $ fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
-                                 ebsr
-                  , not (isRuleAlias l4i rn)
+                          ebsr
                   , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
                                    totext
                   , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)

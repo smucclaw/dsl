@@ -6,6 +6,13 @@ import Data.Text (Text)
 import AnyAll.BoolStruct
 import Prelude hiding (any, all)
 import AnyAll.Types
+import Test.QuickCheck
+import Test.QuickCheck.Classes
+import Test.QuickCheck.Checkers
+import Test.Hspec.Checkers (testBatch)
+import Control.Applicative
+import Data.List (sort)
+import Test.Hspec.QuickCheck (prop)
 
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing
@@ -26,6 +33,29 @@ type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 
 leaf :: Text -> WireBoolStruct
 leaf = Leaf
+
+instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
+    (Leaf x) =-= (Leaf y) = property (x == y)
+    (Not x) =-= (Not y) = property (x == y)
+    (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    _ =-= _ = property False
+
+
+instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
+  arbitrary = boolStruct
+
+boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+boolStruct = sized boolStruct'
+
+boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
+boolStruct' 0 = fmap Leaf arbitrary
+boolStruct' n =
+  oneof [fmap Leaf arbitrary,
+         liftA2 All arbitrary (vectorOf 2 subtree),
+         liftA2 Any arbitrary (vectorOf 2 subtree),
+         fmap Not subtree]
+  where subtree = boolStruct' (n `div` 2)
 
 spec :: Spec
 spec = do
@@ -142,3 +172,6 @@ spec = do
 
     it "alwaysLabeled (all (Just l) [a, b]) == (all l [a, b])" $ do
       alwaysLabeled (All (Just prePostLabel) [aMaybe, bMaybe]) `shouldBe` All prePostLabel [a, b]
+
+  describe "BoolStruct Semigroup" $ do
+    testBatch (semigroup (undefined ::BoolStruct String String, 1::Int))

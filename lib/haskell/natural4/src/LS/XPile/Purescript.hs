@@ -17,7 +17,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
-import Data.Maybe (catMaybes, maybeToList)
 
 -- import Debug.Trace (trace)
 
@@ -34,22 +33,20 @@ toTuple (x,y) = Tuple x y
 
 asPurescript :: Interpreted -> String
 asPurescript l4i =
-  let rs1 = exposedRoots l4i -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
-      rs2 = groupedByAOTree l4i rs1
-  in show (vsep
-           [ "toplevel :: Map.Map (String) (Item String)"
-           , "toplevel = Map.fromFoldable "]) ++
-     TL.unpack ( pShowNoColor
-                 [ toTuple (unwords ((T.unpack <$> rn) ++ [ show rn_n | length totext > 1 ])
-                   , alwaysLabeled aaT)
-                 | (_mbst,rulegroup) <- rs2
-                 , not $ null rulegroup
-                 , let r = Prelude.head rulegroup
-                       rn      = ruleLabelName r
-                       ebsr = expandBSR l4i 1 <$> maybeToList (getBSR r)
-                       totext = fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
-                                ebsr
-                 , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
-                                  totext
-                 ]
-     )
+     show (vsep
+           [ "toplevelDecisions :: Map.Map (String) (Item String)"
+           , "toplevelDecisions = Map.fromFoldable " <>
+             (pretty $ TL.unpack (
+                 pShowNoColor
+                   [ toTuple ( T.intercalate " / " (T.unwords <$> names)
+                             , alwaysLabeled bs)
+                   | (names,bs) <- qaHornsT l4i
+                   ]
+                 )
+             )
+           , "toplevelDefaultMarking :: Marking"
+           , "toplevelDefaultMarking = Marking (Map.fromFoldable " <>
+             "[]" <>
+             ")"
+           ]
+          )

@@ -51,8 +51,7 @@ l4interpret iopts rs =
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
   Map.toList $ Map.fromListWith (++) $
-  (\r -> (getAndOrTree l4i 1 r, [r])) <$>
-  decisionRoots (ruleDecisionGraph l4i rs)
+  (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
 
 
 -- | The top-level decision roots which we expose to the web UI, and also visualize with SVGLadder.
@@ -66,6 +65,25 @@ exposedRoots l4i =
       decisionGraph = ruleDecisionGraph l4i rs
       decisionroots = decisionRoots decisionGraph
   in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+
+-- | the fully expanded, exposed, decision roots of all rules in the ruleset,
+--   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).
+--
+--   This is used for:
+--   * user-facing Q&A (see XPile/Purescript)
+--   * visualization of the decision logic
+
+qaHornsT :: Interpreted -> [([RuleName], BoolStructT)]
+qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
+
+qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
+qaHornsR l4i =
+     [ ( ruleLabelName <$> uniqrs
+       , expanded)
+     | (_grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
+                            exposedRoots l4i      -- EXPOSED
+     , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
+     ]      
 
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
@@ -108,17 +126,18 @@ musings l4i rs =
                      </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
                      </> "***** head uniqrs" </> srchs (DL.head uniqrs)
-                     </> "***** getBSR" </> srchs (getBSR (DL.head uniqrs))
-                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i  -- NUBBED
-                                                          (exposedRoots l4i)   -- EXPOSED
+                     </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
+                     </> "***** getBSR [head uniqrs]" </> srchs (catMaybes $ getBSR <$> [DL.head uniqrs])
+                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> catMaybes (getBSR <$> uniqrs))
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
+                                                          exposedRoots l4i      -- EXPOSED
                                                          ) [1..]
                    , not $ null uniqrs
                    ]
 
-           , "** TODO Expanded rules"
-           , "this isn't quite what we want yet -- we're looking for the rules to be expanded not just in terms of inter-rule HENCE/LEST connections, but also in terms of the defined terms"
-
+           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsR l4i ]
+           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsT l4i ]
+           , "** expandedRules"
            , if expandedRules == DL.nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]

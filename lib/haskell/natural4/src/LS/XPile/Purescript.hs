@@ -17,6 +17,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
+import Data.Maybe (catMaybes, maybeToList)
 
 -- import Debug.Trace (trace)
 
@@ -45,7 +46,7 @@ asPurescript l4i =
                  , not $ null rulegroup
                  , let r = Prelude.head rulegroup
                        rn      = ruleLabelName r
-                       ebsr = expandBSR l4i 1 <$> getBSR r
+                       ebsr = expandBSR l4i 1 <$> maybeToList (getBSR r)
                        totext = fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
                                 ebsr
                  , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)

@@ -15,6 +15,7 @@ import LS
 import AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as T
+import Data.Maybe (maybeToList)
 -- import Debug.Trace (trace)
 
 -- | extract the tree-structured rules from Interpreter
@@ -30,7 +31,7 @@ asAAsvg aavc l4i _rs =
                   , not $ null rulegroup
                   , let r = Prelude.head rulegroup
                         rn      = ruleLabelName r
-                        ebsr = expandBSR l4i 1 <$> getBSR r
+                        ebsr = expandBSR l4i 1 <$> maybeToList (getBSR r)
                         totext = filter isInteresting $
                                  fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
                                  ebsr

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-|
 
@@ -46,12 +47,18 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
+-- | Sometimes multiple rules will have the same decision content.
+-- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree to one or more rules.
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
   Map.toList $ Map.fromListWith (++) $
-  (\r -> (getAndOrTree l4i 1 r, [r])) <$>
-  decisionRoots (ruleDecisionGraph l4i rs)
+  (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
 
+
+-- | The top-level decision roots which we expose to the web UI, and also visualize with SVGLadder.
+-- We exclude rules which are the target of a GOTO RuleAlias, because those are just infrastructure.
+-- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
+-- We want the SVG Xpiler to reuse this code as authoritative.
 
 exposedRoots :: Interpreted -> [Rule]
 exposedRoots l4i =
@@ -60,13 +67,31 @@ exposedRoots l4i =
       decisionroots = decisionRoots decisionGraph
   in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
+-- | the fully expanded, exposed, decision roots of all rules in the ruleset,
+--   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).
+--
+--   This is used for:
+--   * user-facing Q&A (see XPile/Purescript)
+--   * visualization of the decision logic
+
+qaHornsT :: Interpreted -> [([RuleName], BoolStructT)]
+qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
+
+qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
+qaHornsR l4i =
+     [ ( ruleLabelName <$> uniqrs
+       , expanded)
+     | (_grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
+                            exposedRoots l4i      -- EXPOSED
+     , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
+     ]      
+
 -- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
       decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
   in vvsep [ "* musings"
            , "** Class Hierarchy"
            , vvsep [ vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <>
@@ -94,23 +119,26 @@ musings l4i rs =
 
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"
-           , srchs (ruleLabelName <$> decisionroots)
+           , srchs (ruleLabelName <$> exposedRoots l4i)
 
            , "*** Nubbed, Exposed, Decision Roots"
-           , "maybe some of the decision roots are identical and don't need to be repeated"
+           , "maybe some of the decision roots are identical and don't need to be repeated; so we nub them"
            , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
                      </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
-                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> getBSR (DL.head uniqrs))
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i  -- NUBBED
-                                                          (exposedRoots l4i)   -- EXPOSED
+                     </> "***** head uniqrs" </> srchs (DL.head uniqrs)
+                     </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
+                     </> "***** getBSR [head uniqrs]" </> srchs (catMaybes $ getBSR <$> [DL.head uniqrs])
+                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> catMaybes (getBSR <$> uniqrs))
+                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
+                                                          exposedRoots l4i      -- EXPOSED
                                                          ) [1..]
                    , not $ null uniqrs
                    ]
 
-           , "** TODO Expanded rules"
-           , "this isn't quite what we want yet -- we're looking for the rules to be expanded not just in terms of inter-rule HENCE/LEST connections, but also in terms of the defined terms"
-
+           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsR l4i ]
+           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsT l4i ]
+           , "** expandedRules"
            , if expandedRules == DL.nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
@@ -122,6 +150,10 @@ musings l4i rs =
                            | r <- rs -- this is AccidentallyQuadratic in a pathological case.
                            , let rlname = ruleLabelName r
                            , isRuleAlias l4i rlname ]
+                   ]
+           , vvsep [ "** default markings"
+                   , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
+                   , srchs (getMarkings l4i)
                    ]
            , "** The original rules"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
@@ -270,21 +302,6 @@ getAttrTypesIn ct classname =
                               ]
 
 
--- | reduce the ruleset to an organized set of rule trees.
--- where the HENCE and LEST are fully expanded; once a HENCE/LEST child has been incorporated into its parent, remove the child from the top-level list of rules.
--- similarly with DECIDE rules defined inline with MEANS
--- and references to defined terms; if a rule talks about Degustates, expand that to eats/drinks
-
-stitchRules :: Interpreted -> [Rule] -> [Rule]
-stitchRules _l4i rs = rs
-  -- partition rules into consumers and providers
-  -- a consumer is one that is not mentioned by any other rule.
-  -- a provider is one that is mentioned by some other rule, or is a rulealias.
-  -- filter out providers; return only consumers.
-  -- the Petri transpiler uses fgl to think about this stuff.
-  -- here we do it directly.
-
-
 type RuleIDMap = Map.Map Rule Int
 
 -- | structure the rules as a graph.
@@ -345,7 +362,8 @@ relPredRefs _l4i rs ridmap r =
      ]
 
 
--- | all the rules which have no indegrees, as far as decisioning goes
+-- | All the rules which have no indegrees, as far as decisioning goes.
+-- This is based solely on the rule graph.
 decisionRoots :: RuleGraph -> [Rule]
 decisionRoots rg =
   let rg' = dereflexed
@@ -367,10 +385,14 @@ decisionRoots rg =
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
--- a Regulative rule exposes its `who` and `cond` attributes
--- a Constitutive rule exposes the body of its `clauses`
-
--- todo: multiple rules with the same head should get &&'ed together and jammed into a single big rule
+-- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
+-- a Constitutive rule exposes the body of its `clauses`.
+--
+-- [TODO] multiple rules with the same head should get &&'ed together and jammed into a single big rule
+-- Or perhaps this depends on the mode in which the interpreter is running.
+-- It's one thing to merge class declarations for ontology purposes.
+-- It's another thing to merge decision rules.
+-- Perhaps we can have an interpreter pragma decide whether to return an error, or just give a warning that the merge is happening.
 
 getAndOrTree :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.Item T.Text
 getAndOrTree _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
@@ -413,6 +435,11 @@ bsmtOfClauses l4i depth r =
                             Just output
         ]
   in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+
+-- | What does clause expansion mean?
+-- we walk through the RelationalPredicates found in the head and the body of HornClause.
+-- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
+-- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 
 expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
 expandClauses l4i depth hcs = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i (depth+1) hcs
@@ -459,10 +486,11 @@ unleaf (AA.Leaf x     ) = AA.Leaf    x
 --        ]
 --
 
--- True for debugging, False for prod
+-- | Set true for debugging, False for prod
 expandTraceDebugging :: Bool
 expandTraceDebugging = False
 
+-- | a little helper function to do trace debugging of the expansion process
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
 expandTrace fname dpth toSay toShow =
   if expandTraceDebugging
@@ -472,7 +500,7 @@ expandTrace fname dpth toSay toShow =
   else toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
--- later, we shall have to limit the scope of such a definition based on UPON / WHEN / GIVEN preconditions.
+-- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
 -- for now we just scan across the entire ruleset to see if it matches.
 expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
 expandRP l4i depth (RPMT                   mt2) = expandTrace "expandRP" depth ("RPMT " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
@@ -485,6 +513,7 @@ expandRP l4i depth (RPBoolStructR mt1 RPis bsr) = expandTrace "expandRP" depth (
 expandRP _l4i depth x                           = expandTrace "expandRP" depth ("returning unchanged " ++ show x) $
                                                   x
 
+-- | Search the scopetable's symbol tables for a given multiterm. Expand its clauses, and return the expanded.
 expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate
 expandMT l4i depth mt0 =
   let expanded = listToMaybe
@@ -507,8 +536,9 @@ expandMT l4i depth mt0 =
      expandTrace "expandMT" depth ("will return " ++ show toreturn)
      toreturn
 
--- | expand a horn clause that may have both head and body containing stuff we want to fill.
--- not directly related to expandClauses
+-- | Expand a horn clause that may have both head and body containing stuff we want to fill.
+-- Despite the name, this is not directly related to expandClauses.
+-- It happens deeper in, under `expandMT`.
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
 expandClause _l4i _depth (HC2   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
 expandClause _l4i _depth (HC2   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
@@ -668,3 +698,37 @@ isRuleAlias l4i rname =
     matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
     matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
     matchHenceLest _                                                = False
+
+-- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
+-- This is used by the Purescript and SVG transpilers.
+
+getMarkings :: Interpreted -> AA.TextMarking
+getMarkings l4i = 
+  AA.Marking $ Map.fromList $
+  [ (defkey, defval)
+  | DefTypically{..} <- origrules l4i
+  , (defkey,defval) <- catMaybes $ markings <$> defaults
+  ]
+  where
+    markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
+    markings (RPConstraint ("has" : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint ("is"  : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint          xs  RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings _                                    = Nothing
+
+    rhsval rhs = case T.toLower <$> rhs of
+                   ["does not"] -> Just False
+                   ["doesn't"]  -> Just False
+                   ["hasn't"]   -> Just False
+                   ["not"]      -> Just False
+                   ["no"]       -> Just False
+                   ["f"]        -> Just False
+                   ["t"]        -> Just True
+                   ["so"]       -> Just True
+                   ["yes"]      -> Just True
+                   ["has"]      -> Just True
+                   ["does"]     -> Just True
+                   _            -> Nothing
+
+
+

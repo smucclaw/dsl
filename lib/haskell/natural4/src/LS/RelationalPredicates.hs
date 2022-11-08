@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {-|
 This module provides parser and utility functions for the RelationalPredicate group of types.
@@ -12,12 +13,13 @@ import Text.Megaparsec
 import Control.Monad.Writer.Lazy
 import Text.Parser.Permutation
 import qualified AnyAll as AA
--- import qualified Data.List.NonEmpty as NE
-import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..) )
+import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..)  )
 import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes, maybeToList)
 import Data.Semigroup (sconcat)
 import Data.Maybe (mapMaybe)
+import qualified Data.Text as T
 
 import LS.Types
 import LS.Tokens
@@ -500,6 +502,10 @@ slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   liftSL $ writeTypically l typicalval
   return (fromList l, ts)
 
+-- | record a TYPICALLY annotation.
+--
+-- if the annotation is originating in a "subjective" context -- i.e. a WHO or WHICH instead of a WHEN or IF -- the caller must include the name of the subject in the key.
+
 writeTypically :: MultiTerm -> Maybe MultiTerm -> Parser ()
 writeTypically somekey someval = do
   srcref' <- getSrcRef
@@ -600,6 +606,11 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
                                 |*| someLiftSL pOtherVal
       return akaval
 
+-- | parse a TYPICALLY annotation and return its value.
+--
+-- You would expect the value to be able to be TRUE or FALSE
+-- but here we are constrained to MultiTerm.
+-- [TODO] this should change in the future to allow a mix of MultiTerm and True/False values.
 typically :: SLParser MultiTerm
 typically = debugName "typically" $ do
   (_typically, someterm) <- (,)
@@ -661,4 +672,57 @@ meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $ prePostParse pRelPred
+
+-- | convert all decision logic in a rule to BoolStructR format.
+--   the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.
+--   the `cond` of a regulative rule is passed along.
+--   some rules don't hold decision logic so we return Nothing.
+--   [TODO] There is some overlap here with getAndOrTree. Can we converge?
+--
+-- for regulative rules,
+-- we rephrase a rule to add the subject of the rule to the RelationalPredicate.
+--
+-- +----------------------------+-------------------------------------+-----------------------+
+-- | input                      | output                              | intended NLG question |
+-- +============================+=====================================+=======================+
+-- | EVERY Singer WHO walks     | RPMT [ "Singer", "walks" ]          | Does Singer walk?     |
+-- +----------------------------+-------------------------------------+-----------------------+
+--
+-- in future we should also support
+-- +----------------------------+-------------------------------------+-----------------------+
+-- | input                      | output                              | intended NLG question |
+-- +============================+=====================================+=======================+
+-- | EVERY Singer WHO IS Hungry | RPConstraint "Singer" RPis "Hungry" | Is Singer hungry?     |
+-- +----------------------------+-------------------------------------+-----------------------+
+--
+getBSR :: Rule -> Maybe BoolStructR
+getBSR Hornlike{..}   = Just $ AA.simplifyItem $ AA.All Nothing $
+                        catMaybes $
+                        [ hbody
+                        | HC2 _hhead hbody <- clauses
+                        ] ++
+                        [ Just bsr
+                        | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
+                        ]
+getBSR Regulative{..} = Just $ AA.simplifyItem $ AA.All Nothing $
+                        maybeToList (prependSubject who) ++
+                        maybeToList cond
+  where
+    prependSubject :: Maybe BoolStructR -> Maybe BoolStructR
+    prependSubject mbsrwho = do
+      whobsr <- mbsrwho
+      return $ prependToRP [bsp2text subj] <$> whobsr
+      where
+        prependToRP :: [T.Text] -> RelationalPredicate -> RelationalPredicate
+        prependToRP ts (RPMT        mt) = RPMT (ts ++ mt)
+        prependToRP ts (RPParamText pt) = RPParamText (NE.fromList [ (myPrependList ts netext, mtypesig)
+                                                                   | (netext, mtypesig) <- NE.toList pt ])
+          where
+            -- when we upgrade to base 4.17 we can use the real NE.prependList
+            myPrependList pfix nelist = NE.fromList (pfix ++ NE.toList nelist)
+        prependToRP ts (RPConstraint  mt1 rpr mt2) = RPConstraint  mt1 rpr (ts ++ mt2)
+        prependToRP ts (RPBoolStructR mt1 rpr bsr) = RPBoolStructR mt1 rpr (prependToRP ts <$> bsr)
+        prependToRP ts (RPnary        rprel rps)   = RPnary        rprel   (prependToRP ts  $  rps)
+
+getBSR _              = Nothing
 

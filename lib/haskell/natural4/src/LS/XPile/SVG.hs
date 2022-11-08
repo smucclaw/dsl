@@ -15,7 +15,6 @@ import LS
 import AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (maybeToList)
 -- import Debug.Trace (trace)
 
 -- | extract the tree-structured rules from Interpreter
@@ -23,25 +22,15 @@ import Data.Maybe (maybeToList)
 
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
 asAAsvg aavc l4i _rs =
-  let rs1 = exposedRoots l4i -- connect up the rules internally, expand HENCE and LEST rulealias links, expand defined terms
-      rs2 = groupedByAOTree l4i rs1
-  in Map.fromList [ (rn ++ [ T.pack (show rn_n) | length totext > 1 ]
-                    , (svgtiny, svgfull, aaT, qtree))
-                  | (_mbst,rulegroup) <- rs2
-                  , not $ null rulegroup
-                  , let r = Prelude.head rulegroup
-                        rn      = ruleLabelName r
-                        ebsr = expandBSR l4i 1 <$> maybeToList (getBSR r)
-                        totext = filter isInteresting $
-                                 fmap rp2text <$> -- trace ("asAAsvg expandBSR = " ++ show ebsr)
-                                 ebsr
-                  , (rn_n, aaT) <- zip [1::Int ..] --  $ trace ("asAAsvg aaT <- totext = " ++ show totext)
-                                   totext
-                  , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
-                                  aaT
-                        svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
-                        svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
-                  ]
+  Map.fromList [ ( T.unwords <$> names
+                 , (svgtiny, svgfull, bs, qtree) )
+               | (names, bs) <- qaHornsT l4i
+               , isInteresting bs
+               , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
+                               bs
+                     svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
+                     svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
+               ]
   where
     -- | don't show SVG diagrams if they only have a single element
     isInteresting :: BoolStruct lbl a -> Bool

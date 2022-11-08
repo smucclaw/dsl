@@ -151,6 +151,10 @@ musings l4i rs =
                            , let rlname = ruleLabelName r
                            , isRuleAlias l4i rlname ]
                    ]
+           , vvsep [ "** default markings"
+                   , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
+                   , srchs (getMarkings l4i)
+                   ]
            , "** The original rules"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]

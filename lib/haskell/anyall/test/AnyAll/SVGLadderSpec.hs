@@ -75,7 +75,7 @@ compositeAndTree =
           { shouldView = View,
             andOr = And,
             prePost = Just (Pre "all of"),
-            mark = Default {getDefault = Left Nothing}
+            mark = Default ( Left Nothing )
           },
       subForest =
         [ Node
@@ -84,7 +84,7 @@ compositeAndTree =
                   { shouldView = View,
                     andOr = Simply "walk",
                     prePost = Nothing,
-                    mark = Default {getDefault = Right (Just True)}
+                    mark = Default ( Right (Just True) )
                   },
               subForest = []
             },
@@ -94,7 +94,7 @@ compositeAndTree =
                   { shouldView = View,
                     andOr = And,
                     prePost = Just (Pre "all"),
-                    mark = Default {getDefault = Left Nothing}
+                    mark = Default ( Left Nothing )
                   },
               subForest =
                 [ Node
@@ -103,7 +103,7 @@ compositeAndTree =
                           { shouldView = Ask,
                             andOr = Simply "eat",
                             prePost = Nothing,
-                            mark = Default {getDefault = Left (Just False)}
+                            mark = Default ( Left (Just False) )
                           },
                       subForest = []
                     },
@@ -113,7 +113,7 @@ compositeAndTree =
                           { shouldView = Ask,
                             andOr = Simply "drink",
                             prePost = Nothing,
-                            mark = Default {getDefault = Left (Just True)}
+                            mark = Default ( Left (Just True) )
                           },
                       subForest = []
                     }
@@ -131,7 +131,7 @@ simpleAndTree =
           { shouldView = View,
             andOr = And,
             prePost = Just (Pre "all"),
-            mark = Default {getDefault = Right (Just True)}
+            mark = Default ( Right (Just True) )
           },
       subForest =
         [ Node
@@ -140,7 +140,7 @@ simpleAndTree =
                   { shouldView = Ask,
                     andOr = Simply "eat",
                     prePost = Nothing,
-                    mark = Default {getDefault = Right (Just True)}
+                    mark = Default ( Right (Just True) )
                   },
               subForest = []
             },
@@ -150,7 +150,7 @@ simpleAndTree =
                   { shouldView = Ask,
                     andOr = Simply "drink",
                     prePost = Nothing,
-                    mark = Default {getDefault = Right (Just True)}
+                    mark = Default ( Right (Just True) )
                   },
               subForest = []
             }
@@ -165,7 +165,7 @@ simpleOrTree =
           { shouldView = View,
             andOr = Or,
             prePost = Just (Pre "any"),
-            mark = Default {getDefault = Left Nothing}
+            mark = Default ( Left Nothing )
           },
       subForest =
         [ Node
@@ -174,7 +174,7 @@ simpleOrTree =
                   { shouldView = Ask,
                     andOr = Simply "eat",
                     prePost = Nothing,
-                    mark = Default {getDefault = Left (Just False)}
+                    mark = Default ( Left (Just False) )
                   },
               subForest = []
             },
@@ -184,7 +184,7 @@ simpleOrTree =
                   { shouldView = Ask,
                     andOr = Simply "drink",
                     prePost = Nothing,
-                    mark = Default {getDefault = Left (Just True)}
+                    mark = Default ( Left (Just True) )
                   },
               subForest = []
             }
@@ -197,7 +197,7 @@ makeSingleNodeTree t =
     { shouldView = View,
       andOr = Simply t,
       prePost = Nothing,
-      mark = Default {getDefault = Left Nothing}
+      mark = Default ( Left Nothing )
     }
 
 spec :: Spec
@@ -451,7 +451,7 @@ spec = do
     let
       shortTextNode = makeSingleNodeTree "swim"
       longTextNode = makeSingleNodeTree "discombobulate"
-      mark = Default {getDefault = Right (Just True)}
+      mark = Default ( Right (Just True) )
     it "makes elements of different sizes for Full scale" $ do
       let
         shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull

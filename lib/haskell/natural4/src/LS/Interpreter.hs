@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-|
 
@@ -693,3 +694,37 @@ isRuleAlias l4i rname =
     matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
     matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
     matchHenceLest _                                                = False
+
+-- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
+-- This is used by the Purescript and SVG transpilers.
+
+getMarkings :: Interpreted -> AA.TextMarking
+getMarkings l4i = 
+  AA.Marking $ Map.fromList $
+  [ (defkey, defval)
+  | DefTypically{..} <- origrules l4i
+  , (defkey,defval) <- catMaybes $ markings <$> defaults
+  ]
+  where
+    markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
+    markings (RPConstraint ("has" : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint ("is"  : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint          xs  RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings _                                    = Nothing
+
+    rhsval rhs = case T.toLower <$> rhs of
+                   ["does not"] -> Just False
+                   ["doesn't"]  -> Just False
+                   ["hasn't"]   -> Just False
+                   ["not"]      -> Just False
+                   ["no"]       -> Just False
+                   ["f"]        -> Just False
+                   ["t"]        -> Just True
+                   ["so"]       -> Just True
+                   ["yes"]      -> Just True
+                   ["has"]      -> Just True
+                   ["does"]     -> Just True
+                   _            -> Nothing
+
+
+

@@ -17,6 +17,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
+import qualified AnyAll as AA
+import qualified Data.Map as Map
 
 -- import Debug.Trace (trace)
 
@@ -45,8 +47,13 @@ asPurescript l4i =
                  )
              )
            , "toplevelDefaultMarking :: Marking"
-           , "toplevelDefaultMarking = Marking (Map.fromFoldable " <>
-             "[]" <>
-             ")"
+           , "toplevelDefaultMarking = Marking $ Map.fromFoldable " <>
+             (pretty . TL.unpack
+              . TL.replace "False" "false"
+              . TL.replace "True" "true"
+              . pShowNoColor $ 
+              fmap toTuple . Map.toList . AA.getMarking $
+              getMarkings l4i
+             )
            ]
           )

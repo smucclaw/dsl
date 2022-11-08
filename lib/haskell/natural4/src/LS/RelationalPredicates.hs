@@ -502,6 +502,10 @@ slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   liftSL $ writeTypically l typicalval
   return (fromList l, ts)
 
+-- | record a TYPICALLY annotation.
+--
+-- if the annotation is originating in a "subjective" context -- i.e. a WHO or WHICH instead of a WHEN or IF -- the caller must include the name of the subject in the key.
+
 writeTypically :: MultiTerm -> Maybe MultiTerm -> Parser ()
 writeTypically somekey someval = do
   srcref' <- getSrcRef
@@ -602,6 +606,11 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
                                 |*| someLiftSL pOtherVal
       return akaval
 
+-- | parse a TYPICALLY annotation and return its value.
+--
+-- You would expect the value to be able to be TRUE or FALSE
+-- but here we are constrained to MultiTerm.
+-- [TODO] this should change in the future to allow a mix of MultiTerm and True/False values.
 typically :: SLParser MultiTerm
 typically = debugName "typically" $ do
   (_typically, someterm) <- (,)

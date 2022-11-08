@@ -208,12 +208,13 @@ psPrefix = [QQ.r|
 
 module RuleLib.PDPADBNO where
 
-import AnyAll.Types
+import Prelude
+import Data.Either
 import Data.Maybe
 import Data.Tuple
-import Prelude
-
 import Data.Map as Map
+
+import AnyAll.Types
 
 schedule1_part1 :: Item String
 schedule1_part1 =

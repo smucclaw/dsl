@@ -81,8 +81,9 @@ qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
 qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
-     | (_grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                            exposedRoots l4i      -- EXPOSED
+     | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
+                           exposedRoots l4i      -- EXPOSED
+     , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]      
 

@@ -696,10 +696,11 @@ isRuleAlias :: Interpreted -> RuleName -> Bool
 isRuleAlias l4i rname =
   any matchHenceLest (origrules l4i)
   where
-    matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
-    matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
-    matchHenceLest _                                                = False
-
+    matchHenceLest Regulative{..} = testMatch hence || testMatch lest
+    matchHenceLest _              = False
+    testMatch :: Maybe Rule -> Bool
+    testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
+    
 -- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
 -- This is used by the Purescript and SVG transpilers.
 

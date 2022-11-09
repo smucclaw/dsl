@@ -102,22 +102,24 @@ main = do
     unless (not (SFL4.toaasvg   opts)) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
-         then appendFile (dname <> "/index.html") ""
-         else sequence_
-              [ do
-                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
-                mywritefile False dname (fname<>"-full")   ext (show svgfull)
-                mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
-                mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
-                mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
-                mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
-                let fnamext = fname <> "." <> ext
-                    displayTxt = Text.unpack $ Text.unwords n
-                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
-                                                     <> "</a></li>\n")
-            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-            , let (fname, ext) = (take 20 (snake_scrub n), "svg")
-            ]
+        then do
+        createDirectoryIfMissing True dname
+        appendFile (dname <> "/index.html") "<!-- this file intentionally left blank -->"
+        else sequence_
+             [ do
+               mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
+               mywritefile False dname (fname<>"-full")   ext (show svgfull)
+               mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
+               mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
+               mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
+               mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
+               let fnamext = fname <> "." <> ext
+                   displayTxt = Text.unpack $ Text.unwords n
+               appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+                                                    <> "</a></li>\n")
+           | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
+           , let (fname, ext) = (take 20 (snake_scrub n), "svg")
+           ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 
 

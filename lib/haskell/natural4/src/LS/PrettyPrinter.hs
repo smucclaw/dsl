@@ -258,6 +258,7 @@ typedOrNot        _ (multitext, Just (InlineEnum pt1       s1)) = snake_case (to
 prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
 prettySimpleType _        prty (SimpleType TOne      s1) = prty s1
 prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
+prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
 prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
@@ -285,7 +286,8 @@ tildes :: Doc ann -> Doc ann
 tildes x = "~" <> x <> "~"
 
 -- | similar to ... <> Prettyprinter.line <> ...
-(</>) :: Doc ann -> Doc ann -> Doc ann
-a </> b = vvsep [ a, b ]
-infixr 5 </>
+(<//>), (</>) :: Doc ann -> Doc ann -> Doc ann
+a </>  b = vvsep [ a, b ]
+a <//> b = vsep  [ a, b ]
+infixr 5 </>, <//>
 

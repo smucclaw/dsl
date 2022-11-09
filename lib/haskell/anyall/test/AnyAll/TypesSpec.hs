@@ -32,32 +32,32 @@ spec = do
       q `shouldBe` Just (Marking {getMarking = Map.empty})
 
     it "Left empty" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Left\":null}}}"
+      let q = decode "{\"key\":{\"Left\":null}}"
           ma = markingMap $ Left Nothing
       q `shouldBe` Just (Marking {getMarking = ma})
 
     it "Left true" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Left\":true}}}"
+      let q = decode "{\"key\":{\"Left\":true}}"
           ma = markingMap $ Left $ Just True
       q `shouldBe` Just (Marking {getMarking = ma})
 
     it "Left false" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Left\":false}}}"
+      let q = decode "{\"key\":{\"Left\":false}}"
           ma = markingMap $ Left $ Just False
       q `shouldBe` Just (Marking {getMarking = ma})
 
     it "Right empty" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Right\":null}}}"
+      let q = decode "{\"key\":{\"Right\":null}}"
           ma = markingMap $ Right Nothing
       q `shouldBe` Just (Marking {getMarking = ma})
 
     it "Right true" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Right\":true}}}"
+      let q = decode "{\"key\":{\"Right\":true}}"
           ma = markingMap $ Right $ Just True
       q `shouldBe` Just (Marking {getMarking = ma})
 
     it "Right false" $ do
-      let q = decode "{\"key\":{\"getDefault\":{\"Right\":false}}}"
+      let q = decode "{\"key\":{\"Right\":false}}"
           ma = markingMap $ Right $ Just False
       q `shouldBe` Just (Marking {getMarking = ma})
 
@@ -69,29 +69,29 @@ spec = do
     it "marking Left empty" $ do
       let ma = markingMap $ Left Nothing
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Left\":null}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Left\":null}}}"
 
     it "marking Left true" $ do
       let ma = markingMap $ Left $ Just True
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Left\":true}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Left\":true}}}"
 
     it "marking Left false" $ do
       let ma = markingMap $ Left $ Just False
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Left\":false}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Left\":false}}}"
 
     it "marking Right empty" $ do
       let ma = markingMap $ Right Nothing
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Right\":null}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":null}}}"
 
     it "marking Right true" $ do
       let ma = markingMap $ Right $ Just True
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Right\":true}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":true}}}"
 
     it "marking Right false" $ do
       let ma = markingMap $ Right $ Just False
           q = encode Marking {getMarking = ma}
-      q `shouldBe` "{\"getMarking\":{\"key\":{\"getDefault\":{\"Right\":false}}}}"
+      q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":false}}}"

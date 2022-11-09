@@ -19,6 +19,7 @@ import LS.XPile.Petri
 import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
+import LS.XPile.Purescript
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
@@ -51,7 +52,8 @@ main = do
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabeled $ biggestItem l4i rules)) <> "\n\n" <> psSuffix)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabeled $ biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <>
+                                                                 asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
@@ -72,8 +74,8 @@ main = do
                                    , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
 
                                    , "-- getAndOrTrees"
-                                   , unlines $ (\r -> "\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n" <>
-                                                 (TL.unpack $ pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
+                                   , unlines $ (\r -> "\n-- " <> show (SFL4.ruleLabelName r) <> "\n" <>
+                                                 TL.unpack (pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
 
                                    , "-- traverse toList of the getAndOrTrees"
                                    , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i 1 <$> rules
@@ -206,12 +208,13 @@ psPrefix = [QQ.r|
 
 module RuleLib.PDPADBNO where
 
-import AnyAll.Types
+import Prelude
+import Data.Either
 import Data.Maybe
 import Data.Tuple
-import Prelude
-
 import Data.Map as Map
+
+import AnyAll.Types
 
 schedule1_part1 :: Item String
 schedule1_part1 =

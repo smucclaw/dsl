@@ -26,6 +26,8 @@ data BoolStruct lbl a =
 type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
 type BoolStructLT = BoolStruct (Label T.Text) T.Text
 
+-- | negation normal form applies De Morgan's laws to push the Nots down to the Leaves.
+
 nnf :: BoolStruct lbl a -> BoolStruct lbl a
 nnf (Not (Not p)) = nnf p
 nnf (Not (All l ps)) = Any l $ (nnf . Not) <$> ps
@@ -34,6 +36,7 @@ nnf (All l ps) = All l (nnf <$> ps)
 nnf (Any l ps) = Any l (nnf <$> ps)
 nnf x = x
 
+-- | sometimes we're only interested in the leaves of a Boolstruct.
 
 extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]
@@ -41,11 +44,16 @@ extractLeaves (Not x)  = extractLeaves x
 extractLeaves (All _ xs) = concatMap extractLeaves xs
 extractLeaves (Any _ xs) = concatMap extractLeaves xs
 
+-- | more or less the inverse of `alwaysLabeled` below.
+
 addJust ::  BoolStruct lbl a -> BoolStruct (Maybe lbl) a
 addJust (Any lbl xs) = Any (Just lbl) (addJust <$> xs)
 addJust (All lbl xs) = All (Just lbl) (addJust <$> xs)
 addJust (Leaf x)     = Leaf x
 addJust (Not x)      = Not (addJust x)
+
+-- | used in the conversion to Purescript output.
+-- the Purescript types require a `Label T.Text`, so we convert a `Label (Maybe T.Text)` accordingly.
 
 alwaysLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
 alwaysLabeled (Any Nothing    xs) = Any (Pre "any of:") (alwaysLabeled <$> xs)

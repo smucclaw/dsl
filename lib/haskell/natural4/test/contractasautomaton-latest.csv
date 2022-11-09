@@ -3,7 +3,7 @@
 ,,,,,,,,,,,,,,,,,
 //,Flood & Goodenough: Contract As Automaton,,,,,,,,,,,,,,,,6 Sep 2021
 //,"In this lesson, we explore the ""moving parts"" of a contract, as we formalize a loan agreement.",,,,,,,,,,,,,,,,
-//,We thank Mark Flood & Oliver Goodenough for authoring the case from which this example is drawn.,,,,,,,,,,,,,,,,
+//,We thank Mark Flood & Oliver Goodenough for authoring the paper from which this example is drawn.,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 //,"Executive Summary
 A lender offers a loan with interest. The borrower repays principal plus interest in two instalments.
@@ -42,7 +42,7 @@ Money probably includes notions of currency, amount, and so on.",,,,,,,,,,,,,,,,
 ,,"$1,000",,IS,THE,Principal,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 //,"We fill in the blanks: we instantiate the Loan class to an particular object called ""F&G"".
-Instead of declare we say define. The details follow the template.
+In this section, instead of declare, we say define. The details follow the template.
 These particulars are exportable to JSON and other formats which can be consumed by existing software.",,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 ,§,Contract Commencement,,,,,,,,,,,,,,,
@@ -68,7 +68,7 @@ the Lender can warn them to get back on track, and trigger early repayment if th
 ,,,,Repayment,,,,,,,,,,,,,
 ,,,MEANS,Main - Repay in two halves,,,,,,,,,,,,,
 ,,,AND,Side - Keep taxes paid,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,
+;;,,,,,,,,,,,,,,,,,
 //,Here we see two regulative rules connected by the HENCE keyword.,,,,,,,,,,,,,,,,
 //,"This is called ""nesting"". One rule fits inside another.",,,,,,,,,,,,,,,,
 //,,,EARLYRETURN,//,means if one track terminates then the other track also terminates,,,,,,,,,,,,
@@ -80,7 +80,7 @@ but also prepositional logic, ha ha.",,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 //,"(In the future, we will be able to write the Repayment bits more compactly.
 Here, the Repyament bits are a little more verbose than they strictly should be.)",,,,,,,,,,,,,,,,
-;;,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
 ,§,Main - Repay in two halves,,,,,,,,,,,,,,,
 ,PARTY,Borrower,,,,,,,,,,,,,,,
 ,MUST,ON,1 June 2015,,,,,,,,,,,,,,

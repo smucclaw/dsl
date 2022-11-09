@@ -74,8 +74,16 @@ strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Ord, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 
-newtype Default a = Default { getDefault :: Either (Maybe a) (Maybe a) }
+-- | Left: no user input; default value from system.
+--
+--   Right: user input. received value from user.
+
+-- using data instead of newtype because it makes it easier to prettyprint to Purescript via Show
+data Default a = Default (Either (Maybe a) (Maybe a))
   deriving (Eq, Ord, Show, Generic)
+getDefault :: Default a -> Either (Maybe a) (Maybe a)
+getDefault (Default x) = x
+
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
 instance (FromJSON a) => FromJSON (Default a)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString

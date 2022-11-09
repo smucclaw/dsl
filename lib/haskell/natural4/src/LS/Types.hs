@@ -1,12 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass, DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
 
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
@@ -28,7 +26,6 @@ import Data.Aeson (ToJSON)
 import GHC.Generics
 import qualified Data.Tree as Tree
 import qualified Data.Map as Map
-import Data.Maybe (maybeToList, catMaybes)
 
 import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -381,22 +378,6 @@ hasGiven             __ = False
 hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
-
--- | convert all decision logic in a rule to BoolStructR format.
--- the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.
--- the `cond` of a regulative rule is passed along.
-getBSR :: Rule -> [BoolStructR]
-getBSR Hornlike{..}   = catMaybes $
-                        [ hbody
-                        | HC2 _hhead hbody <- clauses
-                        ] ++
-                        [ Just bsr
-                        | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
-                        ]
-getBSR Regulative{..} = maybeToList who ++
-                        maybeToList cond
-
-getBSR _              = []
 
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead

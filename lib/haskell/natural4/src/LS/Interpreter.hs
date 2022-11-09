@@ -145,12 +145,11 @@ musings l4i rs =
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees, direct"
            , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
-           , "** Things that are RuleAliases"
-           , vvsep [ "*** RuleAliases"
-                   , vvsep [ "-" <+> pretty rlname
-                           | r <- rs -- this is AccidentallyQuadratic in a pathological case.
-                           , let rlname = ruleLabelName r
-                           , isRuleAlias l4i rlname ]
+           , vvsep [ "** Things that are RuleAliases"
+                   , vsep [ "-" <+> pretty rlname
+                          | r <- rs -- this is AccidentallyQuadratic in a pathological case.
+                          , let rlname = ruleLabelName r
+                          , isRuleAlias l4i rlname ]
                    ]
            , vvsep [ "** default markings"
                    , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"

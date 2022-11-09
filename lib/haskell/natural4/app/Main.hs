@@ -99,22 +99,28 @@ main = do
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    unless (not (SFL4.toaasvg   opts)) $ sequence_
-      [ do
-          mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
-          mywritefile False dname (fname<>"-full")   ext (show svgfull)
-          mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
-          mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
-          mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
-          mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
-          let fnamext = fname <> "." <> ext
-              displayTxt = Text.unpack $ Text.unwords n
-          appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
-                                               <> "</a></li>\n")
-          myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
-      | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-      , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
-      ]
+    unless (not (SFL4.toaasvg   opts)) $ do
+      let dname = toaasvgFN <> "/" <> iso8601
+      if null asaasvg
+         then appendFile (dname <> "/index.html") ""
+         else sequence_
+              [ do
+                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
+                mywritefile False dname (fname<>"-full")   ext (show svgfull)
+                mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
+                mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
+                mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
+                mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
+                let fnamext = fname <> "." <> ext
+                    displayTxt = Text.unpack $ Text.unwords n
+                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+                                                     <> "</a></li>\n")
+            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
+            , let (fname, ext) = (take 20 (snake_scrub n), "svg")
+            ]
+      myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
+
+
     unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl

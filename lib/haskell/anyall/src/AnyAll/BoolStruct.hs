@@ -68,16 +68,12 @@ instance Monoid lbl => Semigroup (BoolStruct lbl a) where
 -- output:
 --        All [x1, x2,       Any [y1, y2], Leaf z]
 -- but only if the labels match
-
 simplifyItem :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
--- reverse not-nots
 simplifyItem (Not (Not x)) = simplifyItem x
--- extract singletons
-simplifyItem (All _ [x]) = simplifyItem x
-simplifyItem (Any _ [x]) = simplifyItem x
--- flatten parent-child and flatten siblings
-simplifyItem (All l1 xs) = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
-simplifyItem (Any l1 xs) = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem (All _ [x])   = simplifyItem x
+simplifyItem (Any _ [x])   = simplifyItem x
+simplifyItem (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
 simplifyItem orig = orig
 
 
@@ -143,6 +139,7 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
 
 type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
+
 native2tree :: OptionallyLabeledBoolStruct a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])

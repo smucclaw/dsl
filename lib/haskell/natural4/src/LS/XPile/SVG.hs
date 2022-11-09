@@ -26,8 +26,7 @@ asAAsvg aavc l4i _rs =
                  , (svgtiny, svgfull, bs, qtree) )
                | (names, bs) <- qaHornsT l4i
                , isInteresting bs
-               , let qtree   = hardnormal (cgetMark aavc) --  $ trace ("asAAsvg aaT = " ++ show aaT)
-                               bs
+               , let qtree   = softnormal (getMarkings l4i) bs
                      svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree
                      svgfull = makeSvg $ q2svg' aavc { cscale = Full } qtree
                ]

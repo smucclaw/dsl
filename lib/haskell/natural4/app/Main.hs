@@ -20,6 +20,8 @@ import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
+import LS.XPile.NaturalLanguage
+
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
@@ -58,6 +60,7 @@ main = do
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
+      (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -98,6 +101,7 @@ main = do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
+    unless (not (SFL4.tonl      opts)) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ do
       let dname = toaasvgFN <> "/" <> iso8601

@@ -76,18 +76,46 @@ instance Monoid lbl => Semigroup (BoolStruct lbl a) where
 -- output:
 --        All [x1, x2,       Any [y1, y2], Leaf z]
 -- but only if the labels match
-
 simplifyItem :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
--- reverse not-nots
 simplifyItem (Not (Not x)) = simplifyItem x
--- extract singletons
-simplifyItem (All _ [x]) = simplifyItem x
-simplifyItem (Any _ [x]) = simplifyItem x
--- flatten parent-child and flatten siblings
-simplifyItem (All l1 xs) = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
-simplifyItem (Any l1 xs) = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem (All _ [x])   = simplifyItem x
+simplifyItem (Any _ [x])   = simplifyItem x
+simplifyItem (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
+simplifyItem (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
 simplifyItem orig = orig
 
+data MergeResult a = Merged a | Unmerged a a
+
+attemptMergeHeads :: Eq lbl => BoolStruct lbl a -> BoolStruct lbl a -> MergeResult (BoolStruct lbl a)
+attemptMergeHeads  x@(All xl xs)  y@(All yl ys)
+  | xl == yl = Merged (All xl (xs ++ ys))
+  | otherwise = Unmerged x y
+attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
+  | xl == yl = Merged $ Any xl (xs ++ ys)
+  | otherwise = Unmerged x y
+attemptMergeHeads  x  y = Unmerged x y
+
+mergeMatch3 :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
+mergeMatch3 []  = []
+mergeMatch3 [k] = [k]
+mergeMatch3 (bs1 : bs2 : zs) = case x of
+  (Merged m) -> mergeMatch3 (m:zs)
+  (Unmerged x y) -> x : mergeMatch3 (y:zs)
+  where
+    x = attemptMergeHeads bs1 bs2
+
+boolStructToText :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> ((T.Text, lbl), [BoolStruct lbl a])
+boolStructToText x = case x of
+  (Any lbl ys) -> (("any", lbl), ys)
+  (All lbl ys) -> (("all", lbl), ys)
+  (Leaf y) -> (("leaf", mempty), [Leaf y])
+  (Not y) -> (("not", mempty), [Not y])
+
+textToBoolStruct :: (Eq lbl, Monoid lbl) => ((T.Text, lbl), [BoolStruct lbl a2]) -> [BoolStruct lbl a2]
+textToBoolStruct x = case x of
+  (("any", lbl), ys) -> [Any lbl ys]
+  (("all", lbl), ys) -> [All lbl ys]
+  ((_, _), ys) -> ys
 
 -- | utility for simplifyItem: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
 -- example:
@@ -96,34 +124,24 @@ simplifyItem orig = orig
 -- output:
 --        All [Any [x1, x2, y1, y2], Leaf z]
 siblingfyItem :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-siblingfyItem xs =
+siblingfyItem = mergeMatch3
+
+siblingfyItemOrig :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
+siblingfyItemOrig xs =
   let grouped =
         mergeMatch
         [ ((anyall,lbl), ys)
         | x <- xs
-        , let ((anyall,lbl),ys) = case x of
-                                    (Any lbl ys) -> (("any", lbl),     ys)
-                                    (All lbl ys) -> (("all", lbl),     ys)
-                                    (Leaf    y ) -> (("leaf",mempty), [Leaf y])
-                                    (Not     y ) -> (("not", mempty), [Not  y])
+        , let ((anyall,lbl),ys) = boolStructToText x
         ]
-      after = concat $ flip fmap grouped $ \case
-        (("any",lbl),ys) -> [Any lbl ys]
-        (("all",lbl),ys) -> [All lbl ys]
-        ((_,_)      ,ys) -> ys
-  in -- (trace $ TL.unpack $ strPrefix "siblingfyItem: before: " (pShowNoColor xs)) $
-     -- (trace $ TL.unpack $ strPrefix "siblingfyItem: during: " (pShowNoColor grouped)) $
-     -- (trace $ TL.unpack $ strPrefix "siblingfyItem: after:  " (pShowNoColor after)) $
-     after
-  where
-    -- combine sequential ("foo", [x,y]) , ("foo", [z]) into ("foo", [x,y,z]) but only if the "foo" parts match
-    mergeMatch :: (Eq a, Semigroup b) => [(a,b)] -> [(a,b)]
-    mergeMatch []  = []
-    mergeMatch [k] = [k]
-    mergeMatch ((x1,y1) : (x2,y2) : zs)
-      | x1 == x2  =           mergeMatch ((x1, y1 <> y2) : zs)
-      | otherwise = (x1,y1) : mergeMatch ((x2,       y2) : zs)
+  in concatMap textToBoolStruct grouped
 
+mergeMatch :: (Eq a, Semigroup b) => [(a,b)] -> [(a,b)]
+mergeMatch []  = []
+mergeMatch [k] = [k]
+mergeMatch ((x1,y1) : (x2,y2) : zs)
+  | x1 == x2  =           mergeMatch ((x1, y1 <> y2) : zs)
+  | otherwise = (x1,y1) : mergeMatch ((x2,       y2) : zs)
 
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.
 --   The marking comes from user input, and it "changes" at runtime,
@@ -151,6 +169,7 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
 
 type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
+
 native2tree :: OptionallyLabeledBoolStruct a -> AsTree a
 native2tree (Leaf a) = Node (Simply a, Nothing) []
 native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])

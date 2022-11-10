@@ -1,20 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-| transpiler to Purescript and JSON types intended for consumption by Vue. -}
+
+-- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
+
 module LS.XPile.VueJSON where
 
 import LS
 import LS.NLP.NLG
 import AnyAll.Types
+import AnyAll.BoolStruct
 
-import Data.Maybe (maybeToList, catMaybes)
+import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text
 import Control.Monad (when)
 
 import PGF ( linearize, languages )
 import LS.NLP.UDExt (gf)
-import Data.Graph.Inductive.Internal.Thread (threadList)
+-- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
 import qualified Data.Text as T
 
@@ -25,7 +30,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
-                  | r@DefTypically{..} <- rs ]
+                  | r@DefTypically{} <- rs ]
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
 checklist env _ rs = do
@@ -70,7 +75,7 @@ rulegrounds rc globalrules r@Hornlike{..} =
 
   in concat $ concat [givenGrounds, uponGrounds, clauseGrounds]
 
-rulegrounds rc globalrules r = [ ]
+rulegrounds _rc _globalrules _r = [ ]
 
 -- [TODO]: other forms of Rule need their ground terms expressed.
 -- [TODO]: also, we should return the terms as a plain BoolStruct (Item Text.Text) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item Text.
@@ -91,6 +96,7 @@ rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
 rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
 rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
 rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds rc globalrules r (Just bsr)
+rp2grounds  rc  globalrules  r (RPnary     _rprel rp) = rp2grounds rc  globalrules  r rp
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP rc globalrules r =
@@ -151,17 +157,17 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 
 -- define custom types here for things we care about in purescript
 
-itemRPToItemJSON :: ItemMaybeLabel RelationalPredicate -> ItemJSONText
-itemRPToItemJSON (Leaf b) = AnyAll.Types.Leaf (rp2text b)
-itemRPToItemJSON (AnyAll.Types.All Nothing items) = AnyAll.Types.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.All pre (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.All pp (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any Nothing items) = AnyAll.Types.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.Types.Any pre (map itemRPToItemJSON items)
-itemRPToItemJSON (AnyAll.Types.Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.Types.Any pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Not item) = AnyAll.Types.Not (itemRPToItemJSON item)
+itemRPToItemJSON :: BoolStructR -> BoolStructLT
+itemRPToItemJSON (Leaf b) = AnyAll.BoolStruct.Leaf (rp2text b)
+itemRPToItemJSON (All Nothing items) = AnyAll.BoolStruct.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Any Nothing items) = AnyAll.BoolStruct.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.Any pre (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.Any pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Not item) = AnyAll.BoolStruct.Not (itemRPToItemJSON item)
 
-type RuleJSON = Map.Map String ItemJSONText
+type RuleJSON = Map.Map String BoolStructLT
 
 rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
@@ -174,53 +180,3 @@ ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
   <> maybe Map.empty (Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
 ruleToRuleJSON DefNameAlias{} = Map.empty
 ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, Leaf "unimplemented")]
-
-
--- itemRPToBinExpr :: Item RelationalPredicate -> BinExpr String String
--- itemRPToBinExpr (Leaf b) = BELeaf (Text.unpack $ rp2text b)
--- itemRPToBinExpr (AnyAll.Types.All _ items) = BEAll "" (map itemRPToBinExpr items)
--- itemRPToBinExpr (AnyAll.Types.Any _ items) = BEAny "" (map itemRPToBinExpr items)
--- itemRPToBinExpr (Not item) = BENot (itemRPToBinExpr item)
-
--- dsl/lib/haskell/anyall/src/AnyAll/Types.hs
--- type Item a = Item' (Label TL.Text) a
--- data Item' lbl a =
---     Leaf                       a
---   | All (Maybe lbl) [Item' lbl a]
---   | Any (Maybe lbl) [Item' lbl a]
---   | Not             (Item' lbl a)
-
--- data Label a =
---     Pre a
---   | PrePost a a
-
--- vue-pure-pdpa/src/AnyAll/Types.purs
--- data Item a
---   = Leaf a
---   | All (Label a) (Array (Item a))
---   | Any (Label a) (Array (Item a))
---   | Not (Item a)
-
-
--- we have this
--- thing :: Item RelationalPredicate
--- thing =  All Nothing
---   [ Leaf
---     ( RPMT [ "a" ] )
---   , Any Nothing
---     [ Leaf
---       ( RPMT [ "b" ] )
---     , Leaf
---       ( RPMT [ "c" ] )
---     ]
---   ]
-
--- we need this
--- thing' :: Item String
--- thing' =  All Nothing
---   [ Leaf [ "a" ]
---   , Any Nothing
---     [ Leaf [ "b" ]
---     , Leaf  [ "c" ]
---     ]
---   ]

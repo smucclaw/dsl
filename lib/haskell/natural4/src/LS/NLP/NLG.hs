@@ -13,15 +13,15 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
-import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, readExpr, PGF )
+import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text as Text
 import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
-import Data.Maybe ( fromMaybe, catMaybes, mapMaybe, fromJust )
-import Data.List ( group, sort, sortOn, nub, intercalate, isInfixOf )
+import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
+import Data.List ( group, sort, sortOn, nub, intercalate )
 import Data.List.Extra (groupOn, splitOn)
 import Data.Either (partitionEithers)
 import Debug.Trace (trace)
@@ -144,7 +144,7 @@ parseUD env txt = do
 
     swapBack :: [String] -> [String] -> [String]
     swapBack [] [] = []
-    swapBack [] (y:ys) = []
+    swapBack [] (_y:_ys) = []
     swapBack (x:xs) [] = x:xs
     swapBack (x:xs) (y:ys) = ((init x) ++ y) : swapBack xs ys
 
@@ -156,7 +156,7 @@ parseUD env txt = do
         checkSymbol x = any (`Set.member` (Set.fromList ['#','§'])) x
 
     saveNonWords :: [String] -> [String] -> [[String]]
-    saveNonWords [] ls = []
+    saveNonWords [] _ls = []
     saveNonWords (x:xs) ls
       | checkIfChunk x = (x:ls) : saveNonWords xs ls
       | otherwise = saveNonWords xs ls
@@ -262,8 +262,9 @@ nlgQuestion env rl = do
         space = ' '
         lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
         -}
-        lin indentation x = [linearize gr lang (gf x)]
+        lin _indentation x = [linearize gr lang (gf x)]
         qnPunct :: [String] -> [String]
+        qnPunct [] = []
         qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
@@ -372,7 +373,7 @@ nlg env rl = do
               , let linTree = showExpr tree ]
 
         return linTrees_exprs
-      ConstitutiveA {nameA, keywordA, condA, givenA} -> do
+      ConstitutiveA {nameA, condA, givenA} -> do
         putStrLn "Constitutive rule:"
         putStrLn $ Text.unpack nameA
         mapM_ (putStrLn . showExpr) (catMaybes [condA, givenA])
@@ -387,7 +388,7 @@ nlg env rl = do
         mapM_ (putStrLn . showExpr) scgivenA
         mapM_ (putStrLn . showExpr) expectA
         return ""
-      DefNameAliasA { nameA, detailA, nlhintA } -> do
+      DefNameAliasA { nameA, detailA } -> do
         let tree = maybe detailA gf (npFromUDS $ fg detailA)
             linText = linearize gr lang tree
             --linTree = showExpr tree
@@ -499,6 +500,7 @@ parseFields env rl = case rl of
       let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
       let rprel = if is==RPis then fun else keyword2cid is
       return $ mkApp rprel [skyNP, blueUDS]
+    parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
 
     -- ConstitutiveName is [Text.Text]
     parseMulti :: NLGEnv -> [Text.Text] -> IO Expr

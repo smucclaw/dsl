@@ -19,6 +19,7 @@ import LS.XPile.Petri
 import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
+import LS.XPile.Purescript
 import LS.NLP.NLG (nlg,myNLGEnv,toMarkdown, toHTML,toPDF)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
@@ -30,7 +31,10 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
+import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Text.RawString.QQ as QQ
+import qualified Data.Foldable as DF
+-- import qualified Data.Traversable as DT
 
 
 main :: IO ()
@@ -43,38 +47,52 @@ main = do
 --  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
-      l4i         = l4interpret rules
+      l4i         = l4interpret SFL4.defaultInterpreterOptions rules
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabel $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabel $ onlyTheItems l4i)) <> "\n\n" <> psSuffix)
+      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabeled $ biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <>
+                                                                 asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
+      (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
 
                                    , "-- variable-substitution expanded AnyAll rules\n"
-                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i (SFL4.clauses r) }
+                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
                                                                | r@SFL4.Hornlike{} <- rules
                                                                ])
 
-                                   , "-- getAndOrTrees"
-                                   , unlines $ (\r -> ("\n-- " <> (show $ SFL4.ruleLabelName r) <> "\n") <> (TL.unpack $ pShowNoColor $ getAndOrTree l4i r)) <$> rules
-
                                    , "\n\n-- class hierarchy:\n"
-                                   , TL.unpack (pShowNoColor (classHierarchy rules))
+                                   , TL.unpack (pShowNoColor (SFL4.classtable l4i))
 
                                    , "\n\n-- symbol table:\n"
-                                   , TL.unpack (pShowNoColor (symbolTable rules))
+                                   , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
+
+                                   , "-- getAndOrTrees"
+                                   , unlines $ (\r -> "\n-- " <> show (SFL4.ruleLabelName r) <> "\n" <>
+                                                 TL.unpack (pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
+
+                                   , "-- traverse toList of the getAndOrTrees"
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i 1 <$> rules
+
+                                   , "-- onlyTheItems"
+                                   , TL.unpack $ pShowNoColor (onlyTheItems l4i)
+
+                                   , "-- ItemsByRule"
+                                   , TL.unpack $ pShowNoColor (SFL4.itemsByRule l4i rules)
+
                                    ])
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
 --    putStrLn "going to start dumping to workdir outputs"
+    unless (not (SFL4.tonative  opts)) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     unless (not (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
@@ -83,28 +101,37 @@ main = do
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    unless (not (SFL4.toaasvg   opts)) $ sequence_
-      [ do
-          mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
-          mywritefile False dname (fname<>"-full")   ext (show svgfull)
-          mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
-          mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
-          mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
-          mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
-          let fnamext = fname <> "." <> ext
-              displayTxt = Text.unpack $ Text.unwords n
-          appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
-                                               <> "</a></li>\n")
-          myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
-      | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-      , let (dname, fname, ext) = (toaasvgFN <> "/" <> iso8601, take 20 (snake_scrub n), "svg")
-      ]
+    unless (not (SFL4.toaasvg   opts)) $ do
+      let dname = toaasvgFN <> "/" <> iso8601
+      if null asaasvg
+        then do
+        createDirectoryIfMissing True dname
+        appendFile (dname <> "/index.html") "<!-- this file intentionally left blank -->"
+        else sequence_
+             [ do
+               mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
+               mywritefile False dname (fname<>"-full")   ext (show svgfull)
+               mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
+               mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
+               mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
+               mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
+               let fnamext = fname <> "." <> ext
+                   displayTxt = Text.unpack $ Text.unwords n
+               appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+                                                    <> "</a></li>\n")
+           | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
+           , let (fname, ext) = (take 20 (snake_scrub n), "svg")
+           ]
+      myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
+
+
     unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
+    putStrLn "natural4: output to workdir done"
 
   when (SFL4.only opts == "petri")  $ putStrLn asPetri
-  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i <$> rules)
+  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
   when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
   when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
@@ -130,8 +157,8 @@ main = do
 
   when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
   when (SFL4.only opts `elem` ["native"])  $ pPrint rules
-  when (SFL4.only opts `elem` ["classes"]) $ print (classHierarchy rules)
-  when (SFL4.only opts `elem` ["symtab"])  $ print (symbolTable rules)
+  when (SFL4.only opts `elem` ["classes"]) $ print (SFL4.classtable l4i)
+  when (SFL4.only opts `elem` ["symtab"])  $ print (SFL4.scopetable l4i)
 
   when (SFL4.toVue rc) $ do
     -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
@@ -202,14 +229,20 @@ snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] +
 
 psPrefix :: String -- the stuff at the top of the purescript output
 psPrefix = [QQ.r|
+
+-- This file was automatically generated by natural4.
+-- Do not edit by hand.
+-- Instead, revise the toolchain starting at smucclaw/dsl/lib/haskell/natural4/app/Main.hs
+
 module RuleLib.PDPADBNO where
 
-import AnyAll.Types
+import Prelude
+import Data.Either
 import Data.Maybe
 import Data.Tuple
-import Prelude
-
 import Data.Map as Map
+
+import AnyAll.Types
 
 schedule1_part1 :: Item String
 schedule1_part1 =
@@ -287,4 +320,4 @@ schedule1_part1_nl =
 --     ]
 -- |]
 
-  
+

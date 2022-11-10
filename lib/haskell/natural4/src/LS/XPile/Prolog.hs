@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{-| transpiler to Prolog. This module is on hold; instead, see how baby-l4 generates Prolog-like outoputs. -}
+
 module LS.XPile.Prolog where
 
 import LS as SFL4
@@ -9,6 +11,7 @@ import qualified Data.Map as Map
 import Data.List.NonEmpty as NE
 import AnyAll
 
+prologExamples :: [Clause]
 prologExamples =
   [ Clause (Struct "foo" [var "Bar", var "Baz"]) [Struct "quux" [var "Bar"], var "Bonk"]
   ]
@@ -31,7 +34,8 @@ rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $
 --             ( "Left" :| [] ) :|
 --             [ "Right" :| [] ]
 
-rule2clause st td@TypeDecl { has   = rules }    = describeDict st (Text.unwords $ name td) (super td) rules
+rule2clause st td@TypeDecl { has   = rules }
+  | rules /= [] = describeDict st (Text.unwords $ name td) (super td) rules
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -54,7 +58,7 @@ rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describePa
 --     , super = Just
 --         ( SimpleType TOne "Chirality" )
 
-rule2clause st _ = [ mkComment "clause Not Handled" ]
+rule2clause _st _ = [ mkComment "clause Not Handled" ]
 
 describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [Rule] -> [Clause]
 describeDict st tname mparent rules =
@@ -65,18 +69,21 @@ describeDict st tname mparent rules =
   , let typeDesc = maybe "untyped" showtype (super rule)
   ]
 
+showtype :: TypeSig -> EntityType
 showtype (SimpleType TOne      tt) = tt
 showtype (SimpleType TOptional tt) = "optional("     <> tt <> ")"
 showtype (SimpleType TList0    tt) = "listOf("       <> tt <> ")"
 showtype (SimpleType TList1    tt) = "nonEmptyList(" <> tt <> ")"
 showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (untypePT tt)))
+
+inEnums :: NonEmpty (NonEmpty Text.Text) -> Text.Text
 inEnums pt = "enums(" <> Text.unwords [ h | (h :| _) <- NE.toList pt ] <> ")"          
              -- we gonna need the same writer magic to append top-level output.
              -- in future, run clpEnums
              -- for now, just blurt it out
 
 describeParent :: Analysis -> Text.Text -> TypeSig -> Clause
-describeParent st tname parent =
+describeParent _st tname parent =
   Clause (Struct "l4type" [var "class", vart tname, var "extends", vart (showtype parent)]) []
 
 vart, vartl, vartu :: Text.Text -> Term
@@ -88,7 +95,7 @@ vari :: Int -> Term
 vari = var . show
 
 clpEnums :: Analysis -> Text.Text -> ParamText -> [Clause]
-clpEnums st tname ens =
+clpEnums _st tname ens =
   [ Clause (Struct "l4enum" [vartl tname, vari i, vartl v]) []
   | (v :| _, i) <- Prelude.zip (NE.toList $ untypePT ens) [n..] ]
   where n = 1 :: Int
@@ -98,13 +105,13 @@ mkComment :: String -> Clause
 mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
 
 hornlike2clauses :: Analysis -> Text.Text -> [HornClause2] -> [Clause]
-hornlike2clauses st fname hc2s =
-  [ clause
+hornlike2clauses _st _fname hc2s =
+  [ clause'
   | hc2 <- hc2s
   , let lhses = rp2goal $ hHead hc2
-        rhs   = mbsr2rhs $ hBody hc2
-  , lhs <- lhses
-  , let clause = Clause lhs rhs
+        rhs'   = mbsr2rhs $ hBody hc2
+  , lhs' <- lhses
+  , let clause' = Clause lhs' rhs'
   ]
 
 bsp2struct :: BoolStructP -> [Term]
@@ -124,21 +131,17 @@ mbsr2rhs Nothing = []
 mbsr2rhs (Just bsr) = bsr2struct bsr
 
 rp2goal :: RelationalPredicate -> [Term]
-rp2goal (RPParamText pt)     = pure $ vart "ERROR: rp2goal: paramtext not supported"
+rp2goal (RPParamText _pt)     = pure $ vart "ERROR: rp2goal: paramtext not supported"
 rp2goal (RPMT [])            = pure $ vart ""
 rp2goal (RPMT [x])           = pure $ vart x
 rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
-rp2goal (RPBoolStructR lhs rel bsr) = Struct (Text.unpack $ Text.unwords lhs) <$> [bsr2struct bsr]
+rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ Text.unwords lhs_) <$> [bsr2struct bsr]
 rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (vart <$> mt1) ++ (vart <$> mt2)
+rp2goal (RPnary      rprel rp) = pure $ Struct (rel2f rprel) $ rp2goal rp
 
-
+rel2f :: RPRel -> String
 rel2f = Text.unpack . rel2txt
 
 analyze :: [SFL4.Rule] -> Analysis
-analyze rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame
-
-
-
-
-
+analyze _rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame
 

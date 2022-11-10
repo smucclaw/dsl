@@ -4,6 +4,12 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-|
+Abstract parser functions that help build other parsers.
+
+This module imports Control.Monad.Combinators.Expr which is the basis for the BoolStruct family of parsers.
+
+-}
 module LS.Parser where
 
 import LS.Types
@@ -15,7 +21,6 @@ import Text.Megaparsec
 import qualified Data.Text as Text
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
-
 data MyItem lbl a =
     MyLeaf                a
   | MyLabel  lbl (Maybe lbl) (MyItem lbl a)
@@ -25,18 +30,19 @@ data MyItem lbl a =
   deriving (Eq, Show)
   deriving (Functor)
 
+-- hm, shouldn't this be a MyItem (Maybe MultiTerm) to capture scenarios where there is no "any of the following" text?
 type MyBoolStruct = MyItem MultiTerm
 
-pBoolStruct :: Parser BoolStruct
+pBoolStruct :: Parser BoolStructT
 pBoolStruct = prePostParse pOtherVal
 
-prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.ItemMaybeLabel a)
+prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.OptionallyLabeledBoolStruct a)
 prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 -- [TODO]: consider upgrading anyall's Item a to be a Label [TL.Text] rather than Label TL.Text
 -- when we do that, we won't have to Text.unwords lab below.
 
-toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.ItemMaybeLabel a)
+toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.OptionallyLabeledBoolStruct a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
 toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
 toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
@@ -50,6 +56,8 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 -- toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
 -- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
+
+
 
 expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
@@ -89,11 +97,11 @@ notLabelTerm p =
   try (debugName "term p/2:someIndentation expr p" (someIndentation (expr p)))
   <|> try (debugName "term p/3:plain p" (plain p) <?> "term")
 
-table :: [[Operator Parser (MyBoolStruct a)]]
+table :: (Show a) => [[Operator Parser (MyBoolStruct a)]]
 table = [ [ prefix  MPNot  MyNot  ]
         , [ binary  Or    myOr   ]
-        , [ binary  And   myAnd
-          , binary  Unless myUnless  ]
+        , [ binary  Unless myUnless  ]
+        , [ binary  And   myAnd ]
         -- , [ Prefix labelPrefix]
         , [ binary  SetLess   setLess  ]
         , [ binary  SetPlus   myOr  ]
@@ -118,19 +126,22 @@ getAll (MyAll xs) = xs
 getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
-myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myAnd,myOr,myUnless,setLess :: (Show lbl, Show a) => MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
 myAnd a b                          = MyAll (getAll a <> getAll b)
 
-myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
 myOr a b                          = MyAny (getAny a <> getAny b)
 
-myUnless :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myUnless (MyLabel pre post (MyAll xs)) b = MyLabel pre post $ MyAll (MyNot b: xs)
-myUnless a b                             = MyAll (MyNot b : [a])
+myUnless (MyLabel pre post (MyAll as)) b = -- trace "myUnless: path 1" $
+                                           MyLabel pre post $ MyAll (as ++ [MyNot b])
+myUnless a (MyLabel pre post (MyAll bs)) = -- trace "myUnless: path 2" $
+                                           MyLabel pre post $ MyAll (MyNot a: bs)
+myUnless a b                             = -- trace "myUnless: path 3" $
+                                           -- trace ("myUnless: path 3: a = " <> show a) $
+                                           -- trace ("myUnless: path 3: b = " <> show b) $
+                                           MyAll (a : [MyNot b])
 
-setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 setLess a (MyAll ((MyLeaf l):bs))
   | all (\b -> case b of
             MyNot _ -> True
@@ -244,3 +255,14 @@ aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
 -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
+
+-- slightly different, unfortunately. see test/Spec.hs
+aboveNextLineKeyword2 :: SLParser ([Text.Text],MyToken)
+aboveNextLineKeyword2 = debugName "aboveNextLineKeyword2" $ do
+  (_,x,y) <- (,,)
+                 $*| return ((),0::Int)
+                 ->| 1
+                 |*| slMultiTerm
+                 |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
+  return (x,y)
+

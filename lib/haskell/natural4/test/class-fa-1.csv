@@ -1,0 +1,15 @@
+,DECLARE,FinancialStatus,IS,ONE OF,,adequate,inadequate
+,DECLARE,EarningsStatus,IS,ONE OF,,steady,unsteady
+,DECLARE,InvestmentStrategy,IS,ONE OF,savings,stocks,combination
+,,,,,,,
+,§§,person type,,,,,
+,DECLARE,Person,,,,,
+,HAS,dependents,IS,A,Number,,
+,,amountSaved,IS,A,Number,,
+,,earnings,IS,A,Number,,
+,,steadiness,IS,A,EarningsStatus,,
+,,income,IS,A,FinancialStatus,,
+,,savingsAccount,IS,A,FinancialStatus,,
+,,isDead,IS,A,Boolean,,
+,,spendthrift,IS,A,Boolean,,
+,,investment,IS,AN,InvestmentStrategy,,

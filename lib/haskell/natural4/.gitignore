@@ -1,6 +1,9 @@
+natural4.cabal
 .stack-work/
+natural4.cabal
 *.hie
 *~
 .#*
 .hspec-failures
 out/
+workdir/

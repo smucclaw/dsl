@@ -13,6 +13,11 @@
 {-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
 {-# LANGUAGE TupleSections #-}
 
+{-|
+Parser functions not organized into their own separate modules elsewhere.
+
+This includes some top-leve parsers like pRules and pBoolStruct.
+-}
 
 module LS.Lib where
 
@@ -40,7 +45,6 @@ import Data.Maybe (listToMaybe, maybeToList)
 import LS.Types
 import LS.Tokens
 import LS.Parser
-import LS.ParamText
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import Control.Monad.Writer.Lazy
@@ -48,9 +52,9 @@ import Control.Monad.Writer.Lazy
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 import Data.List (transpose)
-import Debug.Trace (trace)
 import Data.Void (Void)
 import Data.Either (rights)
+import Control.Monad.Combinators.Expr
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -93,7 +97,6 @@ instance ParseFields a => ParseFields (NoLabel a) where
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
-  mpj <- lookupEnv "MP_JSON"
   mpn <- lookupEnv "MP_NLG"
   return RC
         { debug       = maybe (dbug o) (read :: String -> Bool) mpd
@@ -391,10 +394,17 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  some (debugName "semicolon" semicolonBetweenRules *> pRule) <* eof
+  debugName "pRulesOnly: some" $ concat <$>
+    some (debugName "trying semicolon *> pRule" $
+          try (debugName "semicolon" semicolonBetweenRules
+               *> optional dnl
+               *> manyIndentation (sameDepth (try pRule))
+               <* optional dnl)
+         )
+    <* eof
 
 semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (try $ manyIndentation (pToken Semicolon))
+semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
 
 pRules = pRulesOnly
 
@@ -416,7 +426,7 @@ pNotARule = debugName "pNotARule" $ do
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
 pRule = debugName "pRule" $ do
-  _ <- many dnl
+  _ <- debugName "many dnl" $ many dnl
   notFollowedBy eof
 
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
@@ -431,7 +441,6 @@ pRule = debugName "pRule" $ do
     <|> try (pScenarioRule <?> "scenario rule")
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
-    <|> debugName "pRule: unwrapping indentation and recursing" (myindented pRule)
 
   return $ foundRule { srcref = Just srcref }
 
@@ -441,16 +450,25 @@ pTypeDeclaration :: Parser Rule
 pTypeDeclaration = debugName "pTypeDeclaration" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
-    <$$> pToken Declare *> declareLimb
+    <$$> pToken Declare *> someIndentation declareLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
   return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
+    -- [TODO] this doesn't correctly parse something that looks like
+    -- DECLARE whatever
+    --     HAS this
+    --     HAS that
+
+    -- it treats the "that" as a child of "this", which is wrong.
+    -- workaround: remove the "HAS" from the "that" line
+    -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
+    
+    parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
-      (name,super) <- manyIndentation (pKeyValues)
+      ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       myTraceM $ "got name = " <> show name
       myTraceM $ "got super = " <> show super
-      has   <- concat <$> many (pToken Has *> someIndentation (sameDepth declareLimb))
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
@@ -490,11 +508,11 @@ pVarDefn = debugName "pVarDefn" $ do
                              else [ ]
                  }
   where
-    defineLimb = debugName "defineLimb" $ do
-      (name,mytype) <- manyIndentation (pKeyValuesAka)
+    defineLimb = debugName "pVarDefn/defineLimb" $ do
+      (name,mytype) <- manyIndentation pKeyValuesAka
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
-      hases   <- concat <$> many (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
       return $ Hornlike
         { name = NE.toList name
@@ -511,8 +529,8 @@ pVarDefn = debugName "pVarDefn" $ do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = debugName "pVarDefn/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
+    uponLimb  = debugName "pVarDefn/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
@@ -529,10 +547,26 @@ pScenarioRule = debugName "pScenarioRule" $ do
     , defaults = [], symtab   = []
     }
 
+-- | this is intended to parse:
+-- @EXPECT   The Sky IS Blue
+-- which should turn into RPConstraint ["The Sky"] RPis ["Blue"]
+--
+-- @EXPECT   NOT The Sky IS Blue
+-- turns into RPBoolStructR [] RPis (AA.Not (AA.Leaf (RPConstraint ["The Sky"] RPis ["Blue"])))
+-- which isn't great because the `[] RPis` was just made up to let the type fit
+--
+-- maybe in a glorious future we can have that parse into
+-- RPConstraint (RPNot (RPIs ["The Sky", "Blue"]))
+
 pExpect :: Parser Expect
 pExpect = debugName "pExpect" $ do
   _expect  <- pToken Expect
-  (relPred, _whenpart) <- someIndentation relPredSamelineWhen
+  relPred <- someIndentation $
+             try (do
+                     (tmp, _when) <- rpSameNextLineWhen
+                     return tmp
+                 )
+             <|> RPBoolStructR [] RPis <$> pBSR
   return $ ExpRP relPred
 
 -- | we want to parse two syntaxes:
@@ -705,9 +739,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 
 
 pDoAction ::  Parser BoolStructP
-pDoAction = do
-  _ <- debugName "pDoAction/Do" $ pToken Do
-  debugName "pDoAction/pAction" $ someIndentation pAction
+pDoAction = debugName "pDoAction" $ snd <$> preambleBoolStructP [ Do ]
 
 
 pAction :: Parser BoolStructP
@@ -776,7 +808,7 @@ permutationsReg keynamewho =
                 <|?> ([], some $ preambleParamText [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
-                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some pHornlike))  -- WHERE ends up in the wwhere attribute of a Regulative
+                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some (pHornlike' False)))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>
@@ -795,7 +827,7 @@ pDT = debugName "pDT" $ do
 pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" $ do
   pd <- pDeontic
-  pa <- someIndentation pAction
+  pa <- someIndentation dBoolStructP
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
@@ -806,12 +838,15 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
   return (condWord, ands)
 
 
-
-
--- [TODO]: Actually parse ParamTexts and not just single cells
 dBoolStructP ::  Parser BoolStructP
-dBoolStructP = debugName "dBoolStructP calling exprP" $ do
-  either fail pure . toBoolStruct =<< exprP
+dBoolStructP = debugName "dBoolStructP" $ do
+  raw <- makeExprParser (manyIndentation $ AA.Leaf <$> pParamText)
+         [ [ prefix MPNot   (\x   -> AA.Not x) ]
+         , [ binary Or      (\x y -> AA.Any Nothing [x, y]) ]
+         , [ binary Unless  (\x y -> AA.All Nothing [x, AA.Not y]) ]
+         , [ binary And     (\x y -> AA.All Nothing [x, y]) ]
+         ]
+  return raw
 
 exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do
@@ -824,7 +859,7 @@ exprP = debugName "expr pParamText" $ do
   --               ,("amount" :| ["$20"]     , Nothing)[))
 
   return $ case raw of
-    MyLabel pre post myitem -> prefixFirstLeaf pre myitem
+    MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
     prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText

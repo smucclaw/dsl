@@ -1,226 +1,78 @@
+#+TITLE: Natural4 Compiler Toolchain Internals Documentation
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="excel-2007.css" />
 
-* Notes on the code
-
-** Extracting a BoolStruct
-
-Suppose we are given an input range containing, /inter alia/, a column of AND and OR values:
-
-| EVERY | person |
-| WHO   | walks  |
-| AND   | runs   |
-| AND   | eats   |
-| OR    | drinks |
-| MUST  | sing   |
-
-The BoolStruct is the bit in the middle. It spans the ~(walks && runs && (eats || drinks))~. Some call it a "condition" or "case".
-
-The prior text, "EVERY person WHO", we will label the "Preamble". Because it comes before "walks".
-
-The "MUST sing" we label the "Denouement". Other structures are possible; more on that later. But most variations contain a BoolStruct somewhere or other.
-
-It's up to us to turn the columns of a BoolStruct into an and/or tree, respecting operator precedence.
-
-Desired output:
-
-#+begin_src haskell
-  All (pre "who")
-      [ Leaf "walks"
-      , Leaf "runs"
-      , Any (Pre "or")
-            [ Leaf "eats"
-            , Leaf "drinks"
-            ]
-      ]
-#+end_src
-
-We do this using a simple Parser pattern in which an AndGroup consists of one or more OrGroups; and the overall expression consists of one or more AndGroups. That gets you conjunctive normal form for free!
-
-** What about the checkboxes?
-
-Some variants of the spreadsheet will arrive bearing Bools:
-
-| EVERY |       | person |
-| WHO   | TRUE  | walks  |
-| AND   | FALSE | runs   |
-| AND   | FALSE | eats   |
-| OR    | TRUE  | drinks |
-| MUST  |       | sing   |
-
-This is because Google Sheets uses checkboxes, in CSV, they show as TRUE and FALSE.
-
-The parser ignores them:
-
-#+begin_src haskell
-  pEmpty = pToken Empty <|> pToken Checkbox
-#+end_src
-
-** What about nested sub-expressions?
-
-~(walks && (eats || drinks))~ can fit into a straight column down the screen, but what if we have
-
-~(walks || (eats && drinks))~ ?
-
-We would need to indent a level, as [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1334573632][Example 13]] shows.
-
-| EVERY | person |        |
-| WHO   | walks  |        |
-| OR    |        | eats   |
-|       | AND    | drinks |
-| MUST  | sing   |        |
-
-** Nested Constitutive Rules
-
-"Inline" constitutive rules take the form of a nested subexpression. Here we show the TRUE/FALSE checkboxes:
-
-| TRUE | Prerequisites are met |                       |   |
-| IF   | TRUE                  | preconditions are met |   |
-|      | IF                    | TRUE                  | A |
-|      | AND                   | TRUE                  | B |
-| OR   | FALSE                 | C                     |   |
-|      |                       |                       |   |
-
-Eliminating the TRUE/FALSE checkboxes shows
-
-|    | Prerequisites are met |                       |   |
-|----+-----------------------+-----------------------+---|
-| IF |                       | preconditions are met |   |
-|    | IF                    |                       | A |
-|    | AND                   |                       | B |
-| OR |                       | C                     |   |
-|    |                       |                       |   |
-
-The general pattern for constitutive rules is
-
-|       | Exp0 |        |
-| IF    |      | Exp1a  |
-| OR    |      | Exp1b  |
-| OR    |      | Exp1c  |
-|-------+------+--------|
-| leftX |      | rightX |
-
-Where each ExpN can itself expand recursively following the same pattern:
-
-|    | Exp0 |       |       |   |
-| IF |      | Exp1a |       |   |
-|    | IF   |       | Exp2a |   |
-|    | AND  |       | Exp2b |   |
-| OR |      | Exp1b |       |   |
-| OR |      | Exp1c |       |   |
-
-Constitutive rules are similar to a ~let~ expression, where each named expression gets a variable binding.
-
-#+begin_src haskell
-  let Exp1a = Exp2a && Exp2b
-      Exp0  = Exp1a || Exp1b || Exp1c
-#+end_src
-
-Equivalently, as an And/Or tree,
-#+begin_src haskell
-  Any (Label "Exp0")
-    [ All (Label "Exp1a") [ Leaf Exp2a
-                          , Leaf Exp2b ]
-    , Leaf Exp1b
-    , Leaf Exp1c ]
-#+end_src
-
-** Nested Boolean Expressions without Constitutive Labels
-
-A version without variable bindings is more compact:
-
-| something | something |        |
-| WHEN      |           | Exp2a  |
-|           | AND       | Exp2b  |
-| OR        | Exp1b     |        |
-| OR        | Exp1c     |        |
-| something | something |        |
-
-** So, how do we parse all this?
-
-Currently the parser goes linearly left to right. It would be nice if we could preserve that linearity in the indentation-sensitive parser.
-
-We know that a BoolStruct comes after an IF token. Reading left to right, a non-nested input would be a stream of ~[ Other AND/OR Other AND/OR Other ]~.
-
-The parser is given the location of the preamble ~IF~. Non-nested input is expected to have all ~AND/OR~ at the same ~x~ (column) position.
-
-What happens if there's a nested structure?
-
-The parser might encounter a new AND or OR with an ~x~ position that is greater than the preamble's ~x~ position.
-
-*** Parsing a Nested Boolean
-
-So when a BoolStruct parser encounters an AND/OR farther to the right, it calls a new BoolStruct Parser, giving it a deeper x position. The result of the inner BoolStruct just becomes a term in the current BoolStruct.
-
-*** Parsing a Nested Constitutive
-
-A BoolStruct parser might encounter a constitutive rule: instead of a simple
-
-#+begin_example
-  Exp2a AND Exp2b
-#+end_example
-
-it encounters
-
-#+begin_example
-  Exp1a IS Exp2a AND Exp2b
-#+end_example
-
-In this situation, it returns, as part of the ongoing BoolStruct, a ~Leaf Exp1a~.
-
-And it returns, as an attachment, a constitutive rule defining ~Leaf Exp1a~ in terms of ~All [ Exp2a, Exp2b ]~.
-
-*** Parsing a Nested Regulative
-
-A BoolStruct parser might encounter a regulative rule, connected to the parent by a ~HENCE~ or a ~LEST~ keyword.
-
-In this situation it returns, as an attachment, the nested regulative rules.
-
-*** The BoolStruct Parser, revisited
-
-The need to return "attachments" means that a BoolStruct parser actually has to return:
-
-#+begin_src haskell
-  data BoolStruct = BS { getBS :: AnyAll Text
-                       , getR  :: [ Rule ] -- constitutive and regulative rules
-                       }
-#+end_src
-
-Nested booleans go into the ~getBS~.
-
-Nested constitutive and regulative rules go into the ~getR~.
-
-** Type Definitions                                                                      :ontology:
+* Type Declarations                                                :ontology:
 
 We assume most L4 developers will have some exposure to OOP.
 
-We borrow some essential notions from OOP.
+We borrow class/instance from OOP, and algebraic data types from Haskell.
 
-*** product types
+** simple sum types, or enums
+
+| DECLARE | TempUnit | IS | ONE OF | Fahrenheit | Celsius |
+
+#+begin_src haskell
+  data TempUnit = Fahrenheit | Celsius
+#+end_src
+
+** Simple parametric datatypes
+
+| DECLARE | Class | HAS | Things | IS | LIST | Thing |
+
+** algebraic datatypes
+
+| DECLARE | Temp | IS | TempUnit | number |
+
+#+begin_src haskell
+  data Temp = Temp TempUnit Float
+#+end_src
+
+** simple tagged unions with prefix constructors
+
+| DECLARE | Temp | IS | F | real |
+|         |      | OR | C | real |
+|         |      | OR | K | real |
+
+#+begin_src haskell
+  data Temp = F Float
+            | C Float
+            | K Float
+#+end_src
+
+*** simple tagged unions with postfix constructors
+
+| DECLARE | temp | IS | real | F |
+|         |      | OR | real | C |
+|         |      | OR | real | K |
+
+same as above
+
+** TODO product types
 
 - classes have attributes
-- alternatively, records have fields
+- equivalently, records have fields
 
-attributes have types.
+the attributes/fields themselves can have types.
 
-| DEFINE | Cartesian   | coordinate | AKA | Point  |
-| HAS    | X           | IS         | AN  | Int    |
-|        | Y           | IS         | AN  | Int    |
-|        | Label       | IS         | A   | String |
+| DECLARE | Cartesian coordinate |    | AKA | Point  |
+| HAS     | X                    | IS | AN  | Int    |
+|         | Y                    | IS | AN  | Int    |
+|         | Label                | IS | A   | String |
 
-**** Legalese
+*** Legalese
 
-***** Dialect 1
+**** Dialect 1
 
 A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
 - an integer value "*X*";
 - an integer value "*Y*"; and
 - a string "*Label*".
 
-***** Dialect 2
+**** Dialect 2
 
 *Point* means a Cartesian coordinate with an integer value "X", an integer value "Y", and a string "label".
 
-**** Haskell
+*** Haskell
 #+begin_src haskell :tangle Classy.hs :noweb yes
   <<lens magic>>
   data Point = Point
@@ -231,7 +83,7 @@ A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
   makeClassy ''Point
 #+end_src
 
-**** Typescript
+*** Typescript
 #+begin_src typescript
   class Point {
     x     : number;
@@ -240,7 +92,7 @@ A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
   }
 #+end_src
 
-**** Python
+*** Python
 #+begin_src python
   class Point:
     x     = 1
@@ -248,13 +100,13 @@ A Cartesian coordinate (hereinafter, a "*Point*") has the following attributes:
     label = "point label"
 #+end_src
 
-**** Prolog [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dicts]]
+*** Prolog [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dicts]]
 
 #+begin_src prolog
   A = point{x:1, y:2, label:"point label"}.
 #+end_src
 
-**** Alloy
+*** Alloy
 #+begin_src alloy
 open util/integers
 
@@ -270,13 +122,13 @@ one pointA extends Point {
 }
 #+end_src
 
-**** Uppaal
+*** Uppaal
 
 #+begin_src uppaal?
 ???
 #+end_src
 
-**** Java
+*** Java
 
 #+begin_src java
 class public super awesome Point {
@@ -286,7 +138,7 @@ class public super awesome Point {
 #+end_src
 
 
-*** basic types
+** basic types
 :PROPERTIES:
 :HTML_CONTAINER_CLASS: plain-table
 :END:
@@ -296,13 +148,14 @@ class public super awesome Point {
 |      | int      | Int                       | number     |                                                                                         |
 |      | real     | Real                      | number     |                                                                                         |
 |      | date     |                           |            | a mess of possible spec formats including "the third business day after Christmas 2033" |
+|      | daterel  |                           |            | a mess of possible spec formats including "the third business day after Christmas"      |
 |      | datetime |                           |            |                                                                                         |
 |      |          |                           |            |                                                                                         |
 |      | currency | (currencycode, baseunits) |            |                                                                                         |
 | SG$1 |          | (SGD, 100)                |            |                                                                                         |
 |      |          |                           |            |                                                                                         |
 
-*** inheritance and validation
+** inheritance and validation
 
 The syntax for inheritance and validation is:
 
@@ -310,16 +163,16 @@ The syntax for inheritance and validation is:
 | HAS            | ...      |    |   |            |
 | WHICH / WHOSE  | ...      |    |   |            |
 
-There must be at least one of { HAS, WHICH | WHOSE } present after the DEFINE
+There must be at least one of { HAS, WHICH | WHOSE } present after the DEFINE.
 
-**** WHICH syntax
+*** WHICH syntax
 
 the subject of the WHICH is the SubClass itself:
 
 | DEFINE | Natural | IS | AN | Int |
 | WHICH  | IS      | >= | 0  |     |
 
-**** WHOSE syntax
+*** WHOSE syntax
 
 an attribute name follows the WHOSE keyword:
 
@@ -327,7 +180,7 @@ an attribute name follows the WHOSE keyword:
 | WHOSE  | X         | IS | >= |     0 |   |
 | AND    | Y         | IS | >= |     0 |   |
 
-**** HAS syntax
+*** HAS syntax
 
 | DEFINE | MyObject |    |   |                |
 | HAS    | attr1    | IS | A | <Type Name>    |
@@ -337,12 +190,12 @@ Here ~<Type Name>~ could be something like ~Int~ or ~String~ or ~Person~ or ~Add
 
 A static value is literally that: something like ~42~. It's a class constant.
 
-**** Examples
-***** Haskell
+*** Examples
+**** Haskell
 
 as shown above with Classy Lenses
 
-***** Typescript
+**** Typescript
 #+begin_src typescript :tangle Classy.ts
   class SuperParent { }
 
@@ -371,7 +224,7 @@ SubChild {
 #+end_example
 
 
-*** validation
+** validation
 
 OOP has the idea of *constructors* which instantiate a particular value into a class. Maybe something like ~init()~ or ~new()~
 
@@ -381,7 +234,7 @@ In advanced typed languages we have the notion of refinement and dependent types
 
 In L4 every class possesses a set of *validation rules*. Some might think of this in terms of refinement or dependent types.
 
-**** Example 1
+*** Example 1
 | DEFINE | Natural | IS | AN | Int |
 | WHICH  | IS      | >= |  0 |     |
 
@@ -398,7 +251,7 @@ In L4 every class possesses a set of *validation rules*. Some might think of thi
     isValid myn = myn^.myint >= 0
 #+end_src
 
-**** Example 2: majority
+*** Example 2: majority
 
 | ENTITY | Person        |   |   |    |       |         |             |                                     |   |    |   |        |                   |
 | HAS    | official name |   |   | IS | A     | String  |             |                                     |   |    |   |        |                   |
@@ -516,15 +369,133 @@ Conventionally one would expect such a form to gather the exact birthdate, from 
 #+end_src
 									
 
-*** instances
+** instances
 
 
 
-*** default values
+** default values
 
-*** attribute types
+** attribute types
 
-*** 
+** 
+
+* Transpiling the above type declarations
+
+
+* Transpiling the instance DEFINEs to typescript
+
+* Notes on the code
+
+* More about nested hornlike rules
+
+Mustsing has a good example: every person who qualifies must do whatever; inline, qualifies means something and something.
+
+that works inside the scope of a WHO because the WHO is a maybe boolstructr. the boolstructr resolves using a RelPred parser (slRelPred) which includes an RPMT $ mustNestHorn.
+
+However, if we want that sort of nested horn clause in a different context -- under the Policyholder of a ~DECLARE Policy HAS Policyholder~, for instance, then we need to take a different tack. Inside ~HAS Policyholder~, Policyholder is parsed by an slKeyValuesAka.
+
+Similarly we want to have support for MEANS inside a ~HENCE Notification~ (in PDPADBNO) -- where the HENCE Notification is of type Maybe Rule
+
+So, how do we augment an arbitrary parser with the ability to have a nestedHorn on the next line? We rely on sameOrNextline, but we crucially require that the sameOrNextline should not extend too far to the left past the term that is directly above the MEANS. Maybe the easy way to do this is to take advantage of the fact that between the Notification and the MEANS there is no godeeper or undeeper, so it is literally a >>.
+
+The problem is, sometimes allowing a nestedHorn in a certain position (e.g. in a maybeAka MEANS something) causes the nestedHorn to overmatch -- the maybeAka is supposed to stand alone, but the nestedHorn consumes the next line's MEANS, when it shouldn't.
+
+The problem can be traced to the ~|^|~ operator, which consumes any number of undeepers.
+
+We need to have a sameOrNextLine which consumes only as many undeepers which were to the right of the position of the base (LHS) parser:
+
+|       | foo1 |
+| MEANS | foo2 |
+
+so in the above, the nestedHorn (hopefully using a sameOrNextLine parser) would NOT match because foo1 is followed by a MEANS which is to the left of foo1
+
+however below, foo3 does have a nestedHorn because the MEANS sits immediately under it
+
+|   | foo3  |      |
+|   | MEANS | foo4 |
+
+This is all complicated by the fact that sometimes we want to be able to match foo5a as having a nested horn:
+
+
+|   | foo5a |      | foo5b
+|   | MEANS | foo6 |
+
+here, we see that it's foo5a that's being MEANSed, and the foo6 is the nested definition, and the foo5b follows the whole thing.
+
+This shows up for real in the PDPADBNO where we have "a data breach | occurred".
+
+But we don't have a very good way of doing this -- the ~|^|~ combinator isn't smart enough to do this job.
+
+To make all this work, we would need the sameOrNextLine function to be able to sense the position at the start of foo1a, and refuse to undeeper past it.
+
+Now trying to figure out how the SL and the Parser all interact so as to be able to get our hands on the (_,n) of the SLParser.
+
+** The SLParser is really a State Depth Parser
+
+We reinvented this particular wheel. When refactoring this we need to see if the ~(value, state)~ tuple has the usual order as seen in the ~State~ monad, or if it's ~(state, value)~.
+
+** The ~|&|~ combinator
+
+Let's have a ~|&|~ combinator that strictly does not match when the RHS is to the left of the LHS.
+
+Now, didn't we have a sufficiently sophisticated indentation management system for the thing that handled pre and post labels above?
+
+We even had a lookahead matcher that anticipated where the next line fell. So maybe we should go look at that again and see if we can reuse any of it.
+
+[TODO].
+
+What we want to be able to say: myindented thingWithMeans
+
+should match a foo3 MEANS foo4
+
+but not foo1 MEANS fo2
+
+how would this work?
+
+thingWithMeans would be inside the myindented, and match because it is ~foo3 MEANS ( foo4 )~ with notihign between the foo3 and the MEANS.
+
+What about
+
+|   | foo7 |       |      |
+|   |      | MEANS | foo8 |
+|   |      |       |      |
+
+?
+
+There would be an EOL in the way, which we would accept
+
+|   | foo9 | MEANS | foo10 |
+
+And, on the same line, we should be fine with Foo9 ( MEANS ( foo10 ))
+
+
+** let's look at an example of how this works
+
+pTypeDeclaration lets us say something like
+
+| DECLARE | someTerm | :: | MyTermType | AKA | someAlias | TYPICALLY | Yes | (optional linebreak) | HAS | someAttribute |                | IS | A | TypeSig |
+|         |          |    |            |     |           |           |     |                      |     | MEANS         | someDefinition |    |   |         |
+|         |          |    |            |     |           |           |     |                      |     |               |                |    |   |         |
+
+The component parsers are:
+- declareLimb: slKeyValuesAka |&| parseHas
+  - slKeyValuesAka: slAKA slKeyValues
+    - slAKA: nestedHorn $ baseParser (=slKeyValues), optional akapart, optional typically
+    - slKeyValues: someLiftSL pNumOrText, optional slTypeSig
+    - slTypeSig: IS A TypeSig
+  - parseHas: pToken Has |>| sameDepth declareLimb
+
+Note that there are two levels of declareLimb going on! The first level defines ~someTerm~.
+
+The second level, called via parseHas, defines ~someAttribute~.
+
+And it is that ~someAttribute~ which takes ~MEANS someDefintion~ by way of the ~nestedHorn~.
+
+The |&| allows an optional linebreak between ~TYPICALLY Yes~ and ~HAS someAttribute~.
+
+The ~nestedHorn~, in turn, also uses a |&| combinator to look for the MEANS.
+
+Crucially, it may be important to remain in SLParser context all the way. Can the sameOrNextLine operator |&| afford to insist that it end with undeepers? This may cause problems for the recursed ~HAS someAttribute~ parser. To investigate.
 
 * Indentation Parsing
 
@@ -627,6 +598,8 @@ Yes, it's possible for labels to have multiple words; or just a single word. We 
 
 * infrastructure
 
+I have quite forgotten what was going on with all this Classy stuff.
+
 #+NAME: lens magic
 #+begin_src haskell
   {-# LANGUAGE TemplateHaskell #-}
@@ -637,3 +610,4 @@ Yes, it's possible for labels to have multiple words; or just a single word. We 
   import Control.Lens
 
 #+end_src
+

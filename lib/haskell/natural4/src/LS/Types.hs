@@ -4,14 +4,18 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+
+{-|
+Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
+-}
 
 module LS.Types ( module LS.BasicTypes
                 , module LS.Types) where
 
 import qualified Data.Text as Text
 import Text.Megaparsec
+import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import Data.Void (Void)
 import qualified Data.Set           as Set
@@ -39,9 +43,9 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 
 -- * BoolStructs wrap Phrasal types
 
-type BoolStruct  = AA.ItemMaybeLabel Text.Text
-type BoolStructP = AA.ItemMaybeLabel ParamText
-type BoolStructR = AA.ItemMaybeLabel RelationalPredicate
+type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
+type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
+type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
@@ -94,7 +98,7 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> AA.ItemMaybeLabel ParamText
+mkLeaf :: Text.Text -> BoolStructP
 mkLeaf = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
@@ -148,7 +152,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
                          , rbwho      :: Maybe (Preamble, BoolStructR)   -- WHO seeks eternal life in me
                          , rbwhere    :: [Rule]      -- Hornlike rules only, please       -- WHERE sky IS blue WHEN day IS thursday -- basically an inlineconstitutiverule but shoehorned into a hornlike until we get such rules working again
                          }
-                      deriving (Eq, Show, Generic)
+                      deriving (Eq, Ord, Show, Generic)
 
 -- | find some unique name for the rule for purposes of scoping the symbol table.
 -- if a rule label is provided, we use that.
@@ -197,7 +201,7 @@ data KW a = KW { dictK :: MyToken
 
 data RegKeywords =
   REvery | RParty | RTokAll
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 class HasToken a where
   tokenOf :: a -> MyToken
@@ -222,6 +226,7 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: Maybe ParamText
+--            , given    :: [ParamText]      -- input parameters basically, or the type thereof
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , wwhere   :: [Rule]
@@ -233,9 +238,12 @@ data Rule = Regulative
             , keyword  :: MyToken       -- Means, Includes, Is, Deem, Decide
             , letbind  :: BoolStructR
             , cond     :: Maybe BoolStructR -- a boolstruct set of conditions representing When/If/Unless
+--            , given    :: [ParamText]
             , given    :: Maybe ParamText
+        --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -244,11 +252,13 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText    -- applicant has submitted fee
+            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender -- the signature of the input
+        --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -258,10 +268,12 @@ data Rule = Regulative
             , super    :: Maybe TypeSig         -- IS A Superclass
             , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+--            , given    :: [ParamText]
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -273,6 +285,7 @@ data Rule = Regulative
 --          , redrule  :: [Rule]                -- a test could return a reduction of existing rules
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
+-- [TODO]   , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -301,20 +314,88 @@ data Rule = Regulative
           -- , eqtest :: Maybe ParamText
           -- }
           | NotARule [MyToken]
-          deriving (Eq, Show, Generic, ToJSON)
+          deriving (Eq, Ord, Show, Generic, ToJSON)
+
+defaultReg, defaultCon, defaultHorn :: Rule
+defaultReg = Regulative
+  { subj = mkLeaf "person"
+  , rkeyword = REvery
+  , who = Nothing
+  , cond = Nothing
+  , deontic = DMust
+  , action = mkLeaf "sing"
+  , temporal = Nothing
+  , hence = Nothing
+  , lest = Nothing
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , upon = Nothing
+  , given = Nothing
+  , having = Nothing
+  , wwhere = []
+  , defaults = []
+  , symtab   = []
+  }
+
+defaultCon = Constitutive
+  { name = []
+  , keyword = Means
+  , letbind = mkLeafR "Undefined"
+  , cond = Nothing
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , given = Nothing
+  , defaults = []
+  , symtab   = []
+  }
+
+defaultHorn = Hornlike
+  { name = []
+  , super = Nothing
+  , keyword = Means
+  , given = Nothing
+  , upon  = Nothing
+  , clauses = []
+  , rlabel = Nothing
+  , lsource = Nothing
+  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , defaults = []
+  , symtab   = []
+  }
+
+-- | does a rule have a Given attribute? 
+hasGiven :: Rule -> Bool
+hasGiven     Hornlike{} = True
+hasGiven   Regulative{} = True
+hasGiven     TypeDecl{} = True
+hasGiven Constitutive{} = True
+hasGiven             __ = False
+
+-- | does a rule have Clauses?
+-- [TODO] it's beginning to look like we need to break out the Rule Types into different types not just constructors
+hasClauses :: Rule -> Bool
+hasClauses     Hornlike{} = True
+hasClauses             __ = False
+
+getDecisionHeads :: Rule -> [MultiTerm]
+getDecisionHeads Hornlike{..} = [ rpHead hhead
+                                | HC2 hhead _hbody <- clauses ]
+getDecisionHeads _ = []
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
-            deriving (Eq, Show, Generic, ToJSON)
+            deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data HornClause2 = HC2
   { hHead :: RelationalPredicate
   , hBody :: Maybe BoolStructR
   }
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data IsPredicate = IP ParamText ParamText
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
@@ -324,25 +405,63 @@ instance PrependHead Text.Text where
   prependHead s = ((s <> " ") <>)
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure s <> xs, ts) :| xss
+
 instance PrependHead RelationalPredicate where
   prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
   prependHead s (RPMT txts)             = RPMT (s : txts)
   prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
+  prependHead s (RPnary rel rp)         = RPnary rel $ prependHead s rp
+
+-- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
+-- 
+-- the simplest form is a MultiTerm wrapped in an RPMT:
+-- `foo | bar baz` turns into `RPMT ["foo", "bar baz"]`
+-- 
+-- the next simplest form, a (one-or-more-line ParamText) wrapped in an RPPT, allows type annotation:
+-- `foo | IS A | Potato` turns into `RPPT [ ("foo" :| [], SimpleType TOne "Potato") ]`
+-- 
+-- the next two allow you to actually express relations, which is why we call this a relational predicate!
+-- 
+-- something like `Bob | IS | your uncle` gets read into an `RPConstraint ["Bob"] RPis ["your uncle"]`
+-- Other relations available inside the RPRel are the usual `<`, `>`, `<=`, `>=`, etc.
+-- Currently every RPConstraint is a binary relation.
+-- There is a strong argument that we should allow simple constraint relations of any arity.
+-- [TODO] this we would rewrite the form of an `RPConstraint` to `RPConstraint RPRel [ MultiTerm ]`
+-- 
+-- The final form is a recursion: we have a Boolean Struct of RelationalPredicates, so we can do a full treelike thing:
+-- `RPBoolStructR "Uncle" RPis (AA.Any Nothing [ AA.Leaf $ RPMT ["your", "mother's", "brother" ]
+--                                             , AA.Leaf $ RPMT ["your", "father's", "brother" ]
+--                                             , AA.Leaf $ RPMT ["some random old guy you want to call uncle" ]
+--                                             ])`
+-- So how do we say something like:
+-- `EXPECT    NOT Sky IS Blue`
+--
+--
+--
+-- We would use a BoolStructR:
+--
+--    AA.Not (AA.Leaf (RPConstraint ["Sky"] RPis ["Blue"]))
+--
+-- In another universe we could recurse the RPConstraints and have an `RPConstraint (Not (RPConstraint (Is Sky Blue)))`
+-- [TODO] Let's think about refactoring to that in future.
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
-                         | RPMT MultiTerm -- intended to replace RPParamText. consider TypedMulti?
+                         | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
-                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue
-                                                                       --          AND
-                                                                       --          right IS brown)
-  deriving (Eq, Show, Generic, ToJSON)
+                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
+                         | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
+                        -- [TODO] consider adding a new approach, actually a very old Lispy approach
+
+                     --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
+  deriving (Eq, Ord, Show, Generic, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
-rel2txt RPis      = "relIs"
+rel2txt RPis      = "Is"
+rel2txt RPhas     = "relHas"
 rel2txt RPeq      = "relEq"
 rel2txt RPlt      = "relLT"
 rel2txt RPlte     = "relLTE"
@@ -350,9 +469,11 @@ rel2txt RPgt      = "relGT"
 rel2txt RPgte     = "relGTE"
 rel2txt RPelem    = "relIn"
 rel2txt RPnotElem = "relNotIn"
+rel2txt RPnot     = "relNot"
 
 rel2op :: RPRel -> Text.Text
-rel2op RPis      = "=="
+rel2op RPis      = "IS"
+rel2op RPhas     = ".?"
 rel2op RPeq      = "=="
 rel2op RPlt      = "<"
 rel2op RPlte     = "<="
@@ -360,12 +481,22 @@ rel2op RPgt      = ">"
 rel2op RPgte     = ">="
 rel2op RPelem    = "IN"
 rel2op RPnotElem = "NOT IN"
+rel2op RPnot     = "NOT"
 
 rp2texts :: RelationalPredicate -> MultiTerm
 rp2texts (RPParamText    pt)            = pt2multiterm pt
 rp2texts (RPMT           mt)            = mt
 rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
 rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
+rp2texts (RPnary         rel rp)        = rel2txt rel : rp2texts rp
+
+-- | pull out all the body leaves of RelationalRredicates as multiterms
+rp2bodytexts :: RelationalPredicate -> [MultiTerm]
+rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
+rp2bodytexts (RPMT           mt)            = [mt]
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [rel2op rel], mt2]
+rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ rel2op rel : bod
+                                              | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . rp2texts
@@ -386,9 +517,10 @@ rpHead (RPParamText    pt)            = pt2multiterm pt
 rpHead (RPMT           mt)            = mt
 rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
+rpHead (RPnary         rel rp)        = rel2op rel : rpHead rp
 
-data RPRel = RPis | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
-  deriving (Eq, Show, Generic, ToJSON)
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 newtype RelName = RN { getName :: RuleName }
 
@@ -402,40 +534,50 @@ noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                          deriving (Eq, Show, Generic, ToJSON)
+                          deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
-                          deriving (Eq, Show, Generic, ToJSON)
+                          deriving (Eq, Ord, Show, Generic, ToJSON)
 type RuleName   = MultiTerm
 type EntityType = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
-             deriving (Eq, Show, Generic, ToJSON)
+             deriving (Eq, Ord, Show, Generic, ToJSON)
 
 -- for use by the interpreter
 
 type VarPath = [TypedMulti]
+
+data InterpreterOptions = IOpts
+  { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
+  }
+  deriving (Eq, Ord, Show)
+
+defaultInterpreterOptions :: InterpreterOptions
+defaultInterpreterOptions = IOpts
+  { enums2decls = False
+  }
 
 data Interpreted = L4I
   { classtable :: ClsTab
   , scopetable :: ScopeTabs
   , origrules  :: [Rule]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | a basic symbol table to track "variable names" and their associated types.
 
 getUnderlyingType :: TypeSig -> Either String EntityType
-getUnderlyingType o@(SimpleType TOne      s1) = Right s1
-getUnderlyingType   (SimpleType TOptional s1) = Left "type declaration cannot inherit from _optional_ superclass"
-getUnderlyingType   (SimpleType TList0    s1) = Left "type declaration cannot inherit from _list_ superclass"
-getUnderlyingType   (SimpleType TList1    s1) = Left "type declaration cannot inherit from _list_ superclass"
-getUnderlyingType   (InlineEnum pt1       s1) = Left "type declaration cannot inherit from _enum_ superclass"
+getUnderlyingType   (SimpleType TOne      s1) = Right s1
+getUnderlyingType   (SimpleType TOptional s1) = Right s1
+getUnderlyingType   (SimpleType TList0    s1) = Right s1
+getUnderlyingType   (SimpleType TList1    s1) = Right s1
+getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
 
 -- what's the difference between SymTab, ClsTab, and ScopeTabs?
 
@@ -445,11 +587,14 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Eq)
+  deriving (Show, Ord, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT (CT x) = x
-type ClassHierarchyMap = Map.Map EntityType (Inferrable TypeSig, ClsTab)
+
+type TypedClass = (Inferrable TypeSig, ClsTab)
+
+type ClassHierarchyMap = Map.Map EntityType TypedClass
 
 -- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
 -- those end up in the ScopeTabs object returned by the `symbolTable` function.
@@ -479,12 +624,11 @@ thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 
 -- | attributes defined in the type declaration for this class specifically
 thisAttributes (CT clstab) subclass = do
-  ((mts, tss), ct) <- Map.lookup subclass clstab
+  ((_mts, _tss), ct) <- Map.lookup subclass clstab
   return ct
 
 extendedAttributes o@(CT clstab) subclass = do
-  ((mts, tss), CT ct) <- Map.lookup subclass clstab
-  ts <- mts
+  ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
   let eAttrs = case (extendedAttributes o <$> clsParent o subclass) of
                  Nothing               -> Map.empty
                  (Just Nothing)        -> Map.empty
@@ -501,10 +645,10 @@ getSymType (Nothing, [])  = Nothing
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
 clsParent (CT clstab) subclass = do
-  ((mts, tss), st) <- Map.lookup subclass clstab
+  ((mts, tss), _st) <- Map.lookup subclass clstab
   case getUnderlyingType <$> getSymType (mts, tss) of
     Just (Right s1) -> Just s1
-    Just (Left err) -> Nothing
+    Just (Left _)   -> Nothing
     Nothing         -> Nothing
 
 -- is this a NonEmpty (NonEmpty Text.Text)
@@ -550,7 +694,7 @@ bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -558,7 +702,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Show, Generic, ToJSON)
+              deriving (Eq, Ord, Show, Generic, ToJSON)
 
 
 mkTComp :: MyToken -> Maybe TComparison
@@ -606,7 +750,7 @@ data RunConfig = RC { debug     :: Bool
                     , extendedGrounds :: Bool
                     , toChecklist :: Bool
                     , runNLGtests :: Bool
-                    } deriving (Show, Eq)
+                    } deriving (Show, Ord, Eq)
 
 defaultRC :: RunConfig
 defaultRC = RC
@@ -642,147 +786,6 @@ increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 magicKeywords :: [Text.Text]
 magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS DEFINE"
 
--- the Rule types employ these tokens, which are meaningful to L4.
---
-toToken :: Text.Text -> [MyToken]
-
--- start a regulative rule
-toToken "EVERY" =  pure Every
-toToken "PARTY" =  pure Party
-toToken "ALL"   =  pure TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
-
--- start a boolstruct
-toToken "ALWAYS" = pure Always
-toToken "NEVER"  = pure Never
-
--- qualify a subject
-toToken "WHO" =    pure Who
-toToken "WHICH" =  pure Which
-toToken "WHOSE" =  pure Whose
-
-toToken "WHEN" =   pure When
-toToken "IF" =     pure If
-toToken "UPON" =   pure Upon
-toToken "GIVEN" =  pure Given
-toToken "HAVING" = pure Having
-
-toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
-toToken "INCLUDES" =  pure Includes
-toToken "IS" =     pure Is
-
--- boolean connectors
-toToken "OR" =     pure Or
-toToken "AND" =    pure And
-toToken "UNLESS" = pure Unless
-toToken "IF NOT" = pure Unless
-toToken "NOT"    = pure MPNot
-
--- set operators
-toToken "PLUS"   = pure SetPlus
-toToken "LESS"   = pure SetLess
-
--- deontics
-toToken "MUST" =   pure Must
-toToken "MAY" =    pure May
-toToken "SHANT" =  pure Shant
-
--- temporals
-toToken "UNTIL"  = pure Before  -- <
-toToken "BEFORE" = pure Before  -- <
-toToken "WITHIN" = pure Before  -- <=
-toToken "AFTER"  = pure After   -- >
-toToken "BY"     = pure By
-toToken "ON"     = pure On      -- ==
-toToken "EVENTUALLY" = pure Eventually
-
--- the rest of the regulative rule
-toToken "➔"       =     pure Do
-toToken "->"      =     pure Do
-toToken "DO"      =     pure Do
-toToken "PERFORM" =     pure Do
-
--- for discarding
-toToken "" =       pure Empty
-toToken "TRUE" =   pure Checkbox
-toToken "FALSE" =  pure Checkbox
-toToken "HOLDS" =  pure Holds
-
--- regulative chains
-toToken "HENCE" = pure Hence
-toToken  "THEN" = pure Hence
--- trivial contracts
-toToken  "FULFILLED" = pure Fulfilled
-toToken  "BREACH" = pure Breach
-
-toToken     "LEST" = pure Lest
-toToken     "ELSE" = pure Lest
-toToken  "OR ELSE" = pure Lest
-toToken "XOR ELSE" = pure Lest
-toToken    "XELSE" = pure Lest
-toToken  "GOTO" = pure Goto
-
-toToken ";"      = pure EOL
-
-toToken ":"      = [TypeSeparator, A_An]
-toToken "::"     = [TypeSeparator, A_An]
-toToken "TYPE"   = [TypeSeparator, A_An]
-toToken "IS A"   = [TypeSeparator, A_An]
-toToken "IS AN"  = [TypeSeparator, A_An]
-toToken "A"      = pure A_An
-toToken "AN"     = pure A_An
-toToken "THE"    = pure A_An
-
-toToken "DECLARE"   = pure Declare
-toToken "DEFINE"    = pure Define
-toToken "DECIDE"    = pure Decide
-toToken "ONE OF"    = pure OneOf
-toToken "AS ONE OF" = pure OneOf
-toToken "DEEM"      = pure Deem
-toToken "HAS"       = pure Has
-
-toToken "ONE"       = pure One
-toToken "OPTIONAL"  = pure Optional
-toToken "LIST0"     = pure List0
-toToken "LIST1"     = pure List1
-
-toToken "AKA"       = pure Aka
-toToken "TYPICALLY" = pure Typically
-
-toToken "-§"        = pure $ RuleMarker (-1) "§"
-toToken "SECTION"   = pure $ RuleMarker   1  "§"
-toToken "§"         = pure $ RuleMarker   1  "§"
-toToken "§§"        = pure $ RuleMarker   2  "§"
-toToken "§§§"       = pure $ RuleMarker   3  "§"
-toToken "§§§§"      = pure $ RuleMarker   4  "§"
-toToken "§§§§§"     = pure $ RuleMarker   5  "§"
-toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
-
-toToken "SCENARIO"  = pure ScenarioTok
-toToken "EXPECT"    = pure Expect
-toToken "<"         = pure TokLT
-toToken "=<"        = pure TokLTE
-toToken "<="        = pure TokLTE
-toToken ">"         = pure TokGT
-toToken ">="        = pure TokGTE
-toToken "="         = pure TokEQ
-toToken "=="        = pure TokEQ
-toToken "==="       = pure TokEQ
-toToken "IN"        = pure TokIn
-toToken "NOT IN"    = pure TokNotIn
-
-toToken "OTHERWISE" = pure Otherwise
-
-toToken "WHERE"     = pure Where
-
-toToken ";;"        = pure Semicolon
-
--- we recognize numbers
--- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
-
--- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
-toToken x = pure $ Other x
-
 
 
 whenDebug :: Parser () -> Parser ()
@@ -816,12 +819,10 @@ pTokenMatch f c = do
         then Just x
         else Nothing
 
-rLabelR :: Rule -> Maybe RuleLabel
-rLabelR Regulative   {..} = rlabel
-rLabelR Constitutive {..} = rlabel
-rLabelR Hornlike     {..} = rlabel
-rLabelR TypeDecl     {..} = rlabel
-rLabelR Scenario     {..} = rlabel
-rLabelR RuleGroup    {..} = rlabel
-rLabelR _                 = Nothing
+enumLabels, enumLabels_ :: ParamText -> [Text.Text]
+enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
+
+enumLabels_ = fmap (Text.replace " " "_") . enumLabels
+
+
 

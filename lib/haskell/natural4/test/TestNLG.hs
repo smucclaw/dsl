@@ -68,14 +68,14 @@ nlgTests2 :: Spec
 nlgTests2 = do
   describe "Convert to predicate" $ do
     -- "organization"
-    let Just org = readExpr "root_only (rootN_ (MassNP (UseN organization_N)))"
+    let Just org1 = readExpr "root_only (rootN_ (MassNP (UseN organization_N)))"
     it "Should convert single noun to a unary predicate" $ do
-      convertToPredicate org `shouldBe` Unary "organization"
+      convertToPredicate org1 `shouldBe` Unary "organization"
 
     -- "the organization"
-    let Just org = readExpr "root_only (rootN_ (DetCN theSg_Det (UseN organization_N)))"
+    let Just org2 = readExpr "root_only (rootN_ (DetCN theSg_Det (UseN organization_N)))"
     it "Should convert Det+N to a unary predicate" $ do
-      convertToPredicate org `shouldBe` Unary "organization"
+      convertToPredicate org2 `shouldBe` Unary "organization"
 
     -- "public agency"
     let Just pub = readExpr "root_only (rootN_ (MassNP (AdjCN (PositA public_A) (UseN agency_N))))"
@@ -203,20 +203,11 @@ nestedCcompRule = defaultRule {
     }
 
 everyOrgNotPublicAg ::  Rule
-everyOrgNotPublicAg = Regulative
+everyOrgNotPublicAg = defaultReg
   { subj = mkLeaf "organization"
   , rkeyword = REvery
   , who = Just $ multiterm2bsr' ["is not a public agency"]
   , cond = Nothing
   , deontic = DMust
   , action = mkLeaf "sings"
-  , temporal = Nothing
-  , hence = Nothing
-  , lest = Nothing
-  , rlabel = Nothing
-  , lsource = Nothing
-  , srcref = Nothing
-  , upon = Nothing
-  , given = Nothing
-  , having = Nothing
   }

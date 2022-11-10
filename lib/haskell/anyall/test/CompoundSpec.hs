@@ -4,6 +4,7 @@ module CompoundSpec(spec) where
 import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
+import AnyAll.BoolStruct
 import qualified Data.Map.Strict as Map
 import Data.Tree
 import Data.Maybe (fromJust)
@@ -313,47 +314,47 @@ spec = do
 
   describe "JSON conversion" $ do
     it "should encode Default left just true" $ do
-      asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"getDefault\":{\"Left\":true}}"
+      asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"Left\":true}"
     it "should encode Default left just false" $ do
-      asJSONDefault (Default (Left (Just False))) `shouldBe` "{\"getDefault\":{\"Left\":false}}"
+      asJSONDefault (Default (Left (Just False))) `shouldBe` "{\"Left\":false}"
     it "should encode Default left nothing" $ do
-      asJSONDefault (Default (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"getDefault\":{\"Left\":null}}"
+      asJSONDefault (Default (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"Left\":null}"
     it "should encode Q mustSing" $ do
       asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                          ,("eat",   Left  $ Just True)
                                          ,("drink", Right $ Just True)]))
-      `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"contents\":\"either\",\"tag\":\"Pre\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"contents\":\"drink\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+      `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"contents\":\"either\",\"tag\":\"Pre\"},\"mark\":{\"Left\":true}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"contents\":\"drink\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Right\":true}},[]]]]]]"
 
     it "should decode Q mustSing" $ do
-      fromJSON   "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"getDefault\":{\"Left\":true}}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Right\":true}}},[]]]]]]"
+      fromJSON   "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"both\"},\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"walk\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Or\"},\"prePost\":{\"tag\":\"Pre\",\"contents\":\"either\"},\"mark\":{\"Left\":true}},[[{\"shouldView\":\"Hide\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"eat\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Simply\",\"contents\":\"drink\"},\"prePost\":null,\"mark\":{\"Right\":true}},[]]]]]]"
       `shouldBe` (Just (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                                    ,("eat",   Left  $ Just True)
                                                    ,("drink", Right $ Just True)])))
     it "should encode Q mustNot" $ do
       asJSON (rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
                                         ,("eat",   Left  $ Just True)]))
-        `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":null}}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"getDefault\":{\"Left\":true}}},[]]]]]]"
+        `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]]]]]]"
 
   -- [{"shouldView":"View"
   --  ,"andOr":{"tag":"And"}
   --  ,"prePost":{"tag":"Pre"
   --             ,"contents":"both"}
-  --  ,"mark":{"getDefault":{"Left":null}}}
+  --  ,"mark":{"Left":null}}
   -- ,[[{"shouldView":"Ask"
   --    ,"andOr":{"tag":"Simply"
   --             ,"contents":"walk"}
   --    ,"prePost":null
-  --    ,"mark":{"getDefault":{"Left":true}}}
+  --    ,"mark":{"Left":true}}
   --   ,[]]
   --  ,[{"shouldView":"View"
   --    ,"andOr":{"tag":"Neg"}
   --    ,"prePost":null
-  --    ,"mark":{"getDefault":{"Left":null}}}
+  --    ,"mark":{"Left":null}}
   --   ,[[{"shouldView":"Ask"
   --      ,"andOr":{"tag":"Simply"
   --               ,"contents":"eat"}
   --      ,"prePost":null
-  --      ,"mark":{"getDefault":{"Left":true}}}
+  --      ,"mark":{"Left":true}}
   --     ,[]]]]]]
 
     it "should roundtrip Q mustNot" $ do
@@ -363,7 +364,7 @@ spec = do
 
 type SingLabel = T.Text
 
-mustSing :: ItemMaybeLabel SingLabel
+mustSing :: OptionallyLabeledBoolStruct SingLabel
 mustSing =
   All (Just $ Pre "both")
   [ Leaf "walk"
@@ -371,13 +372,13 @@ mustSing =
     [ Leaf "eat"
     , Leaf "drink" ] ]
 
-mustNot :: ItemMaybeLabel SingLabel
+mustNot :: OptionallyLabeledBoolStruct SingLabel
 mustNot =
   All (Just $ Pre "both")
   [ Leaf "walk"
   , Not (Leaf "eat") ]
 
-mustDance :: ItemMaybeLabel SingLabel
+mustDance :: OptionallyLabeledBoolStruct SingLabel
 mustDance =
   All (Just $ Pre "three of:")
   [ All (Just $ Pre "both")

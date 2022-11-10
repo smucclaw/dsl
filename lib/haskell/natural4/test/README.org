@@ -1,10 +1,18 @@
 #+TITLE: L4 Dev Guide: Parser Internals
 
 * Skills
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 After working through these examples, you should know:
 
 ** what primitives the parser deals with
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | Parser       | Token Constructor   | Example     | Description              |
 |--------------+---------------------+-------------+--------------------------|
@@ -44,6 +52,10 @@ two,three
 A spreadsheet e.g. Microsoft Excel or Google Sheets can likewise "Save As" a CSV file. All the cell formatting is lost, formulas are evaluated to their values, and checkboxes are shown as TRUE and FALSE.
 
 ** how the parser preprocessor sets up indentation over single and multiple lines
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 Many languages have "semantically meaningful whitespace". YAML, Python, and Haskell, among others. Parsers for such languages employ a variety of strategies to handle indentation: see BNFC's layout rule for an example.
 
@@ -92,13 +104,18 @@ foo GoDeeper bar GoDeeper baz UnDeeper quux honk UnDeeper
 
 To export as .csv, put your cursor over the desired table and run ~M-x org-table-export~
 
-Or you can just run, from the ~mp/~ directory,
+Or you can just run, from the ~natural4/~ directory,
 
 #+begin_src sh
   make csv
 #+end_src
 
 * Tests
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
 ** Types [2021-12-02 Thu]
 
 *** Value Expressions
@@ -116,6 +133,10 @@ L4Leaf (["eats"], Notype)
 L4Leaf (["foo", "bar", "baz"], Notype)
 
 **** multiline lists of words
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | foo |
 | bar |
@@ -127,6 +148,10 @@ L4List [ L4Leaf (["foo"], Notype)
        ]
            
 **** and/or trees
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | all of: |     |
 |         | foo |
@@ -153,6 +178,10 @@ ValueExp "AKA" SingleWord
 annexes a DefNameAlias rule connecting SingleWord to ValueExp
 
 **** optional TypeSig type signatures
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 can be thought of as inline type annotations
 
@@ -187,6 +216,10 @@ paramtext OR paramtext AND paramtext
 paramtext OR ( paramtext AND paramtext )
 
 **** labeled elements in an anyall list
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | EVERY | person |             |              |          |
 | MUST  | fart   | loudly      |              |          |
@@ -805,6 +838,10 @@ no, the parser fails, which is correct.
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+This gets parsed into:
+- c :: HC2 { hHead = c RPis All [a  b ], hBody = Nothing }
+- b :: HC2 { hHead = b RPis All [b1 b2], hBody = Nothing }
+
 |       | c  |
 | MEANS | a  |
 | OR    | b  |
@@ -815,11 +852,21 @@ no, the parser fails, which is correct.
 
 c = a || (b1 && b2)
 
+we know how to expand a head with a head
+
 **** varsub-2-headbody: define one thing in terms of another thing, in the head and body
 :PROPERTIES:
 :TABLE_EXPORT_FILE: varsub-2-headbody.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+c is a horn head definition
+
+b is a horn body definition
+
+This gets parsed into:
+- c :: HC2 { hHead = c RPis All [a  b ], hBody = Nothing     }
+- b :: HC2 { hHead = b,                  hBody = All [b1 b2] }
 
 |        | c  |
 | MEANS  | a  |
@@ -831,11 +878,17 @@ c = a || (b1 && b2)
 
 This should define c = a || (b1 && b2)
 
+we need to be able to expand a head with a body
+
 **** varsub-3-bodybody: define one thing in terms of another thing, in the body and body
 :PROPERTIES:
 :TABLE_EXPORT_FILE: varsub-3-bodybody.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+This gets parsed into:
+- c :: HC2 { hHead = c, hBody = Any [a  b ] }
+- b :: HC2 { hHead = b, hBody = All [b1 b2] }
 
 | DECIDE | c  |
 | IF     | a  |
@@ -847,11 +900,17 @@ This should define c = a || (b1 && b2)
 
 This should define c = a || (b1 && b2)
 
+we need to be able to expand a body with a body
+
 **** varsub-4-bodyhead: define one thing in terms of another thing, in the body and head
 :PROPERTIES:
 :TABLE_EXPORT_FILE: varsub-4-bodyhead.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+This gets parsed into:
+- c :: HC2 { hHead = c,                  hBody = Any a b }
+- b :: HC2 { hHead = b RPis All [b1 b2], hBody = Nothing }
 
 | DECIDE | c  |
 | IF     | a  |
@@ -862,6 +921,8 @@ This should define c = a || (b1 && b2)
 | AND    | b2 |
 
 This should define c = a || (b1 && b2)
+
+we know how to expand a body with a head
 
 **** regexpand-1: regulatives conjoined via a rulealias
 :PROPERTIES:
@@ -916,6 +977,10 @@ if (and a (or b c (not d)))
 #+end_example
 
 ***** explicitly
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | IF  | (A)  |      |
 | AND | (B)  |      |
@@ -929,6 +994,10 @@ whenever we increase indentation level we insert a (
 whenever we decrease indentation level we insert a )
 
 ***** does that rule work for
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 |             | (a   | (aa | (aaa |   |   | (((:: | (AType |
 | ))))))) AND | (b   |     |      |   |   |       |        |
@@ -945,6 +1014,10 @@ whenever we decrease indentation level we insert a )
 Any sufficiently complicated C or Fortran program contains an ad hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.
 
 **** Deriving the Grammar
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 So we know that a binary term looks like this:
 
@@ -1030,6 +1103,11 @@ still means the same thing but with slightly more indentation
 OR, (godeeper, label, undeeper), boolstructr
 
 ***** becomes
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
 |    | (top1) |                  |
 | OR | (top2) |                  |
 | OR | (      | (this is a label |
@@ -1158,12 +1236,20 @@ one or more normal words with optional typesig
 | next | line  |    |        |     |          |
 
 ****** example: rule action
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | NOTIFY | the PDPC            |
 | with   | a list of names     |
 | using  | a prescribed format |
 
 ****** example: GIVEN parameter input to a DECIDE function
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 | GIVEN | Sign1 |   | Sign2 | IS | A | Sign |   |   |   |
 
@@ -1313,6 +1399,10 @@ BoolStructR should be (OR (z is q) (p gt np))
 Explicit nesting only activates when there's a boolconnector after a newline. if the boolconnector is on the same line we keep going.
 
 ***** HornClauseRHS
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 something ... IS HornClauseRHS
 
@@ -1321,15 +1411,26 @@ ParamText <*> optional (pToken WHEN *> RelationalPredicate)
 fragment of a HornClause with a constraint RelationalPredicate sans the X part
 
 ****** examples: HAS IS method definition in a type declaration
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-| DECLARE |   | Round  | IS | A | Type   |        |   |      |                  |       |                  |
-| HAS     | 2 | Player | IS | A | Player |        |   |      |                  |       |                  |
-| HAS     | 1 | winner | IS | A | Player |        |   |      |                  |       |                  |
-|         |   |        | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
+This is a speculative syntax, it may turn out to be too loose to work with.
+
+| DECLARE |   | Round    | IS | A | Type   |        |   |      |                  |       |                  |
+| HAS     |   | Player A | IS | A | Player |        |   |      |                  |       |                  |
+|         |   | Player B | IS | A | Player |        |   |      |                  |       |                  |
+|         | 1 | winner   | IS | A | Player |        |   |      |                  |       |                  |
+|         |   |          | IS |   |        | Player | X | WHEN | Player X's throw | beats | Player Y's throw |
 
 HAS (optional N) OtherVal TypeSig `indented0` IS HornClauseRHS
 
 ****** contexts
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 constitutive rule
 
@@ -1385,6 +1486,10 @@ nope.
 | OR   | Y | IS       | a sibling    |
 
 ***** RelationalPredicate: IsRelation
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 MultiText (pToken IS) MultiText
 
@@ -1404,6 +1509,10 @@ used for equality and unification
 
 
 ***** RelationalPredicate: Constraint
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 MultiText RelToken MultiText
 
@@ -1422,6 +1531,10 @@ MultiText RelToken MultiText
 - part of a HornClause
   
 ***** RelationalPredicate: N-ary Predicate
+:PROPERTIES:
+:TABLE_EXPORT_FILE: /dev/null
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
 ParamText list of words, untyped.
 
@@ -1472,8 +1585,14 @@ without the IS TRUE
 | "      | "     | "     | Paper    | "   | "     | "    | Rock     |   |   |
 
 ***** Binary Predicate definition, compact
+:PROPERTIES:
+:TABLE_EXPORT_FILE: beat-means.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
-|       |          | beats |          |
+don't think we ever got around to testing this one.
+
+|       | beats    |       |          |
 | MEANS | Rock     | beats | Scissors |
 |       | Scissors | beats | Rock     |
 |       | Paper    | beats | Rock     |
@@ -1485,14 +1604,14 @@ without the IS TRUE
 :END:
 
 | DECLARE | Class1         | IS AN        | Object  |         |
-| HAS     | id             | IS A         | Integer |         |
+| HAS     | id             | IS AN        | Integer |         |
 |         |                |              |         |         |
 | DECLARE | Class2         | IS A         | Class1  |         |
 | HAS     | firstname      | IS           | A       | String  |
 |         | lastname       | IS           | A       | String  |
 |         | office address |              |         |         |
 |         | HAS            | line1        | ::      | String  |
-|         | HAS            | line2        | ::      | String  |
+|         |                | line2        | ::      | String  |
 |         | bar address    | ::           | address |         |
 |         | work address   | IS           | A       | address |
 |         | HAS            | floor        | ::      | String  |
@@ -1504,6 +1623,75 @@ without the IS TRUE
 
 This example serves multiple tests:
 - the interpreter should inherit line1 and line2 to "work address" and extend it with "floor" and "company name" attributes.
+
+***** Financial Advisor
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+this is indented deliberately to exercise the parser.
+
+|   | DECLARE | FinancialStatus    | IS | ONE OF |                    | adequate | inadequate  |
+|   | DECLARE | EarningsStatus     | IS | ONE OF |                    | steady   | unsteady    |
+|   | DECLARE | InvestmentStrategy | IS | ONE OF | savings            | stocks   | combination |
+|   |         |                    |    |        |                    |          |             |
+|   | §§      | person type        |    |        |                    |          |             |
+|   | DECLARE | Person             |    |        |                    |          |             |
+|   | HAS     | dependents         | IS | A      | Number             |          |             |
+|   |         | amountSaved        | IS | A      | Number             |          |             |
+|   |         | earnings           | IS | A      | Number             |          |             |
+|   |         | steadiness         | IS | A      | EarningsStatus     |          |             |
+|   |         | income             | IS | A      | FinancialStatus    |          |             |
+|   |         | savingsAccount     | IS | A      | FinancialStatus    |          |             |
+|   |         | isDead             | IS | A      | Boolean            |          |             |
+|   |         | spendthrift        | IS | A      | Boolean            |          |             |
+|   |         | investment         | IS | AN     | InvestmentStrategy |          |             |
+
+***** Financial Advisor decisions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| GIVEN  | p |                | IS | A                             | Person    |      |                |    |   |            |
+| DECIDE | p | investment     | IS | savings                       | WHEN      | p    | savingsAccount | IS |   | inadequate |
+|        | p | "              | "  | stocks                        | WHEN      | p    | savingsAccount | IS |   | adequate   |
+|        |   |                |    |                               | AND       | p    | income         | IS |   | adequate   |
+|        | p | "              | "  | combination                   | OTHERWISE |      |                |    |   |            |
+|        | p | minSavings     | IS | p's dependents                | *         | 5000 |                |    |   |            |
+|        | p | savingsAccount | IS | adequate                      | WHEN      | p    | amountSaved    | >  | p | minSavings |
+|        | p | "              | "  | inadequate                    | OTHERWISE |      |                |    |   |            |
+|        | p | minIncome      | IS | 15000 + 4000 * p's dependents |           |      |                |    |   |            |
+|        | p | income         | IS | adequate                      | WHEN      | p    | earnings       | >  | p | minIncome  |
+|        |   |                |    |                               | AND       | p    | steadiness     | IS |   | steady     |
+|        | p | blah           | IS | 42                            |           |      |                |    |   |            |
+
+
+
+
+p minIncome  IS 15000 + 4000 * (p's dependents) + 1000 * (p's dependents) / 2 + 500 * (p's semidependents) / 3
+
+Map Term Lambda = zip (nub terms, [1..])
+
+\l1 l2 -> 15000 + 4000 * x + 1000 * x / 2 + 500 * y / 3
+
+minIncome(MI, D, SD) :- MI IS 15000 + 4000 * D + 1000 * D / 2 + 500 * SD / 3.
+
+
+****** a scenario would look like:
+:PROPERTIES:
+:TABLE_EXPORT_FILE: class-fa-2-scenario.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+the HAS isn't parseable yet. [TODO]
+
+| GIVEN  | p   | IS A          | Person |         |                |
+|        | HAS | dependents    | IS     |       5 |                |
+|        |     | earnings      | IS     |   10000 |                |
+|        |     | savingsAmount | IS     |  100000 |                |
+| EXPECT | p   | investment    | IS     | savings | -- or whatever |
 
 ***** the CoreL4 encoding of the AXA case uses class extensions
 :PROPERTIES:
@@ -1533,6 +1721,93 @@ This example serves multiple tests:
 ***** HasRelation
 
 
+*** sameOrNextLine -s same
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-1-same.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato | HAS | genus | species |
+
+*** sameOrNextLine - next
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-2-next.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |         |
+| HAS     | genus  | species |
+
+*** sameOrNextLine - left a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-3-dnl.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|     | DECLARE | Potato  |   |
+| HAS | genus   | species |   |
+
+*** sameOrNextLine - next right a bit
+:PROPERTIES:
+:TABLE_EXPORT_FILE: sameornext-4-right.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | DECLARE | Potato |       |         |
+|   |         | HAS    | genus | species |
+*** ampersand: |&| declare with inline nestedHorn
+:PROPERTIES:
+:TABLE_EXPORT_FILE: declare-nestedhorn-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| DECLARE | Potato |                    |         |
+|         | HAS    | genus              | species |
+|         |        | MEANS              |         |
+|         |        | some Linnaen thing |         |
+
+
+*** ampersand: |&| too far left -- should fail
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|              | Potato |         |
+| too far left | genus  | species |
+
+*** ampersand: |&| just underneath -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |         |
+|   | genus  | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+|   | Potato |       |         |
+|   |        | genus | species |
+
+*** ampersand: |&| to the right -- should parse
+:PROPERTIES:
+:TABLE_EXPORT_FILE: ampersand-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+similar to the situation in pdpadbno, where we have SOMETHING occurred
+
+|   | Potato |       |         | uncaptured |
+|   |        | genus | species |            |
+
+we want the SOMETHING to have a MEANS under it, but the "occurred" should not.
+
+we'll leave this as a [TODO] for now.
 
 ** Keywords
 
@@ -1684,6 +1959,8 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 defined terms are T-shaped rules
 
+this should get picked up by the pConstitutiveRule and rewritten to Hornlike
+
 |       | degustates |
 | MEANS | eats       |
 | OR    | drinks     |
@@ -1702,7 +1979,7 @@ defined terms are T-shaped rules
 ...ignoring checkboxes...
 
 |   |   |       |      |            |   |   |
-|   |   | TRUE  |      | degustates |   |   |
+|   |   |       |      | degustates |   |   |
 |   |   | MEANS | TRUE | eats       |   |   |
 |   |   | OR    | TRUE | drinks     |   |   |
 |   |   |       |      |            |   |   |
@@ -2658,6 +2935,8 @@ To handle this we may need to augment our types so that each bit of logic can be
 :TABLE_EXPORT_FILE: define-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
+
+this doesn't actually compile, i think the syntax has changed
 
 |   | DEFINE | Chirality |       |           |           |
 |   | ONE OF | Left      |       |           |           |

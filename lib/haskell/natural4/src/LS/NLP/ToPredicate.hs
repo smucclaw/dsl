@@ -20,7 +20,7 @@ newtype Formula = And [Predicate]
   deriving (Show, Eq)
 
 convertToFormula :: AnnotatedRule -> Formula
-convertToFormula rl@RegulativeA {subjA,whoA,uponA} = And $ mapMaybe (fmap convertToPredicate) [Just subjA, whoA, uponA]
+convertToFormula _rl@RegulativeA {subjA,whoA,uponA} = And $ mapMaybe (fmap convertToPredicate) [Just subjA, whoA, uponA]
 convertToFormula _ = error "not implemented"
 
 applyFormula :: Formula -> String -> String
@@ -28,7 +28,7 @@ applyFormula (And xs) subj = "\\forall " ++ subj ++ " . " ++ intercalate " && " 
 
 applyPredicate :: String -> Predicate -> String
 applyPredicate subj (Unary n) = n ++ "(" ++ subj ++ ")"
-applyPredicate subj (Not pred) = "!" ++ applyPredicate subj pred
+applyPredicate subj (Not predicate) = "!" ++ applyPredicate subj predicate
 applyPredicate subj (Binary n arg) = n ++ "(" ++ intercalate ", " [subj, arg] ++ ")"
 applyPredicate subj (Ternary n a1 a2) = n ++ "(" ++ intercalate ", " [subj, a1, a2] ++  ")"
 
@@ -63,7 +63,7 @@ mkPredicate (Groot_xcomp_ccomp (GrootV_ _t p vp) xc (Gccomp_ uds)) = getNeg p $
      `combinePredicate` findHeadAndArg uds
 mkPredicate (Groot_ccomp (GrootV_ _t p vp) (Gccomp_ uds)) = getNeg p $
     Unary (headVP vp) `combinePredicate` findHeadAndArg uds
-mkPredicate (Groot_nsubj_ccomp rt subj cc) = undefined
+mkPredicate (Groot_nsubj_ccomp _rt _subj _cc) = undefined
 mkPredicate x = error $ "don't know how to find the head from " ++ showExpr [] (gf x)
 
 getNeg :: GPol -> Predicate -> Predicate
@@ -122,7 +122,7 @@ findRoot x = composOpMonoid findRoot x
 headXC :: Gxcomp -> String
 headXC (GxcompA_ a) = headAP a
 headXC (GxcompAdv_ adv) = headAdv adv
-headXC (GxcompA_ccomp_ ap cc) = error "not implemented"
+headXC _ = error "not implemented"
 
 headVP :: GVP -> String
 headVP (GUseV v) | Just (v', []) <- unApp (gf v) = headName v'
@@ -134,7 +134,7 @@ headNP :: GNP -> String
 headNP (GMassNP cn) = headCN cn
 headNP (GDetCN _ cn) = headCN cn
 headNP (GAdvNP np _) = headNP np
-headNP (GConjNP _ (GListNP (np:nps))) = headNP np
+headNP (GConjNP _ (GListNP (np:_nps))) = headNP np
 headNP (GDetNP det) = handleAnaphora det
 headNP (GExtAdvNP np _) = headNP np
 headNP (GGenModNP _ _ cn) = headCN cn

@@ -5,6 +5,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 
+{-|
+This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).
+
+This module also provides a family of SLParser combinators ("Same Line").
+-}
+
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import qualified Data.Set           as Set
@@ -115,7 +121,7 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = do
+pSrcRef = debugName "pSrcRef" $ do
   rlabel' <- optional pRuleLabel
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -173,6 +179,7 @@ pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStre
 
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
+-- Followup: we have a new operator |<<| that calls upToNUndeepers, but doesn't handle the EOL
 
 someUndeepersOrEOL :: SLParser a -> Parser a
 someUndeepersOrEOL p = do
@@ -183,6 +190,20 @@ someUndeepersOrEOL p = do
     pos <- lookAhead pGetTokenPos
     replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
   return x
+
+-- calls upToNUndeepers and continues. Usage: ... |<<| () ...
+(|<<|) :: SLParser a -> () -> SLParser a
+p1 |<<| _ = mkSL $ do
+  (result, n) <- runSL p1
+  (_, u) <- runSL $ upToNUndeepers n
+  let remaining = n + u
+  debugPrint $ "|<<| consumed " ++ show (-1*u) ++ " of " ++ show n ++ " undeepers; " ++ show remaining ++ " remain"
+  eof <|> do
+    pos <- lookAhead pGetTokenPos
+    replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
+  return (result, remaining)
+  
+infixl 4 |<<|
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
 liftedDBG = mapWhenDebug . liftRawPFun . dbg
@@ -261,6 +282,18 @@ slMultiTerm :: SLParser [Text.Text]
 slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
 
 
+-- | sameline: foo foo bar bar
+--   nextline: foo foo
+--             bar bar
+-- if we wanted to try to be super clever we could remain in the SL context the whole time and limit the <|> bit to the dnl newline vs the ) ( vs the samedepth
+
+(|&|) = sameOrNextLine
+sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
+sameOrNextLine pa pb =
+  try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
+  <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
+
+-- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
 
 pNumOrText :: Parser Text.Text
 pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
@@ -424,7 +457,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 -- * the "cell-crossing" combinators consume GoDeepers that arise between the arguments.
 (+>|)  :: Show a           =>          (a -> b) ->        Int  -> SLParser (a -> b)  -- ^ start with an initial count of expected UnDeepers
 ($>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ start using plain plain
-($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ start using plain fancy
+($*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ start using fancy fancy
 
 (>>|)  :: Show a           =>          (a -> b) ->   Parser a  -> SLParser b  -- ^ same as $>| but optionally indented
 (>*|)  :: Show a           =>          (a -> b) -> SLParser a  -> SLParser b  -- ^ same as $*| but optionally indented
@@ -440,6 +473,8 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|^|)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any GoDeepers or UnDeepers, then parse -- fancy
 (|<*)  :: Show a           => SLParser (a -> b) -> SLParser a  -> SLParser b  -- ^ consume any UnDeepers, then parse -- fancy
 (|<>)  :: Show a           => SLParser (a -> b) ->   Parser a  -> SLParser b  -- ^ consume any UnDeepers, then parse, then consume GoDeepers
+
+(|&|)  ::(Show a, Show b)  => SLParser  a       -> SLParser b  ->   Parser (a,b) -- ^ standalone fancy fancy on same or next line
 
 -- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
 (+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.
@@ -681,6 +716,10 @@ l ->| n = do
 
 infixl 4 ->|
 
+howDeep :: SLParser Int
+howDeep = mkSL $ do
+  (_, n) <- runSL $ pure ()
+  return (n,n)
 
 -- | Complete an SL parser and consume any outstanding UnDeepers
 finishSL :: SLParser a -> Parser a
@@ -688,9 +727,9 @@ finishSL p = p |<$ undeepers
 
 -- | Like `someUndeepers`, but only consumes up to n UnDeepers
 upToNUndeepers :: Int -> SLParser ()
-upToNUndeepers 0 = debugName "upToNUndeepers/done" $ return ()
-upToNUndeepers n = debugName "upToNUndeepers/undeeper" $ do
-  slUnDeeper *> upToNUndeepers (n-1) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
+upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ return ()
+upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") $ do
+  (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
 
 
 -- consume all the UnDeepers that have been stacked off to the right

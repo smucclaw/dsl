@@ -7,7 +7,7 @@ maintainer:          "mwwong@smu.edu.sg"
 copyright:           "2022"
 
 extra-source-files:
-- README.md
+- README.org
 - ChangeLog.md
 
 # Metadata used when publishing your package
@@ -65,8 +65,9 @@ dependencies:
 - fgl
 - raw-strings-qq
 - pandoc
+- regex-tdfa
 
-ghc-options: -Wall
+ghc-options: -Wall -Wno-missed-extra-shared-lib
 
 library:
   source-dirs: src
@@ -86,6 +87,16 @@ tests:
   natural4-test:
     main:                Spec.hs
     source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - '"-with-rtsopts=-N -H500M -qg"'
+    dependencies:
+    - natural4
+
+  natural4-unittest:
+    main:                Spec.hs
+    source-dirs:         utest
     ghc-options:
     - -threaded
     - -rtsopts

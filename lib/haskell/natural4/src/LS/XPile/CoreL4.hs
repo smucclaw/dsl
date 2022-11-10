@@ -1,12 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase, TupleSections #-}
+
+{-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
+
 module LS.XPile.CoreL4 where
 
 import Prettyprinter
 
 import AnyAll
-import LS.PrettyPrinter 
+import LS.PrettyPrinter
 import L4.Syntax as CoreL4
 
 import L4.Annotation
@@ -18,8 +22,19 @@ import Data.Functor ( (<&>) )
 
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, fromJust)
 import qualified Data.List.NonEmpty as NE
+-- import           Data.List.NonEmpty (NonEmpty((:|)))
+-- import Text.Pretty.Simple (pShow, pShowNoColor)
+-- import qualified Data.Text.Lazy as TL
+-- import Control.Monad (guard, join)
+import Data.Either (rights, isRight)
+-- import qualified Data.Traversable as DT
+
+import Text.Regex.TDFA
+import Data.List (nub, intercalate, (\\), isPrefixOf)
+import qualified Data.Foldable as DF
+import Data.Map ((!))
 
 -- output to Core L4 for further transformation
 
@@ -28,20 +43,65 @@ sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
-  let sTable = symbolTable rs
-      cTable = classHierarchy rs
-  in unlines ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
-                 -- , ppCorel4 . sfl4ToCorel4Program $ rs
-               "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
-               , (show $ prettyClasses cTable) , ""
-               , (show $ prettyDecls   sTable) , "\n--facts\n"
-               , (show $ prettyFacts   sTable) , ""
-               , "\n# directToCore\n\n"
-               ] ++
-               [ show (directToCore r)
-               | r <- rs
-               ]
-             )
+  let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
+   -- sTable = scopetable interpreted
+      cTable = classtable interpreted
+      pclasses = myrender $ prettyClasses cTable
+      pBoilerplate = myrender $ prettyBoilerplate cTable
+      hardCoded = unlines [ "decl age: Number"
+                          , "decl weight: Number"
+                          , "decl height: Number"
+                          , "decl years: Unit"
+                          , "decl meters: Unit"
+                          , "decl kg: Unit"
+                          , "decl relLT: Number -> Number -> Unit -> Boolean"
+                          , "decl relLTE: Number -> Number -> Unit -> Boolean"
+
+                          , "class Unit"
+                          , "decl tb_length: Number" -- [TODO] the hc2decls should be responsible for this.
+                          , "decl wingspan: Number"
+                          , ""
+                          ]
+
+  in unlines $ nubstrings $ concatMap lines
+  ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
+      -- , ppCorel4 . sfl4ToCorel4Program $ rs
+      "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
+      -- some hardcoding while we debug the transpiler and babyl4 interpreter
+    , hardCoded
+    , "\n\n## classes\n",                   T.unpack pclasses
+    , "\n\n## boilerplate\n",               T.unpack pBoilerplate
+    
+    , "\n\n## decls for predicates used in rules (and not defined above already)\n"
+    , T.unpack . myrender $ prettyDecls (T.pack hardCoded <> pclasses <> pBoilerplate) rs
+    
+    -- honestly i think we can just live without these
+    --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
+    --               , "\n\n## defn from decision rules\n",  show $ prettyDefns   rs
+    
+    , "\n# directToCore\n\n"
+    ] ++
+    [ T.unpack $ myrender (directToCore r)
+    | r <- rs
+    ]
+  )
+  where
+    -- dedup input; if a line has previously been output, don't output it again.
+    nubstrings :: [String] -> [String]
+    nubstrings xs =
+      let zipped = zip xs [1..]
+          xMap2 = Map.fromList (reverse zipped)
+          xtends = Map.fromListWith (<>) (T.breakOn " extends " . T.pack <$> xs)
+      in
+        [ -- show n ++ ": " ++ show (xMap2 Map.! l) ++ ": " ++
+          l
+        | (l,n) <- zipped
+        , if "decl" `isPrefixOf` l || "class" `isPrefixOf` l
+          then (n :: Int) <= xMap2 ! l
+               && maybe True (== "") (Map.lookup (T.pack l) xtends)
+          else True
+        ]
+  
 
 sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
 sfl4ToCorel4Program rus
@@ -49,10 +109,10 @@ sfl4ToCorel4Program rus
 
 ppCorel4 :: CoreL4.Program SRng -> String
 ppCorel4 p =
-  show (vsep $ pptle <$> elementsOfProgram p)
+  T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
 
 pptle :: TopLevelElement SRng -> Doc ann
-pptle (ClassDeclTLE cdcl) = "class" <+> pretty (stringOfClassName . nameOfClassDecl $ cdcl)
+pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
 
 pptle (RuleTLE Rule { nameOfRule }) =
   vsep [nameOfRule']
@@ -66,43 +126,17 @@ pptle (RuleTLE Rule { nameOfRule }) =
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
 
-pptle tle                 = vsep ( "-- pptle: UNIMPLEMENTED, showing Haskell source:"
-                                   : (pretty . ("-- " <>) <$> lines (show tle)) )
+pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell source:"
+                                   : (pretty . ("## " <>) <$> lines (show tle)) )
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement SRng]
-sfl4ToCorel4Rule Regulative
-            { subj     -- every person
-            , rkeyword  -- every / party / all
-            , who      -- who walks and (eats or drinks)
-            , cond     -- if it is a saturday
-            , deontic  -- must
-            , action   -- fart loudly AND run away
-            , temporal -- Before "midnight"
-            , hence
-            , lest
-            , rlabel
-            , lsource
-            , srcref
-            , upon     -- UPON entering the club (event prereq trigger)
-            , given
-            , having   -- HAVING sung...
-            } = undefined
+sfl4ToCorel4Rule Regulative{} = undefined
 
-sfl4ToCorel4Rule hornlike@Hornlike
-            { name     -- :: RuleName           -- colour
-            , keyword  -- :: MyToken            -- decide / define / means
-            , given    -- :: Maybe ParamText    -- applicant has submitted fee
-            , upon     -- :: Maybe ParamText    -- second request occurs
-            , clauses  -- :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
-            , rlabel   -- :: Maybe RuleLabel
-            , lsource  -- :: Maybe Text.Text
-            , srcref   -- :: Maybe SrcRef
-            , defaults -- :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            , symtab   -- :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-            } =
+sfl4ToCorel4Rule Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            given2classdecls given ++ [rule]
+            given2classdecls given ++
+            [rule]
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement SRng]
     given2classdecls Nothing = []
@@ -117,7 +151,7 @@ sfl4ToCorel4Rule hornlike@Hornlike
                 ]
     rule = RuleTLE Rule
       { annotOfRule = undefined
-      , nameOfRule = rlabel <&> rl2text <&> T.unpack 
+      , nameOfRule = rlabel <&> rl2text <&> T.unpack
       , instrOfRule = undefined
       , varDeclsOfRule = undefined
       , precondOfRule = undefined -- gonna need more time to figure out how to convert an L4 Rule to the Expr type. in the meantime there's directToCore
@@ -125,32 +159,12 @@ sfl4ToCorel4Rule hornlike@Hornlike
       }
 
 
-sfl4ToCorel4Rule Constitutive
-            { name     -- the thing we are defining
-            , keyword  -- Means, Includes, Is, Deem
-            , letbind  -- might be just a bunch of words to be parsed downstream
-            , cond     -- a boolstruct set of conditions representing When/If/Unless
-            , given
-            , rlabel
-            , lsource
-            , srcref
-            } = undefined
-sfl4ToCorel4Rule TypeDecl
-            { name     --      DEFINE Sign
-            , super    --                 
-            , has      -- HAS foo :: List Hand \n bar :: Optional Restaurant
-            , enums    -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
-            , rlabel
-            , lsource
-            , srcref
-            } = ClassDeclTLE (ClassDecl {annotOfClassDecl = sfl4Dummy, nameOfClassDecl =  ClsNm $ T.unpack (T.unwords name), defOfClassDecl = ClassDef [] []}) : []
-sfl4ToCorel4Rule DefNameAlias -- inline alias, like     some thing AKA Thing
-            { name   -- "Thing"
-            , detail -- "some thing"
-            , nlhint -- "lang=en number=singular"
-            , srcref
-            } = undefined
-sfl4ToCorel4Rule (RuleAlias t) = undefined -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule Constitutive{ } = undefined
+sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
+                                                         , nameOfClassDecl  = ClsNm $ T.unpack (T.unwords name)
+                                                         , defOfClassDecl   = ClassDef [] []}) ]
+sfl4ToCorel4Rule DefNameAlias { } = undefined
+sfl4ToCorel4Rule (RuleAlias _) = undefined -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled = undefined -- trivial top = _
 sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
 sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
@@ -159,63 +173,383 @@ sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
 -- in practice, a BoolStructR to an Expr
 -- where the RPMT elements of the BooLStructR are nullary, unary, or binary operators depending on how many elements are in the list
 
+
+-- p :: Person
+-- p.dependents           // javascript
+-- | p | dependents |
+-- | p's dependents |
+
+
+-- every predicate in a Hornlike Declare rule needs to be typed.
+-- let's walk through all the bodyNonEx
+
+-- see also comments in Prettyprinter.hs around RP1
+
+-- [TODO] we have a situation where we have class Incident attribute Vehicle that is typed Asset
+-- and in a rule which speaks of Vehicle we need to know how to resolve that type intelligently.
+-- i am guessing we need to quantify the entire class ancestry?
+
 directToCore :: SFL4.Rule -> Doc ann
 directToCore r@Hornlike{keyword}
   | keyword /= Define =
-    let needClauseNumbering = length (clauses r) > 1
-    in
-      vsep [ vsep [ maybe "# no rulename"   (\x -> "rule" <+> angles (prettyRuleName cnum needClauseNumbering x)) (Just $ ruleLabelName r)
-                  , maybe "# no for"        (\x -> "for"  <+> prettyTypedMulti x)                                   (given r)
-                  ,                                "if"   <+> cStyle (hc2preds c)
-                  ,                                "then" <+> pretty (hHead c)
-                  , Prettyprinter.line]
-           | (c,cnum) <- zip (clauses r) [1..]
-           ]
-  | otherwise = ""
-
+      vsep [
+      case hBod of
+        Just _ ->
+          let (bodyEx, bodyNonEx) = partitionExistentials c
+          in
+          vsep
+          [ "rule" <+> angles rname
+          , maybe "# for-limb absent" (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
+          ,                                  "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
+          ,                                  "then" <+> pretty (RP1  $  hHead c)
+          , Prettyprinter.line
+          ]
+            -- [TODO] when testing for an optional boolean, add a hasAttrname test inside bodyNonEx
+        Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
+      | (c,cnum) <- zip (clauses r) [1..]
+      , (HC2 _headRP hBod) <- [c]
+      , let needClauseNumbering = length (clauses r) > 1
+      , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
+      ]
+  | otherwise = "# DEFINE rules unsupported at the moment"
 -- fact <rulename> multiterm
 
-directToCore r@TypeDecl{} = ""
+-- [TODO] -- we can relate classes and attributes by saying in babyl4:
+--                     for i: Incident.  a: Asset.  i.vehicle(a)
+-- we can also say:    for i: Incident,  a: Asset  -- this one will work better for translation to Epilog.
+--                     if (vehicle i a && ...)
+--                     then ...
+
+directToCore TypeDecl{} = ""
 directToCore _ = ""
+
+
+hc2decls :: SFL4.Rule -> Doc ann
+hc2decls r
+  | hasClauses r =
+    vsep
+    [ "decl" <+> pretty pf <> encloseSep ": " "" " -> " (declType ++ ["Boolean"])
+  --    <> Prettyprinter.line
+  --    <> "### headRP: " <> viaShow headRP <> Prettyprinter.line
+  --    <> "### hBod: "   <> viaShow hBod   <> Prettyprinter.line
+  --    <> "### xform 1 headRP:" <+> viaShow headRP <> Prettyprinter.line
+  --    <> "### xform 1 hBod:"   <+> viaShow (maybe [] DF.toList hBod) <> Prettyprinter.line
+  --    <> "### xform 2:"        <+> viaShow (inPredicateForm <$> headRP : maybe [] DF.toList hBod) <> Prettyprinter.line
+  --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
+    | c@(HC2 headRP hBod) <- clauses r
+    , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
+    , T.take 3 pf /= "rel" 
+    , let (bodyEx, _bodyNonEx) = partitionExistentials c
+          localEnv = given r <> bsr2pt bodyEx
+          typeMap = Map.fromList [ (varName, fromJust varType)
+                                 | (varName, mtypesig) <- maybe [] (fmap (mapFst NE.head) . NE.toList) localEnv
+                                 , let underlyingm = getUnderlyingType <$> mtypesig
+                                         , isJust underlyingm
+                                         , isRight $ fromJust underlyingm
+                                         , let varType = rightToMaybe =<< underlyingm
+                                 ]
+          declType = fmap pretty $ catMaybes $ flip Map.lookup typeMap <$> pfs
+    ]
+  where
+    mapFst f (x,y) = (f x,y)
+    rightToMaybe (Left _) = Nothing
+    rightToMaybe (Right x) = Just x
+hc2decls _ = emptyDoc
+
 
 prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
-    
+
 prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
 prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
 
-prettyDecls :: ScopeTabs -> Doc ann
-prettyDecls sctabs = vsep [ "--" <+> pretty scopename <> Prettyprinter.line <> "decl" <+> typedOrNot (NE.fromList mt, getSymType symtype)
-                          | (scopename , symtab')         <- Map.toList sctabs
-                          , (mt, (symtype,_vals)) <- Map.toList symtab'
-                          ]
+-- deal with this properly rather than doing all this icky string manipulation
+--- -- but we would have to refactor the output from hc2decls to not be a Doc, and it would be harder to insert manual overrides
+prettyDecls :: T.Text -> [SFL4.Rule] -> Doc ann
+prettyDecls previously rs =
+  let previousDecls = Map.fromList $ (,""::String) . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
+      predDecls = Map.fromList $ T.breakOn ":" <$> T.lines (myrender $ vsep (hc2decls <$> rs))
+  in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
+
+
+-- [TODO]
+-- fact <helplimit>
+-- for p : Policy
+-- HelpLimit p 7
+
+
+
+
+
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
-  vsep
+  vsep $ concat
   [ -- global symtab as facts
-    "fact" <+> angles (snake_case scopename) <+> viaShow symtab'
+    [ "fact" <+> angles (snake_case scopename)
+    , commentShow "#" symtab'
+    ]
   | (scopename , symtab') <- Map.toList sctabs
-  , (mt, (symtype,_vals)) <- Map.toList symtab'
+  , (_mt, (_symtype,_vals)) <- Map.toList symtab'
   ]
+
+-- | enums are exhaustive and disjoint
+prettyBoilerplate :: ClsTab -> Doc ann
+prettyBoilerplate ct@(CT ch) =
+  vsep $ concat [
+  [ "fact" <+> angles (c_name <> "Exhaustive")
+  , "for x:" <+> c_name
+  , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
+  , ""
+  , "fact" <+> angles (c_name <> "Disj")
+  , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner x <+> "/=" <+> snake_inner y)) <$> pairwise enumList
+  , ""
+  ]
+  | className <- getCTkeys ct
+  , Just (ctype, _) <- [Map.lookup className ch]
+  , (Just (InlineEnum TOne nelist),_) <- [ctype]
+  , let c_name = snake_inner className
+        enumList = enumLabels_ nelist
+  ]
+  where
+    pairwise :: [a] -> [(a, a)]
+    pairwise [] = []
+    pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
+
+-- | print arithmetic elements as defn
+-- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
+--     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
+
+commentShow :: Show a => T.Text -> a -> Doc ann
+commentShow c x = commentWith c (T.lines (T.pack (show x)))
+
+prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
+prettyDefnCs rname cs = 
+  [
+    if null myterms
+    then
+      "fact" <+> angles rname <> Prettyprinter.line <>
+      commentShow "#" cl <>
+      pretty (RP1 clHead)
+    else
+      "defn" <+>
+      -- we assume the lhs is "p something" so we get rid of the p
+      pretty (T.unwords (tail lhs)) <+> colon <+>
+      -- rip out "p's dependents" and "dependents p" from the input rhs
+      -- nub and zip map them to integer indices
+      -- each integer index becomes an x y z a b c d etc
+      -- perhaps wiser if we use x1 x2 x3 instead of x y z
+      -- them we output it all back with the input terms rewritten to x1 x2 x3
+      encloseSep "" "" " -> " (intypes ++ [ returntype ])
+      <+> equals <+>
+      encloseSep "" "" " -> " ([ "\\" <> idx <+> colon <+> typ
+                               | (typ,idx) <- zip intypes x123
+                               ] ++ [ pretty outstr ])
+      <> Prettyprinter.line <> commentShow "#" cl
+    -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
+  | cl <- cs
+  , let clHead = hHead cl
+        clBody = hBody cl
+  , clBody == Nothing
+
+  -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
+  -- encountered, and which was new. The new word (suppose it's Bar) would be the
+  -- predicate, so it would turn into (Bar Foo).
+  -- And that would work whether the input was (Foo IS Bar) or (Bar IS Foo).
+
+  -- [TODO] convert "age < 16 years" to "age_in_years < 16"
+  -- OR just convert to "age < 16"
   
+  , (RPConstraint lhs RPis rhs) <- [clHead]
+  , let rhss = T.unpack (T.unwords rhs)
+  , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
+                                                          ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
+                                          :: String)) :: [String]
+        intypes = replicate (length myterms) "Integer"
+        replacements = [ T.replace (T.pack t) (T.pack $ show n)
+                       | (t,n) <- zip (nub myterms) x123 ]
+        outstr = chain replacements (T.unwords rhs)
+        returntype = "Integer"
+
+  ]
+  where
+    chain :: [a -> a] -> a -> a
+    chain = foldr (.) id
+    x123 = (\n -> "x" <> pretty n) <$> ([1..] :: [Int])
+
+prettyDefns :: [SFL4.Rule] -> Doc ann
+prettyDefns rs =
+  vsep $ concat [ prettyDefnCs "" (clauses r)
+                | r <- rs
+                , hasClauses r
+                ]
+
+
+{-
+ a word or two about our type system.
+
+we do have a notion of extension: sub extends super.
+
+the novel element here is, we use the same annotation syntax for both extension and typing!
+
+suppose we have: DECLARE Thing1
+we know thing1 extends thing0 because thing1 is the direct subject of a DECLARE.
+so we emit: class Thing1
+
+we support extension.
+suppose we have: DECLARE Thing1 IS A Thing0
+we would emit: class Thing1 extends Thing0
+
+supppose we have: DECLARE Thing1 HAS thing2 IS A Thing3
+we know that thing2 is an attribute of type Thing3
+so we emit: class Thing1
+            decl thing2: Thing1 -> Thing3 -> Boolean
+
+however:
+
+suppose we have: DECLARE Thing1 HAS Thing2 IS A Thing3
+                                    HAS thing4 IS a Thing5
+
+we would want to treat Thing2 as a class as well, extending Thing3, with its own attribute Thing4.
+the way to sense this is to see if a child has children; if it does, it's a class.
+
+so we emit: class Thing1
+            class Thing2 extends thing3
+            decl thing2: Thing1 -> Thing2 -> Boolean
+            decl thing4: Thing2 -> Thing5 -> Boolean
+
+Note the automatic downcasing of thing2 from the class version to the decl
+
+And there would be an automatic corresponding upcasing from the decl to the class version.
+
+special case for enums:
+
+suppose we have: DECLARE Thing 1 HAS Thing2 IS ONEOF enumA enumB enumC
+
+we treat Thing2 as a class, and enumA, enumB, enumC as members of the class.
+
+so we emit: class Thing1
+            class Thing2
+            decl thing2: Thing1 -> Thing2 -> Boolean
+            decl enumA: Thing2
+            decl enumB: Thing2
+            decl enumC: Thing2
+
+-}
+
 prettyClasses :: ClsTab -> Doc ann
-prettyClasses ct@(CT ch) =
-  vsep [ "class" <+> pretty className <>
-         case clsParent ct className of
-           Nothing       -> mempty
-           (Just parent) -> " extends" <+> pretty parent
-         -- attributes of the class are shown as decls
-         <> Prettyprinter.line
-         <> vsep [ "decl" <+> pretty attrname <>
-                   case attrType children attrname of
-                     Just t -> " :" <+> pretty className <+>
-                               "->" <+> prettySimpleType snake_inner t
-                     Nothing -> ""
-                 | attrname <- getCTkeys children
-                 -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
-                 ]
-       | className <- getCTkeys ct
-       , Just (ctype, children) <- [Map.lookup className ch]
-       ]
+prettyClasses ct =
+  vsep $
+  ("## allCTkeys:" <+> hsep (pretty <$> allCTkeys ct)) :
+  "### explicitly defined classes" :
+  concat [
+  [ if null mytype && Map.null (unCT children) && null enumDecls
+    then "###" <+> "type annotation for" <+> c_name <+> "is blank, is not enum, and has no children; not emitting a class" <+> uc_name
+    else vsep [ if Map.null (unCT children) && null enumDecls
+                then "###" <+> lc_name <+> "is a" <+> viaShow mytype <> "; without children; we know it is a decl dealt with by my parent function call"
+                else "class" <+> uc_name <> extends
+              , "###" <+> "children length = " <> viaShow (Map.size (unCT children))
+              , "###" <+> "c_name = " <> viaShow c_name
+              , "###" <+> "dot_name = " <> viaShow dot_name
+              , "###" <+> "ctype = " <> viaShow ctype
+              , "###" <+> "mytype = " <> viaShow mytype
+              ]
+  , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
+  , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
+  ]
+  | (classpath, (ctype, children)) <- SFL4.classGraph ct []
+  , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
+                   snake_inner <$> reverse classpath
+        c_name' = untaint $ head classpath
+        c_name = pretty c_name'
+        uc_name = pretty $ ucfirst c_name'
+        lc_name = pretty $ lcfirst c_name'
+        mytype = case getUnderlyingType <$> getSymType ctype of
+                   Just (Right s1) -> Just s1
+                   _               -> Nothing
+        extends = maybe emptyDoc ((" extends" <+>) . pretty) mytype
+        enumDecls = [ "decl" <+> pretty member <> ":" <+> uc_name
+                    | (Just (InlineEnum TOne nelist), _) <- [ctype]
+                    , member <- enumLabels_ nelist
+                    ]
+
+
+        childDecls = [
+          "###" <+> uc_name <+> "has a child attribute" <+> dquotes (pretty attrname) <> Prettyprinter.line <>
+          "decl" <+> lc_childname <>
+          case getSymType attrtype of
+            -- if it's a boolean, we're done. if not, en-predicate it by having it take type and output bool
+            Just (InlineEnum _ptype _pt) -> -- " #" <+> "ERROR: inline enums not supported for CoreL4; use a top-level enum instead."
+              encloseSep ": " "" " -> " [ uc_name
+                                        , uc_childname
+                                        , "Boolean"]
+            Nothing ->
+              encloseSep ": " "" " -> " [ uc_name
+                                        , uc_childname
+                                        , "Boolean"]
+            Just (SimpleType ptype pt) ->
+              encloseSep ": " "" " -> " ([ uc_name
+                                         , child_simpletype
+                                         ] ++ case pt of
+                                                "Boolean" -> []
+                                                _         -> ["Boolean"]
+                                        )
+              <> if ptype == TOptional
+                 then Prettyprinter.line <>
+                      "decl" <+> ("has" <> uc_childname) <>
+                      encloseSep ": " "" " -> " [ uc_name , "Boolean" ]
+                      <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
+                 else emptyDoc
+
+          <> if childIsClass
+             then Prettyprinter.line <> "class" <+> uc_childname
+             else Prettyprinter.line <> "   # " <> lc_childname <+> "is an attribute, not a class." <>
+                  if isJust child_ts && show child_simpletype `notElem` ["Boolean", "Number"]
+                  then Prettyprinter.line <> "   # let's print its type as a class anyway." <>
+                       Prettyprinter.line <> "class" <+> child_simpletype
+                  else emptyDoc
+                  
+
+          | (attrname, (attrtype, attrchildren)) <- Map.toList (unCT children)
+          , let childIsClass = not $ Map.null (unCT attrchildren)
+                lc_childname = pretty $ lcfirst $ untaint attrname
+                uc_childname = pretty $ ucfirst $ untaint attrname
+                child_ts = getSymType attrtype
+                child_simpletype = maybe emptyDoc (prettySimpleType "corel4" snake_inner) child_ts
+         ]
+    -- guard to exclude certain forms which should not appear in the output
+  , case (ctype,children) of
+      ((Nothing, []),                 CT m) | m == Map.empty -> False | otherwise -> True
+      ((Just (SimpleType TOne _), []),CT m) | m == Map.empty -> False | otherwise -> True
+      _                                   -> True -- commentShow "# ctype:" ctype
+      -- [TODO] and how do we treat enum types?
+  ]
+  ++ [ superClassesNotExplicitlyDefined
+     , typesNotExplicitlyDefined ]
+
+  where -- [TODO] -- move this to the Interpreter
+    
+    superClassesNotExplicitlyDefined :: Doc ann
+    superClassesNotExplicitlyDefined =
+      let
+        knownClasses = getCTkeys ct
+        superClasses = nub $ catMaybes $ clsParent ct <$> knownClasses
+      in vsep $ ("### superclasses not explicitly defined" :
+                 ( ("class" <+>) . pretty <$> (superClasses \\ knownClasses) ))
+         ++ ["###"]
+
+    typesNotExplicitlyDefined :: Doc ann
+    typesNotExplicitlyDefined =
+      let
+        foundTypes = rights $ getUnderlyingType <$> concatMap (getAttrTypesIn ct) (getCTkeys ct)
+        knownClasses = getCTkeys ct
+      in vsep $ ("### types not explicitly defined" :
+                 ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
+         ++ ["###"]
+
+    ucfirst x = T.toUpper (T.singleton $ T.head x) <> T.tail x
+    lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
+
+
+
 

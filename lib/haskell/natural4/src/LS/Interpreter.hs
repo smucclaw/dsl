@@ -81,8 +81,9 @@ qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
 qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
-     | (_grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                            exposedRoots l4i      -- EXPOSED
+     | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
+                           exposedRoots l4i      -- EXPOSED
+     , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]      
 
@@ -144,12 +145,11 @@ musings l4i rs =
              else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
            , "** getAndOrTrees, direct"
            , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
-           , "** Things that are RuleAliases"
-           , vvsep [ "*** RuleAliases"
-                   , vvsep [ "-" <+> pretty rlname
-                           | r <- rs -- this is AccidentallyQuadratic in a pathological case.
-                           , let rlname = ruleLabelName r
-                           , isRuleAlias l4i rlname ]
+           , vvsep [ "** Things that are RuleAliases"
+                   , vsep [ "-" <+> pretty rlname
+                          | r <- rs -- this is AccidentallyQuadratic in a pathological case.
+                          , let rlname = ruleLabelName r
+                          , isRuleAlias l4i rlname ]
                    ]
            , vvsep [ "** default markings"
                    , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
@@ -695,10 +695,11 @@ isRuleAlias :: Interpreted -> RuleName -> Bool
 isRuleAlias l4i rname =
   any matchHenceLest (origrules l4i)
   where
-    matchHenceLest Regulative{..} | hence == Just (RuleAlias rname) = True
-    matchHenceLest Regulative{..} | lest  == Just (RuleAlias rname) = True
-    matchHenceLest _                                                = False
-
+    matchHenceLest Regulative{..} = testMatch hence || testMatch lest
+    matchHenceLest _              = False
+    testMatch :: Maybe Rule -> Bool
+    testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
+    
 -- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
 -- This is used by the Purescript and SVG transpilers.
 

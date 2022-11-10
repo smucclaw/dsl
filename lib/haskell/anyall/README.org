@@ -48,7 +48,6 @@ Now you can view the SVG:
 
 Suppose you want to be able to ~import AnyAll as AA~
 
-
 In ~package.yaml~ say ~dependencies: - anyall~
 
 ** Local
@@ -73,6 +72,20 @@ In ~stack.yaml~ under ~extra-deps:~ say
 #+end_src
 
 (The commit hash will need to update to whatever commit you're up to in main.)
+
+** Usage
+
+For an example of this API at work, see https://github.com/smucclaw/dsl/blob/main/lib/haskell/natural4/src/LS/XPile/SVG.hs#L23-L32
+
+The main API to drawing SVGs with AnyAll looks like this:
+
+1. set up your BoolStruct Text (by calling, perhaps, the Interpreter's ~qaHornsT~)
+2. set up your Marking Text (by calling, perhaps, the Interpreter's ~getMarkings~)
+3. choose a hard or soft option -- that is to say, do we take the ~Left~ defaults into consideration when evaluating the markings?
+4. call ~AnyAll.PP.hardnormal~ or ~AnyAll.PP.softnormal~ to set up a QTree
+5. call ~makeSvg~ against the QTree, with some ~cscale~ set to ~Tiny~ or to ~Full~
+
+You now have an SVGElement which is Showable. Dump it to disk and do with it what you will.
 
 * CLI Documentation
 
@@ -364,13 +377,24 @@ a given node may supply more than one decision, so after the upgrade to Data.Tre
 We kind of have the beginnings of this because we keep Leaf-node values separate from the ~AnyAll Item~ input in a ~Marking~ map; so we don't need to go to ~fgl~ just yet.
 
 
-** get input from a spreadsheet
+* Toolchain Context
 
-See https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=1043543357
+This code is most frequently run as part of the Legal Spreadsheets sidebar.
 
-This is happening under smucclaw/sandbox/mengwong/mp/ and will be upgraded to a library in this repo when it is done.
+See https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1779650637
 
-* Visualization
+This is happening under smucclaw/dsl/lib/haskell/natural4/
+
+The toolchain, in brief, looks like this:
+- spreadsheet sidebar
+- gsheet/Code.gs onEdit()
+- gsheet/pyrest/hello.py
+- natural4-exe
+- workdir/..../aasvg/
+- pyrest/hello.py
+- gsheet/Code.gs
+
+* SVGLadder Visualization Notes
 
 In the year 2022, in a world where Edward Tufte has published five hefty books, what good options do we have for visualization of one of the most basic data structures in computer science?
 
@@ -382,6 +406,10 @@ Initially we visualized the and/or tree like this:
 
 After re-reading [[https://drive.google.com/file/d/1FXHyxDhjQJ5plDC_a7yCPUrxIu8EBhYp/view?usp=sharing][Layman Allen]] and considering circuit diagrams, particularly the [[https://en.wikipedia.org/wiki/Ladder_logic][ladder logic used in PLC controllers]], we tried a new design.
 
+** See Also Documentation Diagrams elsewhere
+
+See the PDFs under https://drive.google.com/drive/folders/1y7TssfA925VuyuAt8VBaNxlRTo8KyqlS
+
 ** Principles
 
 *** Orientation
@@ -392,7 +420,7 @@ Elements on the canvas can be laid out left-to-right (LR), top-to-bottom (TB), o
 
 An AnyAll Item is represented as a 2d box, typically connected to the rest of the diagram with a pair of lines.
 
-If the user has not given a truth value to the proposition, it is in an "unknown" state -- ~Nothing :: Maybe Bool~.
+If the user has not given a truth value to the proposition, it is in an "unknown" state -- ~Left Nothing :: Either (Maybe Bool) (Maybe Bool)~.
 
 Typographically, we represent unknown values as white text on gray background. The ASCII art below doesn't show it, but the PNG examples elsewhere do.
 
@@ -493,7 +521,11 @@ If the user answers "yes" to the question the overall value becomes "no", and vi
 
 *** Known states where user has given input
 
-User input allows us to mark a box with a known value -- ~Just True~ or ~Just False~. The marking represents "closing the circuit":
+User input allows us to mark a box with a known value -- ~Just True~ or ~Just False~.
+
+To be precise, ~Right (Just True/False) :: Either (Maybe Bool) (Maybe Bool)~
+
+The marking represents "closing the circuit":
 
 **** Suppose we know that something is true.
 
@@ -558,7 +590,7 @@ TB:
 
 When user input has not been received, but we know that most answers will be "yes", we leave the colour as white on grey but we connect the lines as though the user had given input.
 
-We model this using the `Default` type, which is something like a `Maybe Either Bool`.
+We model this as ~Left (Just True/False) :: Either (Maybe Bool) (Maybe Bool)~
 
 *** Bounding Box
 

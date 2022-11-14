@@ -50,3 +50,29 @@ instance Monoid lbl => Semigroup (BoolStructDT lbl a) where
   l                   <> (Node (FAll y) ys) = Node (FAll y) (l:ys)
   l@(Node (FAll _) _) <> r          = r <> l
   l                   <> r          = Node (FAll mempty) [l, r]
+
+simplifyItemDT :: (Eq lbl, Monoid lbl) => BoolStructDT lbl a -> BoolStructDT lbl a
+simplifyItemDT orig = orig
+
+data MergeResult a = Merged a | Unmerged a a
+
+attemptMergeHeads :: Eq lbl => BoolStructDT lbl a -> BoolStructDT lbl a -> MergeResult (BoolStructDT lbl a)
+attemptMergeHeads  x@(Node (FAll xl) xs)  y@(Node (FAll yl) ys)
+  | xl == yl = Merged $ Node (FAll xl) (xs++ys)
+  | otherwise = Unmerged x y
+attemptMergeHeads  x@(Node (FAny xl) xs)  y@(Node (FAny yl) ys)
+  | xl == yl = Merged $ Node (FAny xl) (xs++ys)
+  | otherwise = Unmerged x y
+attemptMergeHeads  x  y = Unmerged x y
+
+mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStructDT lbl a] -> [BoolStructDT lbl a]
+mergeMatch []  = []
+mergeMatch [k] = [k]
+mergeMatch (bs1 : bs2 : zs) = case x of
+  (Merged m) -> mergeMatch (m:zs)
+  (Unmerged x y) -> x : mergeMatch (y:zs)
+  where
+    x = attemptMergeHeads bs1 bs2
+
+siblingfyItemDT :: (Eq lbl, Monoid lbl) => [BoolStructDT lbl a] -> [BoolStructDT lbl a]
+siblingfyItemDT = mergeMatch

@@ -15,16 +15,20 @@ import Test.QuickCheck
 import Data.List (sort)
 import Control.Applicative
 
-atomNode :: Text -> Tree (Formula (Maybe Text) Text)
+atomNode :: Text -> Tree (Formula (Maybe (Label Text)) Text)
 atomNode t = Node (FAtom t) []
 
-allDt ::  [Tree (Formula (Maybe Text) Text)] -> Tree (Formula (Maybe Text) Text)
+allDt ::  [Tree (Formula (Maybe a) Text)] -> Tree (Formula (Maybe a) Text)
 allDt = Node (FAll Nothing)
 
-anyDt ::  [Tree (Formula (Maybe Text) Text)] -> Tree (Formula (Maybe Text) Text)
+anyDt ::  [Tree (Formula (Maybe a) Text)] -> Tree (Formula (Maybe a) Text)
 anyDt = Node (FAny Nothing)
 
+allPre :: Text -> [BoolStructDT (Maybe (Label Text)) a] -> BoolStructDT (Maybe (Label Text)) a
+allPre label = Node (FAll (Just (Pre label)))
 
+anyPre :: Text -> [BoolStructDT (Maybe (Label Text)) a] -> BoolStructDT (Maybe (Label Text)) a
+anyPre label = Node (FAny (Just (Pre label)))
 instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStructDT lbl a) where
     (Node (FAtom x)         _ ) =-= (Node (FAtom y)         _ ) = property (x == y)
     (Node FNot              xs) =-= (Node FNot              ys) = property (xs == ys)
@@ -123,3 +127,34 @@ spec = do
 
   describe "BoolStructDT Semigroup" $ do
     testBatch (semigroup (undefined ::BoolStructDT String String, 1::Int))
+
+  describe "simplifyItemDT" $ do
+    it "should leave Leaf " $ do
+      simplifyItemDT (atomNode "foo") `shouldBe` (atomNode "foo")
+
+  describe "siblingfyItemDT" $ do
+    let
+      x = 1
+      foobar = [atomNode "foo", atomNode "bar"]
+      fizbaz = [atomNode "fiz", atomNode "baz"]
+
+    it "should leave Leaf " $ do
+      siblingfyItemDT [atomNode "foo", atomNode "foo"] `shouldBe` [atomNode "foo", atomNode "foo"]
+
+    it "should leave Not Leaf " $ do
+      siblingfyItemDT [notDt $ atomNode "foo", notDt $ atomNode "foo"] `shouldBe` [notDt $ atomNode "foo", notDt $ atomNode "foo"]
+
+    it "should merge alls Leaf" $ do
+      siblingfyItemDT [allPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
+
+    xit "should simplify singleton Leaf" $ do
+      siblingfyItemDT [allPre "a" foobar, atomNode "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
+
+    it "should merge alls Leaf" $ do
+      siblingfyItemDT [anyPre "a" foobar, anyPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
+
+    xit "should simplify singleton Leaf" $ do
+      siblingfyItemDT [anyPre "a" foobar, atomNode "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
+
+    it "should merge alls Leaf" $ do
+      siblingfyItemDT [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"]

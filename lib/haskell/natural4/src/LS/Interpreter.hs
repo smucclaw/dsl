@@ -621,10 +621,8 @@ expandRule _ _ = []
 onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
   let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
-      simplified = AA.simplifyItem myitem
-  in -- trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
-     -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
-     simplified
+      simplified = AA.simplifyBoolStruct myitem
+  in simplified
 
 onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> BoolStructT
 onlyItemNamed l4i rs wanteds =

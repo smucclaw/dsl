@@ -131,10 +131,10 @@ spec = do
 
   describe "simplifyItem" $ do
     it "should leave atomNode " $ do
-      simplifyItemDT (atomNode "foo") `shouldBe` atomNode "foo"
+      simplifyBoolStructDT (atomNode "foo") `shouldBe` atomNode "foo"
 
     it "should elevate nested All children" $ do
-      simplifyItemDT ( allDt
+      simplifyBoolStructDT ( allDt
                       [ allDt [atomNode "foo1", atomNode "foo2"],
                         allDt [atomNode "bar", allDt [atomNode "bat"]],
                         allPre "something"
@@ -153,57 +153,57 @@ spec = do
                     ]
 
     it "should simplify singleton atomNode" $ do
-      simplifyItemDT ( allDt [atomNode "foo"] ) `shouldBe`  atomNode "foo"
+      simplifyBoolStructDT ( allDt [atomNode "foo"] ) `shouldBe`  atomNode "foo"
 
     it "should simplify singleton atomNode" $ do
-      simplifyItemDT ( allDt [atomNode "foo"] ) `shouldBe`  atomNode "foo"
+      simplifyBoolStructDT ( allDt [atomNode "foo"] ) `shouldBe`  atomNode "foo"
 
     it "should simplify not-nots" $ do
-      simplifyItemDT ( notDt $ notDt $ atomNode "not" ) `shouldBe`  atomNode "not"
+      simplifyBoolStructDT ( notDt $ notDt $ atomNode "not" ) `shouldBe`  atomNode "not"
 
     it "collapse all" $ do
-      simplifyItemDT ( allPre "a" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"] ) `shouldBe`  allPre "a" [atomNode "foo", atomNode "bar", atomNode "baz"]
+      simplifyBoolStructDT ( allPre "a" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"] ) `shouldBe`  allPre "a" [atomNode "foo", atomNode "bar", atomNode "baz"]
 
     it "does not collapse all" $ do
-      simplifyItemDT (allPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` allPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
+      simplifyBoolStructDT (allPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` allPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
 
     it "collapse any" $ do
-      simplifyItemDT ( anyPre "a" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"] )
+      simplifyBoolStructDT ( anyPre "a" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"] )
       `shouldBe`
                        anyPre "a" [atomNode "foo", atomNode "bar", atomNode "baz"]
 
     it "does not collapse any" $ do
-      simplifyItemDT (anyPre "b" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
+      simplifyBoolStructDT (anyPre "b" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
 
     it "does not collapse any all" $ do
-      simplifyItemDT (anyPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` anyPre "b"  [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
+      simplifyBoolStructDT (anyPre "b" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` anyPre "b"  [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
 
     it "does not collapse all any" $ do
-      simplifyItemDT (allPre "b" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` allPre "b"  [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
+      simplifyBoolStructDT (allPre "b" [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]) `shouldBe` allPre "b"  [anyPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"]
 
-  describe "siblingfyItemDT" $ do
+  describe "siblingfyBoolStructDT" $ do
     let
       x = 1
       foobar = [atomNode "foo", atomNode "bar"]
       fizbaz = [atomNode "fiz", atomNode "baz"]
 
     it "should leave atomNode " $ do
-      siblingfyItemDT [atomNode "foo", atomNode "foo"] `shouldBe` [atomNode "foo", atomNode "foo"]
+      siblingfyBoolStructDT [atomNode "foo", atomNode "foo"] `shouldBe` [atomNode "foo", atomNode "foo"]
 
     it "should leave Not atomNode " $ do
-      siblingfyItemDT [notDt $ atomNode "foo", notDt $ atomNode "foo"] `shouldBe` [notDt $ atomNode "foo", notDt $ atomNode "foo"]
+      siblingfyBoolStructDT [notDt $ atomNode "foo", notDt $ atomNode "foo"] `shouldBe` [notDt $ atomNode "foo", notDt $ atomNode "foo"]
 
     it "should merge alls atomNode" $ do
-      siblingfyItemDT [allPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
+      siblingfyBoolStructDT [allPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
 
     xit "should simplify singleton atomNode" $ do
-      siblingfyItemDT [allPre "a" foobar, atomNode "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
+      siblingfyBoolStructDT [allPre "a" foobar, atomNode "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
 
     it "should merge alls atomNode" $ do
-      siblingfyItemDT [anyPre "a" foobar, anyPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
+      siblingfyBoolStructDT [anyPre "a" foobar, anyPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
 
     xit "should simplify singleton atomNode" $ do
-      siblingfyItemDT [anyPre "a" foobar, atomNode "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
+      siblingfyBoolStructDT [anyPre "a" foobar, atomNode "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), atomNode "fig"]
 
     it "should merge alls atomNode" $ do
-      siblingfyItemDT [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"]
+      siblingfyBoolStructDT [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"]

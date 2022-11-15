@@ -52,13 +52,13 @@ instance Monoid lbl => Semigroup (BoolStructDT lbl a) where
   l@(Node (FAll _) _) <> r          = r <> l
   l                   <> r          = Node (FAll mempty) [l, r]
 
-simplifyItemDT :: (Eq lbl, Monoid lbl) => BoolStructDT lbl a -> BoolStructDT lbl a
-simplifyItemDT (Node FNot [Node FNot [xs]]) = simplifyItemDT xs
-simplifyItemDT (Node (FAll _)  [xs])        = simplifyItemDT xs
-simplifyItemDT (Node (FAny _)  [xs])        = simplifyItemDT xs
-simplifyItemDT (Node (FAll l1) xs)          = Node (FAll l1) $ concatMap (\case { (Node (FAll l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItemDT $ simplifyItemDT <$> xs)
-simplifyItemDT (Node (FAny l1) xs)          = Node (FAny l1) $ concatMap (\case { (Node (FAny l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItemDT $ simplifyItemDT <$> xs)
-simplifyItemDT orig = orig
+simplifyBoolStructDT :: (Eq lbl, Monoid lbl) => BoolStructDT lbl a -> BoolStructDT lbl a
+simplifyBoolStructDT (Node FNot [Node FNot [xs]]) = simplifyBoolStructDT xs
+simplifyBoolStructDT (Node (FAll _)  [xs])        = simplifyBoolStructDT xs
+simplifyBoolStructDT (Node (FAny _)  [xs])        = simplifyBoolStructDT xs
+simplifyBoolStructDT (Node (FAll l1) xs)          = Node (FAll l1) $ concatMap (\case { (Node (FAll l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStructDT $ simplifyBoolStructDT <$> xs)
+simplifyBoolStructDT (Node (FAny l1) xs)          = Node (FAny l1) $ concatMap (\case { (Node (FAny l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStructDT $ simplifyBoolStructDT <$> xs)
+simplifyBoolStructDT orig = orig
 
 data MergeResult a = Merged a | Unmerged a a
 
@@ -80,5 +80,5 @@ mergeMatch (bs1 : bs2 : zs) = case x of
   where
     x = attemptMergeHeads bs1 bs2
 
-siblingfyItemDT :: (Eq lbl, Monoid lbl) => [BoolStructDT lbl a] -> [BoolStructDT lbl a]
-siblingfyItemDT = mergeMatch
+siblingfyBoolStructDT :: (Eq lbl, Monoid lbl) => [BoolStructDT lbl a] -> [BoolStructDT lbl a]
+siblingfyBoolStructDT = mergeMatch

@@ -696,7 +696,7 @@ pBSR = debugName "pBSR" $ prePostParse pRelPred
 -- +----------------------------+-------------------------------------+-----------------------+
 --
 getBSR :: Rule -> Maybe BoolStructR
-getBSR Hornlike{..}   = Just $ AA.simplifyItem $ AA.All Nothing $
+getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.All Nothing $
                         catMaybes $
                         [ hbody
                         | HC2 _hhead hbody <- clauses
@@ -704,7 +704,7 @@ getBSR Hornlike{..}   = Just $ AA.simplifyItem $ AA.All Nothing $
                         [ Just bsr
                         | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
                         ]
-getBSR Regulative{..} = Just $ AA.simplifyItem $ AA.All Nothing $
+getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.All Nothing $
                         maybeToList (prependSubject who) ++
                         maybeToList cond
   where

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 module AnyAll.BoolStructTree where
 import Data.Tree
 import AnyAll.Types
@@ -52,6 +53,11 @@ instance Monoid lbl => Semigroup (BoolStructDT lbl a) where
   l                   <> r          = Node (FAll mempty) [l, r]
 
 simplifyItemDT :: (Eq lbl, Monoid lbl) => BoolStructDT lbl a -> BoolStructDT lbl a
+simplifyItemDT (Node FNot [Node FNot [xs]]) = simplifyItemDT xs
+simplifyItemDT (Node (FAll _)  [xs])        = simplifyItemDT xs
+simplifyItemDT (Node (FAny _)  [xs])        = simplifyItemDT xs
+simplifyItemDT (Node (FAll l1) xs)          = Node (FAll l1) $ concatMap (\case { (Node (FAll l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItemDT $ simplifyItemDT <$> xs)
+simplifyItemDT (Node (FAny l1) xs)          = Node (FAny l1) $ concatMap (\case { (Node (FAny l2) cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItemDT $ simplifyItemDT <$> xs)
 simplifyItemDT orig = orig
 
 data MergeResult a = Merged a | Unmerged a a

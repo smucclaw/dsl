@@ -58,12 +58,12 @@ boolStruct' n =
 
 spec :: Spec
 spec = do
-  describe "simplifyItem" $ do
+  describe "simplifyBoolStruct" $ do
     it "should leave Leaf " $ do
-      simplifyItem (leaf "foo") `shouldBe` leaf "foo"
+      simplifyBoolStruct (leaf "foo") `shouldBe` leaf "foo"
 
     it "should elevate nested All children" $ do
-      simplifyItem ( all
+      simplifyBoolStruct ( all
                       [ all [leaf "foo1", leaf "foo2"],
                         all [leaf "bar", all [leaf "bat"]],
                         allPre "something"
@@ -82,31 +82,31 @@ spec = do
                     ]
 
     it "should simplify singleton Leaf" $ do
-      simplifyItem ( all [leaf "foo"] ) `shouldBe`  leaf "foo"
+      simplifyBoolStruct ( all [leaf "foo"] ) `shouldBe`  leaf "foo"
 
     it "should simplify singleton Leaf" $ do
-      simplifyItem ( any [leaf "foo"] ) `shouldBe`  leaf "foo"
+      simplifyBoolStruct ( any [leaf "foo"] ) `shouldBe`  leaf "foo"
 
     it "should simplify not-nots" $ do
-      simplifyItem ( Not $ Not $ leaf "not" ) `shouldBe`  leaf "not"
+      simplifyBoolStruct ( Not $ Not $ leaf "not" ) `shouldBe`  leaf "not"
 
     it "collapse all" $ do
-      simplifyItem ( allPre "a" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  allPre "a" [leaf "foo", leaf "bar", leaf "baz"]
+      simplifyBoolStruct ( allPre "a" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  allPre "a" [leaf "foo", leaf "bar", leaf "baz"]
 
     it "does not collapse all" $ do
-      simplifyItem (allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "collapse any" $ do
-      simplifyItem ( anyPre "a" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  anyPre "a" [leaf "foo", leaf "bar", leaf "baz"]
+      simplifyBoolStruct ( anyPre "a" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  anyPre "a" [leaf "foo", leaf "bar", leaf "baz"]
 
     it "does not collapse any" $ do
-      simplifyItem (anyPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (anyPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "does not collapse any all" $ do
-      simplifyItem (anyPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (anyPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "does not collapse all any" $ do
-      simplifyItem (allPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (allPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
   describe "nnf transformation" $ do
     let
@@ -195,29 +195,29 @@ spec = do
   describe "BoolStruct Semigroup" $ do
     testBatch (semigroup (undefined ::BoolStruct String String, 1::Int))
 
-  describe "siblingfyItem" $ do
+  describe "siblingfyBoolStruct" $ do
     let
       x = 1
       foobar = [leaf "foo", leaf "bar"]
       fizbaz = [leaf "fiz", leaf "baz"]
 
     it "should leave Leaf " $ do
-      siblingfyItem [leaf "foo", leaf "foo"] `shouldBe` [leaf "foo", leaf "foo"]
+      siblingfyBoolStruct [leaf "foo", leaf "foo"] `shouldBe` [leaf "foo", leaf "foo"]
 
     it "should leave Not Leaf " $ do
-      siblingfyItem [Not $ leaf "foo", Not $ leaf "foo"] `shouldBe` [Not $ leaf "foo", Not $ leaf "foo"]
+      siblingfyBoolStruct [Not $ leaf "foo", Not $ leaf "foo"] `shouldBe` [Not $ leaf "foo", Not $ leaf "foo"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [allPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [allPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     xit "should simplify singleton Leaf" $ do
-      siblingfyItem [allPre "a" foobar, leaf "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [allPre "a" foobar, leaf "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, anyPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, anyPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     xit "should simplify singleton Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, leaf "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, leaf "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"]

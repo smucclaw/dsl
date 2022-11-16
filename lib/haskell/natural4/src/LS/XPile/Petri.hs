@@ -217,7 +217,7 @@ mergePetri rules og = foldl (mergePetri' rules) og (nodes $ labfilter (hasDeet I
 mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
 mergePetri' rules og splitNode = runGM og $ do
   -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
-  -- traceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
+  -- myTraceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
   forM_ [ twins
         | let twins = suc og splitNode
         , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
@@ -236,8 +236,8 @@ mergePetri' rules og splitNode = runGM og $ do
     forM_ excess        delNode'
     newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
 
-    -- traceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
-    -- traceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
+    -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
+    -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
     newPetri <- getGraph
     gs <- GM get
     GM . put $ gs {curentGraph = mergePetri' rules newPetri splitNode }
@@ -343,7 +343,7 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
       newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
       mapM_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
-      -- traceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
+      -- myTraceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
       mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasText :: Text -> PNode a -> Bool
@@ -476,7 +476,7 @@ newNode :: PNodeD -> GraphMonad Node
 newNode lbl = do
   gs@GS {lastNode = n, curentGraph = g} <- GM get
   let n' = succ n
-  -- traceM $ "newNode: " <> show n' <> " " <> show lbl
+  -- myTraceM $ "newNode: " <> show n' <> " " <> show lbl
   GM . put $ gs {lastNode = n' , curentGraph = insNode (n', lbl) g }
   return n'
 
@@ -539,14 +539,20 @@ r2fgl rs defRL Regulative{..} = do
         return [IsFirstNode,OrigRL (rl2text rl), IsParty]
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
-
-  let everywho = Text.unwords ( if rkeyword == REvery then [ Text.pack (show (tokenOf rkeyword)) ] else []
+  myTraceM $ "Petri/r2fgl: rkeyword = " <> show rkeyword
+  let everywho = Text.unwords ( ( if rkeyword == REvery
+                                  then [ Text.pack (show (tokenOf rkeyword)) ]
+                                  else [] )
                                 <> [ subj2nl NLen subj ] )
+  myTraceM $ "Petri/r2fgl: everywho = " <> show everywho
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
                                     Just _bsr  -> mkDecis everywho
       firstNodeLabel1 = addDeet firstNodeLabel0 IsParty
       firstNodeLabel = maybe firstNodeLabel1 (addDeets firstNodeLabel1) myLabel
+ -- myTraceM $ "Petri: firstNodeLabel0 = " <> show firstNodeLabel0
+  myTraceM $ "Petri/r2fgl: firstNodeLabel1 = " <> show firstNodeLabel1
+  myTraceM $ "Petri/r2fgl: firstNodeLabel  = " <> show firstNodeLabel
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
@@ -569,6 +575,7 @@ r2fgl rs defRL Regulative{..} = do
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
   (onSuccessN, mbOnFailureN) <- do
+    myTraceM $ "Petri/r2fgl: action = " <> show action
     let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
         temp = tc2nl NLen temporal
         actn = actionFragments action
@@ -580,6 +587,8 @@ r2fgl rs defRL Regulative{..} = do
                      -- vp2np
                      -- ( actionWord $ head $ actionFragments action) <> " " <>
                      henceWord deontic
+    myTraceM $ "Petri/r2fgl: actn = " <> show actn
+    myTraceM $ "Petri/r2fgl: oblLab = " <> show actn
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
@@ -599,7 +608,7 @@ r2fgl rs defRL Regulative{..} = do
   newEdge onSuccessN henceN []
 
   lestN  <- fromMaybe breachNode <$> maybe (pure Nothing) (r2fgl rs (rl2text <$> rlabel <|> defRL)) lest
-  -- traceM $ "lestNEs: " <> show lestNEs
+  -- myTraceM $ "lestNEs: " <> show lestNEs
   -- let sg3 = insertNE lestNEs  sg2
       -- connect up the hence and lest bits
       -- the "hence" transition from dtaE should plug in to the first node in our henceContexts

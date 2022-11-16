@@ -1,5 +1,5 @@
-//,,live updates,TRUE,,devMode port,8081,,,FALSE,,,,,,,,
-//,"CASE STUDY ONE:    LEGISLATION — Matthew Waddington, Legislative Drafting Office, Jersey",,,,,,,,,,,,,,,,
+//,,live updates,TRUE,,devMode port,8081,,,TRUE,,,,,,,,
+//,"CASE STUDY:    LEGISLATION — Matthew Waddington, Legislative Drafting Office, Jersey",,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 //,"A Person Who Walks; and Eats, or Drinks; Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
 //,"In this lesson, we show how to write a simple rule in L4, illustrating key concepts along the way.",,,,,,,,,,,,,,,,
@@ -57,11 +57,11 @@ We'll make Qualifies an explicit defined term.
 That allows us to break the text into two explicit parts:
 the regulative rule to the left, the constitutive rule to the right.",,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
-,,EVERY,Person,,,,,,,,,,,,,,
-,,WHO,,,Qualifies,,,,,,,,,,,,
-,,,,,MEANS,walks,,,,,,,,,,,
-,,,,,AND,,eats,,,,,,,,,,
-,,,,,,OR,drinks,,,,,,,,,,
+,,PARTY,Person,,,,,,,,,,,,,,
+//,,WHO,,,Qualifies,,,,,,,,,,,,
+//,,,,,MEANS,walks,,,,,,,,,,,
+//,,,,,AND,,eats,,,,,,,,,,
+//,,,,,,OR,drinks,,,,,,,,,,
 ,,MUST,sing,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
 //,"In the left margin, a button hides and shows the definition of ""Qualifies"".
@@ -96,12 +96,12 @@ the subject of the rule could always weasel out with ""well, I plan to, I just h
 //,,,,,,,,,,,,,,,,,
 //,Let's go Interactive.,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
-//,"You can explore scenarios by clicking on the red checkboxes.
+//,"You can explore scenarios by clicking on the coloured checkboxes.
 The other checkboxes (in black) change in response.",,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
 //,,EVERY,Person,,,,,,,,,,,,,,
 //,,WHO,FALSE,Qualifies,,,,,,,,,,,,,
-//,,,,MEANS,TRUE,walks,,,,,,,,,,,
+//,,,,MEANS,FALSE,walks,,,,,,,,,,,
 //,,,,AND,FALSE,FALSE,eats,,,,,,,,,,
 //,,,,,OR,FALSE,drinks,,,,,,,,,,
 //,,MUST,sing,,,,,,,,,,,,,,

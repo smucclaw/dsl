@@ -37,6 +37,9 @@ import qualified Text.RawString.QQ as QQ
 import qualified Data.Foldable as DF
 -- import qualified Data.Traversable as DT
 
+myTraceM :: String -> IO ()
+myTraceM = SFL4.myTraceM
+
 main :: IO ()
 main = do
   opts     <- unwrapRecord "mp"
@@ -54,7 +57,8 @@ main = do
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (pShowNoColor (alwaysLabeled $ biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <>
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <>
+                                                                 psSuffix <> "\n\n" <>
                                                                  asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -93,17 +97,17 @@ main = do
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
 --    putStrLn "going to start dumping to workdir outputs"
-    unless (not (SFL4.tonative  opts)) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
-    unless (not (SFL4.tonative  opts)) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
-    unless (not (SFL4.tocorel4  opts)) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
-    unless (not (SFL4.tojson    opts)) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
-    unless (not (SFL4.topurs    opts)) $ mywritefile True topursFN     iso8601 "purs" asPursstr
-    unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
-    unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    unless (not (SFL4.tonl      opts)) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
-    unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    unless (not (SFL4.toaasvg   opts)) $ do
+    when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
+    when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
+    when (SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+    when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
+    when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
+    when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
+    when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
+    when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
         then do
@@ -127,7 +131,7 @@ main = do
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 
 
-    unless (not (SFL4.tocheckl  opts)) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
+    when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
     putStrLn "natural4: output to workdir done"

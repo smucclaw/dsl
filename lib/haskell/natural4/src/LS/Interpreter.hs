@@ -28,6 +28,7 @@ import qualified Data.Map as Map
 import Prettyprinter
 import Text.Pretty.Simple
 import Debug.Trace
+import Control.Monad (guard)
 import Data.Maybe
 import Data.Graph.Inductive
 import Data.Tuple (swap)
@@ -95,7 +96,7 @@ musings l4i rs =
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <>
+           , vvsep [ vvsep [ "*** Class:" <+> pretty (traceStack "phead cname" cname) <>
                              if null (Prelude.tail cname) then emptyDoc
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
                            , if null cchild then emptyDoc
@@ -636,12 +637,13 @@ onlyItemNamed l4i rs wanteds =
     else snd $ DL.head found
 
 -- | let's hazard a guess that the item with the mostest is the thing we should put in front of the user.
-biggestItem :: Interpreted -> [Rule] -> BoolStructT
-biggestItem l4i rs =
+biggestItem :: Interpreted -> [Rule] -> Maybe BoolStructT
+biggestItem l4i rs = do
   let ibr = itemsByRule l4i rs
       flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
       sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
-  in (Map.fromList ibr) ! (fst $ DL.head sorted)
+  guard (not $ null sorted)
+  return ((Map.fromList ibr) ! (fst $ DL.head sorted))
 
 itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =

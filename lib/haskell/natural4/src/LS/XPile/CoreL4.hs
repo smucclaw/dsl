@@ -102,6 +102,10 @@ sfl4ToCorel4 rs =
           else True
         ]
   
+-- | go directly from Natural L4 to Baby L4, bypassing the text-file step.
+-- We need some amount of type inference here to upgrade natural l4 to be as rigorously typed as core l4.
+-- [TODO] this has been planned for some time. LET'S DO THIS.
+-- well, maybe next year, as Sondheim said.
 
 sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
 sfl4ToCorel4Program rus

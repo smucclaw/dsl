@@ -4,6 +4,13 @@ What questions do we need to ask the end user?
 
 How do we automatically build various transpilation targets?
 
+
+* A Simple Example of a New Transpiler
+
+To get a sense of which bits of which source files are involved in setting up a new transpiler target, see this pull request:
+https://github.com/smucclaw/dsl/pull/199
+
+
 * Outputting Constitutive Rules to a Visualization
 
 ** Ladder Logic
@@ -57,10 +64,6 @@ From this current state of the world we can:
 A MUST always has two output paths: the happy path goes to the right, and is connected via ~HENCE~. The unhappy path goes to the left, and is connected via ~LEST~. If they are not explicitly given, then by default, the unhappy path is BREACH; the happy path is FULFILLED.
 
 A MAY without an explicit neutral path (where the permitted action is not taken) will, by default, have an implicit neutral to FULFILLED.
-
-* Simple Example
-
-See the test/README.org for pdpadbno-1
 
 * PDPA Notification Example
 

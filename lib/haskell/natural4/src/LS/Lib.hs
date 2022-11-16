@@ -74,6 +74,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , togrounds :: w ::: Bool   <!> "True"  <?> "ground terms"
                    , tots      :: w ::: Bool   <!> "True"  <?> "typescript"
+                   , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
 
                    , dbug :: w ::: Bool <!> "False"

@@ -507,9 +507,11 @@ text2rp = RPParamText . text2pt
 pt2multiterm :: ParamText -> MultiTerm
 pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
 
--- head here is super fragile, will runtime crash
 rpFirstWord :: RelationalPredicate -> Text.Text
-rpFirstWord = head . rp2texts
+rpFirstWord rp =
+  case rp2texts rp of
+    []  -> ""
+    x:_ -> x
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm

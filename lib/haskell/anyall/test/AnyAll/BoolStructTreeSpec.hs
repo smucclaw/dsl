@@ -14,6 +14,7 @@ import Test.QuickCheck.Checkers
 import Test.QuickCheck
 import Data.List (sort)
 import Control.Applicative
+import Data.Aeson (encode, decode)
 
 atomNode :: Text -> Tree (Formula (Maybe (Label Text)) Text)
 atomNode t = Node (FAtom t) []
@@ -207,3 +208,84 @@ spec = do
 
     it "should merge alls atomNode" $ do
       siblingfyBoolStructDT [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, atomNode "fig"]
+
+  describe "JSON marshalling" $ do
+    let
+      foobar = [atomNode "foo", atomNode "bar"]
+      fizbaz = [atomNode "fiz", atomNode "baz"]
+
+    it "encode Leaf" $ do
+      encode (atomNode "foo") `shouldBe` "{\"contents\":\"foo\",\"tag\":\"Leaf\"}"
+
+    it "encode Not" $ do
+      encode (notDt (atomNode "foo")) `shouldBe` "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}"
+
+    it "encode Any (Label Pre)" $ do
+      encode (anyPre "any" foobar) `shouldBe` "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode Any (Label PrePost)" $ do
+      encode (Node (FAny (Just (PrePost "PreText" "PostText"))) foobar) `shouldBe` "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode Any (Label Nothing)" $ do
+      encode (Node (FAny Nothing) foobar) `shouldBe` "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode All (Label Pre)" $ do
+      encode (allPre "all" foobar) `shouldBe` "{\"contents\":[{\"contents\":\"all\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+    it "encode All (Label PrePost)" $ do
+      encode (Node (FAll (Just (PrePost "PreText" "PostText"))) foobar) `shouldBe` "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+    it "encode All (Label Nothing)" $ do
+      encode (Node (FAll Nothing) foobar) `shouldBe` "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+  describe "JSON unmarshalling" $ do
+    let
+      foobar = [atomNode "foo", atomNode "bar"]
+      fizbaz = [atomNode "fiz", atomNode "baz"]
+
+    it "decode Leaf" $ do
+      decode "{\"contents\":\"foo\",\"tag\":\"Leaf\"}" `shouldBe` Just (atomNode "foo")
+
+    it "decode Not" $ do
+      decode "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}" `shouldBe` Just (notDt (atomNode "foo"))
+
+    it "decode Any (Label Pre)" $ do
+      decode "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (anyPre "any" foobar)
+
+    it "decode Any (Label PrePost)" $ do
+      decode "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (Node (FAny (Just (PrePost "PreText" "PostText"))) foobar)
+
+    it "decode Any (Label Nothing)" $ do
+      decode "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (Node (FAny Nothing) foobar)
+
+    it "decode Any Nothing - Missing" $ do
+      decode "{\"contents\":[[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      (Nothing::Maybe (BoolStructDT (Maybe (Label Text)) Text))
+
+    it "decode All (Label Pre)" $ do
+      decode "{\"contents\":[{\"contents\":\"all\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (allPre "all" foobar)
+
+    it "decode All (Label PrePost)" $ do
+      decode "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (Node (FAll (Just (PrePost "PreText" "PostText"))) foobar)
+
+    it "decode All (Label Nothing)" $ do
+      decode "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (Node (FAll Nothing) foobar)
+  
+    it "decode All Nothing - Missing" $ do
+      decode "{\"contents\":[[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      (Nothing::Maybe (BoolStructDT (Maybe (Label Text)) Text))
+

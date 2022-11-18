@@ -1,17 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE InstanceSigs #-}
 module AnyAll.BoolStructTree where
 import Data.Tree
 import AnyAll.Types
 import qualified Data.Text as T
+import Data.Aeson
+import GHC.Generics
+import Data.Aeson.Types (object, Parser)
+import Control.Applicative (empty)
+import Data.Text (Text)
 
 data Formula lbl a =
     FAtom a
   | FAll lbl
   | FAny lbl
   | FNot
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Show, Ord, Generic)
 
 type BoolStructDT lbl a = Tree (Formula lbl a)
 
@@ -82,3 +89,31 @@ mergeMatch (bs1 : bs2 : zs) = case x of
 
 siblingfyBoolStructDT :: (Eq lbl, Monoid lbl) => [BoolStructDT lbl a] -> [BoolStructDT lbl a]
 siblingfyBoolStructDT = mergeMatch
+
+instance {-# OVERLAPPING #-} (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStructDT lbl a) where
+  toJSON (Node (FAtom x) _    ) = object ["contents" .= x, "tag" .= ("Leaf"::T.Text)]
+  toJSON (Node FNot      [x]) = object ["contents" .= x, "tag" .= ("Not"::T.Text)]
+  toJSON (Node (FAny l)  xs) = object ["contents" .= (l, xs), "tag" .= ("Any"::T.Text)]
+  toJSON (Node (FAll l)  xs) = object ["contents" .= (l, xs), "tag" .= ("All"::T.Text)]
+
+parseNode :: (FromJSON lbl, FromJSON a) => T.Text -> Object -> Parser (BoolStructDT lbl a)
+parseNode "Leaf" v = do
+  l <- v .: "contents"
+  return (Node (FAtom l) [])
+parseNode "Not" v = do
+  l <- v .: "contents"
+  return (Node FNot [l])
+parseNode "Any" v = do
+  (l,xs) <- v .: "contents"
+  return (Node (FAny l) xs)
+parseNode "All" v = do
+  (l,xs) <- v .: "contents"
+  return (Node (FAll l) xs)
+parseNode _ _ = empty
+
+instance {-# OVERLAPPING #-} (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStructDT lbl a) where
+  parseJSON (Object v) = do
+    t <- v .: "tag"
+    parseNode t v
+    
+  parseJSON _ = empty

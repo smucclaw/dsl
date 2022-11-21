@@ -113,7 +113,9 @@ sfl4ToCorel4 rs =
 sfl4ToCorel4Program :: Interpreted -> CoreL4.Program SRng
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = sfl4Dummy
-            , elementsOfProgram = concatMap sfl4ToCorel4Rule (origrules l4i)}
+            , elementsOfProgram = [] } -- concatMap sfl4ToCorel4Rule (origrules l4i)}
+
+-- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
 ppCorel4 :: CoreL4.Program SRng -> String
 ppCorel4 p =
@@ -158,11 +160,11 @@ sfl4ToCorel4Rule Hornlike{..} =
                 | ts <- snd <$> NE.toList pt
                 ]
     rule = RuleTLE Rule
-      { annotOfRule = undefined
-      , nameOfRule = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule = undefined
+      { annotOfRule    = undefined
+      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
+      , instrOfRule    = undefined
       , varDeclsOfRule = undefined
-      , precondOfRule = undefined -- gonna need more time to figure out how to convert an L4 Rule to the Expr type. in the meantime there's directToCore
+      , precondOfRule  = undefined -- gonna need more time to figure out how to convert an L4 Rule to the Expr type. in the meantime there's directToCore
       , postcondOfRule = undefined
       }
 

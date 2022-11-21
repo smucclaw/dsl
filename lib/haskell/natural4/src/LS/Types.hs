@@ -98,8 +98,8 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> BoolStructP
-mkLeaf = AA.Leaf . text2pt
+mkLeafPT :: Text.Text -> BoolStructP
+mkLeafPT = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
 mkLeafR x = AA.Leaf $ RPMT [x]
@@ -318,12 +318,12 @@ data Rule = Regulative
 
 defaultReg, defaultCon, defaultHorn :: Rule
 defaultReg = Regulative
-  { subj = mkLeaf "person"
+  { subj = mkLeafPT "person"
   , rkeyword = REvery
   , who = Nothing
   , cond = Nothing
   , deontic = DMust
-  , action = mkLeaf "sing"
+  , action = mkLeafPT "sing"
   , temporal = Nothing
   , hence = Nothing
   , lest = Nothing

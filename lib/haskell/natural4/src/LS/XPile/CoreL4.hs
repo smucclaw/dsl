@@ -41,6 +41,9 @@ import Data.Map ((!))
 sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
+sfl4ToBabyl4 :: Interpreted -> String
+sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
+
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
   let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
@@ -107,9 +110,10 @@ sfl4ToCorel4 rs =
 -- [TODO] this has been planned for some time. LET'S DO THIS.
 -- well, maybe next year, as Sondheim said.
 
-sfl4ToCorel4Program :: [SFL4.Rule] -> CoreL4.Program SRng
-sfl4ToCorel4Program rus
-  = Program {annotOfProgram = sfl4Dummy, elementsOfProgram = concatMap sfl4ToCorel4Rule rus}
+sfl4ToCorel4Program :: Interpreted -> CoreL4.Program SRng
+sfl4ToCorel4Program l4i
+  = Program { annotOfProgram = sfl4Dummy
+            , elementsOfProgram = concatMap sfl4ToCorel4Rule (origrules l4i)}
 
 ppCorel4 :: CoreL4.Program SRng -> String
 ppCorel4 p =
@@ -134,7 +138,7 @@ pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell sou
                                    : (pretty . ("## " <>) <$> lines (show tle)) )
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement SRng]
-sfl4ToCorel4Rule Regulative{} = undefined
+sfl4ToCorel4Rule Regulative{} = []
 
 sfl4ToCorel4Rule Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations

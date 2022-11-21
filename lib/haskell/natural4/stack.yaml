@@ -52,7 +52,7 @@ extra-deps:
 # - ../../../../prolog # smucclaw fork of the standard hackage package for prolog
 
 - github: smucclaw/baby-l4
-  commit: c757e61613b419940d1acc2c632d066bef2406b7
+  commit: 8a35d67538a16017d6c26751389e8fdabf515b4d
   subdirs:
   - .
   - baby-l4-core

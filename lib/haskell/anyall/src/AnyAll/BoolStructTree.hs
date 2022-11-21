@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE InstanceSigs #-}
 module AnyAll.BoolStructTree where
 import Data.Tree
 import AnyAll.Types

@@ -305,13 +305,6 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-
-  describe "native2tree / tree2native" $ do
-    it "should round-trip mustSing" $ do
-      tree2native (native2tree mustSing) `shouldBe` mustSing
-    it "should round-trip mustDance" $ do
-      tree2native (native2tree mustDance) `shouldBe` mustDance
-
   describe "JSON conversion" $ do
     it "should encode Default left just true" $ do
       asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"Left\":true}"

@@ -137,17 +137,3 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 -- instance   ToJSON ItemJSON
 
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
-
-type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
-
-native2tree :: OptionallyLabeledBoolStruct a -> AsTree a
-native2tree (Leaf a) = Node (Simply a, Nothing) []
-native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
-native2tree (All l items) = Node (And, l) (native2tree <$> items)
-native2tree (Any l items) = Node ( Or, l) (native2tree <$> items)
-
-tree2native :: AsTree a -> OptionallyLabeledBoolStruct a
-tree2native (Node (Simply a, _) children) = Leaf a
-tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
-tree2native (Node (And, lbl) children) = All lbl (tree2native <$> children)
-tree2native (Node ( Or, lbl) children) = Any lbl (tree2native <$> children)

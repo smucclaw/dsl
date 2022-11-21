@@ -49,19 +49,19 @@ spec = do
         bt = atomNode "b"
 
     it "nnf (not (not a)) == a" $ do
-      nnfDT (notDt . notDt $ at) `shouldBe` at
+      nnfDT (mkNotDT . mkNotDT $ at) `shouldBe` at
 
     it "nnf (not (all [a, b])) == (any [not a, not b])" $ do
-      nnfDT (notDt $ allDt [at, bt]) `shouldBe` anyDt [notDt at, notDt bt]
+      nnfDT (mkNotDT $ allDt [at, bt]) `shouldBe` anyDt [mkNotDT at, mkNotDT bt]
 
     it "nnf (not (any [a, b])) == (all [not a, not b])" $ do
-      nnfDT (notDt $ anyDt [at, bt]) `shouldBe` allDt [notDt at, notDt bt]
+      nnfDT (mkNotDT $ anyDt [at, bt]) `shouldBe` allDt [mkNotDT at, mkNotDT bt]
 
     it "nnf (not (not all [not not a, not not b])) == all [a, b]" $ do
-      nnfDT (notDt . notDt $ allDt [notDt . notDt $ at, notDt . notDt $ bt]) `shouldBe` allDt [at, bt]
+      nnfDT (mkNotDT . mkNotDT $ allDt [mkNotDT . mkNotDT $ at, mkNotDT . mkNotDT $ bt]) `shouldBe` allDt [at, bt]
 
     it "nnf (all [not not a, not not b]) == (all [a,b])" $ do
-      nnfDT (allDt [notDt . notDt $ at, notDt . notDt $ bt]) `shouldBe` allDt [at, bt]
+      nnfDT (allDt [mkNotDT . mkNotDT $ at, mkNotDT . mkNotDT $ bt]) `shouldBe` allDt [at, bt]
 
   describe "extractLeaves" $ do
     let
@@ -72,10 +72,10 @@ spec = do
       extractLeavesDT a `shouldBe` ["a"]
 
     it "extractLeaves not a == a" $ do
-      extractLeavesDT (notDt a) `shouldBe` ["a"]
+      extractLeavesDT (mkNotDT a) `shouldBe` ["a"]
 
     it "extractLeaves (not (any [a, b])) == [a, b]" $ do
-      extractLeavesDT (notDt $ anyDt [a, b]) `shouldBe` ["a", "b"]
+      extractLeavesDT (mkNotDT $ anyDt [a, b]) `shouldBe` ["a", "b"]
 
     it "extractLeaves  (all [a, b]) == [a, b]" $ do
       extractLeavesDT (anyDt [a, b]) `shouldBe` ["a", "b"]
@@ -92,7 +92,7 @@ spec = do
       addJustDT a `shouldBe` aMaybe
 
     it "addJust not a == a" $ do
-      addJustDT (notDt a) `shouldBe` notDt aMaybe
+      addJustDT (mkNotDT a) `shouldBe` mkNotDT aMaybe
 
     it "addJust (any [a, b]) == [a, b]" $ do
       addJustDT (Node (FAny "") [a, b]) `shouldBe` (Node (FAny (Just "")) [aMaybe, bMaybe])
@@ -113,7 +113,7 @@ spec = do
       alwaysLabeledDT aMaybe `shouldBe` a
 
     it "alwaysLabeled not a == a" $ do
-      alwaysLabeledDT (notDt aMaybe) `shouldBe` (notDt a)
+      alwaysLabeledDT (mkNotDT aMaybe) `shouldBe` (mkNotDT a)
 
     it "alwaysLabeled (any Nothing [a, b]) == (any (pre 'any of:') [a, b])" $ do
       alwaysLabeledDT (Node (FAny Nothing) [aMaybe, bMaybe]) `shouldBe` Node (FAny (Pre "any of:")) [a, b]
@@ -160,7 +160,7 @@ spec = do
       simplifyBoolStructDT ( allDt [atomNode "foo"] ) `shouldBe`  atomNode "foo"
 
     it "should simplify not-nots" $ do
-      simplifyBoolStructDT ( notDt $ notDt $ atomNode "not" ) `shouldBe`  atomNode "not"
+      simplifyBoolStructDT ( mkNotDT $ mkNotDT $ atomNode "not" ) `shouldBe`  atomNode "not"
 
     it "collapse all" $ do
       simplifyBoolStructDT ( allPre "a" [allPre "a" [atomNode "foo", atomNode "bar"], atomNode "baz"] ) `shouldBe`  allPre "a" [atomNode "foo", atomNode "bar", atomNode "baz"]
@@ -192,7 +192,7 @@ spec = do
       siblingfyBoolStructDT [atomNode "foo", atomNode "foo"] `shouldBe` [atomNode "foo", atomNode "foo"]
 
     it "should leave Not atomNode " $ do
-      siblingfyBoolStructDT [notDt $ atomNode "foo", notDt $ atomNode "foo"] `shouldBe` [notDt $ atomNode "foo", notDt $ atomNode "foo"]
+      siblingfyBoolStructDT [mkNotDT $ atomNode "foo", mkNotDT $ atomNode "foo"] `shouldBe` [mkNotDT $ atomNode "foo", mkNotDT $ atomNode "foo"]
 
     it "should merge alls atomNode" $ do
       siblingfyBoolStructDT [allPre "a" foobar, allPre "a" fizbaz, atomNode "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), atomNode "fig"]
@@ -218,7 +218,7 @@ spec = do
       encode (atomNode "foo") `shouldBe` "{\"contents\":\"foo\",\"tag\":\"Leaf\"}"
 
     it "encode Not" $ do
-      encode (notDt (atomNode "foo")) `shouldBe` "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}"
+      encode (mkNotDT (atomNode "foo")) `shouldBe` "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}"
 
     it "encode Any (Label Pre)" $ do
       encode (anyPre "any" foobar) `shouldBe` "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
@@ -247,7 +247,7 @@ spec = do
       decode "{\"contents\":\"foo\",\"tag\":\"Leaf\"}" `shouldBe` Just (atomNode "foo")
 
     it "decode Not" $ do
-      decode "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}" `shouldBe` Just (notDt (atomNode "foo"))
+      decode "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}" `shouldBe` Just (mkNotDT (atomNode "foo"))
 
     it "decode Any (Label Pre)" $ do
       decode "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"

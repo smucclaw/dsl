@@ -64,25 +64,25 @@ spec = do
       flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just False)
                                                               ,("eat",   Left $ Just True)
                                                               ,("drink", Left $ Just True)])
-        `shouldBe` [Leaf "walk"]
+        `shouldBe` [mkLeaf "walk"]
 
     it "when Soft, should consider a Walk=L False to be dispositive" $ do
       flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just False)
                                                               ,("eat",   Left $ Just True)
                                                               ,("drink", Left $ Just True)])
-        `shouldBe` [Leaf "walk"]
+        `shouldBe` [mkLeaf "walk"]
 
     it "when Soft, should consider a Walk=L True, drink=L True to be dispositive" $ do
       flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just True)
                                                               ,("eat",   Left $ Nothing)
                                                               ,("drink", Left $ Just True)])
-        `shouldBe` [Leaf "walk", Leaf "drink"]
+        `shouldBe` [mkLeaf "walk", mkLeaf "drink"]
 
     it "should consider a Walk=R True, Eat=R True to be dispositive" $ do
       flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just True)
                                                               ,("eat",   Right $ Just True)
                                                               ,("drink", Left $ Just True)])
-        `shouldBe` [Leaf "walk", Leaf "eat"]
+        `shouldBe` [mkLeaf "walk", mkLeaf "eat"]
 
     it "should short-circuit a confirmed False in an And list" $ do
       rlv mustSing (Map.fromList [("walk",  Right $ Just False)
@@ -328,28 +328,6 @@ spec = do
                                         ,("eat",   Left  $ Just True)]))
         `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]]]]]]"
 
-  -- [{"shouldView":"View"
-  --  ,"andOr":{"tag":"And"}
-  --  ,"prePost":{"tag":"Pre"
-  --             ,"contents":"both"}
-  --  ,"mark":{"Left":null}}
-  -- ,[[{"shouldView":"Ask"
-  --    ,"andOr":{"tag":"Simply"
-  --             ,"contents":"walk"}
-  --    ,"prePost":null
-  --    ,"mark":{"Left":true}}
-  --   ,[]]
-  --  ,[{"shouldView":"View"
-  --    ,"andOr":{"tag":"Neg"}
-  --    ,"prePost":null
-  --    ,"mark":{"Left":null}}
-  --   ,[[{"shouldView":"Ask"
-  --      ,"andOr":{"tag":"Simply"
-  --               ,"contents":"eat"}
-  --      ,"prePost":null
-  --      ,"mark":{"Left":true}}
-  --     ,[]]]]]]
-
     it "should roundtrip Q mustNot" $ do
       let qNot = rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
                                            ,("eat",   Left  $ Just True)])
@@ -360,24 +338,24 @@ type SingLabel = T.Text
 mustSing :: OptionallyLabeledBoolStruct SingLabel
 mustSing =
   All (Just $ Pre "both")
-  [ Leaf "walk"
+  [ mkLeaf "walk"
   , Any (Just $ Pre "either")
-    [ Leaf "eat"
-    , Leaf "drink" ] ]
+    [ mkLeaf "eat"
+    , mkLeaf "drink" ] ]
 
 mustNot :: OptionallyLabeledBoolStruct SingLabel
 mustNot =
   All (Just $ Pre "both")
-  [ Leaf "walk"
-  , Not (Leaf "eat") ]
+  [ mkLeaf "walk"
+  , Not (mkLeaf "eat") ]
 
 mustDance :: OptionallyLabeledBoolStruct SingLabel
 mustDance =
   All (Just $ Pre "three of:")
   [ All (Just $ Pre "both")
-    [ Leaf "walk"
-    , Leaf "run" ]
+    [ mkLeaf "walk"
+    , mkLeaf "run" ]
   , Any (Just $ Pre "either")
-    [ Leaf "eat"
-    , Leaf "drink" ] ]
+    [ mkLeaf "eat"
+    , mkLeaf "drink" ] ]
 

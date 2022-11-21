@@ -23,6 +23,18 @@ data BoolStruct lbl a =
   | Not             (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
+mkLeaf :: a -> BoolStruct lbl a
+mkLeaf = Leaf
+
+mkAll :: lbl -> [BoolStruct lbl a] -> BoolStruct lbl a
+mkAll = All
+
+mkAny :: lbl -> [BoolStruct lbl a] -> BoolStruct lbl a
+mkAny = Any
+
+mkNot :: BoolStruct lbl a -> BoolStruct lbl a
+mkNot = Not
+
 type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
 type BoolStructLT = BoolStruct (Label T.Text) T.Text
 

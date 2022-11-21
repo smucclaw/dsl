@@ -204,10 +204,10 @@ nestedCcompRule = defaultRule {
 
 everyOrgNotPublicAg ::  Rule
 everyOrgNotPublicAg = defaultReg
-  { subj = mkLeaf "organization"
+  { subj = mkLeafPT "organization"
   , rkeyword = REvery
   , who = Just $ multiterm2bsr' ["is not a public agency"]
   , cond = Nothing
   , deontic = DMust
-  , action = mkLeaf "sings"
+  , action = mkLeafPT "sings"
   }

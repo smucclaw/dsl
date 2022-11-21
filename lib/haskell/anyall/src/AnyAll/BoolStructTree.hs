@@ -21,13 +21,22 @@ data Formula lbl a =
 
 type BoolStructDT lbl a = Tree (Formula lbl a)
 
-notDt :: BoolStructDT lbl a -> BoolStructDT lbl a
-notDt at = Node FNot [at]
+mkLeafDT :: a -> BoolStructDT lbl a
+mkLeafDT a = Node (FAtom a) []
+
+mkAllDT :: lbl -> [BoolStructDT lbl a] -> BoolStructDT lbl a
+mkAllDT lbl = Node (FAll lbl)
+
+mkAnyDT :: lbl -> [BoolStructDT lbl a] -> BoolStructDT lbl a
+mkAnyDT lbl = Node (FAny lbl)
+
+mkNotDT :: BoolStructDT lbl a -> BoolStructDT lbl a
+mkNotDT at = Node FNot [at]
 
 nnfDT :: BoolStructDT lbl a -> BoolStructDT lbl a
 nnfDT (Node FNot [Node FNot [st]] ) = nnfDT st
-nnfDT (Node FNot [Node (FAll l) fs] ) = Node (FAny l) (nnfDT . notDt <$> fs)
-nnfDT (Node FNot [Node (FAny l) fs] ) = Node (FAll l) (nnfDT . notDt <$> fs)
+nnfDT (Node FNot [Node (FAll l) fs] ) = Node (FAny l) (nnfDT . mkNotDT <$> fs)
+nnfDT (Node FNot [Node (FAny l) fs] ) = Node (FAll l) (nnfDT . mkNotDT <$> fs)
 nnfDT (Node (FAll l) fs) = Node (FAll l) (nnfDT <$> fs)
 nnfDT (Node (FAny l) fs) = Node (FAny l) (nnfDT <$> fs)
 nnfDT x = x

@@ -121,11 +121,11 @@ data Q a = Q { shouldView :: ShouldView
              } deriving (Eq, Ord, Show, Generic)
 
 ask2hide :: Q a -> Q a
-ask2hide (Q Ask x y z) = Q Hide x y z
+ask2hide q@Q{shouldView=Ask} = q{shouldView=Hide}
 ask2hide x = x
 
 ask2view :: Q a -> Q a
-ask2view (Q Ask x y z) = Q View x y z
+ask2view q@Q{shouldView=Ask} = q{shouldView=View}
 ask2view x = x
 
 type QTree a = Tree (Q a)

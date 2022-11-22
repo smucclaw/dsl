@@ -42,23 +42,6 @@ import Data.Map ((!))
 -- functions. It is typically run once, in the high-level caller, and
 -- handed to each transpiler for use, as an `l4i` argument.
 --
--- The attributes are as follows:
---
--- `classtable`: all the `DECLARE`d classes
---
--- `scopetable`: all the rule scopes; the exact semantics are not
--- entirely nailed down as we don't have a rigorous notion of scope
--- yet. This is intended to reflect the real-world usage of "for the
--- purposes of this section, X means Y". We might think of that as a
--- nested block scope for `let` bindings.
---
--- `origrules`: the original rules on which the interpretation was based.
--- You may sometimes see functions that take both `Interpreted` and `[Rule]`;
--- the latter is technically redunant and can be safely eliminated. [TODO].
---
--- In the future we may add to this list of attributes the following frequently called functions:
---   qaHornsT -- currently a function run against `l4i`
---   qaHornsR -- currently a function run against `l4i`
 
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
 l4interpret iopts rs =

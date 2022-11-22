@@ -94,7 +94,7 @@ musings l4i rs =
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty (traceStack "phead cname" cname) <>
+           , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
                              if null (Prelude.tail cname) then emptyDoc
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
                            , if null cchild then emptyDoc

@@ -21,7 +21,7 @@ rn = Default $ Right Nothing
 spec :: Spec
 spec = do
   let markup m = Marking (Default <$> m)
-      rlv item marking = relevant Hard DPNormal (markup marking) Nothing item
+      rlv item marking = relevant Hard (markup marking) Nothing item
   describe "with mustSing," $ do
     it "should ask for confirmation of assumptions, even if true" $ do
       rlv mustSing (Map.fromList [("walk",  Left $ Just True)

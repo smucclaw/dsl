@@ -79,8 +79,9 @@ instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 --   Right: user input. received value from user.
 
 -- using data instead of newtype because it makes it easier to prettyprint to Purescript via Show
-data Default a = Default (Either (Maybe a) (Maybe a))
+newtype Default a = Default (Either (Maybe a) (Maybe a))
   deriving (Eq, Ord, Show, Generic)
+
 getDefault :: Default a -> Either (Maybe a) (Maybe a)
 getDefault (Default x) = x
 
@@ -109,7 +110,6 @@ parseMarking :: Value -> Parser (Marking T.Text)
 parseMarking = withObject "marking" $ \o -> do
     return $ Marking $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
 
-
 data ShouldView = View | Hide | Ask deriving (Eq, Ord, Show, Generic)
 instance ToJSON ShouldView; instance FromJSON ShouldView
 
@@ -118,6 +118,14 @@ data Q a = Q { shouldView :: ShouldView
              , prePost    :: Maybe (Label a)
              , mark       :: Default Bool
              } deriving (Eq, Ord, Show, Generic)
+
+ask2hide :: Q a -> Q a
+ask2hide (Q Ask x y z) = Q Hide x y z
+ask2hide x = x
+
+ask2view :: Q a -> Q a
+ask2view (Q Ask x y z) = Q View x y z
+ask2view x = x
 
 type QTree a = Tree (Q a)
 

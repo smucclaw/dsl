@@ -1,0 +1,4 @@
+GIVEN,,db,IS,A,DataBreach,,,,
+,,numberOfAffectedIndividuals,,,IS,AN,Int,,
+DECIDE,db,exceedsPrescrNumberOfIndividuals,,,,,,,
+WHEN,db,numberOfAffectedIndividuals,,,,,,>=,500

@@ -15,19 +15,12 @@ import Data.Tree
 import qualified Data.Text       as T
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: Hardness -> DisplayPref -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
-relevant sh dp marking parentValue self =
+relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
+relevant sh  marking parentValue self =
   let
-      initVis   = if | isJust parentValue -> if | parentValue == selfValue              -> View
-                                                | otherwise                             -> Hide
-                     | otherwise          -> if | isJust (evaluate Hard marking self)   -> View
-                                                | otherwise                             -> Ask
-      -- we are able to compute the initial visibility of the subtree; TODO we can modify it according to our display preference
-      paintedChildren = relevant sh dp marking selfValue <$> boolStructChildren self
-      -- if i am myself hidden, then convert all my descendants' Ask to Hide
-      repaintedChildren = if initVis /= Hide
-                          then paintedChildren
-                          else (ask2hide <$>) <$> paintedChildren
+    repaintedChildren = if initVis == Hide
+                          then (ask2hide <$>) <$> paintedChildren
+                          else paintedChildren
   in -- convert to a QTree for output
   case self of
              Leaf x -> case Map.lookup x (getMarking marking) of
@@ -39,7 +32,16 @@ relevant sh dp marking parentValue self =
              Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
   where
     selfValue = evaluate sh marking self
-    
+    selfValueHard = evaluate Hard marking self
+    initVis = initVisFn parentValue selfValue selfValueHard
+    paintedChildren = relevant sh marking selfValue <$> boolStructChildren self
+
+initVisFn :: Maybe Bool -> Maybe Bool -> Maybe Bool -> ShouldView
+initVisFn parentValue selfValue selfValueHard
+  | isJust parentValue = if parentValue == selfValue then View else Hide
+  | isJust selfValueHard = View
+  | otherwise = Ask
+
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some
 

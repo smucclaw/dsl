@@ -59,9 +59,9 @@ markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
                                                                  
 hardnormal, softnormal :: Marking T.Text -> OptionallyLabeledBoolStruct T.Text -> QTree T.Text
-hardnormal m = relevant Hard DPNormal m Nothing
+hardnormal m = relevant Hard m Nothing
 
-softnormal m = relevant Soft DPNormal m Nothing
+softnormal m = relevant Soft m Nothing
 
 docQ1 :: (IsString a, Ord a, Show a, Pretty a) => Marking a -> Tree (Q a) -> Doc ann
 docQ1 m (Node (Q sv  Neg              pp              v) c) = markbox v sv <+>              ": !" <+> nest 2 (hsep $ docQ1 m <$> c)

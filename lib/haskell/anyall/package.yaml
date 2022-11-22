@@ -68,3 +68,4 @@ tests:
     - hspec-checkers
     - QuickCheck
     - checkers
+    - quickcheck-instances

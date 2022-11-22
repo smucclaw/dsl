@@ -2,15 +2,32 @@
 module AnyAll.TypesSpec (spec) where
 
 import Test.Hspec
-import Data.Text (Text)
 import Data.Aeson (decode, encode)
 import qualified Data.Map as Map
 import AnyAll.Types
+import Test.QuickCheck
+import qualified Data.Text as T
+import Test.QuickCheck.Instances.Text
 
-type MarkingMap = Map.Map Text (Default Bool)
+type MarkingMap = Map.Map T.Text (Default Bool)
 
-markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.Map Text (Default Bool)
+markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.Map T.Text (Default Bool)
 markingMap payload = Map.singleton "key" (Default payload)
+
+instance Arbitrary (ShouldView) where
+  arbitrary = oneof [pure View, pure Hide, pure Ask]
+
+instance (Arbitrary a) => Arbitrary (AndOr a) where
+  arbitrary = oneof [pure And, pure Or, Simply <$> arbitrary, pure Neg]
+
+instance (Arbitrary a) => Arbitrary (Label a) where
+  arbitrary = oneof [Pre <$> arbitrary, PrePost <$> arbitrary <*> arbitrary]
+
+instance (Arbitrary a) => Arbitrary (Default a) where
+  arbitrary = Default <$> arbitrary
+
+instance (Arbitrary a) => Arbitrary (Q a) where
+  arbitrary = Q <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 spec :: Spec
 spec = do
@@ -63,7 +80,7 @@ spec = do
 
   describe "serialize Marking" $ do
     it "empty marking" $ do
-      let q = encode (Marking {getMarking = Map.empty} :: Marking Text)
+      let q = encode (Marking {getMarking = Map.empty} :: Marking T.Text)
       q `shouldBe` "{\"getMarking\":{}}"
 
     it "marking Left empty" $ do
@@ -95,3 +112,9 @@ spec = do
       let ma = markingMap $ Right $ Just False
           q = encode Marking {getMarking = ma}
       q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":false}}}"
+
+  describe "Q functions" $ do
+    it "ask2hide" $ property $
+      \q -> ask2hide q{ shouldView = Ask } `shouldBe` (q{ shouldView = Hide } :: (Q T.Text))
+    it "ask2view" $ property $
+      \q -> ask2view q{ shouldView = Ask } `shouldBe` (q{ shouldView = View } :: (Q T.Text))

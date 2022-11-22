@@ -48,7 +48,11 @@ nnf (All l ps) = All l (nnf <$> ps)
 nnf (Any l ps) = Any l (nnf <$> ps)
 nnf x = x
 
--- | sometimes we're only interested in the leaves of a Boolstruct.
+boolStructChildren :: BoolStruct lbl a -> [BoolStruct lbl a]
+boolStructChildren (Leaf _) = []
+boolStructChildren (Any _ c) = c
+boolStructChildren (All _ c) = c
+boolStructChildren (Not c) = [c]
 
 extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]

@@ -101,12 +101,14 @@ musings l4i rs =
            , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
                              if null (Prelude.tail cname) then emptyDoc
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                           , if null cchild then emptyDoc
-                             else "**** extends" </> srchs cchild
+                           , if null cchild
+                             then emptyDoc
+                             else "**** extends" <+> maybe "" viaShow (fst . fst $ cchild) <+> "with new attributes"
+                                  </> srchs (snd cchild)
                            , "**** deets" </> srchs cname
                            ]
                    | (cname, cchild) <- cg ]
-           , "*** The entire classgraph"
+           , "** The entire classgraph"
            , srchs cg
            , "** Symbol Table"
            , "we know about the following scopes"

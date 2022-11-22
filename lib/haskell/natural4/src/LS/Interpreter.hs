@@ -57,7 +57,9 @@ l4interpret iopts rs =
 --   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).
 --
 --   This is used for:
+--
 --   * user-facing Q&A (see XPile/Purescript)
+--
 --   * visualization of the decision logic
 --
 
@@ -65,7 +67,9 @@ qaHornsT :: Interpreted -> [([RuleName], BoolStructT)]
 qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
 
 -- | where `qaHornsT` returns a `BoolStructT`, `qaHornsR` returns a `BoolStructR`.
+--
 -- The `T` version is used for applications that lie closer to the end-user's eyeballs.
+--
 -- The `R` version is used when the internal structure of the RelationalPredicates is still needed.
 
 qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
@@ -79,12 +83,12 @@ qaHornsR l4i =
      ]      
 
 -- | Talk a little bit about what we've interpreted.
--- The output of this function gets saved to the workdir's org/ directory
--- and can be viewed inside the `LATEST.org` output file.
+-- The output of this function gets saved to the workdir's @org/@ directory
+-- and can be viewed inside the @LATEST.org@ output file.
 -- If you are working on the Interpreter and want to see what it is thinking,
 -- this is a good place to add "printf debugging".
 --
--- When you view the `LATEST.org` output file, org-mode is recommended.
+-- When you view the @LATEST.org@ output file, org-mode is recommended.
 -- This comes naturally in Emacs. In VS Code you will need to install plugins.
 
 musings :: Interpreted -> [Rule] -> Doc ann
@@ -246,8 +250,8 @@ getCTkeys :: ClsTab -> [EntityType]
 getCTkeys (CT ct) = Map.keys ct
 
 -- | passthrough type, present in case we decide to represent the names of classes differently.
-
 type MyClassName = EntityType
+
 -- | class names, topologically sorted by inheritance to eliminate forward references in "extends" relationships
 -- note: this code will probably fail silently on any input that isn't as expected
 -- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
@@ -341,7 +345,7 @@ type RuleGraphEdgeLabel = ()
 type RuleGraph = Gr Rule RuleGraphEdgeLabel
 
 
-
+-- | which decision rules depend on which other decision rules?
 ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
 ruleDecisionGraph l4i rs =
   let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
@@ -410,7 +414,9 @@ decisionRoots rg =
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
+-- 
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
+--
 -- a Constitutive rule exposes the body of its `clauses`.
 --
 -- [TODO] multiple rules with the same head should get &&'ed together and jammed into a single big rule
@@ -462,7 +468,7 @@ bsmtOfClauses l4i depth r =
   in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
 
 -- | What does clause expansion mean?
--- we walk through the RelationalPredicates found in the head and the body of HornClause.
+-- We walk through the RelationalPredicates found in the head and the body of HornClause.
 -- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
 -- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 

@@ -30,69 +30,44 @@ spec = do
       qc2 = Q {shouldView = View, andOr = Simply "key2", prePost = Nothing, mark = Default (Right (Just True))}
 
     describe "leaf" $ do
-      describe "leaf marking=(Right True)" $ do
-        it "Hard DPNormal (Right True) (Just True) (leaf key)" $ do
-          relevant Hard m (Just True) (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 []
-
-        it "Hard DPNormal (Right True) (Just False) (leaf key)" $ do
-          relevant Hard m (Just False) (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 []
-
-        it "Hard DPNormal (Right True) (Nothing) (leaf key)" $ do
-          relevant Hard m Nothing (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 []
+      let
+        mrf =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just False)}
+        mlf =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just False)}
+        mlt =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just True)}
+      it "Hard (Right True) (Just True) (leaf key)" $ do
+        relevant Hard m (Just True) (mkLeaf "key1")
+          `shouldBe`
+          Node qc1 []
       
-        it "Hard DPNormal (Right True) (Just True) (leaf missing)" $ do
-          relevant Hard m (Just True) (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Hide, andOr = Simply "missing", mark = Default (Left Nothing)} []
+      it "Hard (Right True) (Just True) (leaf key)" $ do
+        relevant Hard m (Just False) (mkLeaf "key1")
+          `shouldBe`
+          Node qc1 []
 
-        it "Hard DPNormal (Right True) (Just False) (leaf missing)" $ do
-          relevant Hard m (Just False) (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Hide, andOr = Simply "missing", mark = Default (Left Nothing)} []
-
-        it "Hard DPNormal (Right True) (Nothing) (leaf missing)" $ do
-          relevant Hard m Nothing (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Ask, andOr = Simply "missing", mark = Default (Left Nothing)} []
-
-      describe "leaf marking=(Right False)" $ do
-        let
-          mrf =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just False)}
-        it "Hard DPNormal (Right False) (Just True) (leaf key)" $ do
-          relevant Hard mrf (Just True) (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 {mark = Default (Right (Just False))} []
-
-        it "Hard DPNormal (Right False) (Just False) (leaf key)" $ do
-          relevant Hard mrf (Just False) (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 {mark = Default (Right (Just False))} []
-
-        it "Hard DPNormal (Right False) (Nothing) (leaf key)" $ do
-          relevant Hard mrf Nothing (mkLeaf "key1")
-            `shouldBe` 
-            Node qc1 {mark = Default (Right (Just False))} []
+      it "Soft (Left True) (Just True) (leaf key)" $ do
+        relevant Soft mlt (Just True) (mkLeaf "key1")
+          `shouldBe`
+          Node qc1{shouldView = Ask, mark = Default (Left (Just True))} []
       
-        it "Hard DPNormal (Right False) (Just True) (leaf missing)" $ do
-          relevant Hard mrf (Just True) (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Hide, andOr = Simply "missing", mark = Default (Left Nothing)} []
+      it "Soft (Left True) (Just True) (leaf key)" $ do
+        relevant Soft mlt (Just False) (mkLeaf "key1")
+          `shouldBe`
+          Node qc1{shouldView = Hide, mark = Default (Left (Just True))} []
 
-        it "Hard DPNormal (Right False) (Just False) (leaf missing)" $ do
-          relevant Hard mrf (Just False) (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Hide, andOr = Simply "missing", mark = Default (Left Nothing)} []
+      it "Soft (Left True) (Just True) (leaf key)" $ do
+        relevant Soft mlt Nothing (mkLeaf "key1")
+          `shouldBe`
+          Node qc1{shouldView = Ask, mark = Default (Left (Just True))} []
 
-        it "Hard DPNormal (Right False) (Nothing) (leaf missing)" $ do
-          relevant Hard mrf Nothing (mkLeaf "missing")
-            `shouldBe` 
-            Node qc1 {shouldView = Ask, andOr = Simply "missing", mark = Default (Left Nothing)} []
+      it "Soft (Left True) (Just True) (leaf key)" $ do
+        relevant Hard mlt (Just True) (mkLeaf "miss")
+          `shouldBe`
+          Node qc1{shouldView = Hide, andOr = Simply "miss", mark = Default (Left Nothing)} []
+
+      it "Soft (Left True) (Just True) (leaf key)" $ do
+        relevant Hard mlt Nothing (mkLeaf "miss")
+          `shouldBe`
+          Node qc1{shouldView = Ask, andOr = Simply "miss", mark = Default (Left Nothing)} []
 
     it "Hard DPNormal (Right True) (Just True) (not key)" $ do
       let
@@ -121,3 +96,4 @@ spec = do
       relevant Hard m (Just True) (mkAny Nothing [mkLeaf "key1", mkLeaf "key2"])
         `shouldBe`
         Node qp [Node qc1 [],Node qc2 []]
+

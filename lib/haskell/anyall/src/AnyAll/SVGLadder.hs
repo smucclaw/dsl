@@ -607,8 +607,9 @@ drawBoxCap negContext m BoxDimensions{boxWidth=bw, boxHeight=bh} =
     (leftline, rightline, topline) = deriveBoxCap negContext m
     leftLineSVG = drawVerticalLine 0 bh leftline "leftline" "black"
     rightLineSVG = drawVerticalLine bw bh rightline "rightline" "black"
-                   -- draw a white line just to the left of the full-height right black line
+                   -- in Full and Small mode, draw a white line just to the left of the full-height right black line
                    -- for increased visibility
+                   -- [TODO] don't draw the line when Tiny. Need to move this into DrawConfigM
                    <> if rightline == FullLine
                       then drawVerticalLine (bw-2) bh rightline "rightline" "white"
                       else mempty

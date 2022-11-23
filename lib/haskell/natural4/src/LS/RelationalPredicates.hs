@@ -6,7 +6,7 @@
 {-|
 This module provides parser and utility functions for the RelationalPredicate group of types.
 
-= Why Relational Predicates? =
+= Why Relational Predicates?
 
 L4 follows in the logic programming tradition, which uses first-order logic to organize information.
 
@@ -14,23 +14,23 @@ L4's controlled natural language interface attempts to give a
 user-friendly gloss to predicate syntax, but under the hood, if you
 are familiar with Prolog, you will recognize the Horn clauses under the skin.
 
-== nary ==
+== arity
 
-=== How do we handle zero-argument predicates? ===
+=== How do we handle zero-argument predicates?
 
-=== How do we handle single-argument predicates? ===
+=== How do we handle single-argument predicates?
 
-=== How do we handle two-argument predicates? ===
+=== How do we handle two-argument predicates?
 
-=== How do we handle three-or-more-argument predicates? ===
+=== How do we handle three-or-more-argument predicates?
 
-== Reasoning with Relational Predicates ==
+== Reasoning with Relational Predicates
 
-== Different Forms of RelationalPredicates ==
+== Different Forms of RelationalPredicates
 
 Here we talk about each constructor.
 
-== Horn Clauses ==
+== Horn Clauses
 
 How they fit together into a HornClause2 structure
 

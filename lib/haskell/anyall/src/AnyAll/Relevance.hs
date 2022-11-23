@@ -17,27 +17,28 @@ import qualified Data.Text       as T
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
 relevant sh  marking parentValue self =
-  let
-    repaintedChildren = if initVis == Hide
-                          then (ask2hide <$>) <$> paintedChildren
-                          else paintedChildren
-  in -- convert to a QTree for output
   case self of
-             Leaf x -> case Map.lookup x (getMarking marking) of
-                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
-                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
-             Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
-             All label items -> Node (ask2view (Q initVis And label   (Default $ Left selfValue))) repaintedChildren
-             Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
+    Leaf x          -> mkRelevantLeaf (Map.lookup x (getMarking marking)) initVis x
+    Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
+    All label items -> Node (ask2view (Q initVis And label   (Default $ Left selfValue))) repaintedChildren
+    Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
   where
     selfValue = evaluate sh marking self
     selfValueHard = evaluate Hard marking self
-    initVis = initVisFn parentValue selfValue selfValueHard
+    initVis = deriveInitVis parentValue selfValue selfValueHard
     paintedChildren = relevant sh marking selfValue <$> boolStructChildren self
+    repaintedChildren =
+      if initVis == Hide
+      then (ask2hide <$>) <$> paintedChildren
+      else paintedChildren
 
-initVisFn :: Maybe Bool -> Maybe Bool -> Maybe Bool -> ShouldView
-initVisFn parentValue selfValue selfValueHard
+mkRelevantLeaf :: Maybe (Default Bool) -> ShouldView -> a -> Tree (Q a)
+mkRelevantLeaf (Just (Default (Right b))) _       x = Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
+mkRelevantLeaf (Just (Default (Left  b))) initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left  b)) []
+mkRelevantLeaf Nothing                    initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left Nothing)) []
+
+deriveInitVis :: Maybe Bool -> Maybe Bool -> Maybe Bool -> ShouldView
+deriveInitVis parentValue selfValue selfValueHard
   | isJust parentValue = if parentValue == selfValue then View else Hide
   | isJust selfValueHard = View
   | otherwise = Ask

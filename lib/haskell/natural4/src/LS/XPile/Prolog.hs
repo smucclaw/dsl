@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{-| transpiler to Prolog. This module is on hold; instead, see how baby-l4 generates Prolog-like outoputs. -}
+{-| transpiler from NaturaL4 to Prolog. This module useful as a point of
+reference for L4's operational semantics. If you know Prolog, you can
+understand the meaning of L4 expressions by seeing how they translate
+to Prolog.
+
+For more information see also `RelationalPredicates`.
+-}
 
 module LS.XPile.Prolog where
 

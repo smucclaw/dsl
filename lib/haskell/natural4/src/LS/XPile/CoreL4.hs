@@ -11,7 +11,7 @@ import Prettyprinter
 
 import AnyAll
 import LS.PrettyPrinter
-import L4.Syntax as CoreL4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
+import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
 
 import L4.Annotation
 import LS as SFL4
@@ -74,7 +74,7 @@ sfl4ToCorel4 rs =
                           ]
 
   in unlines $ nubstrings $ concatMap lines
-  ( [ -- "#\n# outputted via CoreL4.Program types\n#\n\n"
+  ( [ -- "#\n# outputted via L4.Program types\n#\n\n"
       -- , ppCorel4 . sfl4ToCorel4Program $ rs
       "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
       -- some hardcoding while we debug the transpiler and babyl4 interpreter
@@ -117,14 +117,14 @@ sfl4ToCorel4 rs =
 -- [TODO] this has been planned for some time. LET'S DO THIS.
 -- well, maybe next year, as Sondheim said.
 
-sfl4ToCorel4Program :: Interpreted -> CoreL4.Program ()
+sfl4ToCorel4Program :: Interpreted -> L4.Program ()
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = ()
             , elementsOfProgram = [] } -- concatMap sfl4ToCorel4Rule (origrules l4i)}
 
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
-ppCorel4 :: CoreL4.Program () -> String
+ppCorel4 :: L4.Program () -> String
 ppCorel4 p =
   T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
 
@@ -162,7 +162,9 @@ varNameToVarNoType :: VarName -> Var ()
 varNameToVarNoType vn = GlobalVar (QVarName () vn)
 
 varsToExprNoType :: [Var t] -> Expr t
-varsToExprNoType (v:vs) = applyVarsNoType v vs
+varsToExprNoType (v:vs) = --
+  -- error
+  applyVarsNoType v vs
 varsToExprNoType [] = error "internal error (varsToExprNoType [])"
 
 multiTermToExprNoType :: [T.Text] -> Expr ()
@@ -226,7 +228,7 @@ postcondOfHornClauses [HC2 hh _hb] = relationalPredicateToExpr hh
 postcondOfHornClauses _ = trueVNoType
 
 {- TODO: remove after testing
-sfl4ToCorel4RuleSingle :: SFL4.Rule -> [CoreL4.Rule ()]
+sfl4ToCorel4RuleSingle :: SFL4.Rule -> [L4.Rule ()]
 sfl4ToCorel4RuleSingle Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?

@@ -5,7 +5,7 @@
 
 {-| transpiler to SVG visualization of the AnyAll and/or trees.
 
-Largely a wrapper. Most of the functionality is in the anyall lib.
+Largely a wrapper. Most of the functionality is in the `AnyAll` lib.
 
 -}
 

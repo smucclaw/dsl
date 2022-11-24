@@ -59,17 +59,17 @@ DECIDE someEntity someAttribute
 
 Example:
 
-    Prolog:
+Prolog:
 
-    @
-    isBlue(theSky).
-    @
+@
+isBlue(theSky).
+@
 
-    L4:
+L4:
 
-    @
-    DECIDE theSky isBlue
-    @
+@
+DECIDE theSky isBlue
+@
 
 With bodies:
 
@@ -89,7 +89,32 @@ DECIDE theSky isBlue
 
 === How do we handle two-argument predicates?
 
+Prolog:
+
+@
+isParentOf(alice,bob).
+@
+
+L4:
+
+@
+DECIDE alice isParentOf bob
+@
+
+
 === How do we handle three-or-more-argument predicates?
+
+Prolog:
+
+@
+isChildOf(bob,alice,carol).
+@
+
+L4:
+
+@
+DECIDE bob isChildOf alice carol
+@
 
 == Syntactic Sugar
 

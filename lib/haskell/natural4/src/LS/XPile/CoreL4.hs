@@ -11,7 +11,7 @@ import Prettyprinter
 
 import AnyAll
 import LS.PrettyPrinter
-import L4.Syntax as CoreL4
+import L4.Syntax as CoreL4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
 
 import L4.Annotation
 import LS as SFL4
@@ -36,8 +36,15 @@ import Data.List (nub, intercalate, (\\), isPrefixOf)
 import qualified Data.Foldable as DF
 import Data.Map ((!))
 
+-- TODO: the following is only for testing purposes, can be removed later
+import L4.PrintProg (showL4, PrintSystem (L4Style), PrintConfig (PrintSystem))
+import L4.SyntaxManipulation (applyVarsNoType)
+import LS.Tokens (undeepers)
+
 -- output to Core L4 for further transformation
 
+-- TODO: could be removed: the result type of transpilation 
+-- is now ... () (as in Program()) and not ... SRng (as in Program SRng)
 sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
@@ -74,14 +81,14 @@ sfl4ToCorel4 rs =
     , hardCoded
     , "\n\n## classes\n",                   T.unpack pclasses
     , "\n\n## boilerplate\n",               T.unpack pBoilerplate
-    
+
     , "\n\n## decls for predicates used in rules (and not defined above already)\n"
     , T.unpack . myrender $ prettyDecls (T.pack hardCoded <> pclasses <> pBoilerplate) rs
-    
+
     -- honestly i think we can just live without these
     --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
     --               , "\n\n## defn from decision rules\n",  show $ prettyDefns   rs
-    
+
     , "\n# directToCore\n\n"
     ] ++
     [ T.unpack $ myrender (directToCore r)
@@ -104,24 +111,24 @@ sfl4ToCorel4 rs =
                && maybe True (== "") (Map.lookup (T.pack l) xtends)
           else True
         ]
-  
+
 -- | go directly from Natural L4 to Baby L4, bypassing the text-file step.
 -- We need some amount of type inference here to upgrade natural l4 to be as rigorously typed as core l4.
 -- [TODO] this has been planned for some time. LET'S DO THIS.
 -- well, maybe next year, as Sondheim said.
 
-sfl4ToCorel4Program :: Interpreted -> CoreL4.Program SRng
+sfl4ToCorel4Program :: Interpreted -> CoreL4.Program ()
 sfl4ToCorel4Program l4i
-  = Program { annotOfProgram = sfl4Dummy
+  = Program { annotOfProgram = ()
             , elementsOfProgram = [] } -- concatMap sfl4ToCorel4Rule (origrules l4i)}
 
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
-ppCorel4 :: CoreL4.Program SRng -> String
+ppCorel4 :: CoreL4.Program () -> String
 ppCorel4 p =
   T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
 
-pptle :: TopLevelElement SRng -> Doc ann
+pptle :: TopLevelElement () -> Doc ann
 pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
 
 pptle (RuleTLE Rule { nameOfRule }) =
@@ -139,20 +146,121 @@ pptle (RuleTLE Rule { nameOfRule }) =
 pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell source:"
                                    : (pretty . ("## " <>) <$> lines (show tle)) )
 
-sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement SRng]
+-- TODO: remove after import from BabyL4 works correctly
+trueVNoType :: Expr ()
+trueVNoType = ValE () (BoolV True)
+falseVNoType :: Expr ()
+falseVNoType = ValE () (BoolV False)
+
+-- TODO: BEGIN helper functions
+-- maybe move into BabyL4/SyntaxManipulations.hs
+
+-- Convert variable name to global variable
+-- TODO: should be refined to generate local/global variable 
+-- depending on contextual information when available
+varNameToVarNoType :: VarName -> Var ()
+varNameToVarNoType vn = GlobalVar (QVarName () vn)
+
+varsToExprNoType :: [Var t] -> Expr t
+varsToExprNoType (v:vs) = applyVarsNoType v vs
+varsToExprNoType [] = error "internal error (varsToExprNoType [])"
+
+multiTermToExprNoType :: [T.Text] -> Expr ()
+multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack)
+
+rpRelToBComparOp :: RPRel -> BinOp
+rpRelToBComparOp cop = case cop of
+  RPis -> undefined
+  RPhas -> undefined
+  RPeq -> BCompar BCeq
+  RPlt -> BCompar BClt
+  RPlte -> BCompar BClte
+  RPgt -> BCompar BCgt
+  RPgte -> BCompar BCgte
+  RPelem -> undefined
+  RPnotElem -> undefined
+  RPnot -> undefined
+
+conjExprNoType :: Expr () -> Expr () -> Expr ()
+conjExprNoType = BinOpE () (BBool BBand)
+
+disjExprNoType :: Expr () -> Expr () -> Expr ()
+disjExprNoType = BinOpE () (BBool BBor)
+
+conjsExprNoType :: [Expr ()] -> Expr ()
+conjsExprNoType [] = trueVNoType
+conjsExprNoType [e] = e
+conjsExprNoType (e:es) = conjExprNoType e (conjsExprNoType es)
+
+disjsExprNoType :: [Expr ()] -> Expr ()
+disjsExprNoType [] = falseVNoType
+disjsExprNoType [e] = e
+disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
+-- END helper functions
+
+boolStructRToExpr :: BoolStructR-> Expr ()
+boolStructRToExpr bs = case bs of
+  Leaf rp -> relationalPredicateToExpr rp
+  All _m_la bss -> conjsExprNoType (map boolStructRToExpr bss)
+  Any _m_la bss -> disjsExprNoType (map boolStructRToExpr bss)
+  Not bs' -> UnaOpE () (UBool UBnot) (boolStructRToExpr bs')
+
+relationalPredicateToExpr :: RelationalPredicate-> Expr ()
+relationalPredicateToExpr rp = case rp of
+  RPParamText ne -> undefined
+  RPMT txts -> multiTermToExprNoType txts
+  RPConstraint txts RPis txts' -> multiTermToExprNoType (txts' ++ txts)
+  RPConstraint txts rr txts' ->
+    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType txts) (multiTermToExprNoType txts')
+  RPBoolStructR txts rr bs ->
+    -- TODO: translate bs
+    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType txts) falseVNoType
+  RPnary rr rp' -> undefined
+
+precondOfHornClauses :: [HornClause2] -> Expr ()
+precondOfHornClauses [HC2 _hh (Just hb)] = boolStructRToExpr hb
+precondOfHornClauses _ = trueVNoType
+
+postcondOfHornClauses :: [HornClause2] -> Expr ()
+postcondOfHornClauses [HC2 hh _hb] = relationalPredicateToExpr hh
+postcondOfHornClauses _ = trueVNoType
+
+{- TODO: remove after testing
+sfl4ToCorel4RuleSingle :: SFL4.Rule -> [CoreL4.Rule ()]
+sfl4ToCorel4RuleSingle Hornlike{..} =
+            -- pull any type annotations out of the "given" paramtext as ClassDeclarations
+            -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
+            -- TODO: the following produces an error: Prelude.tail: empty list
+            -- has been temporarily commented out 
+            -- given2classdecls given ++
+      [Rule
+      { annotOfRule    = ()
+      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
+      , instrOfRule    = []
+      , varDeclsOfRule = []
+      , precondOfRule  = precondOfHornClauses clauses
+      , postcondOfRule = postcondOfHornClauses clauses
+      }
+      ]
+sfl4ToCorel4RuleSingle _ = []
+-}
+
+sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = []
 
 sfl4ToCorel4Rule Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
             -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            given2classdecls given ++
+            -- TODO: the following produces an error: Prelude.tail: empty list
+            -- has been temporarily commented out 
+            -- given2classdecls given ++
             [rule]
   where
-    given2classdecls :: Maybe ParamText -> [TopLevelElement SRng]
+    given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
     given2classdecls (Just pt) =
       catMaybes [ case ts of
-                    Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
+                    Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                                                 , nameOfClassDecl =  ClsNm (T.unpack s1)
                                                                                 , defOfClassDecl = ClassDef [] []
                                                                                 } )
@@ -160,17 +268,17 @@ sfl4ToCorel4Rule Hornlike{..} =
                 | ts <- snd <$> NE.toList pt
                 ]
     rule = RuleTLE Rule
-      { annotOfRule    = undefined
+      { annotOfRule    = ()
       , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule    = undefined
-      , varDeclsOfRule = undefined
-      , precondOfRule  = undefined -- gonna need more time to figure out how to convert an L4 Rule to the Expr type. in the meantime there's directToCore
-      , postcondOfRule = undefined
+      , instrOfRule    = []
+      , varDeclsOfRule = []
+      , precondOfRule  = precondOfHornClauses clauses
+      , postcondOfRule = postcondOfHornClauses clauses
       }
 
 
 sfl4ToCorel4Rule Constitutive{ } = undefined
-sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = sfl4Dummy
+sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (T.unwords name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
 sfl4ToCorel4Rule DefNameAlias { } = undefined
@@ -248,7 +356,7 @@ hc2decls r
   --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
     | c@(HC2 headRP hBod) <- clauses r
     , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
-    , T.take 3 pf /= "rel" 
+    , T.take 3 pf /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
           typeMap = Map.fromList [ (varName, fromJust varType)
@@ -334,7 +442,7 @@ commentShow :: Show a => T.Text -> a -> Doc ann
 commentShow c x = commentWith c (T.lines (T.pack (show x)))
 
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
-prettyDefnCs rname cs = 
+prettyDefnCs rname cs =
   [
     if null myterms
     then
@@ -369,7 +477,7 @@ prettyDefnCs rname cs =
 
   -- [TODO] convert "age < 16 years" to "age_in_years < 16"
   -- OR just convert to "age < 16"
-  
+
   , (RPConstraint lhs RPis rhs) <- [clHead]
   , let rhss = T.unpack (T.unwords rhs)
   , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
@@ -518,7 +626,7 @@ prettyClasses ct =
                   then Prettyprinter.line <> "   # let's print its type as a class anyway." <>
                        Prettyprinter.line <> "class" <+> child_simpletype
                   else emptyDoc
-                  
+
 
           | (attrname, (attrtype, attrchildren)) <- Map.toList (unCT children)
           , let childIsClass = not $ Map.null (unCT attrchildren)
@@ -538,7 +646,7 @@ prettyClasses ct =
      , typesNotExplicitlyDefined ]
 
   where -- [TODO] -- move this to the Interpreter
-    
+
     superClassesNotExplicitlyDefined :: Doc ann
     superClassesNotExplicitlyDefined =
       let
@@ -562,4 +670,229 @@ prettyClasses ct =
 
 
 
+-- runTestrules :: IO()
+runTestrules :: [Doc ann]
+runTestrules =
+  let rls = testrules in
+  let rulesTransformed = concatMap sfl4ToCorel4Rule rls in
+    map (showL4 [PrintSystem L4Style]) rulesTransformed
+
+  {-
+>>> runTestrules
+[rule <Rule_foo>
+
+if ((numberOfAffectedIndividuals db) >= 500)
+then (exceedsPrescrNumberOfIndividuals db),rule 
+
+if ((green Bar) && (blue Baz))
+then Foo,rule 
+
+if ((green Bloo) && (red Blubs))
+then Foo]
+
+
+-}
+
+r1 :: SFL4.Rule
+r1 = Hornlike
+    { name =
+        [ "exceedsPrescrNumberOfIndividuals"
+        , "db"
+        ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( "db" NE.:| []
+            , Just
+                ( SimpleType TOne "DataBreach" )
+            ) NE.:| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC2
+            { hHead = RPMT
+                [ "exceedsPrescrNumberOfIndividuals"
+                , "db"
+                ]
+            , hBody = Just
+                ( Leaf
+                    ( RPConstraint
+                        [ "numberOfAffectedIndividuals"
+                        , "db"
+                        ] RPgte [ "500" ]
+                    )
+                )
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "Rule_foo"
+        )
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/tobb1.csv"
+            , short = "test/tobb1.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+
+r2 :: SFL4.Rule
+r2 = Hornlike 
+  { name = [ "Foo" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC2
+            { hHead = RPMT [ "Foo" ]
+            , hBody = Just
+                ( All Nothing
+                    [ Leaf
+                        ( RPConstraint [ "Bar" ] RPis [ "green" ] )
+                    , Leaf
+                        ( RPConstraint [ "Baz" ] RPis [ "blue" ] )
+                    ]
+                )
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/tobb1.csv"
+            , short = "test/tobb1.csv"
+            , srcrow = 1
+            , srccol = 6
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+testrules :: [SFL4.Rule]
+testrules = [ Hornlike
+    { name =
+        [ "exceedsPrescrNumberOfIndividuals"
+        , "db"
+        ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( "db" NE.:| []
+            , Just
+                ( SimpleType TOne "DataBreach" )
+            ) NE.:| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC2
+            { hHead = RPMT
+                [ "exceedsPrescrNumberOfIndividuals"
+                , "db"
+                ]
+            , hBody = Just
+                ( Leaf
+                    ( RPConstraint
+                        [ "numberOfAffectedIndividuals"
+                        , "db"
+                        ] RPgte [ "500" ]
+                    )
+                )
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "Rule_foo"
+        )
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/tobb1.csv"
+            , short = "test/tobb1.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+  , Hornlike
+    { name = [ "Foo" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC2
+            { hHead = RPMT [ "Foo" ]
+            , hBody = Just
+                ( All Nothing
+                    [ Leaf
+                        ( RPConstraint [ "Bar" ] RPis [ "green" ] )
+                    , Leaf
+                        ( RPConstraint [ "Baz" ] RPis [ "blue" ] )
+                    ]
+                )
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/tobb1.csv"
+            , short = "test/tobb1.csv"
+            , srcrow = 1
+            , srccol = 6
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+  , Hornlike
+    { name = [ "Foo" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC2
+            { hHead = RPMT [ "Foo" ]
+            , hBody = Just
+                ( All Nothing
+                    [ Leaf
+                        ( RPConstraint [ "Bloo" ] RPis [ "green" ] )
+                    , Leaf
+                        ( RPConstraint [ "Blubs" ] RPis [ "red" ] )
+                    ]
+                )
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/tobb1.csv"
+            , short = "test/tobb1.csv"
+            , srcrow = 1
+            , srccol = 11
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+  ]
 

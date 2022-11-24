@@ -693,6 +693,13 @@ then Foo]
 
 -}
 
+
+{-
+§	Rule_exceeds1								
+GIVEN		db	IS	A	DataBreach				
+DECIDE		exceedsPrescrNumberOfIndividuals					db		
+WHEN		numberOfAffectedIndividuals					db	>=	500
+-} 
 r1 :: SFL4.Rule
 r1 = Hornlike
     { name =
@@ -744,6 +751,11 @@ r1 = Hornlike
     , symtab = []
     }
 
+{-
+DECIDE		Foo		
+WHEN		Bar	IS	green
+AND		Baz	IS	blue
+-}
 r2 :: SFL4.Rule
 r2 = Hornlike 
   { name = [ "Foo" ]

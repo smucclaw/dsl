@@ -138,14 +138,14 @@ toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 -- define custom types here for things we care about in purescript
 
 itemRPToItemJSON :: BoolStructR -> BoolStructLT
-itemRPToItemJSON (Leaf b) = AnyAll.BoolStruct.Leaf (rp2text b)
-itemRPToItemJSON (All Nothing items) = AnyAll.BoolStruct.All (AnyAll.Types.Pre "all of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Any Nothing items) = AnyAll.BoolStruct.Any (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pre@(AnyAll.Types.Pre _)) items) = AnyAll.BoolStruct.Any pre (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pp@(AnyAll.Types.PrePost _ _)) items) = AnyAll.BoolStruct.Any pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Not item) = AnyAll.BoolStruct.Not (itemRPToItemJSON item)
+itemRPToItemJSON (Leaf b) = mkLeaf (rp2text b)
+itemRPToItemJSON (All Nothing items) = mkAll (Pre "all of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pre@(Pre _)) items) = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
+itemRPToItemJSON (All (Just pp@(PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Any Nothing items) = mkAny (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pre@(Pre _)) items) = mkAny pre (map itemRPToItemJSON items)
+itemRPToItemJSON (Any (Just pp@(PrePost _ _)) items) = mkAny pp (map itemRPToItemJSON items)
+itemRPToItemJSON (Not item) = mkNot (itemRPToItemJSON item)
 
 type RuleJSON = Map.Map String BoolStructLT
 
@@ -159,4 +159,4 @@ ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
   =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
   <> maybe Map.empty (Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
 ruleToRuleJSON DefNameAlias{} = Map.empty
-ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, Leaf "unimplemented")]
+ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, mkLeaf "unimplemented")]

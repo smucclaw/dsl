@@ -462,7 +462,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     -- it treats the "that" as a child of "this", which is wrong.
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
-    
+
     parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
@@ -612,7 +612,7 @@ pRegRule = debugName "pRegRule" $ do
 
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
-  entityname         <- AA.Leaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
+  entityname         <- AA.mkLeaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((RParty, entityname), Nothing)
   (rulebody,henceLimb,lestLimb) <- someIndentation ((,,)
@@ -723,7 +723,7 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
   entitytype   <- someIndentation pNameParens
-  let boolEntity = AA.Leaf $ multiterm2pt entitytype
+  let boolEntity = AA.mkLeaf $ multiterm2pt entitytype
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule
   -- tell $ listToDL omgARule
@@ -735,15 +735,11 @@ pActor keywords = debugName ("pActor " ++ show keywords) $ do
 --  MUST WITHIN 200 years
 --    -> die
 
-
-
 pDoAction ::  Parser BoolStructP
 pDoAction = debugName "pDoAction" $ snd <$> preambleBoolStructP [ Do ]
 
-
 pAction :: Parser BoolStructP
-pAction = debugName "pAction calling pParamText" (AA.Leaf <$> pParamText)
-
+pAction = debugName "pAction calling pParamText" (AA.mkLeaf <$> pParamText)
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
@@ -839,23 +835,16 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" $ do
-  raw <- makeExprParser (manyIndentation $ AA.Leaf <$> pParamText)
-         [ [ prefix MPNot   (\x   -> AA.Not x) ]
-         , [ binary Or      (\x y -> AA.Any Nothing [x, y]) ]
-         , [ binary Unless  (\x y -> AA.All Nothing [x, AA.Not y]) ]
-         , [ binary And     (\x y -> AA.All Nothing [x, y]) ]
+  makeExprParser (manyIndentation $ AA.mkLeaf <$> pParamText)
+         [ [ prefix MPNot   (\x   -> AA.mkNot x) ]
+         , [ binary Or      (\x y -> AA.mkAny Nothing [x, y]) ]
+         , [ binary Unless  (\x y -> AA.mkAll Nothing [x, AA.mkNot y]) ]
+         , [ binary And     (\x y -> AA.mkAll Nothing [x, y]) ]
          ]
-  return raw
 
 exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" $ do
   raw <- expr pParamText
-  -- rewrite the raw returned from expr pParamText
-  -- expr pParamText has returned MyLabel "pay" (MyLeaf (     ("to"     :| ["the King"],Nothing)
-  --                                                      :| [("amount" :| ["$20"]     ,Nothing)]))
-  -- to MyLeaf (("pay" :| [], Nothing)
-  --            :| [("to"     :| ["the King"], Nothing)
-  --               ,("amount" :| ["$20"]     , Nothing)[))
 
   return $ case raw of
     MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
@@ -881,7 +870,7 @@ pAndGroup = debugName "pAndGroup" $ do
   orGroupN <- many $ pToken And *> pOrGroup
   let toreturn = if null orGroupN
                  then orGroup1
-                 else AA.All Nothing (orGroup1 : orGroupN)
+                 else AA.mkAll Nothing (orGroup1 : orGroupN)
   return toreturn
 
 pOrGroup ::  Parser BoolStructP
@@ -890,7 +879,7 @@ pOrGroup = debugName "pOrGroup" $ do
   elems    <- many $ pToken Or *> pElement
   let toreturn = if null elems
                  then elem1
-                 else AA.Any Nothing (elem1 : elems)
+                 else AA.mkAny Nothing (elem1 : elems)
   return toreturn
 
 pAtomicElement ::  Parser BoolStructP
@@ -906,24 +895,20 @@ pElement = debugName "pElement" $ do
         try (hornlikeAsElement <$> tellIdFirst (debugName "nested pHornlike" pHornlike))
     <|> pAtomicElement
 
--- Makes a leaf with just the name of a constitutive rule
--- constitutiveAsElement ::  Rule -> BoolStructP
--- constitutiveAsElement cr = AA.Leaf $ multiterm2pt $ name cr
-
 -- Makes a leaf with just the name of a hornlike rule
 hornlikeAsElement ::  Rule -> BoolStructP
-hornlikeAsElement hlr = AA.Leaf $ multiterm2pt $ name hlr
+hornlikeAsElement hlr = AA.mkLeaf $ multiterm2pt $ name hlr
 
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" $ do
   inner <- pToken MPNot *> pElement
-  return $ AA.Not inner
+  return $ AA.mkNot inner
 
 pLeafVal ::  Parser BoolStructP
 pLeafVal = debugName "pLeafVal" $ do
   leafVal <- pParamText
   myTraceM $ "pLeafVal returning " ++ show leafVal
-  return $ AA.Leaf leafVal
+  return $ AA.mkLeaf leafVal
 
 -- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 

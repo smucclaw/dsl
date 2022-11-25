@@ -255,7 +255,7 @@ rpLeafVal :: Parser BoolStructR
 rpLeafVal = debugName "rpLeafVal" $ do
   leafVal <- pRelationalPredicate
   myTraceM $ "rpLeafVal returning " ++ show leafVal
-  return $ AA.Leaf leafVal
+  return $ AA.mkLeaf leafVal
 
 -- | in the body of a HornClause, any elements which are defined with a type signature are considered local/private existential variables internal to the body.
 -- we partition the body of the Horn Clause into such existential variables, vs the rest of the logic.
@@ -264,8 +264,8 @@ partitionExistentials c = ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (ha
                           , aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
     where
       aaFilter :: (AA.BoolStruct lbl a -> Bool) -> AA.BoolStruct lbl a -> AA.BoolStruct lbl a
-      aaFilter f (AA.Any lbl xs) = AA.Any lbl (filter f (aaFilter f <$> xs))
-      aaFilter f (AA.All lbl xs) = AA.All lbl (filter f (aaFilter f <$> xs))
+      aaFilter f (AA.Any lbl xs) = AA.mkAny lbl (filter f (aaFilter f <$> xs))
+      aaFilter f (AA.All lbl xs) = AA.mkAll lbl (filter f (aaFilter f <$> xs))
       aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
 
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
@@ -279,7 +279,7 @@ bsr2pt bsr =
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
 hc2preds :: HornClause2 -> BoolStructR
-hc2preds (HC2 _headRP Nothing) = AA.Leaf (RPMT ["TRUE"])
+hc2preds (HC2 _headRP Nothing) = AA.mkLeaf (RPMT ["TRUE"])
 hc2preds (HC2 _headRP (Just bsr)) = bsr
 
 aaLeaves :: BoolStructR -> [MultiTerm]
@@ -301,15 +301,15 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
-addneg Nothing  (Just n)  = Just $ AA.Not n
-addneg (Just p) (Just n)  = Just $ AA.All Nothing [p, AA.Not n]
+addneg Nothing  (Just n)  = Just $ AA.mkNot n
+addneg (Just p) (Just n)  = Just $ AA.mkAll Nothing [p, AA.mkNot n]
 addneg (Just p) Nothing   = Just p
 
 -- combine all the boolrules under the first preamble keyword
 mergePBRS :: [(Preamble, BoolStructR)] -> Maybe (Preamble, BoolStructR)
 mergePBRS [] = Nothing
 mergePBRS [x] = Just x
-mergePBRS xs         = Just (fst . head $ xs, AA.All Nothing (snd <$> xs))
+mergePBRS xs         = Just (fst . head $ xs, AA.mkAll Nothing (snd <$> xs))
 
 c2hornlike :: Rule -> Rule
 c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
@@ -516,7 +516,7 @@ whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenIf *> (Just <$> pBSR))
 --  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
-  <|> Just (AA.Leaf (RPMT ["OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
+  <|> Just (AA.mkLeaf (RPMT ["OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
 
 whenIf :: Parser MyToken
 whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
@@ -893,7 +893,7 @@ pBSR = debugName "pBSR" $ prePostParse pRelPred
 -- +----------------------------+-------------------------------------+-----------------------+
 --
 getBSR :: Rule -> Maybe BoolStructR
-getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.All Nothing $
+getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         catMaybes $
                         [ hbody
                         | HC2 _hhead hbody <- clauses
@@ -901,7 +901,7 @@ getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.All Nothing $
                         [ Just bsr
                         | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
                         ]
-getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.All Nothing $
+getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         maybeToList (prependSubject who) ++
                         maybeToList cond
   where

@@ -684,10 +684,10 @@ multiterm2pt :: MultiTerm -> ParamText
 multiterm2pt x = pure (fromList x, Nothing)
 
 multiterm2bsr :: Rule -> BoolStructR
-multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
+multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 
 multiterm2bsr' :: MultiTerm -> BoolStructR
-multiterm2bsr' = AA.Leaf . RPParamText . multiterm2pt
+multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
@@ -839,6 +839,3 @@ enumLabels, enumLabels_ :: ParamText -> [Text.Text]
 enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
-
-
-

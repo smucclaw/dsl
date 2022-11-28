@@ -9,33 +9,11 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-18.28
+resolver: lts-19.33
 
-# resolver: nightly-2022-02-19
-
-# resolver: nightly-2015-09-21
-# resolver: ghc-7.10.2
-#
-# The location of a snapshot can be provided as a file or url. Stack assumes
-# a snapshot provided as a file might change, whereas a url resource does not.
-#
-# resolver: ./custom-snapshot.yaml
-# resolver: https://example.com/snapshots/2018-01-01.yaml
-# resolver:
-#   url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/13.yaml
-#  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2021/10/2.yaml
-
-# User packages to be built.
-# Various formats can be used as shown in the example below.
-#
-# packages:
-# - some-directory
-# - https://example.com/foo/bar/baz-0.0.2.tar.gz
-#   subdirs:
-#   - auto-update
-#   - wai
 packages:
 - .
+
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
@@ -48,22 +26,19 @@ packages:
 extra-deps:
 - ../anyall
 
-- prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
+# - prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 # - ../../../../prolog # smucclaw fork of the standard hackage package for prolog
-
-
-- ../../../../baby-l4/baby-l4-core
-
-# - github: smucclaw/baby-l4
-#   commit: 8a35d67538a16017d6c26751389e8fdabf515b4d
-#   subdirs:
-#   - .
-#   - baby-l4-core
+- github: smucclaw/prolog
+  commit: 1f793236846ad506eef1cf3acd8646334123088d
+  # branch: ghc-9
+  
+- github: smucclaw/baby-l4
+  commit: b953d5ff81d4f37120ed91ce93889aed6dd2d5f0
+  # branch: core-merged with resolver 19.33
 
 - github: anka-213/gf-ud # Upstream: GrammaticalFramework/gf-ud
   commit: 9a3a89f1e2896a26ab1671405f2af2b3facfc893
   # branch: all-changes
-- compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
 
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
@@ -75,10 +50,7 @@ extra-deps:
   commit: 04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89
   # branch: random-performance-improvements
 
-- svg-builder-0.1.1
-# - MissingH-1.4.3.0@sha256:32f9892ec98cd21df4f4d3ed8d95a3831ae74287ea0641d6f09b2dc6ef061d39,4859
-# - simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
-# - network-3.1.2.5@sha256:433a5e076aaa8eb3e4158abae78fb409c6bd754e9af99bc2e87583d2bcd8404a,4888
+- simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
 
 allow-newer: true
 
@@ -86,6 +58,8 @@ allow-newer: true
 ghc-options:
   "$locals": -fwrite-ide-info
 #  "$locals": -fwrite-ide-info -prof -fprof-auto
+
+# for baby-l4
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

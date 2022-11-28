@@ -15,6 +15,10 @@ import Data.Tree
 import GHC.Generics
 import Data.Aeson.Types
 import Data.Maybe
+import Test.QuickCheck
+import Test.QuickCheck.Checkers
+import Data.List (sort)
+import Control.Applicative
 
 data BoolStruct lbl a =
     Leaf                       a
@@ -153,3 +157,25 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 -- instance   ToJSON ItemJSON
 
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
+
+instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
+    (Leaf x) =-= (Leaf y) = property (x == y)
+    (Not x) =-= (Not y) = property (x == y)
+    (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    _ =-= _ = property False
+
+instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
+  arbitrary = boolStruct
+
+boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+boolStruct = sized boolStruct'
+
+boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
+boolStruct' 0 = fmap Leaf arbitrary
+boolStruct' n =
+  oneof [fmap Leaf arbitrary,
+         liftA2 All arbitrary (vectorOf 2 subtree),
+         liftA2 Any arbitrary (vectorOf 2 subtree),
+         fmap Not subtree]
+  where subtree = boolStruct' (n `div` 2)

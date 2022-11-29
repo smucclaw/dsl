@@ -759,6 +759,7 @@ data RunConfig = RC { debug     :: Bool
                     , asJSON    :: Bool
                     , toNLG     :: Bool
                     , toBabyL4  :: Bool
+                    , toASP     :: Bool
                     , toProlog  :: Bool
                     , toUppaal  :: Bool
                     , saveAKA   :: Bool
@@ -782,6 +783,7 @@ defaultRC = RC
         , asJSON = False
         , toNLG = False
         , toBabyL4 = False
+        , toASP    = False
         , toProlog = False
         , toUppaal = False
         , saveAKA = False

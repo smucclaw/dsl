@@ -12,6 +12,7 @@ import Prettyprinter
 import AnyAll
 import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
+import LS.XPile.ToASP(astToDoc)
 
 import L4.Annotation
 import LS as SFL4
@@ -50,6 +51,13 @@ sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
+
+sfl4ToASP :: [SFL4.Rule] -> String
+sfl4ToASP rs = 
+  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
+  let prg = Program () rulesTransformed in
+  let doc = astToDoc prg in
+    show doc
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
@@ -681,9 +689,9 @@ runTestrules =
 
   {-
 >>> runTestrules
-[rule <Rule_foo>
+[rule <Rule_exceeds1>
 
-if ((numberOfAffectedIndividuals db) >= 500)
+if (((numberOfAffectedIndividuals db) >= 500) && ((numberOfAffectedIndividuals db) && ((numberOfAffectedIndividuals db) >= (foobars db))))
 then (exceedsPrescrNumberOfIndividuals db),rule 
 
 if ((green Bar) && (blue Baz))
@@ -704,54 +712,35 @@ WHEN		numberOfAffectedIndividuals					db	>=	500
 -} 
 r1 :: SFL4.Rule
 r1 = Hornlike
-    { name =
-        [ "exceedsPrescrNumberOfIndividuals"
-        , "db"
-        ]
+  { name = [ "savings account" ]
     , super = Nothing
     , keyword = Decide
-    , given = Just
-        (
-            ( "db" NE.:| []
-            , Just
-                ( SimpleType TOne "DataBreach" )
-            ) NE.:| []
-        )
+    , given = Nothing
     , upon = Nothing
     , clauses =
         [ HC2
-            { hHead = RPMT
-                [ "exceedsPrescrNumberOfIndividuals"
-                , "db"
-                ]
+            { hHead = RPConstraint [ "savings account" ] RPis [ "inadequate" ]
             , hBody = Just
                 ( Leaf
-                    ( RPConstraint
-                        [ "numberOfAffectedIndividuals"
-                        , "db"
-                        ] RPgte [ "500" ]
-                    )
+                    ( RPMT [ "OTHERWISE" ] )
                 )
             }
         ]
-    , rlabel = Just
-        ( "§"
-        , 1
-        , "Rule_foo"
-        )
+    , rlabel = Nothing
     , lsource = Nothing
     , srcref = Just
         ( SrcRef
             { url = "test/tobb1.csv"
             , short = "test/tobb1.csv"
-            , srcrow = 1
-            , srccol = 1
+            , srcrow = 2
+            , srccol = 19
             , version = Nothing
             }
         )
     , defaults = []
     , symtab = []
     }
+    
 
 {-
 DECIDE		Foo		
@@ -792,6 +781,7 @@ r2 = Hornlike
     , defaults = []
     , symtab = []
     }
+
 testrules :: [SFL4.Rule]
 testrules = [ Hornlike
     { name =
@@ -815,19 +805,36 @@ testrules = [ Hornlike
                 , "db"
                 ]
             , hBody = Just
-                ( Leaf
-                    ( RPConstraint
-                        [ "numberOfAffectedIndividuals"
-                        , "db"
-                        ] RPgte [ "500" ]
-                    )
+                ( All Nothing
+                    [ Leaf
+                        ( RPConstraint
+                            [ "numberOfAffectedIndividuals"
+                            , "db"
+                            ] RPgte [ "500" ]
+                        )
+                    , Leaf
+                        ( RPMT
+                            [ "numberOfAffectedIndividuals"
+                            , "db"
+                            ]
+                        )
+                    , Leaf
+                        ( RPConstraint
+                            [ "numberOfAffectedIndividuals"
+                            , "db"
+                            ] RPgte
+                            [ "foobars"
+                            , "db"
+                            ]
+                        )
+                    ]
                 )
             }
         ]
     , rlabel = Just
         ( "§"
         , 1
-        , "Rule_foo"
+        , "Rule_exceeds1"
         )
     , lsource = Nothing
     , srcref = Just
@@ -868,7 +875,7 @@ testrules = [ Hornlike
             { url = "test/tobb1.csv"
             , short = "test/tobb1.csv"
             , srcrow = 1
-            , srccol = 6
+            , srccol = 8
             , version = Nothing
             }
         )
@@ -901,12 +908,13 @@ testrules = [ Hornlike
             { url = "test/tobb1.csv"
             , short = "test/tobb1.csv"
             , srcrow = 1
-            , srccol = 11
+            , srccol = 13
             , version = Nothing
             }
         )
     , defaults = []
     , symtab = []
     }
+
   ]
 

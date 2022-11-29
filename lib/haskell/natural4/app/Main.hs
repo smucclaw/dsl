@@ -20,7 +20,8 @@ import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
-import LS.NLP.NLG (nlg,myNLGEnv,toMarkdown, toHTML,toPDF)
+import LS.XPile.Markdown
+import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -58,6 +59,7 @@ main = do
                                                                  asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
+      (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
@@ -100,6 +102,7 @@ main = do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
+    unless (not (SFL4.tomd opts)) $ mywritefile True tomarkdownFN  iso8601 "md"  asMD
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ do
       let dname = toaasvgFN <> "/" <> iso8601
@@ -165,21 +168,16 @@ main = do
     putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
     -- pPrint $ itemRPToItemJSON  $ toVueRules rules
 
-  when (SFL4.toMarkdown rc) $ do
-    mkdn <- mapM (toMarkdown nlgEnv) rules
-    writeFile "output.md" $ concatMap Text.unpack mkdn
-    pPrint mkdn
+  -- when (SFL4.toHTML rc) $ do
+  --   mkdn <- mapM (toMarkdown nlgEnv) rules
+  --   let htm = concatMap toHTML mkdn
+  --   writeFile "output.html" htm
+  --   pPrint htm
 
-  when (SFL4.toHTML rc) $ do
-    mkdn <- mapM (toMarkdown nlgEnv) rules
-    let htm = concatMap toHTML mkdn
-    writeFile "output.html" htm
-    pPrint htm
-
-  when (SFL4.toPDF rc) $ do
-    mkdn <- mapM (toMarkdown nlgEnv) rules
-    pdf <- toPDF (Text.concat mkdn)
-    Byte.writeFile "output.pdf" pdf
+  -- when (SFL4.toPDF rc) $ do
+  --   mkdn <- mapM (toMarkdown nlgEnv) rules
+  --   pdf <- toPDF (Text.concat mkdn)
+  --   Byte.writeFile "output.pdf" pdf
 
   when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 

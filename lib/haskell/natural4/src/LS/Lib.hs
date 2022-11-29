@@ -72,6 +72,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tocorel4  :: w ::: Bool   <!> "True"  <?> "in core-l4 syntax"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
+                   , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
                    , togrounds :: w ::: Bool   <!> "True"  <?> "ground terms"
                    , tots      :: w ::: Bool   <!> "True"  <?> "typescript"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
@@ -114,7 +115,6 @@ getConfig o = do
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
         , toHTML    = only o == "html"
-        , toMarkdown = only o == "markdown"
         , toPDF = only o == "pdf"
         , toTS      = only o `elem` words "typescript ts"
         , saveAKA = False
@@ -463,7 +463,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
     -- it treats the "that" as a child of "this", which is wrong.
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
-    
+
     parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas

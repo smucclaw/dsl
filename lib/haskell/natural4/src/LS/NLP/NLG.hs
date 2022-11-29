@@ -269,56 +269,7 @@ nlgQuestion env rl = do
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
 toMarkdown :: NLGEnv -> Rule -> IO Text.Text
-toMarkdown env rl = do
-   annotatedRule <- parseFields env rl
-   gr <- nlgExtPGF
-   let Just eng = readLanguage "UDExtEng"
-   let Just may = readLanguage "UDExtMay"
-   case annotatedRule of
-      RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
-        let deonticAction = mkApp deonticA [gf $ toUDS gr actionA]
-            openRlDiv = "<div class=\"deontic rule\">"
-            closeRlDiv = "</div>"
-            -- splitTheOr = isInfixOf "or_Conj" x
-            -- mkApp (mkCId name) [expr, action]
-            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
-            subj = mkApp keywordA [subjWho]
-            king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
-            existingQualifiers = [(name,expr) |
-                                  (name,Just expr) <- [("Cond", gf . toUDS gr <$> condA),
-                                                       ("Temporal", temporalA),
-                                                       ("Upon", uponA),
-                                                       ("Given", givenA)]]
-            finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            linText = linearize gr eng finalTree
-            linTree = showExpr finalTree
-        -- putStrLn "-"
-        -- putStrLn $ linearize gr eng (mkApp keywordA [gf $ peelNP subjA])
-        -- putStrLn "--"
-        -- putStrLn "<ul class=\"who\">"
-        -- putStrLn $ showExpr $ mkApp (mkCId "Who") [fromJust whoA]
-        -- putStrLn "</ul>"
-        -- putStrLn $ linearize gr eng subj
-        -- putStrLn "---"
-        -- putStrLn "<div class=\"deonticAction\">"
-        -- putStrLn $ linearize gr eng $ deonticAction
-        -- putStrLn "</div>"
-        -- putStrLn "----"
-        -- putStrLn $ showExpr king_may_sing
-        -- putStrLn "----"
-        -- return (
-        --   Text.pack linText
-        --   )
-        return (
-          Text.pack (
-            linText ++ "\n" ++ linTree
-            )
-          )
-      _ -> do
-        statement <- nlg env rl
-        putStrLn ("rule was not linearised, but regular NLG returns " ++ Text.unpack statement)
-        return mempty
-        -- return (Text.pack $ error "error linearising rule")
+toMarkdown env rl = nlg env rl
 
 toHTML :: Text.Text -> String
 toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str

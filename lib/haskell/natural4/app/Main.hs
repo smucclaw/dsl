@@ -102,7 +102,9 @@ main = do
     unless (not (SFL4.toprolog  opts)) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     unless (not (SFL4.topetri   opts)) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     unless (not (SFL4.tots      opts)) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    unless (not (SFL4.tomd opts)) $ mywritefile True tomarkdownFN  iso8601 "md"  asMD
+    unless (not (SFL4.tomd opts)) $ do
+      md <- asMD
+      mywritefile True tomarkdownFN  iso8601 "md" md
     unless (not (SFL4.togrounds opts)) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     unless (not (SFL4.toaasvg   opts)) $ do
       let dname = toaasvgFN <> "/" <> iso8601

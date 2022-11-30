@@ -5,49 +5,38 @@
 
 packages:
 - completed:
-    name: prolog
-    pantry-tree:
-      sha256: e5ff5e42a409ec85dabb40363e10ec8929b2e4df9c37d06e5213b1240a220f49
-      size: 839
-    sha256: 2a64f5537d26e10075ee3700461d175d21c798f7061d1552cba9bf51f34e38fc
-    size: 9494
-    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
-    version: 0.3.2
-  original:
-    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
-- completed:
     name: baby-l4
     pantry-tree:
-      sha256: b9475f1b9b7498cf3d2ec5fcf6448aeda577dd63eb27113a1ea635264dd696b2
+      sha256: ce968a73f6d052471430e7a638974ed8f186606b980227603cd551dce18a316c
       size: 10338
-    sha256: bde4c6143cba5503446bf9677b0e740a7740d52352742fc111ec947c8f34fe86
-    size: 3153646
-    url: https://github.com/smucclaw/baby-l4/archive/b953d5ff81d4f37120ed91ce93889aed6dd2d5f0.tar.gz
-    version: 0.1.2.0
+    sha256: 1df729eb2b6641caf6195b363cfbe19d1bfb303f863b685947752866d0c2005a
+    size: 3153935
+    url: https://github.com/smucclaw/baby-l4/archive/c057bb1b04c13f14933a6e6988748459c4cb7514.tar.gz
+    version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/b953d5ff81d4f37120ed91ce93889aed6dd2d5f0.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c057bb1b04c13f14933a6e6988748459c4cb7514.tar.gz
+- completed:
+    name: gf
+    pantry-tree:
+      sha256: ab1b24b4d2c8f56f19dd8bf6e345c38cc2c7c5243e2c552ff2cb9ad472df7818
+      size: 67922
+    sha256: 27012d1bf5d626a4446ad04f877255409a4d215494a0901d5510fa7748662d20
+    size: 3499717
+    url: https://github.com/smucclaw/gf-core/archive/edb55df7b0c4892ba0bac2817b5f493921c20c36.tar.gz
+    version: 3.11.1
+  original:
+    url: https://github.com/smucclaw/gf-core/archive/edb55df7b0c4892ba0bac2817b5f493921c20c36.tar.gz
 - completed:
     name: gf-ud
     pantry-tree:
-      sha256: c32ddb452d0a1450984614cb9eb5997cace1812c84af39519eb2cd8a16db9453
+      sha256: bd4aba2ea7ff8a85019615884a20edb05988184ce4b60bb9000a82e6dadc4e45
       size: 7012
-    sha256: cf10611d53c229b020fc309ceddad93486f7ff610dc776afd72dd49df2616192
-    size: 1364864
-    url: https://github.com/anka-213/gf-ud/archive/9a3a89f1e2896a26ab1671405f2af2b3facfc893.tar.gz
+    sha256: 62979c5079995a8eb10b0df9274eac956c0ebf3a9730eecdddc1560d425cd009
+    size: 1363816
+    url: https://github.com/smucclaw/gf-ud/archive/bb53f75a789fa1d8173bccf52bd076e60771796c.tar.gz
     version: 0.1.0.0
   original:
-    url: https://github.com/anka-213/gf-ud/archive/9a3a89f1e2896a26ab1671405f2af2b3facfc893.tar.gz
-- completed:
-    name: wordnet
-    pantry-tree:
-      sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
-      size: 5871
-    sha256: 6a59dbb54d0067e9bbd95456b74be72481ec2e1835a85e7d2c5e7cc6472a23e4
-    size: 16398419
-    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
-    version: 0.1.1.0
-  original:
-    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
+    url: https://github.com/smucclaw/gf-ud/archive/bb53f75a789fa1d8173bccf52bd076e60771796c.tar.gz
 - completed:
     commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
     git: https://github.com/anka-213/udpipe-hs.git
@@ -60,16 +49,27 @@ packages:
     commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
     git: https://github.com/anka-213/udpipe-hs.git
 - completed:
-    name: gf
+    name: prolog
     pantry-tree:
-      sha256: 169c314a8c98340f52864a76d50a58a9de3d2acbc87a5ff17cd82c65d8862b65
-      size: 67874
-    sha256: c2fa97d3708d651541e66a8394bb710f29cb2ec1c3f69a2e87a31ccf4f52369c
-    size: 3494406
-    url: https://github.com/anka-213/gf-core/archive/04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89.tar.gz
-    version: 3.11.0
+      sha256: e5ff5e42a409ec85dabb40363e10ec8929b2e4df9c37d06e5213b1240a220f49
+      size: 839
+    sha256: 2a64f5537d26e10075ee3700461d175d21c798f7061d1552cba9bf51f34e38fc
+    size: 9494
+    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
+    version: 0.3.2
   original:
-    url: https://github.com/anka-213/gf-core/archive/04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89.tar.gz
+    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
+- completed:
+    name: wordnet
+    pantry-tree:
+      sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
+      size: 5871
+    sha256: 6a59dbb54d0067e9bbd95456b74be72481ec2e1835a85e7d2c5e7cc6472a23e4
+    size: 16398419
+    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
+    version: 0.1.1.0
+  original:
+    url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
     hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
     pantry-tree:
@@ -77,9 +77,44 @@ packages:
       size: 253
   original:
     hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
+- completed:
+    hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+    pantry-tree:
+      sha256: c6f1c2f201b196b43cd8d0537482796c9fd389b40c4be945ee66348d31f130bf
+      size: 993
+  original:
+    hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+- completed:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+    pantry-tree:
+      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
+      size: 546
+  original:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+- completed:
+    hackage: lsp-1.6.0.0@sha256:2b95e406cc85ffa95406ae8ad7d16b82283a6ca2fcb7ea5308a4ef3e6d6e68e6,4397
+    pantry-tree:
+      sha256: 43a82c501ec3074d888f2bf4960e4b447028c1537abbca4cf65e74944604bf62
+      size: 1044
+  original:
+    hackage: lsp-1.6.0.0@sha256:2b95e406cc85ffa95406ae8ad7d16b82283a6ca2fcb7ea5308a4ef3e6d6e68e6,4397
+- completed:
+    hackage: co-log-core-0.3.2.0@sha256:9b2699adecee2f072b6c713089e675b592ef23f00a2ff3740bdaf4d87de8d456,3850
+    pantry-tree:
+      sha256: af9c807ce50a126706bd99983ec71c060a489ab2b914de8dbccf756adccc2a43
+      size: 584
+  original:
+    hackage: co-log-core-0.3.2.0@sha256:9b2699adecee2f072b6c713089e675b592ef23f00a2ff3740bdaf4d87de8d456,3850
+- completed:
+    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
+    pantry-tree:
+      sha256: 935927f27b1406c529a992e99b6ad76669612831d5aef4dae1717c5927263cff
+      size: 383
+  original:
+    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 snapshots:
 - completed:
-    sha256: 6d1532d40621957a25bad5195bfca7938e8a06d923c91bc52aa0f3c41181f2d4
-    size: 619204
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/33.yaml
-  original: lts-19.33
+    sha256: fc39d8afc97531d53d87b10abdef593bce503c0c1e46c2e9a84ebcbc78bf8470
+    size: 648432
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/2.yaml
+  original: lts-20.2

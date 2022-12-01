@@ -337,10 +337,10 @@ Within the Prolog family of targets we differentiate:
 
 **** petri: a Petri Net showing the state diagram
 
-The following incantation converts PDPDABNO input into a Petri Net flowchart showing the moving parts of the ruleset. This is like a state diagram.
+One of the ~workdir~ outputs is a ~Petri~ (workflow) net in GraphViz ~dot~ format. This is like a state diagram.
 
 #+begin_src 
-  stack run -- --only petri test/pdpadbno-[1578].csv > petri.dot && dot -Tpng petri.dot > petri.png && open petri.png
+  dot -Tsvg workdir/no-uuid/petri/LATEST.dot > workdir/no-uuid/petri/LATEST.svg
 #+end_src
 
 It is not exactly a state diagram because things can be in multiple sub-states at once. Petri Nets are good at showing that.

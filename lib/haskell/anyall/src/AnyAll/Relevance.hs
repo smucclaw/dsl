@@ -15,45 +15,34 @@ import Data.Tree
 import qualified Data.Text       as T
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
-relevant :: Hardness -> DisplayPref -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
-relevant sh dp marking parentValue self =
-  let selfValue = evaluate sh marking self
-      initVis   = if | isJust parentValue -> if | parentValue == selfValue              -> View
-                                                | otherwise                             -> Hide
-                     | otherwise          -> if | isJust (evaluate Hard marking self)   -> View
-                                                | otherwise                             -> Ask
-      -- we are able to compute the initial visibility of the subtree; TODO we can modify it according to our display preference
-      paintedChildren = relevant sh dp marking selfValue <$> getChildren self
-      -- if i am myself hidden, then convert all my descendants' Ask to Hide
-      repaintedChildren = if -- trace ("repaintedChildren: initVis = " ++ show initVis)
-                             initVis /= Hide
-                          then -- trace ("repaintedChildren: initVis /= Hide so just paintedChildren")
-                               paintedChildren
-                          else -- trace ("repaintedChildren: initVis /= Hide so remapping ask2hide")
-                               fmap ask2hide <$> paintedChildren
-  in -- convert to a QTree for output
+relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
+relevant sh  marking parentValue self =
   case self of
-             Leaf x -> case Map.lookup x (getMarking marking) of
-                         Just (Default (Right b)) -> Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
-                         Just (Default (Left  b)) -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left  b)) []
-                         Nothing          -> Node (Q (if initVis /= Hide then Ask else Hide)  (Simply x) Nothing (Default $ Left Nothing)) []
-             Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
-             All label items -> Node (ask2view (Q initVis And label   (Default $ Left selfValue))) repaintedChildren
-             Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
+    Leaf x          -> mkRelevantLeaf (Map.lookup x (getMarking marking)) initVis x
+    Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
+    All label items -> Node (ask2view (Q initVis And label   (Default $ Left selfValue))) repaintedChildren
+    Not       item  -> Node (ask2view (Q initVis Neg Nothing (Default $ Left selfValue))) repaintedChildren
   where
-    getChildren (Leaf _) = []
-    getChildren (Any _ c) = c
-    getChildren (All _ c) = c
-    getChildren (Not c) = [c]
+    selfValue = evaluate sh marking self
+    selfValueHard = evaluate Hard marking self
+    initVis = deriveInitVis parentValue selfValue selfValueHard
+    paintedChildren = relevant sh marking selfValue <$> boolStructChildren self
+    repaintedChildren =
+      if initVis == Hide
+      then (ask2hide <$>) <$> paintedChildren
+      else paintedChildren
 
-    ask2hide :: Q a -> Q a
-    ask2hide (Q Ask x y z) = Q Hide x y z
-    ask2hide x = x
-    
-    ask2view :: Q a -> Q a
-    ask2view (Q Ask x y z) = Q View x y z
-    ask2view x = x
-    
+mkRelevantLeaf :: Maybe (Default Bool) -> ShouldView -> a -> Tree (Q a)
+mkRelevantLeaf (Just (Default (Right b))) _       x = Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
+mkRelevantLeaf (Just (Default (Left  b))) initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left  b)) []
+mkRelevantLeaf Nothing                    initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left Nothing)) []
+
+deriveInitVis :: Maybe Bool -> Maybe Bool -> Maybe Bool -> ShouldView
+deriveInitVis parentValue selfValue selfValueHard
+  | isJust parentValue = if parentValue == selfValue then View else Hide
+  | isJust selfValueHard = View
+  | otherwise = Ask
+
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some
 

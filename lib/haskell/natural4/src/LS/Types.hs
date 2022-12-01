@@ -98,8 +98,8 @@ type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothi
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
 
-mkLeaf :: Text.Text -> BoolStructP
-mkLeaf = AA.Leaf . text2pt
+mkLeafPT :: Text.Text -> BoolStructP
+mkLeafPT = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
 mkLeafR x = AA.Leaf $ RPMT [x]
@@ -318,12 +318,12 @@ data Rule = Regulative
 
 defaultReg, defaultCon, defaultHorn :: Rule
 defaultReg = Regulative
-  { subj = mkLeaf "person"
+  { subj = mkLeafPT "person"
   , rkeyword = REvery
   , who = Nothing
   , cond = Nothing
   , deontic = DMust
-  , action = mkLeaf "sing"
+  , action = mkLeafPT "sing"
   , temporal = Nothing
   , hence = Nothing
   , lest = Nothing
@@ -684,10 +684,10 @@ multiterm2pt :: MultiTerm -> ParamText
 multiterm2pt x = pure (fromList x, Nothing)
 
 multiterm2bsr :: Rule -> BoolStructR
-multiterm2bsr = AA.Leaf . RPParamText . multiterm2pt . name
+multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 
 multiterm2bsr' :: MultiTerm -> BoolStructR
-multiterm2bsr' = AA.Leaf . RPParamText . multiterm2pt
+multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
@@ -841,6 +841,3 @@ enumLabels, enumLabels_ :: ParamText -> [Text.Text]
 enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
-
-
-

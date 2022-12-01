@@ -26,10 +26,18 @@ packages:
 extra-deps:
 - ../anyall
 
-- github: smucclaw/baby-l4
-  commit: c057bb1b04c13f14933a6e6988748459c4cb7514
-  # branch: core-merged with resolver 19.33
 
+
+# if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
+# you may prefer to do something like this:
+# - ../../../../baby-l4
+# and then you would comment out this thing which can be updated less frequently as main receives pull requests.
+- github: smucclaw/baby-l4
+  commit: 8d8b1d8cc05ac1ec9e21a21b3659d87711279586
+  # branch: main with resolver 20.2
+
+  
+  
 - github: smucclaw/gf-core
   commit: edb55df7b0c4892ba0bac2817b5f493921c20c36
 

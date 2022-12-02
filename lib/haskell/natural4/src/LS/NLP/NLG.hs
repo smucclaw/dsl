@@ -32,18 +32,6 @@ import Control.Monad (when)
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
-import qualified Text.Pandoc as Pandoc (Format(..),runPure, Extension (..), ReaderOptions(..), Pandoc)
-import qualified Text.Pandoc.Options as Pandoc (def, writerTemplate, WriterOptions(..))
-import qualified Text.Pandoc.Error as Pandoc
-import qualified Text.Pandoc.Writers.HTML as Pandoc (writeHtml5String)
-import qualified Text.Pandoc.Readers.Markdown as Pandoc
-import qualified Text.Pandoc.Readers.Markdown as Pandoc
-import qualified Text.Pandoc.Writers.LaTeX as Pandoc
-import qualified Text.Pandoc.Readers.LaTeX as Pandoc
-import qualified Text.Pandoc.PDF as Pandoc
-import qualified Text.Pandoc.UTF8 as Pandoc
-import qualified Text.Pandoc.Class as Pandoc (runIOorExplode)
-import qualified Text.Pandoc.Templates as Pandoc
 import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
 import Control.Monad.Trans
 import System.IO (stderr)
@@ -268,22 +256,19 @@ nlgQuestion env rl = do
         qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
         qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
-toMarkdown :: NLGEnv -> Rule -> IO Text.Text
-toMarkdown env rl = nlg env rl
+-- toHTML :: Text.Text -> String
+-- toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
 
-toHTML :: Text.Text -> String
-toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
-
-toPDF :: Text.Text -> IO Byte.ByteString
-toPDF str = do
-  template <- Pandoc.runIOorExplode $ Pandoc.getTemplate "template.tex"
-  Right pandTemplate <- Pandoc.compileTemplate "" template :: IO (Either String (Pandoc.Template Text.Text))
-  pdf <- Pandoc.runIOorExplode $ (Pandoc.makePDF "pdflatex" [] Pandoc.writeLaTeX (Pandoc.def {Pandoc.writerTemplate = Just pandTemplate}) =<< Pandoc.readMarkdown Pandoc.def str)
-  case pdf of
-    Left err -> do
-      Byte.hPutStrLn stderr err
-      exitFailure
-    Right bytePDF -> return bytePDF
+-- toPDF :: Text.Text -> IO Byte.ByteString
+-- toPDF str = do
+--   template <- Pandoc.runIOorExplode $ Pandoc.getTemplate "template.tex"
+--   Right pI guess the documentation emergesandTemplate <- Pandoc.compileTemplate "" template :: IO (Either String (Pandoc.Template Text.Text))
+--   pdf <- Pandoc.runIOorExplode $ (Pandoc.makePDF "pdflatex" [] Pandoc.writeLaTeX (Pandoc.def {Pandoc.writerTemplate = Just pandTemplate}) =<< Pandoc.readMarkdown Pandoc.def str)
+--   case pdf of
+--     Left err -> do
+--       Byte.hPutStrLn stderr err
+--       exitFailure
+--     Right bytePDF -> return bytePDF
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do

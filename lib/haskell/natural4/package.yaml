@@ -64,7 +64,6 @@ dependencies:
 - directory
 - fgl
 - raw-strings-qq
-- pandoc
 - regex-tdfa
 
 ghc-options: -Wall -Wno-missed-extra-shared-lib

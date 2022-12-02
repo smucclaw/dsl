@@ -127,6 +127,9 @@ ask2view :: Q a -> Q a
 ask2view q@Q{shouldView=Ask} = q{shouldView=View}
 ask2view x = x
 
+-- add identifier to Q
+-- populated identifier with whatever generates the Q
+
 type QTree a = Tree (Q a)
 
 instance ToJSON a => ToJSON (Q a) where

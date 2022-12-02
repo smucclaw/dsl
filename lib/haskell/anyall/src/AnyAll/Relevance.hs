@@ -13,6 +13,7 @@ import Data.Maybe (isJust)
 import Data.Either
 import Data.Tree
 import qualified Data.Text       as T
+import AnyAll.BoolStructTree
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
@@ -73,6 +74,24 @@ evaluate sh marking (Any label items)
 evaluate sh marking (All label items)
   | all (== Just True) (evaluate sh marking <$> items) = Just True
   | Just False `elem`  (evaluate sh marking <$> items) = Just False
+  | otherwise = Nothing
+
+evaluateDT :: (Ord a, Show a) => Hardness -> Marking a -> BoolStructDT l a -> Maybe Bool
+evaluateDT Soft (Marking marking) (Node (FAtom x) _    ) = case Map.lookup x marking of
+                                             Just (Default (Right (Just x))) -> Just x
+                                             Just (Default (Left  (Just x))) -> Just x
+                                             _                               -> Nothing
+evaluateDT Hard (Marking marking) (Node (FAtom x) _    ) = case Map.lookup x marking of
+                                             Just (Default (Right (Just x))) -> Just x
+                                             _                               -> Nothing
+evaluateDT sh   marking           (Node FNot    [x]      )  = not <$> evaluateDT sh marking x
+evaluateDT sh marking (Node (FAny label)    items )
+  | Just True `elem`    (evaluateDT sh marking <$> items) = Just True
+  | all (== Just False) (evaluateDT sh marking <$> items) = Just False
+  | otherwise = Nothing
+evaluateDT sh marking (Node (FAll label)    items )
+  | all (== Just True) (evaluateDT sh marking <$> items) = Just True
+  | Just False `elem`  (evaluateDT sh marking <$> items) = Just False
   | otherwise = Nothing
 
 

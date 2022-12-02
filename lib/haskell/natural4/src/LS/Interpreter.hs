@@ -28,6 +28,7 @@ import qualified Data.Map as Map
 import Prettyprinter
 import Text.Pretty.Simple
 import Debug.Trace
+import Control.Monad (guard)
 import Data.Maybe
 import Data.Graph.Inductive
 import Data.Tuple (swap)
@@ -95,7 +96,7 @@ musings l4i rs =
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty (Prelude.head cname) <>
+           , vvsep [ vvsep [ "*** Class:" <+> pretty (traceStack "phead cname" cname) <>
                              if null (Prelude.tail cname) then emptyDoc
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
                            , if null cchild then emptyDoc
@@ -457,10 +458,10 @@ expandClauses' l4i depth hcs =
 
 unleaf :: BoolStructR -> BoolStructR
 unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
-unleaf (AA.All  lbl xs) = AA.All lbl (unleaf <$> xs)
-unleaf (AA.Any  lbl xs) = AA.Any lbl (unleaf <$> xs)
-unleaf (AA.Not      x ) = AA.Not     (unleaf     x )
-unleaf (AA.Leaf x     ) = AA.Leaf    x
+unleaf (AA.All  lbl xs) = AA.mkAll lbl (unleaf <$> xs)
+unleaf (AA.Any  lbl xs) = AA.mkAny lbl (unleaf <$> xs)
+unleaf (AA.Not      x ) = AA.mkNot     (unleaf     x )
+unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
@@ -569,13 +570,13 @@ expandBSR' l4i depth (AA.Leaf rp)    = expandTrace "expandBSR" depth ("handling 
     RPBoolStructR _mt1 RPis bsr -> expandTrace "expandBSR" depth ("bsr track: " ++ show bsr)
                                    bsr
     o                           -> expandTrace "expandBSR" depth ("o track: Leaf " ++ show o) $
-                                   AA.Leaf o
+                                   AA.mkLeaf o
 expandBSR' l4i depth (AA.Not item)   = expandTrace "expandBSR" depth "recursing into Not" $
-                                       AA.Not     (expandBSR' l4i (depth + 1) item)
+                                       AA.mkNot     (expandBSR' l4i (depth + 1) item)
 expandBSR' l4i depth (AA.All lbl xs) = expandTrace "expandBSR" depth "recursing into All" $
-                                       AA.All lbl (expandBSR' l4i (depth + 1) <$> xs)
+                                       AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = expandTrace "expandBSR" depth "recursing into Any" $
-                                       AA.Any lbl (expandBSR' l4i (depth + 1) <$> xs)
+                                       AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id
@@ -607,7 +608,7 @@ expandRule rules r@Hornlike{..} =
                     hHead clause
         , isJust rlbl'
         , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
-                aaLeaves (AA.Leaf bsr)
+                aaLeaves (AA.mkLeaf bsr)
         -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
         , q <- expandRulesByLabel rules (mt2text mt)
         ]
@@ -620,11 +621,9 @@ expandRule _ _ = []
 -- | used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
-  let myitem = AA.All Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
-      simplified = AA.simplifyItem myitem
-  in -- trace ("onlyTheItems: before calling simplifyItem: " <> (TL.unpack $ pShowNoColor myitem)) $
-     -- trace ("onlyTheItems: after  calling simplifyItem: " <> (TL.unpack $ pShowNoColor simplified)) $
-     simplified
+  let myitem = AA.mkAll Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
+      simplified = AA.simplifyBoolStruct myitem
+  in simplified
 
 onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> BoolStructT
 onlyItemNamed l4i rs wanteds =
@@ -632,16 +631,17 @@ onlyItemNamed l4i rs wanteds =
       found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
   in
     if null found
-    then AA.Leaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
+    then AA.mkLeaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
     else snd $ DL.head found
 
 -- | let's hazard a guess that the item with the mostest is the thing we should put in front of the user.
-biggestItem :: Interpreted -> [Rule] -> BoolStructT
-biggestItem l4i rs =
+biggestItem :: Interpreted -> [Rule] -> Maybe BoolStructT
+biggestItem l4i rs = do
   let ibr = itemsByRule l4i rs
       flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
       sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
-  in (Map.fromList ibr) ! (fst $ DL.head sorted)
+  guard (not $ null sorted)
+  return ((Map.fromList ibr) ! (fst $ DL.head sorted))
 
 itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =
@@ -677,17 +677,17 @@ getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
 
 -- where every RelationalPredicate in the boolstruct is narrowed to RPMT only
 bsr2bsmt :: BoolStructR -> BoolStructR
-bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.Leaf (RPMT mt)
-bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.Leaf (RPMT $ pt2multiterm pt)
-bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.Leaf (RPMT (mt1 ++ rel2txt rpr : mt2))
+bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.mkLeaf (RPMT mt)
+bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.mkLeaf (RPMT $ pt2multiterm pt)
+bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.mkLeaf (RPMT (mt1 ++ rel2txt rpr : mt2))
 bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ rel2txt rpr : rpmt)) <$> bsr2bsmt bsr2
                                                      in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
                                                         -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
                                                         output
-bsr2bsmt (AA.Leaf (RPnary     _rprel rp) )         = AA.Leaf rp
-bsr2bsmt (AA.All lbl xs) = AA.All lbl (bsr2bsmt <$> xs)
-bsr2bsmt (AA.Any lbl xs) = AA.Any lbl (bsr2bsmt <$> xs)
-bsr2bsmt (AA.Not     x ) = AA.Not     (bsr2bsmt x)
+bsr2bsmt (AA.Leaf (RPnary     _rprel rp) )         = AA.mkLeaf rp
+bsr2bsmt (AA.All lbl xs) = AA.mkAll lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Any lbl xs) = AA.mkAny lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Not     x ) = AA.mkNot     (bsr2bsmt x)
 
 -- | is a given RuleName the target of a Hence or Lest "GOTO"-style pointer?
 -- If it is, we deem it a RuleAlias.

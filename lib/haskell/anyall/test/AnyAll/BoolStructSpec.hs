@@ -6,13 +6,14 @@ import Data.Text (Text)
 import AnyAll.BoolStruct
 import Prelude hiding (any, all)
 import AnyAll.Types
-import Test.QuickCheck
 import Test.QuickCheck.Classes
 import Test.QuickCheck.Checkers
 import Test.Hspec.Checkers (testBatch)
-import Control.Applicative
-import Data.List (sort)
 import Test.Hspec.QuickCheck (prop)
+import Data.Aeson
+import Data.ByteString.Lazy (ByteString)
+import Data.Text.Lazy.Encoding
+import Data.Text.Lazy (fromStrict)
 
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing
@@ -34,36 +35,20 @@ type WireBoolStruct = BoolStruct (Maybe (Label Text)) Text
 leaf :: Text -> WireBoolStruct
 leaf = Leaf
 
-instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
-    (Leaf x) =-= (Leaf y) = property (x == y)
-    (Not x) =-= (Not y) = property (x == y)
-    (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
-    (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
-    _ =-= _ = property False
+data Jb = Jb { contents :: Text, tag :: Text } deriving (Show)
 
-instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
-  arbitrary = boolStruct
-
-boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
-boolStruct = sized boolStruct'
-
-boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
-boolStruct' 0 = fmap Leaf arbitrary
-boolStruct' n =
-  oneof [fmap Leaf arbitrary,
-         liftA2 All arbitrary (vectorOf 2 subtree),
-         liftA2 Any arbitrary (vectorOf 2 subtree),
-         fmap Not subtree]
-  where subtree = boolStruct' (n `div` 2)
+toJ :: Jb -> ByteString
+--myfn C{name=n} = length n
+toJ Jb {contents=c, tag=t } = encodeUtf8 $ fromStrict $ "{\"contents\":\"" <> c <> "\",\"tag\":\"" <> t <> "\"}"
 
 spec :: Spec
 spec = do
-  describe "simplifyItem" $ do
+  describe "simplifyBoolStruct" $ do
     it "should leave Leaf " $ do
-      simplifyItem (leaf "foo") `shouldBe` leaf "foo"
+      simplifyBoolStruct (leaf "foo") `shouldBe` leaf "foo"
 
     it "should elevate nested All children" $ do
-      simplifyItem ( all
+      simplifyBoolStruct ( all
                       [ all [leaf "foo1", leaf "foo2"],
                         all [leaf "bar", all [leaf "bat"]],
                         allPre "something"
@@ -82,31 +67,31 @@ spec = do
                     ]
 
     it "should simplify singleton Leaf" $ do
-      simplifyItem ( all [leaf "foo"] ) `shouldBe`  leaf "foo"
+      simplifyBoolStruct ( all [leaf "foo"] ) `shouldBe`  leaf "foo"
 
     it "should simplify singleton Leaf" $ do
-      simplifyItem ( any [leaf "foo"] ) `shouldBe`  leaf "foo"
+      simplifyBoolStruct ( any [leaf "foo"] ) `shouldBe`  leaf "foo"
 
     it "should simplify not-nots" $ do
-      simplifyItem ( Not $ Not $ leaf "not" ) `shouldBe`  leaf "not"
+      simplifyBoolStruct ( Not $ Not $ leaf "not" ) `shouldBe`  leaf "not"
 
     it "collapse all" $ do
-      simplifyItem ( allPre "a" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  allPre "a" [leaf "foo", leaf "bar", leaf "baz"]
+      simplifyBoolStruct ( allPre "a" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  allPre "a" [leaf "foo", leaf "bar", leaf "baz"]
 
     it "does not collapse all" $ do
-      simplifyItem (allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "collapse any" $ do
-      simplifyItem ( anyPre "a" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  anyPre "a" [leaf "foo", leaf "bar", leaf "baz"]
+      simplifyBoolStruct ( anyPre "a" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"] ) `shouldBe`  anyPre "a" [leaf "foo", leaf "bar", leaf "baz"]
 
     it "does not collapse any" $ do
-      simplifyItem (anyPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (anyPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "does not collapse any all" $ do
-      simplifyItem (anyPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (anyPre "b" [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` anyPre "b"  [allPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
     it "does not collapse all any" $ do
-      simplifyItem (allPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
+      simplifyBoolStruct (allPre "b" [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]) `shouldBe` allPre "b"  [anyPre "a" [leaf "foo", leaf "bar"], leaf "baz"]
 
   describe "nnf transformation" $ do
     let
@@ -195,29 +180,109 @@ spec = do
   describe "BoolStruct Semigroup" $ do
     testBatch (semigroup (undefined ::BoolStruct String String, 1::Int))
 
-  describe "siblingfyItem" $ do
+  describe "siblingfyBoolStruct" $ do
     let
       x = 1
       foobar = [leaf "foo", leaf "bar"]
       fizbaz = [leaf "fiz", leaf "baz"]
 
     it "should leave Leaf " $ do
-      siblingfyItem [leaf "foo", leaf "foo"] `shouldBe` [leaf "foo", leaf "foo"]
+      siblingfyBoolStruct [leaf "foo", leaf "foo"] `shouldBe` [leaf "foo", leaf "foo"]
 
     it "should leave Not Leaf " $ do
-      siblingfyItem [Not $ leaf "foo", Not $ leaf "foo"] `shouldBe` [Not $ leaf "foo", Not $ leaf "foo"]
+      siblingfyBoolStruct [Not $ leaf "foo", Not $ leaf "foo"] `shouldBe` [Not $ leaf "foo", Not $ leaf "foo"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [allPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [allPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     xit "should simplify singleton Leaf" $ do
-      siblingfyItem [allPre "a" foobar, leaf "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [allPre "a" foobar, leaf "fig", allPre "a" fizbaz] `shouldBe` [allPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, anyPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, anyPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     xit "should simplify singleton Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, leaf "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, leaf "fig", anyPre "a" fizbaz] `shouldBe` [anyPre "a" (foobar ++ fizbaz), leaf "fig"]
 
     it "should merge alls Leaf" $ do
-      siblingfyItem [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"]
+      siblingfyBoolStruct [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"] `shouldBe` [anyPre "a" foobar, allPre "a" fizbaz, leaf "fig"]
+
+  describe "JSON marshalling" $ do
+    let
+      foobar = [leaf "foo", leaf "bar"]
+      fizbaz = [leaf "fiz", leaf "baz"]
+
+    it "encode Leaf" $ do
+      encode (leaf "foo") `shouldBe` "{\"contents\":\"foo\",\"tag\":\"Leaf\"}"
+
+    it "encode Not" $ do
+      encode (Not (leaf "foo")) `shouldBe` "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}"
+
+    it "encode Any (Label Pre" $ do
+      encode (anyPre "any" foobar) `shouldBe` "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode Any (Label PrePost" $ do
+      encode (Any (Just (PrePost "PreText" "PostText")) foobar) `shouldBe` "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode Any (Label Nothing" $ do
+      encode (any foobar) `shouldBe` "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+
+    it "encode All (Label Pre" $ do
+      encode (allPre "all" foobar) `shouldBe` "{\"contents\":[{\"contents\":\"all\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+    it "encode All (Label PrePost" $ do
+      encode (All (Just (PrePost "PreText" "PostText")) foobar) `shouldBe` "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+    it "encode All (Label Nothing" $ do
+      encode (all foobar) `shouldBe` "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+
+  describe "JSON unmarshalling" $ do
+    let
+      foobar = [leaf "foo", leaf "bar"]
+      fizbaz = [leaf "fiz", leaf "baz"]
+
+    it "decode Leaf" $ do
+      decode "{\"contents\":\"foo\",\"tag\":\"Leaf\"}" `shouldBe` Just (leaf "foo")
+
+    it "decode Not" $ do
+      decode "{\"contents\":{\"contents\":\"foo\",\"tag\":\"Leaf\"},\"tag\":\"Not\"}" `shouldBe` Just (Not (leaf "foo"))
+
+    it "decode Any (Label Pre)" $ do
+      decode "{\"contents\":[{\"contents\":\"any\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (anyPre "any" foobar)
+
+    it "decode Any (Label PrePost)" $ do
+      decode "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (Any (Just (PrePost "PreText" "PostText")) foobar)
+
+    it "decode Any (Label Nothing)" $ do
+      decode "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      Just (any foobar)
+
+    it "decode Any Nothing - Missing" $ do
+      decode "{\"contents\":[[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"Any\"}"
+      `shouldBe`
+      (Nothing::Maybe WireBoolStruct)
+
+    it "decode All (Label Pre)" $ do
+      decode "{\"contents\":[{\"contents\":\"all\",\"tag\":\"Pre\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (allPre "all" foobar)
+
+    it "decode All (Label PrePost)" $ do
+      decode "{\"contents\":[{\"contents\":[\"PreText\",\"PostText\"],\"tag\":\"PrePost\"},[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (All (Just (PrePost "PreText" "PostText")) foobar)
+
+    it "decode All (Label Nothing)" $ do
+      decode "{\"contents\":[null,[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      Just (all foobar)
+
+    it "decode All Nothing - Missing" $ do
+      decode "{\"contents\":[[{\"contents\":\"foo\",\"tag\":\"Leaf\"},{\"contents\":\"bar\",\"tag\":\"Leaf\"}]],\"tag\":\"All\"}"
+      `shouldBe`
+      (Nothing::Maybe WireBoolStruct)

@@ -20,8 +20,6 @@ import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 
--- import Debug.Trace (trace)
-
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
 -- in future: also ship out a Marking which represents the TYPICALLY values

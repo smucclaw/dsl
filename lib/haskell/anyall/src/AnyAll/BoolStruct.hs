@@ -15,6 +15,10 @@ import Data.Tree
 import GHC.Generics
 import Data.Aeson.Types
 import Data.Maybe
+import Test.QuickCheck
+import Test.QuickCheck.Checkers
+import Data.List (sort)
+import Control.Applicative
 
 data BoolStruct lbl a =
     Leaf                       a
@@ -22,6 +26,18 @@ data BoolStruct lbl a =
   | Any lbl [BoolStruct lbl a]
   | Not             (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+mkLeaf :: a -> BoolStruct lbl a
+mkLeaf = Leaf
+
+mkAll :: lbl -> [BoolStruct lbl a] -> BoolStruct lbl a
+mkAll = All
+
+mkAny :: lbl -> [BoolStruct lbl a] -> BoolStruct lbl a
+mkAny = Any
+
+mkNot :: BoolStruct lbl a -> BoolStruct lbl a
+mkNot = Not
 
 type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
 type BoolStructLT = BoolStruct (Label T.Text) T.Text
@@ -36,7 +52,11 @@ nnf (All l ps) = All l (nnf <$> ps)
 nnf (Any l ps) = Any l (nnf <$> ps)
 nnf x = x
 
--- | sometimes we're only interested in the leaves of a Boolstruct.
+boolStructChildren :: BoolStruct lbl a -> [BoolStruct lbl a]
+boolStructChildren (Leaf _) = []
+boolStructChildren (Any _ c) = c
+boolStructChildren (All _ c) = c
+boolStructChildren (Not c) = [c]
 
 extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]
@@ -76,13 +96,13 @@ instance Monoid lbl => Semigroup (BoolStruct lbl a) where
 -- output:
 --        All [x1, x2,       Any [y1, y2], Leaf z]
 -- but only if the labels match
-simplifyItem :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
-simplifyItem (Not (Not x)) = simplifyItem x
-simplifyItem (All _ [x])   = simplifyItem x
-simplifyItem (Any _ [x])   = simplifyItem x
-simplifyItem (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
-simplifyItem (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyItem $ simplifyItem <$> xs)
-simplifyItem orig = orig
+simplifyBoolStruct :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
+simplifyBoolStruct (Not (Not x)) = simplifyBoolStruct x
+simplifyBoolStruct (All _ [x])   = simplifyBoolStruct x
+simplifyBoolStruct (Any _ [x])   = simplifyBoolStruct x
+simplifyBoolStruct (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStruct $ simplifyBoolStruct <$> xs)
+simplifyBoolStruct (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStruct $ simplifyBoolStruct <$> xs)
+simplifyBoolStruct orig = orig
 
 data MergeResult a = Merged a | Unmerged a a
 
@@ -95,53 +115,23 @@ attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
   | otherwise = Unmerged x y
 attemptMergeHeads  x  y = Unmerged x y
 
-mergeMatch3 :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-mergeMatch3 []  = []
-mergeMatch3 [k] = [k]
-mergeMatch3 (bs1 : bs2 : zs) = case x of
-  (Merged m) -> mergeMatch3 (m:zs)
-  (Unmerged x y) -> x : mergeMatch3 (y:zs)
+mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
+mergeMatch []  = []
+mergeMatch [k] = [k]
+mergeMatch (bs1 : bs2 : zs) = case x of
+  (Merged m) -> mergeMatch (m:zs)
+  (Unmerged x y) -> x : mergeMatch (y:zs)
   where
     x = attemptMergeHeads bs1 bs2
 
-boolStructToText :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> ((T.Text, lbl), [BoolStruct lbl a])
-boolStructToText x = case x of
-  (Any lbl ys) -> (("any", lbl), ys)
-  (All lbl ys) -> (("all", lbl), ys)
-  (Leaf y) -> (("leaf", mempty), [Leaf y])
-  (Not y) -> (("not", mempty), [Not y])
-
-textToBoolStruct :: (Eq lbl, Monoid lbl) => ((T.Text, lbl), [BoolStruct lbl a2]) -> [BoolStruct lbl a2]
-textToBoolStruct x = case x of
-  (("any", lbl), ys) -> [Any lbl ys]
-  (("all", lbl), ys) -> [All lbl ys]
-  ((_, _), ys) -> ys
-
--- | utility for simplifyItem: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
+-- | utility for simplifyBoolStruct: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
 -- example:
 -- input:
 --        All [Any [x1, x2], Any [y1, y2], Leaf z]
 -- output:
 --        All [Any [x1, x2, y1, y2], Leaf z]
-siblingfyItem :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-siblingfyItem = mergeMatch3
-
-siblingfyItemOrig :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-siblingfyItemOrig xs =
-  let grouped =
-        mergeMatch
-        [ ((anyall,lbl), ys)
-        | x <- xs
-        , let ((anyall,lbl),ys) = boolStructToText x
-        ]
-  in concatMap textToBoolStruct grouped
-
-mergeMatch :: (Eq a, Semigroup b) => [(a,b)] -> [(a,b)]
-mergeMatch []  = []
-mergeMatch [k] = [k]
-mergeMatch ((x1,y1) : (x2,y2) : zs)
-  | x1 == x2  =           mergeMatch ((x1, y1 <> y2) : zs)
-  | otherwise = (x1,y1) : mergeMatch ((x2,       y2) : zs)
+siblingfyBoolStruct :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
+siblingfyBoolStruct = mergeMatch
 
 -- | The andOrTree is defined in L4; we think of it as an "immutable" given.
 --   The marking comes from user input, and it "changes" at runtime,
@@ -168,16 +158,24 @@ instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 
 instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
 
-type AsTree a = Tree (AndOr a, Maybe (Label T.Text))
+instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
+    (Leaf x) =-= (Leaf y) = property (x == y)
+    (Not x) =-= (Not y) = property (x == y)
+    (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
+    _ =-= _ = property False
 
-native2tree :: OptionallyLabeledBoolStruct a -> AsTree a
-native2tree (Leaf a) = Node (Simply a, Nothing) []
-native2tree (Not a)  = Node (Neg, Nothing) (native2tree <$> [a])
-native2tree (All l items) = Node (And, l) (native2tree <$> items)
-native2tree (Any l items) = Node ( Or, l) (native2tree <$> items)
+instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
+  arbitrary = boolStruct
 
-tree2native :: AsTree a -> OptionallyLabeledBoolStruct a
-tree2native (Node (Simply a, _) children) = Leaf a
-tree2native (Node (Neg, _) children) = Not (tree2native $ head children) -- will this break? maybe we need list nonempty
-tree2native (Node (And, lbl) children) = All lbl (tree2native <$> children)
-tree2native (Node ( Or, lbl) children) = Any lbl (tree2native <$> children)
+boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
+boolStruct = sized boolStruct'
+
+boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
+boolStruct' 0 = fmap Leaf arbitrary
+boolStruct' n =
+  oneof [fmap Leaf arbitrary,
+         liftA2 All arbitrary (vectorOf 2 subtree),
+         liftA2 Any arbitrary (vectorOf 2 subtree),
+         fmap Not subtree]
+  where subtree = boolStruct' (n `div` 2)

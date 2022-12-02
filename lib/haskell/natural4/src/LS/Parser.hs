@@ -43,18 +43,16 @@ prePostParse base = either fail pure . toBoolStruct =<< expr base
 -- when we do that, we won't have to Text.unwords lab below.
 
 toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.OptionallyLabeledBoolStruct a)
-toBoolStruct (MyLeaf txt)                    = pure $ AA.Leaf txt
-toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.All (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.Any (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.All (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.Any (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyAll mis)                     = AA.All Nothing <$> mapM toBoolStruct mis
-toBoolStruct (MyAny mis)                     = AA.Any Nothing <$> mapM toBoolStruct mis
-toBoolStruct (MyNot mi')                     = AA.Not <$> toBoolStruct mi'
+toBoolStruct (MyLeaf txt)                    = pure $ AA.mkLeaf txt
+toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.mkAll (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.mkAny (Just (AA.Pre     (Text.unwords pre))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.mkAll (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.mkAny (Just (AA.PrePost (Text.unwords pre) (Text.unwords post))) <$> mapM toBoolStruct xs
+toBoolStruct (MyAll mis)                     = AA.mkAll Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyAny mis)                     = AA.mkAny Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyNot mi')                     = AA.mkNot <$> toBoolStruct mi'
 toBoolStruct (MyLabel pre post (MyLabel pre2 post2 _))  = Left $ "Nested labels not supported: " ++ show (MyLabel pre post (MyLeaf ()), MyLabel pre2 post2 (MyLeaf ()))
 toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre ++ " cannot be applied to a leaf: " ++ show x
--- toBoolStruct (MyLabel lab (MyLabel lab2 x))  = toBoolStruct (MyLabel (lab <> lab2) x)
--- toBoolStruct (MyLabel lab (MyLeaf x))        = pure $ AA.Leaf $ foldr prependHead x lab
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 
@@ -202,9 +200,6 @@ withPrePost basep = debugName "withPrePost" $ do
   where
     relabelpp :: MyBoolStruct a -> Text.Text -> Text.Text -> MyBoolStruct a
     relabelpp bs pre post = MyLabel [pre] (Just [post]) bs
-    -- relabelpp (AA.All Nothing xs) pre post = AA.All (Just $ AA.PrePost pre post) xs
-    -- relabelpp (AA.Any Nothing xs) pre post = AA.Any (Just $ AA.PrePost pre post) xs
-    -- relabelpp _ _ _ = error "RelationalPredicates: relabelpp failed"
 
 withPreOnly basep = do -- debugName "withPreOnly" $ do
   (pre, body) <- (,)
@@ -217,9 +212,6 @@ withPreOnly basep = do -- debugName "withPreOnly" $ do
   where
     relabelp :: MyBoolStruct a -> Text.Text -> MyBoolStruct  a
     relabelp bs pre = MyLabel [pre] Nothing bs
-    -- relabelp  (AA.All Nothing xs) pre      = AA.All (Just $ AA.Pre     pre)      xs
-    -- relabelp  (AA.Any Nothing xs) pre      = AA.Any (Just $ AA.Pre     pre)      xs
-    -- relabelp  _ _ = error "RelationalPredicates: relabelp failed"
 
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct

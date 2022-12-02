@@ -42,7 +42,7 @@ nnfDT (Node (FAny l) fs) = Node (FAny l) (nnfDT <$> fs)
 nnfDT x = x
 
 extractLeavesDT :: BoolStructDT lbl a -> [a]
-extractLeavesDT (Node (FAtom x) _    ) = [x]
+extractLeavesDT (Node (FAtom x) _    ) = [x] ++ [x]
 extractLeavesDT (Node FNot    x      ) = concatMap extractLeavesDT x
 extractLeavesDT (Node (FAll l)    fs ) = concatMap extractLeavesDT fs
 extractLeavesDT (Node (FAny l)    fs ) = concatMap extractLeavesDT fs

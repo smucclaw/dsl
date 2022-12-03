@@ -152,7 +152,11 @@ ruleToASPRule globals r =
         postcond = fst postcondNeg
         negpreds = mapMaybe snd (postcondNeg : precondsNeg)
     in  ( ASPRule
-                (fromMaybe (error $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++ show r) $
+                (fromMaybe (error $
+                            "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++
+                            show r ++ "\n" ++
+                            "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option."
+                           ) $
                  nameOfRule r)
                 globals
                 (varDeclsOfRule r)

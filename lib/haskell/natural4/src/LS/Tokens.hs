@@ -253,7 +253,7 @@ class IsParser f where
 instance IsParser Parser where
   debugName = debugNameP
   debugPrint = debugPrintP
-  mapParser = id
+  mapParser x = x
 
 instance IsParser SLParser where
   debugName = debugNameSL

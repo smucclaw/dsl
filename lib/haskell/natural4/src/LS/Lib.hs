@@ -70,6 +70,8 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , topetri   :: w ::: Bool   <!> "True"  <?> "a petri-net Dot file of the state graph"
                    , toaasvg   :: w ::: Bool   <!> "True"  <?> "an anyall SVG of the decision trees"
                    , tocorel4  :: w ::: Bool   <!> "True"  <?> "in core-l4 syntax"
+                   , tobabyl4  :: w ::: Bool   <!> "True"  <?> "in baby-l4 syntax (directly via AST)"
+                   , toasp     :: w ::: Bool   <!> "True"  <?> "in ASP syntax"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
@@ -110,6 +112,7 @@ getConfig o = do
         , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
+        , toASP     = only o == "asp" 
         , toProlog  = only o == "prolog"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"

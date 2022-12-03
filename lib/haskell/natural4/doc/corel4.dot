@@ -1,0 +1,42 @@
+strict digraph deps {
+  node [colorscheme=set312, style=filled];
+
+   subgraph cluster_1 {
+     label = "src/LS/XPile/CoreL4.hs";
+     "sfl4ToCorel4Rule" [label= "sfl4ToCorel4Rule", color=1];
+     "sfl4ToCorel4Program" [label= "sfl4ToCorel4Program", color=1];
+     "sfl4ToCorel4" [label= "sfl4ToCorel4", color=1];
+     "sfl4ToBabyl4" [label= "sfl4ToBabyl4", color=1];
+     "sfl4Dummy" [label= "sfl4Dummy", color=1];
+     "prettyTypedMulti" [label= "prettyTypedMulti", color=1];
+     "prettyRuleName" [label= "prettyRuleName", color=1];
+     "prettyFacts" [label= "prettyFacts", color=1];
+     "prettyDefns" [label= "prettyDefns", color=1];
+     "prettyDefnCs" [label= "prettyDefnCs", color=1];
+     "prettyDecls" [label= "prettyDecls", color=1];
+     "prettyClasses" [label= "prettyClasses", color=1];
+     "prettyBoilerplate" [label= "prettyBoilerplate", color=1];
+     "pptle" [label= "pptle", color=1];
+     "ppCorel4" [label= "ppCorel4", color=1];
+     "hc2decls" [label= "hc2decls", color=1];
+     "directToCore" [label= "directToCore", color=1];
+     "commentShow" [label= "commentShow", color=1];
+   }
+
+"directToCore" -> "prettyDefnCs";
+"directToCore" -> "prettyRuleName";
+"directToCore" -> "prettyTypedMulti";
+"ppCorel4" -> "pptle";
+"prettyClasses" -> "commentShow";
+"prettyDecls" -> "hc2decls";
+"prettyDefnCs" -> "commentShow";
+"prettyDefns" -> "prettyDefnCs";
+"prettyFacts" -> "commentShow";
+"sfl4ToBabyl4" -> "sfl4ToCorel4Program";
+"sfl4ToCorel4" -> "directToCore";
+"sfl4ToCorel4" -> "prettyBoilerplate";
+"sfl4ToCorel4" -> "prettyClasses";
+"sfl4ToCorel4" -> "prettyDecls";
+"sfl4ToCorel4Program" -> "sfl4Dummy";
+"sfl4ToCorel4Rule" -> "sfl4Dummy";
+}

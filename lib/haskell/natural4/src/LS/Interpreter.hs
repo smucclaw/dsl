@@ -1,17 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
 
 {-|
 
 The Interpreter runs after the Parser. It prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
 
-In future, we may be so ambitious as to attempt some type checking and type inference, and so on, here, though that may be better left to corel4.
+In future, we may be so ambitious as to attempt some type checking and type inference, and so on, here, though that may be better left to corel4 or other backends.
 
 See also documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
 
-Typical usage runs `l4interpret` and then makes use of the attributes returned in the `l4i` object.
+Typical usage: an XPile module is handed the output of `l4interpret`, and  makes use of the values returned in the `l4i` object.
 
 -}
 
@@ -37,7 +35,12 @@ import qualified Data.List as DL
 import Data.Bifunctor (first)
 import Data.Map ((!))
 
--- | interpret the parsed rules based on some configuration options. This is a canonical intermediate representation used by downstream functions.
+-- | interpret the parsed rules based on some configuration options.
+-- This is a canonical intermediate representation used by downstream
+-- functions. It is typically run once, in the high-level caller, and
+-- handed to each transpiler for use, as an `l4i` argument.
+--
+
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
 l4interpret iopts rs =
   let ct = classHierarchy rs
@@ -48,35 +51,24 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
--- | Sometimes multiple rules will have the same decision content.
--- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree to one or more rules.
-groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
-groupedByAOTree l4i rs =
-  Map.toList $ Map.fromListWith (++) $
-  (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
-
-
--- | The top-level decision roots which we expose to the web UI, and also visualize with SVGLadder.
--- We exclude rules which are the target of a GOTO RuleAlias, because those are just infrastructure.
--- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
--- We want the SVG Xpiler to reuse this code as authoritative.
-
-exposedRoots :: Interpreted -> [Rule]
-exposedRoots l4i =
-  let rs = origrules l4i
-      decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
-  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
-
 -- | the fully expanded, exposed, decision roots of all rules in the ruleset,
 --   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).
 --
 --   This is used for:
+--
 --   * user-facing Q&A (see XPile/Purescript)
+--
 --   * visualization of the decision logic
+--
 
 qaHornsT :: Interpreted -> [([RuleName], BoolStructT)]
 qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
+
+-- | where `qaHornsT` returns a `BoolStructT`, `qaHornsR` returns a `BoolStructR`.
+--
+-- The `T` version is used for applications that lie closer to the end-user's eyeballs.
+--
+-- The `R` version is used when the internal structure of the RelationalPredicates is still needed.
 
 qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
 qaHornsR l4i =
@@ -88,7 +80,15 @@ qaHornsR l4i =
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]      
 
--- | introspect a little bit about what we've interpreted. This gets saved to the workdir's org/ directory.
+-- | Talk a little bit about what we've interpreted.
+-- The output of this function gets saved to the workdir's @org/@ directory
+-- and can be viewed inside the @LATEST.org@ output file.
+-- If you are working on the Interpreter and want to see what it is thinking,
+-- this is a good place to add "printf debugging".
+--
+-- When you view the @LATEST.org@ output file, org-mode is recommended.
+-- This comes naturally in Emacs. In VS Code you will need to install plugins.
+
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
@@ -96,15 +96,17 @@ musings l4i rs =
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty (traceStack "phead cname" cname) <>
+           , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
                              if null (Prelude.tail cname) then emptyDoc
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                           , if null cchild then emptyDoc
-                             else "**** extends" </> srchs cchild
+                           , if null cchild
+                             then emptyDoc
+                             else "**** extends" <+> maybe "" viaShow (fst . fst $ cchild) <+> "with new attributes"
+                                  </> srchs (snd cchild)
                            , "**** deets" </> srchs cname
                            ]
                    | (cname, cchild) <- cg ]
-           , "*** The entire classgraph"
+           , "** The entire classgraph"
            , srchs cg
            , "** Symbol Table"
            , "we know about the following scopes"
@@ -156,7 +158,13 @@ musings l4i rs =
                    , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
                    , srchs (getMarkings l4i)
                    ]
-           , "** The original rules"
+           , "** symbol tables (~scopetable l4i~)"
+           , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (scopetable l4i) ]
+
+           , "** class tables (~classtable l4i~)" </> srchs (classtable l4i)
+           , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (unCT $ classtable l4i) ]
+
+           , "** The original rules (~origrules l4i~)"
            , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
            ]
   where
@@ -242,8 +250,8 @@ getCTkeys :: ClsTab -> [EntityType]
 getCTkeys (CT ct) = Map.keys ct
 
 -- | passthrough type, present in case we decide to represent the names of classes differently.
-
 type MyClassName = EntityType
+
 -- | class names, topologically sorted by inheritance to eliminate forward references in "extends" relationships
 -- note: this code will probably fail silently on any input that isn't as expected
 -- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
@@ -276,6 +284,26 @@ topsortedClasses ct =
                    , (Just aid) <- [Map.lookup a typeToID]
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
+
+-- | Sometimes multiple rules will have the same decision content: X depends on Z; Y also depends on Z.
+-- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree (Z) to one or more rules (X and Y).
+groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
+groupedByAOTree l4i rs =
+  Map.toList $ Map.fromListWith (++) $
+  (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
+
+
+-- | The top-level decision roots which we expose to the web UI, and also visualize with SVGLadder.
+-- We exclude rules which are the target of a GOTO RuleAlias, because those are just infrastructure.
+-- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
+-- We want the SVG Xpiler to reuse this code as authoritative.
+
+exposedRoots :: Interpreted -> [Rule]
+exposedRoots l4i =
+  let rs = origrules l4i
+      decisionGraph = ruleDecisionGraph l4i rs
+      decisionroots = decisionRoots decisionGraph
+  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
 -- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
@@ -317,7 +345,7 @@ type RuleGraphEdgeLabel = ()
 type RuleGraph = Gr Rule RuleGraphEdgeLabel
 
 
-
+-- | which decision rules depend on which other decision rules?
 ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
 ruleDecisionGraph l4i rs =
   let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
@@ -354,12 +382,12 @@ relPredRefs _l4i rs ridmap r =
   in [ (rid, targetRuleId', ())
      | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
-           targetRule' = fromJust targetRule
-           targetRuleId = Map.lookup targetRule' ridmap
-           targetRuleId' = fromJust targetRuleId
-           rid = ridmap ! r
      , isJust targetRule
+     , let targetRule' = fromJust targetRule -- safe due to above isJust test
+     , let targetRuleId = Map.lookup targetRule' ridmap
      , isJust targetRuleId
+     , let targetRuleId' = fromJust targetRuleId -- safe due to above isJust test
+           rid = ridmap ! r
      ]
 
 
@@ -386,7 +414,9 @@ decisionRoots rg =
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
+-- 
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
+--
 -- a Constitutive rule exposes the body of its `clauses`.
 --
 -- [TODO] multiple rules with the same head should get &&'ed together and jammed into a single big rule
@@ -438,7 +468,7 @@ bsmtOfClauses l4i depth r =
   in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
 
 -- | What does clause expansion mean?
--- we walk through the RelationalPredicates found in the head and the body of HornClause.
+-- We walk through the RelationalPredicates found in the head and the body of HornClause.
 -- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
 -- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 

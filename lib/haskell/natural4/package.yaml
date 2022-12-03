@@ -42,7 +42,6 @@ dependencies:
 - utf8-string
 - gf
 - gf-ud
-- baby-l4-core
 - optparse-generic
 - prolog
 - typed-process
@@ -65,8 +64,9 @@ dependencies:
 - fgl
 - raw-strings-qq
 - regex-tdfa
+- baby-l4
 
-ghc-options: -Wall -Wno-missed-extra-shared-lib
+ghc-options: -Wall -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10
 
 library:
   source-dirs: src

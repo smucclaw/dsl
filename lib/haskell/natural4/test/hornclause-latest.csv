@@ -1,0 +1,6 @@
+GIVEN,,db,IS,A,DataBreach,,,,
+,,numberOfAffectedIndividuals,,,IS,AN,Int,,
+DECIDE,db,exceedsPrescrNumberOfIndividuals,,,,,,,
+WHEN,db,numberOfAffectedIndividuals,,,,,,>=,500
+AND,happy,,,,,,,,
+OR,db,pred1,pred2,,,,,,

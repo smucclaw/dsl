@@ -398,7 +398,7 @@ connectRules sg rules =
                    , let outgraph = labfilter (\pn -> any (\x -> x pn) [ hasDeet (OrigRL rlout')
                                                                        | rlout <- rlouts
                                                                        , isJust rlout
-                                                                       , let rlout' = fromJust rlout
+                                                                       , let rlout' = fromJust rlout -- safe due to above isJust test
                                                                        ] ) sg
                    ]
       -- headNodes = [ headNode

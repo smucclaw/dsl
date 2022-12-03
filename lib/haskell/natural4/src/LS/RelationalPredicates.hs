@@ -5,6 +5,203 @@
 
 {-|
 This module provides parser and utility functions for the RelationalPredicate group of types.
+
+= Why Relational Predicates?
+
+L4 follows in the logic programming tradition, which uses first-order logic to organize information.
+
+L4's controlled natural language interface attempts to give a
+user-friendly gloss to predicate syntax, but under the hood, if you
+are familiar with Prolog, you will recognize the Horn clauses under the skin.
+
+== arity
+
+=== How do we handle zero-argument predicates?
+
+Prolog:
+
+@
+fact.
+@
+
+L4:
+
+@
+DECIDE fact
+@
+
+Prolog:
+
+@
+head :- body.
+@
+
+L4:
+
+@
+DECIDE head
+  WHEN body
+@
+
+=== How do we handle single-argument predicates?
+
+Prolog:
+
+@
+someAttribute(someEntity).
+@
+
+L4:
+
+@
+DECIDE someEntity someAttribute
+@
+
+Example:
+
+Prolog:
+
+@
+isBlue(theSky).
+@
+
+L4:
+
+@
+DECIDE theSky isBlue
+@
+
+With bodies:
+
+Prolog:
+
+@
+isBlue(theSky) :- duringDay(Time).
+@
+
+L4:
+
+@
+DECIDE theSky isBlue
+  WHEN Time duringDay
+@
+
+
+=== How do we handle two-argument predicates?
+
+Prolog:
+
+@
+isParentOf(alice,bob).
+@
+
+L4:
+
+@
+DECIDE alice isParentOf bob
+@
+
+
+=== How do we handle three-or-more-argument predicates?
+
+Prolog:
+
+@
+isChildOf(bob,alice,carol).
+@
+
+L4:
+
+@
+DECIDE bob isChildOf alice carol
+@
+
+== Syntactic Sugar
+
+=== IS True
+
+Before:
+
+@
+DECIDE head IS True
+  WHEN body
+@
+
+After:
+
+@
+DECIDE head
+  WHEN body
+@
+
+=== IS False
+
+Before:
+
+@
+DECIDE head IS False
+  WHEN body
+@
+
+After:
+
+@
+DECIDE NOT head
+  WHEN body
+@
+
+=== IS Attribute
+
+Before:
+
+    @
+    DECIDE theSky IS Blue
+      WHEN Time IS duringDay
+    @
+
+Rewrite:
+
+    @
+    isBlue(theSky) :- isDuringDay(Time).
+    blue(theSky) :- duringDay(Time).
+    @
+
+We still need to decide on some conventions here. Maybe we do multiple forms just to maximize confusion?
+
+== Reasoning with Relational Predicates
+
+== Different Forms of RelationalPredicates
+
+See the `RelationalPredicate` definition below for a detailed discussion of each constructor.
+
+== BoolStructs of RelationalPredicates
+
+We use the `AnyAll` library to combine RelationalPredicates.
+
+[TODO] we will likely need to upgrade the head of a HornClause2 to BoolStructR if we want to allow NOT semantics.
+
+This opens the door to having multiple heads in a single Horn clause, which is something that more advanced Prologs do, e.g. Flora.
+
+== Horn Clauses
+
+How everything above fits together into a HornClause2 structure
+
+== How Other Decision Elements Fit In To A Rule
+
+=== Regulative WHO and WHICH
+
+=== Constitutive WHEN
+
+@DECIDE@ x IS y
+  @WHEN@ z IS q
+
+= Future Work
+
+We don't have a first-class way of talking about implication at the moment -- the "MUST BE" pattern.
+
+
+
+
 -}
 
 module LS.RelationalPredicates where

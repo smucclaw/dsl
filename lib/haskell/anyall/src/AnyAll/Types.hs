@@ -23,7 +23,8 @@ import Text.Pretty.Simple (pShowNoColor)
 import Data.Aeson
 import Data.Aeson.Types (parseMaybe, parse, Parser)
 import GHC.Generics
-import GHC.Exts (toList)
+import Data.Aeson.KeyMap hiding (mapMaybe)
+import Data.Aeson.Key (toText)
 
 data Label a =
     Pre a
@@ -100,10 +101,10 @@ instance FromJSON (Marking T.Text) where
   -- the keys in the object correspond to leaf contents, so we have to process them "manually"
   parseJSON = parseMarking
 
-parseMarkingKV :: ( T.Text, Value) -> Maybe (T.Text, Default Bool)
+parseMarkingKV :: ( Key, Value) -> Maybe (T.Text, Default Bool)
 parseMarkingKV (k,v) =
   case parseMaybe parseJSON v :: Maybe (Default Bool) of
-    Just ma -> Just (k, ma)
+    Just ma -> Just (toText k, ma)
     Nothing -> Nothing
 
 parseMarking :: Value -> Parser (Marking T.Text)

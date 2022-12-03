@@ -11,38 +11,39 @@ permissions:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-11, macos-12]
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
-      with:
-        enable-stack: true
+      - uses: actions/checkout@v3
+      - uses: haskell/actions/setup@v2
+        with:
+          enable-stack: true
 
-    - name: Cache
-      uses: actions/cache@v3
-      env:
-        cache-name: cache-stack
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
-          ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+      - name: Cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-stack
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml','lib/haskell/**/stack.yaml.lock') }}
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('lib/haskell/**/package.yaml') }}
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
-    - name: Build anyall
-      run: stack build
-      working-directory: lib/haskell/anyall
-    - name: Test anyall
-      run: stack test
-      working-directory: lib/haskell/anyall
-    - name: Build natural4
-      run: stack build
-      working-directory: lib/haskell/natural4
-    - name: Test natural4
-      run: stack test
-      working-directory: lib/haskell/natural4
+      - name: Build anyall
+        run: stack build
+        working-directory: lib/haskell/anyall
+      - name: Test anyall
+        run: stack test
+        working-directory: lib/haskell/anyall
+      - name: Build natural4
+        run: stack build
+        working-directory: lib/haskell/natural4
+      - name: Test natural4
+        run: stack test
+        working-directory: lib/haskell/natural4

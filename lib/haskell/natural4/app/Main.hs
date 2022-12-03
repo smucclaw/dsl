@@ -20,6 +20,7 @@ import qualified LS.XPile.SVG as AAS
 import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
+import LS.XPile.Markdown
 import LS.XPile.NaturalLanguage
 
 import LS.NLP.NLG (nlg,myNLGEnv)
@@ -27,6 +28,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
 import Data.ByteString.Lazy.UTF8 (toString)
+import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
@@ -62,6 +64,7 @@ main = do
                                                                  asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
+      (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
@@ -97,6 +100,7 @@ main = do
 
   when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
 --    putStrLn "going to start dumping to workdir outputs"
+
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
@@ -107,6 +111,9 @@ main = do
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
+    when (SFL4.tomd opts) $ do
+      md <- asMD
+      mywritefile True tomarkdownFN  iso8601 "md" md
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
@@ -170,6 +177,19 @@ main = do
     -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
     putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
     -- pPrint $ itemRPToItemJSON  $ toVueRules rules
+
+  -- when (SFL4.toHTML rc) $ do
+  --   mkdn <- mapM (toMarkdown nlgEnv) rules
+  --   let htm = concatMap toHTML mkdn
+  --   writeFile "output.html" htm
+  --   pPrint htm
+
+  -- when (SFL4.toPDF rc) $ do
+  --   mkdn <- mapM (toMarkdown nlgEnv) rules
+  --   pdf <- toPDF (Text.concat mkdn)
+  --   Byte.writeFile "output.pdf" pdf
+
+  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
@@ -308,4 +328,4 @@ schedule1_part1_nl =
 --     ]
 -- |]
 
-  
+

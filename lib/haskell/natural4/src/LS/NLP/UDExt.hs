@@ -5,7 +5,6 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
-
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -388,6 +387,7 @@ data Tree :: * -> * where
   GGerundAdv :: GVP -> Tree GAdv_
   GPositAdvAdj :: GA -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  GStrAdv :: GString -> Tree GAdv_
   GSubjS :: GSubj -> GS -> Tree GAdv_
   Gacl2Adv :: Gacl -> Tree GAdv_
   Gadvcl2Adv :: Gadvcl -> Tree GAdv_
@@ -582,6 +582,7 @@ data Tree :: * -> * where
   GExistS :: GTemp -> GPol -> GNP -> Tree GS_
   GPostAdvS :: GS -> GAdv -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
+  GSSubjS :: GS -> GSubj -> GS -> Tree GS_
   GUseCl :: GTemp -> GPol -> GCl -> Tree GS_
   GEmbedQS :: GQS -> Tree GSC_
   GEmbedS :: GS -> Tree GSC_
@@ -737,6 +738,7 @@ data Tree :: * -> * where
   Groot_xcomp :: Groot -> Gxcomp -> Tree GUDS_
   Groot_xcomp_ccomp :: Groot -> Gxcomp -> Gccomp -> Tree GUDS_
   Groot_xcomp_obj :: Groot -> Gxcomp -> Gobj -> Tree GUDS_
+  GStrV :: GString -> Tree GV_
   LexV :: String -> Tree GV_
   GAdVVP :: GAdV -> GVP -> Tree GVP_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
@@ -894,6 +896,7 @@ instance Eq (Tree a) where
     (GGerundAdv x1,GGerundAdv y1) -> and [ x1 == y1 ]
     (GPositAdvAdj x1,GPositAdvAdj y1) -> and [ x1 == y1 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GStrAdv x1,GStrAdv y1) -> and [ x1 == y1 ]
     (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gacl2Adv x1,Gacl2Adv y1) -> and [ x1 == y1 ]
     (Gadvcl2Adv x1,Gadvcl2Adv y1) -> and [ x1 == y1 ]
@@ -1088,6 +1091,7 @@ instance Eq (Tree a) where
     (GExistS x1 x2 x3,GExistS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GPostAdvS x1 x2,GPostAdvS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSSubjS x1 x2 x3,GSSubjS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GUseCl x1 x2 x3,GUseCl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GEmbedQS x1,GEmbedQS y1) -> and [ x1 == y1 ]
     (GEmbedS x1,GEmbedS y1) -> and [ x1 == y1 ]
@@ -1243,6 +1247,7 @@ instance Eq (Tree a) where
     (Groot_xcomp x1 x2,Groot_xcomp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp_ccomp x1 x2 x3,Groot_xcomp_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_xcomp_obj x1 x2 x3,Groot_xcomp_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GStrV x1,GStrV y1) -> and [ x1 == y1 ]
     (LexV x,LexV y) -> x == y
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1472,6 +1477,7 @@ instance Gf GAdv where
   gf (GGerundAdv x1) = mkApp (mkCId "GerundAdv") [gf x1]
   gf (GPositAdvAdj x1) = mkApp (mkCId "PositAdvAdj") [gf x1]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf (GStrAdv x1) = mkApp (mkCId "StrAdv") [gf x1]
   gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
   gf (Gacl2Adv x1) = mkApp (mkCId "acl2Adv") [gf x1]
   gf (Gadvcl2Adv x1) = mkApp (mkCId "advcl2Adv") [gf x1]
@@ -1488,6 +1494,7 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "GerundAdv" -> GGerundAdv (fg x1)
       Just (i,[x1]) | i == mkCId "PositAdvAdj" -> GPositAdvAdj (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "StrAdv" -> GStrAdv (fg x1)
       Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "acl2Adv" -> Gacl2Adv (fg x1)
       Just (i,[x1]) | i == mkCId "advcl2Adv" -> Gadvcl2Adv (fg x1)
@@ -2325,6 +2332,7 @@ instance Gf GS where
   gf (GExistS x1 x2 x3) = mkApp (mkCId "ExistS") [gf x1, gf x2, gf x3]
   gf (GPostAdvS x1 x2) = mkApp (mkCId "PostAdvS") [gf x1, gf x2]
   gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
+  gf (GSSubjS x1 x2 x3) = mkApp (mkCId "SSubjS") [gf x1, gf x2, gf x3]
   gf (GUseCl x1 x2 x3) = mkApp (mkCId "UseCl") [gf x1, gf x2, gf x3]
 
   fg t =
@@ -2333,6 +2341,7 @@ instance Gf GS where
       Just (i,[x1,x2,x3]) | i == mkCId "ExistS" -> GExistS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "PostAdvS" -> GPostAdvS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "SSubjS" -> GSSubjS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "UseCl" -> GUseCl (fg x1) (fg x2) (fg x3)
 
 
@@ -2734,10 +2743,12 @@ instance Gf GUDS where
       _ -> error ("no UDS " ++ show t)
 
 instance Gf GV where
+  gf (GStrV x1) = mkApp (mkCId "StrV") [gf x1]
   gf (LexV x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "StrV" -> GStrV (fg x1)
 
       Just (i,[]) -> LexV (showCId i)
       _ -> error ("no V " ++ show t)
@@ -3630,6 +3641,7 @@ instance Compos Tree where
     GGerundAdv x1 -> r GGerundAdv `a` f x1
     GPositAdvAdj x1 -> r GPositAdvAdj `a` f x1
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GStrAdv x1 -> r GStrAdv `a` f x1
     GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
     Gacl2Adv x1 -> r Gacl2Adv `a` f x1
     Gadvcl2Adv x1 -> r Gadvcl2Adv `a` f x1
@@ -3747,6 +3759,7 @@ instance Compos Tree where
     GExistS x1 x2 x3 -> r GExistS `a` f x1 `a` f x2 `a` f x3
     GPostAdvS x1 x2 -> r GPostAdvS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
+    GSSubjS x1 x2 x3 -> r GSSubjS `a` f x1 `a` f x2 `a` f x3
     GUseCl x1 x2 x3 -> r GUseCl `a` f x1 `a` f x2 `a` f x3
     GEmbedQS x1 -> r GEmbedQS `a` f x1
     GEmbedS x1 -> r GEmbedS `a` f x1
@@ -3894,6 +3907,7 @@ instance Compos Tree where
     Groot_xcomp x1 x2 -> r Groot_xcomp `a` f x1 `a` f x2
     Groot_xcomp_ccomp x1 x2 x3 -> r Groot_xcomp_ccomp `a` f x1 `a` f x2 `a` f x3
     Groot_xcomp_obj x1 x2 x3 -> r Groot_xcomp_obj `a` f x1 `a` f x2 `a` f x3
+    GStrV x1 -> r GStrV `a` f x1
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplSVP x1 x2 -> r GComplSVP `a` f x1 `a` f x2

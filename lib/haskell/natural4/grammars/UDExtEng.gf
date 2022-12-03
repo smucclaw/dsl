@@ -5,12 +5,12 @@ concrete UDExtEng of UDExt = UDAppEng,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
-    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+    ,PredVPS, ConsVPS
   ],
   IdiomEng [
     GenericCl, ImpersCl
   ],
-  SentenceEng [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+  SentenceEng [PredSCVP, EmbedS, EmbedQS]
 
  ** open
   Prelude,

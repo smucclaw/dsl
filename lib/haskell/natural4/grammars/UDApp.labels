@@ -117,6 +117,7 @@
 #fun PossNP 	head nmod
 #fun RelCN 	head acl
 #fun SentCN 	head acl
+#fun SentNP 	head acl
 #fun AdNum 	advmod head
 #fun AdjDAP 	det head -- TODO: do we need auxfun for `head amod` variant?
 #fun ConjDet 	cc head
@@ -169,6 +170,7 @@
 #fun PassVAgent head obl
 -- #fun PastPartAgentAP head obl
 #fun GenModNP dep nmod:poss head
+#fun EmbedVP head
 
 #cat cop AUX
 #cat aux AUX

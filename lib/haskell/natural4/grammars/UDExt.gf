@@ -5,12 +5,12 @@ abstract UDExt = UDApp ,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
-    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+    ,PredVPS, ConsVPS
   ],
   Idiom [
     GenericCl, ImpersCl
   ],
-  Sentence [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+  Sentence [PredSCVP, EmbedS, EmbedQS]
   ** {
 
 --------------------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ abstract UDExt = UDApp ,
 
     ACard2Det : ACard -> Det ;
 
-    SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
+    -- SentNP : NP -> SC -> NP ; -- like SentCN but for NP instead
 
     ComplVP : VP -> NP -> VP ; -- "eat enthusiastically pizza"--the first argument is already VP. TODO improve NLG.hs so we can remove this
     ComplSVP : VP -> S -> VP ; -- [assess]:VP [if it is a NDB]:S

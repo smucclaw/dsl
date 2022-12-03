@@ -5,12 +5,12 @@ concrete UDExtMay of UDExt = UDAppMay,
     S, ExistS, ExistsNP, ExistCN, ExistNPQS, ExistIPQS
     ,ApposNP, AdjAsNP, GerundCN, GerundAdv
     ,ICompAP, IAdvAdv, PredIAdvVP
-    ,PredVPS, ListVPS, ConjVPS, BaseVPS, ConsVPS
+    ,PredVPS, ConsVPS
   ],
   IdiomMay [
     GenericCl, ImpersCl
   ],
-  SentenceMay [PredSCVP, EmbedVP, EmbedS, EmbedQS]
+  SentenceMay [PredSCVP, EmbedS, EmbedQS]
  ** open
   Prelude,
   SyntaxMay, (P=ParadigmsMay), ExtendMay,

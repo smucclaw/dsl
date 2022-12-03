@@ -72,6 +72,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tocorel4  :: w ::: Bool   <!> "True"  <?> "in core-l4 syntax"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
+                   , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
                    , togrounds :: w ::: Bool   <!> "True"  <?> "ground terms"
                    , tots      :: w ::: Bool   <!> "True"  <?> "typescript"
                    , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
@@ -114,6 +115,8 @@ getConfig o = do
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
         , toVue     = only o == "vue"
+        , toHTML    = only o == "html"
+        , toPDF = only o == "pdf"
         , toTS      = only o `elem` words "typescript ts"
         , saveAKA = False
         , wantNotRules = False

@@ -232,7 +232,7 @@ ExtAdvS sent adv = {s = sent.s ++ "," ++ adv.s} ;
 -----------------------
 -- stuff to disable
 
-#disable StrN StrPN StrA StrAP StrCard StrNum StrSymb
+#disable StrN StrPN StrA StrAdv StrAP StrCard StrNum StrSymb StrV
 
 #disable pot1 pot2 pot3 pot4 pot1to19
 

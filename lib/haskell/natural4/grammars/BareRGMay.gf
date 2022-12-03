@@ -6,11 +6,13 @@ concrete BareRGMay of BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
-    ,VPS,MkVPS
+    ,VPS,MkVPS,
+    ListVPS, ConjVPS, BaseVPS
   ],
 
   SentenceMay [
     PredVP, UseCl, UseRCl, UseQCl
+    , SSubjS , EmbedVP
     ],
 
 

@@ -6,11 +6,12 @@ concrete BareRGEng of BareRG =
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
-    ,VPS,MkVPS
+    ,VPS,MkVPS, Conj, ListVPS, ConjVPS, BaseVPS
   ],
 
   SentenceEng [
     PredVP, UseCl, UseRCl, UseQCl
+    , SSubjS , EmbedVP
     ],
 
 
@@ -181,6 +182,7 @@ concrete BareRGEng of BareRG =
     StrCard str = symb (mkSymb str.s) ;
     StrNum str = N.NumPl ** {s,sp = \\_,_ => str.s} ;
     StrSymb = SyE.MkSymb ; -- String -> Symb
+    StrV str = <P.mkV "dummy" : V>** {s = \\_ => str.s} ;
     SymbNP x = symb x ;
 
     DefPN pn = N.PredetNP (lin Predet {s= "the"}) (N.UsePN pn) ;
@@ -248,7 +250,6 @@ concrete BareRGEng of BareRG =
       inf = applyConj conj vps.inf1 vps.inf ;
       nonAuxForms = applyConjNAF conj vps.nonAuxForms1 vps.nonAuxForms ;
     } ;
-
 
   oper
     -- This is a hack, if you need to make a VP into Str in other places, use ResEng.infVP

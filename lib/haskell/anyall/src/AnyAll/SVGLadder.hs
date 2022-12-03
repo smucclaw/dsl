@@ -520,7 +520,7 @@ drawPreLabelTop sc label (childBox, childSVG) =
 
 drawPrePostLabelTopBottom :: Scale -> T.Text -> T.Text -> BoxedSVG -> BoxedSVG
 drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
-    (childBox 
+    (childBox
       & boxDims.dimHeight %~ (+ 2 * labelHeight)
       & boxMargins.topMargin %~ (+ labelHeight)
       & boxMargins.bottomMargin %~ (+ labelHeight)

@@ -369,12 +369,13 @@ hc2decls r
     , T.take 3 pf /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
-          typeMap = Map.fromList [ (varName, fromJust varType)
+          typeMap = Map.fromList [ (varName, fromJust varType) -- safe due to isJust test below
                                  | (varName, mtypesig) <- maybe [] (fmap (mapFst NE.head) . NE.toList) localEnv
                                  , let underlyingm = getUnderlyingType <$> mtypesig
-                                         , isJust underlyingm
-                                         , isRight $ fromJust underlyingm
-                                         , let varType = rightToMaybe =<< underlyingm
+                                 , isJust underlyingm
+                                 , isRight $ fromJust underlyingm
+                                 , let varType = rightToMaybe =<< underlyingm
+                                 , isJust varType
                                  ]
           declType = fmap pretty $ catMaybes $ flip Map.lookup typeMap <$> pfs
     ]

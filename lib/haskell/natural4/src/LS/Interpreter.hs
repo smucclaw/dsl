@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
 
 {-|
 
@@ -384,12 +382,12 @@ relPredRefs _l4i rs ridmap r =
   in [ (rid, targetRuleId', ())
      | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
-           targetRule' = fromJust targetRule
-           targetRuleId = Map.lookup targetRule' ridmap
-           targetRuleId' = fromJust targetRuleId
-           rid = ridmap ! r
      , isJust targetRule
+     , let targetRule' = fromJust targetRule -- safe due to above isJust test
+     , let targetRuleId = Map.lookup targetRule' ridmap
      , isJust targetRuleId
+     , let targetRuleId' = fromJust targetRuleId -- safe due to above isJust test
+           rid = ridmap ! r
      ]
 
 

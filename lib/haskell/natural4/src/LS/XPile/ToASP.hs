@@ -10,7 +10,7 @@ import L4.PrintProg
       PrintVarCase(CapitalizeLocalVar),
       capitalise )
 -- import RuleTransfo (ruleDisjL, clarify) -- TODO: Not needed here, and module RuleTransfo not visible here
-import Data.Maybe (fromJust, mapMaybe)
+import Data.Maybe (fromJust, mapMaybe, fromMaybe)
 import L4.SyntaxManipulation (decomposeBinop, appToFunArgs, applyVars, globalVarsOfProgram, funArgsToAppNoType, applyVarsNoType)
 import Data.List (nub)
 import Data.Foldable (find)
@@ -48,11 +48,12 @@ skolemizeASPRule :: Eq t => ASPRule t -> ASPRule t
 skolemizeASPRule r = ASPRule (skolemizedASPRuleName r)  (skolemizeASPRuleGlobals r) (skolemizedASPRuleVardecls r) (skolemizedASPRulePrecond r) (skolemizedASPRulePostcond r)
 
 
-findVarDecl :: VarName -> [VarDecl t2] -> VarDecl t2
-findVarDecl varname decls = fromJust (find (\d -> varname == nameOfVarDecl d) decls)
+findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
+findVarDecl varname decls = find (\d -> varname == nameOfVarDecl d) decls
 
 convertVarExprToDecl :: [VarDecl t2] -> Expr t ->VarDecl t2
-convertVarExprToDecl decls (VarE _ v) = findVarDecl (nameOfQVarName (nameOfVar v)) decls
+convertVarExprToDecl decls (VarE _ v) = fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
+                                        findVarDecl (nameOfQVarName (nameOfVar v)) decls
 convertVarExprToDecl _decls _ = error "trying to convert a non-variable expression to a declaration"
 
 --transformPrecond :: Expr t -> Expr t ->[VarDecl t] -> String -> Expr t
@@ -143,7 +144,7 @@ negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
             _ -> error "negationPredicate: ill-formed negation"
 negationPredicate e = (e, Nothing)
 
-ruleToASPRule :: [VarDecl t] -> Rule t -> (ASPRule t, [(Var t, Var t, Int)])
+ruleToASPRule :: (Show t) => [VarDecl t] -> Rule t -> (ASPRule t, [(Var t, Var t, Int)])
 ruleToASPRule globals r =
     let precondsNeg = map negationPredicate (decomposeBinop (BBool BBand)(precondOfRule r))
         postcondNeg = negationPredicate (postcondOfRule r)
@@ -151,7 +152,8 @@ ruleToASPRule globals r =
         postcond = fst postcondNeg
         negpreds = mapMaybe snd (postcondNeg : precondsNeg)
     in  ( ASPRule
-                (fromJust $ nameOfRule r)
+                (fromMaybe (error $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++ show r) $
+                 nameOfRule r)
                 globals
                 (varDeclsOfRule r)
                 preconds

@@ -460,16 +460,16 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
-rel2txt RPis      = "Is"
-rel2txt RPhas     = "relHas"
-rel2txt RPeq      = "relEq"
-rel2txt RPlt      = "relLT"
-rel2txt RPlte     = "relLTE"
-rel2txt RPgt      = "relGT"
-rel2txt RPgte     = "relGTE"
-rel2txt RPelem    = "relIn"
-rel2txt RPnotElem = "relNotIn"
-rel2txt RPnot     = "relNot"
+rel2txt RPis      = "IS"
+rel2txt RPhas     = "HAS" -- "relHas"
+rel2txt RPeq      = "=="  -- "relEq"
+rel2txt RPlt      = "<"   -- "relLT"
+rel2txt RPlte     = "<="  -- "relLTE"
+rel2txt RPgt      = ">"   -- "relGT"
+rel2txt RPgte     = ">="  -- "relGTE"
+rel2txt RPelem    = "IN"  -- "relIn"
+rel2txt RPnotElem = "NOT IN" -- "relNotIn"
+rel2txt RPnot     = "NOT"    -- "relNot"
 
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "IS"

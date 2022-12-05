@@ -150,6 +150,7 @@ defaultMargins = Margins
   }
 
 -- default stroke colour for the connecting lines between boxes
+defaultStroke_ :: T.Text
 defaultStroke_ = "darkgrey"
 
 -- | how compact should the output be?

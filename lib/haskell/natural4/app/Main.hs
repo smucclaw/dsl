@@ -100,8 +100,13 @@ main = do
 
                                    ])
 
-  when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
---    putStrLn "going to start dumping to workdir outputs"
+
+
+  
+  -- if --workdir is specified, and there are no --only, then we run all the things
+  -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
+  -- putStrLn $ "natural4: only = " <> SFL4.only opts
+  when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
@@ -115,9 +120,7 @@ main = do
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    when (SFL4.tomd opts) $ do
-      md <- asMD
-      mywritefile True tomarkdownFN  iso8601 "md" md
+    when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
@@ -142,59 +145,75 @@ main = do
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 
 
-    when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last
+    when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
         asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
     putStrLn "natural4: output to workdir done"
 
-  when (SFL4.only opts == "petri")  $ putStrLn asPetri
-  when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
-  when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
-  when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
-    naturalLangSents <- mapM (nlg nlgEnv) rules
-    mapM_ (putStrLn . Text.unpack) naturalLangSents
 
-  when (SFL4.toBabyL4 rc) $ putStrLn $ asCoreL4
 
-  when (SFL4.toUppaal rc) $ do
-    pPrint $ Uppaal.toL4TA rules
-    putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
 
-  when (SFL4.toGrounds rc) $ do
-    pPrint $ groundrules rc rules
 
-  when (SFL4.toChecklist rc) $ do
-    checkls <- checklist nlgEnv rc rules
-    pPrint checkls
+  -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
+  -- natural4-exe --workdir workdir --only md inputfile.csv
+  -- will produce only the workdir output file
 
-  when (SFL4.toProlog rc) $ pPrint $ asProlog
+  when (toworkdir && not (null $ SFL4.uuiddir opts) && (not $ null $ SFL4.only opts)) $ do
+    when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
-  when (SFL4.toTS rc) $ print $ asTypescript rules
 
-  when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
-  when (SFL4.only opts `elem` ["native"])  $ pPrint rules
-  when (SFL4.only opts `elem` ["classes"]) $ print (SFL4.classtable l4i)
-  when (SFL4.only opts `elem` ["symtab"])  $ print (SFL4.scopetable l4i)
 
-  when (SFL4.toVue rc) $ do
-    -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
-    putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
-    -- pPrint $ itemRPToItemJSON  $ toVueRules rules
 
-  -- when (SFL4.toHTML rc) $ do
-  --   mkdn <- mapM (toMarkdown nlgEnv) rules
-  --   let htm = concatMap toHTML mkdn
-  --   writeFile "output.html" htm
-  --   pPrint htm
+  -- when workdir is not specified, --only will dump to STDOUT
+  when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
+    when (SFL4.only opts == "petri")  $ putStrLn asPetri
+    when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
-  -- when (SFL4.toPDF rc) $ do
-  --   mkdn <- mapM (toMarkdown nlgEnv) rules
-  --   pdf <- toPDF (Text.concat mkdn)
-  --   Byte.writeFile "output.pdf" pdf
+    when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
+    when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
+      naturalLangSents <- mapM (nlg nlgEnv) rules
+      mapM_ (putStrLn . Text.unpack) naturalLangSents
 
-  when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
+    when (SFL4.toBabyL4 rc) $ putStrLn $ asCoreL4
 
+    when (SFL4.toUppaal rc) $ do
+      pPrint $ Uppaal.toL4TA rules
+      putStrLn $ Uppaal.taSysToString $ Uppaal.toL4TA rules
+
+    when (SFL4.toGrounds rc) $ do
+      pPrint $ groundrules rc rules
+
+    when (SFL4.toChecklist rc) $ do
+      checkls <- checklist nlgEnv rc rules
+      pPrint checkls
+
+    when (SFL4.toProlog rc) $ pPrint $ asProlog
+
+    when (SFL4.toTS rc) $ print $ asTypescript rules
+
+    when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
+    when (SFL4.only opts `elem` ["native"])  $ pPrint rules
+    when (SFL4.only opts `elem` ["classes"]) $ print (SFL4.classtable l4i)
+    when (SFL4.only opts `elem` ["symtab"])  $ print (SFL4.scopetable l4i)
+
+    when (SFL4.toVue rc) $ do
+      -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
+      putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+      -- pPrint $ itemRPToItemJSON  $ toVueRules rules
+
+    -- when (SFL4.toHTML rc) $ do
+    --   mkdn <- mapM (toMarkdown nlgEnv) rules
+    --   let htm = concatMap toHTML mkdn
+    --   writeFile "output.html" htm
+    --   pPrint htm
+
+    -- when (SFL4.toPDF rc) $ do
+    --   mkdn <- mapM (toMarkdown nlgEnv) rules
+    --   pdf <- toPDF (Text.concat mkdn)
+    --   Byte.writeFile "output.pdf" pdf
+
+    when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts

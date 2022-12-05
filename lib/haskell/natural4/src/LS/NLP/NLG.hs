@@ -182,6 +182,22 @@ parseUD env txt = do
       return check
 -----------------------------------------------------------------------------
 
+-- | rewrite statements into questions, for use by the Q&A web UI
+-- 
+-- +-----------------+-----------------------------------------------------+
+-- | input           | the data breach, occurs on or after 1 Feb 2022      |
+-- | output          | Did the data breach occur on or after 1 Feb 2022?   |
+-- +-----------------+-----------------------------------------------------+
+-- | input           | Organisation, NOT, is a Public Agency               |
+-- | intermediate    | (AA.Not (...) :: BoolStructT                        |
+-- | output          | Is the Organisation a Public Agency?                |
+-- +-----------------+-----------------------------------------------------+
+-- | input           | Claim Count <= 2                                    |
+-- | intermediate    | RPConstraint (RPMT ["Claim Count"]) RelLTE          |
+-- |                 |               (RPMT ["2"]) :: RelationalPredicate   |
+-- | output          | Have there been more than two claims?               |
+-- +-----------------+-----------------------------------------------------+
+
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
   annotatedRule <- parseFields env rl

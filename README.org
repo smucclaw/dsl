@@ -50,7 +50,7 @@ Along the way it discusses the internal structure of our compiler codebase.
 1. Clone this repository.
 2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed ahead of the next step because different editors will have different opinions about how to install Haskell.
 3. Nix users will have their own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand.
-4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
+4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][GHCup]].
 
 *** Installation
 
@@ -66,6 +66,7 @@ This will take some time as it needs to compile a particular version of ~ghc~, p
 **** Confirming the install
 
 A number of sample CSV inputs can be found in the ~test/~ directory.
+(The following should be run from the ~lib/haskell/natural4~ subdirectory.)
 
 #+begin_src
   natural4$ stack run -- --only native test/indented-1.csv

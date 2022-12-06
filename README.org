@@ -50,7 +50,7 @@ Along the way it discusses the internal structure of our compiler codebase.
 1. Clone this repository.
 2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed ahead of the next step because different editors will have different opinions about how to install Haskell.
 3. Nix users will have their own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand.
-4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][GHCup]].
+4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][GHCup]]. (If you are curious about the pros and cons of Stack vs. GHCup, see [[https://github.com/haskell-infra/www.haskell.org/issues/191][this issue]].)
 
 *** Installation
 
@@ -95,14 +95,13 @@ Example: Go to the "Case Study: PDPA DBNO" tab in [[https://docs.google.com/spre
 
 The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
 
-Is there some other way to obtain the same CSV using only the command line? Yes:
+Is there some other way to obtain the same CSV using only the command line? Yes. If you just want to use the stock CSV, you can do
 
 #+begin_example
   wget -O pdpadbno.csv 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbknuGFkvvk_Pv9e97iDW9BInxd-Cj27-xC8d_SwveP1PxERV7ZmiAIU7PWXas2CEMH2bl8PyyD6X3/pub?gid=0&single=true&output=csv'
 #+end_example
 
-
-For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
+Otherwise, if you want to make your own changes and get the resulting spreadsheet in CSV form, you should make a copy (File > Make a Copy in Google Sheets) if you haven't already and make your changes in that copy. Then, to get the URL for ~wget~, click on ~File / Share / Publish to web~, choose the appropriate tab under 'Link' and select ~CSV~ as the output format under 'Embed', and finally click on Publish. You will then be presented with a URL; this URL is what should replace that in the ~wget~ eaxmple block above.
 
 *** Usage
 

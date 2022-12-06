@@ -46,15 +46,15 @@ spec = do
     it "rp2texts RPConstraint" $ do
       let
         rp = RPConstraint ["sky"] RPis ["blue"]
-      rp2texts rp `shouldBe` ["sky","Is","blue"]
+      rp2texts rp `shouldBe` ["sky","IS","blue"]
     it "rp2texts RPBoolStructR" $ do
       let
         rp = RPBoolStructR ["sky"] RPis (Leaf $ RPMT ["sky", "is", "blue"])
-      rp2texts rp `shouldBe` ["sky","Is","sky is blue"]
+      rp2texts rp `shouldBe` ["sky","IS","sky is blue"]
     it "rp2texts RPBoolStructR" $ do
       let
         rp = RPnary RPnot (RPMT ["sky", "is", "blue"])
-      rp2texts rp `shouldBe` ["relNot", "sky", "is", "blue"]
+      rp2texts rp `shouldBe` ["NOT", "sky", "is", "blue"]
 
   describe "rpHead" $ do
     it "rpHead RPMT" $ do

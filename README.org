@@ -91,7 +91,7 @@ The typical user drafts an L4 program in a spreadsheet.
 
 That program can be downloaded as a CSV, which this toolchain consumes.
 
-Example: Go to the the PDPADBNO tab, and click ~Download / as CSV~.
+Example: Go to the "Case Study: PDPA DBNO" tab in [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]], and click ~File/ Download / as CSV~.
 
 The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
 
@@ -100,6 +100,7 @@ Is there some other way to obtain the same CSV using only the command line? Yes:
 #+begin_example
   wget -O pdpadbno.csv 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbknuGFkvvk_Pv9e97iDW9BInxd-Cj27-xC8d_SwveP1PxERV7ZmiAIU7PWXas2CEMH2bl8PyyD6X3/pub?gid=0&single=true&output=csv'
 #+end_example
+
 
 For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
 

@@ -1,7 +1,7 @@
 #+TITLE: The home of the L4 DSL
 #+STARTUP: content
 
-Hi! If you /aren't/ a L4 internal developer, or if you aren't already familiar with L4, you might want to look at [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]] first, if you haven't already. This documentation is primarily intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
+Hi! If you /aren't/ a L4 internal developer, or if you aren't already familiar with L4, you might want to look at [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]] first, if you haven't already. This documentation is primarily intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
 * L4 Language Family
 
@@ -33,7 +33,7 @@ There is a parser and transpiler to a variety of downstream targets.
 
 ** Spreadsheet Interface
 
-[[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]] contains examples of L4 "source code".
+[[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]] contains examples of L4 "source code".
 
 You will be installing a toolchain that makes sense of that code.
 
@@ -91,7 +91,7 @@ The typical user drafts an L4 program in a spreadsheet.
 
 That program can be downloaded as a CSV, which this toolchain consumes.
 
-Example: Go to the "Case Study: PDPA DBNO" tab in [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]], and click ~File/ Download / as CSV~.
+Example: Go to the "Case Study: PDPA DBNO" tab in [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]], and click ~File/ Download / as CSV~.
 
 The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
 

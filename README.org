@@ -1,9 +1,7 @@
 #+TITLE: The home of the L4 DSL
 #+STARTUP: content
 
-This documentation is intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
-
-Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]]. If you're not already familiar with L4, you may want to work through that documentation first.
+Hi! If you /aren't/ a L4 internal developer, or if you aren't already familiar with L4, you might want to look at [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]] first, if you haven't already. This documentation is primarily intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
 * L4 Language Family
 
@@ -35,7 +33,7 @@ There is a parser and transpiler to a variety of downstream targets.
 
 ** Spreadsheet Interface
 
-[[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] contains examples of L4 "source code".
+[[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?pli=1#gid=1505307398][LegalSS]] contains examples of L4 "source code".
 
 You will be installing a toolchain that makes sense of that code.
 
@@ -370,7 +368,7 @@ Making sense of the parser debug output requires some familiarity with programmi
 This little script (on Mac at least) watches your Downloads folder so every time you Save As CSV it moves the new download over to the ~test/~ directory. Run from home directory. You may need to edit to taste.
 
 #+begin_example
-  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(Legal Spreadsheets - (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
+  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(LegalSS (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
 #+end_example
 ** Interpretation Requirements
 
@@ -456,11 +454,11 @@ Let's have a convention where each transpiler under ~XPile~ can expect two argum
 
 ** Language Reference
 
-See the Legal Spreadsheets L4 Manual.
+See the LegalSS L4 Manual.
 
 ** Web Development Environment
 
-The "Legal Spreadsheets" document in Google Sheets serves as the front end to a development environment.
+The "LegalSS" document in Google Sheets serves as the front end to a development environment.
 
 *** Configuring the IDE back-end
 
@@ -488,7 +486,7 @@ TODO:
 
 *** Downstream Components
 
-Thanks to the ~l4api~ listener, every Legal Spreadsheets document has a corresponding web link.
+Thanks to the ~l4api~ listener, every LegalSS document has a corresponding web link.
 
 At that web page, you will be able to view:
 

@@ -241,8 +241,6 @@ workdir
 
 These outputs can be further transformed and put in front of the user's eyeballs.
 
-The "tocheckl" output (Checklists) is off by default -- to turn it on, add the option ~--tocheckl=True~ to the command line.
-
 Other outputs are on by default. To turn them off, add the relevant option to the command line -- for example, ~--togrounds=False~.
 
 **** native: a Haskell data structure

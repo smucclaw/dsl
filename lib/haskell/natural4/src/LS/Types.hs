@@ -31,6 +31,7 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
+import qualified AnyAll.BoolStructTree as BST
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -47,6 +48,7 @@ type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
+type BoolStructDTR = BST.BoolStructDT (Maybe (AA.Label Text.Text)) RelationalPredicate
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
 
@@ -450,6 +452,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
+                         | RPBoolStructDTR MultiTerm RPRel BoolStructDTR   -- eyes IS (left IS blue AND right IS brown)
                          | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 

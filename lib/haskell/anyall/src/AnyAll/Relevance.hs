@@ -47,7 +47,7 @@ deriveInitVis parentValue selfValue selfValueHard
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some
 
-dispositive :: (Ord a, Show a) => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
+dispositive :: Ord a => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
 dispositive sh marking self =
   let selfValue  = evaluate sh marking self
       recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
@@ -57,8 +57,18 @@ dispositive sh marking self =
        All label items -> recurse items
        Not       item  -> recurse [item]
 
+dispositiveDT :: Ord a => Hardness -> Marking a -> BoolStructDT l a -> [BoolStructDT l a]
+dispositiveDT sh marking self =
+  let selfValue  = evaluateDT sh marking self
+      recurse cs = concatMap (dispositiveDT sh marking) (filter ((selfValue ==) . evaluateDT sh marking) cs)
+  in case self of
+       (Node (FAtom x)          _  ) -> if isJust selfValue then return self else mempty
+       (Node (FAny label)    items ) -> recurse items
+       (Node (FAll label)    items ) -> recurse items
+       (Node FNot            [item]) -> recurse [item]
+
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
-evaluate :: (Ord a, Show a) => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
+evaluate :: Ord a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
 evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              Just (Default (Left  (Just x))) -> Just x
@@ -76,7 +86,7 @@ evaluate sh marking (All label items)
   | Just False `elem`  (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing
 
-evaluateDT :: (Ord a, Show a) => Hardness -> Marking a -> BoolStructDT l a -> Maybe Bool
+evaluateDT :: Ord a => Hardness -> Marking a -> BoolStructDT l a -> Maybe Bool
 evaluateDT Soft (Marking marking) (Node (FAtom x) _    ) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              Just (Default (Left  (Just x))) -> Just x

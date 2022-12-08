@@ -142,14 +142,7 @@ instance Pretty a => Pretty (LTL a) where
   pretty (L1 Lnot   ltlx       ) = "not" <+> pretty ltlx
   pretty (L1 Lbrace ltlx       ) = braces   $ pretty ltlx
   pretty (L1 Lbracket ltlx     ) = brackets $ pretty ltlx
-  pretty (L1 G        ltlx     ) = viaShow G <+> pretty ltlx
-  pretty (L1 F        ltlx     ) = viaShow F <+> pretty ltlx
-  pretty (L1 R        ltlx     ) = viaShow R <+> pretty ltlx
-  pretty (L1 W        ltlx     ) = viaShow W <+> pretty ltlx
-  pretty (L1 M        ltlx     ) = viaShow M <+> pretty ltlx
-  pretty (L1 X        ltlx     ) = viaShow X <+> pretty ltlx
-  pretty (L1 U        ltlx     ) = viaShow U <+> pretty ltlx
-  pretty (L1 H        ltlx     ) = viaShow H <+> pretty ltlx
+  pretty (L1 t        ltlx     ) = viaShow t <+> pretty ltlx
   pretty (L2 Land     ltlx ltly) = parens ( pretty ltlx ) <+> "&"  <> nest 2 (line <> parens (pretty ltly))
   pretty (L2 Lor      ltlx ltly) = parens ( pretty ltlx ) <+> "or" <+> parens (pretty ltly)
   pretty (L2 Limplies ltlx ltly) = parens ( pretty ltlx ) <+> "=>" <> line <> nest 4 ( parens (pretty ltly))

@@ -69,8 +69,7 @@ A number of sample CSV inputs can be found in the ~test/~ directory.
 (The following should be run from the ~lib/haskell/natural4~ subdirectory.)
 
 #+begin_src
-  natural4$ stack run -- --only native test/indented-1.csv
-  natural4$ stack run -- --only native test/pdpadbno-1.csv
+  natural4$ stack run -- --workdir=workdir --toasp --tomd test/mustsing-latest.csv
 #+end_src
 
 This should compile the ~l4~ parser, and produce a bunch of output.

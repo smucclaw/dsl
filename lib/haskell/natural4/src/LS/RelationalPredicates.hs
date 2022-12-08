@@ -239,12 +239,6 @@ tok2rel = choice
     , RPnotElem <$ pToken TokNotIn
     ]
 
--- [TODO]: [FIXME]: this is a hack, because we don't have a good way to parse the thing
-unLeaf :: BoolStructR -> RelationalPredicate
-unLeaf (AA.Leaf x) = x
-unLeaf _ = error "unLeaf: not a leaf"
-
-
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
 

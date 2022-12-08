@@ -11,6 +11,7 @@ import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 
 import LS.XPile.CoreL4
+import LS.XPile.B
 import LS.Interpreter
 
 import qualified LS.XPile.Uppaal as Uppaal
@@ -59,6 +60,7 @@ main = do
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
+      (toBFN,       asBout)    = (workuuid <> "/" <> "b",        asB l4i)
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <>
@@ -119,6 +121,7 @@ main = do
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
+    when (SFL4.tob       opts) $ mywritefile True toBFN        iso8601 "b"    asBout
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
     when (SFL4.toaasvg   opts) $ do

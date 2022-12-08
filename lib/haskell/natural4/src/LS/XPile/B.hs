@@ -100,9 +100,11 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
+import LS.PrettyPrinter
 import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
+import qualified Data.List as DL
 
 
 -- | A quick definition of Linear Temporal Logic intended for transpilation toward B.
@@ -166,40 +168,70 @@ data BProgram a = BSystem a [BSection a]
   deriving (Eq, Read, Show, Functor)
 
 
-data BSection a = BSInc  (BIncludes       a)
-                | BSProm (BPromotes       a)
-                | BSDef  (BDefinitions    a)
-                | BSCon  (BConstants      a)
-                | BSProp (BProperties     a)
-                | BSVars (BVariables      a)
-                | BSInv  (BInvariant      a)
-                | BSInit (BInitialisation a)
-                | BSOps  (BOperations     a)
-                | BSEnd  (BEnd            a)
+data BSection a = BSInc  [a]
+                | BSProm [a]
+                | BSDef  [a]
+                | BSCon  [a]
+                | BSVars [a]
+                | BSProp           (BProperties a)
+                | BSInv  BJunction [BAlgebra    a]
+                | BSInit BJunction [BStatement  a]
+                | BSOps            [BOp         a]
+                | BSEnd  (BEnd                  a)
   deriving (Eq, Read, Show, Functor)
 
+instance Pretty a => Pretty (BProgram a) where
+  pretty (BSystem a bs) = vsep $ ("SYSTEM" <+> pretty a) : (pretty <$> bs)
+                               
+instance Pretty a => Pretty (BSection a) where
+  pretty (BSInc     bs) = "INCLUDES" <+> encloseSep "" "" comma (pretty <$> bs)
+  pretty (BSProm    bs) = "PROMOTES" <+> encloseSep "" "" comma (pretty <$> bs)
+  pretty (BSDef     bs) = "DEFINITIONS"    <//> nest 2 (vsep $ dquotes . pretty <$> bs)
+  pretty (BSCon     bs) = "CONSTANTS"      <//> nest 2 (encloseSep "" "" comma (pretty <$> bs))
+  pretty (BSProp    bs) = "PROPERTIES"     <//> nest 2 (pretty bs)
+  pretty (BSVars    bs) = "VARIABLES"      <//> nest 2 (vsep $ punctuate comma $ pretty <$> bs)
+  pretty (BSInv  bj bs) = "INVARIANT"      <//> nest 2 (vsep $ punctuate (pretty bj) (pretty <$> bs))
+  pretty (BSInit bj bs) = "INITIALISATION" <//> nest 2 (vsep $ punctuate (pretty bj) (pretty <$> bs))
+  pretty (BSOps     bs) = "OPERATIONS"     <//> nest 2 (vsep $ punctuate semi        (pretty <$> bs))
 
-data BIncludes       a = BIncludes a                                            deriving (Eq, Read, Show, Functor)
-data BPromotes       a = BPromotes a                                            deriving (Eq, Read, Show, Functor)
-data BDefinitions    a = BDefinitions [a]                                       deriving (Eq, Read, Show, Functor)
-data BConstants      a = BConstants [a]                                         deriving (Eq, Read, Show, Functor)
 data BProperties     a = BProperties BJunction [BProperties a]                  
                        | BProperty a                                            deriving (Eq, Read, Show, Functor)
-									        
+
+instance Pretty a => Pretty (BProperties a) where
+  pretty (BProperty a) = pretty a
+  pretty (BProperties bjunc bps) = vsep $ punctuate (pretty bjunc) (pretty <$> bps)
+
 data BJunction         = BConj | BDisj                                          deriving (Eq, Read, Show)
-									        
-data BVariables      a = BVariables [a]                                         deriving (Eq, Read, Show, Functor)
-data BInvariant      a = BAlgebra a                                             deriving (Eq, Read, Show, Functor)
-data BInitialisation a = BStatement a					        deriving (Eq, Read, Show, Functor)
+
+instance Pretty BJunction where
+  pretty BConj = "∧"
+  pretty BDisj = "∨"
+  
 data BStatement      a = BParallel [BAss a]
                        | BSequential [BAss a]					deriving (Eq, Read, Show, Functor)
-data BOperations     a = BOperations [BOp a]					deriving (Eq, Read, Show, Functor)
+
+instance Pretty (BStatement a) where
+  pretty (BParallel   basses) = vsep $ punctuate "||" (pretty <$> basses)
+  pretty (BSequential basses) = vsep $ punctuate "&&" (pretty <$> basses)
+
 
 data BOp             a = BOpPre { bopLHS  :: BPredLHS a
                                 , bopPre  :: [BStatement a]
                                 , bopThen :: [BStatement a]
                                 }						deriving (Eq, Read, Show, Functor)
-  
+
+data BIfThen         a = BIfThen { bopIf   :: BIfCond a
+                                 , bopThen :: [BThen a]
+                                 }
+
+instance Pretty (BOp a) where
+  pretty (BopPre{..}) =
+    pretty bopLHS <+> equals <+> nest 2
+    (vsep
+      [ "PRE"  <//> nest 2 (vsep (pretty <$> bopPre))
+      , "THEN" <//> nest 2 (vvsep (punctuate semi (pretty <$> bopThen)))
+      , "END" ])
+
 data BAss            a = BAssAlgebra (BAlgebra a)
                        | BAssPlain   a
                        | BAassPred   (BPredLHS a)
@@ -232,10 +264,19 @@ data BRecR           a = BRplain a
 data BAlgebra        a =           a  :∈  (BSet a)
                        | (BAlgebra a) :-> (BAlgebra a)     		       deriving (Eq, Read, Show, Functor)                         
 
+instance Pretty a => Pretty (BAlgebra a) where
+  pretty (   x  :∈  bset)  = pretty x     <+> "∈" <+> pretty bset
+  pretty (balgl :-> balgr) = pretty balgl <+> "→" <+> pretty balgr
+
 data BSet            a = BSetBool
                        | BSetCurly [a]
                        | BSetCurlyParen [a]              		       deriving (Eq, Read, Show, Functor)                         
 
+
+instance Pretty a => Pretty (BSet a) where
+  pretty  BSetBool           = "BOOL"
+  pretty (BSetCurly      xs) = braces $          hsep $ punctuate comma (pretty <$> xs)
+  pretty (BSetCurlyParen xs) = braces $ parens $ hsep $ punctuate comma (pretty <$> xs)
 
 加 :: Int -> Int -> Int
 a `加` b = a + b

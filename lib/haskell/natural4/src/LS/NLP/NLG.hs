@@ -20,7 +20,7 @@ import qualified Data.Text as Text
 import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
-import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
+import Data.Maybe ( fromMaybe, catMaybes, mapMaybe, fromJust )
 import Data.List ( group, sort, sortOn, nub, intercalate )
 import Data.List.Extra (groupOn, splitOn)
 import Data.Either (partitionEithers)
@@ -29,13 +29,15 @@ import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when)
-import System.Environment (lookupEnv)
+import System.Environment (lookupEnv, getExecutablePath)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
 import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
 import Control.Monad.Trans
 import System.IO (stderr)
 import System.Exit (exitFailure)
+import Data.Typeable
+import Paths_natural4
 
 
 data NLGEnv = NLGEnv
@@ -47,8 +49,8 @@ data NLGEnv = NLGEnv
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
-modelFilePath :: FilePath
-modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
+modelFilePath :: IO FilePath
+modelFilePath = getDataFileName $ gfPath "english-ewt-ud-2.5-191206.udpipe"
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
@@ -58,7 +60,8 @@ myNLGEnv = do
       getEnv (gfPath "UDApp") "Eng" "UDS"
     ) $ do
     when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
-    udpipeModel <- either error id <$> loadModel modelFilePath
+    udpath <- modelFilePath
+    udpipeModel <- either error id <$> loadModel udpath
     when verbose $ putStrLn "Loaded UDPipe model"
     pure udpipeModel
   -- let
@@ -68,7 +71,9 @@ myNLGEnv = do
   return $ NLGEnv {udEnv, udpipeModel, verbose}
 
 nlgExtPGF :: IO PGF
-nlgExtPGF = readPGF (gfPath "UDExt.pgf")
+nlgExtPGF = do
+  udext <- getDataFileName $ gfPath "UDExt.pgf"
+  readPGF udext
 
 dummyExpr :: String -> PGF.Expr
 dummyExpr msg = gf $ Groot_only (GrootN_ (GUsePN (GStrPN (GString msg)))) -- dummy expr
@@ -183,7 +188,7 @@ parseUD env txt = do
 -----------------------------------------------------------------------------
 
 -- | rewrite statements into questions, for use by the Q&A web UI
--- 
+--
 -- +-----------------+-----------------------------------------------------+
 -- | input           | the data breach, occurs on or after 1 Feb 2022      |
 -- | output          | Did the data breach occur on or after 1 Feb 2022?   |

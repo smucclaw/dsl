@@ -104,6 +104,10 @@ import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 
+
+-- | A quick definition of Linear Temporal Logic intended for transpilation toward B.
+-- if we end up with multiple LTL backends we can refactor this out to a separate module.
+
 data LTLunary  = Lnot       -- ^ unary negation
                | Lbrace     -- ^ state formula
                | Lbracket   -- ^ actions
@@ -116,6 +120,7 @@ data LTLunary  = Lnot       -- ^ unary negation
                | U -- ^ until               -- this is the other big one
                | H -- ^ past tense
            deriving (Eq, Read, Show)
+
 data LTLbinary = Land
                | Lor
                | Limplies
@@ -125,7 +130,7 @@ data LTL a = L1   LTLunary  (LTL a)          -- ^ unary
            | L2   LTLbinary (LTL a) (LTL a)  -- ^ binary
            | Le   a                          -- ^ base element
            | Lb   Bool                       -- ^ bool special case
-           deriving (Eq, Read, Show)
+           deriving (Eq, Read, Show, Functor)
 
 type Expr = String
              
@@ -146,6 +151,94 @@ instance Pretty a => Pretty (LTL a) where
   pretty (L2 Land     ltlx ltly) = parens ( pretty ltlx ) <+> "&"  <> nest 2 (line <> parens (pretty ltly))
   pretty (L2 Lor      ltlx ltly) = parens ( pretty ltlx ) <+> "or" <+> parens (pretty ltly)
   pretty (L2 Limplies ltlx ltly) = parens ( pretty ltlx ) <+> "=>" <> line <> nest 4 ( parens (pretty ltly))
+
+
+
+-- | We could imagine doing the same with CTL
+
+data CTL a
+
+
+
+-- | A quick definition of the B Machine syntax
+
+data BProgram a = BSystem a [BSection a]
+  deriving (Eq, Read, Show, Functor)
+
+
+data BSection a = BSInc  (BIncludes       a)
+                | BSProm (BPromotes       a)
+                | BSDef  (BDefinitions    a)
+                | BSCon  (BConstants      a)
+                | BSProp (BProperties     a)
+                | BSVars (BVariables      a)
+                | BSInv  (BInvariant      a)
+                | BSInit (BInitialisation a)
+                | BSOps  (BOperations     a)
+                | BSEnd  (BEnd            a)
+  deriving (Eq, Read, Show, Functor)
+
+
+data BIncludes       a = BIncludes a                                            deriving (Eq, Read, Show, Functor)
+data BPromotes       a = BPromotes a                                            deriving (Eq, Read, Show, Functor)
+data BDefinitions    a = BDefinitions [a]                                       deriving (Eq, Read, Show, Functor)
+data BConstants      a = BConstants [a]                                         deriving (Eq, Read, Show, Functor)
+data BProperties     a = BProperties BJunction [BProperties a]                  
+                       | BProperty a                                            deriving (Eq, Read, Show, Functor)
+									        
+data BJunction         = BConj | BDisj                                          deriving (Eq, Read, Show)
+									        
+data BVariables      a = BVariables [a]                                         deriving (Eq, Read, Show, Functor)
+data BInvariant      a = BAlgebra a                                             deriving (Eq, Read, Show, Functor)
+data BInitialisation a = BStatement a					        deriving (Eq, Read, Show, Functor)
+data BStatement      a = BParallel [BAss a]
+                       | BSequential [BAss a]					deriving (Eq, Read, Show, Functor)
+data BOperations     a = BOperations [BOp a]					deriving (Eq, Read, Show, Functor)
+
+data BOp             a = BOpPre { bopLHS  :: BPredLHS a
+                                , bopPre  :: [BStatement a]
+                                , bopThen :: [BStatement a]
+                                }						deriving (Eq, Read, Show, Functor)
+  
+data BAss            a = BAssAlgebra (BAlgebra a)
+                       | BAssPlain   a
+                       | BAassPred   (BPredLHS a)
+                       | BAssEvent a -- ^ something = VAR ... IN ... <- ...
+		       deriving (Eq, Read, Show, Functor)
+
+data BEvent          a = BEvent a a (BPredLHS a) -- ^ foo(bar) = VAR baz IN quux <- poof
+     		       deriving (Eq, Read, Show, Functor)                         
+
+data BEnd            a
+     		       deriving (Eq, Read, Show, Functor)                         
+
+data BProperty       a = BPredicate (BPredLHS a) BPredRel (BPredRHS a)         deriving (Eq, Read, Show, Functor)                         
+
+data BPredLHS        a = BPredLHS a [a] -- ^ BPredLHS "parent" ["alice", "bob"]    ==>   parent(alice, bob)
+     		       deriving (Eq, Read, Show, Functor)                         
+data BPredRel          = BRelEq
+     		       deriving (Eq, Read, Show)                         
+
+data BPredRHS        a = BCurlyList [a] -- ^ BPredRHS ["Foo", "Bar", "Baz"]        ==>   { Foo, Bar, Baz }
+                       | BCurlyrec  [BRec a]
+     		       deriving (Eq, Read, Show, Functor)                         
+
+data BRec            a = BRec a (BRecR a)                 		       deriving (Eq, Read, Show, Functor)                         
+
+data BRecR           a = BRplain a
+                       | BRcurly a
+                       | BRrec (BRec a)                    		       deriving (Eq, Read, Show, Functor)                         
+
+data BAlgebra        a =           a  :∈  (BSet a)
+                       | (BAlgebra a) :-> (BAlgebra a)     		       deriving (Eq, Read, Show, Functor)                         
+
+data BSet            a = BSetBool
+                       | BSetCurly [a]
+                       | BSetCurlyParen [a]              		       deriving (Eq, Read, Show, Functor)                         
+
+
+加 :: Int -> Int -> Int
+a `加` b = a + b
 
 -- | extract the tree-structured rules from Interpreter
 

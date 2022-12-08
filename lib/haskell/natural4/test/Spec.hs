@@ -20,6 +20,7 @@ import LS.NLP.WordNet
 -- import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.XPile.CoreL4
+import LS.XPile.B
 -- import LS.XPile.Typescript
 
 import Test.Hspec

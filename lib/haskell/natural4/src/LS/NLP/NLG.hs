@@ -10,9 +10,9 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       Rule(..),
       BoolStructP, BoolStructR,
-      RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
+      RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair)
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2)
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -418,8 +418,8 @@ parseFields env rl = case rl of
   _ -> return RegBreachA
   where
     parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
-    parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
-    parseHornClause env fun (HC2 rp (Just bsr)) = do
+    parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
+    parseHornClause env fun (HC rp (Just bsr)) = do
       extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
       db_is_NDB_UDFragment <- parseRPforHC env fun rp
       db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr

@@ -32,6 +32,7 @@ import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
 import qualified AnyAll.BoolStructTree as BST
+import AnyAll.BoolStructTree (mkLeafDT)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -49,6 +50,15 @@ type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 type BoolStructDTR = BST.BoolStructDT (Maybe (AA.Label Text.Text)) RelationalPredicate
+
+class MyBSR a where
+  mkBSRLeaf :: RelationalPredicate -> a
+
+instance MyBSR BoolStructR where
+  mkBSRLeaf = AA.mkLeaf
+
+instance MyBSR BoolStructDTR where
+  mkBSRLeaf = mkLeafDT
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
 
@@ -383,18 +393,22 @@ hasClauses             __ = False
 
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
-                                | HC2 hhead _hbody <- clauses ]
+                                | HC hhead _hbody <- clauses ]
 getDecisionHeads _ = []
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
             deriving (Eq, Ord, Show, Generic, ToJSON)
 
-data HornClause2 = HC2
+data HornClause a = HC
   { hHead :: RelationalPredicate
-  , hBody :: Maybe BoolStructR
+  , hBody :: Maybe a
   }
   deriving (Eq, Ord, Show, Generic, ToJSON)
+
+type HornClause2 = HornClause BoolStructR
+
+type HornClauseDT = HornClause BoolStructDTR
 
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Ord, Show, Generic, ToJSON)

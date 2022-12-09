@@ -152,7 +152,7 @@ quaero xs = xs
 
 toVueRules :: [Rule] -> BoolStructR
 -- [TODO] is there something in RelationalPredicates or elsewhere that knows how to extract the Item from an HC2. there is a lot going on so we need to sort out the semantics first.
-toVueRules [Hornlike {clauses=[HC2 {hBody=Just t}]}] = t
+toVueRules [Hornlike {clauses=[HC {hBody=Just t}]}] = t
 toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
 
 -- define custom types here for things we care about in purescript
@@ -173,7 +173,7 @@ rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
 
 ruleToRuleJSON :: Rule -> RuleJSON
-ruleToRuleJSON Hornlike {clauses=[HC2 {hHead=RPMT mt,hBody=Just itemRP}]}
+ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]}
   = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
 ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
   =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP

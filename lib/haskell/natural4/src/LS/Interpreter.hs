@@ -483,8 +483,8 @@ expandClauses' l4i depth hcs =
                  , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
                        newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
-                                 HC2 _oldh Nothing -> HC2 newhead Nothing
-                                 HC2  oldh _       -> HC2 oldh    newbody
+                                 HC _oldh Nothing -> HC newhead Nothing
+                                 HC  oldh _       -> HC oldh    newbody
                  ]
   in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
      toreturn
@@ -498,7 +498,7 @@ unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
---        [ HC2
+--        [ HC
 --            { hHead = RPMT [ "c" ]
 --            , hBody = Just
 --                ( Any Nothing
@@ -560,16 +560,16 @@ expandMT l4i depth mt0 =
 -- Despite the name, this is not directly related to expandClauses.
 -- It happens deeper in, under `expandMT`.
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
-expandClause _l4i _depth (HC2   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
-expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
-expandClause  l4i  depth (HC2   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
-expandClause  l4i  depth (HC2   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
-expandClause _l4i _depth (HC2   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
-expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
-expandClause _l4i _depth (HC2   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
+expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
+expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
+expandClause  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
+expandClause _l4i _depth (HC   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
+expandClause _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.

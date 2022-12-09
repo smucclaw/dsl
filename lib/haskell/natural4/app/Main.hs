@@ -11,7 +11,7 @@ import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 
 import LS.XPile.CoreL4
-import LS.XPile.B
+import LS.XPile.B hiding (T)
 import LS.Interpreter
 
 import qualified LS.XPile.Uppaal as Uppaal

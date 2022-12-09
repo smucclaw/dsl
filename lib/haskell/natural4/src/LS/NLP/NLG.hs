@@ -771,6 +771,7 @@ treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
   [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
   [TG {gfNP = Just np}, TG {gfVP = Just vp}] -> gf $ predVPS np vp
+  -- [TG {gfS = Just (GUseCl t p (GPredVP np vp))}, TG {gfNP = Just np2}] -> gf $ predVPS np2 (GMkVPS t p (GComplVP vp np))
   _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
            $ treeContents conj contents
 
@@ -1205,6 +1206,8 @@ npFromUDS x = case x of
   Groot_nmod_nmod (GrootN_ service_NP) (Gnmod_ from_Prep provider_NP) (Gnmod_ to_Prep payer_NP) -> Just $ GAdvNP (GAdvNP service_NP (GPrepNP from_Prep provider_NP)) (GPrepNP to_Prep payer_NP)
   -- great harm that she suffered
   Groot_acl (GrootN_ great_harm_NP) (GaclUDS_ (Groot_nsubj (GrootV_ _temp _pol suffer_VP) (Gnsubj_ she_NP))) -> Just $ GRelNP great_harm_NP (GRS_that_NP_VP she_NP suffer_VP)
+  -- Groot_obj (GrootN_ five_NP) (GRelclNP np aclrelcl) -> Just $ GRelclNP (GApposNP five_NP np) aclrelcl
+  ----np  gnp
 
 
   _ -> case getRoot x of -- TODO: fill in other cases
@@ -1340,6 +1343,11 @@ root2vps root = case root of
   -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
   _            -> Nothing
 
+udsFromacl :: Gacl -> Maybe GUDS
+udsFromacl x = case x of
+  GaclUDSgerund_ u -> Just u
+  GaclUDSpastpart_ u -> Just u
+  _ -> error $ "udsFromacl: can't handle " ++ showExpr (gf x)
 
 scFromUDS :: GUDS -> Maybe GSC
 scFromUDS x = case sFromUDS x of
@@ -1354,6 +1362,10 @@ sFromUDS x = case getNsubj x of
   --[] -> trace ("\n\n **** sFromUDS: no nsubj in " ++ showExpr (gf x)) Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   [] -> Nothing
   _ -> case x of
+    Groot_acl root acl -> do
+      uds <- udsFromacl acl
+      np <- npFromUDS uds
+      predVPS np <$> (root2vps root)
     Groot_expl_cop_csubj root _expl _cop csubj -> do
       GMkVPS t p vp <- (root2vps root)
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
@@ -1384,7 +1396,9 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_nmod root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obj root (Gnsubj_ np) obj -> predVPS np <$> verbFromUDSVerbose (Groot_obj root obj)
     Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
@@ -1393,6 +1407,7 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_obj root (Gobj_ obj) -> predVPS obj <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
     Groot_xcomp root xcomp -> case xcomp of
       GxcompN_ np -> predVPS np <$> root2vps root

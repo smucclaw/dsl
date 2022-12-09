@@ -1,9 +1,7 @@
 #+TITLE: The home of the L4 DSL
 #+STARTUP: content
 
-This documentation is intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
-
-Documentation for legal engineers writing legal code in L4 may be found in [[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]]. If you're not already familiar with L4, you may want to work through that documentation first.
+Hi! If you /aren't/ a L4 internal developer, or if you aren't already familiar with L4, you might want to look at [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]] first, if you haven't already. This documentation is primarily intended for L4 internal developers -- programmers working on the compiler toolchain and IDE for L4 itself.
 
 * L4 Language Family
 
@@ -35,7 +33,7 @@ There is a parser and transpiler to a variety of downstream targets.
 
 ** Spreadsheet Interface
 
-[[https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit#gid=911811172][Legal Spreadsheets]] contains examples of L4 "source code".
+[[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]] contains examples of L4 "source code".
 
 You will be installing a toolchain that makes sense of that code.
 
@@ -52,7 +50,7 @@ Along the way it discusses the internal structure of our compiler codebase.
 1. Clone this repository.
 2. (Optional) Consider the plugin requirements of your favourite text editor -- [[https://github.com/emacs-lsp/lsp-haskell][emacs]] / [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] / <a more recent guide>. This step is listed ahead of the next step because different editors will have different opinions about how to install Haskell.
 3. Nix users will have their own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand.
-4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][Ghcup]].
+4. Install the [[https://docs.haskellstack.org/en/stable/README/][Haskell Tool Stack]]; alternatively, install [[https://www.haskell.org/ghcup/install/][GHCup]]. (If you are curious about the pros and cons of Stack vs. GHCup, see [[https://github.com/haskell-infra/www.haskell.org/issues/191][this issue]].)
 
 *** Installation
 
@@ -68,10 +66,10 @@ This will take some time as it needs to compile a particular version of ~ghc~, p
 **** Confirming the install
 
 A number of sample CSV inputs can be found in the ~test/~ directory.
+(The following should be run from the ~lib/haskell/natural4~ subdirectory.)
 
 #+begin_src
-  natural4$ stack run -- --only native test/indented-1.csv
-  natural4$ stack run -- --only native test/pdpadbno-1.csv
+  natural4$ stack run -- --workdir=workdir --toasp --tomd test/mustsing-latest.csv
 #+end_src
 
 This should compile the ~l4~ parser, and produce a bunch of output.
@@ -92,88 +90,155 @@ The typical user drafts an L4 program in a spreadsheet.
 
 That program can be downloaded as a CSV, which this toolchain consumes.
 
-Example: Go to the the PDPADBNO tab, and click ~Download / as CSV~.
+Example: Go to the "Case Study: PDPA DBNO" tab in [[https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit?usp=sharing][LegalSS]], and click ~File/ Download / as CSV~.
 
 The downloaded filename will probably be quite long. For the sake of concision, we will call it ~pdpadbno.csv~
 
-Is there some other way to obtain the same CSV using only the command line? Yes:
+Is there some other way to obtain the same CSV using only the command line? Yes. If you just want to use the stock CSV, you can do
 
 #+begin_example
   wget -O pdpadbno.csv 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbknuGFkvvk_Pv9e97iDW9BInxd-Cj27-xC8d_SwveP1PxERV7ZmiAIU7PWXas2CEMH2bl8PyyD6X3/pub?gid=0&single=true&output=csv'
 #+end_example
 
-For this to work, you need to first click on ~File / Share / Publish to web~. Then choose the appropriate tab and select ~CSV~ as the output format. That turns on URL-based access which ~wget~ can download.
+Otherwise, if you want to make your own changes and get the resulting spreadsheet in CSV form, you should make a copy (File > Make a Copy in Google Sheets), if you haven't already, and make your changes in that copy. Then, to get the URL for ~wget~, click on ~File / Share / Publish to web~, choose the appropriate tab under 'Link' and select ~CSV~ as the output format under 'Embed', and finally click on Publish. You will then be presented with a URL; this URL is what should replace that in the ~wget~ eaxmple block above.
 
 *** Usage
 
-The job of a compiler / transpiler / parser / interpreter, whatever you want to call it, is to transform user code to some useful target representation.
+The job of a compiler / transpiler / parser, whatever you want to call it, is to transform user code to some useful target representation.
 
-This command outputs all the target representations to disk:
+We'll first want to output all the target representations to disk. To do that, navigate to ~dsl/lib/haskell/natural4~ and run
 
 #+begin_example
-$ stack run -- --workdir=workdir --uuiddir=1234abcd test/pdpadbno-[1578].csv
+$ stack run -- --workdir=workdir --toasp --tomd pdpadbno.csv
 #+end_example
-
-Note that the ~--uuiddir~ option is for a shared-secret session key under some web UI.
-
-You can make it whatever you want, so it would be a good idea to put the spreadsheet ID and sheet ID in there as well: ~uuiddir="secret/spreadsheetId/sheetId"~
 
 The result will be something like:
 
 #+begin_example
-  $ tree workdir
-  workdir
-  └── 1234abcd
-      ├── aasvg
-      │   ├── 2022-07-01T03:37:39.121Z
-      │   │   ├── Assessment.svg
-      │   │   ├── Data_Intermediary.svg
-      │   │   ├── Notify_Individuals.svg
-      │   │   ├── Notify_PDPC.svg
-      │   │   ├── Organisation.svg
-      │   │   ├── You.svg
-      │   │   ├── a_Data_Breach.svg
-      │   │   ├── a_data_breach-occurr.svg
-      │   │   ├── all_of-the_following.svg
-      │   │   ├── any_of_the_prescribe.svg
-      │   │   ├── in_other_prescribed_.svg
-      │   │   ├── index.html
-      │   │   ├── is-not-a_Public_Agen.svg
-      │   │   ├── it_is-unlikely_that_.svg
-      │   │   ├── it_is_or_is_likely_t.svg
-      │   │   ├── it_results_in_or_is_.svg
-      │   │   ├── the_data_breach_is_i.svg
-      │   │   └── the_data_breach_occu.svg
-      │   └── LATEST -> 2022-07-01T03:37:39.121Z
-      ├── corel4
-      │   ├── 2022-07-01T03:37:39.121Z.l4
-      │   └── LATEST.l4 -> 2022-07-01T03:37:39.121Z.l4
-      ├── grounds
-      │   ├── 2022-07-01T03:37:39.121Z.txt
-      │   └── LATEST.txt -> 2022-07-01T03:37:39.121Z.txt
-      ├── json
-      │   ├── 2022-07-01T03:37:39.121Z.json
-      │   └── LATEST.json -> 2022-07-01T03:37:39.121Z.json
-      ├── native
-      │   ├── 2022-07-01T03:37:39.121Z.hs
-      │   └── LATEST.hs -> 2022-07-01T03:37:39.121Z.hs
-      ├── petri
-      │   ├── 2022-07-01T03:37:39.121Z.dot
-      │   └── LATEST.dot -> 2022-07-01T03:37:39.121Z.dot
-      ├── prolog
-      │   ├── 2022-07-01T03:37:39.121Z.pl
-      │   └── LATEST.pl -> 2022-07-01T03:37:39.121Z.pl
-      ├── purs
-      │   ├── 2022-07-01T03:37:39.121Z.purs
-      │   └── LATEST.purs -> 2022-07-01T03:37:39.121Z.purs
-      └── ts
-          ├── 2022-07-01T03:37:39.121Z.ts
-          └── LATEST.ts -> 2022-07-01T03:37:39.121Z.ts
+$ tree workdir     
+workdir
+└── no-uuid
+    ├── aasvg
+    │   ├── 2022-12-01T08:56:17.579Z
+    │   │   ├── Assessment-anyall.hs
+    │   │   ├── Assessment-anyall.json
+    │   │   ├── Assessment-full.svg
+    │   │   ├── Assessment-qjson.json
+    │   │   ├── Assessment-qtree.hs
+    │   │   ├── Assessment-tiny.svg
+    │   │   ├── Notify_Individuals-N-anyall.hs
+    │   │   ├── Notify_Individuals-N-anyall.json
+    │   │   ├── Notify_Individuals-N-full.svg
+    │   │   ├── Notify_Individuals-N-qjson.json
+    │   │   ├── Notify_Individuals-N-qtree.hs
+    │   │   ├── Notify_Individuals-N-tiny.svg
+    │   │   └── index.html
+    │   ├── 2022-12-07T10:01:07.764Z
+    │   │   ├── Assessment-anyall.hs
+    │   │   ├── Assessment-anyall.json
+    │   │   ├── Assessment-full.svg
+    │   │   ├── Assessment-qjson.json
+    │   │   ├── Assessment-qtree.hs
+    │   │   ├── Assessment-tiny.svg
+    │   │   ├── Notify_Individuals-N-anyall.hs
+    │   │   ├── Notify_Individuals-N-anyall.json
+    │   │   ├── Notify_Individuals-N-full.svg
+    │   │   ├── Notify_Individuals-N-qjson.json
+    │   │   ├── Notify_Individuals-N-qtree.hs
+    │   │   ├── Notify_Individuals-N-tiny.svg
+    │   │   └── index.html
+    │   └── LATEST -> 2022-12-07T10:01:07.764Z
+    ├── asp
+    │   ├── 2022-12-01T08:55:44.907Z.lp
+    │   └── 2022-12-07T09:35:17.752Z.lp
+    ├── babyl4
+    │   ├── 2022-12-01T08:55:44.907Z.l4
+    │   ├── 2022-12-01T08:56:17.579Z.l4
+    │   ├── 2022-12-07T09:35:17.752Z.l4
+    │   ├── 2022-12-07T09:35:58.025Z.l4
+    │   ├── 2022-12-07T09:40:34.028Z.l4
+    │   ├── 2022-12-07T09:45:45.443Z.l4
+    │   ├── 2022-12-07T10:01:07.764Z.l4
+    │   └── LATEST.l4 -> 2022-12-07T10:01:07.764Z.l4
+    ├── corel4
+    │   ├── 2022-12-01T08:55:44.907Z.l4
+    │   ├── 2022-12-01T08:56:17.579Z.l4
+    │   ├── 2022-12-07T09:35:17.752Z.l4
+    │   ├── 2022-12-07T09:35:58.025Z.l4
+    │   ├── 2022-12-07T09:40:34.028Z.l4
+    │   ├── 2022-12-07T09:45:45.443Z.l4
+    │   ├── 2022-12-07T10:01:07.764Z.l4
+    │   └── LATEST.l4 -> 2022-12-07T10:01:07.764Z.l4
+    ├── grounds
+    │   ├── 2022-12-01T08:56:17.579Z.txt
+    │   ├── 2022-12-07T09:35:58.025Z.txt
+    │   ├── 2022-12-07T09:40:34.028Z.txt
+    │   ├── 2022-12-07T09:45:45.443Z.txt
+    │   ├── 2022-12-07T10:01:07.764Z.txt
+    │   └── LATEST.txt -> 2022-12-07T10:01:07.764Z.txt
+    ├── json
+    │   ├── 2022-12-01T08:56:17.579Z.json
+    │   ├── 2022-12-07T09:35:58.025Z.json
+    │   ├── 2022-12-07T09:40:34.028Z.json
+    │   ├── 2022-12-07T09:45:45.443Z.json
+    │   ├── 2022-12-07T10:01:07.764Z.json
+    │   └── LATEST.json -> 2022-12-07T10:01:07.764Z.json
+    ├── native
+    │   ├── 2022-12-01T08:55:44.907Z.hs
+    │   ├── 2022-12-01T08:56:17.579Z.hs
+    │   ├── 2022-12-07T09:35:17.752Z.hs
+    │   ├── 2022-12-07T09:35:58.025Z.hs
+    │   ├── 2022-12-07T09:40:34.028Z.hs
+    │   ├── 2022-12-07T09:45:45.443Z.hs
+    │   ├── 2022-12-07T10:01:07.764Z.hs
+    │   └── LATEST.hs -> 2022-12-07T10:01:07.764Z.hs
+    ├── natlang
+    │   ├── 2022-12-01T08:56:17.579Z.txt
+    │   ├── 2022-12-07T09:35:58.025Z.txt
+    │   ├── 2022-12-07T09:40:34.028Z.txt
+    │   ├── 2022-12-07T09:45:45.443Z.txt
+    │   ├── 2022-12-07T10:01:07.764Z.txt
+    │   └── LATEST.txt -> 2022-12-07T10:01:07.764Z.txt
+    ├── org
+    │   ├── 2022-12-01T08:55:44.907Z.org
+    │   ├── 2022-12-01T08:56:17.579Z.org
+    │   ├── 2022-12-07T09:35:17.752Z.org
+    │   ├── 2022-12-07T09:35:58.025Z.org
+    │   ├── 2022-12-07T09:40:34.028Z.org
+    │   ├── 2022-12-07T09:45:45.443Z.org
+    │   ├── 2022-12-07T10:01:07.764Z.org
+    │   └── LATEST.org -> 2022-12-07T10:01:07.764Z.org
+    ├── petri
+    │   ├── 2022-12-01T08:56:17.579Z.dot
+    │   ├── 2022-12-07T09:35:58.025Z.dot
+    │   ├── 2022-12-07T09:40:34.028Z.dot
+    │   ├── 2022-12-07T09:45:45.443Z.dot
+    │   ├── 2022-12-07T10:01:07.764Z.dot
+    │   └── LATEST.dot -> 2022-12-07T10:01:07.764Z.dot
+    ├── prolog
+    │   ├── 2022-12-01T08:56:17.579Z.pl
+    │   ├── 2022-12-07T09:35:58.025Z.pl
+    │   ├── 2022-12-07T09:40:34.028Z.pl
+    │   ├── 2022-12-07T09:45:45.443Z.pl
+    │   ├── 2022-12-07T10:01:07.764Z.pl
+    │   └── LATEST.pl -> 2022-12-07T10:01:07.764Z.pl
+    ├── purs
+    │   ├── 2022-12-01T08:56:17.579Z.purs
+    │   ├── 2022-12-07T09:35:58.025Z.purs
+    │   ├── 2022-12-07T09:40:34.028Z.purs
+    │   ├── 2022-12-07T09:45:45.443Z.purs
+    │   ├── 2022-12-07T10:01:07.764Z.purs
+    │   └── LATEST.purs -> 2022-12-07T10:01:07.764Z.purs
+    └── ts
+        ├── 2022-12-01T08:56:17.579Z.ts
+        ├── 2022-12-07T09:35:58.025Z.ts
+        ├── 2022-12-07T09:40:34.028Z.ts
+        ├── 2022-12-07T09:45:45.443Z.ts
+        ├── 2022-12-07T10:01:07.764Z.ts
+        └── LATEST.ts -> 2022-12-07T10:01:07.764Z.ts
 #+end_example
 
 These outputs can be further transformed and put in front of the user's eyeballs.
-
-The "tocheckl" output (Checklists) is off by default -- to turn it on, add the option ~--tocheckl=True~ to the command line.
 
 Other outputs are on by default. To turn them off, add the relevant option to the command line -- for example, ~--togrounds=False~.
 
@@ -370,7 +435,7 @@ Making sense of the parser debug output requires some familiarity with programmi
 This little script (on Mac at least) watches your Downloads folder so every time you Save As CSV it moves the new download over to the ~test/~ directory. Run from home directory. You may need to edit to taste.
 
 #+begin_example
-  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(Legal Spreadsheets - (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
+  fswatch -x ~/Downloads/ | perl -nle 'if (my ($fn, $target) = /(LegalSS (.*).csv) Created Renamed/) { for ($target) { $_ = lc $_; s/[^a-z]//g ; $_ .= "-latest.csv" }; rename (qq(Downloads/$fn), qq(src/smucclaw/dsl/lib/haskell/natural4/test/$target)) && print "$fn -> $target} BEGIN { $|++ }'
 #+end_example
 ** Interpretation Requirements
 
@@ -456,11 +521,11 @@ Let's have a convention where each transpiler under ~XPile~ can expect two argum
 
 ** Language Reference
 
-See the Legal Spreadsheets L4 Manual.
+See the LegalSS L4 Manual.
 
 ** Web Development Environment
 
-The "Legal Spreadsheets" document in Google Sheets serves as the front end to a development environment.
+The "LegalSS" document in Google Sheets serves as the front end to a development environment.
 
 *** Configuring the IDE back-end
 
@@ -488,7 +553,7 @@ TODO:
 
 *** Downstream Components
 
-Thanks to the ~l4api~ listener, every Legal Spreadsheets document has a corresponding web link.
+Thanks to the ~l4api~ listener, every LegalSS document has a corresponding web link.
 
 At that web page, you will be able to view:
 

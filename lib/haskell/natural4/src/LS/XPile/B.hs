@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot, OverloadedRecordUpdate #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-| transpiler to ProB \/ EventB \/ Rodin
@@ -120,7 +123,11 @@ data LTLunary  = Lnot       -- ^ unary negation
                | M -- ^ mighty release
                | X -- ^ next, aka O and N   -- this is one of the big ones
                | U -- ^ until               -- this is the other big one
-               | H -- ^ past tense
+               | H -- ^ dual to G
+               | O -- ^ dual to F
+               | Y -- ^ dual to X
+               | S -- ^ dual to U
+               | T -- ^ dual to R
            deriving (Eq, Read, Show)
 
 data LTLbinary = Land
@@ -142,7 +149,7 @@ sample1 = (L2 Land
             (L1 G (L2 Limplies
                    (L1 Lbracket (Le"prohibit_notify_indiv_happened(_)"))
                    (L1 H (L1 Lnot (L1 Lbrace (Le "notify_indiv_happened(_)")))))))
-                       
+
 instance Pretty a => Pretty (LTL a) where
   pretty (Le x)                    = pretty x
   pretty (Lb b)                    = pretty b -- True / False
@@ -212,7 +219,7 @@ data BStatement      a = BParallel [BAss a]
 
 instance Pretty (BStatement a) where
   pretty (BParallel   basses) = vsep $ punctuate "||" (pretty <$> basses)
-  pretty (BSequential basses) = vsep $ punctuate "&&" (pretty <$> basses)
+  pretty (BSequential basses) = vsep $ punctuate ";" (pretty <$> basses)
 
 
 data BOp             a = BOpPre { bopLHS  :: BPredLHS a
@@ -224,8 +231,11 @@ data BIfThen         a = BIfThen { bopIf   :: BIfCond a
                                  , bopThen :: [BThen a]
                                  }
 
+data BThen a = BThen
+data BIfCond a = BIfCond
+
 instance Pretty (BOp a) where
-  pretty (BopPre{..}) =
+  pretty (BOpPre{..}) =
     pretty bopLHS <+> equals <+> nest 2
     (vsep
       [ "PRE"  <//> nest 2 (vsep (pretty <$> bopPre))
@@ -238,6 +248,9 @@ data BAss            a = BAssAlgebra (BAlgebra a)
                        | BAssEvent a -- ^ something = VAR ... IN ... <- ...
 		       deriving (Eq, Read, Show, Functor)
 
+instance Pretty (BAss a) where
+  pretty = undefined
+
 data BEvent          a = BEvent a a (BPredLHS a) -- ^ foo(bar) = VAR baz IN quux <- poof
      		       deriving (Eq, Read, Show, Functor)                         
 
@@ -248,6 +261,10 @@ data BProperty       a = BPredicate (BPredLHS a) BPredRel (BPredRHS a)         d
 
 data BPredLHS        a = BPredLHS a [a] -- ^ BPredLHS "parent" ["alice", "bob"]    ==>   parent(alice, bob)
      		       deriving (Eq, Read, Show, Functor)                         
+
+instance Pretty (BPredLHS a) where
+  pretty = undefined
+
 data BPredRel          = BRelEq
      		       deriving (Eq, Read, Show)                         
 

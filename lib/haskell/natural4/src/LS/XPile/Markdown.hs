@@ -14,5 +14,6 @@ import qualified Data.Text as Text
 
 markdown :: NLGEnv -> [Rule] -> IO String
 markdown env rl = do
-  nlg <- mapM (nlg env) rl
-  return $ concatMap Text.unpack nlg
+  nl <- mapM (nlg env) rl
+  print $ concatMap Text.unpack nl
+  return $ concatMap Text.unpack nl

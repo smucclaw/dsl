@@ -315,11 +315,15 @@ instance Pretty a => Pretty (BSet a) where
 加 :: Int -> Int -> Int
 a `加` b = a + b
 
+示 :: (Show a) => a -> String
+示 = show
+
 -- | extract the tree-structured rules from Interpreter
 
 asB :: Interpreted -> String
 asB l4i =
   show (pretty sample1)
+  <> "\n" <> 示 (11 `加` 31)
   <> "\n" <>
 
   -- [TOOD] the hard part now is the conversion from the Interpreted AST to the above embedded language

@@ -242,28 +242,39 @@ instance Pretty (BOp a) where
       , "THEN" <//> nest 2 (vvsep (punctuate semi (pretty <$> bopThen)))
       , "END" ])
 
+
+
 data BAss            a = BAssAlgebra (BAlgebra a)
                        | BAssPlain   a
-                       | BAassPred   (BPredLHS a)
+                       | BAssPred    (BPredLHS a)
                        | BAssEvent a -- ^ something = VAR ... IN ... <- ...
 		       deriving (Eq, Read, Show, Functor)
 
 instance Pretty (BAss a) where
-  pretty = undefined
+  pretty (BAssAlgebra ba) = "[TODO]"
+  pretty (BAssPlain   ba) = "[TODO]"
+  pretty (BAssPred    ba) = "[TODO]"
+  pretty (BAssEvent   ba) = "[TODO]"
 
 data BEvent          a = BEvent a a (BPredLHS a) -- ^ foo(bar) = VAR baz IN quux <- poof
      		       deriving (Eq, Read, Show, Functor)                         
+
+instance Pretty (BEvent a) where
+  pretty (BEvent x y z) = "[TODO]"
 
 data BEnd            a
      		       deriving (Eq, Read, Show, Functor)                         
 
 data BProperty       a = BPredicate (BPredLHS a) BPredRel (BPredRHS a)         deriving (Eq, Read, Show, Functor)                         
 
+instance Pretty (BProperty a) where
+  pretty (BPredicate x y z) = "[TODO]"
+
 data BPredLHS        a = BPredLHS a [a] -- ^ BPredLHS "parent" ["alice", "bob"]    ==>   parent(alice, bob)
      		       deriving (Eq, Read, Show, Functor)                         
 
 instance Pretty (BPredLHS a) where
-  pretty = undefined
+  pretty (BPredLHS x y) = "[TODO]"
 
 data BPredRel          = BRelEq
      		       deriving (Eq, Read, Show)                         
@@ -271,6 +282,12 @@ data BPredRel          = BRelEq
 data BPredRHS        a = BCurlyList [a] -- ^ BPredRHS ["Foo", "Bar", "Baz"]        ==>   { Foo, Bar, Baz }
                        | BCurlyrec  [BRec a]
      		       deriving (Eq, Read, Show, Functor)                         
+
+data BPredCurly      a = BPredCurly a
+     		       deriving (Eq, Read, Show, Functor)                         
+
+instance Pretty (BPredCurly a) where
+  pretty (BPredCurly b) = "[TODO]"
 
 data BRec            a = BRec a (BRecR a)                 		       deriving (Eq, Read, Show, Functor)                         
 

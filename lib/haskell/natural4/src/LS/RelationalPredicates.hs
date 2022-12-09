@@ -221,6 +221,8 @@ import qualified Data.Text as T
 import LS.Types
 import LS.Tokens
 import LS.Parser
+import AnyAll.BoolStructTree (BoolStructDT, Formula (FAtom, FAll, FAny), mkAnyDT, mkAllDT)
+import Data.Tree
 
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = pRelPred
@@ -262,6 +264,15 @@ partitionExistentials c = ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (ha
       aaFilter f (AA.All lbl xs) = AA.mkAll lbl (filter f (aaFilter f <$> xs))
       aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
 
+partitionExistentialsDT :: HornClauseDT -> (BoolStructDTR, BoolStructDTR)
+partitionExistentialsDT c = ( aaFilter (\case { Node (FAtom (RPParamText x)) _ ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
+                            , aaFilter (\case { Node (FAtom (RPParamText x)) _ -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
+    where
+      aaFilter :: (BoolStructDT lbl a -> Bool) -> BoolStructDT lbl a -> BoolStructDT lbl a
+      aaFilter f (Node (FAny lbl) xs) = mkAnyDT lbl (filter f (aaFilter f <$> xs))
+      aaFilter f (Node (FAll lbl) xs) = mkAllDT lbl (filter f (aaFilter f <$> xs))
+      aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
+
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText
 bsr2pt bsr =
@@ -272,9 +283,9 @@ bsr2pt bsr =
 -- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
-hc2preds :: HornClause2 -> BoolStructR
-hc2preds (HC2 _headRP Nothing) = AA.mkLeaf (RPMT ["TRUE"])
-hc2preds (HC2 _headRP (Just bsr)) = bsr
+hc2preds :: (MyBSR a) => HornClause a -> a
+hc2preds (HC _headRP Nothing) = mkBSRLeaf (RPMT ["TRUE"])
+hc2preds (HC _headRP (Just bsr)) = bsr
 
 aaLeaves :: BoolStructR -> [MultiTerm]
 aaLeaves = aaLeavesFilter (const True)
@@ -307,7 +318,7 @@ mergePBRS xs         = Just (fst . head $ xs, AA.mkAll Nothing (snd <$> xs))
 
 c2hornlike :: Rule -> Rule
 c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
-  let clauses = pure $ HC2 (RPBoolStructR name RPis letbind) cond
+  let clauses = pure $ HC (RPBoolStructR name RPis letbind) cond
       upon = Nothing
   in Hornlike { name, super = Nothing, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
 c2hornlike r = r
@@ -481,7 +492,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
       relwhens <- (if keyword == Nothing then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
       return (keyword
              , inferRuleName (fst . head $ relwhens)
-             , [HC2 relPred whenpart
+             , [HC relPred whenpart
                | (relPred, whenpart) <- relwhens ])
 
 
@@ -846,7 +857,7 @@ mustNestHorn toMT toRN connector pbsr basesl =
                             , keyword = meansTok
                             , given = Nothing
                             , upon = Nothing
-                            , clauses = [ HC2 (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                            , clauses = [ HC (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
                             , rlabel = Nothing
                             , lsource = Nothing
                             , srcref = Just srcref
@@ -890,10 +901,10 @@ getBSR :: Rule -> Maybe BoolStructR
 getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         catMaybes $
                         [ hbody
-                        | HC2 _hhead hbody <- clauses
+                        | HC _hhead hbody <- clauses
                         ] ++
                         [ Just bsr
-                        | HC2 (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
+                        | HC (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
                         ]
 getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         maybeToList (prependSubject who) ++

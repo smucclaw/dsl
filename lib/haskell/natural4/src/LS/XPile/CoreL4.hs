@@ -228,11 +228,11 @@ relationalPredicateToExpr rp = case rp of
   RPnary rr rp' -> undefined
 
 precondOfHornClauses :: [HornClause2] -> Expr ()
-precondOfHornClauses [HC2 _hh (Just hb)] = boolStructRToExpr hb
+precondOfHornClauses [HC _hh (Just hb)] = boolStructRToExpr hb
 precondOfHornClauses _ = trueVNoType
 
 postcondOfHornClauses :: [HornClause2] -> Expr ()
-postcondOfHornClauses [HC2 hh _hb] = relationalPredicateToExpr hh
+postcondOfHornClauses [HC hh _hb] = relationalPredicateToExpr hh
 postcondOfHornClauses _ = trueVNoType
 
 {- TODO: remove after testing
@@ -335,7 +335,7 @@ directToCore r@Hornlike{keyword}
             -- [TODO] when testing for an optional boolean, add a hasAttrname test inside bodyNonEx
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
-      , (HC2 _headRP hBod) <- [c]
+      , (HC _headRP hBod) <- [c]
       , let needClauseNumbering = length (clauses r) > 1
       , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
       ]
@@ -364,7 +364,7 @@ hc2decls r
   --    <> "### xform 1 hBod:"   <+> viaShow (maybe [] DF.toList hBod) <> Prettyprinter.line
   --    <> "### xform 2:"        <+> viaShow (inPredicateForm <$> headRP : maybe [] DF.toList hBod) <> Prettyprinter.line
   --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
-    | c@(HC2 headRP hBod) <- clauses r
+    | c@(HC headRP hBod) <- clauses r
     , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
     , T.take 3 pf /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
@@ -719,7 +719,7 @@ r1 = Hornlike
     , given = Nothing
     , upon = Nothing
     , clauses =
-        [ HC2
+        [ HC
             { hHead = RPConstraint [ "savings account" ] RPis [ "inadequate" ]
             , hBody = Just
                 ( Leaf
@@ -756,7 +756,7 @@ r2 = Hornlike
     , given = Nothing
     , upon = Nothing
     , clauses =
-        [ HC2
+        [ HC
             { hHead = RPMT [ "Foo" ]
             , hBody = Just
                 ( All Nothing
@@ -800,7 +800,7 @@ testrules = [ Hornlike
         )
     , upon = Nothing
     , clauses =
-        [ HC2
+        [ HC
             { hHead = RPMT
                 [ "exceedsPrescrNumberOfIndividuals"
                 , "db"
@@ -857,7 +857,7 @@ testrules = [ Hornlike
     , given = Nothing
     , upon = Nothing
     , clauses =
-        [ HC2
+        [ HC
             { hHead = RPMT [ "Foo" ]
             , hBody = Just
                 ( All Nothing
@@ -890,7 +890,7 @@ testrules = [ Hornlike
     , given = Nothing
     , upon = Nothing
     , clauses =
-        [ HC2
+        [ HC
             { hHead = RPMT [ "Foo" ]
             , hBody = Just
                 ( All Nothing

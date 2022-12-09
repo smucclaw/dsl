@@ -320,7 +320,7 @@ parserTests nlgEnv runConfig_ = do
 
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
-          `shouldParse` [Hornlike {name = ["something"], super = Nothing,  keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["something"] RPis (mkLeaf (RPMT ["something"])), hBody = Nothing}], rlabel = Just ("\167",1,"Hello"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
+          `shouldParse` [Hornlike {name = ["something"], super = Nothing,  keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["something"] RPis (mkLeaf (RPMT ["something"])), hBody = Nothing}], rlabel = Just ("\167",1,"Hello"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
@@ -369,7 +369,7 @@ parserTests nlgEnv runConfig_ = do
             , keyword = Means
             , given = Nothing
             , upon = Nothing
-            , clauses = [ HC2
+            , clauses = [ HC
                           { hHead = RPBoolStructR ["degustates"]
                                     RPis (Any Nothing [mkLeaf (RPMT ["eats"])
                                                       ,mkLeaf (RPMT ["drinks"])])
@@ -392,7 +392,7 @@ parserTests nlgEnv runConfig_ = do
               }
             , defaultHorn { name = ["degustates"]
                           , keyword = Means
-                          , clauses = [HC2 { hHead = RPMT ["degustates"]
+                          , clauses = [HC { hHead = RPMT ["degustates"]
                                            , hBody = Just (Any Nothing [Leaf (RPMT ["eats"])
                                                                        ,Leaf (RPMT ["imbibes"])])}]
                           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec"
@@ -405,9 +405,9 @@ parserTests nlgEnv runConfig_ = do
       -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
       -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
 
-      filetest "indented-2" "inline constitutive rule" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "indented-2" "inline constitutive rule" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
 
-      filetest "indented-3" "defined names in natural positions" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [mkLeaf (RPMT ["drinks"]),Any Nothing [mkLeaf (RPMT ["swallows"]),mkLeaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "indented-3" "defined names in natural positions" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [mkLeaf (RPMT ["drinks"]),Any Nothing [mkLeaf (RPMT ["swallows"]),mkLeaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")
@@ -542,7 +542,7 @@ parserTests nlgEnv runConfig_ = do
             { name = ["Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT ["Bob is estranged"])
+              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT ["Bob is estranged"])
                                                                                        ,mkLeaf (RPMT ["Bob is dead"])]))
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
@@ -554,7 +554,7 @@ parserTests nlgEnv runConfig_ = do
 
       let bobUncle2 = bobUncle1
             { clauses =
-              [HC2 { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT ["Bob is estranged"]))
+              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT ["Bob is estranged"]))
                                                                                   ,mkLeaf (RPMT ["Bob is dead"])])
                    , hBody = Nothing } ] }
 
@@ -568,7 +568,7 @@ parserTests nlgEnv runConfig_ = do
         (parseR pRules) [ srcrow2 defaultHorn
                           { name = ["Bob's your uncle"]
                           , keyword = Means
-                          , clauses =  [ HC2
+                          , clauses =  [ HC
                                          { hHead = RPBoolStructR [ "Bob's your uncle" ] RPis
                                            ( All Nothing
                                              [ Any Nothing
@@ -698,21 +698,21 @@ parserTests nlgEnv runConfig_ = do
     --               ] RPis [ "steady" ]
     --             ]
     --         , expect =
-    --           [ HC2
+    --           [ HC
     --             { hHead = RPConstraint [ "investment" ] RPis [ "savings" ]
     --             , hBody = Just
     --                           ( Leaf
     --                             ( RPConstraint [ "dependents" ] RPis [ "5" ] )
     --                           )
     --             }
-    --           , HC2
+    --           , HC
     --             { hHead = RPConstraint [ "investment" ] RPis [ "combination" ]
     --             , hBody = Just
     --                           ( Leaf
     --                             ( RPConstraint [ "dependents" ] RPis [ "3" ] )
     --                           )
     --             }
-    --           , HC2
+    --           , HC
     --             { hHead = RPConstraint [ "investment" ] RPis [ "stocks" ]
     --             , hBody = Just
     --                           ( Leaf
@@ -746,7 +746,7 @@ parserTests nlgEnv runConfig_ = do
               , keyword = Decide
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
               , clauses =
-                [ HC2
+                [ HC
                   { hHead = RPConstraint ["X"] RPis ["Y"]
                   , hBody = Just $ All Nothing [ mkLeaf (RPConstraint ["Z"] RPis ["Q"])
                                                , mkLeaf (RPConstraint ["P"] RPgt ["NP"]) ]
@@ -758,7 +758,7 @@ parserTests nlgEnv runConfig_ = do
       --         , keyword = Decide
       --         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
       --         , clauses =
-      --           [ HC2
+      --           [ HC
       --             { hHead = RPConstraint ["X"] RPis ["Y"]
       --             , hBody = Just $ mkLeaf (RPConstraint ["Z"] RPis ["Q"])
       --             } ]
@@ -769,7 +769,7 @@ parserTests nlgEnv runConfig_ = do
               , keyword = Decide
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
               , clauses =
-                [ HC2
+                [ HC
                   { hHead = RPConstraint ["X"] RPis ["Y"]
                   , hBody = Nothing
                   } ]
@@ -912,7 +912,7 @@ parserTests nlgEnv runConfig_ = do
           `shouldParse` ((Is,(Is,Is),Is), [])
 
     describe "MISC" $ do
-      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a Data Breach"] RPis (mkLeaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (mkLeaf (RPMT ["a data breach","occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = ["a data breach","occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [mkLeaf (RPMT ["access"]),mkLeaf (RPMT ["use"]),mkLeaf (RPMT ["disclosure"]),mkLeaf (RPMT ["copying"]),mkLeaf (RPMT ["modification"]),mkLeaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
+      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["a Data Breach"] RPis (mkLeaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (mkLeaf (RPMT ["a data breach","occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = ["a data breach","occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [mkLeaf (RPMT ["access"]),mkLeaf (RPMT ["use"]),mkLeaf (RPMT ["disclosure"]),mkLeaf (RPMT ["copying"]),mkLeaf (RPMT ["modification"]),mkLeaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
       filetest "unauthorised" "should parse correctly"
         (parseR pToplevel) unauthorisedExpected
 
@@ -1064,7 +1064,7 @@ parserTests nlgEnv runConfig_ = do
             )
           , upon = Nothing
           , clauses =
-              [ HC2
+              [ HC
                 { hHead = RPMT
                           [ "it is"
                           , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
@@ -1122,7 +1122,7 @@ parserTests nlgEnv runConfig_ = do
 
   -- this got broken by work done in pHornlike someStructure; probably the inline MEANS.
       filetest "pdpadbno-7" "notification to users"
-        (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPMT ["the Notifiable Individuals"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}], defaults = [], symtab = []},Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["the Notifiable Individuals"] RPis (All Nothing [mkLeaf (RPMT ["the set of individuals affected by the NDB"]),Not (mkLeaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (mkLeaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (mkLeaf (RPMT ["the individuals on","the LEA Exclusion List"]))]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}]
+        (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPMT ["the Notifiable Individuals"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}], defaults = [], symtab = []},Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["the Notifiable Individuals"] RPis (All Nothing [mkLeaf (RPMT ["the set of individuals affected by the NDB"]),Not (mkLeaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (mkLeaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (mkLeaf (RPMT ["the individuals on","the LEA Exclusion List"]))]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}]
 
 {- primitives -}
       filetest "primitive-pNumber" "primitive number"
@@ -1447,7 +1447,7 @@ parserTests nlgEnv runConfig_ = do
 --     , given = Nothing
 --     , upon = Nothing
 --     , clauses =
---         [ HC2
+--         [ HC
 --             { hHead = RPBoolStructR [ "Bad" ] RPis
 --                 ( Any
 --                     ( Just
@@ -1722,15 +1722,15 @@ parserTests nlgEnv runConfig_ = do
           given = Just (("p" :| [], Just (SimpleType TOne "Person")) :| []),
           upon = Nothing,
           clauses =
-            [ HC2 {hHead = RPConstraint ["p", "investment"] RPis ["savings"], hBody = Just (mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["inadequate"]))},
-              HC2 {hHead = RPConstraint ["p", "investment"] RPis ["stocks"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["adequate"]), mkLeaf (RPConstraint ["p", "income"] RPis ["adequate"])])},
-              HC2 {hHead = RPConstraint ["p", "investment"] RPis ["combination"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
-              HC2 {hHead = RPConstraint ["p", "minSavings"] RPis ["p's dependents", "*", "5000"], hBody = Nothing},
-              HC2 {hHead = RPConstraint ["p", "savingsAccount"] RPis ["adequate"], hBody = Just (mkLeaf (RPConstraint ["p", "amountSaved"] RPgt ["p", "minSavings"]))},
-              HC2 {hHead = RPConstraint ["p", "savingsAccount"] RPis ["inadequate"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
-              HC2 {hHead = RPConstraint ["p", "minIncome"] RPis ["15000 + 4000 * p's dependents"], hBody = Nothing},
-              HC2 {hHead = RPConstraint ["p", "income"] RPis ["adequate"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "earnings"] RPgt ["p", "minIncome"]), mkLeaf (RPConstraint ["p", "steadiness"] RPis ["steady"])])},
-              HC2 {hHead = RPConstraint ["p", "blah"] RPis ["42"], hBody = Nothing}
+            [ HC {hHead = RPConstraint ["p", "investment"] RPis ["savings"], hBody = Just (mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["inadequate"]))},
+              HC {hHead = RPConstraint ["p", "investment"] RPis ["stocks"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["adequate"]), mkLeaf (RPConstraint ["p", "income"] RPis ["adequate"])])},
+              HC {hHead = RPConstraint ["p", "investment"] RPis ["combination"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
+              HC {hHead = RPConstraint ["p", "minSavings"] RPis ["p's dependents", "*", "5000"], hBody = Nothing},
+              HC {hHead = RPConstraint ["p", "savingsAccount"] RPis ["adequate"], hBody = Just (mkLeaf (RPConstraint ["p", "amountSaved"] RPgt ["p", "minSavings"]))},
+              HC {hHead = RPConstraint ["p", "savingsAccount"] RPis ["inadequate"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
+              HC {hHead = RPConstraint ["p", "minIncome"] RPis ["15000 + 4000 * p's dependents"], hBody = Nothing},
+              HC {hHead = RPConstraint ["p", "income"] RPis ["adequate"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "earnings"] RPgt ["p", "minIncome"]), mkLeaf (RPConstraint ["p", "steadiness"] RPis ["steady"])])},
+              HC {hHead = RPConstraint ["p", "blah"] RPis ["42"], hBody = Nothing}
             ],
           rlabel = Nothing,
           lsource = Nothing,
@@ -1757,7 +1757,7 @@ parserTests nlgEnv runConfig_ = do
 -- declare should be able to have nestedHorn, not just pBSR
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
-        (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC2 {hHead = RPBoolStructR ["genus","species"] RPis (mkLeaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
+        (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["genus","species"] RPis (mkLeaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
   -- |&|
     describe "ampersand" $ do

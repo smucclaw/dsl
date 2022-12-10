@@ -119,15 +119,15 @@ You can browse that output using any text editor or filesystem explorer.
 If you're happy with the above output,
 
 #+begin_src bash
-  stack install
+  natural4$ stack install
 #+end_src
 
-will put a ~natural4-exe~ somewhere in your ~~/.local/bin~ directory. That directory should be in your ~$PATH~ after the above installation procedure.
+will put a ~natural4-exe~ somewhere in your ~$HOME/.local/bin~ directory. After the above installation procedure, that directory should appear in your ~$PATH~.
 
 **** Generate Haddock documentation
 
 #+begin_src shell
-natural$ stack haddock
+natural4$ stack haddock
 #+end_src
 
 will generate Haddock documentation from the Haskell source. The output takes the form of ~.html~ files; pay attention to the last dozen lines or so of the ~stack haddock~ run output to get the actual pathnames.

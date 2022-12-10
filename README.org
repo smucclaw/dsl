@@ -75,11 +75,11 @@ Along the way it discusses the internal structure of our compiler codebase.
 *** Prerequisites
 
 1. Clone this repository.
-2. (/For Nix users only:/) You will have your own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand. You Nix if your ~PATH~ contains ~~/.nix-profile/bin/~
+2. (/For Nix users only:/) You will have your own setup universe which we won't go into here, but if you use Nix you already probably have Haskell well in hand. You are using Nix if your ~PATH~ contains ~$HOME/.nix-profile/bin/~
 3. If you're not a Nix user, install [[https://www.haskell.org/ghcup/install/][GHCup]].
-4. After installing GHCup, your ~PATH~ should contain ~~/.ghcup/bin/~ 
+4. After installing GHCup, your ~PATH~ should contain ~$HOME/.ghcup/bin/~ 
 5. Use GHCup to install [[https://docs.haskellstack.org/en/stable/README/][Stack]] by running ~ghcup tui~.
-6. After installin Stack, your ~PATH~ should contain ~~/.local/bin/~ 
+6. After installin Stack, your ~PATH~ should contain ~$HOME/.local/bin/~ 
 7. /For [[https://betterprogramming.pub/haskell-vs-code-setup-in-2021-6267cc991551][VS Code]] and [[https://github.com/emacs-lsp/lsp-haskell][emacs]] users:/ use GHCup to install HLS by manually running
 
    #+begin_src shell

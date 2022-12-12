@@ -21,9 +21,23 @@ import AnyAll (hardnormal)
 import Data.Tree
 import Data.Sequence.Internal.Sorting (Queue(Q))
 import Control.Monad.Reader (runReader)
+import Test.Hspec.Golden
 import Lens.Micro.Platform
+import Data.ByteString.Lazy.Char8 (unpack)
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
+
+goldenBytestring :: String -> B.ByteString -> Golden B.ByteString
+goldenBytestring name actualOutput =
+    Golden {
+        output = actualOutput,
+        encodePretty = unpack,
+        writeToFile = B.writeFile,
+        readFromFile = B.readFile,
+        goldenFile = "test/golden/" <> name <> ".svg",
+        actualFile = Just ("test/golden/.actual-" <> name <> ".svg"),
+        failFirstTime = False
+    }
 
 svgRect :: SVGRect -> Element
 svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
@@ -406,32 +420,19 @@ spec = do
                                 & boxPorts.leftPort .~ PMiddle
                                 & boxPorts.rightPort .~ PMiddle)
 
-  describe "test combineAnd" $ do
+  describe "golden test combineAnd" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
-    myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
     let
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
-      --(bbox, svg) = q2svg' c qq
       (bbox2, svg2) = drawItemFull Full False simpleAndTree
       svgs = renderBS svg2
-      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleAndTree
-      rawChildren = drawItemFull Full False <$> childqs
-      hrawChildren = hAlign HCenter rawChildren
-    -- _ <- runIO $ print svgs
-    -- _ <- runIO $ print rawChildren
     it "expands bounding box on Left alignment" $ do
-      svgs `shouldBe` myFixture
-    it "print debug" $ do
-      let
-        svgXml = TL.toStrict . renderText . move (23,23) $ svg2
-      _ <- print bbox2
-      pendingWith "it's not a real test but just a debug code"
+      goldenBytestring "example-and-short" svgs
 
   describe "test combineOr" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
-    myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
@@ -439,13 +440,8 @@ spec = do
       --(bbox, svg) = q2svg' c qq
       (bbox2, svg2) = drawItemFull Full False simpleOrTree
       svgs = renderBS svg2
-      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleOrTree
-      rawChildren = drawItemFull Full False <$> childqs
-      hrawChildren = hAlign HCenter rawChildren
-    -- _ <- runIO $ print hrawChildren
-    -- _ <- runIO $ print questionTree
     it "expands bounding box on Left alignment" $ do
-      svgs `shouldBe` myFixture
+      goldenBytestring "example-or-short" svgs
 
   describe "drawLeaf" $ do
     let

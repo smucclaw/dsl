@@ -246,34 +246,15 @@ spec :: Spec
 spec = do
   mpd <- runIO $ lookupEnv "MP_DEBUG"
   mpn <- runIO $ lookupEnv "MP_NLG"
-  let runConfig_ = RC
-        { debug = isJust mpd
-        , callDepth = 0
-        , oldDepth = 0
-        , parseCallStack = []
-        , sourceURL = "STDIN"
-        , asJSON = False
-        , toNLG = False
-        , toBabyL4 = False
-        , toProlog = False
-        , toUppaal = False
-        , saveAKA = False
-        , wantNotRules = False
-        , toGrounds = False
-        , toVue = False
-        , toTS = False
-        , extendedGrounds = False
-        , toChecklist = False
-        , printstream = False
-        , runNLGtests = isJust mpn || False
-        }
-  -- verboseCheck prop_gerundcheck
-  -- quickCheck prop_rendertoken
-  -- nlgEnv <- putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
+  let runConfig_ = defaultRC {
+      debug = isJust mpd,
+      runNLGtests = isJust mpn || False
+    }
+
   asyncNlgEnv <- runIO $ async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
   let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
 
-  runIO $ hspec $ do
+  do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
         property prop_gerundcheck
@@ -442,67 +423,6 @@ parserTests nlgEnv runConfig_ = do
         --   parseR pRules testfile stream
         --     `shouldParse` [ defaultCon
         --                   ]
-
-  -- upgrade single OR group to bypass the top level AND group
-
-  -- defNameAlias should absorb the WHO limb
-
-    -- describe "megaparsing scenarios" $ do
-    --   filetest "scenario-1" "should handle labeled given/expect"
-    --     (parseR pRules)
-    --       [ Scenario
-    --         { scgiven =
-    --             [ RPConstraint [ "amount saved" ] RPis [ "22000" ]
-    --             , RPConstraint
-    --               [ "earnings"
-    --               , "amount"
-    --               ] RPis [ "25000" ]
-    --             , RPConstraint
-    --               [ "earnings"
-    --               , "steadiness"
-    --               ] RPis [ "steady" ]
-    --             ]
-    --         , expect =
-    --           [ HC
-    --             { hHead = RPConstraint [ "investment" ] RPis [ "savings" ]
-    --             , hBody = Just
-    --                           ( Leaf
-    --                             ( RPConstraint [ "dependents" ] RPis [ "5" ] )
-    --                           )
-    --             }
-    --           , HC
-    --             { hHead = RPConstraint [ "investment" ] RPis [ "combination" ]
-    --             , hBody = Just
-    --                           ( Leaf
-    --                             ( RPConstraint [ "dependents" ] RPis [ "3" ] )
-    --                           )
-    --             }
-    --           , HC
-    --             { hHead = RPConstraint [ "investment" ] RPis [ "stocks" ]
-    --             , hBody = Just
-    --                           ( Leaf
-    --                             ( RPConstraint [ "dependents" ] RPis [ "0" ] )
-    --                         )
-    --             }
-    --           ]
-    --         , rlabel = Just
-    --                    ( "§"
-    --                    , 1
-    --                    , "Scenario 1"
-    --                    )
-    --         , lsource = Nothing
-    --         , srcref = srcref defaultReg
-    --         , defaults = mempty, symtab = mempty
-    --         }
-    --       ]
-
-    -- describe "megaparsing DECIDE layouts" $ do
-    --   it "should handle multiline" $ do
-    --     let testfile = "test/financialadvisor-decide-1.csv"
-    --     testcsv <- BS.readFile testfile
-    --     parseR pRules testfile `traverse` (exampleStreams testcsv)
-    --       `shouldParse`
-    --       [ [ Scenario
 
     describe "revised parser" $ do
 
@@ -1134,21 +1054,6 @@ parserTests nlgEnv runConfig_ = do
                           , "bar" )
                         ,[])
 
--- this test will fail; we can try uncommenting the `term p/c` stanza within Parser.hs/term but that will break action parameters.
-      -- filetest "inline-1-a2" "line crossing"
-      --   (parseOther ( (,,)
-      --                 >*| slMultiTerm
-      --                 |<| pToken Means
-      --                 |>| pBSR
-      --                 |<$ undeepers
-      --               ))
-      --   ( ( ["Food"]
-      --     , Means
-      --     , Any (Just $ Pre "yummy nightshades with spices") [ Leaf (RPMT ["potato","with","salt"])
-      --                                                        , Leaf (RPMT ["tomato","with","pepper"])]
-      --     ), []
-      --   )
-
       let inline_1 = ( ( ["Bad"] , Means , inline_pp ), [] )
           inline_2 = ( ( ["Bad"] , Means , inline_p  ), [] )
           inline_3 = ( ( ["Bad"] , Means , inline_   ), [] )
@@ -1196,102 +1101,8 @@ parserTests nlgEnv runConfig_ = do
       filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])
       filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (["foo","bar","baz"],[])
 
--- expected to fail
---      filetest "multiterm-with-blanks-3" "p, with blank, next line"  (parseOther pMultiTerm) (["foo","bar","baz"],[])
-
       filetest "multiterm-with-blanks-1" "sl, no blanks"             (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
       filetest "multiterm-with-blanks-2" "sl, with blanks"           (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
-
--- expected to fail
---      filetest "multiterm-with-blanks-3" "sl, with blank, next line" (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
-
-
--- [ Hornlike
---     { name = [ "Bad" ]
---     , keyword = Means
---     , given = Nothing
---     , upon = Nothing
---     , clauses =
---         [ HC
---             { hHead = RPBoolStructR [ "Bad" ] RPis
---                 ( Any
---                     ( Just
---                         ( PrePost "any unauthorised" "of personal data" )
---                     )
---                     [ Leaf
---                         ( RPMT [ "access" ] )
---                     , Leaf
---                         ( RPMT [ "use" ] )
---                     , Leaf
---                         ( RPMT [ "disclosure" ] )
---                     , Leaf
---                         ( RPMT [ "copying" ] )
---                     , Leaf
---                         ( RPMT [ "modification" ] )
---                     , Leaf
---                         ( RPMT [ "disposal" ] )
---                     ]
---                 )
---             , hBody = Nothing
---             }
---         ]
---     , rlabel = Nothing
---     , lsource = Nothing
---     , srcref = Just
---         ( SrcRef
---             { url = "test/inline-1-e.csv"
---             , short = "test/inline-1-e.csv"
---             , srcrow = 2
---             , srccol = 1
---             , version = Nothing
---             }
---         )
---     , defaults = []
---     , symtab = []
---     }
--- ]
-
-
-
-{-
-    describe "Prolog" $ do
-
-      it "pdpadbno1" $ do
-        testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
-        let dbno1 = parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
-        (show . fmap sfl4ToProlog <$> dbno1) `shouldParse` "potato"
-
-      it "degustates" $ do
-        testcsv <- BS.readFile ("test/" <> "simple-constitutive-1" <> ".csv")
-        let rules = parseR pRules "simple-constitutive-1" `traverse` exampleStreams testcsv
-        (show . fmap sfl4ToProlog <$> rules) `shouldParse` "potato"
--}
-
-
-{- tests for the Petri net backend -}
-
---    describe "Petri" $ do
-
-      -- can we output a simple petri net
-      -- it "petri-1" $ do
-      --   testcsv <- BS.readFile ("test/" <> "pdpadbno-1" <> ".csv")
-      --   rawRules <- fromRight $ parseR pRules "pdbadbno-1" `traverse` exampleStreams testcsv
-      --   let rules = insrules rawRules startGraph
-      --       asPetri = renderDot $ unqtDot $ graphToDot (petriParams rules) rules
-      --   asPetri `shouldBe` (myReadFile "... expected.dot")
-
-      -- rule expansion directly, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
-
-      -- rule expansion via a single hornlike, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
-
-      -- rule expansion via two layers of hornlike, where a Rule1 says "GOTO Rule2"; can we connect up Rule2 correctly
-
-      -- "AND" split/join should do the right thing
-
-      -- "OR" split/join should do the right thing
-
-      -- graph transformation eliminates if (a) { ... if (a) ... }
-      -- -- we see this in the rule for Notify Individuals
 
       filetest "boolstructp-1" "basic boolstruct of text"
         (parseOther pBoolStruct )
@@ -1568,4 +1379,3 @@ srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
 srccol1     = srccol' 1
 srccol2     = srccol' 2
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
-

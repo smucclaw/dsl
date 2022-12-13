@@ -9,5 +9,5 @@ main = hspec spec
 spec :: Spec
 spec = do
   describe "Parser"         ParserSpec.spec
-  describe "Megaparsing"    MegaparsingSpec.spec
+  describe "Megaparsing"    MegaparsingSpec.parserTests
   describe "TestNLG"        TestNLG.nlgTests2

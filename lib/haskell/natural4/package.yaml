@@ -84,7 +84,7 @@ executables:
 
 tests:
   natural4-test:
-    main:                Spec.hs
+    main:                RootSpec.hs
     source-dirs:         test
     ghc-options:
     - -threaded

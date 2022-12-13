@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-
-module Main where
+module ParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
@@ -243,15 +242,10 @@ prop_rendertoken mytok =
   mytok `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
   toToken (T.pack $ renderToken mytok) === [mytok]
 
-
-
-
-
-
-main :: IO ()
-main = do
-  mpd <- lookupEnv "MP_DEBUG"
-  mpn <- lookupEnv "MP_NLG"
+spec :: Spec
+spec = do
+  mpd <- runIO $ lookupEnv "MP_DEBUG"
+  mpn <- runIO $ lookupEnv "MP_NLG"
   let runConfig_ = RC
         { debug = isJust mpd
         , callDepth = 0
@@ -276,9 +270,10 @@ main = do
   -- verboseCheck prop_gerundcheck
   -- quickCheck prop_rendertoken
   -- nlgEnv <- putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
-  asyncNlgEnv <- async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
+  asyncNlgEnv <- runIO $ async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
   let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
-  hspec $ do
+
+  runIO $ hspec $ do
     describe "mkGerund" $ do
       it "behaves like gfmkGerund" $ do
         property prop_gerundcheck

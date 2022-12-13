@@ -102,3 +102,4 @@ tests:
     - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
     - natural4
+    - hspec-megaparsec

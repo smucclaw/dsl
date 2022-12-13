@@ -4,64 +4,13 @@ module MegaparsingSpec where
 -- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
-import LS.Parser
-import LS.Interpreter
-import LS.RelationalPredicates
-import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
 import LS.Types
-import LS.Error
-import TestNLG
-import Test.QuickCheck
-import LS.NLP.WordNet
-
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Debug.Trace (traceM)
-import System.Environment (lookupEnv)
-import Data.Maybe (isJust)
--- import qualified Data.Map as Map
-import Control.Monad (when)
-import System.IO.Unsafe (unsafePerformIO)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TLE
-import Test.QuickCheck.Arbitrary.Generic
-import LS.NLP.NLG (NLGEnv, myNLGEnv)
-import Control.Concurrent.Async (async, wait)
--- import qualified Data.Text.Encoding as TE
--- import LS.BasicTypes (MyToken)
-
--- if you just want to run a test in the repl, this might be enough:
--- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
--- Right (("foo","bar"),[])
---
--- λ: runMyParser id defaultRC ((,,,) $>| pOtherVal |>| pOtherVal |>| pOtherVal |>< pOtherVal) "" (exampleStream "foo,foo,foo,bar")
--- Right (("foo","foo","foo","bar"),[])
-
--- | Create an expectation by saying what the result should be.
---
--- > parse letterChar "" "x" `shouldParse` 'x'
-shouldParse ::
-  ( HasCallStack,
-    ShowErrorComponent e,
-    Show a,
-    Eq a
-  ) =>
-  -- | Result of parsing as returned by function like 'parse'
-  Either (ParseErrorBundle MyStream e) a ->
-  -- | Desired result
-  a ->
-  Expectation
-r `shouldParse` v = case r of
-  Left e ->
-    expectationFailure $
-      "expected: " ++ show v
-        ++ "\nbut parsing failed with error:\n"
-        ++ errorBundlePrettyCustom e
-  Right x -> x `shouldBe` v
+import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =

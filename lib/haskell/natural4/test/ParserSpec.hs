@@ -19,15 +19,12 @@ import LS.NLP.WordNet
 -- import LS.XPile.SVG
 import LS.XPile.VueJSON
 import LS.XPile.CoreL4
--- import LS.XPile.Typescript
-
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Debug.Trace (traceM)
 import System.Environment (lookupEnv)
 import Data.Maybe (isJust)
--- import qualified Data.Map as Map
 import Control.Monad (when, guard)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Text as T
@@ -36,8 +33,7 @@ import qualified Data.Text.Lazy.Encoding as TLE
 import Test.QuickCheck.Arbitrary.Generic
 import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
--- import qualified Data.Text.Encoding as TE
--- import LS.BasicTypes (MyToken)
+import Test.Hspec.Megaparsec (shouldParse)
 
 -- if you just want to run a test in the repl, this might be enough:
 -- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
@@ -49,25 +45,6 @@ import Control.Concurrent.Async (async, wait)
 -- | Create an expectation by saying what the result should be.
 --
 -- > parse letterChar "" "x" `shouldParse` 'x'
-shouldParse ::
-  ( HasCallStack,
-    ShowErrorComponent e,
-    Show a,
-    Eq a
-  ) =>
-  -- | Result of parsing as returned by function like 'parse'
-  Either (ParseErrorBundle MyStream e) a ->
-  -- | Desired result
-  a ->
-  Expectation
-r `shouldParse` v = case r of
-  Left e ->
-    expectationFailure $
-      "expected: " ++ show v
-        ++ "\nbut parsing failed with error:\n"
-        ++ errorBundlePrettyCustom e
-  Right x -> x `shouldBe` v
-
 
 defaultScenario :: Rule
 defaultScenario = Scenario

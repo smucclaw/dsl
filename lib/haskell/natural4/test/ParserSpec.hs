@@ -259,57 +259,6 @@ parserTests nlgEnv runConfig_ = do
     let  parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
     let _parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
 
-    describe "megaparsing MEANS" $ do
-
-      let bobUncle1 = defaultHorn
-            { name = ["Bob's your uncle"]
-            , keyword = Means
-            , clauses =
-              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT ["Bob is estranged"])
-                                                                                       ,mkLeaf (RPMT ["Bob is dead"])]))
-                   , hBody = Nothing}]
-            , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
-
-      filetest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
-
-      filetest "bob-head-1-b" "more indented NOT"
-        (parseR pRules) [srcrow2 bobUncle1]
-
-      let bobUncle2 = bobUncle1
-            { clauses =
-              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT ["Bob is estranged"]))
-                                                                                  ,mkLeaf (RPMT ["Bob is dead"])])
-                   , hBody = Nothing } ] }
-
-      filetest "bob-head-2" "handle less indentation"
-          (parseR pRules) [srcrow2 bobUncle2]
-
-      filetest "bob-head-3" "should handle outdentation"
-        (parseR pRules) [srcrow2 bobUncle2]
-
-      filetest "bob-tail-1" "should work for constitutive rules"
-        (parseR pRules) [ srcrow2 defaultHorn
-                          { name = ["Bob's your uncle"]
-                          , keyword = Means
-                          , clauses =  [ HC
-                                         { hHead = RPBoolStructR [ "Bob's your uncle" ] RPis
-                                           ( All Nothing
-                                             [ Any Nothing
-                                               [ Leaf
-                                                 ( RPMT [ "Bob is your mother's brother" ] )
-                                               , Leaf
-                                                 ( RPMT [ "Bob is your father's brother" ] )
-                                               ]
-                                             , Not
-                                               ( Leaf
-                                                 ( RPMT [ "Bob is just a family friend" ] )
-                                               )
-                                             ]
-                                           )
-                                         , hBody = Nothing
-                                         }
-                                       ] } ]
-
     describe "megaparsing UNLESS semantics" $ do
 
       let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ]
@@ -396,11 +345,6 @@ parserTests nlgEnv runConfig_ = do
         parseR pRules "pilcrows-1" `traverse` exampleStreams testcsv
           `shouldParse` [ dayOfSilence, srcrow2 <$> dayOfSong ]
 
-        -- forM_ (exampleStreams testcsv) $ \stream ->
-        --   parseR pRules testfile stream
-        --     `shouldParse` [ defaultCon
-        --                   ]
-
     describe "revised parser" $ do
 
       let simpleHorn = [ defaultHorn
@@ -415,17 +359,7 @@ parserTests nlgEnv runConfig_ = do
                   } ]
               }
             ]
-      -- let simpleHorn10 = [ defaultHorn
-      --         { name = ["X"]
-      --         , keyword = Decide
-      --         , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-      --         , clauses =
-      --           [ HC
-      --             { hHead = RPConstraint ["X"] RPis ["Y"]
-      --             , hBody = Just $ mkLeaf (RPConstraint ["Z"] RPis ["Q"])
-      --             } ]
-      --         }
-      --       ]
+
       let simpleHorn02 = [ defaultHorn
               { name = ["X"]
               , keyword = Decide
@@ -449,13 +383,8 @@ parserTests nlgEnv runConfig_ = do
 
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
-      -- filetest "horn-1" "should parse horn clause on a single line" (parseR pToplevel) simpleHorn10
-
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn
-
-      -- syntax unsupported at this time; we need continuation passing style
-      -- filetest "horn-3" "should parse horn clauses 3" (parseR pToplevel) simpleHorn
 
     describe "our new parser" $ do
       let myand = LS.Types.And
@@ -492,9 +421,6 @@ parserTests nlgEnv runConfig_ = do
                                                                       , MyLeaf (text2pt "mid4") ]
                         ],[])
 
-      -- of the three layouts below, only 2-c-3 works.
---      filetest "indent-2-c" "label samecol" (parseOther exprP) ablcd
---      filetest "indent-2-c-2" "label right" (parseOther exprP) ablcd
       filetest "indent-2-c-3" "label left"  (parseOther exprP) ablcd
 
       filetest "indent-2-d" "should handle indent-2-d which goes out, in, out"
@@ -554,7 +480,6 @@ parserTests nlgEnv runConfig_ = do
       let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats"] ) ) }
           whoStructR_2 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats", "rudely"] ) ) }
           whoStructR_3 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats", "without", "manners"] ) ) }
-       -- whoStructR_4 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats", "sans", "decorum"] )) }
 
       filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ]
@@ -700,8 +625,6 @@ parserTests nlgEnv runConfig_ = do
       filetest "pdpadbno-3" "data intermediaries"
         (parseR pToplevel) [Regulative {subj = mkLeaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (mkLeaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = mkLeaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Data Intermediary for PA"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}]
 
---      filetest "pdpadbno-4" "ndb qualification" (parseR pToplevel) []
-
       filetest "pdpadbno-5" "notification to PDPC"
         (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = mkLeaf (("the PDPC" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = mkLeaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}]
 
@@ -782,11 +705,9 @@ parserTests nlgEnv runConfig_ = do
           }
         ]
 
-  -- this got broken by work done in pHornlike someStructure; probably the inline MEANS.
       filetest "pdpadbno-7" "notification to users"
         (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPMT ["the Notifiable Individuals"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}], defaults = [], symtab = []},Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["the Notifiable Individuals"] RPis (All Nothing [mkLeaf (RPMT ["the set of individuals affected by the NDB"]),Not (mkLeaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (mkLeaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (mkLeaf (RPMT ["the individuals on","the LEA Exclusion List"]))]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}]
 
-{- primitives -}
       filetest "primitive-pNumber" "primitive number"
         (parseOther pNumber) (42, [])
 
@@ -944,10 +865,6 @@ parserTests nlgEnv runConfig_ = do
             guard (n < maxDepth)
             return (toreturn, n)
 
-      -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
-      -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
-      -- aboveNextLineKeyword has returned ((["foo3"],              Or),-1) -- to get this, maxDepth=0
-
       it "SLParser combinators 5 aboveNextLineKeyword2" $ do
         parseOther ((,,)
                     $>| pOtherVal
@@ -1016,7 +933,6 @@ parserTests nlgEnv runConfig_ = do
                           , "bar" )
                         ,[])
 
-      -- this should serve for matching a pBSR
       it "SLParser combinators 10 maxdepth 0" $ do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
@@ -1119,7 +1035,6 @@ parserTests nlgEnv runConfig_ = do
         ]
 
       when (runNLGtests runConfig_) $ do
-        -- let's see if the groundrules function outputs the right things
         let grNormal = groundrules runConfig_
             grExtend = groundrules runConfig_ { extendedGrounds = True }
             asCList  = unsafePerformIO .
@@ -1135,11 +1050,6 @@ parserTests nlgEnv runConfig_ = do
         filetest "boolstructp-3" "as checklist, extended"
           (parseWith asCList pRules) [ ["Does the person have health insurance?"]
                                      , ["Is the person immortal?"]]
-        -- TODO: check why nlgQuestion reverses order, revert this once that is fixed
-
-
-
--- let's parse scenario rules!
 
       filetest "prulelabel-1" "standalone rule label"
         (parseOther pRuleLabel )
@@ -1307,12 +1217,10 @@ parserTests nlgEnv runConfig_ = do
       filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
       filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
 
--- declare should be able to have nestedHorn, not just pBSR
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
         (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["genus","species"] RPis (mkLeaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
-  -- |&|
     describe "ampersand" $ do
       let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
       xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
@@ -1345,7 +1253,6 @@ parserTests nlgEnv runConfig_ = do
       filetest "varsub-3-bodybody" "should expand hornlike" parseSM ab1b2
       filetest "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
 
--- bits of infrastructure
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
 srcrow', srccol' :: Int -> Rule -> Rule
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

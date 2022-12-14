@@ -24,6 +24,7 @@ import Control.Monad.Reader (runReader)
 import Test.Hspec.Golden
 import Lens.Micro.Platform
 import Data.ByteString.Lazy.Char8 (unpack)
+import Control.Monad.RWS
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
 
@@ -450,15 +451,15 @@ spec = do
       mark = Default ( Right (Just True) )
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
+        shortLeaf = fst (evalRWS (drawLeafR "swim") (DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull) (defaultBBox', mempty::SVGElement))
+        longLeaf = fst (evalRWS (drawLeafR "discombobulate") (DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull) (defaultBBox', mempty::SVGElement))
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
+        shortLeaf = fst (evalRWS (drawLeafR "swim") (DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny) (defaultBBox', mempty::SVGElement))
+        longLeaf = fst (evalRWS (drawLeafR "discombobulate") (DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny) (defaultBBox', mempty::SVGElement))
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)

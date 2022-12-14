@@ -22,8 +22,8 @@ import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
-import Control.Monad.Reader
 import Lens.Micro.Platform
+import Control.Monad.RWS
 
 type Length  = Integer
 type SVGElement = Element
@@ -241,13 +241,13 @@ getColorsText    Tiny     False   = "lightgrey"
 getColorsText    _        True    = "black"
 getColorsText    _        False   = "white"
 
-getBoxColorsR :: DrawConfigM (T.Text, T.Text)
+getBoxColorsR :: SVGCanvas (T.Text, T.Text)
 getBoxColorsR = do
   m <- asks markingR
   return $ getColorsBox (confidence m)
 
 
-getTextColorsR :: DrawConfigM T.Text
+getTextColorsR :: SVGCanvas T.Text
 getTextColorsR = do
   m <- asks markingR
   sc <- asks contextScale
@@ -292,9 +292,9 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
+drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = fst (evalRWS (drawLeafR txt) (DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)) (defaultBBox', mempty::SVGElement))
 drawItemTiny sc negContext (Node (Q _sv Neg         pp m) childqs)  = drawItemTiny sc (not negContext) (head childqs)
-drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
+drawItemTiny sc negContext qt                                       = drawItemFull sc      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
 alignV alignment maxHeight (box, el) = (adjustMargins (box & bboxHeight .~ maxHeight), moveElement el)
@@ -548,12 +548,12 @@ decorateWithLabel _ Nothing childBox = childBox
 decorateWithLabel sc (Just (Pre txt)) childBox = drawPreLabelTop sc txt childBox
 decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox = drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
-decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
 decorateWithLabelR Nothing childBox = return childBox
 decorateWithLabelR (Just (Pre txt)) childBox = asks contextScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
 decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks contextScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
-decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
 decorateWithLabelGuardR ml childBox = asks contextScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox
 
 drawItemFull :: Scale -> Bool -> QuestionTree -> BoxedSVG
@@ -561,7 +561,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
   case ao of
     Or -> decorateWithLabel sc pp (combineOr sc rawChildren)
     And -> decorateWithLabel sc pp  (combineAnd sc rawChildren)
-    Simply txt -> runReader (drawLeafR txt) contextR
+    Simply txt -> fst (evalRWS (drawLeafR txt) contextR (defaultBBox', mempty::SVGElement))
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
     contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
@@ -589,13 +589,13 @@ confidence :: Default Bool -> Bool
 confidence (Default (Right _)) = True
 confidence (Default (Left _)) = False
 
-drawBoxCapR :: T.Text -> DrawConfigM SVGElement
+drawBoxCapR :: T.Text -> SVGCanvas SVGElement
 drawBoxCapR caption = do
   negContext <- asks negContext
   m <- asks markingR
   drawBoxCap negContext m <$> deriveBoxSize caption
 
-drawBoxContentR :: T.Text -> DrawConfigM SVGElement
+drawBoxContentR :: T.Text -> SVGCanvas SVGElement
 drawBoxContentR caption = do
   sc <- asks contextScale
   textFill <- getTextColorsR
@@ -610,7 +610,7 @@ drawBoxCap negContext m BoxDimensions{boxWidth=bw, boxHeight=bh} =
     rightLineSVG = drawVerticalLine bw bh rightline "rightline" "black"
                    -- in Full and Small mode, draw a white line just to the left of the full-height right black line
                    -- for increased visibility
-                   -- [TODO] don't draw the line when Tiny. Need to move this into DrawConfigM
+                   -- [TODO] don't draw the line when Tiny. Need to move this into SVGCanvas
                    <> if rightline == FullLine
                       then drawVerticalLine (bw-2) bh rightline "rightline" "white"
                       else mempty
@@ -665,7 +665,7 @@ data DrawConfig = DrawConfig{
     textBoxLengthFn :: Length -> Length -> Length
   }
 
-type DrawConfigM = Reader DrawConfig
+type SVGCanvas = RWS DrawConfig T.Text BoxedSVG
 
 textBoxLengthFull :: Length -> Length -> Length
 textBoxLengthFull defBoxWidth captionLength = defBoxWidth + (6 * captionLength)
@@ -673,7 +673,7 @@ textBoxLengthFull defBoxWidth captionLength = defBoxWidth + (6 * captionLength)
 textBoxLengthTiny :: Length -> Length -> Length
 textBoxLengthTiny defBoxWidth _ = defBoxWidth
 
-deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
+deriveBoxSize :: T.Text -> SVGCanvas BoxDimensions
 deriveBoxSize caption = do
   textBoxLength <- asks textBoxLengthFn
   BoxDimensions{boxWidth=defBoxWidth, boxHeight=boxHeight} <- asks (scaleDims.aav)
@@ -694,7 +694,7 @@ labelBox sc baseline caption =
     boxWidth = textBoxLengthFull defBoxWidth (fromIntegral (T.length caption))
     boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement caption)
 
-labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
+labelBoxR :: T.Text -> T.Text -> SVGCanvas BoxedSVG
 labelBoxR baseline mytext = do
   dbox <- asks defaultBox
   dims@BoxDimensions{boxWidth=boxWidth} <- deriveBoxSize mytext
@@ -703,7 +703,7 @@ labelBoxR baseline mytext = do
     ,
     text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
-drawLeafR :: T.Text -> DrawConfigM BoxedSVG
+drawLeafR :: T.Text -> SVGCanvas BoxedSVG
 drawLeafR caption = do
   dbox <- asks defaultBox
   (boxStroke, boxFill) <- getBoxColorsR

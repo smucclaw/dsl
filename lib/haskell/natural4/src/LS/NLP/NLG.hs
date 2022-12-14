@@ -13,7 +13,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
-import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF, readExpr )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text as Text
@@ -21,8 +21,9 @@ import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe ( fromMaybe, catMaybes, mapMaybe, fromJust )
-import Data.List ( group, sort, sortOn, nub, intercalate )
+import Data.List ( group, sort, sortOn, nub, intercalate, isInfixOf )
 import Data.List.Extra (groupOn, splitOn)
+import Data.List.Split (splitOneOf)
 import Data.Either (partitionEithers)
 import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
@@ -86,33 +87,21 @@ parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
   when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
---  conll <- udpipe txt -- Initial parse
+  -- conll <- udpipe txt -- Initial parse
   let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
-  print "string that's being replaced"
-  print nonWords
-  print "origin string"
-  print txt
-  -- check that it's not just a capitalised real word
-  print ("lowerconll")
-  lowerConll <- checkAllCapsIsWord txt
-  print lowerConll
+   -- check that it's not just a capitalised real word and replace if not
+  lowerConll <- udpipe (Text.unwords $ map Text.pack $ checkAllCapsIsWord txt)
   -- when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
-  -- let expr = case ud2gf conll of
+  -- let expr = case ud2gf lowerConll of
   --              Just e -> e
   --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
-  expr <- either errorMsg pure (ud2gf lowerConll)
-  print "the original expression"
-  print $ words $ showExpr expr
-  -- print "replaced expression as string"
-  -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
-  -- print replaced
-  -- when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
-  -- let replacedToExpr = fromMaybe (dummyExpr "") (PGF.readExpr replaced)
-  -- print "show replaced as expr"
-  -- print $ showExpr replacedToExpr
-  -- let uds = toUDS (pgfGrammar $ udEnv env) replacedToExpr
-  let uds = toUDS (pgfGrammar $ udEnv env) expr
-  -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
+  expr <- either errorMsg pure $ ud2gf lowerConll
+  let swappedExpr = fromMaybe (dummyExpr ("no expr from udpipe: " ++ Text.unpack txt)) (readExpr $ swapBack nonWords $ showExpr expr)
+  let uds = toUDS (pgfGrammar $ udEnv env) swappedExpr
+  -- compare to just getting readExpr from original txt
+  -- uds: "every Gra25 must notify the organization if the data's breach occurs on or after the date of commencement of PDPA_PDP(A)A_2020_\167\&13"
+  -- unparsed original txt: Got the error: * Function Gra25 is not in scope
+  when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
   where
     errorMsg msg = do
@@ -134,12 +123,6 @@ parseUD env txt = do
                   ((l:_l), []) -> Left l
                   ([]  ,   []) -> Left "ud2gf: no results given for input"
       [] -> Left "ud2gf: tried parsing an empty input"
-
-    swapBack :: [String] -> [String] -> [String]
-    swapBack [] [] = []
-    swapBack [] (_y:_ys) = []
-    swapBack (x:xs) [] = x:xs
-    swapBack (x:xs) (y:ys) = ((init x) ++ y) : swapBack xs ys
 
     checkIfChunk :: String -> Bool
     checkIfChunk x = checkDigit x || checkLower x || checkSymbol x
@@ -164,11 +147,11 @@ parseUD env txt = do
     replaceChunks txt = swapChunk $ map Text.unpack $ Text.words txt
     -- Text.pack $ unwords $
 
-    combinePROPERNOUN :: [[String]] ->[[String]]
+    combinePROPERNOUN :: [String] -> [String]
     combinePROPERNOUN [] = []
-    combinePROPERNOUN (x:xs)
-      | head x == "propernoun" = [intercalate "_" x] : combinePROPERNOUN xs
-      | otherwise = x : combinePROPERNOUN xs
+    combinePROPERNOUN x
+      | (head x == "propernoun") = [intercalate "_" x]
+      | otherwise = x
 
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords
@@ -178,13 +161,21 @@ parseUD env txt = do
       | wd <- Text.words txt
       ]
 
-    checkAllCapsIsWord :: Text.Text -> IO String
-    checkAllCapsIsWord txt = do
-      lowerConll <- udpipe (Text.map toLower txt)
-      defaultConll <- udpipe $ lowerButPreserveAllCaps txt
-      let check | (map toLower lowerConll) == (map toLower defaultConll) = defaultConll
-                | otherwise = lowerConll
-      return check
+    checkAllCapsIsWord :: Text.Text -> [String]
+    checkAllCapsIsWord txt
+      | isInfixOf "propernoun" (check (Text.map toLower txt)) = words $ check txt
+      | otherwise = words $ check (Text.map toLower txt)
+      where
+        check tx = Text.unpack $ Text.unwords $ map Text.pack $ concatMap combinePROPERNOUN $ group $ replaceChunks tx
+
+    swapBack :: [String] -> String -> String
+    swapBack str txt
+      | isInfixOf "propernoun" txt = concat $ concat $ swap str $ splitOn "propernoun" txt
+      | otherwise = txt
+      where
+        swap a b = (zipWith (++) (fst l) a) : [snd l]
+          where
+            l = splitAt (length a) b
 -----------------------------------------------------------------------------
 
 -- | rewrite statements into questions, for use by the Q&A web UI
@@ -830,8 +821,8 @@ bsr2gf env bsr = case bsr of
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    -- let existingTrees = groupByRGLtype andConj contentsUDS
-    --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
+    let existingTrees = groupByRGLtype andConj contentsUDS
+    putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ treeContents andConj contentsUDS
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
@@ -1366,10 +1357,15 @@ sFromUDS x = case getNsubj x of
       uds <- udsFromacl acl
       np <- npFromUDS uds
       predVPS np <$> (root2vps root)
+    Groot_aclRelcl root (GaclRelclUDS_ uds) -> do
+      np <- npFromUDS uds
+      predVPS np <$> root2vps root
     Groot_expl_cop_csubj root _expl _cop csubj -> do
       GMkVPS t p vp <- (root2vps root)
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
       pure $ GUseCl t p $ GImpersCl pred
+    Groot_nmod root (Gnmod_ prep np) ->
+      predVPS np <$> root2vps root
     Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> root2vps root
     Groot_csubj root (Gcsubj_ cs) -> do
       GMkVPS t p vp <- (root2vps root)

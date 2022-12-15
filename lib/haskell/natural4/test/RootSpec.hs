@@ -3,6 +3,7 @@ import qualified TestNLG
 import qualified MegaparsingSpec
 import qualified MegaparsingMeansSpec
 import qualified MegaparsingUnlessSpec
+import qualified NewParserSpec
 import qualified ParserSpec
 
 main :: IO ()
@@ -14,4 +15,5 @@ spec = do
   describe "Megaparsing"           MegaparsingSpec.parserTests
   describe "MegaparsingMeans"      MegaparsingMeansSpec.parserTests
   describe "MegaparsingUnlessSpec" MegaparsingUnlessSpec.parserTests
+  describe "NewParserSpec"         NewParserSpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2

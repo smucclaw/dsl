@@ -5,6 +5,7 @@ import qualified MegaparsingMeansSpec
 import qualified MegaparsingUnlessSpec
 import qualified NewParserSpec
 import qualified ParserSpec
+import qualified PDPASpec
 
 main :: IO ()
 main = hspec spec
@@ -16,4 +17,5 @@ spec = do
   describe "MegaparsingMeans"      MegaparsingMeansSpec.parserTests
   describe "MegaparsingUnlessSpec" MegaparsingUnlessSpec.parserTests
   describe "NewParserSpec"         NewParserSpec.parserTests
+  describe "PDPASpec"              PDPASpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2

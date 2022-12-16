@@ -406,7 +406,7 @@
 #fun root_obl_xcomp head obl xcomp
 #fun root_parataxis head parataxis
 #fun root_xcomp_ccomp head xcomp ccomp
-#fun root_xcomp_obj head xcomp obj
+#fun root_obj_xcomp head obj xcomp
 #fun root_advcl_det_compound_amod_advcl head advcl  det  compound  amod  advcl
 #fun root_advcl_nsubjPass_auxPass head advcl  nsubj:pass  aux:pass
 #fun root_advcl_nsubj_aux_advcl head advcl  nsubj:*  aux  advcl

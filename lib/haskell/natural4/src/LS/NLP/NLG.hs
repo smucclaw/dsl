@@ -1317,7 +1317,8 @@ verbFromUDS' verbose x = case getNsubj x of
     Groot_obj_obl (GrootV_ t p vp) (Gobj_ obj) (Gobl_ adv) -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) adv
     Groot_obl_obl (GrootV_ t p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl1) obl2
     Groot_obl_xcomp (GrootV_ t p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl) xc
-    Groot_xcomp (GrootV_ t p vp) (GxcompAdv_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
+    Groot_xcomp (GrootV_ t p vp) xcomp -> Just $ GMkVPS t p $ GAdvVP vp (xcomp2adv xcomp)
+    Groot_obj_xcomp (GrootV_ t p vp) (Gobj_ obj) xcomp -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) (xcomp2adv xcomp)
     Groot_advmod (GrootV_ t p vp) (Gadvmod_ adv) ->
       Just $ GMkVPS t p $ GAdvVP vp adv
     Groot_acl_nmod root         (GaclUDSgerund_ uds) (Gnmod_ prep np) -> do
@@ -1334,6 +1335,15 @@ verbFromUDS' verbose x = case getNsubj x of
                 _ -> if verbose
                       then trace ("\n\n **** verbFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
                       else Nothing
+
+xcomp2adv :: Gxcomp -> GAdv
+xcomp2adv xc = case xc of
+  GxcompAdv_ adv -> adv
+  _ -> Gxcomp2Adv xc
+  -- GxcompN_ : NP -> xcomp ;
+  -- GxcompToBeN_ : mark -> cop -> NP -> xcomp ;
+  -- GxcompA_ ap -> GPositAdvAdj ap
+  -- GxcompA_ccomp_ : AP -> ccomp -> xcomp ;
 
 -- | Two first cases overlap with verbFromUDS: rootV_ and rootVaux_ always become VPS.
 -- Rest don't, because this is called for any root ever that we want to turn into VPS.
@@ -1405,6 +1415,7 @@ sFromUDS x = case getNsubj x of
     Groot_xcomp root xcomp -> case xcomp of
       GxcompN_ np -> predVPS np <$> root2vps root
       GxcompToBeN_ _ _ np -> predVPS np <$> root2vps root
+      _ -> error ("sFromUDS: doesn't handle yet " <> showExpr (gf xcomp))
     -- todo: add other xcomps
     GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) cop) -> do
       xcomp <- pure $ GxcompToBeN_ (Gmark_ subj) cop nsubj

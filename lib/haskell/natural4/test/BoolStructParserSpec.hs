@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ParserSpec where
+module BoolStructParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
@@ -34,6 +34,8 @@ import Test.QuickCheck.Arbitrary.Generic
 import LS.NLP.NLG (NLGEnv, myNLGEnv)
 import Control.Concurrent.Async (async, wait)
 import Test.Hspec.Megaparsec (shouldParse)
+import Data.Void (Void)
+import Control.Monad.Cont (MonadIO(liftIO))
 
 -- if you just want to run a test in the repl, this might be enough:
 -- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
@@ -241,23 +243,25 @@ spec = do
     describe "Nothing Test" $ do
       it "should be nothing" $ do
         (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-    describe "Parser tests" $ parserTests nlgEnv runConfig_
+    describe "Parser tests" $ parserTests nlgEnv
     if runNLGtests runConfig_
       then describe "NLG tests" $ nlgTests nlgEnv
       else describe "skipping NLG tests" $ do it "to enable, run with MP_NLG=True or edit Spec.hs's runNLGtests config" $ do True
 
-parserTests :: NLGEnv -> RunConfig -> Spec
-parserTests nlgEnv runConfig_ = do
-    let runConfig = runConfig_ { sourceURL = "test/Spec" }
+parserTests :: NLGEnv -> Spec
+parserTests nlgEnv = do
+    let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
-    let  dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
-    let  parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
-    let _parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
-    let  parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-    let _parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-    let  parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-    let _parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
+    let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
+
+    let  parseWith  f x y s = f <$> runMyParser combine runConfig x y s
+    let  parseR       x y s = runMyParser combine runConfig x y s
+    let _parseR1      x y s = runMyParser combine runConfigDebug x y s
+    let  parseOther   x y s = runMyParser id      runConfig x y s
+    let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
+
+        asCList = unsafePerformIO . checklist nlgEnv (runConfig { extendedGrounds = True }) 
 
     describe "Parsing boolstruct" $ do
       filetest "boolstructp-1" "basic boolstruct of text"
@@ -297,22 +301,16 @@ parserTests nlgEnv runConfig_ = do
           , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
         ]
 
-      when (runNLGtests runConfig_) $ do
-        let grNormal = groundrules runConfig_
-            grExtend = groundrules runConfig_ { extendedGrounds = True }
-            asCList  = unsafePerformIO .
-                         checklist nlgEnv runConfig_ { extendedGrounds = True }
+      filetest "boolstructp-3" "groundrules, non-extended"
+        (parseWith (groundrules runConfig) pRules) [["person","has","health insurance"]]
 
-        filetest "boolstructp-3" "groundrules, non-extended"
-          (parseWith grNormal pRules) [["person","has","health insurance"]]
+      filetest "boolstructp-3" "groundrules, extended"
+        (parseWith (groundrules runConfig { extendedGrounds = True }) pRules) [ ["person","is","immortal"]
+                                    , ["person","has","health insurance"]]
 
-        filetest "boolstructp-3" "groundrules, extended"
-          (parseWith grExtend pRules) [ ["person","is","immortal"]
-                                      , ["person","has","health insurance"]]
-
-        filetest "boolstructp-3" "as checklist, extended"
-          (parseWith asCList pRules) [ ["Does the person have health insurance?"]
-                                     , ["Is the person immortal?"]]
+      filetest "boolstructp-3" "as checklist, extended"
+        (parseWith asCList pRules) [ ["Does the person have health insurance?"]
+                                    , ["Is the person immortal?"]]
 
       filetest "prulelabel-1" "standalone rule label"
         (parseOther pRuleLabel )
@@ -341,7 +339,7 @@ parserTests nlgEnv runConfig_ = do
       xtexttest "EXPECT,NOT,IT IS,A Notifiable Data Breach," "unit test EXPECT ... NOT"
         (parseOther pExpect)
         ( ExpRP (RPBoolStructR
-                 [] RPis -- [TODO] this sucks, refactor it away
+                 [] RPis
                  (Not (mkLeaf (RPMT ["IT IS","A Notifiable Data Breach"]))))
         , []
         )
@@ -349,7 +347,7 @@ parserTests nlgEnv runConfig_ = do
       xtexttest "GIVEN,not,IT IS,A Notifiable Data Breach," "unit test GIVEN ... NOT"
         (parseOther pGivens )
         (  [RPBoolStructR
-                 [] RPis -- [TODO] this sucks, refactor it away
+                 [] RPis
                  (Not (mkLeaf (RPMT ["IT IS","A Notifiable Data Breach"])))]
         , []
         )
@@ -360,7 +358,6 @@ parserTests nlgEnv runConfig_ = do
         , []
         )
 
-  -- [TODO] we need a better notion of how to handle a nested regulative rule under a scenario EXPECT
       xtexttest "EXPECT,,Organisation,,MUST,,notify PDPC,,,," "unit test EXPECT ... MUST"
         (parseOther pExpect )
         ( ExpRP (RPMT ["Organisation","MUST","notify PDPC"])
@@ -384,87 +381,6 @@ parserTests nlgEnv runConfig_ = do
         ( scenario4
         , []
         )
-
-    -- [TODO] it'd be nice to get this working as a filetest rather than the manual way
-    describe "transpiler to CoreL4" $ do
-      xit "should output a class declaration for seca.csv" $ do
-        let testfile = "seca"
-        testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
-        let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
-        (fmap sfl4ToCorel4 <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
-
-      filetest "class-1" "type definitions"
-        (parseR pRules)
-        [TypeDecl {name = ["Class1"], super = Just (SimpleType TOne "Object"), has = [TypeDecl {name = ["id"], super = Just (SimpleType TOne "Integer"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},TypeDecl {name = ["Class2"], super = Just (SimpleType TOne "Class1"), has = [TypeDecl {name = ["firstname"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["lastname"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["office address"], super = Nothing, has = [TypeDecl {name = ["line1"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["line2"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["bar address"], super = Just (SimpleType TOne "address"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["work address"], super = Just (SimpleType TOne "address"), has = [TypeDecl {name = ["floor"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["company name"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 4, version = Nothing}), defaults = [], symtab = []},TypeDecl {name = ["address"], super = Nothing, has = [TypeDecl {name = ["line1"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},TypeDecl {name = ["line2"], super = Just (SimpleType TOne "String"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 15, version = Nothing}), defaults = [], symtab = []}]
-
-      filetest "class-1" "parent-class identification"
-        (parseOther (do
-                        rules <- some pTypeDeclaration
-                        let classH = classHierarchy rules
-                            parent = clsParent classH "Class2"
-                        return $ parent))
-        (Just "Class1",[])
-
-      filetest "class-1" "attribute enumeration"
-        (parseOther (do
-                        rules <- some pTypeDeclaration
-                        let classH = classHierarchy rules
-                            tA = getCTkeys <$> thisAttributes classH "Class2"
-                        return $ tA))
-        (Just ["bar address","firstname","lastname","office address","work address"], [])
-
-      filetest "class-1" "extended attribute enumeration"
-        (parseOther (do
-                        rules <- some pTypeDeclaration
-                        let classH = classHierarchy rules
-                            eA = getCTkeys <$> extendedAttributes classH "Class2"
-                        return $ eA))
-        (Just ["bar address","firstname","id","lastname","office address","work address"], [])
-
-      filetest "class-fa-1" "financial advisor data modelling"
-        (parseR pToplevel) [
-          TypeDecl { name = ["FinancialStatus"], super = Just (InlineEnum TOne (("adequate" :| ["inadequate"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}), defaults = [], symtab = []},
-          TypeDecl {name = ["EarningsStatus"], super = Just (InlineEnum TOne (("steady" :| ["unsteady"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing}), defaults = [], symtab = []},
-          TypeDecl {name = ["InvestmentStrategy"], super = Just (InlineEnum TOne (("savings" :| ["stocks","combination"],Nothing) :| [])), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []},
-          TypeDecl {name = ["Person"], super = Nothing, has = [
-            TypeDecl {name = ["dependents"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["amountSaved"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["earnings"], super = Just (SimpleType TOne "Number"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["steadiness"], super = Just (SimpleType TOne "EarningsStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["income"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["savingsAccount"], super = Just (SimpleType TOne "FinancialStatus"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["isDead"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["spendthrift"], super = Just (SimpleType TOne "Boolean"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []},
-            TypeDecl {name = ["investment"], super = Just (SimpleType TOne "InvestmentStrategy"), has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}],
-            enums = Nothing, given = Nothing, upon = Nothing, rlabel = Just ("\167",2,"person type"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 5, version = Nothing}), defaults = [], symtab = []}
-          ]
-
-      filetest "class-fa-2" "financial advisor decision modelling"
-        (parseR pToplevel)
-        [ Hornlike {
-          name = ["p", "investment"],
-          super = Nothing,
-          keyword = Decide,
-          given = Just (("p" :| [], Just (SimpleType TOne "Person")) :| []),
-          upon = Nothing,
-          clauses =
-            [ HC {hHead = RPConstraint ["p", "investment"] RPis ["savings"], hBody = Just (mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["inadequate"]))},
-              HC {hHead = RPConstraint ["p", "investment"] RPis ["stocks"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "savingsAccount"] RPis ["adequate"]), mkLeaf (RPConstraint ["p", "income"] RPis ["adequate"])])},
-              HC {hHead = RPConstraint ["p", "investment"] RPis ["combination"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
-              HC {hHead = RPConstraint ["p", "minSavings"] RPis ["p's dependents", "*", "5000"], hBody = Nothing},
-              HC {hHead = RPConstraint ["p", "savingsAccount"] RPis ["adequate"], hBody = Just (mkLeaf (RPConstraint ["p", "amountSaved"] RPgt ["p", "minSavings"]))},
-              HC {hHead = RPConstraint ["p", "savingsAccount"] RPis ["inadequate"], hBody = Just (mkLeaf (RPMT ["OTHERWISE"]))},
-              HC {hHead = RPConstraint ["p", "minIncome"] RPis ["15000 + 4000 * p's dependents"], hBody = Nothing},
-              HC {hHead = RPConstraint ["p", "income"] RPis ["adequate"], hBody = Just (All Nothing [mkLeaf (RPConstraint ["p", "earnings"] RPgt ["p", "minIncome"]), mkLeaf (RPConstraint ["p", "steadiness"] RPis ["steady"])])},
-              HC {hHead = RPConstraint ["p", "blah"] RPis ["42"], hBody = Nothing}
-            ],
-          rlabel = Nothing,
-          lsource = Nothing,
-          srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
-          defaults = [],
-          symtab = []
-        }
-        ]
 
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"

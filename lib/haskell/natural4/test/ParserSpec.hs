@@ -229,7 +229,7 @@ spec = do
     }
 
   asyncNlgEnv <- runIO $ async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
-  let nlgEnv = unsafePerformIO $ wait asyncNlgEnv
+  nlgEnv <- runIO $ wait asyncNlgEnv
 
   do
     describe "mkGerund" $ do

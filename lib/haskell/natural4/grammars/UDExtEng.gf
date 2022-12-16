@@ -194,9 +194,9 @@ concrete UDExtEng of UDExt = UDAppEng,
     RPelem,
     RPnotElem -}
 
-    -- : UDFragment -> UDS -> UDFragment ; -- breach is severe WHEN data is lost
+    -- : UDFragment -> S -> UDFragment ; -- breach is severe WHEN data is lost
     HornClause2 breach_is_severe data_is_lost =
-      let when_data_lost_Adv : SyntaxEng.Adv = mkAdv SyntaxEng.when_Subj (udsToS data_is_lost)
+      let when_data_lost_Adv : SyntaxEng.Adv = mkAdv SyntaxEng.when_Subj data_is_lost
        in hornlike breach_is_severe when_data_lost_Adv ;
 
     CondStandalone uds = ss (linUDS uds) ;

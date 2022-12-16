@@ -142,7 +142,7 @@ abstract UDExt = UDApp ,
     RPnotElem : NP -> UDS -> UDFragment ; -- TODO: types?
 
     Means : NP -> UDS -> UDFragment ; -- foo MEANS bar -- what types to use??? "eyes IS (left IS blue AND right IS brown)"
-    HornClause2 : (breach_is_severe : UDFragment) -> (data_is_lost : UDS) -> UDFragment ; -- breach is severe WHEN data is lost
+    HornClause2 : (breach_is_severe : UDFragment) -> (data_is_lost : S) -> UDFragment ; -- breach is severe WHEN data is lost
 
     Who : UDS -> NP -> NP ; -- EVERY king WHO is a singer
     subjAction : NP -> UDS -> UDFragment ;

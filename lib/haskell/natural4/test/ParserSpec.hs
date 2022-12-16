@@ -466,36 +466,11 @@ parserTests nlgEnv runConfig_ = do
         }
         ]
 
-
--- sl style
-    describe "sameOrNextLine" $ do
-      let potatoParser = parseOther (sameOrNextLine
-                                      (flip const $>| (pToken Declare) |*| (someSL (liftSL pOtherVal)))
-                                      (flip const $>| (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
-          potatoExpect = ( ( [ "Potato" ]
-                           , [ "genus", "species" ] ), [] )
-
-      filetest "sameornext-1-same"  "a b on same line"  potatoParser potatoExpect
-      filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
-      filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
-      filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
-
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
         (parseR pToplevel) [TypeDecl {name = ["Potato"], super = Nothing, has = [TypeDecl {name = ["genus","species"], super = Nothing, has = [], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, defaults = [], symtab = []}], enums = Nothing, given = Nothing, upon = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["genus","species"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["genus","species"] RPis (mkLeaf (RPMT ["some Linnaen thing"])), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}), defaults = [], symtab = []}]
 
-    describe "ampersand" $ do
-      let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
-      xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
-        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
-      filetest "ampersand-2" "this bed is just right"
-        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
-      filetest "ampersand-3" "to the right shouldbe OK"
-        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
-      xfiletest "ampersand-4" "to the right with extra should leave uncaptured uncaptured"
-        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
-      filetest "ampersand-4" "to the right with extra"
-        (parseOther nextLineP) ((["Potato", "uncaptured"],["genus", "species"]), [])
+
 
     describe "variable substitution and rule expansion" $ do
       let parseSM s m = do
